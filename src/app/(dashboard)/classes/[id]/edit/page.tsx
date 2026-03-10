@@ -60,6 +60,7 @@ export default function ClassEditPage() {
     content?: ContentItem
   } | null>(null)
   const [contentForm, setContentForm] = useState<ContentForm>(emptyForm)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const fetchData = useCallback(async () => {
@@ -178,6 +179,7 @@ export default function ClassEditPage() {
   const openAddContent = (topicId: string) => {
     setContentModal({ mode: 'add', topicId })
     setContentForm(emptyForm)
+    setSelectedFile(null)
   }
 
   const openEditContent = (topicId: string, item: ContentItem) => {
@@ -188,6 +190,7 @@ export default function ClassEditPage() {
       videoUrl: item.videoUrl || '',
       pptUrl: item.pptUrl || '',
     })
+    setSelectedFile(null)
   }
 
   const saveContent = async () => {
@@ -314,6 +317,49 @@ export default function ClassEditPage() {
                   className="form-input"
                   style={{ width: '100%' }}
                 />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                  Upload File
+                </label>
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '10px 14px', borderRadius: '10px',
+                  background: '#e8eaf0', border: '1.5px dashed #b0b2c0',
+                  cursor: 'pointer', transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#3636e8')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = '#b0b2c0')}
+                >
+                  <input
+                    type="file"
+                    style={{ display: 'none' }}
+                    onChange={e => setSelectedFile(e.target.files?.[0] ?? null)}
+                  />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <span style={{ fontSize: '13px', color: selectedFile ? '#1e1e3a' : '#9999b0', fontWeight: selectedFile ? '500' : '400' }}>
+                    {selectedFile ? selectedFile.name : 'Choose a file to upload'}
+                  </span>
+                  {selectedFile && (
+                    <span style={{ fontSize: '11px', color: '#9999b0', marginLeft: 'auto' }}>
+                      {(selectedFile.size / 1024).toFixed(1)} KB
+                    </span>
+                  )}
+                </label>
+                {selectedFile && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFile(null)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: '#ef4444', marginTop: '4px', padding: '0' }}
+                  >
+                    Remove file
+                  </button>
+                )}
               </div>
 
               <div>

@@ -54,12 +54,15 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password)
 
+    const securityNumber = 'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase()
+
     const user = await prisma.user.create({
       data: {
         name,
         email: email.toLowerCase(),
         passwordHash,
         role,
+        securityNumber,
       },
       select: {
         id: true,

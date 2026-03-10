@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 
 interface Lecture {
   id: string
@@ -21,7 +20,7 @@ export default function RecordingsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [classFilter, setClassFilter] = useState('all')
-  const [classes, setClasses] = useState<Array<{ id: string; name: string }>>([])
+  const [classes, setClasses] = useState<Array<{ id: string; name: string; color: string }>>([])
 
   useEffect(() => {
     Promise.all([
@@ -29,7 +28,7 @@ export default function RecordingsPage() {
       fetch('/api/classes').then(r => r.json()),
     ]).then(([lecData, clsData]) => {
       setLectures(lecData.lectures || lecData || [])
-      setClasses((clsData.classes || clsData || []).map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })))
+      setClasses((clsData.classes || clsData || []).map((c: { id: string; name: string; color: string }) => ({ id: c.id, name: c.name, color: c.color })))
     }).catch(console.error).finally(() => setLoading(false))
   }, [])
 
@@ -55,38 +54,86 @@ export default function RecordingsPage() {
   return (
     <div className="page-container fade-in">
 
-      {/* Filters */}
+      {/* Search bar */}
+      <div style={{ marginBottom: '16px', position: 'relative', maxWidth: '420px' }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"
+          style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }}>
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          type="text"
+          placeholder="Search recordings..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '11px 16px 11px 44px',
+            borderRadius: '50px',
+            border: 'none',
+            outline: 'none',
+            background: '#e8eaf0',
+            boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff',
+            fontSize: '14.5px',
+            color: '#1e1e3a',
+            fontFamily: 'inherit',
+          }}
+        />
+      </div>
+
+      {/* Subject filter pill chips */}
       <div style={{
         display: 'flex',
-        gap: '12px',
-        marginBottom: '20px',
+        gap: '8px',
+        marginBottom: '24px',
         flexWrap: 'wrap',
         alignItems: 'center',
       }}>
-        <div style={{ position: 'relative', flex: '1', maxWidth: '320px' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"
-            style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}>
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input
-            type="text"
-            placeholder="Search recordings..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="search-input"
-          />
-        </div>
-        <select
-          value={classFilter}
-          onChange={e => setClassFilter(e.target.value)}
-          className="form-input"
-          style={{ width: 'auto', minWidth: '180px' }}
+        {/* All Subjects chip */}
+        <button
+          onClick={() => setClassFilter('all')}
+          style={{
+            padding: '8px 20px',
+            borderRadius: '50px',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontSize: '13.5px',
+            fontWeight: '700',
+            transition: 'all 0.2s ease',
+            background: classFilter === 'all' ? '#3636e8' : '#e8eaf0',
+            color: classFilter === 'all' ? '#ffffff' : '#6b6b8a',
+            boxShadow: classFilter === 'all'
+              ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)'
+              : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+          }}
         >
-          <option value="all">All Classes</option>
-          {classes.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+          All Subjects
+        </button>
+
+        {/* Individual subject chips */}
+        {classes.map(cls => (
+          <button
+            key={cls.id}
+            onClick={() => setClassFilter(cls.id)}
+            style={{
+              padding: '8px 20px',
+              borderRadius: '50px',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontSize: '13.5px',
+              fontWeight: '700',
+              transition: 'all 0.2s ease',
+              background: classFilter === cls.id ? cls.color : '#e8eaf0',
+              color: classFilter === cls.id ? '#ffffff' : '#6b6b8a',
+              boxShadow: classFilter === cls.id
+                ? `4px 4px 10px ${cls.color}55, -2px -2px 6px rgba(255,255,255,0.7)`
+                : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+            }}
+          >
+            {cls.name}
+          </button>
+        ))}
       </div>
 
       {/* Recordings list */}
@@ -108,7 +155,7 @@ export default function RecordingsPage() {
           >
             {/* Play badge */}
             <div style={{
-              width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0,
+              width: '48px', height: '48px', borderRadius: '50%', flexShrink: 0,
               background: '#e8eaf0',
               boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -120,11 +167,18 @@ export default function RecordingsPage() {
 
             {/* Info */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e1e3a', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {lec.title}
               </div>
-              <div style={{ fontSize: '12px', color: '#9999b0', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ color: lec.class?.color || '#6366f1', fontWeight: '500' }}>{lec.class?.name}</span>
+              <div style={{ fontSize: '12.5px', color: '#9999b0', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{
+                  padding: '2px 10px', borderRadius: '50px',
+                  background: (lec.class?.color || '#6366f1') + '18',
+                  color: lec.class?.color || '#6366f1',
+                  fontWeight: '700', fontSize: '12px',
+                }}>
+                  {lec.class?.name}
+                </span>
                 {lec.duration && <span>&bull; {lec.duration}</span>}
                 <span>&bull; {new Date(lec.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 {lec.uploadedBy && <span>&bull; {lec.uploadedBy.name}</span>}
@@ -157,7 +211,7 @@ export default function RecordingsPage() {
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5">
             <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
           </svg>
-          <p style={{ fontSize: '15px', fontWeight: '500', marginBottom: '4px' }}>No recordings found</p>
+          <p style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px' }}>No recordings found</p>
           <p style={{ fontSize: '13px' }}>Try adjusting your search or filter</p>
         </div>
       )}

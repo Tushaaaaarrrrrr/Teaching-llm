@@ -8,20 +8,29 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         String   @default("STUDENT")
-  avatar       String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  email          String   @unique
+  passwordHash   String
+  role           String   @default("STUDENT")
+  avatar         String?
+  securityNumber String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  createdClasses    Class[]       @relation("ClassCreator")
-  uploadedLectures  Lecture[]     @relation("LectureUploader")
-  uploadedMaterials Material[]    @relation("MaterialUploader")
-  createdSessions   LiveSession[] @relation("SessionCreator")
-  createdEvents     CalendarEvent[] @relation("EventCreator")
+  createdClasses    Class[]            @relation("ClassCreator")
+  uploadedLectures  Lecture[]          @relation("LectureUploader")
+  uploadedMaterials Material[]         @relation("MaterialUploader")
+  createdSessions   LiveSession[]      @relation("SessionCreator")
+  createdEvents     CalendarEvent[]    @relation("EventCreator")
+  enrollments       Enrollment[]
+  supportTickets    SupportTicket[]    @relation("TicketStudent")
+  ticketReplies     TicketReply[]      @relation("ReplyAuthor")
+  chatSessions      ChatSession[]      @relation("ChatStudent")
+  agentSessions     ChatSession[]      @relation("ChatAgent")
+  chatMessages      ChatMessage[]      @relation("ChatMsgSender")
+  communityMessages CommunityMessage[] @relation("CommMsgSender")
+  notifications     Notification[]
 }
 
 model Class {
@@ -35,12 +44,27 @@ model Class {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy    User          @relation("ClassCreator", fields: [createdById], references: [id])
-  lectures     Lecture[]
-  liveSessions LiveSession[]
-  materials    Material[]
-  events       CalendarEvent[]
-  topics       Topic[]
+  createdBy         User               @relation("ClassCreator", fields: [createdById], references: [id])
+  lectures          Lecture[]
+  liveSessions      LiveSession[]
+  materials         Material[]
+  events            CalendarEvent[]
+  topics            Topic[]
+  enrollments       Enrollment[]
+  supportTickets    SupportTicket[]
+  communityMessages CommunityMessage[]
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  classId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, classId])
 }
 
 model Lecture {
@@ -144,4 +168,80 @@ model Announcement {
   type      String   @default("info")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  type        String   @default("GENERAL")
+  status      String   @default("OPEN")
+  priority    String   @default("MEDIUM")
+  studentId   String
+  classId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  class   Class?        @relation(fields: [classId], references: [id])
+  user    User          @relation("TicketStudent", fields: [studentId], references: [id])
+  replies TicketReply[]
+}
+
+model TicketReply {
+  id        String        @id @default(cuid())
+  ticketId  String
+  senderId  String
+  content   String
+  createdAt DateTime      @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User          @relation("ReplyAuthor", fields: [senderId], references: [id])
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  studentId String
+  agentId   String?
+  status    String   @default("WAITING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student  User          @relation("ChatStudent", fields: [studentId], references: [id])
+  agent    User?         @relation("ChatAgent", fields: [agentId], references: [id])
+  messages ChatMessage[]
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  chatId    String
+  senderId  String
+  content   String
+  createdAt DateTime    @default(now())
+
+  chat   ChatSession @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender User        @relation("ChatMsgSender", fields: [senderId], references: [id])
+}
+
+model CommunityMessage {
+  id        String   @id @default(cuid())
+  classId   String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  class  Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  sender User  @relation("CommMsgSender", fields: [senderId], references: [id])
+}
+
+model Notification {
+  id             String   @id @default(cuid())
+  userId         String
+  title          String
+  content        String
+  type           String   @default("INFO")
+  isRead         Boolean  @default(false)
+  announcementId String?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

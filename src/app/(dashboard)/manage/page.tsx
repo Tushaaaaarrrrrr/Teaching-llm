@@ -229,7 +229,7 @@ export default function ManagePage() {
       </div>
 
       {/* Items List */}
-      <div className="card" style={{ overflow: 'hidden' }}>
+      <div className="card" style={{ overflow: 'hidden', maxWidth: '100%' }}>
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading...</div>
         ) : getItems().length === 0 ? (
@@ -239,7 +239,8 @@ export default function ManagePage() {
         ) : (
           <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {getItems().map((item, idx) => {
-              const itemDetail = item.description || item.content || item.duration || ''
+              const rawDetail = item.description || item.content || item.duration || ''
+              const itemDetail = rawDetail.length > 72 ? rawDetail.slice(0, 69) + '…' : rawDetail
               const showClassName = tab !== 'announcements' && tab !== 'classes' && item.class?.name
               const subtitle = showClassName
                 ? `${item.class.name}${itemDetail ? ' · ' + itemDetail : ''}`

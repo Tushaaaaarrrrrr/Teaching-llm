@@ -81,6 +81,27 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/community',
+    label: 'Community',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/support',
+    label: 'Support',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    ),
+  },
+  {
     href: '/manage',
     label: 'Manage',
     roles: ['MANAGER', 'ADMIN'],
@@ -156,10 +177,10 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           </svg>
         </div>
         <div>
-          <div style={{ fontWeight: '700', fontSize: '15px', color: '#1e1e3a', lineHeight: '1.2' }}>
+          <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a', lineHeight: '1.2' }}>
             Teaching LLM
           </div>
-          <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '1px' }}>
+          <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '1px', fontWeight: '600' }}>
             {roleLabel} Portal
           </div>
         </div>
@@ -187,8 +208,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)'
                   : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                 textDecoration: 'none',
-                fontSize: '14px',
-                fontWeight: isActive ? '600' : '400',
+                fontSize: '14.5px',
+                fontWeight: isActive ? '700' : '500',
                 transition: 'all 0.2s ease',
               }}
             >

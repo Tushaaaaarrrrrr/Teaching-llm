@@ -34,11 +34,19 @@ export async function POST(request: NextRequest) {
     const { title, content, type } = await request.json()
 
     const announcement = await prisma.announcement.create({
-      data: {
+      data: { title, content, type },
+    })
+
+    // Fan-out notification to every user
+    const allUsers = await prisma.user.findMany({ select: { id: true } })
+    await prisma.notification.createMany({
+      data: allUsers.map(u => ({
+        userId: u.id,
         title,
         content,
-        type,
-      },
+        type: type?.toUpperCase() || 'INFO',
+        announcementId: announcement.id,
+      })),
     })
 
     return NextResponse.json(announcement, { status: 201 })
