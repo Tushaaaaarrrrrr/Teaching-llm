@@ -255,21 +255,23 @@ export default function ClassDetailPage() {
 
               {/* Topic Content */}
               {expandedTopics.has(topic.id) && (
-                <div style={{ borderTop: '1px solid #d8dae3', padding: '8px 0' }}>
+                <div style={{ borderTop: '1px solid #d8dae3', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {topic.content.length === 0 ? (
                     <div style={{ padding: '20px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
                       No lectures in this topic yet
                     </div>
                   ) : (
-                    topic.content.map((item, contentIdx) => (
+                    topic.content.map((item) => (
                       <div key={item.id} style={{
                         display: 'flex', alignItems: 'center', gap: '14px',
                         padding: '12px 20px',
-                        borderBottom: contentIdx < topic.content.length - 1 ? '1px solid #e8eaf0' : 'none',
-                        transition: 'background 0.15s',
+                        borderRadius: '50px',
+                        background: '#e8eaf0',
+                        boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
+                        transition: 'box-shadow 0.2s',
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#f4f5f8'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      onMouseEnter={e => (e.currentTarget.style.boxShadow = '7px 7px 14px #c2c4cc, -7px -7px 14px #ffffff')}
+                      onMouseLeave={e => (e.currentTarget.style.boxShadow = '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff')}
                       >
                         {/* Lecture number */}
                         <div style={{

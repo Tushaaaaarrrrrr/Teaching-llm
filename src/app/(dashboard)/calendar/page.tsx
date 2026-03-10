@@ -180,16 +180,23 @@ export default function CalendarPage() {
             No events this month
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {events.sort((a, b) => a.date.localeCompare(b.date)).map(ev => {
               const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
               return (
-                <div key={ev.id} className="card" style={{
+                <div key={ev.id} style={{
                   display: 'flex',
                   alignItems: 'center',
-                  padding: '14px 18px',
+                  padding: '14px 24px',
                   gap: '14px',
-                }}>
+                  borderRadius: '50px',
+                  background: '#e8eaf0',
+                  boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+                  transition: 'box-shadow 0.2s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
+                >
                   <div style={{
                     width: '40px',
                     height: '40px',
