@@ -239,7 +239,6 @@ export default function LoginPage() {
           }}>
             <p style={{ fontSize: '11px', color: '#9999b0', marginBottom: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Quick Access</p>
             {[
-              { role: 'Manager', email: 'manager@teacherai.com', pass: 'manager123' },
               { role: 'Admin', email: 'admin@teacherai.com', pass: 'admin123' },
               { role: 'Student', email: 'student@teacherai.com', pass: 'student123' },
             ].map(acc => (

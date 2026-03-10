@@ -256,7 +256,6 @@ After running `npm run db:seed`, the following test accounts are available:
 
 | Role | Email | Password |
 |---|---|---|
-| **Manager** | `manager@teacherai.com` | `manager123` |
 | **Admin** | `admin@teacherai.com` | `admin123` |
 | **Student** | `student@teacherai.com` | `student123` |
 | **Student** | `priya@teacherai.com` | `student123` |
@@ -278,7 +277,7 @@ The seed also creates 6 sample classes (DSA, Machine Learning, Web Development, 
 
 ### Quick Access Buttons
 
-The login page features **Quick Access** buttons for demo purposes. Click "Manager", "Admin", or "Student" to auto-fill the corresponding test credentials and log in instantly.
+The login page features **Quick Access** buttons for demo purposes. Click "Admin" or "Student" to auto-fill the corresponding test credentials and log in instantly.
 
 ---
 
