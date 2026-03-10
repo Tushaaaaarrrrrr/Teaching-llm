@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("STUDENT")
+  avatar       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdClasses    Class[]       @relation("ClassCreator")
+  uploadedLectures  Lecture[]     @relation("LectureUploader")
+  uploadedMaterials Material[]    @relation("MaterialUploader")
+  createdSessions   LiveSession[] @relation("SessionCreator")
+  createdEvents     CalendarEvent[] @relation("EventCreator")
+}
+
+model Class {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  subject     String?
+  color       String   @default("#4F46E5")
+  icon        String   @default("BookOpen")
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy    User          @relation("ClassCreator", fields: [createdById], references: [id])
+  lectures     Lecture[]
+  liveSessions LiveSession[]
+  materials    Material[]
+  events       CalendarEvent[]
+}
+
+model Lecture {
+  id           String   @id @default(cuid())
+  classId      String
+  title        String
+  description  String?
+  videoUrl     String?
+  notesUrl     String?
+  duration     String?
+  thumbnail    String?
+  uploadedById String
+  uploadedAt   DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  class      Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  uploadedBy User  @relation("LectureUploader", fields: [uploadedById], references: [id])
+}
+
+model LiveSession {
+  id          String   @id @default(cuid())
+  classId     String
+  title       String
+  description String?
+  meetingLink String
+  instructor  String
+  date        String
+  time        String
+  status      String   @default("scheduled")
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  class     Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("SessionCreator", fields: [createdById], references: [id])
+}
+
+model Material {
+  id           String   @id @default(cuid())
+  classId      String
+  title        String
+  description  String?
+  fileUrl      String
+  fileType     String
+  fileSize     String?
+  uploadedById String
+  uploadedAt   DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  class      Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  uploadedBy User  @relation("MaterialUploader", fields: [uploadedById], references: [id])
+}
+
+model CalendarEvent {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  date         String
+  time         String?
+  type         String   @default("class")
+  relatedClass String?
+  classId      String?
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  class     Class? @relation(fields: [classId], references: [id])
+  createdBy User   @relation("EventCreator", fields: [createdById], references: [id])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  type      String   @default("info")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
