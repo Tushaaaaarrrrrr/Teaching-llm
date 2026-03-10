@@ -17,7 +17,7 @@ const TYPE_COLORS: Record<string, { bg: string; color: string; label: string }> 
   exam: { bg: '#fee2e2', color: '#ef4444', label: 'Exam' },
   assignment: { bg: '#fef3c7', color: '#f59e0b', label: 'Assignment' },
   event: { bg: '#d1fae5', color: '#10b981', label: 'Event' },
-  holiday: { bg: '#f1f5f9', color: '#64748b', label: 'Holiday' },
+  holiday: { bg: '#d0d2d9', color: '#6b6b8a', label: 'Holiday' },
 }
 
 export default function CalendarPage() {
@@ -61,10 +61,6 @@ export default function CalendarPage() {
   return (
     <div className="page-container fade-in">
       <div className="page-header">
-        <div>
-          <h2 className="page-title">Calendar</h2>
-          <p className="page-subtitle">Track classes, exams, and events</p>
-        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button onClick={goToday} className="btn btn-ghost btn-sm">Today</button>
           <button onClick={prevMonth} className="btn btn-icon btn-ghost" style={{ padding: '6px' }}>
@@ -89,8 +85,8 @@ export default function CalendarPage() {
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(7, 1fr)',
-          borderBottom: '1px solid #e2e8f0',
-          background: '#f8f9fc',
+          borderBottom: '1px solid #c5c7cf',
+          background: '#dddfe6',
         }}>
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
             <div key={d} style={{
@@ -98,7 +94,7 @@ export default function CalendarPage() {
               textAlign: 'center',
               fontSize: '12px',
               fontWeight: '600',
-              color: '#64748b',
+              color: '#6b6b8a',
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
             }}>
@@ -118,8 +114,8 @@ export default function CalendarPage() {
               <div key={i} style={{
                 minHeight: '100px',
                 padding: '6px 8px',
-                borderBottom: '1px solid #f1f5f9',
-                borderRight: (i + 1) % 7 !== 0 ? '1px solid #f1f5f9' : 'none',
+                borderBottom: '1px solid #d8dae3',
+                borderRight: (i + 1) % 7 !== 0 ? '1px solid #d8dae3' : 'none',
                 background: day && isToday(day) ? '#f0f0ff' : 'transparent',
                 transition: 'background 0.15s',
               }}
@@ -137,7 +133,7 @@ export default function CalendarPage() {
                       justifyContent: 'center',
                       fontSize: '13px',
                       fontWeight: isToday(day) ? '700' : '400',
-                      color: isToday(day) ? 'white' : '#0f172a',
+                      color: isToday(day) ? 'white' : '#1e1e3a',
                       background: isToday(day) ? '#6366f1' : 'transparent',
                       marginBottom: '4px',
                     }}>
@@ -164,7 +160,7 @@ export default function CalendarPage() {
                       )
                     })}
                     {dayEvents.length > 3 && (
-                      <div style={{ fontSize: '10px', color: '#94a3b8', paddingLeft: '4px' }}>
+                      <div style={{ fontSize: '10px', color: '#9999b0', paddingLeft: '4px' }}>
                         +{dayEvents.length - 3} more
                       </div>
                     )}
@@ -180,7 +176,7 @@ export default function CalendarPage() {
       <div style={{ marginTop: '20px' }}>
         <h3 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>Events This Month</h3>
         {events.length === 0 ? (
-          <div className="card" style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>
+          <div className="card" style={{ padding: '30px', textAlign: 'center', color: '#9999b0' }}>
             No events this month
           </div>
         ) : (
@@ -213,10 +209,10 @@ export default function CalendarPage() {
                     </span>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#0f172a', marginBottom: '2px' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px' }}>
                       {ev.title}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                    <div style={{ fontSize: '12px', color: '#9999b0' }}>
                       {ev.time && `${ev.time} · `}
                       {ev.class?.name || ev.description || tc.label}
                     </div>

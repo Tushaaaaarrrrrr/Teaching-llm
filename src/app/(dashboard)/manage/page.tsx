@@ -116,7 +116,7 @@ export default function ManagePage() {
                 {COLORS.map(c => (
                   <button key={c} onClick={() => set('color', c)} style={{
                     width: '32px', height: '32px', borderRadius: '8px', background: c,
-                    border: f.color === c ? '3px solid #0f172a' : '2px solid transparent',
+                    border: f.color === c ? '3px solid #1e1e3a' : '2px solid transparent',
                     cursor: 'pointer', transition: 'all 0.15s',
                   }} />
                 ))}
@@ -186,10 +186,7 @@ export default function ManagePage() {
   return (
     <div className="page-container fade-in">
       <div className="page-header">
-        <div>
-          <h2 className="page-title">Manage Content</h2>
-          <p className="page-subtitle">Create and edit classes, lectures, sessions, and materials</p>
-        </div>
+        <div />
         <button onClick={openCreate} className="btn btn-primary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -199,7 +196,7 @@ export default function ManagePage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '0' }}>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '1px solid #c5c7cf', paddingBottom: '0' }}>
         {tabs.map(t => (
           <button
             key={t.key}
@@ -208,7 +205,7 @@ export default function ManagePage() {
               padding: '10px 18px',
               fontSize: '13px',
               fontWeight: '500',
-              color: tab === t.key ? '#6366f1' : '#64748b',
+              color: tab === t.key ? '#6366f1' : '#6b6b8a',
               borderBottom: tab === t.key ? '2px solid #6366f1' : '2px solid transparent',
               background: 'none',
               cursor: 'pointer',
@@ -222,8 +219,8 @@ export default function ManagePage() {
               borderRadius: '10px',
               fontSize: '11px',
               fontWeight: '600',
-              background: tab === t.key ? '#e0e7ff' : '#f1f5f9',
-              color: tab === t.key ? '#6366f1' : '#94a3b8',
+              background: tab === t.key ? '#e0e7ff' : '#d0d2d9',
+              color: tab === t.key ? '#6366f1' : '#9999b0',
             }}>
               {t.count}
             </span>
@@ -234,9 +231,9 @@ export default function ManagePage() {
       {/* Items Table */}
       <div className="card" style={{ overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Loading...</div>
+          <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading...</div>
         ) : getItems().length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+          <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>
             No {tab} yet. Click "Create New" to add one.
           </div>
         ) : (
@@ -254,24 +251,24 @@ export default function ManagePage() {
                 {getItems().map(item => (
                   <tr key={item.id}>
                     <td>
-                      <div style={{ fontWeight: '600', color: '#0f172a' }}>
+                      <div style={{ fontWeight: '600', color: '#1e1e3a' }}>
                         {item.name || item.title}
                       </div>
                       {item.description && (
-                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {item.description || item.content}
                         </div>
                       )}
                     </td>
                     {tab !== 'announcements' && tab !== 'classes' && (
                       <td>
-                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                        <span style={{ fontSize: '12px', color: '#6b6b8a' }}>
                           {item.class?.name || '—'}
                         </span>
                       </td>
                     )}
                     <td>
-                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                      <span style={{ fontSize: '12px', color: '#9999b0' }}>
                         {tab === 'classes' && `${item._count?.lectures || 0} lectures`}
                         {tab === 'lectures' && (item.duration || 'No duration')}
                         {tab === 'sessions' && (
@@ -320,7 +317,7 @@ export default function ManagePage() {
               <h3 style={{ fontSize: '16px', fontWeight: '600' }}>
                 {editId ? 'Edit' : 'Create'} {tab.slice(0, -1).charAt(0).toUpperCase() + tab.slice(1, -1)}
               </h3>
-              <button onClick={() => setShowModal(false)} style={{ color: '#94a3b8', cursor: 'pointer', background: 'none', border: 'none' }}>
+              <button onClick={() => setShowModal(false)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>

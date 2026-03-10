@@ -9,8 +9,8 @@ interface HeaderProps {
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/dashboard': { title: 'Dashboard', subtitle: 'Welcome back to your learning hub' },
-  '/classes': { title: 'Classes', subtitle: 'Browse all your courses' },
-  '/live': { title: 'Live Classes', subtitle: 'Join ongoing and upcoming sessions' },
+  '/classes': { title: 'Classes', subtitle: 'Manage your enrolled subjects and lectures' },
+  '/live': { title: 'Live Classes', subtitle: "Today's Schedule" },
   '/calendar': { title: 'Calendar', subtitle: 'Your schedule and upcoming events' },
   '/recordings': { title: 'Recordings', subtitle: 'Browse lecture recordings' },
   '/materials': { title: 'Study Materials', subtitle: 'Download notes and resources' },
@@ -40,51 +40,65 @@ export default function Header({ userName, userRole }: HeaderProps) {
     router.refresh()
   }
 
+  const neuIconStyle = {
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    background: '#e8eaf0',
+    boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#6b6b8a',
+    cursor: 'pointer',
+    transition: 'box-shadow 0.2s ease',
+    border: 'none',
+    flexShrink: 0,
+  } as React.CSSProperties
+
   return (
     <header style={{
-      height: '64px',
-      background: '#ffffff',
-      borderBottom: '1px solid #e2e8f0',
+      height: '72px',
+      background: '#e8eaf0',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '0 28px',
+      padding: '0 32px',
       position: 'sticky',
       top: 0,
       zIndex: 50,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
     }}>
       {/* Page title */}
       <div>
-        <h1 style={{ fontSize: '17px', fontWeight: '700', color: '#0f172a', lineHeight: '1.2' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1.2' }}>
           {pageInfo.title}
         </h1>
         {pageInfo.subtitle && (
-          <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '1px' }}>
+          <p style={{ fontSize: '13px', color: '#9999b0', marginTop: '2px' }}>
             {pageInfo.subtitle}
           </p>
         )}
       </div>
 
       {/* Right side actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Search */}
+        <button
+          style={neuIconStyle}
+          onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
+
         {/* Notifications */}
-        <button style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: '8px',
-          border: '1px solid #e2e8f0',
-          background: 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#64748b',
-          cursor: 'pointer',
-          position: 'relative',
-          transition: 'all 0.15s',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#f8f9fc')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        <button
+          style={{ ...neuIconStyle, position: 'relative' }}
+          onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -92,59 +106,60 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </svg>
           <span style={{
             position: 'absolute',
-            top: '6px',
-            right: '7px',
+            top: '8px',
+            right: '9px',
             width: '7px',
             height: '7px',
             borderRadius: '50%',
             background: '#ef4444',
-            border: '1.5px solid white',
+            border: '1.5px solid #e8eaf0',
           }} />
         </button>
 
         {/* User menu */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '4px 8px 4px 4px',
-          borderRadius: '8px',
-          border: '1px solid #e2e8f0',
-          cursor: 'pointer',
-          transition: 'all 0.15s',
-        }}
-        onClick={handleLogout}
-        onMouseEnter={e => (e.currentTarget.style.background = '#f8f9fc')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-        title="Click to sign out"
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '6px 16px 6px 6px',
+            borderRadius: '50px',
+            background: '#e8eaf0',
+            boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+            cursor: 'pointer',
+            transition: 'box-shadow 0.2s ease',
+          }}
+          onClick={handleLogout}
+          onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+          title="Click to sign out"
         >
           <div style={{
-            width: '28px',
-            height: '28px',
+            width: '32px',
+            height: '32px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            background: '#e8eaf0',
+            boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'white',
-            fontSize: '11px',
-            fontWeight: '600',
+            color: '#3636e8',
+            fontSize: '12px',
+            fontWeight: '700',
           }}>
             {initials}
           </div>
           <div>
-            <div style={{ fontSize: '13px', fontWeight: '500', color: '#0f172a', lineHeight: '1.2' }}>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a', lineHeight: '1.2' }}>
               {userName}
             </div>
-            <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+            <div style={{ fontSize: '11px', color: '#9999b0' }}>
               {userRole.charAt(0) + userRole.slice(1).toLowerCase()}
             </div>
           </div>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ marginLeft: '2px' }}>
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
         </div>
       </div>
     </header>
   )
 }
+

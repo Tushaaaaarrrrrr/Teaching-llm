@@ -117,10 +117,7 @@ export default function AdminPage() {
   return (
     <div className="page-container fade-in">
       <div className="page-header">
-        <div>
-          <h2 className="page-title">User Management</h2>
-          <p className="page-subtitle">{users.length} total accounts</p>
-        </div>
+        <p className="page-subtitle">{users.length} total accounts</p>
         <button onClick={openCreate} className="btn btn-primary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -147,7 +144,7 @@ export default function AdminPage() {
               alignItems: 'center',
               gap: '14px',
               cursor: 'pointer',
-              border: filter === s.key ? `2px solid ${s.color}` : '1px solid #f1f5f9',
+              border: filter === s.key ? `2px solid ${s.color}` : '1px solid #d8dae3',
               transition: 'all 0.15s',
               textAlign: 'left',
             }}
@@ -160,8 +157,8 @@ export default function AdminPage() {
               {counts[s.key as keyof typeof counts]}
             </div>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{s.label}</div>
-              <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+              <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a' }}>{s.label}</div>
+              <div style={{ fontSize: '11px', color: '#9999b0' }}>
                 {s.key === 'all' ? 'Total registered' : `${s.label} role`}
               </div>
             </div>
@@ -172,7 +169,7 @@ export default function AdminPage() {
       {/* Users Table */}
       <div className="card" style={{ overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Loading users...</div>
+          <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading users...</div>
         ) : (
           <div className="table-container">
             <table>
@@ -200,16 +197,16 @@ export default function AdminPage() {
                           }}>
                             {initials}
                           </div>
-                          <span style={{ fontWeight: '600', color: '#0f172a' }}>{user.name}</span>
+                          <span style={{ fontWeight: '600', color: '#1e1e3a' }}>{user.name}</span>
                         </div>
                       </td>
-                      <td style={{ color: '#64748b' }}>{user.email}</td>
+                      <td style={{ color: '#6b6b8a' }}>{user.email}</td>
                       <td>
                         <span className="badge" style={{ background: rc.bg, color: rc.color }}>
                           {user.role}
                         </span>
                       </td>
-                      <td style={{ color: '#94a3b8', fontSize: '12px' }}>
+                      <td style={{ color: '#9999b0', fontSize: '12px' }}>
                         {new Date(user.createdAt).toLocaleDateString('en-US', {
                           month: 'short', day: 'numeric', year: 'numeric'
                         })}
@@ -248,7 +245,7 @@ export default function AdminPage() {
               <h3 style={{ fontSize: '16px', fontWeight: '600' }}>
                 {editId ? 'Edit User' : 'Create New User'}
               </h3>
-              <button onClick={() => setShowModal(false)} style={{ color: '#94a3b8', cursor: 'pointer', background: 'none', border: 'none' }}>
+              <button onClick={() => setShowModal(false)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>

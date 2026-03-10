@@ -42,72 +42,41 @@ export default function LoginPage() {
     <div style={{
       minHeight: '100vh',
       display: 'flex',
-      background: '#0d1526',
+      background: '#e8eaf0',
     }}>
       {/* Left Panel - Branding */}
       <div style={{
-        flex: '0 0 45%',
-        background: 'linear-gradient(135deg, #0d1526 0%, #1a2540 50%, #0d1526 100%)',
+        flex: '0 0 42%',
+        background: '#e8eaf0',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '48px',
-        position: 'relative',
-        overflow: 'hidden',
       }}>
-        {/* Background decoration circles */}
-        <div style={{
-          position: 'absolute',
-          width: '400px',
-          height: '400px',
-          borderRadius: '50%',
-          background: 'rgba(99,102,241,0.08)',
-          top: '-100px',
-          left: '-100px',
-        }} />
-        <div style={{
-          position: 'absolute',
-          width: '300px',
-          height: '300px',
-          borderRadius: '50%',
-          background: 'rgba(139,92,246,0.06)',
-          bottom: '50px',
-          right: '-80px',
-        }} />
-        <div style={{
-          position: 'absolute',
-          width: '200px',
-          height: '200px',
-          borderRadius: '50%',
-          background: 'rgba(99,102,241,0.05)',
-          bottom: '200px',
-          left: '30px',
-        }} />
-
         {/* Logo & Brand */}
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', width: '100%', maxWidth: '340px' }}>
           <div style={{
-            width: '72px',
-            height: '72px',
-            borderRadius: '20px',
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            width: '80px',
+            height: '80px',
+            borderRadius: '24px',
+            background: '#e8eaf0',
+            boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 24px',
-            boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+            margin: '0 auto 28px',
           }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
               <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
               <path d="M6 12v5c3 3 9 3 12 0v-5"/>
             </svg>
           </div>
 
           <h1 style={{
-            fontSize: '32px',
+            fontSize: '34px',
             fontWeight: '800',
-            color: '#ffffff',
+            color: '#1e1e3a',
             letterSpacing: '-0.5px',
             marginBottom: '8px',
           }}>
@@ -115,7 +84,7 @@ export default function LoginPage() {
           </h1>
           <p style={{
             fontSize: '15px',
-            color: 'rgba(255,255,255,0.5)',
+            color: '#9999b0',
             marginBottom: '48px',
             lineHeight: '1.6',
           }}>
@@ -132,15 +101,15 @@ export default function LoginPage() {
             <div key={f.label} style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
-              padding: '12px 20px',
-              background: 'rgba(255,255,255,0.05)',
-              borderRadius: '10px',
-              marginBottom: '10px',
-              border: '1px solid rgba(255,255,255,0.08)',
+              gap: '14px',
+              padding: '14px 20px',
+              background: '#e8eaf0',
+              borderRadius: '50px',
+              marginBottom: '12px',
+              boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
             }}>
               <span style={{ fontSize: '18px' }}>{f.icon}</span>
-              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>{f.label}</span>
+              <span style={{ color: '#6b6b8a', fontSize: '14px', fontWeight: '500' }}>{f.label}</span>
             </div>
           ))}
         </div>
@@ -149,7 +118,7 @@ export default function LoginPage() {
       {/* Right Panel - Login Form */}
       <div style={{
         flex: 1,
-        background: '#f0f2f8',
+        background: '#e8eaf0',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -158,22 +127,21 @@ export default function LoginPage() {
         <div style={{
           width: '100%',
           maxWidth: '400px',
-          background: '#ffffff',
-          borderRadius: '20px',
-          padding: '40px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-          border: '1px solid #e2e8f0',
+          background: '#e8eaf0',
+          borderRadius: '28px',
+          padding: '44px',
+          boxShadow: '12px 12px 24px #c5c7cf, -12px -12px 24px #ffffff',
         }}>
-          <div style={{ marginBottom: '32px' }}>
+          <div style={{ marginBottom: '36px' }}>
             <h2 style={{
-              fontSize: '26px',
+              fontSize: '28px',
               fontWeight: '700',
-              color: '#0f172a',
+              color: '#1e1e3a',
               marginBottom: '6px',
             }}>
               Welcome back
             </h2>
-            <p style={{ color: '#94a3b8', fontSize: '14px' }}>
+            <p style={{ color: '#9999b0', fontSize: '14px' }}>
               Sign in to your account to continue learning
             </p>
           </div>
@@ -181,15 +149,16 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit}>
             {error && (
               <div style={{
-                background: '#fee2e2',
-                color: '#991b1b',
+                background: 'rgba(239,68,68,0.08)',
+                color: '#dc2626',
                 padding: '12px 16px',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 fontSize: '13px',
                 marginBottom: '20px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
+                boxShadow: 'inset 2px 2px 5px rgba(239,68,68,0.1)',
               }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/>
@@ -200,7 +169,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div className="form-group" style={{ marginBottom: '16px' }}>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
               <label className="form-label" htmlFor="email">Email Address</label>
               <input
                 id="email"
@@ -214,7 +183,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="form-group" style={{ marginBottom: '24px' }}>
+            <div className="form-group" style={{ marginBottom: '28px' }}>
               <label className="form-label" htmlFor="password">Password</label>
               <input
                 id="password"
@@ -233,11 +202,11 @@ export default function LoginPage() {
               disabled={loading}
               style={{
                 width: '100%',
-                padding: '12px',
-                background: loading ? '#a5b4fc' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                padding: '14px',
+                background: loading ? '#9999cc' : '#3636e8',
                 color: 'white',
                 border: 'none',
-                borderRadius: '10px',
+                borderRadius: '50px',
                 fontSize: '15px',
                 fontWeight: '600',
                 cursor: loading ? 'not-allowed' : 'pointer',
@@ -246,7 +215,7 @@ export default function LoginPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                boxShadow: loading ? 'none' : '0 4px 12px rgba(99,102,241,0.3)',
+                boxShadow: loading ? 'none' : '4px 4px 10px rgba(54,54,232,0.4), -2px -2px 6px rgba(255,255,255,0.8)',
               }}
             >
               {loading ? (
@@ -262,13 +231,13 @@ export default function LoginPage() {
           </form>
 
           <div style={{
-            marginTop: '24px',
-            padding: '16px',
-            background: '#f8f9fc',
-            borderRadius: '10px',
-            border: '1px solid #e2e8f0',
+            marginTop: '28px',
+            padding: '18px',
+            background: '#e8eaf0',
+            borderRadius: '16px',
+            boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff',
           }}>
-            <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Test Accounts</p>
+            <p style={{ fontSize: '11px', color: '#9999b0', marginBottom: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Quick Access</p>
             {[
               { role: 'Manager', email: 'manager@teacherai.com', pass: 'manager123' },
               { role: 'Admin', email: 'admin@teacherai.com', pass: 'admin123' },
@@ -282,21 +251,22 @@ export default function LoginPage() {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   width: '100%',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  marginBottom: '4px',
-                  background: 'transparent',
-                  border: '1px solid transparent',
+                  padding: '8px 12px',
+                  borderRadius: '50px',
+                  marginBottom: '6px',
+                  background: '#e8eaf0',
+                  border: 'none',
                   cursor: 'pointer',
                   fontSize: '12px',
                   transition: 'all 0.15s',
-                  color: '#475569',
+                  color: '#6b6b8a',
+                  boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#e0e7ff', e.currentTarget.style.color = '#4f46e5')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent', e.currentTarget.style.color = '#475569')}
+                onMouseEnter={e => (e.currentTarget.style.color = '#3636e8')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#6b6b8a')}
               >
                 <span style={{ fontWeight: '600' }}>{acc.role}</span>
-                <span style={{ opacity: 0.7 }}>{acc.email}</span>
+                <span style={{ opacity: 0.7, fontSize: '11px' }}>{acc.email}</span>
               </button>
             ))}
           </div>

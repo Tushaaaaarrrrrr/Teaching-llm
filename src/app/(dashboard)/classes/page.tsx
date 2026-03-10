@@ -62,10 +62,7 @@ export default function ClassesPage() {
   return (
     <div className="page-container fade-in">
       <div className="page-header">
-        <div>
-          <h2 className="page-title">All Classes</h2>
-          <p className="page-subtitle">{classes.length} courses available</p>
-        </div>
+        <p className="page-subtitle">{classes.length} courses available</p>
         <div style={{ position: 'relative' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -88,15 +85,15 @@ export default function ClassesPage() {
               overflow: 'hidden',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              border: '1px solid #f1f5f9',
+              border: '1px solid #d8dae3',
             }}
             onMouseEnter={e => {
               e.currentTarget.style.transform = 'translateY(-3px)'
-              e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'
+              e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff'
             }}
             onMouseLeave={e => {
               e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)'
+              e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff'
             }}
             >
               {/* Color header */}
@@ -119,7 +116,7 @@ export default function ClassesPage() {
               {/* Card body */}
               <div style={{ padding: '16px 18px 14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#0f172a' }}>{cls.name}</h3>
+                  <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#1e1e3a' }}>{cls.name}</h3>
                 </div>
                 {cls.subject && (
                   <span className="badge badge-gray" style={{ marginBottom: '8px', display: 'inline-block' }}>
@@ -127,17 +124,17 @@ export default function ClassesPage() {
                   </span>
                 )}
                 {cls.description && (
-                  <p style={{ fontSize: '12.5px', color: '#64748b', lineHeight: '1.5', marginBottom: '12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  <p style={{ fontSize: '12.5px', color: '#6b6b8a', lineHeight: '1.5', marginBottom: '12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {cls.description}
                   </p>
                 )}
 
-                <div style={{ display: 'flex', gap: '14px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
-                  <span style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ display: 'flex', gap: '14px', paddingTop: '10px', borderTop: '1px solid #d8dae3' }}>
+                  <span style={{ fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
                     {cls._count?.lectures || 0} lectures
                   </span>
-                  <span style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     {cls._count?.materials || 0} materials
                   </span>

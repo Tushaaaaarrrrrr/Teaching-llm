@@ -126,10 +126,10 @@ export default function DashboardPage() {
               {card.icon}
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '500', marginBottom: '4px' }}>
+              <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: '500', marginBottom: '4px' }}>
                 {card.label}
               </div>
-              <div style={{ fontSize: '26px', fontWeight: '700', color: '#0f172a', lineHeight: '1' }}>
+              <div style={{ fontSize: '26px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1' }}>
                 {card.value}
               </div>
             </div>
@@ -148,7 +148,7 @@ export default function DashboardPage() {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '18px 20px',
-              borderBottom: '1px solid #f1f5f9',
+              borderBottom: '1px solid #d8dae3',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{
@@ -164,22 +164,24 @@ export default function DashboardPage() {
               <Link href="/live" className="btn btn-secondary btn-sm">View All</Link>
             </div>
             {sessions.length === 0 ? (
-              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9999b0' }}>
                 No upcoming sessions
               </div>
             ) : (
-              <div>
+              <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {sessions.map((session) => (
                   <div key={session.id} style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '14px 20px',
-                    borderBottom: '1px solid #f8fafc',
-                    transition: 'background 0.15s',
+                    borderRadius: '50px',
+                    background: '#e8eaf0',
+                    boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
+                    transition: 'box-shadow 0.2s',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = '7px 7px 14px #c2c4cc, -7px -7px 14px #ffffff'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff'}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                       <div style={{
@@ -197,10 +199,10 @@ export default function DashboardPage() {
                         </svg>
                       </div>
                       <div>
-                        <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#0f172a', marginBottom: '2px' }}>
+                        <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px' }}>
                           {session.title}
                         </div>
-                        <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                        <div style={{ fontSize: '12px', color: '#9999b0' }}>
                           {session.class?.name} &middot; {session.instructor} &middot; {session.date} at {session.time}
                         </div>
                       </div>
@@ -226,28 +228,30 @@ export default function DashboardPage() {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '18px 20px',
-              borderBottom: '1px solid #f1f5f9',
+              borderBottom: '1px solid #d8dae3',
             }}>
               <h3 style={{ fontSize: '15px', fontWeight: '600' }}>Recent Lectures</h3>
               <Link href="/recordings" className="btn btn-secondary btn-sm">View All</Link>
             </div>
             {lectures.length === 0 ? (
-              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9999b0' }}>
                 No lectures uploaded yet
               </div>
             ) : (
-              <div>
+              <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {lectures.map((lec) => (
                   <div key={lec.id} style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '12px 20px',
-                    borderBottom: '1px solid #f8fafc',
-                    transition: 'background 0.15s',
+                    borderRadius: '50px',
+                    background: '#e8eaf0',
+                    boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
+                    transition: 'box-shadow 0.2s',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = '7px 7px 14px #c2c4cc, -7px -7px 14px #ffffff'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff'}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{
@@ -264,15 +268,15 @@ export default function DashboardPage() {
                         </svg>
                       </div>
                       <div>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', marginBottom: '2px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px' }}>
                           {lec.title}
                         </div>
-                        <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                        <div style={{ fontSize: '12px', color: '#9999b0' }}>
                           {lec.class?.name} {lec.duration ? `· ${lec.duration}` : ''}
                         </div>
                       </div>
                     </div>
-                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                    <span style={{ fontSize: '11px', color: '#9999b0' }}>
                       {new Date(lec.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   </div>
@@ -313,16 +317,16 @@ export default function DashboardPage() {
           <div className="card" style={{ overflow: 'hidden' }}>
             <div style={{
               padding: '18px 20px',
-              borderBottom: '1px solid #f1f5f9',
+              borderBottom: '1px solid #d8dae3',
             }}>
               <h3 style={{ fontSize: '15px', fontWeight: '600' }}>Announcements</h3>
             </div>
             {announcements.length === 0 ? (
-              <div style={{ padding: '30px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+              <div style={{ padding: '30px 20px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
                 No announcements
               </div>
             ) : (
-              <div>
+              <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {announcements.map((a) => {
                   const colors: Record<string, { bg: string; border: string; icon: string }> = {
                     info: { bg: '#dbeafe', border: '#3b82f6', icon: '#3b82f6' },
@@ -334,16 +338,18 @@ export default function DashboardPage() {
                   return (
                     <div key={a.id} style={{
                       padding: '14px 20px',
-                      borderBottom: '1px solid #f8fafc',
-                      borderLeft: `3px solid ${c.border}`,
+                      borderRadius: '16px',
+                      background: '#e8eaf0',
+                      boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                      borderLeft: `4px solid ${c.border}`,
                     }}>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', marginBottom: '4px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a', marginBottom: '4px' }}>
                         {a.title}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>
+                      <div style={{ fontSize: '12px', color: '#6b6b8a', lineHeight: '1.5' }}>
                         {a.content}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
+                      <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
                         {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </div>
                     </div>

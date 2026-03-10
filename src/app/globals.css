@@ -5,40 +5,44 @@
 }
 
 :root {
-  --sidebar-bg: #0d1526;
-  --sidebar-width: 240px;
+  --sidebar-bg: #e8eaf0;
+  --sidebar-width: 215px;
   --sidebar-collapsed: 72px;
   --header-height: 64px;
-  --bg: #f0f2f8;
-  --surface: #ffffff;
-  --surface-2: #f8f9fc;
-  --border: #e2e8f0;
-  --border-light: #f1f5f9;
-  --primary: #6366f1;
-  --primary-dark: #4f46e5;
-  --primary-light: #e0e7ff;
-  --accent: #8b5cf6;
+  --bg: #e8eaf0;
+  --surface: #e8eaf0;
+  --surface-2: #dfe1e8;
+  --border: rgba(255,255,255,0.7);
+  --border-light: rgba(255,255,255,0.5);
+  --primary: #3636e8;
+  --primary-dark: #2525cc;
+  --primary-light: rgba(54,54,232,0.08);
+  --accent: #6366f1;
   --success: #10b981;
-  --success-light: #d1fae5;
+  --success-light: rgba(16,185,129,0.1);
   --warning: #f59e0b;
-  --warning-light: #fef3c7;
+  --warning-light: rgba(245,158,11,0.1);
   --danger: #ef4444;
-  --danger-light: #fee2e2;
+  --danger-light: rgba(239,68,68,0.1);
   --info: #3b82f6;
-  --info-light: #dbeafe;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --info-light: rgba(59,130,246,0.1);
+  --text-primary: #1e1e3a;
+  --text-secondary: #6b6b8a;
+  --text-muted: #9999b0;
   --text-inverse: #ffffff;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.05);
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --neu-light: #ffffff;
+  --neu-dark: #c5c7cf;
+  --shadow-sm: 3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff;
+  --shadow: 6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff;
+  --shadow-md: 8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff;
+  --shadow-lg: 12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff;
+  --shadow-inset: inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 50px;
   --transition: all 0.2s ease;
 }
 
@@ -87,11 +91,11 @@ img {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #c5c7cf;
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #b0b2ba;
 }
 
 /* Utility classes */
@@ -125,9 +129,9 @@ img {
 /* Cards */
 .card {
   background: var(--surface);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  border: 1px solid var(--border-light);
+  border: none;
 }
 
 /* Buttons */
@@ -135,39 +139,42 @@ img {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
+  padding: 8px 20px;
+  border-radius: var(--radius-pill);
   font-weight: 500;
   font-size: 13px;
   transition: var(--transition);
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary {
   background: var(--primary);
   color: white;
+  box-shadow: 4px 4px 8px rgba(54,54,232,0.3), -2px -2px 6px rgba(255,255,255,0.8);
 }
 .btn-primary:hover {
   background: var(--primary-dark);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: 4px 4px 12px rgba(54,54,232,0.4), -2px -2px 6px rgba(255,255,255,0.8);
 }
 
 .btn-secondary {
-  background: var(--primary-light);
+  background: var(--bg);
   color: var(--primary);
+  box-shadow: var(--shadow-sm);
 }
 .btn-secondary:hover {
-  background: #c7d2fe;
+  box-shadow: var(--shadow);
 }
 
 .btn-ghost {
-  background: transparent;
+  background: var(--bg);
   color: var(--text-secondary);
-  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 .btn-ghost:hover {
-  background: var(--surface-2);
+  box-shadow: var(--shadow);
   color: var(--text-primary);
 }
 
@@ -188,19 +195,18 @@ img {
 }
 
 .btn-sm {
-  padding: 5px 12px;
+  padding: 5px 14px;
   font-size: 12px;
 }
 
 .btn-lg {
-  padding: 11px 22px;
+  padding: 12px 28px;
   font-size: 15px;
-  border-radius: var(--radius);
 }
 
 .btn-icon {
-  padding: 8px;
-  border-radius: var(--radius-sm);
+  padding: 10px;
+  border-radius: var(--radius-pill);
 }
 
 /* Badge */
@@ -214,12 +220,12 @@ img {
   letter-spacing: 0.02em;
 }
 
-.badge-primary { background: var(--primary-light); color: var(--primary-dark); }
-.badge-success { background: var(--success-light); color: #065f46; }
-.badge-warning { background: var(--warning-light); color: #92400e; }
-.badge-danger { background: var(--danger-light); color: #991b1b; }
-.badge-info { background: var(--info-light); color: #1d4ed8; }
-.badge-gray { background: #f1f5f9; color: var(--text-secondary); }
+.badge-primary { background: var(--primary-light); color: var(--primary); }
+.badge-success { background: var(--success-light); color: #059669; }
+.badge-warning { background: var(--warning-light); color: #d97706; }
+.badge-danger { background: var(--danger-light); color: #dc2626; }
+.badge-info { background: var(--info-light); color: #2563eb; }
+.badge-gray { background: var(--surface-2); color: var(--text-secondary); }
 
 /* Form elements */
 .form-group {
@@ -236,18 +242,18 @@ img {
 
 .form-input {
   width: 100%;
-  padding: 9px 12px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
+  padding: 10px 14px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--bg);
   color: var(--text-primary);
   transition: var(--transition);
   outline: none;
+  box-shadow: var(--shadow-inset);
 }
 
 .form-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: var(--shadow-inset), 0 0 0 2px rgba(54,54,232,0.15);
 }
 
 .form-input::placeholder {
@@ -379,7 +385,7 @@ img {
 
 /* Loading skeleton */
 .skeleton {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background: linear-gradient(90deg, #dddfe6 25%, #e8eaf0 50%, #dddfe6 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;
   border-radius: var(--radius-sm);

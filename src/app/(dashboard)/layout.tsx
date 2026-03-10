@@ -15,7 +15,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f2f8' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#e8eaf0' }}>
       <Sidebar
         userRole={session.role}
         userName={session.name}
@@ -23,7 +23,7 @@ export default async function DashboardLayout({
       />
       <div style={{
         flex: 1,
-        marginLeft: '240px',
+        marginLeft: '215px',
         display: 'flex',
         flexDirection: 'column',
         minHeight: '100vh',

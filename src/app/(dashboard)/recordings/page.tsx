@@ -54,12 +54,6 @@ export default function RecordingsPage() {
 
   return (
     <div className="page-container fade-in">
-      <div className="page-header">
-        <div>
-          <h2 className="page-title">Recordings</h2>
-          <p className="page-subtitle">{lectures.length} lecture recordings available</p>
-        </div>
-      </div>
 
       {/* Filters */}
       <div style={{
@@ -95,107 +89,64 @@ export default function RecordingsPage() {
         </select>
       </div>
 
-      {/* Recordings grid */}
-      <div className="grid-3">
+      {/* Recordings list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {filtered.map((lec) => (
-          <div key={lec.id} className="card" style={{
-            overflow: 'hidden',
-            transition: 'all 0.2s',
+          <div key={lec.id} style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '18px',
+            padding: '16px 24px',
+            borderRadius: '50px',
+            background: '#e8eaf0',
+            boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+            transition: 'box-shadow 0.2s ease',
             cursor: 'pointer',
           }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = 'translateY(-2px)'
-            e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = 'translateY(0)'
-            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)'
-          }}
+          onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
           >
-            {/* Thumbnail */}
+            {/* Play badge */}
             <div style={{
-              height: '130px',
-              background: `linear-gradient(135deg, ${lec.class?.color || '#6366f1'}40, ${lec.class?.color || '#6366f1'}20)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
+              width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0,
+              background: '#e8eaf0',
+              boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.9)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill={lec.class?.color || '#6366f1'} stroke="none">
-                  <polygon points="5 3 19 12 5 21 5 3"/>
-                </svg>
-              </div>
-              {lec.duration && (
-                <span style={{
-                  position: 'absolute',
-                  bottom: '8px',
-                  right: '8px',
-                  background: 'rgba(0,0,0,0.7)',
-                  color: 'white',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                }}>
-                  {lec.duration}
-                </span>
-              )}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={lec.class?.color || '#6366f1'} stroke="none">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
             </div>
 
-            {/* Body */}
-            <div style={{ padding: '14px 16px' }}>
-              <div style={{
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#0f172a',
-                marginBottom: '4px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}>
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e1e3a', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {lec.title}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                <span style={{
-                  background: (lec.class?.color || '#6366f1') + '18',
-                  color: lec.class?.color || '#6366f1',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                }}>
-                  {lec.class?.name}
-                </span>
-                <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                  {new Date(lec.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </span>
+              <div style={{ fontSize: '12px', color: '#9999b0', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ color: lec.class?.color || '#6366f1', fontWeight: '500' }}>{lec.class?.name}</span>
+                {lec.duration && <span>&bull; {lec.duration}</span>}
+                <span>&bull; {new Date(lec.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                {lec.uploadedBy && <span>&bull; {lec.uploadedBy.name}</span>}
               </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button className="btn btn-primary btn-sm" style={{ flex: 1, justifyContent: 'center' }}>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+              <button className="btn btn-primary btn-sm">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Watch
+              </button>
+              {lec.notesUrl && (
+                <button className="btn btn-ghost btn-sm">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="5 3 19 12 5 21 5 3"/>
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                   </svg>
-                  Watch
+                  Notes
                 </button>
-                {lec.notesUrl && (
-                  <button className="btn btn-ghost btn-sm">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    Notes
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
         ))}
