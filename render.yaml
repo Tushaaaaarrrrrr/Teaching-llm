@@ -2,5 +2,5 @@ services:
   - type: web
     name: teaching-llm
     runtime: node
-    buildCommand: npm ci && npm run build
+    buildCommand: rm -rf .next && npm ci && npm run build
     startCommand: npm start
