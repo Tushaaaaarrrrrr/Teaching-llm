@@ -15,6 +15,8 @@ interface CommMsg {
   id: string
   content: string
   createdAt: string
+  isDeleted?: boolean
+  deletedAt?: string | null
   sender: {
     id: string
     name: string
@@ -31,6 +33,7 @@ export default function CommunityPage() {
   const [userId, setUserId] = useState('')
   const [userRole, setUserRole] = useState('STUDENT')
   const [loading, setLoading] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const loadMessages = useCallback(async (classId: string) => {
@@ -79,6 +82,25 @@ export default function CommunityPage() {
       body: JSON.stringify({ content: optimistic.content }),
     })
     loadMessages(selectedClass.id)
+  }
+
+  async function deleteMessage(messageId: string) {
+    if (!selectedClass || deletingId) return
+    if (!confirm('Delete this message? It will be removed from the chat.')) return
+    setDeletingId(messageId)
+    try {
+      const res = await fetch(`/api/community/${selectedClass.id}/messages`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId }),
+      })
+      if (res.ok) {
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, isDeleted: true, content: '' } : m))
+      }
+    } catch (e) {
+      console.error(e)
+    }
+    setDeletingId(null)
   }
 
   const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
@@ -190,6 +212,39 @@ export default function CommunityPage() {
                 const isAdmin = msg.sender.role !== 'STUDENT'
                 const showAvatar = idx === 0 || messages[idx - 1]?.sender.id !== msg.sender.id
 
+                if (msg.isDeleted) {
+                  return (
+                    <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
+                      {!isMe && (
+                        <>
+                          {showAvatar ? (
+                            <div style={{
+                              width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                              background: '#e8eaf0',
+                              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '11px', fontWeight: '800', color: '#9999b0',
+                            }}>
+                              {msg.sender.name.charAt(0).toUpperCase()}
+                            </div>
+                          ) : <div style={{ width: '32px', flexShrink: 0 }} />}
+                        </>
+                      )}
+                      <div style={{
+                        padding: '8px 14px', borderRadius: '14px',
+                        background: 'transparent',
+                        border: '1.5px dashed #c5c7cf',
+                        color: '#9999b0', fontSize: '13px', fontStyle: 'italic',
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}>
+                          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                        Message deleted
+                      </div>
+                    </div>
+                  )
+                }
+
                 return (
                   <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
                     {/* Avatar */}
@@ -219,7 +274,6 @@ export default function CommunityPage() {
                               {msg.sender.role.charAt(0) + msg.sender.role.slice(1).toLowerCase()}
                             </span>
                           )}
-                          {/* Manager sees security number */}
                           {userRole === 'MANAGER' && msg.sender.securityNumber && (
                             <span style={{ fontSize: '10px', background: '#f59e0b22', color: '#f59e0b', padding: '1px 7px', borderRadius: '50px', fontWeight: '700' }}>
                               {msg.sender.securityNumber}
@@ -227,17 +281,42 @@ export default function CommunityPage() {
                           )}
                         </div>
                       )}
-                      <div style={{
-                        padding: '10px 16px',
-                        borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                        background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0',
-                        color: isMe ? '#fff' : '#1e1e3a',
-                        fontSize: '14px', lineHeight: '1.5',
-                        boxShadow: isMe
-                          ? '4px 4px 10px rgba(54,54,232,0.25)'
-                          : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                      }}>
-                        {msg.content}
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                        <div style={{
+                          padding: '10px 16px',
+                          borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                          background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0',
+                          color: isMe ? '#fff' : '#1e1e3a',
+                          fontSize: '14px', lineHeight: '1.5',
+                          boxShadow: isMe
+                            ? '4px 4px 10px rgba(54,54,232,0.25)'
+                            : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                        }}>
+                          {msg.content}
+                        </div>
+                        {/* Delete button for own messages */}
+                        {isMe && !msg.id.startsWith('temp-') && (
+                          <button
+                            onClick={() => deleteMessage(msg.id)}
+                            disabled={deletingId === msg.id}
+                            title="Delete message"
+                            style={{
+                              width: '26px', height: '26px', borderRadius: '50%',
+                              border: 'none', cursor: 'pointer',
+                              background: '#e8eaf0',
+                              boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0, opacity: deletingId === msg.id ? 0.4 : 0.5,
+                              transition: 'opacity 0.2s',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                            onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                            </svg>
+                          </button>
+                        )}
                       </div>
                       <div style={{ fontSize: '10.5px', color: '#9999b0', padding: '0 4px' }}>
                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

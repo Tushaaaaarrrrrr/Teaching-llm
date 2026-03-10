@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,6 +55,16 @@ export async function POST(request: NextRequest) {
         fileSize,
         uploadedById: session.userId,
       },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.MATERIAL_CREATED,
+      actionDescription: `${session.name} created material "${title}"`,
+      moduleName: MODULE.MATERIALS,
+      targetId: material.id,
     })
 
     return NextResponse.json(material, { status: 201 })

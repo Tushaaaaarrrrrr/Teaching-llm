@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { comparePassword, signToken, getCookieConfig } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,6 +42,17 @@ export async function POST(request: NextRequest) {
     })
 
     response.cookies.set(name, token, options)
+
+    logActivity({
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      securityNumber: user.securityNumber,
+      actionType: ACTION.USER_LOGIN,
+      actionDescription: `${user.name} logged in`,
+      moduleName: MODULE.AUTH,
+    })
+
     return response
   } catch (error) {
     console.error('Login error:', error)

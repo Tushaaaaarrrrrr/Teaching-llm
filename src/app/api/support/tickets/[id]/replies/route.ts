@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(
   _request: NextRequest,
@@ -45,6 +46,16 @@ export async function POST(
         data: { status: 'IN_PROGRESS' },
       })
     }
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.TICKET_REPLY_SENT,
+      actionDescription: `${session.name} replied to support ticket`,
+      moduleName: MODULE.SUPPORT,
+      targetId: params.id,
+    })
 
     return NextResponse.json(reply, { status: 201 })
   } catch (error) {

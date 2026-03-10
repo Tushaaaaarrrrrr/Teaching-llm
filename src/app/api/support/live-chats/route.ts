@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 const CHAT_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 
@@ -64,6 +65,16 @@ export async function POST() {
         student: { select: { id: true, name: true } },
         agent: { select: { id: true, name: true, role: true } },
       },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.CHAT_STARTED,
+      actionDescription: `${session.name} started a live chat session`,
+      moduleName: MODULE.SUPPORT,
+      targetId: chat.id,
     })
 
     return NextResponse.json(chat, { status: 201 })

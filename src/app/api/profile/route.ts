@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET() {
   try {
@@ -75,6 +76,15 @@ export async function PUT(request: NextRequest) {
         avatar: true,
         createdAt: true,
       },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.PROFILE_UPDATED,
+      actionDescription: `${session.name} updated their profile`,
+      moduleName: MODULE.PROFILE,
     })
 
     return NextResponse.json({ user })

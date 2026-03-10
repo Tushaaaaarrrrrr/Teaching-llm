@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(
   request: NextRequest,
@@ -55,6 +56,16 @@ export async function PUT(
       data: { classId, title, description, meetingLink, instructor, date, time, status },
     })
 
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.SESSION_UPDATED,
+      actionDescription: `${session.name} updated live session "${updatedSession.title}"`,
+      moduleName: MODULE.LIVE_SESSIONS,
+      targetId: id,
+    })
+
     return NextResponse.json(updatedSession)
   } catch (error) {
     console.error('Error updating live session:', error)
@@ -78,7 +89,22 @@ export async function DELETE(
 
     const { id } = await params
 
+    const existingSession = await prisma.liveSession.findUnique({
+      where: { id },
+      select: { title: true },
+    })
+
     await prisma.liveSession.delete({ where: { id } })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.SESSION_DELETED,
+      actionDescription: `${session.name} deleted live session "${existingSession?.title ?? ''}"`,
+      moduleName: MODULE.LIVE_SESSIONS,
+      targetId: id,
+    })
 
     return NextResponse.json({ message: 'Live session deleted successfully' })
   } catch (error) {

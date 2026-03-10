@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, comparePassword, hashPassword } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function PUT(request: NextRequest) {
   try {
@@ -37,6 +38,15 @@ export async function PUT(request: NextRequest) {
     await prisma.user.update({
       where: { id: session.userId },
       data: { passwordHash },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.PASSWORD_CHANGED,
+      actionDescription: `${session.name} changed their password`,
+      moduleName: MODULE.PROFILE,
     })
 
     return NextResponse.json({ message: 'Password updated successfully' })

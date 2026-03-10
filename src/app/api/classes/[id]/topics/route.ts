@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, canManageContent, isInstructor, getInstructorClassIds } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(
   request: NextRequest,
@@ -36,15 +37,34 @@ export async function POST(
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!isAdminOrManager(session.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!canManageContent(session.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { id } = await params
+
+    // Instructor: verify assigned to this class
+    if (isInstructor(session.role)) {
+      const assignedIds = await getInstructorClassIds(session.userId)
+      if (!assignedIds.includes(id)) {
+        return NextResponse.json({ error: 'You are not assigned to this subject' }, { status: 403 })
+      }
+    }
+
     const { title } = await request.json()
 
     const count = await prisma.topic.count({ where: { classId: id } })
     const topic = await prisma.topic.create({
       data: { classId: id, title, order: count },
       include: { content: true },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.TOPIC_CREATED,
+      actionDescription: `${session.name} created topic "${title}"`,
+      moduleName: MODULE.TOPICS,
+      targetId: topic.id,
     })
 
     return NextResponse.json(topic)

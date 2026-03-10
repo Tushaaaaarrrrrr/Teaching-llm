@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleClassIds } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET() {
   try {
@@ -19,6 +20,11 @@ export async function GET() {
       where,
       include: {
         createdBy: { select: { name: true } },
+        instructorAssignments: {
+          include: {
+            instructor: { select: { id: true, name: true, email: true } },
+          },
+        },
         _count: {
           select: {
             lectures: true,
@@ -70,6 +76,16 @@ export async function POST(request: NextRequest) {
       }
 
       return cls
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.CLASS_CREATED,
+      actionDescription: `${session.name} created class "${name}"`,
+      moduleName: MODULE.CLASSES,
+      targetId: newClass.id,
     })
 
     return NextResponse.json(newClass, { status: 201 })

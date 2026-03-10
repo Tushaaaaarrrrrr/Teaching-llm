@@ -39,10 +39,16 @@ export function middleware(request: NextRequest) {
     const payload = JSON.parse(atob(parts[1]))
 
     // Role-based route protection
-    if (pathname.startsWith('/admin') && payload.role === 'STUDENT') {
+    if (pathname.startsWith('/admin') && (payload.role === 'STUDENT' || payload.role === 'INSTRUCTOR')) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     if (pathname.startsWith('/manage') && payload.role === 'STUDENT') {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    if (pathname.startsWith('/chat-transcripts') && payload.role !== 'MANAGER') {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    if (pathname.startsWith('/work-log') && payload.role !== 'MANAGER') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   } catch {

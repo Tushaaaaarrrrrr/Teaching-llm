@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isManager } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function PUT(
   request: NextRequest,
@@ -37,6 +38,16 @@ export async function PUT(
       },
     })
 
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.TICKET_UPDATED,
+      actionDescription: `${session.name} updated support ticket`,
+      moduleName: MODULE.SUPPORT,
+      targetId: params.id,
+    })
+
     return NextResponse.json(ticket)
   } catch (error) {
     console.error(error)
@@ -54,7 +65,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id: params.id },
+      select: { title: true },
+    })
+
     await prisma.supportTicket.delete({ where: { id: params.id } })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.TICKET_DELETED,
+      actionDescription: `${session.name} deleted support ticket "${ticket?.title}"`,
+      moduleName: MODULE.SUPPORT,
+      targetId: params.id,
+    })
+
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error(error)

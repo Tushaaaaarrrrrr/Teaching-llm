@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, isManager } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(
   request: NextRequest,
@@ -29,6 +30,11 @@ export async function GET(
         },
         events: {
           orderBy: { date: 'desc' },
+        },
+        instructorAssignments: {
+          include: {
+            instructor: { select: { id: true, name: true, email: true } },
+          },
         },
       },
     })
@@ -66,6 +72,16 @@ export async function PUT(
       data: { name, description, subject, color, icon },
     })
 
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.CLASS_UPDATED,
+      actionDescription: `${session.name} updated class "${updatedClass.name}"`,
+      moduleName: MODULE.CLASSES,
+      targetId: id,
+    })
+
     return NextResponse.json(updatedClass)
   } catch (error) {
     console.error('Error updating class:', error)
@@ -89,7 +105,22 @@ export async function DELETE(
 
     const { id } = await params
 
+    const classToDelete = await prisma.class.findUnique({
+      where: { id },
+      select: { name: true },
+    })
+
     await prisma.class.delete({ where: { id } })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.CLASS_DELETED,
+      actionDescription: `${session.name} deleted class "${classToDelete?.name ?? id}"`,
+      moduleName: MODULE.CLASSES,
+      targetId: id,
+    })
 
     return NextResponse.json({ message: 'Class deleted successfully' })
   } catch (error) {

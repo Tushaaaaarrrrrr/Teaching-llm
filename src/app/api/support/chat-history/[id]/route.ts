@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isManager } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(
   _request: NextRequest,
@@ -37,6 +38,17 @@ export async function DELETE(
 
     // Cascade deletes messages via schema onDelete: Cascade
     await prisma.chatSession.delete({ where: { id: params.id } })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.CHAT_HISTORY_DELETED,
+      actionDescription: `${session.name} deleted chat history`,
+      moduleName: MODULE.SUPPORT,
+      targetId: params.id,
+    })
+
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error(error)

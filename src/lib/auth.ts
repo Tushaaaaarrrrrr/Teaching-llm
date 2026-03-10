@@ -9,7 +9,7 @@ const COOKIE_NAME = 'teaching_llm_token'
 export interface JWTPayload {
   userId: string
   email: string
-  role: 'MANAGER' | 'ADMIN' | 'STUDENT'
+  role: 'MANAGER' | 'ADMIN' | 'INSTRUCTOR' | 'STUDENT'
   name: string
 }
 
@@ -65,6 +65,26 @@ export function isAdminOrManager(role: string) {
   return role === 'MANAGER' || role === 'ADMIN'
 }
 
+export function isInstructor(role: string) {
+  return role === 'INSTRUCTOR'
+}
+
+/** Returns true for any role that can manage content (MANAGER, ADMIN, INSTRUCTOR) */
+export function canManageContent(role: string) {
+  return role === 'MANAGER' || role === 'ADMIN' || role === 'INSTRUCTOR'
+}
+
+/**
+ * Returns the classIds the instructor is assigned to via InstructorAssignment.
+ */
+export async function getInstructorClassIds(userId: string): Promise<string[]> {
+  const assignments = await prisma.instructorAssignment.findMany({
+    where: { instructorId: userId },
+    select: { classId: true },
+  })
+  return assignments.map(a => a.classId)
+}
+
 /**
  * Returns the classIds the user has access to via Enrollment.
  * MANAGER: returns null (meaning "all classes, no filtering")
@@ -75,6 +95,15 @@ export async function getAccessibleClassIds(
   role: string
 ): Promise<string[] | null> {
   if (role === 'MANAGER') return null
+
+  // INSTRUCTOR: return assigned classIds
+  if (role === 'INSTRUCTOR') {
+    const assignments = await prisma.instructorAssignment.findMany({
+      where: { instructorId: userId },
+      select: { classId: true },
+    })
+    return assignments.map(a => a.classId)
+  }
 
   const enrollments = await prisma.enrollment.findMany({
     where: { userId },

@@ -32,6 +32,8 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/admin':      { title: 'User Management',   subtitle: 'Manage platform accounts and permissions' },
   '/profile':    { title: 'My Profile',         subtitle: 'View and edit your personal information' },
   '/settings':   { title: 'Settings',          subtitle: 'Manage passwords, appearance, and notifications' },
+  '/chat-transcripts': { title: 'Transcripts', subtitle: 'View community chat transcripts' },
+  '/work-log':   { title: 'Work Log',          subtitle: 'Monitor all platform activity and user actions' },
 }
 
 const TYPE_COLORS: Record<string, string> = {

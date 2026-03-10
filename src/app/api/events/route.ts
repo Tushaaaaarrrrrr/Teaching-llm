@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleClassIds } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         class: true,
+        instructor: { select: { id: true, name: true } },
       },
       orderBy: { date: 'desc' },
     })
@@ -50,7 +52,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { title, description, date, time, type, relatedClass, classId } =
+    const { title, description, date, time, type, relatedClass, classId, instructorId } =
       await request.json()
 
     // Verify ADMIN has access to the target class
@@ -70,8 +72,19 @@ export async function POST(request: NextRequest) {
         type,
         relatedClass,
         classId,
+        instructorId: instructorId || null,
         createdById: session.userId,
       },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.EVENT_CREATED,
+      actionDescription: `${session.name} created calendar event "${title}"`,
+      moduleName: MODULE.CALENDAR,
+      targetId: event.id,
     })
 
     return NextResponse.json(event, { status: 201 })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, hashPassword, getAccessibleClassIds } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET() {
   try {
@@ -41,6 +42,12 @@ export async function GET() {
             class: { select: { id: true, name: true, color: true, subject: true } },
           },
         },
+        instructorAssignments: {
+          select: {
+            classId: true,
+            class: { select: { id: true, name: true, color: true, subject: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -63,7 +70,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, email, password, role, classIds = [] } = await request.json()
+    const { name, email, password, role, classIds = [], assignedClassIds = [] } = await request.json()
 
     // ADMINs can only create STUDENT accounts
     if (session.role === 'ADMIN' && role !== 'STUDENT') {
@@ -117,7 +124,27 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      // Create instructor assignments if role is INSTRUCTOR
+      if (role === 'INSTRUCTOR' && assignedClassIds.length > 0) {
+        await tx.instructorAssignment.createMany({
+          data: assignedClassIds.map((classId: string) => ({
+            instructorId: newUser.id,
+            classId,
+          })),
+        })
+      }
+
       return newUser
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.USER_CREATED,
+      actionDescription: `${session.name} created ${role} account for ${name} (${email})`,
+      moduleName: MODULE.USER_MGMT,
+      targetId: user.id,
     })
 
     return NextResponse.json(user, { status: 201 })

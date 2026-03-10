@@ -14,6 +14,11 @@ interface Enrollment {
   class: ClassInfo
 }
 
+interface InstructorAssignment {
+  classId: string
+  class: ClassInfo
+}
+
 interface User {
   id: string
   name: string
@@ -22,6 +27,7 @@ interface User {
   isTerminated: boolean
   createdAt: string
   enrollments?: Enrollment[]
+  instructorAssignments?: InstructorAssignment[]
 }
 
 export default function AdminPage() {
@@ -31,7 +37,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'STUDENT', classIds: [] as string[] })
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'STUDENT', classIds: [] as string[], assignedClassIds: [] as string[] })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('all')
@@ -77,7 +83,7 @@ export default function AdminPage() {
 
   function openCreate() {
     setEditId(null)
-    setForm({ name: '', email: '', password: '', role: 'STUDENT', classIds: [] })
+    setForm({ name: '', email: '', password: '', role: 'STUDENT', classIds: [], assignedClassIds: [] })
     setError('')
     setShowModal(true)
   }
@@ -90,6 +96,7 @@ export default function AdminPage() {
       password: '',
       role: user.role,
       classIds: user.enrollments?.map(e => e.classId) || [],
+      assignedClassIds: user.instructorAssignments?.map(a => a.classId) || [],
     })
     setError('')
     setShowModal(true)
@@ -112,6 +119,7 @@ export default function AdminPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const body: Record<string, any> = { name: form.name, email: form.email, role: form.role, classIds: form.classIds }
       if (form.password) body.password = form.password
+      if (form.role === 'INSTRUCTOR') body.assignedClassIds = form.assignedClassIds
 
       const res = await fetch(url, {
         method: editId ? 'PUT' : 'POST',
@@ -177,6 +185,7 @@ export default function AdminPage() {
   const roleColors: Record<string, { bg: string; color: string }> = {
     MANAGER: { bg: '#ede9fe', color: '#7c3aed' },
     ADMIN: { bg: '#dbeafe', color: '#3b82f6' },
+    INSTRUCTOR: { bg: '#fef3c7', color: '#d97706' },
     STUDENT: { bg: '#d1fae5', color: '#10b981' },
   }
 
@@ -188,6 +197,7 @@ export default function AdminPage() {
     all: visibleUsers.length,
     MANAGER: visibleUsers.filter(u => u.role === 'MANAGER').length,
     ADMIN: visibleUsers.filter(u => u.role === 'ADMIN').length,
+    INSTRUCTOR: visibleUsers.filter(u => u.role === 'INSTRUCTOR').length,
     STUDENT: visibleUsers.filter(u => u.role === 'STUDENT').length,
   }
 
@@ -197,6 +207,7 @@ export default function AdminPage() {
     ...(userRole === 'MANAGER' ? [
       { label: 'Managers', key: 'MANAGER', color: '#7c3aed', bg: '#ede9fe' },
       { label: 'Admins', key: 'ADMIN', color: '#3b82f6', bg: '#dbeafe' },
+      { label: 'Instructors', key: 'INSTRUCTOR', color: '#d97706', bg: '#fef3c7' },
     ] : []),
     { label: 'Students', key: 'STUDENT', color: '#10b981', bg: '#d1fae5' },
   ]
@@ -311,6 +322,23 @@ export default function AdminPage() {
                         )}
                       </div>
                     )}
+                    {/* Assigned subjects for INSTRUCTOR users */}
+                    {user.role === 'INSTRUCTOR' && user.instructorAssignments && user.instructorAssignments.length > 0 && (
+                      <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
+                        {user.instructorAssignments.slice(0, 3).map(a => (
+                          <span key={a.classId} style={{
+                            padding: '2px 8px', borderRadius: '50px', fontSize: '10px', fontWeight: '600',
+                            background: a.class.color + '18', color: a.class.color,
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {a.class.name}
+                          </span>
+                        ))}
+                        {user.instructorAssignments.length > 3 && (
+                          <span style={{ fontSize: '10px', color: '#9999b0', paddingTop: '2px' }}>+{user.instructorAssignments.length - 3}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <span className="badge" style={{ background: rc.bg, color: rc.color, flexShrink: 0 }}>
                     {user.role}
@@ -421,9 +449,10 @@ export default function AdminPage() {
               <div className="form-group">
                 <label className="form-label">Role</label>
                 {userRole === 'MANAGER' ? (
-                  <select className="form-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))}>
+                  <select className="form-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value, classIds: [], assignedClassIds: [] }))}>
                     <option value="STUDENT">Student</option>
                     <option value="ADMIN">Admin</option>
+                    <option value="INSTRUCTOR">Instructor</option>
                     <option value="MANAGER">Manager</option>
                   </select>
                 ) : (
@@ -454,6 +483,50 @@ export default function AdminPage() {
                                 classIds: e.target.checked
                                   ? [...p.classIds, cls.id]
                                   : p.classIds.filter(id => id !== cls.id)
+                              }))
+                            }}
+                          />
+                          <span style={{
+                            width: '8px', height: '8px', borderRadius: '50%',
+                            background: cls.color, flexShrink: 0,
+                          }} />
+                          <span style={{ fontSize: '13px' }}>{cls.name}</span>
+                          {cls.subject && (
+                            <span style={{ fontSize: '11px', color: '#9999b0' }}>({cls.subject})</span>
+                          )}
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+              {/* Subject assignment for INSTRUCTOR role */}
+              {form.role === 'INSTRUCTOR' && userRole === 'MANAGER' && (
+                <div className="form-group">
+                  <label className="form-label">Assigned Subjects / Courses</label>
+                  <p style={{ fontSize: '11px', color: '#9999b0', marginBottom: '6px' }}>
+                    Select the subjects this instructor can manage content for.
+                  </p>
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', gap: '6px',
+                    maxHeight: '200px', overflowY: 'auto',
+                    padding: '10px', borderRadius: '8px',
+                    background: '#f3f4f6', border: '1px solid #e5e7eb',
+                  }}>
+                    {classes.length === 0 ? (
+                      <span style={{ fontSize: '12px', color: '#9999b0' }}>No classes available</span>
+                    ) : (
+                      classes.map(cls => (
+                        <label key={cls.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={form.assignedClassIds.includes(cls.id)}
+                            onChange={e => {
+                              setForm(p => ({
+                                ...p,
+                                assignedClassIds: e.target.checked
+                                  ? [...p.assignedClassIds, cls.id]
+                                  : p.assignedClassIds.filter(id => id !== cls.id)
                               }))
                             }}
                           />

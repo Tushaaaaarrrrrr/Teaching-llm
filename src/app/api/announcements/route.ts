@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleClassIds } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET() {
   try {
@@ -102,6 +103,16 @@ export async function POST(request: NextRequest) {
         })),
       })
     }
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.ANNOUNCEMENT_CREATED,
+      actionDescription: `${session.name} created announcement "${title}"`,
+      moduleName: MODULE.ANNOUNCEMENTS,
+      targetId: announcement.id,
+    })
 
     return NextResponse.json(announcement, { status: 201 })
   } catch (error) {

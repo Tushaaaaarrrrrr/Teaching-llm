@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, hashPassword, getAccessibleClassIds } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function PUT(
   request: NextRequest,
@@ -17,7 +18,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, email, role, password, isTerminated, classIds } = await request.json()
+    const { name, email, role, password, isTerminated, classIds, assignedClassIds } = await request.json()
 
     // ADMIN restrictions
     if (session.role === 'ADMIN') {
@@ -75,7 +76,20 @@ export async function PUT(
         }
       }
 
-      // Re-fetch with enrollments
+      // Handle instructor subject assignments (MANAGER only)
+      if (assignedClassIds !== undefined) {
+        await tx.instructorAssignment.deleteMany({ where: { instructorId: id } })
+        if (assignedClassIds.length > 0) {
+          await tx.instructorAssignment.createMany({
+            data: assignedClassIds.map((classId: string) => ({
+              instructorId: id,
+              classId,
+            })),
+          })
+        }
+      }
+
+      // Re-fetch with enrollments and instructor assignments
       return tx.user.findUnique({
         where: { id },
         select: {
@@ -91,8 +105,25 @@ export async function PUT(
               class: { select: { id: true, name: true, color: true, subject: true } },
             },
           },
+          instructorAssignments: {
+            select: {
+              classId: true,
+              class: { select: { id: true, name: true, color: true, subject: true } },
+            },
+          },
         },
       })
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.USER_UPDATED,
+      actionDescription: `${session.name} updated user ${updatedUser?.name || id}`,
+      moduleName: MODULE.USER_MGMT,
+      targetId: id,
+      metadata: { changedFields: Object.keys(data) },
     })
 
     return NextResponse.json(updatedUser)
@@ -122,7 +153,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 })
     }
 
+    const targetUser = await prisma.user.findUnique({ where: { id }, select: { name: true, email: true, role: true } })
     await prisma.user.delete({ where: { id } })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.USER_DELETED,
+      actionDescription: `${session.name} deleted user ${targetUser?.name || id} (${targetUser?.email || 'unknown'})`,
+      moduleName: MODULE.USER_MGMT,
+      targetId: id,
+    })
 
     return NextResponse.json({ message: 'User deleted successfully' })
   } catch (error) {

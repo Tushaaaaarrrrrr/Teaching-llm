@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleClassIds } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(request: NextRequest) {
   try {
@@ -58,6 +59,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Get the class name for linking to the calendar event
+    let className: string | null = null
+    if (classId) {
+      const cls = await prisma.class.findUnique({ where: { id: classId }, select: { name: true } })
+      className = cls?.name || null
+    }
+
     const liveSession = await prisma.liveSession.create({
       data: {
         classId,
@@ -70,6 +78,32 @@ export async function POST(request: NextRequest) {
         status,
         createdById: session.userId,
       },
+    })
+
+    // Auto-create a calendar event linked to the same class
+    if (date) {
+      await prisma.calendarEvent.create({
+        data: {
+          title: `Live: ${title}`,
+          description: instructor ? `Instructor: ${instructor}` : description || null,
+          date,
+          time: time || null,
+          type: 'class',
+          classId: classId || null,
+          relatedClass: className,
+          createdById: session.userId,
+        },
+      })
+    }
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.SESSION_CREATED,
+      actionDescription: `${session.name} created live session "${title}"`,
+      moduleName: MODULE.LIVE_SESSIONS,
+      targetId: liveSession.id,
     })
 
     return NextResponse.json(liveSession, { status: 201 })

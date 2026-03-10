@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(
   request: NextRequest,
@@ -56,6 +57,16 @@ export async function PUT(
       data: { classId, title, description, videoUrl, notesUrl, duration, thumbnail },
     })
 
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.LECTURE_UPDATED,
+      actionDescription: `${session.name} updated lecture "${updatedLecture.title}"`,
+      moduleName: MODULE.LECTURES,
+      targetId: id,
+    })
+
     return NextResponse.json(updatedLecture)
   } catch (error) {
     console.error('Error updating lecture:', error)
@@ -78,8 +89,19 @@ export async function DELETE(
     }
 
     const { id } = await params
+    const existing = await prisma.lecture.findUnique({ where: { id }, select: { title: true } })
 
     await prisma.lecture.delete({ where: { id } })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.LECTURE_DELETED,
+      actionDescription: `${session.name} deleted lecture "${existing?.title}"`,
+      moduleName: MODULE.LECTURES,
+      targetId: id,
+    })
 
     return NextResponse.json({ message: 'Lecture deleted successfully' })
   } catch (error) {

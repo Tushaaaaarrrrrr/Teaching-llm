@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { writeFile } from 'fs/promises'
 import path from 'path'
 
@@ -48,6 +49,15 @@ export async function POST(request: NextRequest) {
         role: true,
         avatar: true,
       },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.AVATAR_UPLOADED,
+      actionDescription: `${session.name} uploaded a new avatar`,
+      moduleName: MODULE.PROFILE,
     })
 
     return NextResponse.json({ user, avatar: avatarUrl })

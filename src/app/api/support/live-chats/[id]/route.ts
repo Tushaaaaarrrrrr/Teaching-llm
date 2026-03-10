@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 // Agent joins or closes a chat
 export async function PUT(
@@ -27,6 +28,16 @@ export async function PUT(
         student: { select: { id: true, name: true } },
         agent: { select: { id: true, name: true, role: true } },
       },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: action === 'join' ? ACTION.CHAT_JOINED : ACTION.CHAT_CLOSED,
+      actionDescription: `${session.name} ${action === 'join' ? 'joined' : 'closed'} a live chat session`,
+      moduleName: MODULE.SUPPORT,
+      targetId: params.id,
     })
 
     return NextResponse.json(chat)

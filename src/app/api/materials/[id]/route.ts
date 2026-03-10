@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function PUT(
   request: NextRequest,
@@ -25,6 +26,16 @@ export async function PUT(
       data: { classId, title, description, fileUrl, fileType, fileSize },
     })
 
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.MATERIAL_UPDATED,
+      actionDescription: `${session.name} updated material "${updatedMaterial.title}"`,
+      moduleName: MODULE.MATERIALS,
+      targetId: id,
+    })
+
     return NextResponse.json(updatedMaterial)
   } catch (error) {
     console.error('Error updating material:', error)
@@ -47,8 +58,19 @@ export async function DELETE(
     }
 
     const { id } = await params
+    const existing = await prisma.material.findUnique({ where: { id }, select: { title: true } })
 
     await prisma.material.delete({ where: { id } })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.MATERIAL_DELETED,
+      actionDescription: `${session.name} deleted material "${existing?.title}"`,
+      moduleName: MODULE.MATERIALS,
+      targetId: id,
+    })
 
     return NextResponse.json({ message: 'Material deleted successfully' })
   } catch (error) {

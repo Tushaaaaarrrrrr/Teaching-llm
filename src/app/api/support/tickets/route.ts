@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, getAccessibleClassIds } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 const ticketInclude = {
   user: { select: { id: true, name: true, role: true } },
@@ -67,6 +68,16 @@ export async function POST(request: NextRequest) {
         studentId: session.userId,
       },
       include: ticketInclude,
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.TICKET_CREATED,
+      actionDescription: `${session.name} created support ticket "${title}"`,
+      moduleName: MODULE.SUPPORT,
+      targetId: ticket.id,
     })
 
     return NextResponse.json(ticket, { status: 201 })
