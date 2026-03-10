@@ -166,73 +166,70 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* Users Table */}
+      {/* Users List */}
       <div className="card" style={{ overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading users...</div>
         ) : (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Joined</th>
-                  <th style={{ width: '120px', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(user => {
-                  const rc = roleColors[user.role] || roleColors.STUDENT
-                  const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-                  return (
-                    <tr key={user.id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{
-                            width: '34px', height: '34px', borderRadius: '50%', background: rc.bg,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: rc.color, fontSize: '12px', fontWeight: '600', flexShrink: 0,
-                          }}>
-                            {initials}
-                          </div>
-                          <span style={{ fontWeight: '600', color: '#1e1e3a' }}>{user.name}</span>
-                        </div>
-                      </td>
-                      <td style={{ color: '#6b6b8a' }}>{user.email}</td>
-                      <td>
-                        <span className="badge" style={{ background: rc.bg, color: rc.color }}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td style={{ color: '#9999b0', fontSize: '12px' }}>
-                        {new Date(user.createdAt).toLocaleDateString('en-US', {
-                          month: 'short', day: 'numeric', year: 'numeric'
-                        })}
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
-                          <button onClick={() => openEdit(user)} className="btn btn-ghost btn-sm">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                            Edit
-                          </button>
-                          <button onClick={() => handleDelete(user.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="3 6 5 6 21 6"/>
-                              <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {filtered.map(user => {
+              const rc = roleColors[user.role] || roleColors.STUDENT
+              const initials = user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+              return (
+                <div key={user.id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  padding: '12px 20px',
+                  borderRadius: '50px',
+                  background: '#e8eaf0',
+                  boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+                  transition: 'box-shadow 0.2s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
+                >
+                  <div style={{
+                    width: '40px', height: '40px', borderRadius: '50%', background: rc.bg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: rc.color, fontSize: '13px', fontWeight: '600', flexShrink: 0,
+                    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                  }}>
+                    {initials}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>{user.name}</div>
+                    <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+                  </div>
+                  <span className="badge" style={{ background: rc.bg, color: rc.color, flexShrink: 0 }}>
+                    {user.role}
+                  </span>
+                  <span style={{ fontSize: '12px', color: '#9999b0', flexShrink: 0, minWidth: '90px', textAlign: 'right' }}>
+                    {new Date(user.createdAt).toLocaleDateString('en-US', {
+                      month: 'short', day: 'numeric', year: 'numeric'
+                    })}
+                  </span>
+                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                    <button onClick={() => openEdit(user)} className="btn btn-ghost btn-sm">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                      Edit
+                    </button>
+                    <button onClick={() => handleDelete(user.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+            {filtered.length === 0 && (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9999b0' }}>No users found</div>
+            )}
           </div>
         )}
       </div>

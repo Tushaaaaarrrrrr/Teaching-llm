@@ -228,83 +228,102 @@ export default function ManagePage() {
         ))}
       </div>
 
-      {/* Items Table */}
+      {/* Items List */}
       <div className="card" style={{ overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading...</div>
         ) : getItems().length === 0 ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>
-            No {tab} yet. Click "Create New" to add one.
+            No {tab} yet. Click &quot;Create New&quot; to add one.
           </div>
         ) : (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  {tab !== 'announcements' && tab !== 'classes' && <th>Class</th>}
-                  <th>Details</th>
-                  <th style={{ width: '120px', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {getItems().map(item => (
-                  <tr key={item.id}>
-                    <td>
-                      <div style={{ fontWeight: '600', color: '#1e1e3a' }}>
-                        {item.name || item.title}
-                      </div>
-                      {item.description && (
-                        <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {item.description || item.content}
-                        </div>
-                      )}
-                    </td>
-                    {tab !== 'announcements' && tab !== 'classes' && (
-                      <td>
-                        <span style={{ fontSize: '12px', color: '#6b6b8a' }}>
-                          {item.class?.name || '—'}
-                        </span>
-                      </td>
-                    )}
-                    <td>
-                      <span style={{ fontSize: '12px', color: '#9999b0' }}>
-                        {tab === 'classes' && `${item._count?.lectures || 0} lectures`}
-                        {tab === 'lectures' && (item.duration || 'No duration')}
-                        {tab === 'sessions' && (
-                          <span className={`badge badge-${item.status === 'live' ? 'danger' : item.status === 'completed' ? 'success' : 'info'}`}>
-                            {item.status}
-                          </span>
-                        )}
-                        {tab === 'materials' && `${item.fileType || ''} ${item.fileSize || ''}`}
-                        {tab === 'announcements' && (
-                          <span className={`badge badge-${item.type === 'warning' ? 'warning' : item.type === 'success' ? 'success' : 'info'}`}>
-                            {item.type}
-                          </span>
-                        )}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
-                        <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                          </svg>
-                          Edit
-                        </button>
-                        <button onClick={() => handleDelete(item.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {getItems().map((item, idx) => {
+              const itemDetail = item.description || item.content || item.duration || ''
+              const showClassName = tab !== 'announcements' && tab !== 'classes' && item.class?.name
+              const subtitle = showClassName
+                ? `${item.class.name}${itemDetail ? ' · ' + itemDetail : ''}`
+                : itemDetail
+              const iconLabel =
+                tab === 'classes' ? item.name?.slice(0, 2).toUpperCase() :
+                tab === 'sessions' ? '▶' :
+                tab === 'materials' ? (item.fileType?.slice(0, 4) || 'FILE') :
+                tab === 'announcements' ? '!' :
+                String(idx + 1).padStart(2, '0')
+              return (
+              <div key={item.id} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                padding: '12px 20px',
+                borderRadius: '50px',
+                background: '#e8eaf0',
+                boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+                transition: 'box-shadow 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
+              onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
+              >
+                {/* Icon badge */}
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
+                  background: '#e8eaf0',
+                  boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#6366f1', fontSize: '13px', fontWeight: '700',
+                }}>
+                  {iconLabel}
+                </div>
+
+                {/* Main info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.name || item.title}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {subtitle}
+                  </div>
+                </div>
+
+                {/* Details badge */}
+                <div style={{ flexShrink: 0 }}>
+                  {tab === 'classes' && (
+                    <span style={{ fontSize: '12px', color: '#9999b0' }}>{item._count?.lectures || 0} lectures</span>
+                  )}
+                  {tab === 'sessions' && (
+                    <span className={`badge badge-${item.status === 'live' ? 'danger' : item.status === 'completed' ? 'success' : 'info'}`}>
+                      {item.status}
+                    </span>
+                  )}
+                  {tab === 'materials' && (
+                    <span style={{ fontSize: '12px', color: '#9999b0' }}>{item.fileType || ''} {item.fileSize || ''}</span>
+                  )}
+                  {tab === 'announcements' && (
+                    <span className={`badge badge-${item.type === 'warning' ? 'warning' : item.type === 'success' ? 'success' : 'info'}`}>
+                      {item.type}
+                    </span>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                  <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Edit
+                  </button>
+                  <button onClick={() => handleDelete(item.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              )
+            })}
           </div>
         )}
       </div>
