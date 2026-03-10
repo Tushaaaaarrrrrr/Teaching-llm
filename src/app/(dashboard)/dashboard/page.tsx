@@ -6,7 +6,6 @@ import Link from 'next/link'
 interface Stats {
   totalClasses: number
   totalLectures: number
-  totalStudents: number
   upcomingSessions: number
   totalMaterials: number
 }
@@ -79,9 +78,6 @@ export default function DashboardPage() {
     { label: 'Lectures', value: stats?.totalLectures ?? 0, color: '#8b5cf6', bg: '#ede9fe', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
     )},
-    { label: 'Students', value: stats?.totalStudents ?? 0, color: '#10b981', bg: '#d1fae5', icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-    )},
     { label: 'Upcoming Sessions', value: stats?.upcomingSessions ?? 0, color: '#f59e0b', bg: '#fef3c7', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
     )},
@@ -90,8 +86,8 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="page-container">
-        <div className="grid-4">
-          {[1,2,3,4].map(i => (
+        <div className="grid-3">
+          {[1,2,3].map(i => (
             <div key={i} className="card" style={{ padding: '24px' }}>
               <div className="skeleton" style={{ height: '14px', width: '80px', marginBottom: '12px' }} />
               <div className="skeleton" style={{ height: '28px', width: '48px' }} />
@@ -105,7 +101,7 @@ export default function DashboardPage() {
   return (
     <div className="page-container fade-in">
       {/* Stats Grid */}
-      <div className="grid-4" style={{ marginBottom: '24px' }}>
+      <div className="grid-3" style={{ marginBottom: '24px' }}>
         {statCards.map((card) => (
           <div key={card.label} className="card" style={{
             padding: '22px 20px',
