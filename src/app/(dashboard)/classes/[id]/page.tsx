@@ -27,6 +27,7 @@ interface ClassDetail {
   subject: string
   color: string
   createdBy: { name: string }
+  instructorAssignments?: { instructor: { id: string; name: string } }[]
 }
 
 export default function ClassDetailPage() {
@@ -36,6 +37,7 @@ export default function ClassDetailPage() {
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState<string>('')
+  const [userId, setUserId] = useState<string>('')
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
   const [videoModal, setVideoModal] = useState<{ url: string; title: string } | null>(null)
 
@@ -53,6 +55,7 @@ export default function ClassDetailPage() {
       setCls(clsData.class || clsData)
       setTopics(Array.isArray(topicsData) ? topicsData : [])
       setRole(sessionData.user?.role || '')
+      setUserId(sessionData.user?.id || '')
       // Expand all topics by default
       if (Array.isArray(topicsData) && topicsData.length > 0) {
         setExpandedTopics(new Set(topicsData.map((t: Topic) => t.id)))
@@ -104,6 +107,9 @@ export default function ClassDetailPage() {
   }
 
   const isAdminOrManager = role === 'ADMIN' || role === 'MANAGER'
+  const isAssignedInstructor = role === 'INSTRUCTOR' && cls.instructorAssignments?.some(a => a.instructor.id === userId)
+  const canManage = isAdminOrManager || isAssignedInstructor
+  const instructorNames = cls.instructorAssignments?.map(a => a.instructor.name) || []
 
   return (
     <div className="page-container fade-in">
@@ -168,7 +174,7 @@ export default function ClassDetailPage() {
               {cls.description && (
                 <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '14px', maxWidth: '600px', lineHeight: '1.5' }}>{cls.description}</p>
               )}
-              <div style={{ display: 'flex', gap: '16px', marginTop: '14px' }}>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
                 {cls.subject && (
                   <span style={{ background: 'rgba(255,255,255,0.15)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500' }}>
                     {cls.subject}
@@ -177,6 +183,12 @@ export default function ClassDetailPage() {
                 <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   {topics.length} topic{topics.length !== 1 ? 's' : ''} &middot; {topics.reduce((acc, t) => acc + t.content.length, 0)} lectures
                 </span>
+                {instructorNames.length > 0 && (
+                  <span style={{ background: 'rgba(255,255,255,0.15)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Instructor: {instructorNames.join(', ')}
+                  </span>
+                )}
               </div>
             </div>
 

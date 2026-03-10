@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, canManageContent, isInstructor, getInstructorClassIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(request: NextRequest) {
@@ -38,12 +38,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role)) {
+    if (!canManageContent(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const { classId, title, description, videoUrl, notesUrl, duration, thumbnail } =
       await request.json()
+
+    // Instructor: can only create lectures in assigned classes
+    if (isInstructor(session.role)) {
+      const assignedIds = await getInstructorClassIds(session.userId)
+      if (!assignedIds.includes(classId)) {
+        return NextResponse.json({ error: 'You are not assigned to this subject' }, { status: 403 })
+      }
+    }
 
     const lecture = await prisma.lecture.create({
       data: {

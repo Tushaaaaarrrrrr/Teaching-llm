@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -19,23 +20,23 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  createdClasses        Class[]            @relation("ClassCreator")
-  uploadedLectures      Lecture[]          @relation("LectureUploader")
-  uploadedMaterials     Material[]         @relation("MaterialUploader")
-  createdSessions       LiveSession[]      @relation("SessionCreator")
-  createdEvents         CalendarEvent[]    @relation("EventCreator")
-  instructorEvents      CalendarEvent[]    @relation("EventInstructor")
+  createdClasses        Class[]                @relation("ClassCreator")
+  uploadedLectures      Lecture[]              @relation("LectureUploader")
+  uploadedMaterials     Material[]             @relation("MaterialUploader")
+  createdSessions       LiveSession[]          @relation("SessionCreator")
+  createdEvents         CalendarEvent[]        @relation("EventCreator")
+  instructorEvents      CalendarEvent[]        @relation("EventInstructor")
   enrollments           Enrollment[]
   instructorAssignments InstructorAssignment[]
-  supportTickets        SupportTicket[]    @relation("TicketStudent")
-  assignedTickets       SupportTicket[]    @relation("TicketAssignee")
-  ticketReplies         TicketReply[]      @relation("ReplyAuthor")
-  chatSessions          ChatSession[]      @relation("ChatStudent")
-  agentSessions         ChatSession[]      @relation("ChatAgent")
-  chatMessages          ChatMessage[]      @relation("ChatMsgSender")
-  communityMessages     CommunityMessage[] @relation("CommMsgSender")
+  supportTickets        SupportTicket[]        @relation("TicketStudent")
+  assignedTickets       SupportTicket[]        @relation("TicketAssignee")
+  ticketReplies         TicketReply[]          @relation("ReplyAuthor")
+  chatSessions          ChatSession[]          @relation("ChatStudent")
+  agentSessions         ChatSession[]          @relation("ChatAgent")
+  chatMessages          ChatMessage[]          @relation("ChatMsgSender")
+  communityMessages     CommunityMessage[]     @relation("CommMsgSender")
   notifications         Notification[]
-  announcements         Announcement[]     @relation("AnnouncementCreator")
+  announcements         Announcement[]         @relation("AnnouncementCreator")
   activityLogs          ActivityLog[]
 }
 
@@ -50,17 +51,17 @@ model Class {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy              User                   @relation("ClassCreator", fields: [createdById], references: [id])
-  lectures               Lecture[]
-  liveSessions           LiveSession[]
-  materials              Material[]
-  events                 CalendarEvent[]
-  topics                 Topic[]
-  enrollments            Enrollment[]
-  instructorAssignments  InstructorAssignment[]
-  supportTickets         SupportTicket[]
-  communityMessages      CommunityMessage[]
-  announcements          Announcement[]
+  createdBy             User                   @relation("ClassCreator", fields: [createdById], references: [id])
+  lectures              Lecture[]
+  liveSessions          LiveSession[]
+  materials             Material[]
+  events                CalendarEvent[]
+  topics                Topic[]
+  enrollments           Enrollment[]
+  instructorAssignments InstructorAssignment[]
+  supportTickets        SupportTicket[]
+  communityMessages     CommunityMessage[]
+  announcements         Announcement[]
 }
 
 model Enrollment {
@@ -146,12 +147,12 @@ model CalendarEvent {
 }
 
 model Topic {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   classId   String
   title     String
-  order     Int       @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   class   Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
   content Content[]
@@ -205,11 +206,11 @@ model SupportTicket {
 }
 
 model TicketReply {
-  id        String        @id @default(cuid())
+  id        String   @id @default(cuid())
   ticketId  String
   senderId  String
   content   String
-  createdAt DateTime      @default(now())
+  createdAt DateTime @default(now())
 
   ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   sender User          @relation("ReplyAuthor", fields: [senderId], references: [id])
@@ -239,11 +240,11 @@ model Faq {
 }
 
 model ChatMessage {
-  id        String      @id @default(cuid())
+  id        String   @id @default(cuid())
   chatId    String
   senderId  String
   content   String
-  createdAt DateTime    @default(now())
+  createdAt DateTime @default(now())
 
   chat   ChatSession @relation(fields: [chatId], references: [id], onDelete: Cascade)
   sender User        @relation("ChatMsgSender", fields: [senderId], references: [id])

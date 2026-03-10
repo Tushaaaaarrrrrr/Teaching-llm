@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, canManageContent, isInstructor, getInstructorClassIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(
@@ -44,13 +44,23 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role)) {
+    if (!canManageContent(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const { id } = await params
     const { classId, title, description, videoUrl, notesUrl, duration, thumbnail } =
       await request.json()
+
+    // Instructor: can only edit lectures in assigned classes
+    if (isInstructor(session.role)) {
+      const lecture = await prisma.lecture.findUnique({ where: { id }, select: { classId: true } })
+      if (!lecture) return NextResponse.json({ error: 'Lecture not found' }, { status: 404 })
+      const assignedIds = await getInstructorClassIds(session.userId)
+      if (!assignedIds.includes(lecture.classId)) {
+        return NextResponse.json({ error: 'You are not assigned to this subject' }, { status: 403 })
+      }
+    }
 
     const updatedLecture = await prisma.lecture.update({
       where: { id },
@@ -84,11 +94,22 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role)) {
+    if (!canManageContent(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const { id } = await params
+
+    // Instructor: can only delete lectures in assigned classes
+    if (isInstructor(session.role)) {
+      const lecture = await prisma.lecture.findUnique({ where: { id }, select: { classId: true } })
+      if (!lecture) return NextResponse.json({ error: 'Lecture not found' }, { status: 404 })
+      const assignedIds = await getInstructorClassIds(session.userId)
+      if (!assignedIds.includes(lecture.classId)) {
+        return NextResponse.json({ error: 'You are not assigned to this subject' }, { status: 403 })
+      }
+    }
+
     const existing = await prisma.lecture.findUnique({ where: { id }, select: { title: true } })
 
     await prisma.lecture.delete({ where: { id } })
