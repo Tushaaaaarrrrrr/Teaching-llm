@@ -6,6 +6,7 @@ import Link from 'next/link'
 interface Stats {
   totalClasses: number
   totalLectures: number
+  totalStudents: number
   upcomingSessions: number
   totalMaterials: number
 }
@@ -43,22 +44,26 @@ export default function DashboardPage() {
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
+  const [role, setRole] = useState<string>('')
 
   useEffect(() => {
     async function load() {
       try {
-        const [statsRes, sessionsRes, lecturesRes, announcementsRes] = await Promise.all([
+        const [statsRes, sessionsRes, lecturesRes, announcementsRes, meRes] = await Promise.all([
           fetch('/api/stats'),
           fetch('/api/live-sessions?status=scheduled'),
           fetch('/api/lectures'),
           fetch('/api/announcements'),
+          fetch('/api/auth/me'),
         ])
-        const statsData = await statsRes.json()
-        const sessionsData = await sessionsRes.json()
-        const lecturesData = await lecturesRes.json()
+        const statsData        = await statsRes.json()
+        const sessionsData     = await sessionsRes.json()
+        const lecturesData     = await lecturesRes.json()
         const announcementsData = await announcementsRes.json()
+        const meData           = await meRes.json()
 
         setStats(statsData)
+        setRole(meData.user?.role || '')
         setSessions((sessionsData.sessions || sessionsData || []).slice(0, 4))
         setLectures((lecturesData.lectures || lecturesData || []).slice(0, 5))
         setAnnouncements((announcementsData.announcements || announcementsData || []).slice(0, 3))
@@ -71,6 +76,8 @@ export default function DashboardPage() {
     load()
   }, [])
 
+  const isManager = role === 'MANAGER'
+
   const statCards = [
     { label: 'Total Classes', value: stats?.totalClasses ?? 0, color: '#6366f1', bg: '#e0e7ff', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
@@ -78,6 +85,11 @@ export default function DashboardPage() {
     { label: 'Lectures', value: stats?.totalLectures ?? 0, color: '#8b5cf6', bg: '#ede9fe', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
     )},
+    ...(isManager ? [{
+      label: 'Students Enrolled', value: stats?.totalStudents ?? 0, color: '#10b981', bg: '#d1fae5', icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      ),
+    }] : []),
     { label: 'Upcoming Sessions', value: stats?.upcomingSessions ?? 0, color: '#f59e0b', bg: '#fef3c7', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
     )},
@@ -101,7 +113,7 @@ export default function DashboardPage() {
   return (
     <div className="page-container fade-in">
       {/* Stats Grid */}
-      <div className="grid-3" style={{ marginBottom: '24px' }}>
+      <div className={isManager ? 'grid-4' : 'grid-3'} style={{ marginBottom: '24px' }}>
         {statCards.map((card) => (
           <div key={card.label} className="card" style={{
             padding: '22px 20px',
