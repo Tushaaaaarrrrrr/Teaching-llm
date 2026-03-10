@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
+import { prisma } from '@/lib/db'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'teaching-llm-secret-key-change-in-production'
 const COOKIE_NAME = 'teaching_llm_token'
@@ -62,4 +63,23 @@ export function isManager(role: string) {
 
 export function isAdminOrManager(role: string) {
   return role === 'MANAGER' || role === 'ADMIN'
+}
+
+/**
+ * Returns the classIds the user has access to via Enrollment.
+ * MANAGER: returns null (meaning "all classes, no filtering")
+ * ADMIN/STUDENT: returns string[] of enrolled classIds (may be empty)
+ */
+export async function getAccessibleClassIds(
+  userId: string,
+  role: string
+): Promise<string[] | null> {
+  if (role === 'MANAGER') return null
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: { userId },
+    select: { classId: true },
+  })
+
+  return enrollments.map(e => e.classId)
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login']
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated']
 const COOKIE_NAME = 'teaching_llm_token'
 
 export function middleware(request: NextRequest) {
@@ -39,7 +39,7 @@ export function middleware(request: NextRequest) {
     const payload = JSON.parse(atob(parts[1]))
 
     // Role-based route protection
-    if (pathname.startsWith('/admin') && payload.role !== 'MANAGER') {
+    if (pathname.startsWith('/admin') && payload.role === 'STUDENT') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     if (pathname.startsWith('/manage') && payload.role === 'STUDENT') {

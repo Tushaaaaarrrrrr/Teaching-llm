@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
+import { prisma } from '@/lib/db'
 import Sidebar from '@/components/layout/Sidebar'
 import Header from '@/components/layout/Header'
 
@@ -12,6 +13,16 @@ export default async function DashboardLayout({
 
   if (!session) {
     redirect('/login')
+  }
+
+  // Check if user account is terminated
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { isTerminated: true },
+  })
+
+  if (user?.isTerminated) {
+    redirect('/terminated')
   }
 
   return (

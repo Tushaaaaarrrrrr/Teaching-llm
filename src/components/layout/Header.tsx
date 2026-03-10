@@ -14,6 +14,7 @@ interface Notification {
   content: string
   type: string
   isRead: boolean
+  announcementId: string | null
   createdAt: string
 }
 
@@ -25,9 +26,12 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/recordings': { title: 'Recordings',        subtitle: 'Browse lecture recordings' },
   '/materials':  { title: 'Study Materials',   subtitle: 'Download notes and resources' },
   '/community':  { title: 'Community',         subtitle: 'Connect with your classmates' },
+  '/announcements': { title: 'Announcements',  subtitle: 'Stay updated with the latest news' },
   '/support':    { title: 'Contact & Support', subtitle: 'Raise a ticket or chat with support' },
   '/manage':     { title: 'Manage Content',    subtitle: 'Create and edit classes, lectures, and sessions' },
   '/admin':      { title: 'User Management',   subtitle: 'Manage platform accounts and permissions' },
+  '/profile':    { title: 'My Profile',         subtitle: 'View and edit your personal information' },
+  '/settings':   { title: 'Settings',          subtitle: 'Manage passwords, appearance, and notifications' },
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -40,7 +44,10 @@ export default function Header({ userName, userRole }: HeaderProps) {
   const pathname = usePathname()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [showNotif, setShowNotif] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [avatar, setAvatar] = useState<string | null>(null)
   const notifRef = useRef<HTMLDivElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   const unreadCount = notifications.filter(n => !n.isRead).length
 
@@ -69,19 +76,36 @@ export default function Header({ userName, userRole }: HeaderProps) {
     return () => clearInterval(t)
   }, [])
 
+  // Load user avatar
+  useEffect(() => {
+    fetch('/api/profile')
+      .then(r => r.json())
+      .then(data => {
+        if (data.user?.avatar) setAvatar(data.user.avatar)
+      })
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setShowNotif(false)
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false)
       }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  async function markRead(id: string) {
+  async function markRead(id: string, announcementId?: string | null) {
     await fetch(`/api/notifications/${id}`, { method: 'PUT' })
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n))
+    if (announcementId) {
+      setShowNotif(false)
+      router.push(`/announcements?id=${announcementId}`)
+    }
   }
 
   async function markAllRead() {
@@ -115,7 +139,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
     }}>
       <div>
-        <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', letterSpacing: '-0.5px' }}>
           {pageInfo.title}
         </h1>
         {pageInfo.subtitle && (
@@ -175,7 +199,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
                 ) : notifications.slice(0, 15).map(n => (
                   <div
                     key={n.id}
-                    onClick={() => markRead(n.id)}
+                    onClick={() => markRead(n.id, n.announcementId)}
                     style={{
                       padding: '12px 18px', cursor: 'pointer',
                       borderBottom: '1px solid rgba(0,0,0,0.04)',
@@ -208,21 +232,103 @@ export default function Header({ userName, userRole }: HeaderProps) {
           )}
         </div>
 
-        {/* User pill */}
-        <div
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', cursor: 'pointer', transition: 'box-shadow 0.2s ease' }}
-          onClick={handleLogout}
-          onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
-          onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
-          title="Click to sign out"
-        >
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#e8eaf0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3636e8', fontSize: '12px', fontWeight: '800' }}>
-            {initials}
+        {/* User pill with dropdown */}
+        <div ref={userMenuRef} style={{ position: 'relative' }}>
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', cursor: 'pointer', transition: 'box-shadow 0.2s ease' }}
+            onClick={() => setShowUserMenu(v => !v)}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+          >
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '50%',
+              background: avatar ? 'transparent' : '#e8eaf0',
+              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#3636e8', fontSize: '12px', fontWeight: '800',
+              overflow: 'hidden',
+            }}>
+              {avatar ? (
+                <img src={avatar} alt={userName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                initials
+              )}
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1.2' }}>{userName}</div>
+              <div style={{ fontSize: '11px', color: '#9999b0' }}>{userRole.charAt(0) + userRole.slice(1).toLowerCase()}</div>
+            </div>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2" style={{ marginLeft: '4px' }}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
           </div>
-          <div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1.2' }}>{userName}</div>
-            <div style={{ fontSize: '11px', color: '#9999b0' }}>{userRole.charAt(0) + userRole.slice(1).toLowerCase()}</div>
-          </div>
+
+          {/* User dropdown menu */}
+          {showUserMenu && (
+            <div style={{
+              position: 'absolute', right: 0, top: 'calc(100% + 10px)',
+              width: '200px', borderRadius: '16px',
+              background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
+              zIndex: 200, overflow: 'hidden', padding: '6px',
+            }}>
+              <button
+                onClick={() => { setShowUserMenu(false); router.push('/profile') }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+                  padding: '10px 14px', borderRadius: '12px', border: 'none',
+                  background: 'transparent', cursor: 'pointer', fontSize: '13px',
+                  fontWeight: '500', color: '#1e1e3a', fontFamily: 'inherit',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(54,54,232,0.06)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                My Profile
+              </button>
+              <button
+                onClick={() => { setShowUserMenu(false); router.push('/settings') }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+                  padding: '10px 14px', borderRadius: '12px', border: 'none',
+                  background: 'transparent', cursor: 'pointer', fontSize: '13px',
+                  fontWeight: '500', color: '#1e1e3a', fontFamily: 'inherit',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(54,54,232,0.06)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                Settings
+              </button>
+              <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)', margin: '4px 10px' }} />
+              <button
+                onClick={() => { setShowUserMenu(false); handleLogout() }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+                  padding: '10px 14px', borderRadius: '12px', border: 'none',
+                  background: 'transparent', cursor: 'pointer', fontSize: '13px',
+                  fontWeight: '500', color: '#ef4444', fontFamily: 'inherit',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Sign Out
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

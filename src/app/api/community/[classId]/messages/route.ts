@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession } from '@/lib/auth'
+import { getSession, getAccessibleClassIds } from '@/lib/auth'
 
 export async function GET(
   _request: NextRequest,
@@ -10,6 +10,12 @@ export async function GET(
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    // Verify the user has access to this class
+    const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
+    if (accessibleClassIds !== null && !accessibleClassIds.includes(params.classId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const messages = await prisma.communityMessage.findMany({
       where: { classId: params.classId },
       include: {
@@ -18,7 +24,6 @@ export async function GET(
             id: true,
             name: true,
             role: true,
-            // Only expose securityNumber to Manager
             securityNumber: true,
           },
         },
@@ -50,6 +55,12 @@ export async function POST(
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Verify the user has access to this class
+    const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
+    if (accessibleClassIds !== null && !accessibleClassIds.includes(params.classId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const { content } = await request.json()
 

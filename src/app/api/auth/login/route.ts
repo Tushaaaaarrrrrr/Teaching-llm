@@ -21,6 +21,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
+    if (user.isTerminated) {
+      return NextResponse.json(
+        { error: 'Your ID has been terminated. Please contact the Admin for further details.' },
+        { status: 403 }
+      )
+    }
+
     const token = signToken({
       userId: user.id,
       email: user.email,

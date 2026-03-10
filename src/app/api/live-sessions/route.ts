@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, isAdminOrManager, getAccessibleClassIds } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +12,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
 
-    const where = status ? { status } : {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: Record<string, any> = {}
+    if (status) where.status = status
+
+    const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
+    if (accessibleClassIds !== null) {
+      where.classId = { in: accessibleClassIds }
+    }
 
     const liveSessions = await prisma.liveSession.findMany({
       where,
@@ -42,6 +49,14 @@ export async function POST(request: NextRequest) {
 
     const { classId, title, description, meetingLink, instructor, date, time, status } =
       await request.json()
+
+    // Verify ADMIN has access to the target class
+    if (session.role === 'ADMIN') {
+      const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
+      if (accessibleClassIds !== null && !accessibleClassIds.includes(classId)) {
+        return NextResponse.json({ error: 'No access to this class' }, { status: 403 })
+      }
+    }
 
     const liveSession = await prisma.liveSession.create({
       data: {

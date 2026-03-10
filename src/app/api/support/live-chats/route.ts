@@ -1,17 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession } from '@/lib/auth'
+
+const CHAT_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+
+async function autoExpireChats() {
+  const now = new Date()
+  await prisma.chatSession.updateMany({
+    where: {
+      status: { not: 'CLOSED' },
+      expiresAt: { lte: now },
+    },
+    data: { status: 'CLOSED' },
+  })
+}
 
 export async function GET() {
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    await autoExpireChats()
+
     let where: Record<string, unknown> = {}
     if (session.role === 'STUDENT') {
       where = { studentId: session.userId }
     }
-    // Admins/Managers see all WAITING/ACTIVE chats
+    // Admins and Managers see all non-closed chats
 
     const chats = await prisma.chatSession.findMany({
       where: { ...where, status: { not: 'CLOSED' } },
@@ -41,14 +56,10 @@ export async function POST() {
       return NextResponse.json({ error: 'Only students can start a chat' }, { status: 403 })
     }
 
-    // Check if student already has an active chat
-    const existing = await prisma.chatSession.findFirst({
-      where: { studentId: session.userId, status: { not: 'CLOSED' } },
-    })
-    if (existing) return NextResponse.json(existing)
-
+    // Always create a new session (each chat is separate)
+    const expiresAt = new Date(Date.now() + CHAT_TTL_MS)
     const chat = await prisma.chatSession.create({
-      data: { studentId: session.userId, status: 'WAITING' },
+      data: { studentId: session.userId, status: 'WAITING', expiresAt },
       include: {
         student: { select: { id: true, name: true } },
         agent: { select: { id: true, name: true, role: true } },

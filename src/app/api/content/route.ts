@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession } from '@/lib/auth'
+import { getSession, getAccessibleClassIds } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,10 +16,21 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: Record<string, any> = {}
 
+    const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
+
     if (topicId) {
       where.topicId = topicId
     } else if (classId) {
+      // If a specific classId is requested, verify access
+      if (accessibleClassIds !== null && !accessibleClassIds.includes(classId)) {
+        return NextResponse.json({ content: [] })
+      }
       where.topic = { classId }
+    }
+
+    // Apply enrollment filter when no specific classId/topicId is requested
+    if (!topicId && !classId && accessibleClassIds !== null) {
+      where.topic = { classId: { in: accessibleClassIds } }
     }
 
     if (hasVideo === 'true') {

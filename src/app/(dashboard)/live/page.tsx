@@ -147,11 +147,11 @@ export default function LivePage() {
                 transition: 'all 0.2s ease',
               }}>
                 {/* Time block */}
-                <div style={{ minWidth: '120px', flexShrink: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: isLive ? '#16a34a' : isCompleted || isCancelled ? '#9999b0' : '#6b6b8a' }}>
+                <div style={{ width: '120px', flexShrink: 0, overflow: 'hidden' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: isLive ? '#16a34a' : isCompleted || isCancelled ? '#9999b0' : '#6b6b8a', whiteSpace: 'nowrap' }}>
                     {session.time}
                   </div>
-                  <div style={{ fontSize: '11px', marginTop: '3px' }}>
+                  <div style={{ fontSize: '11px', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     <span style={{ color: '#9999b0' }}>{session.class?.name || ''}</span>
                   </div>
                 </div>
@@ -162,12 +162,12 @@ export default function LivePage() {
                 {/* Title + instructor + status badge */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'wrap',
+                    display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'nowrap', overflow: 'hidden',
                   }}>
                     <span style={{
                       fontSize: '15px', fontWeight: '600',
                       color: isCompleted || isCancelled ? '#9999b0' : '#1e1e3a',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
                     }}>
                       {session.title}
                     </span>

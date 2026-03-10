@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
 interface NavItem {
   href: string
@@ -93,6 +93,15 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/announcements',
+    label: 'Announcements',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/>
+      </svg>
+    ),
+  },
+  {
     href: '/support',
     label: 'Support',
     icon: (
@@ -115,7 +124,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/admin',
     label: 'User Admin',
-    roles: ['MANAGER'],
+    roles: ['MANAGER', 'ADMIN'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -129,6 +138,13 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function Sidebar({ userRole, userName, userEmail }: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/login')
+    router.refresh()
+  }
 
   const visibleItems = NAV_ITEMS.filter(
     item => !item.roles || item.roles.includes(userRole)
@@ -226,6 +242,37 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
         })}
       </div>
 
+      {/* Sign Out */}
+      <button
+        onClick={handleLogout}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '11px 18px',
+          borderRadius: '50px',
+          color: '#ef4444',
+          background: '#e8eaf0',
+          boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: '14.5px',
+          fontWeight: '500',
+          fontFamily: 'inherit',
+          transition: 'all 0.2s ease',
+          marginTop: '12px',
+          width: '100%',
+        }}
+      >
+        <span style={{ color: '#ef4444', flexShrink: 0, display: 'flex' }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </span>
+        Sign Out
+      </button>
 
     </nav>
   )

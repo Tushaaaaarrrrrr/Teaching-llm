@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, isAdminOrManager, getAccessibleClassIds } from '@/lib/auth'
 
 export async function GET() {
   try {
@@ -9,7 +9,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
+
+    const where = accessibleClassIds !== null
+      ? { id: { in: accessibleClassIds } }
+      : {}
+
     const classes = await prisma.class.findMany({
+      where,
       include: {
         createdBy: { select: { name: true } },
         _count: {
@@ -43,15 +50,26 @@ export async function POST(request: NextRequest) {
 
     const { name, description, subject, color, icon } = await request.json()
 
-    const newClass = await prisma.class.create({
-      data: {
-        name,
-        description,
-        subject,
-        color,
-        icon,
-        createdById: session.userId,
-      },
+    const newClass = await prisma.$transaction(async (tx) => {
+      const cls = await tx.class.create({
+        data: {
+          name,
+          description,
+          subject,
+          color,
+          icon,
+          createdById: session.userId,
+        },
+      })
+
+      // Auto-enroll the creating ADMIN so they have immediate access
+      if (session.role === 'ADMIN') {
+        await tx.enrollment.create({
+          data: { userId: session.userId, classId: cls.id },
+        })
+      }
+
+      return cls
     })
 
     return NextResponse.json(newClass, { status: 201 })

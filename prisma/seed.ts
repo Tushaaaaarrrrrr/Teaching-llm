@@ -28,6 +28,8 @@ async function main() {
   const adminPassword = await bcrypt.hash("admin123", 10);
   const studentPassword = await bcrypt.hash("student123", 10);
 
+  const genSec = () => 'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase();
+
   const manager = await prisma.user.create({
     data: {
       name: "Platform Manager",
@@ -35,6 +37,7 @@ async function main() {
       passwordHash: managerPassword,
       role: "MANAGER",
       avatar: "/avatars/manager.png",
+      securityNumber: genSec(),
     },
   });
 
@@ -45,6 +48,7 @@ async function main() {
       passwordHash: adminPassword,
       role: "ADMIN",
       avatar: "/avatars/admin.png",
+      securityNumber: genSec(),
     },
   });
 
@@ -55,6 +59,7 @@ async function main() {
       passwordHash: studentPassword,
       role: "STUDENT",
       avatar: "/avatars/rahul.png",
+      securityNumber: genSec(),
     },
   });
 
@@ -65,6 +70,7 @@ async function main() {
       passwordHash: studentPassword,
       role: "STUDENT",
       avatar: "/avatars/priya.png",
+      securityNumber: genSec(),
     },
   });
 
@@ -75,6 +81,7 @@ async function main() {
       passwordHash: studentPassword,
       role: "STUDENT",
       avatar: "/avatars/amit.png",
+      securityNumber: genSec(),
     },
   });
 
@@ -838,6 +845,37 @@ async function main() {
   console.log("Created 7 calendar events.");
 
   // ──────────────────────────────────────────────
+  // 7.5. Create enrollments
+  // ──────────────────────────────────────────────
+  console.log("Creating enrollments...");
+
+  await prisma.enrollment.createMany({
+    data: [
+      // Admin enrolled in all classes
+      { userId: admin.id, classId: dsaClass.id },
+      { userId: admin.id, classId: mlClass.id },
+      { userId: admin.id, classId: webDevClass.id },
+      { userId: admin.id, classId: dbClass.id },
+      { userId: admin.id, classId: osClass.id },
+      { userId: admin.id, classId: networkClass.id },
+      // Rahul enrolled in DSA, ML, Web Dev
+      { userId: rahul.id, classId: dsaClass.id },
+      { userId: rahul.id, classId: mlClass.id },
+      { userId: rahul.id, classId: webDevClass.id },
+      // Priya enrolled in ML, DB, OS
+      { userId: priya.id, classId: mlClass.id },
+      { userId: priya.id, classId: dbClass.id },
+      { userId: priya.id, classId: osClass.id },
+      // Amit enrolled in DSA, DB, Networks
+      { userId: amit.id, classId: dsaClass.id },
+      { userId: amit.id, classId: dbClass.id },
+      { userId: amit.id, classId: networkClass.id },
+    ],
+  });
+
+  console.log("Created enrollments.");
+
+  // ──────────────────────────────────────────────
   // 8. Create announcements
   // ──────────────────────────────────────────────
   console.log("Creating announcements...");
@@ -849,18 +887,21 @@ async function main() {
         content:
           "The Teaching LLM platform will undergo scheduled maintenance on Saturday from 2:00 AM to 6:00 AM IST. During this window, the platform may be temporarily unavailable. Please save your work and plan accordingly.",
         type: "warning",
+        createdById: manager.id,
       },
       {
         title: "New Course Materials Available",
         content:
           "Updated lecture slides and practice problem sets have been uploaded for Data Structures & Algorithms and Machine Learning Fundamentals. Check the Materials section of each class to access the new resources.",
         type: "info",
+        createdById: admin.id,
       },
       {
         title: "Midterm Results Published",
         content:
           "Results for the Database Systems and Operating Systems midterm exams are now available. Students can view their scores and detailed feedback in their respective class dashboards. Congratulations to all who performed well!",
         type: "success",
+        createdById: admin.id,
       },
     ],
   });

@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, getAccessibleClassIds } from '@/lib/auth'
+
+const ticketInclude = {
+  user: { select: { id: true, name: true, role: true } },
+  class: { select: { id: true, name: true, color: true } },
+  assignedTo: { select: { id: true, name: true, role: true } },
+  replies: {
+    include: { sender: { select: { id: true, name: true, role: true } } },
+    orderBy: { createdAt: 'asc' as const },
+  },
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,36 +23,23 @@ export async function GET(request: NextRequest) {
     let where: Record<string, unknown> = {}
 
     if (session.role === 'STUDENT') {
-      // Students only see their own tickets
       where = { studentId: session.userId }
     } else if (session.role === 'ADMIN') {
-      // Admins see tickets for classes they manage OR general tickets
-      const adminClasses = await prisma.class.findMany({
-        where: { createdById: session.userId },
-        select: { id: true },
-      })
-      const classIds = adminClasses.map(c => c.id)
+      const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
       where = {
         OR: [
-          { type: 'GENERAL' },
-          { classId: { in: classIds } },
+          { assignedToId: session.userId },
+          { classId: { in: accessibleClassIds || [] } },
         ],
       }
     }
-    // MANAGER sees all tickets (no filter)
+    // MANAGER sees everything
 
     if (status) where = { ...where, status }
 
     const tickets = await prisma.supportTicket.findMany({
       where,
-      include: {
-        user: { select: { id: true, name: true, role: true } },
-        class: { select: { id: true, name: true, color: true } },
-        replies: {
-          include: { sender: { select: { id: true, name: true, role: true } } },
-          orderBy: { createdAt: 'asc' },
-        },
-      },
+      include: ticketInclude,
       orderBy: { updatedAt: 'desc' },
     })
 
@@ -69,11 +66,7 @@ export async function POST(request: NextRequest) {
         priority: priority || 'MEDIUM',
         studentId: session.userId,
       },
-      include: {
-        user: { select: { id: true, name: true, role: true } },
-        class: { select: { id: true, name: true, color: true } },
-        replies: true,
-      },
+      include: ticketInclude,
     })
 
     return NextResponse.json(ticket, { status: 201 })

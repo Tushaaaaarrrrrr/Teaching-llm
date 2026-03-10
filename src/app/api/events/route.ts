@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, isAdminOrManager, getAccessibleClassIds } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,9 +12,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const month = searchParams.get('month')
 
-    const where = month
-      ? { date: { startsWith: month } }
-      : {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: Record<string, any> = {}
+    if (month) where.date = { startsWith: month }
+
+    const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
+    if (accessibleClassIds !== null) {
+      where.OR = [
+        { classId: null },
+        { classId: { in: accessibleClassIds } },
+      ]
+    }
 
     const events = await prisma.calendarEvent.findMany({
       where,
@@ -44,6 +52,14 @@ export async function POST(request: NextRequest) {
 
     const { title, description, date, time, type, relatedClass, classId } =
       await request.json()
+
+    // Verify ADMIN has access to the target class
+    if (session.role === 'ADMIN' && classId) {
+      const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
+      if (accessibleClassIds !== null && !accessibleClassIds.includes(classId)) {
+        return NextResponse.json({ error: 'No access to this class' }, { status: 403 })
+      }
+    }
 
     const event = await prisma.calendarEvent.create({
       data: {

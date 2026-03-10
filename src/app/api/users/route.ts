@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isManager, hashPassword } from '@/lib/auth'
+import { getSession, isAdminOrManager, hashPassword, getAccessibleClassIds } from '@/lib/auth'
 
 export async function GET() {
   try {
@@ -9,17 +9,38 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isManager(session.role)) {
+    if (!isAdminOrManager(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let where: Record<string, any> = {}
+
+    if (session.role === 'ADMIN') {
+      const adminClassIds = await getAccessibleClassIds(session.userId, session.role)
+      where = {
+        role: 'STUDENT',
+        enrollments: {
+          some: { classId: { in: adminClassIds || [] } },
+        },
+      }
+    }
+
     const users = await prisma.user.findMany({
+      where,
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        isTerminated: true,
         createdAt: true,
+        enrollments: {
+          select: {
+            classId: true,
+            class: { select: { id: true, name: true, color: true, subject: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -38,11 +59,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isManager(session.role)) {
+    if (!isAdminOrManager(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, email, password, role } = await request.json()
+    const { name, email, password, role, classIds = [] } = await request.json()
+
+    // ADMINs can only create STUDENT accounts
+    if (session.role === 'ADMIN' && role !== 'STUDENT') {
+      return NextResponse.json({ error: 'Admins can only create student accounts' }, { status: 403 })
+    }
+
+    // ADMINs can only assign classes they have access to
+    if (session.role === 'ADMIN' && classIds.length > 0) {
+      const adminClassIds = await getAccessibleClassIds(session.userId, session.role)
+      const unauthorized = classIds.filter((id: string) => !adminClassIds?.includes(id))
+      if (unauthorized.length > 0) {
+        return NextResponse.json({ error: 'Cannot assign classes you don\'t have access to' }, { status: 403 })
+      }
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
@@ -53,24 +88,36 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordHash = await hashPassword(password)
-
     const securityNumber = 'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase()
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email: email.toLowerCase(),
-        passwordHash,
-        role,
-        securityNumber,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          email: email.toLowerCase(),
+          passwordHash,
+          role,
+          securityNumber,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+        },
+      })
+
+      if (classIds.length > 0) {
+        await tx.enrollment.createMany({
+          data: classIds.map((classId: string) => ({
+            userId: newUser.id,
+            classId,
+          })),
+        })
+      }
+
+      return newUser
     })
 
     return NextResponse.json(user, { status: 201 })
