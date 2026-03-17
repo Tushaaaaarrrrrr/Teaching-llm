@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
+import useSWR from 'swr'
 
 interface HeaderProps {
   userName: string
@@ -44,12 +45,20 @@ const TYPE_COLORS: Record<string, string> = {
 export default function Header({ userName, userRole }: HeaderProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  // const [notifications, setNotifications] = useState<Notification[]>([]) - Removed in favor of SWR
   const [showNotif, setShowNotif] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [avatar, setAvatar] = useState<string | null>(null)
   const notifRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
+
+  const fetcher = (url: string) => fetch(url).then(r => r.json())
+  const { data: notificationsData, mutate: mutateNotifications } = useSWR('/api/notifications', fetcher, {
+    refreshInterval: 60000, // Poll every 1 minute
+    revalidateOnFocus: true,
+  })
+
+  const notifications = Array.isArray(notificationsData) ? notificationsData : []
 
   const unreadCount = notifications.filter(n => !n.isRead).length
 
@@ -58,6 +67,16 @@ export default function Header({ userName, userRole }: HeaderProps) {
   )
   const pageInfo = matchedKey ? PAGE_TITLES[matchedKey] : { title: 'Teaching LLM', subtitle: '' }
 
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour >= 5 && hour < 12) return 'Good Morning'
+    if (hour >= 12 && hour < 17) return 'Good Afternoon'
+    if (hour >= 17 && hour < 21) return 'Good Evening'
+    return 'Good Night, take rest'
+  }
+
+  // const [notifications, setNotifications] = useState<Notification[]>([]) - Removed
+
   const initials = userName
     .split(' ')
     .map(n => n[0])
@@ -65,20 +84,9 @@ export default function Header({ userName, userRole }: HeaderProps) {
     .toUpperCase()
     .slice(0, 2)
 
-  function loadNotifications() {
-    fetch('/api/notifications')
-      .then(r => r.json())
-      .then(data => setNotifications(Array.isArray(data) ? data : []))
-      .catch(() => {})
-  }
+  // Initials and other logic
 
-  useEffect(() => {
-    loadNotifications()
-    const t = setInterval(loadNotifications, 15000)
-    return () => clearInterval(t)
-  }, [])
-
-  // Load user avatar
+  // Load user profile
   useEffect(() => {
     fetch('/api/profile')
       .then(r => r.json())
@@ -103,7 +111,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   async function markRead(id: string, announcementId?: string | null) {
     await fetch(`/api/notifications/${id}`, { method: 'PUT' })
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n))
+    mutateNotifications() // Refresh SWR data
     if (announcementId) {
       setShowNotif(false)
       router.push(`/announcements?id=${announcementId}`)
@@ -116,7 +124,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
         fetch(`/api/notifications/${n.id}`, { method: 'PUT' })
       )
     )
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+    mutateNotifications()
   }
 
   async function handleLogout() {
@@ -140,13 +148,17 @@ export default function Header({ userName, userRole }: HeaderProps) {
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
     }}>
-      <div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', letterSpacing: '-0.5px' }}>
-          {pageInfo.title}
+          {matchedKey === '/dashboard' ? getGreeting() : pageInfo.title}
         </h1>
-        {pageInfo.subtitle && (
+        {matchedKey === '/dashboard' ? (
+          <div style={{ fontSize: '16px', fontWeight: '400', color: '#1e1e3a' }}>
+            {userName}
+          </div>
+        ) : pageInfo.subtitle ? (
           <p style={{ fontSize: '13px', color: '#9999b0', marginTop: '2px' }}>{pageInfo.subtitle}</p>
-        )}
+        ) : null}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

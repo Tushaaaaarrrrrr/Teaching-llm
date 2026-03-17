@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, getAccessibleClassIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { validateLength, sanitizeInput } from '@/lib/validation'
 
 export async function GET(
   _request: NextRequest,
@@ -16,8 +17,14 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const { searchParams } = new URL(_request.url)
+    const cursor = searchParams.get('cursor')
+    const limit = parseInt(searchParams.get('limit') || '20')
+
     const messages = await prisma.communityMessage.findMany({
       where: { classId: params.classId },
+      take: limit,
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       include: {
         sender: {
           select: {
@@ -28,20 +35,25 @@ export async function GET(
           },
         },
       },
-      orderBy: { createdAt: 'asc' },
-      take: 100,
+      orderBy: { createdAt: 'desc' },
     })
 
+    // Reverse to return in chronological order for the chat UI
+    messages.reverse()
+
     // For non-managers: hide deleted message content and strip securityNumber
-    // For managers in normal chat view: still show isDeleted flag but hide content
-    const sanitized = messages.map(msg => ({
-      ...msg,
-      content: msg.isDeleted ? '' : msg.content,
-      sender: {
-        ...msg.sender,
-        securityNumber: session.role === 'MANAGER' ? msg.sender.securityNumber : undefined,
-      },
-    }))
+    // For managers: show content but with flags
+    const sanitized = messages.map(msg => {
+      const isActuallyDeleted = msg.isDeleted || msg.isSystemDeleted
+      return {
+        ...msg,
+        content: (isActuallyDeleted && session.role !== 'MANAGER') ? '' : msg.content,
+        sender: {
+          ...msg.sender,
+          securityNumber: session.role === 'MANAGER' ? msg.sender.securityNumber : undefined,
+        },
+      }
+    })
 
     return NextResponse.json(sanitized)
   } catch (error) {
@@ -64,9 +76,15 @@ export async function POST(
     }
 
     const { content } = await request.json()
+    
+    if (!content || !validateLength(content, 2000)) {
+      return NextResponse.json({ error: 'Message content must be between 1 and 2,000 characters' }, { status: 400 })
+    }
+
+    const sanitizedContent = sanitizeInput(content)
 
     const message = await prisma.communityMessage.create({
-      data: { classId: params.classId, senderId: session.userId, content },
+      data: { classId: params.classId, senderId: session.userId, content: sanitizedContent },
       include: {
         sender: { select: { id: true, name: true, role: true, securityNumber: true } },
       },
@@ -135,12 +153,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Message already deleted' }, { status: 400 })
     }
 
-    // Soft delete: mark as deleted but keep content in database
+    // Soft delete: mark as deleted
     await prisma.communityMessage.update({
       where: { id: messageId },
       data: {
         isDeleted: true,
         deletedAt: new Date(),
+        content: `[Message deleted by user]`, // Optional: track that it was user-deleted
       },
     })
 

@@ -36,6 +36,7 @@ export async function GET() {
         role: true,
         isTerminated: true,
         createdAt: true,
+        ...(session.role === 'MANAGER' ? { gender: true } : {}),
         enrollments: {
           select: {
             classId: true,
@@ -70,11 +71,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, email, password, role, classIds = [], assignedClassIds = [] } = await request.json()
+    const { 
+      name, email, password, role, gender,
+      classIds = [], assignedClassIds = [], 
+      canTerminate = false, canCreateStudents = false 
+    } = await request.json()
 
-    // ADMINs can only create STUDENT accounts
-    if (session.role === 'ADMIN' && role !== 'STUDENT') {
-      return NextResponse.json({ error: 'Admins can only create student accounts' }, { status: 403 })
+    if (!gender) {
+      return NextResponse.json({ error: 'Gender is required' }, { status: 400 })
+    }
+
+    // ADMINs can only create STUDENT accounts and must have permission
+    if (session.role === 'ADMIN') {
+      if (role !== 'STUDENT') {
+        return NextResponse.json({ error: 'Admins can only create student accounts' }, { status: 403 })
+      }
+      if (!session.canCreateStudents) {
+        return NextResponse.json({ error: 'You do not have permission to create students' }, { status: 403 })
+      }
     }
 
     // ADMINs can only assign classes they have access to
@@ -104,7 +118,11 @@ export async function POST(request: NextRequest) {
           email: email.toLowerCase(),
           passwordHash,
           role,
+          gender: gender.toUpperCase(),
+          avatar: gender.toUpperCase() === 'FEMALE' ? '/images/default-female.png' : '/images/default-male.png',
           securityNumber,
+          canTerminate: session.role === 'MANAGER' ? canTerminate : false,
+          canCreateStudents: session.role === 'MANAGER' ? canCreateStudents : false,
         },
         select: {
           id: true,

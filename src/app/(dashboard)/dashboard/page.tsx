@@ -131,6 +131,55 @@ export default function DashboardPage() {
 
   return (
     <div className="page-container fade-in">
+      {/* Management Actions — only for Manager */}
+      {isManager && (
+        <div className="card" style={{ padding: '20px', borderRadius: '20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+          <div>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a', marginBottom: '4px' }}>System Maintenance</h3>
+            <p style={{ fontSize: '12px', color: '#6b6b8a' }}>Back up the current state of the database to GitHub.</p>
+          </div>
+          <button
+            onClick={async () => {
+              if (confirm('Start database backup to GitHub?')) {
+                const btn = document.getElementById('backup-btn') as HTMLButtonElement
+                const status = document.getElementById('backup-status') as HTMLDivElement
+                if (!btn || !status) return
+                
+                btn.disabled = true
+                btn.innerText = 'Backing up...'
+                status.innerText = 'Initializing secure backup process...'
+                status.style.color = '#6366f1'
+
+                try {
+                  const res = await fetch('/api/admin/backup', { method: 'POST' })
+                  const data = await res.json()
+                  if (res.ok) {
+                    status.innerText = 'Backup successful! Database pushed to GitHub.'
+                    status.style.color = '#10b981'
+                  } else {
+                    status.innerText = `Backup failed: ${data.error || 'Unknown error'}`
+                    status.style.color = '#ef4444'
+                  }
+                } catch (err) {
+                  status.innerText = 'Network error during backup.'
+                  status.style.color = '#ef4444'
+                } finally {
+                  btn.disabled = false
+                  btn.innerText = 'Backup Database Now'
+                  setTimeout(() => { if (status) status.innerText = '' }, 8000)
+                }
+              }
+            }}
+            id="backup-btn"
+            className="btn btn-primary"
+            style={{ borderRadius: '12px', padding: '10px 20px', fontWeight: '700' }}
+          >
+            Backup Database Now
+          </button>
+          <div id="backup-status" style={{ fontSize: '12px', fontWeight: '600', position: 'absolute', bottom: '-25px', left: '20px' }}></div>
+        </div>
+      )}
+
       {/* Stats Grid — untouched */}
       <div className={isManager ? 'grid-4' : 'grid-3'} style={{ marginBottom: '24px' }}>
         {statCards.map((card) => (
@@ -165,321 +214,292 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* ── Row 1: Active Now + Up Next — equal columns ── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '20px',
-        marginBottom: '20px',
-        alignItems: 'stretch',
-      }}>
-        {/* Active Now card */}
-        <div className="card" style={{
-          padding: '20px',
-          borderRadius: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          overflow: 'hidden',
-        }}>
-          {hasLive && frontSession ? (
-            <>
-              {/* Top row: ACTIVE NOW badge + time + nav button */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '7px',
-                  background: 'rgba(16,185,129,0.12)',
-                  padding: '5px 12px', borderRadius: '20px',
-                  animation: 'badgeGlow 2s ease-in-out infinite',
-                }}>
-                  <div style={{
-                    width: '7px', height: '7px', borderRadius: '50%',
-                    background: '#10b981', flexShrink: 0,
-                    animation: 'greenPulse 1.5s infinite',
-                  }} />
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Active Now
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: '500' }}>
-                    {frontSession.time}
-                  </span>
-                  {liveSessions.length > 1 && (
-                    <button
-                      onClick={handleNextLive}
-                      style={{
-                        width: '30px', height: '30px', borderRadius: '50%',
-                        background: '#e8eaf0',
-                        boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                        border: 'none', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0,
-                        transition: 'box-shadow 0.15s',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.boxShadow = '5px 5px 9px #c2c4cc, -5px -5px 9px #ffffff')}
-                      onMouseLeave={e => (e.currentTarget.style.boxShadow = '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff')}
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.5">
-                        <polyline points="9 18 15 12 9 6"/>
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Animated session content — key swap triggers slideInRight */}
-              <div
-                key={activeCard}
-                style={{
-                  opacity: sliding ? 0 : 1,
-                  transform: sliding ? 'translateX(-16px)' : 'translateX(0)',
-                  transition: 'opacity 0.18s ease, transform 0.18s ease',
-                  animation: sliding ? 'none' : 'slideInRight 0.32s ease',
-                }}
-              >
-                <div style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.3', marginBottom: '8px' }}>
-                  {frontSession.title}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                  <div style={{
-                    width: '24px', height: '24px', borderRadius: '50%',
-                    background: '#e0e7ff', flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                    </svg>
+      {!isManager && (
+        <>
+          {/* ── Row 1: Active Now + Up Next ── */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '20px',
+            marginBottom: '20px',
+            alignItems: 'stretch',
+          }}>
+            {/* Active Now card */}
+            <div className="card" style={{
+              padding: '20px',
+              borderRadius: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              overflow: 'hidden',
+            }}>
+              {hasLive && frontSession ? (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '7px',
+                      background: 'rgba(16,185,129,0.12)',
+                      padding: '5px 12px', borderRadius: '20px',
+                      animation: 'badgeGlow 2s ease-in-out infinite',
+                    }}>
+                      <div style={{
+                        width: '7px', height: '7px', borderRadius: '50%',
+                        background: '#10b981', flexShrink: 0,
+                        animation: 'greenPulse 1.5s infinite',
+                      }} />
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Active Now
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: '500' }}>
+                        {frontSession.time}
+                      </span>
+                      {liveSessions.length > 1 && (
+                        <button
+                          onClick={handleNextLive}
+                          style={{
+                            width: '30px', height: '30px', borderRadius: '50%',
+                            background: '#e8eaf0',
+                            boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                            border: 'none', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0,
+                            transition: 'box-shadow 0.15s',
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.5">
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <span style={{ fontSize: '12.5px', color: '#6b6b8a', fontWeight: '500' }}>
-                    {frontSession.instructor}{frontSession.class?.name ? ` · ${frontSession.class.name}` : ''}
-                  </span>
-                </div>
-              </div>
 
-              {/* Dot indicators (only when multiple live sessions) */}
-              {liveSessions.length > 1 ? (
-                <div style={{ display: 'flex', gap: '5px' }}>
-                  {liveSessions.map((_, i) => (
-                    <div
-                      key={i}
-                      onClick={handleNextLive}
-                      style={{
-                        width: i === activeCard ? '18px' : '6px',
-                        height: '6px',
-                        borderRadius: '3px',
-                        background: i === activeCard ? '#10b981' : '#c5c7cf',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer',
-                      }}
-                    />
-                  ))}
-                </div>
-              ) : <div />}
-
-              {/* Join button */}
-              <a
-                href={frontSession.meetingLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                  padding: '13px 20px',
-                  borderRadius: '12px',
-                  background: '#ef4444',
-                  color: '#ffffff', fontSize: '13.5px', fontWeight: '700',
-                  textDecoration: 'none', letterSpacing: '0.01em',
-                  animation: 'joinGlow 2.5s ease-in-out infinite',
-                  transition: 'background 0.18s',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.animation = 'none'
-                  e.currentTarget.style.background = '#dc2626'
-                  e.currentTarget.style.boxShadow = '0 4px 28px rgba(239,68,68,0.7)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.animation = 'joinGlow 2.5s ease-in-out infinite'
-                  e.currentTarget.style.background = '#ef4444'
-                  e.currentTarget.style.boxShadow = ''
-                }}
-              >
-                <div style={{
-                  width: '28px', height: '28px', borderRadius: '7px',
-                  background: 'rgba(255,255,255,0.2)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5">
-                    <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                  </svg>
-                </div>
-                Join Live Class
-              </a>
-            </>
-          ) : (
-            /* No live session placeholder — centred, fills full height */
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '10px' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#f3f4f8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="2">
-                  <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                </svg>
-              </div>
-              <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '500', textAlign: 'center' }}>No active classes right now</div>
-              <Link href="/live" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>View schedule →</Link>
-            </div>
-          )}
-        </div>
-
-        {/* Up Next panel */}
-        <div className="card" style={{ padding: '20px', borderRadius: '20px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a' }}>Up Next</h3>
-            <Link href="/live" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
-              View All →
-            </Link>
-          </div>
-          {upNextSessions.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
-              No upcoming sessions
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {upNextSessions.map((session, idx) => (
-                <a
-                  key={session.id}
-                  href={session.meetingLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ textDecoration: 'none' }}
-                >
                   <div
+                    key={activeCard}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: '12px',
-                      padding: '13px 14px',
-                      borderRadius: '14px',
-                      background: '#e8eaf0',
-                      boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                      transition: 'box-shadow 0.2s',
+                      opacity: sliding ? 0 : 1,
+                      transform: sliding ? 'translateX(-16px)' : 'translateX(0)',
+                      transition: 'opacity 0.18s ease, transform 0.18s ease',
+                      animation: sliding ? 'none' : 'slideInRight 0.32s ease',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c2c4cc, -6px -6px 12px #ffffff')}
-                    onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+                  >
+                    <div style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.3', marginBottom: '8px' }}>
+                      {frontSession.title}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                      <div style={{
+                        width: '24px', height: '24px', borderRadius: '50%',
+                        background: '#e0e7ff', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                        </svg>
+                      </div>
+                      <span style={{ fontSize: '12.5px', color: '#6b6b8a', fontWeight: '500' }}>
+                        {frontSession.instructor}{frontSession.class?.name ? ` · ${frontSession.class.name}` : ''}
+                      </span>
+                    </div>
+                  </div>
+
+                  {liveSessions.length > 1 ? (
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                      {liveSessions.map((_, i) => (
+                        <div
+                          key={i}
+                          onClick={handleNextLive}
+                          style={{
+                            width: i === activeCard ? '18px' : '6px',
+                            height: '6px',
+                            borderRadius: '3px',
+                            background: i === activeCard ? '#10b981' : '#c5c7cf',
+                            transition: 'all 0.3s ease',
+                            cursor: 'pointer',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : <div />}
+
+                  <a
+                    href={frontSession.meetingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                      padding: '13px 20px',
+                      borderRadius: '12px',
+                      background: '#ef4444',
+                      color: '#ffffff', fontSize: '13.5px', fontWeight: '700',
+                      textDecoration: 'none', letterSpacing: '0.01em',
+                      animation: 'joinGlow 2.5s ease-in-out infinite',
+                      transition: 'background 0.18s',
+                    }}
                   >
                     <div style={{
-                      width: '40px', height: '40px', borderRadius: '11px', flexShrink: 0,
-                      background: idx === 0 ? '#e0e7ff' : '#f3f4f8',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: '28px', height: '28px', borderRadius: '7px',
+                      background: 'rgba(255,255,255,0.2)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                     }}>
-                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={idx === 0 ? '#6366f1' : '#9999b0'} strokeWidth="2">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5">
                         <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                       </svg>
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      {idx === 0 && (
-                        <div style={{
-                          display: 'inline-block', fontSize: '9.5px', fontWeight: '700', color: '#6366f1',
-                          background: '#e0e7ff', padding: '1px 7px', borderRadius: '20px',
-                          textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px',
-                        }}>
-                          Up Next
-                        </div>
-                      )}
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {session.title}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px' }}>
-                        {session.date} · {session.time}
-                      </div>
-                    </div>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="2.5" style={{ flexShrink: 0 }}>
-                      <polyline points="9 18 15 12 9 6"/>
+                    Join Live Class
+                  </a>
+                </>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '10px' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#f3f4f8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="2">
+                      <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                     </svg>
                   </div>
-                </a>
-              ))}
+                  <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '500', textAlign: 'center' }}>No active classes right now</div>
+                  <Link href="/live" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>View schedule →</Link>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* ── Row 2: Recent Lectures — 3-column grid ── */}
-      <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Recent Lectures</h3>
-          <Link href="/recordings" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
-            View All →
-          </Link>
-        </div>
-        {lectures.length === 0 ? (
-          <div style={{ padding: '32px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
-            No lectures uploaded yet
+            {/* Up Next panel */}
+            <div className="card" style={{ padding: '20px', borderRadius: '20px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a' }}>Up Next</h3>
+                <Link href="/live" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
+                  View All →
+                </Link>
+              </div>
+              {upNextSessions.length === 0 ? (
+                <div style={{ padding: '24px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
+                  No upcoming sessions
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {upNextSessions.map((session, idx) => (
+                    <a
+                      key={session.id}
+                      href={session.meetingLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '12px',
+                          padding: '13px 14px',
+                          borderRadius: '14px',
+                          background: '#e8eaf0',
+                          boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                          transition: 'box-shadow 0.2s',
+                        }}
+                      >
+                        <div style={{
+                          width: '40px', height: '40px', borderRadius: '11px', flexShrink: 0,
+                          background: idx === 0 ? '#e0e7ff' : '#f3f4f8',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={idx === 0 ? '#6366f1' : '#9999b0'} strokeWidth="2">
+                            <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                          </svg>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {idx === 0 && (
+                            <div style={{
+                              display: 'inline-block', fontSize: '9.5px', fontWeight: '700', color: '#6366f1',
+                              background: '#e0e7ff', padding: '1px 7px', borderRadius: '20px',
+                              textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px',
+                            }}>
+                              Up Next
+                            </div>
+                          )}
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {session.title}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px' }}>
+                            {session.date} · {session.time}
+                          </div>
+                        </div>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                          <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-            {lectures.map((lec) => {
-              const accent = lec.class?.color || '#6366f1'
-              return (
-                <div
-                  key={lec.id}
-                  style={{
-                    padding: '18px',
-                    borderRadius: '18px',
-                    background: '#e8eaf0',
-                    boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                    transition: 'box-shadow 0.2s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '7px 7px 14px #c2c4cc, -7px -7px 14px #ffffff')}
-                  onMouseLeave={e => (e.currentTarget.style.boxShadow = '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff')}
-                >
-                  {/* Icon */}
-                  <div style={{
-                    width: '46px', height: '46px', borderRadius: '13px',
-                    background: accent + '20',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
-                    </svg>
-                  </div>
-                  {/* Info */}
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      fontSize: '13px', fontWeight: '700', color: '#1e1e3a',
-                      lineHeight: '1.35', marginBottom: '5px',
-                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                    }}>
-                      {lec.title}
-                    </div>
-                    <div style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: '500' }}>
-                      {lec.class?.name}
-                      {lec.duration ? ` · ${lec.duration}` : ''}
-                    </div>
-                  </div>
-                  {/* Footer */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '11px', color: '#b0b2c0' }}>
-                      {new Date(lec.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
-                    <Link
-                      href="/recordings"
+
+          {/* ── Row 2: Recent Lectures ── */}
+          <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Recent Lectures</h3>
+              <Link href="/recordings" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
+                View All →
+              </Link>
+            </div>
+            {lectures.length === 0 ? (
+              <div style={{ padding: '32px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
+                No lectures uploaded yet
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+                {lectures.map((lec) => {
+                  const accent = lec.class?.color || '#6366f1'
+                  return (
+                    <div
+                      key={lec.id}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                        fontSize: '11.5px', fontWeight: '600', color: accent, textDecoration: 'none',
+                        padding: '18px',
+                        borderRadius: '18px',
+                        background: '#e8eaf0',
+                        boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        transition: 'all 0.2s',
                       }}
                     >
-                      Watch
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5">
-                        <polyline points="9 18 15 12 9 6"/>
-                      </svg>
-                    </Link>
-                  </div>
-                </div>
-              )
-            })}
+                      <div style={{
+                        width: '46px', height: '46px', borderRadius: '13px',
+                        background: accent + '20',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
+                        </svg>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          fontSize: '13px', fontWeight: '700', color: '#1e1e3a',
+                          lineHeight: '1.35', marginBottom: '5px',
+                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                        }}>
+                          {lec.title}
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: '500' }}>
+                          {lec.class?.name}
+                          {lec.duration ? ` · ${lec.duration}` : ''}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '11px', color: '#b0b2c0' }}>
+                          {new Date(lec.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                        <Link href="/recordings" style={{ fontSize: '11.5px', fontWeight: '600', color: accent, textDecoration: 'none' }}>
+                          Watch →
+                        </Link>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* ── Row 3: Announcements ── */}
       {announcements.length > 0 && (

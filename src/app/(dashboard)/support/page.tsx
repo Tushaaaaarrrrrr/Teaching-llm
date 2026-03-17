@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import useSWR from 'swr'
 
 interface Ticket {
   id: string
@@ -106,6 +107,7 @@ export default function SupportPage() {
   const [replyText, setReplyText] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ title: '', description: '', type: 'GENERAL', classId: '', priority: 'MEDIUM' })
+  const fetcher = (url: string) => fetch(url).then(r => r.json())
   const [userRole, setUserRole] = useState('STUDENT')
   const [userId, setUserId] = useState('')
 
@@ -136,14 +138,34 @@ export default function SupportPage() {
   const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
   const card = { background: '#ffffff', borderRadius: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 6px 24px rgba(0,0,0,0.04)' }
 
+  // SWR for Tickets
+  const { data: ticketsData, mutate: mutateTickets } = useSWR('/api/support/tickets', fetcher, {
+    refreshInterval: 15000,
+    revalidateOnFocus: true
+  })
+  useEffect(() => { if (ticketsData) setTickets(Array.isArray(ticketsData) ? ticketsData : []) }, [ticketsData])
+
+  // SWR for All Active Chats (Admin/Manager view)
+  const { data: chatsData, mutate: mutateAllChats } = useSWR(
+    view === 'chat' ? '/api/support/live-chats' : null,
+    fetcher,
+    { refreshInterval: 4000 }
+  )
+  useEffect(() => { if (chatsData) setAllChats(Array.isArray(chatsData) ? chatsData : []) }, [chatsData])
+
+  // SWR for Current Chat Messages
+  const { data: swrChatMsgs, mutate: mutateChatMsgs } = useSWR(
+    activeChatId ? `/api/support/live-chats/${activeChatId}/messages` : null,
+    fetcher,
+    { refreshInterval: 3000 }
+  )
+  useEffect(() => { if (swrChatMsgs) setChatMsgs(Array.isArray(swrChatMsgs) ? swrChatMsgs : []) }, [swrChatMsgs])
+
   const loadTickets = useCallback(async () => {
-    const [tr, cr] = await Promise.all([
-      fetch('/api/support/tickets').then(r => r.json()),
-      fetch('/api/classes').then(r => r.json()),
-    ])
-    setTickets(Array.isArray(tr) ? tr : [])
+    mutateTickets()
+    const cr = await fetch('/api/classes').then(r => r.json())
     setClasses((cr.classes || cr || []).map((c: ClassItem) => ({ id: c.id, name: c.name, color: c.color })))
-  }, [])
+  }, [mutateTickets])
 
   const loadFaqs = useCallback(async () => {
     const data = await fetch('/api/support/faq').then(r => r.json())
@@ -165,24 +187,7 @@ export default function SupportPage() {
     loadFaqs()
   }, [loadTickets, loadFaqs])
 
-  // Poll chat messages
-  useEffect(() => {
-    if (!activeChatId) return
-    const poll = () => fetch(`/api/support/live-chats/${activeChatId}/messages`)
-      .then(r => r.json()).then(d => setChatMsgs(Array.isArray(d) ? d : []))
-    poll()
-    const t = setInterval(poll, 3000)
-    return () => clearInterval(t)
-  }, [activeChatId])
-
-  // Poll chat list when in chat view
-  useEffect(() => {
-    if (view !== 'chat') return
-    const poll = () => fetch('/api/support/live-chats').then(r => r.json()).then(d => setAllChats(Array.isArray(d) ? d : []))
-    poll()
-    const t = setInterval(poll, 4000)
-    return () => clearInterval(t)
-  }, [view])
+  // SWR handles polling now
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatMsgs])
   useEffect(() => { repliesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [selected?.replies])
@@ -246,8 +251,10 @@ export default function SupportPage() {
 
   async function sendChatMsg() {
     if (!chatInput.trim() || !activeChatId) return
-    await fetch(`/api/support/live-chats/${activeChatId}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: chatInput }) })
+    const content = chatInput
     setChatInput('')
+    await fetch(`/api/support/live-chats/${activeChatId}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) })
+    mutateChatMsgs()
   }
 
   // ── FAQ actions ──────────────────────────────────────────────────────────
@@ -320,11 +327,13 @@ export default function SupportPage() {
           )}
           <div className="form-group">
             <label className="form-label">Title *</label>
-            <input className="form-input" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Brief description of the issue" />
+            <input className="form-input" maxLength={200} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Brief description of the issue" />
+            <div style={{ textAlign: 'right', fontSize: '10px', color: '#9999b0', marginTop: '2px' }}>{form.title.length}/200</div>
           </div>
           <div className="form-group">
             <label className="form-label">Description *</label>
-            <textarea className="form-input" rows={4} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Explain your issue in detail..." style={{ resize: 'vertical' }} />
+            <textarea className="form-input" rows={4} maxLength={5000} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Explain your issue in detail..." style={{ resize: 'vertical' }} />
+            <div style={{ textAlign: 'right', fontSize: '10px', color: form.description.length > 4800 ? '#ef4444' : '#9999b0', marginTop: '2px' }}>{form.description.length}/5,000</div>
           </div>
           <div className="form-group">
             <label className="form-label">Priority</label>
@@ -651,9 +660,12 @@ export default function SupportPage() {
               </div>
 
               {selected.status !== 'CLOSED' && (
-                <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '8px' }}>
-                  <input value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendReply()} placeholder="Type your reply..." style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: '#1e1e3a' }} />
-                  <button onClick={sendReply} className="btn btn-primary btn-sm" style={{ borderRadius: '50px', padding: '10px 18px' }}>Send</button>
+                <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input maxLength={2000} value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendReply()} placeholder="Type your reply..." style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: '#1e1e3a' }} />
+                    <button onClick={sendReply} className="btn btn-primary btn-sm" style={{ borderRadius: '50px', padding: '10px 18px' }}>Send</button>
+                  </div>
+                  <div style={{ textAlign: 'right', fontSize: '10px', color: replyText.length > 1900 ? '#ef4444' : '#9999b0', paddingRight: '12px' }}>{replyText.length}/2,000</div>
                 </div>
               )}
             </div>
@@ -860,11 +872,14 @@ export default function SupportPage() {
                   <div ref={chatEndRef} />
                 </div>
 
-                <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '8px' }}>
-                  <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMsg()} placeholder="Type a message..." style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: '#1e1e3a' }} />
-                  <button onClick={sendChatMsg} className="btn btn-primary" style={{ borderRadius: '50%', padding: '10px 13px' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-                  </button>
+                <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input maxLength={2000} value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendChatMsg()} placeholder="Type a message..." style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: '#1e1e3a' }} />
+                    <button onClick={sendChatMsg} className="btn btn-primary" style={{ borderRadius: '50%', padding: '10px 13px' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                    </button>
+                  </div>
+                  <div style={{ textAlign: 'right', fontSize: '10px', color: chatInput.length > 1900 ? '#ef4444' : '#9999b0', paddingRight: '12px' }}>{chatInput.length}/2,000</div>
                 </div>
               </>
             )

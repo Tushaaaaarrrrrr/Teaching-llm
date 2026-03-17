@@ -18,7 +18,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, email, role, password, isTerminated, classIds, assignedClassIds } = await request.json()
+    const { name, email, role, password, isTerminated, canTerminate, canCreateStudents, classIds, assignedClassIds } = await request.json()
 
     // ADMIN restrictions
     if (session.role === 'ADMIN') {
@@ -45,6 +45,10 @@ export async function PUT(
     if (email !== undefined) data.email = email
     if (role !== undefined) data.role = role
     if (typeof isTerminated === 'boolean') data.isTerminated = isTerminated
+    if (session.role === 'MANAGER') {
+      if (typeof canTerminate === 'boolean') data.canTerminate = canTerminate
+      if (typeof canCreateStudents === 'boolean') data.canCreateStudents = canCreateStudents
+    }
 
     if (password) {
       data.passwordHash = await hashPassword(password)
@@ -143,7 +147,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'MANAGER' && session.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -153,7 +157,20 @@ export async function DELETE(
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 })
     }
 
+    // Role-based deletion logic
     const targetUser = await prisma.user.findUnique({ where: { id }, select: { name: true, email: true, role: true } })
+    if (!targetUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    if (session.role === 'ADMIN') {
+      if (!session.canTerminate) {
+        return NextResponse.json({ error: 'You do not have permission to terminate users' }, { status: 403 })
+      }
+      if (targetUser.role !== 'STUDENT') {
+        return NextResponse.json({ error: 'Admins can only delete student accounts' }, { status: 403 })
+      }
+    }
     await prisma.user.delete({ where: { id } })
 
     logActivity({

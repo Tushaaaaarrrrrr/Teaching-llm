@@ -54,7 +54,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, subject, color, icon } = await request.json()
+    const { name, description, subject, color, icon, expiresAt } = await request.json()
+    
+    // Validate expiresAt if provided
+    if (expiresAt) {
+      const expiryDate = new Date(expiresAt)
+      if (expiryDate <= new Date()) {
+        return NextResponse.json({ error: 'Expiry date must be in the future' }, { status: 400 })
+      }
+    }
 
     const newClass = await prisma.$transaction(async (tx) => {
       const cls = await tx.class.create({
@@ -64,6 +72,7 @@ export async function POST(request: NextRequest) {
           subject,
           color,
           icon,
+          expiresAt: expiresAt ? new Date(expiresAt) : null,
           createdById: session.userId,
         },
       })

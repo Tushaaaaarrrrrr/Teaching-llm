@@ -27,11 +27,11 @@ export async function PUT(
       }
     }
 
-    const { title, description, videoUrl, pptUrl } = await request.json()
+    const { title, description, videoUrl, videoSource, pptUrl } = await request.json()
 
     const content = await prisma.content.update({
       where: { id },
-      data: { title, description, videoUrl, pptUrl },
+      data: { title, description, videoUrl, videoSource, pptUrl },
     })
 
     logActivity({

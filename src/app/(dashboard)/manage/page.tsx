@@ -197,10 +197,43 @@ export default function ManagePage() {
             <div className="form-group"><label className="form-label">Subject</label><input className="form-input" value={f.subject || ''} onChange={e => set('subject', e.target.value)} placeholder="e.g. Computer Science" /></div>
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} placeholder="Class description" rows={3} style={{ resize: 'vertical' }} /></div>
             <div className="form-group">
+              <label className="form-label">Expiry Date (Course Access Deadline)</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input 
+                  type="date" 
+                  className="form-input" 
+                  value={f.expiresAt ? f.expiresAt.split('T')[0] : ''} 
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (!val) { set('expiresAt', ''); return; }
+                    const year = new Date(val).getFullYear();
+                    if ([2025, 2026, 2027].includes(year)) {
+                      set('expiresAt', val);
+                    } else {
+                      alert('Please select a year between 2025 and 2027');
+                    }
+                  }}
+                  min={new Date().toISOString().split('T')[0]}
+                  max="2027-12-31"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => set('expiresAt', '')}
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: '#ef4444' }}
+                >
+                  Clear
+                </button>
+              </div>
+              <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                Access will be blocked for students after this date. (Allowed years: 2025, 2026, 2027)
+              </p>
+            </div>
+            <div className="form-group">
               <label className="form-label">Color</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {COLORS.map(c => (
-                  <button key={c} onClick={() => set('color', c)} style={{
+                  <button key={c} type="button" onClick={() => set('color', c)} style={{
                     width: '32px', height: '32px', borderRadius: '8px', background: c,
                     border: f.color === c ? '3px solid #1e1e3a' : '2px solid transparent',
                     cursor: 'pointer', transition: 'all 0.15s',

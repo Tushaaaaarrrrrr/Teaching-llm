@@ -2,9 +2,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { comparePassword, signToken, getCookieConfig } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { checkRateLimit } from '@/lib/ratelimit'
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1'
+    const { success, remaining, reset } = await checkRateLimit(ip)
+
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': '5',
+            'X-RateLimit-Remaining': remaining.toString(),
+            'X-RateLimit-Reset': reset.toString(),
+          }
+        }
+      )
+    }
+
     const { email, password } = await request.json()
 
     if (!email || !password) {
@@ -34,6 +52,8 @@ export async function POST(request: NextRequest) {
       email: user.email,
       role: user.role as 'MANAGER' | 'ADMIN' | 'STUDENT',
       name: user.name,
+      canTerminate: user.canTerminate,
+      canCreateStudents: user.canCreateStudents,
     })
 
     const { name, options } = getCookieConfig()

@@ -9,6 +9,7 @@ interface ContentItem {
   title: string
   description?: string
   videoUrl?: string
+  videoSource: string
   pptUrl?: string
   order: number
 }
@@ -32,10 +33,11 @@ interface ContentForm {
   title: string
   description: string
   videoUrl: string
+  videoSource: string
   pptUrl: string
 }
 
-const emptyForm: ContentForm = { title: '', description: '', videoUrl: '', pptUrl: '' }
+const emptyForm: ContentForm = { title: '', description: '', videoUrl: '', videoSource: 'YOUTUBE', pptUrl: '' }
 
 export default function ClassEditPage() {
   const params = useParams()
@@ -188,6 +190,7 @@ export default function ClassEditPage() {
       title: item.title,
       description: item.description || '',
       videoUrl: item.videoUrl || '',
+      videoSource: item.videoSource || 'YOUTUBE',
       pptUrl: item.pptUrl || '',
     })
     setSelectedFile(null)
@@ -293,17 +296,33 @@ export default function ClassEditPage() {
                 />
               </div>
 
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
-                  Video URL
-                </label>
-                <input
-                  value={contentForm.videoUrl}
-                  onChange={e => setContentForm(f => ({ ...f, videoUrl: e.target.value }))}
-                  placeholder="https://youtube.com/watch?v=... or direct video link"
-                  className="form-input"
-                  style={{ width: '100%' }}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                    Video Source
+                  </label>
+                  <select
+                    value={contentForm.videoSource}
+                    onChange={e => setContentForm(f => ({ ...f, videoSource: e.target.value }))}
+                    className="form-input"
+                    style={{ width: '100%' }}
+                  >
+                    <option value="YOUTUBE">YouTube</option>
+                    <option value="DRIVE">Google Drive</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                    Video URL
+                  </label>
+                  <input
+                    value={contentForm.videoUrl}
+                    onChange={e => setContentForm(f => ({ ...f, videoUrl: e.target.value }))}
+                    placeholder={contentForm.videoSource === 'YOUTUBE' ? "https://youtube.com/watch?v=..." : "https://drive.google.com/file/d/.../view"}
+                    className="form-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </div>
 
               <div>
@@ -570,7 +589,10 @@ export default function ClassEditPage() {
                           {item.pptUrl && <span style={{ fontSize: '11px', color: '#10b981' }}>📄 PPT linked</span>}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'center' }}>
+                        <div style={{ fontSize: '10px', color: '#9999b0', background: '#f0f0f5', padding: '4px 8px', borderRadius: '4px', fontStyle: 'italic', marginRight: '8px' }}>
+                          ID: {item.id}
+                        </div>
                         <button onClick={() => openEditContent(topic.id, item)} className="btn btn-ghost btn-sm">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           Edit
@@ -579,7 +601,8 @@ export default function ClassEditPage() {
                           background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
                           color: '#ef4444', borderRadius: '6px', display: 'flex', alignItems: 'center',
                         }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                          </svg>
                         </button>
                       </div>
                     </div>

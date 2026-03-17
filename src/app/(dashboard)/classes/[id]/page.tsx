@@ -26,6 +26,7 @@ interface ClassDetail {
   description: string
   subject: string
   color: string
+  expiresAt?: string
   createdBy: { name: string }
   instructorAssignments?: { instructor: { id: string; name: string } }[]
 }
@@ -39,7 +40,6 @@ export default function ClassDetailPage() {
   const [role, setRole] = useState<string>('')
   const [userId, setUserId] = useState<string>('')
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
-  const [videoModal, setVideoModal] = useState<{ url: string; title: string } | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -113,45 +113,6 @@ export default function ClassDetailPage() {
 
   return (
     <div className="page-container fade-in">
-      {/* Video Modal */}
-      {videoModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
-        }}
-        onClick={() => setVideoModal(null)}
-        >
-          <div style={{
-            background: '#e8eaf0', borderRadius: '16px', overflow: 'hidden',
-            width: '100%', maxWidth: '880px',
-            boxShadow: '0 24px 48px rgba(0,0,0,0.4)',
-          }}
-          onClick={e => e.stopPropagation()}
-          >
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '14px 20px', borderBottom: '1px solid #d0d2d9',
-            }}>
-              <span style={{ fontWeight: '600', color: '#1e1e3a', fontSize: '15px' }}>{videoModal.title}</span>
-              <button onClick={() => setVideoModal(null)} style={{
-                width: '32px', height: '32px', borderRadius: '50%',
-                background: '#e8eaf0', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#6b6b8a',
-                boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>×</button>
-            </div>
-            <div style={{ position: 'relative', paddingTop: '56.25%', background: '#000' }}>
-              <iframe
-                src={getEmbedUrl(videoModal.url)}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Class Header Banner */}
       <div className="card" style={{ overflow: 'hidden', marginBottom: '20px' }}>
         <div style={{
@@ -183,6 +144,28 @@ export default function ClassDetailPage() {
                 <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   {topics.length} topic{topics.length !== 1 ? 's' : ''} &middot; {topics.reduce((acc, t) => acc + t.content.length, 0)} lectures
                 </span>
+                {cls.expiresAt && (
+                  <span style={{ 
+                    background: 'rgba(255,165,0,0.2)', 
+                    color: '#ffa500', 
+                    padding: '4px 12px', 
+                    borderRadius: '20px', 
+                    fontSize: '12px', 
+                    fontWeight: '600',
+                    border: '1px solid rgba(255,165,0,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {(() => {
+                      const expiry = new Date(cls.expiresAt)
+                      const diff = expiry.getTime() - new Date().getTime()
+                      const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
+                      return days > 0 ? `Course Access Ends In: ${days} Day${days !== 1 ? 's' : ''}` : 'Course Access Ending Soon'
+                    })()}
+                  </span>
+                )}
                 {instructorNames.length > 0 && (
                   <span style={{ background: 'rgba(255,255,255,0.15)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -314,13 +297,13 @@ export default function ClassDetailPage() {
                         {/* Actions */}
                         <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                           {item.videoUrl && (
-                            <button
-                              onClick={() => setVideoModal({ url: item.videoUrl!, title: item.title })}
+                            <Link
+                              href={`/classes/${params.id}/lectures/${item.id}`}
                               className="btn btn-primary btn-sm"
                             >
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                               Watch
-                            </button>
+                            </Link>
                           )}
                           {item.pptUrl && (
                             <a href={item.pptUrl} download target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">

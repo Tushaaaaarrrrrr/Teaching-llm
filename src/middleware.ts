@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { jwtVerify } from 'jose'
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated']
 const COOKIE_NAME = 'teaching_llm_token'
+const JWT_SECRET = process.env.JWT_SECRET || 'teaching-llm-secret-key-change-in-production'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Allow public paths
@@ -25,18 +27,17 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Check for auth cookie (actual JWT verification happens in API/server components)
+  // Check for auth cookie
   const token = request.cookies.get(COOKIE_NAME)?.value
 
   if (!token) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Basic payload extraction from JWT (no signature verification in edge)
   try {
-    const parts = token.split('.')
-    if (parts.length !== 3) throw new Error('Invalid token')
-    const payload = JSON.parse(atob(parts[1]))
+    // Ful JWT signature verification at the Edge
+    const secret = new TextEncoder().encode(JWT_SECRET)
+    const { payload } = await jwtVerify(token, secret)
 
     // Role-based route protection
     if (pathname.startsWith('/admin') && (payload.role === 'STUDENT' || payload.role === 'INSTRUCTOR')) {
@@ -51,7 +52,8 @@ export function middleware(request: NextRequest) {
     if (pathname.startsWith('/work-log') && payload.role !== 'MANAGER') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
-  } catch {
+  } catch (error) {
+    console.error('JWT Verification failed in middleware:', error)
     const response = NextResponse.redirect(new URL('/login', request.url))
     response.cookies.delete(COOKIE_NAME)
     return response

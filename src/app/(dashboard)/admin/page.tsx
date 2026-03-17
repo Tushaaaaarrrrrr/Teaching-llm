@@ -25,6 +25,9 @@ interface User {
   email: string
   role: string
   isTerminated: boolean
+  canTerminate: boolean
+  gender?: string
+  securityNumber?: string | null
   createdAt: string
   enrollments?: Enrollment[]
   instructorAssignments?: InstructorAssignment[]
@@ -34,10 +37,15 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([])
   const [classes, setClasses] = useState<ClassInfo[]>([])
   const [userRole, setUserRole] = useState('')
+  const [userPermissions, setUserPermissions] = useState({ canTerminate: false, canCreateStudents: false })
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'STUDENT', classIds: [] as string[], assignedClassIds: [] as string[] })
+  const [form, setForm] = useState({ 
+    name: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
+    classIds: [] as string[], assignedClassIds: [] as string[], 
+    canTerminate: false, canCreateStudents: false 
+  })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('all')
@@ -54,6 +62,10 @@ export default function AdminPage() {
       const res = await fetch('/api/auth/me')
       const data = await res.json()
       setUserRole(data.user?.role || '')
+      setUserPermissions({
+        canTerminate: data.user?.canTerminate || false,
+        canCreateStudents: data.user?.canCreateStudents || false,
+      })
     } catch (e) {
       console.error(e)
     }
@@ -83,7 +95,11 @@ export default function AdminPage() {
 
   function openCreate() {
     setEditId(null)
-    setForm({ name: '', email: '', password: '', role: 'STUDENT', classIds: [], assignedClassIds: [] })
+    setForm({ 
+      name: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
+      classIds: [], assignedClassIds: [], 
+      canTerminate: false, canCreateStudents: false 
+    })
     setError('')
     setShowModal(true)
   }
@@ -95,8 +111,11 @@ export default function AdminPage() {
       email: user.email,
       password: '',
       role: user.role,
+      gender: user.gender || 'MALE',
       classIds: user.enrollments?.map(e => e.classId) || [],
       assignedClassIds: user.instructorAssignments?.map(a => a.classId) || [],
+      canTerminate: (user as any).canTerminate || false,
+      canCreateStudents: (user as any).canCreateStudents || false,
     })
     setError('')
     setShowModal(true)
@@ -117,7 +136,12 @@ export default function AdminPage() {
     try {
       const url = editId ? `/api/users/${editId}` : '/api/users'
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const body: Record<string, any> = { name: form.name, email: form.email, role: form.role, classIds: form.classIds }
+      const body: Record<string, any> = { 
+        name: form.name, email: form.email, role: form.role, gender: form.gender,
+        classIds: form.classIds,
+        canTerminate: form.canTerminate,
+        canCreateStudents: form.canCreateStudents
+      }
       if (form.password) body.password = form.password
       if (form.role === 'INSTRUCTOR') body.assignedClassIds = form.assignedClassIds
 
@@ -216,12 +240,14 @@ export default function AdminPage() {
     <div className="page-container fade-in">
       <div className="page-header">
         <p className="page-subtitle">{visibleUsers.length} total accounts</p>
-        <button onClick={openCreate} className="btn btn-primary">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          {userRole === 'ADMIN' ? 'Add Student' : 'Add User'}
-        </button>
+        {(userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canCreateStudents)) && (
+          <button onClick={openCreate} className="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            {userRole === 'ADMIN' ? 'Add Student' : 'Add User'}
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -295,6 +321,9 @@ export default function AdminPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       {user.name}
+                      {user.gender && (
+                        <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: '400' }}>({user.gender})</span>
+                      )}
                       {user.isTerminated && (
                         <span style={{
                           fontSize: '10px', fontWeight: '700', color: '#ef4444',
@@ -356,8 +385,8 @@ export default function AdminPage() {
                       </svg>
                       Edit
                     </button>
-                    {/* Terminate / Revert toggle - only for MANAGER or ADMIN's own students */}
-                    {user.role === 'STUDENT' && (userRole === 'MANAGER' || userRole === 'ADMIN') && (
+                    {/* Terminate / Revert toggle - based on MANAGER or ADMIN with canTerminate */}
+                    {user.role === 'STUDENT' && (userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate)) && (
                       <button
                         onClick={() => handleToggleTerminate(user)}
                         disabled={togglingId === user.id}
@@ -394,8 +423,8 @@ export default function AdminPage() {
                         )}
                       </button>
                     )}
-                    {/* Delete - only for MANAGER */}
-                    {userRole === 'MANAGER' && (
+                    {/* Delete - only for MANAGER or privileged ADMIN */}
+                    {(userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate && user.role === 'STUDENT')) && (
                       <button onClick={() => handleDelete(user.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="3 6 5 6 21 6"/>
@@ -459,6 +488,90 @@ export default function AdminPage() {
                   <input className="form-input" value="STUDENT" disabled style={{ opacity: 0.6 }} />
                 )}
               </div>
+
+              {!editId && (
+                <div className="form-group">
+                  <label className="form-label">Gender *</label>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                      <input 
+                        type="radio" 
+                        name="gender" 
+                        value="MALE" 
+                        checked={form.gender === 'MALE'} 
+                        onChange={() => setForm(p => ({ ...p, gender: 'MALE' }))} 
+                      />
+                      Male
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                      <input 
+                        type="radio" 
+                        name="gender" 
+                        value="FEMALE" 
+                        checked={form.gender === 'FEMALE'} 
+                        onChange={() => setForm(p => ({ ...p, gender: 'FEMALE' }))} 
+                      />
+                      Female
+                    </label>
+                  </div>
+                </div>
+              )}
+              
+              {/* Granular Permissions (MANAGER ONLY for ADMIN/INSTRUCTOR roles) */}
+              {userRole === 'MANAGER' && (form.role === 'ADMIN' || form.role === 'INSTRUCTOR') && (
+                <div style={{
+                  background: '#f9fafb', padding: '12px', borderRadius: '10px',
+                  border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: '10px'
+                }}>
+                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '2px' }}>GRANULAR PERMISSIONS</div>
+                  
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '13px', color: '#4b5563' }}>Allow User Termination</span>
+                    <div style={{ position: 'relative', display: 'inline-block', width: '36px', height: '20px' }}>
+                      <input 
+                        type="checkbox" 
+                        style={{ opacity: 0, width: 0, height: 0 }} 
+                        checked={form.canTerminate}
+                        onChange={e => setForm(p => ({ ...p, canTerminate: e.target.checked }))}
+                      />
+                      <span style={{
+                        position: 'absolute', cursor: 'pointer', inset: 0,
+                        backgroundColor: form.canTerminate ? '#3b82f6' : '#d1d5db',
+                        borderRadius: '34px', transition: '.2s'
+                      }}>
+                        <span style={{
+                          position: 'absolute', content: '""', height: '14px', width: '14px',
+                          left: form.canTerminate ? '18px' : '3px', bottom: '3px',
+                          backgroundColor: 'white', borderRadius: '50%', transition: '.2s'
+                        }} />
+                      </span>
+                    </div>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '13px', color: '#4b5563' }}>Allow Student Creation</span>
+                    <div style={{ position: 'relative', display: 'inline-block', width: '36px', height: '20px' }}>
+                      <input 
+                        type="checkbox" 
+                        style={{ opacity: 0, width: 0, height: 0 }} 
+                        checked={form.canCreateStudents}
+                        onChange={e => setForm(p => ({ ...p, canCreateStudents: e.target.checked }))}
+                      />
+                      <span style={{
+                        position: 'absolute', cursor: 'pointer', inset: 0,
+                        backgroundColor: form.canCreateStudents ? '#3b82f6' : '#d1d5db',
+                        borderRadius: '34px', transition: '.2s'
+                      }}>
+                        <span style={{
+                          position: 'absolute', content: '""', height: '14px', width: '14px',
+                          left: form.canCreateStudents ? '18px' : '3px', bottom: '3px',
+                          backgroundColor: 'white', borderRadius: '50%', transition: '.2s'
+                        }} />
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              )}
               {/* Class assignment for ADMIN or STUDENT roles */}
               {(form.role === 'ADMIN' || form.role === 'STUDENT') && (
                 <div className="form-group">

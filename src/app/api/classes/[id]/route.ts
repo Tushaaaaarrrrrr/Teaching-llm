@@ -65,11 +65,26 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, subject, color, icon } = await request.json()
+    const { name, description, subject, color, icon, expiresAt } = await request.json()
+
+    // Validate expiresAt if provided
+    if (expiresAt) {
+      const expiryDate = new Date(expiresAt)
+      if (expiryDate <= new Date()) {
+        return NextResponse.json({ error: 'Expiry date must be in the future' }, { status: 400 })
+      }
+    }
 
     const updatedClass = await prisma.class.update({
       where: { id },
-      data: { name, description, subject, color, icon },
+      data: { 
+        name, 
+        description, 
+        subject, 
+        color, 
+        icon,
+        expiresAt: expiresAt ? new Date(expiresAt) : null 
+      },
     })
 
     logActivity({

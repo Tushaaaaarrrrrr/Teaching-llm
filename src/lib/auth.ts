@@ -3,7 +3,12 @@ import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'teaching-llm-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET
+
+if (!JWT_SECRET || JWT_SECRET === 'teaching-llm-secret-key-change-in-production') {
+  console.error('\x1b[31m%s\x1b[0m', 'FATAL ERROR: JWT_SECRET is missing or insecure! The application will not start.')
+  throw new Error('JWT_SECRET is required for security.')
+}
 const COOKIE_NAME = 'teaching_llm_token'
 
 export interface JWTPayload {
@@ -11,6 +16,8 @@ export interface JWTPayload {
   email: string
   role: 'MANAGER' | 'ADMIN' | 'INSTRUCTOR' | 'STUDENT'
   name: string
+  canTerminate?: boolean
+  canCreateStudents?: boolean
 }
 
 export function signToken(payload: JWTPayload): string {
@@ -50,7 +57,7 @@ export function getCookieConfig() {
     options: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
+      sameSite: 'strict' as const, // Hardened for CSRF protection
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
     },
@@ -96,17 +103,36 @@ export async function getAccessibleClassIds(
 ): Promise<string[] | null> {
   if (role === 'MANAGER') return null
 
-  // INSTRUCTOR: return assigned classIds
+  const now = new Date()
+
+  // INSTRUCTOR: return assigned classIds that haven't expired
   if (role === 'INSTRUCTOR') {
     const assignments = await prisma.instructorAssignment.findMany({
-      where: { instructorId: userId },
+      where: { 
+        instructorId: userId,
+        class: {
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gt: now } }
+          ]
+        }
+      },
       select: { classId: true },
     })
     return assignments.map(a => a.classId)
   }
 
+  // STUDENT / ADMIN: return enrolled classIds that haven't expired
   const enrollments = await prisma.enrollment.findMany({
-    where: { userId },
+    where: { 
+      userId,
+      class: {
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gt: now } }
+        ]
+      }
+    },
     select: { classId: true },
   })
 

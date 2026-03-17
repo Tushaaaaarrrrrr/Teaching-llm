@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -14,8 +15,11 @@ model User {
   passwordHash   String
   role           String   @default("STUDENT")
   avatar         String?
+  gender         String?  @default("MALE")
   securityNumber String?  @unique
   isTerminated   Boolean  @default(false)
+  canTerminate   Boolean  @default(false)
+  canCreateStudents Boolean @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -61,6 +65,7 @@ model Class {
   supportTickets        SupportTicket[]
   communityMessages     CommunityMessage[]
   announcements         Announcement[]
+  expiresAt             DateTime?
 }
 
 model Enrollment {
@@ -163,6 +168,7 @@ model Content {
   title       String
   description String?
   videoUrl    String?
+  videoSource String   @default("YOUTUBE")
   pptUrl      String?
   order       Int      @default(0)
   createdAt   DateTime @default(now())
@@ -242,8 +248,11 @@ model ChatMessage {
   id        String   @id @default(cuid())
   chatId    String
   senderId  String
-  content   String
-  createdAt DateTime @default(now())
+  content         String
+  isDeleted       Boolean   @default(false)
+  deletedAt       DateTime?
+  isSystemDeleted Boolean   @default(false)
+  createdAt       DateTime  @default(now())
 
   chat   ChatSession @relation(fields: [chatId], references: [id], onDelete: Cascade)
   sender User        @relation("ChatMsgSender", fields: [senderId], references: [id])
@@ -253,10 +262,11 @@ model CommunityMessage {
   id        String    @id @default(cuid())
   classId   String
   senderId  String
-  content   String
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
+  content         String
+  isDeleted       Boolean   @default(false)
+  deletedAt       DateTime?
+  isSystemDeleted Boolean   @default(false)
+  createdAt       DateTime  @default(now())
 
   class  Class @relation(fields: [classId], references: [id], onDelete: Cascade)
   sender User  @relation("CommMsgSender", fields: [senderId], references: [id])

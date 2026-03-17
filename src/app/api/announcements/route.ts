@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleClassIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { validateLength, sanitizeInput } from '@/lib/validation'
 
 export async function GET() {
   try {
@@ -50,15 +51,22 @@ export async function POST(request: NextRequest) {
     }
 
     const { title, content, type, classId } = await request.json()
-
-    if (!title || !content) {
-      return NextResponse.json({ error: 'Title and content are required' }, { status: 400 })
+ 
+    if (!title || !validateLength(title, 200)) {
+      return NextResponse.json({ error: 'Announcement title must be between 1 and 200 characters' }, { status: 400 })
     }
+
+    if (!content || !validateLength(content, 10000)) {
+      return NextResponse.json({ error: 'Announcement content must be between 1 and 10,000 characters' }, { status: 400 })
+    }
+
+    const sanitizedTitle = sanitizeInput(title)
+    const sanitizedContent = sanitizeInput(content)
 
     const announcement = await prisma.announcement.create({
       data: {
-        title,
-        content,
+        title: sanitizedTitle,
+        content: sanitizedContent,
         type: type || 'info',
         classId: classId || null,
         createdById: session.userId,
