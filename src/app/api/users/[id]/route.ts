@@ -18,7 +18,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, email, role, password, isTerminated, canTerminate, canCreateStudents, courseIds, assignedCourseIds } = await request.json()
+    const { name, email, role, password, isTerminated, classIds, assignedClassIds } = await request.json()
 
     // ADMIN restrictions
     if (session.role === 'ADMIN') {
@@ -31,12 +31,12 @@ export async function PUT(
       }
     }
 
-    // Validate courseIds for ADMINs
-    if (session.role === 'ADMIN' && courseIds !== undefined && courseIds.length > 0) {
+    // Validate classIds for ADMINs
+    if (session.role === 'ADMIN' && classIds !== undefined && classIds.length > 0) {
       const adminCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-      const unauthorized = courseIds.filter((cid: string) => !adminCourseIds?.includes(cid))
+      const unauthorized = classIds.filter((cid: string) => !adminCourseIds?.includes(cid))
       if (unauthorized.length > 0) {
-        return NextResponse.json({ error: 'Cannot assign courses you don\'t have access to' }, { status: 403 })
+        return NextResponse.json({ error: 'Cannot assign classes you don\'t have access to' }, { status: 403 })
       }
     }
 
@@ -45,10 +45,6 @@ export async function PUT(
     if (email !== undefined) data.email = email
     if (role !== undefined) data.role = role
     if (typeof isTerminated === 'boolean') data.isTerminated = isTerminated
-    if (session.role === 'MANAGER') {
-      if (typeof canTerminate === 'boolean') data.canTerminate = canTerminate
-      if (typeof canCreateStudents === 'boolean') data.canCreateStudents = canCreateStudents
-    }
 
     if (password) {
       data.passwordHash = await hashPassword(password)
@@ -68,11 +64,11 @@ export async function PUT(
         },
       })
 
-      if (courseIds !== undefined) {
+      if (classIds !== undefined) {
         await tx.enrollment.deleteMany({ where: { userId: id } })
-        if (courseIds.length > 0) {
+        if (classIds.length > 0) {
           await tx.enrollment.createMany({
-            data: courseIds.map((courseId: string) => ({
+            data: classIds.map((courseId: string) => ({
               userId: id,
               courseId,
             })),
@@ -80,12 +76,12 @@ export async function PUT(
         }
       }
 
-      // Handle instructor course assignments (MANAGER only)
-      if (assignedCourseIds !== undefined) {
+      // Handle instructor subject assignments (MANAGER only)
+      if (assignedClassIds !== undefined) {
         await tx.instructorAssignment.deleteMany({ where: { instructorId: id } })
-        if (assignedCourseIds.length > 0) {
+        if (assignedClassIds.length > 0) {
           await tx.instructorAssignment.createMany({
-            data: assignedCourseIds.map((courseId: string) => ({
+            data: assignedClassIds.map((courseId: string) => ({
               instructorId: id,
               courseId,
             })),
@@ -147,7 +143,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (session.role !== 'MANAGER' && session.role !== 'ADMIN') {
+    if (session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -157,20 +153,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 })
     }
 
-    // Role-based deletion logic
     const targetUser = await prisma.user.findUnique({ where: { id }, select: { name: true, email: true, role: true } })
-    if (!targetUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    if (session.role === 'ADMIN') {
-      if (!session.canTerminate) {
-        return NextResponse.json({ error: 'You do not have permission to terminate users' }, { status: 403 })
-      }
-      if (targetUser.role !== 'STUDENT') {
-        return NextResponse.json({ error: 'Admins can only delete student accounts' }, { status: 403 })
-      }
-    }
     await prisma.user.delete({ where: { id } })
 
     logActivity({

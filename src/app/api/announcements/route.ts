@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { validateLength, sanitizeInput } from '@/lib/validation'
 
 export async function GET() {
   try {
@@ -29,12 +28,6 @@ export async function GET() {
       include: {
         createdBy: { select: { id: true, name: true, role: true, avatar: true } },
         course: { select: { id: true, name: true, color: true } },
-        poll: {
-          include: {
-            options: { orderBy: { order: 'asc' } },
-            responses: { where: { userId: session.userId }, select: { optionId: true } },
-          },
-        },
       },
     })
 
@@ -56,57 +49,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { title, content, type, courseId, imageUrl, pollData } = await request.json()
+    const { title, content, type, courseId } = await request.json()
 
-    // Mutual exclusivity check
-    if (imageUrl && pollData) {
-      return NextResponse.json({ error: 'An announcement cannot have both an image and a poll' }, { status: 400 })
-    }
-
-    if (!title || !validateLength(title, 200)) {
-      return NextResponse.json({ error: 'Announcement title must be between 1 and 200 characters' }, { status: 400 })
-    }
-
-    if (!content || !validateLength(content, 10000)) {
-      return NextResponse.json({ error: 'Announcement content must be between 1 and 10,000 characters' }, { status: 400 })
-    }
-
-    const sanitizedTitle = sanitizeInput(title)
-    const sanitizedContent = sanitizeInput(content)
-
-    // Handle nested poll creation if provided
-    let createdPollId: string | null = null
-    if (pollData) {
-      const poll = await prisma.poll.create({
-        data: {
-          question: pollData.question,
-          expiresAt: new Date(pollData.expiresAt),
-          createdById: session.userId,
-          options: {
-            create: pollData.options.map((opt: string, idx: number) => ({
-              text: opt,
-              order: idx,
-            })),
-          },
-        },
-      })
-      createdPollId = poll.id
+    if (!title || !content) {
+      return NextResponse.json({ error: 'Title and content are required' }, { status: 400 })
     }
 
     const announcement = await prisma.announcement.create({
       data: {
-        title: sanitizedTitle,
-        content: sanitizedContent,
+        title,
+        content,
         type: type || 'info',
         courseId: courseId || null,
-        imageUrl: imageUrl || null,
-        pollId: createdPollId,
         createdById: session.userId,
       },
       include: {
         createdBy: { select: { id: true, name: true, role: true, avatar: true } },
         course: { select: { id: true, name: true, color: true } },
-        poll: { include: { options: true } },
       },
     })
 
@@ -154,18 +113,6 @@ export async function POST(request: NextRequest) {
       moduleName: MODULE.ANNOUNCEMENTS,
       targetId: announcement.id,
     })
-
-    if (pollData && createdPollId) {
-      logActivity({
-        userId: session.userId,
-        userName: session.name,
-        userRole: session.role,
-        actionType: ACTION.POLL_CREATED,
-        actionDescription: `${session.name} created poll "${pollData.question}"`,
-        moduleName: MODULE.ANNOUNCEMENTS,
-        targetId: createdPollId,
-      })
-    }
 
     return NextResponse.json(announcement, { status: 201 })
   } catch (error) {

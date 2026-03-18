@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
-import { validateLength, sanitizeInput } from '@/lib/validation'
 
 export async function GET(
   _request: NextRequest,
@@ -17,16 +16,7 @@ export async function GET(
       orderBy: { createdAt: 'asc' },
     })
 
-    // Manager oversight: managers see all, students/admins see only non-deleted
-    const sanitized = messages.map(msg => {
-      const isActuallyDeleted = msg.isDeleted || msg.isSystemDeleted
-      return {
-        ...msg,
-        content: (isActuallyDeleted && session.role !== 'MANAGER') ? '' : msg.content,
-      }
-    })
-
-    return NextResponse.json(sanitized)
+    return NextResponse.json(messages)
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -42,15 +32,9 @@ export async function POST(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { content } = await request.json()
- 
-    if (!content || !validateLength(content, 2000)) {
-      return NextResponse.json({ error: 'Message content must be between 1 and 2,000 characters' }, { status: 400 })
-    }
-
-    const sanitizedContent = sanitizeInput(content)
 
     const message = await prisma.chatMessage.create({
-      data: { chatId: params.id, senderId: session.userId, content: sanitizedContent },
+      data: { chatId: params.id, senderId: session.userId, content },
       include: { sender: { select: { id: true, name: true, role: true } } },
     })
 

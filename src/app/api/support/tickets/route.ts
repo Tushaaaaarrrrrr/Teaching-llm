@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { validateLength, sanitizeInput } from '@/lib/validation'
 
 const ticketInclude = {
   user: { select: { id: true, name: true, role: true } },
@@ -58,22 +57,11 @@ export async function POST(request: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { title, description, type, courseId, priority } = await request.json()
- 
-    if (!title || !validateLength(title, 200)) {
-      return NextResponse.json({ error: 'Ticket title must be between 1 and 200 characters' }, { status: 400 })
-    }
- 
-    if (!description || !validateLength(description, 5000)) {
-      return NextResponse.json({ error: 'Ticket description must be between 1 and 5,000 characters' }, { status: 400 })
-    }
-
-    const sanitizedTitle = sanitizeInput(title)
-    const sanitizedDescription = sanitizeInput(description)
 
     const ticket = await prisma.supportTicket.create({
       data: {
-        title: sanitizedTitle,
-        description: sanitizedDescription,
+        title,
+        description,
         type: type || 'GENERAL',
         courseId: type === 'SUBJECT' ? courseId : null,
         priority: priority || 'MEDIUM',

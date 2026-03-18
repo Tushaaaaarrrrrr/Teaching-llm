@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, canManageContent, isInstructor, getInstructorCourseIds } from '@/lib/auth'
+import { getSession, canManageContent } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const courseId = searchParams.get('courseId')
+    const courseId = searchParams.get('courseId') || searchParams.get('courseId')
 
     const where = courseId ? { courseId } : {}
 
@@ -45,17 +45,10 @@ export async function POST(request: NextRequest) {
     const { courseId, title, description, videoUrl, notesUrl, duration, thumbnail } =
       await request.json()
 
-    // Instructor: can only create lectures in assigned courses
-    if (isInstructor(session.role)) {
-      const assignedIds = await getInstructorCourseIds(session.userId)
-      if (!assignedIds.includes(courseId)) {
-        return NextResponse.json({ error: 'You are not assigned to this course' }, { status: 403 })
-      }
-    }
 
     const lecture = await prisma.lecture.create({
       data: {
-        courseId,
+        courseId: courseId,
         title,
         description,
         videoUrl,

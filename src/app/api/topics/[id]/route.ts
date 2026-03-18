@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, canManageContent, isInstructor, getInstructorCourseIds } from '@/lib/auth'
+import { getSession, canManageContent } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function PUT(
@@ -13,16 +13,6 @@ export async function PUT(
     if (!canManageContent(session.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { id } = await params
-
-    // Instructor: verify topic belongs to an assigned course
-    if (isInstructor(session.role)) {
-      const topic = await prisma.topic.findUnique({ where: { id }, select: { courseId: true } })
-      if (!topic) return NextResponse.json({ error: 'Topic not found' }, { status: 404 })
-      const assignedIds = await getInstructorCourseIds(session.userId)
-      if (!assignedIds.includes(topic.courseId)) {
-        return NextResponse.json({ error: 'You are not assigned to this course' }, { status: 403 })
-      }
-    }
 
     const { title, order } = await request.json()
 
@@ -58,16 +48,6 @@ export async function DELETE(
     if (!canManageContent(session.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { id } = await params
-
-    // Instructor: verify topic belongs to an assigned course
-    if (isInstructor(session.role)) {
-      const topic = await prisma.topic.findUnique({ where: { id }, select: { courseId: true } })
-      if (!topic) return NextResponse.json({ error: 'Topic not found' }, { status: 404 })
-      const assignedIds = await getInstructorCourseIds(session.userId)
-      if (!assignedIds.includes(topic.courseId)) {
-        return NextResponse.json({ error: 'You are not assigned to this course' }, { status: 403 })
-      }
-    }
 
     const topicToDelete = await prisma.topic.findUnique({
       where: { id },

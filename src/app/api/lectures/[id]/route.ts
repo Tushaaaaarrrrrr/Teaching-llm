@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, canManageContent, isInstructor, getInstructorCourseIds } from '@/lib/auth'
+import { getSession, canManageContent } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(
@@ -52,19 +52,10 @@ export async function PUT(
     const { courseId, title, description, videoUrl, notesUrl, duration, thumbnail } =
       await request.json()
 
-    // Instructor: can only edit lectures in assigned courses
-    if (isInstructor(session.role)) {
-      const lecture = await prisma.lecture.findUnique({ where: { id }, select: { courseId: true } })
-      if (!lecture) return NextResponse.json({ error: 'Lecture not found' }, { status: 404 })
-      const assignedIds = await getInstructorCourseIds(session.userId)
-      if (!assignedIds.includes(lecture.courseId)) {
-        return NextResponse.json({ error: 'You are not assigned to this course' }, { status: 403 })
-      }
-    }
 
     const updatedLecture = await prisma.lecture.update({
       where: { id },
-      data: { courseId, title, description, videoUrl, notesUrl, duration, thumbnail },
+      data: { courseId: courseId, title, description, videoUrl, notesUrl, duration, thumbnail },
     })
 
     logActivity({
@@ -100,15 +91,6 @@ export async function DELETE(
 
     const { id } = await params
 
-    // Instructor: can only delete lectures in assigned courses
-    if (isInstructor(session.role)) {
-      const lecture = await prisma.lecture.findUnique({ where: { id }, select: { courseId: true } })
-      if (!lecture) return NextResponse.json({ error: 'Lecture not found' }, { status: 404 })
-      const assignedIds = await getInstructorCourseIds(session.userId)
-      if (!assignedIds.includes(lecture.courseId)) {
-        return NextResponse.json({ error: 'You are not assigned to this course' }, { status: 403 })
-      }
-    }
 
     const existing = await prisma.lecture.findUnique({ where: { id }, select: { title: true } })
 

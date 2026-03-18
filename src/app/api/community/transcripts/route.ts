@@ -16,17 +16,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get('courseId')
 
-    // If no courseId, return list of all courses with message counts
+    // If no courseId, return list of all classes with message counts
     if (!courseId) {
-      const courses = await prisma.course.findMany({
+      const classes = await prisma.course.findMany({
         include: {
           _count: { select: { communityMessages: true } },
         },
         orderBy: { name: 'asc' },
       })
 
-      const coursesWithStats = await Promise.all(
-        courses.map(async (cls) => {
+      const classesWithStats = await Promise.all(
+        classes.map(async (cls) => {
           const deletedCount = await prisma.communityMessage.count({
             where: { courseId: cls.id, isDeleted: true },
           })
@@ -41,10 +41,10 @@ export async function GET(request: NextRequest) {
         })
       )
 
-      return NextResponse.json({ courses: coursesWithStats })
+      return NextResponse.json({ classes: classesWithStats })
     }
 
-    // Fetch all messages for this course, including deleted ones with full content
+    // Fetch all messages for this class, including deleted ones with full content
     const messages = await prisma.communityMessage.findMany({
       where: { courseId },
       include: {

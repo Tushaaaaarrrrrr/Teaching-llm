@@ -12,44 +12,25 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 20
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: Record<string, any> = { type: 'live' }
+    const where: Record<string, any> = {}
     if (status) where.status = status
 
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
     if (accessibleCourseIds !== null) {
-      where.OR = [
-        { courseId: null },
-        { courseId: { in: accessibleCourseIds } },
-      ]
+      where.courseId = { in: accessibleCourseIds }
     }
 
-    const events = await (prisma.calendarEvent as any).findMany({
+    const liveSessions = await prisma.liveSession.findMany({
       where,
       include: {
-        course: { select: { id: true, name: true, color: true } },
-        instructor: { select: { name: true } },
+        course: { select: { name: true } },
       },
       orderBy: { date: 'desc' },
-      take: limit,
     })
 
-    // Map to expected LiveSession format for the UI
-    const mapped = events.map(e => ({
-      id: e.id,
-      title: e.title,
-      description: e.description,
-      instructor: e.instructor?.name || 'Teacher',
-      date: e.date,
-      time: e.time,
-      status: e.status,
-      meetingLink: e.meetingLink,
-      course: e.course ? { name: e.course.name, color: e.course.color } : { name: 'General', color: '#6366f1' }
-    }))
-
-    return NextResponse.json(mapped)
+    return NextResponse.json(liveSessions)
   } catch (error) {
     console.error('Error fetching live sessions:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -67,36 +48,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { courseId, title, description, meetingLink, instructorId, instructor, date, time, status } =
+    const { courseId, title, description, meetingLink, instructor, date, time, status } =
       await request.json()
 
-    // Verify ADMIN has access to the target course
-    if (session.role === 'ADMIN' && courseId) {
+    // Verify ADMIN has access to the target class
+    if (session.role === 'ADMIN') {
       const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
       if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
-        return NextResponse.json({ error: 'No access to this course' }, { status: 403 })
+        return NextResponse.json({ error: 'No access to this class' }, { status: 403 })
       }
     }
 
-    // Create a calendar event with 'live' type
-    const event = await (prisma.calendarEvent as any).create({
+    // Get the class name for linking to the calendar event
+    let className: string | null = null
+    if (courseId) {
+      const cls = await prisma.course.findUnique({ where: { id: courseId }, select: { name: true } })
+      className = cls?.name || null
+    }
+
+    const liveSession = await prisma.liveSession.create({
       data: {
+        courseId,
         title,
         description,
+        meetingLink,
+        instructor,
         date,
         time,
-        type: 'live',
-        courseId: courseId || null,
-        instructorId: instructorId || null,
-        meetingLink,
-        status: status || 'scheduled',
+        status,
         createdById: session.userId,
       },
-      include: {
-        course: { select: { name: true, color: true } },
-        instructor: { select: { name: true } }
-      }
     })
+
+    // Auto-create a calendar event linked to the same class
+    if (date) {
+      await prisma.calendarEvent.create({
+        data: {
+          title: `Live: ${title}`,
+          description: instructor ? `Instructor: ${instructor}` : description || null,
+          date,
+          time: time || null,
+          type: 'class',
+          courseId: courseId || null,
+          relatedCourse: className,
+          createdById: session.userId,
+        },
+      })
+    }
 
     logActivity({
       userId: session.userId,
@@ -105,21 +103,10 @@ export async function POST(request: NextRequest) {
       actionType: ACTION.SESSION_CREATED,
       actionDescription: `${session.name} created live session "${title}"`,
       moduleName: MODULE.LIVE_SESSIONS,
-      targetId: event.id,
+      targetId: liveSession.id,
     })
 
-    // Return in the format the frontend expects
-    return NextResponse.json({
-        id: event.id,
-        title: event.title,
-        description: event.description,
-        instructor: event.instructor?.name || instructor || 'Teacher',
-        date: event.date,
-        time: event.time,
-        status: event.status,
-        meetingLink: event.meetingLink,
-        course: event.course ? { name: event.course.name, color: event.course.color } : { name: 'General', color: '#6366f1' }
-    }, { status: 201 })
+    return NextResponse.json(liveSession, { status: 201 })
   } catch (error) {
     console.error('Error creating live session:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

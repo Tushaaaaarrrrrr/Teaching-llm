@@ -20,7 +20,6 @@ export async function GET() {
         avatar: true,
         securityNumber: true,
         createdAt: true,
-        ...(session.role === 'MANAGER' ? { gender: true } : {}),
       },
     })
 
@@ -42,7 +41,6 @@ export async function GET() {
           avatar: true,
           securityNumber: true,
           createdAt: true,
-          ...(session.role === 'MANAGER' ? { gender: true } : {}),
         },
       })
     }
@@ -61,7 +59,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { name, gender } = await request.json()
+    const { name } = await request.json()
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
@@ -69,10 +67,7 @@ export async function PUT(request: NextRequest) {
 
     const user = await prisma.user.update({
       where: { id: session.userId },
-      data: { 
-        name: name?.trim(),
-        gender: gender 
-      },
+      data: { name: name.trim() },
       select: {
         id: true,
         name: true,
@@ -80,7 +75,6 @@ export async function PUT(request: NextRequest) {
         role: true,
         avatar: true,
         createdAt: true,
-        ...(session.role === 'MANAGER' ? { gender: true } : {}),
       },
     })
 

@@ -9,13 +9,13 @@ interface CalEvent {
   date: string
   time: string
   type: string
-  courseId?: string | null
-  course?: { id: string; name: string; color: string } | null
+  classId?: string | null
+  class?: { id: string; name: string; color: string } | null
   instructorId?: string | null
   instructor?: { id: string; name: string } | null
 }
 
-interface CourseOption {
+interface ClassOption {
   id: string
   name: string
   color: string
@@ -31,26 +31,24 @@ interface UserInfo {
 }
 
 const TYPE_COLORS: Record<string, { bg: string; color: string; label: string }> = {
-  course: { bg: '#e0e7ff', color: '#6366f1', label: 'Course' },
+  class: { bg: '#e0e7ff', color: '#6366f1', label: 'Class' },
   exam: { bg: '#fee2e2', color: '#ef4444', label: 'Exam' },
   assignment: { bg: '#fef3c7', color: '#f59e0b', label: 'Assignment' },
   event: { bg: '#d1fae5', color: '#10b981', label: 'Event' },
   holiday: { bg: '#d0d2d9', color: '#6b6b8a', label: 'Holiday' },
-  live: { bg: '#dcfce7', color: '#16a34a', label: 'Live' },
 }
 
 const EVENT_TYPES = [
-  { value: 'course', label: 'Course' },
+  { value: 'class', label: 'Class' },
   { value: 'exam', label: 'Exam' },
   { value: 'assignment', label: 'Assignment' },
   { value: 'event', label: 'Event' },
   { value: 'holiday', label: 'Holiday' },
-  { value: 'live', label: 'Live' },
 ]
 
 export default function CalendarPage() {
   const [events, setEvents] = useState<CalEvent[]>([])
-  const [courses, setCourses] = useState<CourseOption[]>([])
+  const [classes, setClasses] = useState<ClassOption[]>([])
   const [instructors, setInstructors] = useState<InstructorOption[]>([])
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(true)
@@ -70,14 +68,14 @@ export default function CalendarPage() {
   const isAdminOrManager = user?.role === 'MANAGER' || user?.role === 'ADMIN'
 
   useEffect(() => {
-    // Load user info, courses, and instructors once
+    // Load user info, classes, and instructors once
     Promise.all([
       fetch('/api/auth/me').then(r => r.json()),
-      fetch('/api/courses').then(r => r.json()),
+      fetch('/api/classes').then(r => r.json()),
       fetch('/api/instructors').then(r => r.json()),
-    ]).then(([meData, courseData, instrData]) => {
+    ]).then(([meData, clsData, instrData]) => {
       setUser(meData.user || meData)
-      setCourses(courseData.courses || courseData || [])
+      setClasses(clsData.classes || clsData || [])
       setInstructors(instrData || [])
     }).catch(console.error)
   }, [])
@@ -127,8 +125,8 @@ export default function CalendarPage() {
       description: '',
       date: prefilledDate || '',
       time: '',
-      type: 'course',
-      courseId: '',
+      type: 'class',
+      classId: '',
       instructorId: '',
     })
     setShowModal(true)
@@ -141,8 +139,8 @@ export default function CalendarPage() {
       description: ev.description || '',
       date: ev.date || '',
       time: ev.time || '',
-      type: ev.type || 'course',
-      courseId: ev.courseId || '',
+      type: ev.type || 'class',
+      classId: ev.classId || '',
       instructorId: ev.instructorId || '',
     })
     setSelectedEvent(null)
@@ -158,11 +156,11 @@ export default function CalendarPage() {
         description: formData.description || null,
         date: formData.date,
         time: formData.time || null,
-        type: formData.type || 'course',
-        courseId: formData.courseId || null,
+        type: formData.type || 'class',
+        classId: formData.classId || null,
         instructorId: formData.instructorId || null,
-        relatedCourse: formData.courseId
-          ? courses.find(c => c.id === formData.courseId)?.name || null
+        relatedClass: formData.classId
+          ? classes.find(c => c.id === formData.classId)?.name || null
           : null,
       }
       const url = editId ? `/api/events/${editId}` : '/api/events'
@@ -290,7 +288,7 @@ export default function CalendarPage() {
                       {day}
                     </div>
                     {dayEvents.slice(0, 3).map(ev => {
-                      const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.course
+                      const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
                       return (
                         <div key={ev.id} onClick={(e) => { e.stopPropagation(); setSelectedEvent(ev) }} style={{
                           padding: '2px 6px',
@@ -332,7 +330,7 @@ export default function CalendarPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {events.sort((a, b) => a.date.localeCompare(b.date)).map(ev => {
-              const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.course
+              const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
               return (
                 <div key={ev.id} style={{
                   display: 'flex',
@@ -369,17 +367,17 @@ export default function CalendarPage() {
                     <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px' }}>
                       {ev.title}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#6b6b8a' }}>
+                    <div style={{ fontSize: '12px', color: '#9999b0' }}>
                       {ev.time && `${ev.time} · `}
-                      {ev.course?.name ? ev.course.name : ev.description || 'General (All Groups)'}
+                      {ev.class?.name ? ev.class.name : ev.description || 'General (All Groups)'}
                     </div>
                   </div>
                   <span style={{
                     fontSize: '10px', padding: '3px 10px', borderRadius: '10px', fontWeight: '600',
-                    background: ev.courseId ? (ev.course?.color || '#6366f1') + '18' : '#d0d2d9',
-                    color: ev.courseId ? (ev.course?.color || '#6366f1') : '#6b6b8a',
+                    background: ev.classId ? (ev.class?.color || '#6366f1') + '18' : '#d0d2d9',
+                    color: ev.classId ? (ev.class?.color || '#6366f1') : '#6b6b8a',
                   }}>
-                    {ev.course?.name || 'General'}
+                    {ev.class?.name || 'General'}
                   </span>
                   <span className={`badge badge-${ev.type === 'exam' ? 'danger' : ev.type === 'assignment' ? 'warning' : 'primary'}`}>
                     {tc.label}
@@ -444,12 +442,12 @@ export default function CalendarPage() {
                 <div>
                   <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Type</div>
                   <span className={`badge badge-${selectedEvent.type === 'exam' ? 'danger' : selectedEvent.type === 'assignment' ? 'warning' : 'primary'}`}>
-                    {(TYPE_COLORS[selectedEvent.type] || TYPE_COLORS.course).label}
+                    {(TYPE_COLORS[selectedEvent.type] || TYPE_COLORS.class).label}
                   </span>
                 </div>
                 <div>
                   <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Subject</div>
-                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.course?.name || 'General (All Groups)'}</div>
+                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.class?.name || 'General (All Groups)'}</div>
                 </div>
               </div>
               {selectedEvent.instructor && (
@@ -512,17 +510,17 @@ export default function CalendarPage() {
                 <label className="form-label">Subject / Course</label>
                 <select
                   className="form-input"
-                  value={formData.courseId || ''}
-                  onChange={e => set('courseId', e.target.value)}
+                  value={formData.classId || ''}
+                  onChange={e => set('classId', e.target.value)}
                 >
                   <option value="">General (visible to all groups)</option>
-                  {courses.map(c => (
+                  {classes.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
                 <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
-                  {formData.courseId
-                    ? 'Only members enrolled in this course will see this event.'
+                  {formData.classId
+                    ? 'Only members enrolled in this subject will see this event.'
                     : 'This event will be visible to everyone.'}
                 </p>
               </div>
@@ -550,7 +548,7 @@ export default function CalendarPage() {
                 <label className="form-label">Type</label>
                 <select
                   className="form-input"
-                  value={formData.type || 'course'}
+                  value={formData.type || 'class'}
                   onChange={e => set('type', e.target.value)}
                 >
                   {EVENT_TYPES.map(t => (

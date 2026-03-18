@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { validateLength, sanitizeInput } from '@/lib/validation'
 
 export async function GET(
   _request: NextRequest,
@@ -34,15 +33,9 @@ export async function POST(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { content } = await request.json()
- 
-    if (!content || !validateLength(content, 2000)) {
-      return NextResponse.json({ error: 'Reply content must be between 1 and 2,000 characters' }, { status: 400 })
-    }
-
-    const sanitizedContent = sanitizeInput(content)
 
     const reply = await prisma.ticketReply.create({
-      data: { ticketId: params.id, senderId: session.userId, content: sanitizedContent },
+      data: { ticketId: params.id, senderId: session.userId, content },
       include: { sender: { select: { id: true, name: true, role: true } } },
     })
 

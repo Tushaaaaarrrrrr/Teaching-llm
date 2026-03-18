@@ -13,9 +13,9 @@ export const MODULE = {
   ANNOUNCEMENTS: 'Announcements',
   COMMUNITY: 'Community',
   SUPPORT: 'Support',
+  EXAMS: 'Exams',
   PROFILE: 'Profile',
   FAQ: 'FAQ',
-  EXAMS: 'Exams',
 } as const
 
 export const ACTION = {
@@ -63,10 +63,13 @@ export const ACTION = {
   FAQ_CREATED: 'FAQ_CREATED',
   FAQ_UPDATED: 'FAQ_UPDATED',
   FAQ_DELETED: 'FAQ_DELETED',
+  EXAM_CREATED: 'EXAM_CREATED',
+  EXAM_UPDATED: 'EXAM_UPDATED',
+  EXAM_DELETED: 'EXAM_DELETED',
+  EXAM_SUBMITTED: 'EXAM_SUBMITTED',
   POLL_CREATED: 'POLL_CREATED',
   POLL_VOTED: 'POLL_VOTED',
-  EXAM_CREATED: 'EXAM_CREATED',
-  EXAM_SUBMITTED: 'EXAM_SUBMITTED',
+  POLL_DELETED: 'POLL_DELETED',
 } as const
 
 interface LogActivityParams {
