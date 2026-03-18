@@ -138,6 +138,7 @@ export default function AnnouncementsPage() {
   const [submitting,    setSubmitting]    = useState(false)
   const [expandedId,    setExpandedId]    = useState<string | null>(highlightId)
   const [activeTab,     setActiveTab]     = useState<FilterTab>('all')
+  const [editId,        setEditId]        = useState<string | null>(null)
 
   // Form state
   const [title,   setTitle]   = useState('')
@@ -184,6 +185,36 @@ export default function AnnouncementsPage() {
     }
   }
 
+  async function handleDelete(id: string) {
+    if (!confirm('Are you sure you want to delete this announcement?')) return
+    try {
+      const res = await fetch(`/api/announcements/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setAnnouncements(prev => prev.filter(a => a.id !== id))
+      }
+    } catch { /* ignore */ }
+  }
+
+  function handleEdit(a: Announcement) {
+    setEditId(a.id)
+    setTitle(a.title)
+    setContent(a.content)
+    setType(a.type)
+    setCourseId(a.courseId || '')
+    setContentType(a.imageUrl ? 'image' : a.poll ? 'poll' : 'post')
+    setSelectedImage(a.imageUrl ? a.imageUrl : null)
+    setCroppedImage(null)
+    if (a.poll) {
+      setPollQuestion(a.poll.question)
+      setPollOptions(a.poll.options.map(o => o.text))
+    } else {
+      setPollQuestion('')
+      setPollOptions(['', ''])
+    }
+    setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !content.trim()) return
@@ -208,8 +239,10 @@ export default function AnnouncementsPage() {
         expiresAt: new Date(Date.now() + pollExpiry * 60 * 60 * 1000).toISOString()
       } : null
 
-      const res = await fetch('/api/announcements', {
-        method: 'POST',
+      const url = editId ? `/api/announcements/${editId}` : '/api/announcements'
+      const method = editId ? 'PUT' : 'POST'
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           title: title.trim(), 
@@ -222,7 +255,11 @@ export default function AnnouncementsPage() {
       })
       if (res.ok) {
         const newAnn = await res.json()
-        setAnnouncements(prev => [newAnn, ...prev])
+        if (editId) {
+          setAnnouncements(prev => prev.map(a => a.id === editId ? newAnn : a))
+        } else {
+          setAnnouncements(prev => [newAnn, ...prev])
+        }
         resetForm()
       }
     } catch { /* ignore */ } finally {
@@ -231,6 +268,7 @@ export default function AnnouncementsPage() {
   }
 
   function resetForm() {
+    setEditId(null)
     setTitle('')
     setContent('')
     setType('info')
@@ -284,7 +322,7 @@ export default function AnnouncementsPage() {
     } catch { /* ignore */ }
   }
 
-  const isAdminOrManager = userRole === 'MANAGER' || userRole === 'ADMIN'
+  const isManager = userRole === 'MANAGER'
 
   const filtered = announcements.filter(a => {
     if (activeTab === 'updates') return !a.courseId
@@ -365,9 +403,9 @@ export default function AnnouncementsPage() {
         </div>
 
         {/* New Announcement button (admin/manager only) */}
-        {isAdminOrManager && (
+        {isManager && (
           <button
-            onClick={() => setShowForm(v => !v)}
+            onClick={() => { resetForm(); setShowForm(v => !v) }}
             style={{
               ...neuButton,
               background: showForm ? '#6b6b8a' : '#3636e8',
@@ -388,10 +426,10 @@ export default function AnnouncementsPage() {
       </div>
 
       {/* ── Create form ─────────────────────────────────────────────────── */}
-      {isAdminOrManager && showForm && (
+      {isManager && showForm && (
         <div style={{ ...neuCard, marginBottom: '28px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>
-            Create Announcement
+            {editId ? 'Edit Announcement' : 'Create Announcement'}
           </h3>
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -429,6 +467,17 @@ export default function AnnouncementsPage() {
                       <button 
                         type="button"
                         onClick={() => setCroppedImage(null)}
+                        style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer' }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : selectedImage ? (
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <img src={selectedImage} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
+                      <button 
+                        type="button"
+                        onClick={() => setSelectedImage(null)}
                         style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer' }}
                       >
                         ×
@@ -537,7 +586,7 @@ export default function AnnouncementsPage() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                   </svg>
-                  {submitting ? 'Publishing...' : 'Publish Announcement'}
+                  {submitting ? 'Publishing...' : (editId ? 'Update Announcement' : 'Publish Announcement')}
                 </button>
               </div>
             </div>
@@ -555,7 +604,7 @@ export default function AnnouncementsPage() {
             {activeTab === 'all' ? 'No announcements yet' : `No ${activeTab} announcements`}
           </div>
           <div style={{ fontSize: '13px', color: '#9999b0' }}>
-            {isAdminOrManager ? 'Create your first announcement using the button above.' : 'Check back later for updates.'}
+            {isManager ? 'Create your first announcement using the button above.' : 'Check back later for updates.'}
           </div>
         </div>
       ) : (
@@ -620,9 +669,21 @@ export default function AnnouncementsPage() {
                         </span>
                       )}
 
-                      <span style={{ fontSize: '12px', color: '#b0b2ba', marginLeft: 'auto' }}>
-                        {relativeTime(a.createdAt)}
-                      </span>
+                      <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', color: '#b0b2ba' }}>
+                          {relativeTime(a.createdAt)}
+                        </span>
+                        {isManager && (
+                          <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
+                            <button onClick={() => handleEdit(a)} title="Edit" style={{ background: '#e8eaf0', border: 'none', cursor: 'pointer', color: '#6366f1', width: '26px', height: '26px', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff' }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button onClick={() => handleDelete(a.id)} title="Delete" style={{ background: '#e8eaf0', border: 'none', cursor: 'pointer', color: '#ef4444', width: '26px', height: '26px', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff' }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Title */}

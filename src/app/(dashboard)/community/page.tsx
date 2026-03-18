@@ -41,6 +41,7 @@ export default function CommunityPage() {
   const [hasMore, setHasMore] = useState(true)
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [initialLoaded, setInitialLoaded] = useState(false)
+  const [showTranscript, setShowTranscript] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const prevScrollHeightRef = useRef<number>(0)
   
@@ -131,6 +132,7 @@ export default function CommunityPage() {
   // Poll messages when a course is selected - handled by SWR
   useEffect(() => {
     if (selectedCourse) {
+      setShowTranscript(false)
       loadMessages(selectedCourse.id)
     }
   }, [selectedCourse, loadMessages])
@@ -280,22 +282,14 @@ export default function CommunityPage() {
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '12px', alignItems: 'center' }}>
                 {userRole === 'MANAGER' && (
                   <button 
-                    onClick={() => window.location.href = '/chat-transcripts'}
+                    onClick={() => setShowTranscript(!showTranscript)}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '8px',
                       padding: '8px 16px', borderRadius: '50px',
-                      background: '#e8eaf0', color: '#6b6b8a',
-                      boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                      background: showTranscript ? '#3636e8' : '#e8eaf0', color: showTranscript ? '#fff' : '#6b6b8a',
+                      boxShadow: showTranscript ? '4px 4px 10px rgba(54,54,232,0.35)' : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                       border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '700',
                       transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.color = '#3636e8'
-                      e.currentTarget.style.transform = 'translateY(-1px)'
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.color = '#6b6b8a'
-                      e.currentTarget.style.transform = 'translateY(0)'
                     }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -304,7 +298,7 @@ export default function CommunityPage() {
                       <line x1="16" y1="13" x2="8" y2="13"/>
                       <line x1="16" y1="17" x2="8" y2="17"/>
                     </svg>
-                    Transcripts
+                    {showTranscript ? 'Back to Chat' : 'Transcript'}
                   </button>
                 )}
                 <span style={{
@@ -317,11 +311,15 @@ export default function CommunityPage() {
               </div>
             </div>
 
-            {/* Messages */}
-            <div 
-              ref={scrollRef}
-              style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}
-            >
+            {/* Content Area */}
+            {showTranscript ? (
+              <TranscriptView course={selectedCourse} />
+            ) : (
+             <>
+              <div 
+                ref={scrollRef}
+                style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}
+              >
               {hasMore && messages.length >= 20 && (
                 <button
                   onClick={loadHistory}
@@ -523,9 +521,209 @@ export default function CommunityPage() {
                 </svg>
               </button>
             </div>
+           </>
+          )}
           </>
         )}
       </div>
     </div>
   )
 }
+
+function TranscriptView({ course }: { course: CourseItem }) {
+  const [messages, setMessages] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<'all' | 'deleted'>('all')
+  const [search, setSearch] = useState('')
+  const [exporting, setExporting] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    fetch(`/api/community/transcripts?courseId=${course.id}`)
+      .then(r => r.json())
+      .then(data => setMessages(data.messages || []))
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [course.id])
+
+  async function exportTranscript(format: 'csv' | 'json' | 'pdf') {
+    setExporting(true)
+    try {
+      const res = await fetch(`/api/community/transcripts/export?courseId=${course.id}&format=${format}`)
+      const blob = await res.blob()
+      const ext = format === 'pdf' ? 'html' : format
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `transcript-${course.name.replace(/\s+/g, '_')}.${ext}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error(e)
+    }
+    setExporting(false)
+  }
+
+  const filteredMessages = messages.filter(msg => {
+    if (filter === 'deleted' && !msg.isDeleted && !msg.isSystemDeleted) return false
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      return (
+        msg.content.toLowerCase().includes(q) ||
+        msg.sender.name.toLowerCase().includes(q) ||
+        (msg.sender.securityNumber || '').toLowerCase().includes(q)
+      )
+    }
+    return true
+  })
+
+  const neuSmall = { background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }
+  const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Filters & Export */}
+      <div style={{ padding: '10px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search transcript..."
+          style={{
+            flex: 1, padding: '9px 16px', borderRadius: '50px',
+            border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13px',
+            ...neuInset, color: '#1e1e3a', minWidth: '200px'
+          }}
+        />
+        <div style={{ display: 'flex', gap: '4px' }}>
+          {(['all', 'deleted'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              style={{
+                padding: '6px 14px', borderRadius: '50px', border: 'none',
+                cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                background: filter === f ? '#3636e8' : '#e8eaf0',
+                color: filter === f ? '#fff' : '#6b6b8a',
+                boxShadow: filter === f
+                  ? '4px 4px 10px rgba(54,54,232,0.25)'
+                  : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                transition: 'all 0.2s',
+              }}
+            >
+              {f === 'all' ? 'All' : 'Deleted Only'}
+            </button>
+          ))}
+        </div>
+        <div style={{ width: '1px', height: '20px', background: '#c5c7cf', margin: '0 8px' }} />
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {(['csv', 'json', 'pdf'] as const).map(fmt => (
+            <button
+              key={fmt}
+              onClick={() => exportTranscript(fmt)}
+              disabled={exporting || messages.length === 0}
+              style={{
+                padding: '6px 14px', borderRadius: '50px', border: 'none',
+                cursor: exporting ? 'default' : 'pointer',
+                fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                ...neuSmall, color: exporting ? '#9999b0' : '#3636e8',
+                transition: 'all 0.2s',
+              }}
+            >
+              {fmt === 'pdf' ? 'PDF' : fmt.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Transcript table */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#9999b0', fontWeight: '600' }}>Loading transcript...</div>
+        ) : filteredMessages.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#9999b0' }}>
+            <p style={{ fontWeight: '700' }}>No messages found</p>
+            <p style={{ fontSize: '13px', marginTop: '4px' }}>
+              {filter === 'deleted' ? 'No deleted messages in this community' : search ? 'Try a different search term' : 'This community has no messages yet'}
+            </p>
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ position: 'sticky', top: 0, background: '#e8eaf0', zIndex: 1 }}>
+                <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>User</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Time</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Message</th>
+                <th style={{ textAlign: 'center', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredMessages.map(msg => {
+                const isDel = msg.isDeleted || msg.isSystemDeleted
+                return (
+                  <tr
+                    key={msg.id}
+                    style={{ background: isDel ? '#fff5f5' : 'transparent', transition: 'background 0.15s' }}
+                    onMouseEnter={e => { if (!isDel) e.currentTarget.style.background = '#f0f0f8' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = isDel ? '#fff5f5' : 'transparent' }}
+                  >
+                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{
+                          width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
+                          background: msg.sender.role !== 'STUDENT' ? '#3636e8' : '#e8eaf0',
+                          boxShadow: msg.sender.role !== 'STUDENT' ? 'none' : '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '10px', fontWeight: '800',
+                          color: msg.sender.role !== 'STUDENT' ? '#fff' : '#6b6b8a',
+                        }}>
+                          {msg.sender.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: '700', fontSize: '13px' }}>{msg.sender.name}</div>
+                          <div style={{ fontSize: '10px', color: '#9999b0' }}>{msg.sender.role}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap', color: '#6b6b8a', fontSize: '12px' }}>
+                      {new Date(msg.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', maxWidth: '400px', wordBreak: 'break-word' }}>
+                      <span style={{ color: isDel ? '#ef4444' : '#1e1e3a' }}>
+                        {msg.content}
+                      </span>
+                      {isDel && (
+                        <span style={{
+                          marginLeft: '8px', fontSize: '10px', fontWeight: '700',
+                          background: '#fef2f2', color: '#ef4444',
+                          padding: '1px 8px', borderRadius: '50px',
+                        }}>
+                          DELETED
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', textAlign: 'center' }}>
+                      {isDel ? (
+                        <span style={{
+                          padding: '3px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
+                          background: '#fef2f2', color: '#ef4444',
+                        }}>Deleted</span>
+                      ) : (
+                        <span style={{
+                          padding: '3px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
+                          background: '#f0fdf4', color: '#22c55e',
+                        }}>Active</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+}
+
