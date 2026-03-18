@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isManager } from '@/lib/auth'
 
-// GET: Return transcript data for a community (classId query param)
+// GET: Return transcript data for a community (courseId query param)
 // Manager-only — includes ALL messages, including deleted ones with original content
 export async function GET(request: NextRequest) {
   try {
@@ -14,21 +14,21 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const classId = searchParams.get('classId')
+    const courseId = searchParams.get('courseId')
 
-    // If no classId, return list of all classes with message counts
-    if (!classId) {
-      const classes = await prisma.class.findMany({
+    // If no courseId, return list of all courses with message counts
+    if (!courseId) {
+      const courses = await prisma.course.findMany({
         include: {
           _count: { select: { communityMessages: true } },
         },
         orderBy: { name: 'asc' },
       })
 
-      const classesWithStats = await Promise.all(
-        classes.map(async (cls) => {
+      const coursesWithStats = await Promise.all(
+        courses.map(async (cls) => {
           const deletedCount = await prisma.communityMessage.count({
-            where: { classId: cls.id, isDeleted: true },
+            where: { courseId: cls.id, isDeleted: true },
           })
           return {
             id: cls.id,
@@ -41,12 +41,12 @@ export async function GET(request: NextRequest) {
         })
       )
 
-      return NextResponse.json({ classes: classesWithStats })
+      return NextResponse.json({ courses: coursesWithStats })
     }
 
-    // Fetch all messages for this class, including deleted ones with full content
+    // Fetch all messages for this course, including deleted ones with full content
     const messages = await prisma.communityMessage.findMany({
-      where: { classId },
+      where: { courseId },
       include: {
         sender: {
           select: {
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
             securityNumber: true,
           },
         },
-        class: {
+        course: {
           select: {
             name: true,
             subject: true,

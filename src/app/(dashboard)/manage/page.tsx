@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from 'react'
 
-type Tab = 'classes' | 'lectures' | 'sessions' | 'materials' | 'announcements'
+type Tab = 'courses' | 'lectures' | 'sessions' | 'materials' | 'announcements'
 
 export default function ManagePage() {
-  const [tab, setTab] = useState<Tab>('classes')
-  const [classes, setClasses]           = useState<any[]>([])
+  const [tab, setTab] = useState<Tab>('courses')
+  const [courses, setCourses]           = useState<any[]>([])
   const [lectures, setLectures]         = useState<any[]>([])
   const [sessions, setSessions]         = useState<any[]>([])
   const [materials, setMaterials]       = useState<any[]>([])
   const [announcements, setAnnouncements] = useState<any[]>([])
+  const [instructors, setInstructors]     = useState<any[]>([])
   const [loading, setLoading]           = useState(true)
   const [showModal, setShowModal]       = useState(false)
   const [editId, setEditId]             = useState<string | null>(null)
@@ -18,7 +19,7 @@ export default function ManagePage() {
   const [saving, setSaving]             = useState(false)
 
   // For lecture / material forms: topic selector
-  const [topicsForClass, setTopicsForClass] = useState<any[]>([])
+  const [topicsForCourse, setTopicsForCourse] = useState<any[]>([])
   const [loadingTopics, setLoadingTopics]   = useState(false)
 
   useEffect(() => { loadData() }, [])
@@ -26,28 +27,30 @@ export default function ManagePage() {
   async function loadData() {
     setLoading(true)
     try {
-      const [cls, lec, sess, mat, ann] = await Promise.all([
-        fetch('/api/classes').then(r => r.json()),
+      const [cls, lec, sess, mat, ann, inst] = await Promise.all([
+        fetch('/api/courses').then(r => r.json()),
         fetch('/api/content?hasVideo=true').then(r => r.json()),
         fetch('/api/live-sessions').then(r => r.json()),
         fetch('/api/content?hasPpt=true').then(r => r.json()),
         fetch('/api/announcements').then(r => r.json()),
+        fetch('/api/instructors').then(r => r.json()),
       ])
-      setClasses(cls.classes || cls || [])
+      setCourses(cls.courses || cls || [])
       setLectures(lec.content || [])
       setSessions(sess.sessions || sess || [])
       setMaterials(mat.content || [])
       setAnnouncements(ann.announcements || ann || [])
+      setInstructors(inst || [])
     } catch (e) { console.error(e) }
     setLoading(false)
   }
 
-  async function loadTopicsForClass(classId: string) {
-    if (!classId) { setTopicsForClass([]); return }
+  async function loadTopicsForCourse(courseId: string) {
+    if (!courseId) { setTopicsForCourse([]); return }
     setLoadingTopics(true)
     try {
-      const data = await fetch(`/api/classes/${classId}/topics`).then(r => r.json())
-      setTopicsForClass(Array.isArray(data) ? data : [])
+      const data = await fetch(`/api/courses/${courseId}/topics`).then(r => r.json())
+      setTopicsForCourse(Array.isArray(data) ? data : [])
     } catch (e) { console.error(e) }
     setLoadingTopics(false)
   }
@@ -55,15 +58,15 @@ export default function ManagePage() {
   function openCreate() {
     setEditId(null)
     setFormData({})
-    setTopicsForClass([])
+    setTopicsForCourse([])
     setShowModal(true)
   }
 
   function openEdit(item: any) {
     setEditId(item.id)
     if (tab === 'lectures' || tab === 'materials') {
-      // Content items carry their class info via topic relation
-      const classId = item.topic?.classId || ''
+      // Content items carry their course info via topic relation
+      const courseId = item.topic?.courseId || ''
       setFormData({
         id: item.id,
         title: item.title || '',
@@ -71,13 +74,13 @@ export default function ManagePage() {
         videoUrl: item.videoUrl || '',
         pptUrl: item.pptUrl || '',
         topicId: item.topicId || '',
-        classId,
+        courseId,
       })
-      setTopicsForClass([])
+      setTopicsForCourse([])
       setShowModal(true)
-      if (classId) loadTopicsForClass(classId)
+      if (courseId) loadTopicsForCourse(courseId)
     } else {
-      setFormData({ ...item, classId: item.classId || item.class?.id || '' })
+      setFormData({ ...item, courseId: item.courseId || item.course?.id || '' })
       setShowModal(true)
     }
   }
@@ -103,7 +106,7 @@ export default function ManagePage() {
         }
       } else {
         const endpoints: Record<Tab, string> = {
-          classes:       '/api/classes',
+          courses:       '/api/courses',
           lectures:      '',            // handled above
           sessions:      '/api/live-sessions',
           materials:     '',            // handled above
@@ -129,7 +132,7 @@ export default function ManagePage() {
       await fetch(`/api/content/${id}`, { method: 'DELETE' })
     } else {
       const endpoints: Record<Tab, string> = {
-        classes:       '/api/classes',
+        courses:       '/api/courses',
         lectures:      '',
         sessions:      '/api/live-sessions',
         materials:     '',
@@ -141,7 +144,7 @@ export default function ManagePage() {
   }
 
   const tabs: Array<{ key: Tab; label: string; count: number }> = [
-    { key: 'classes',       label: 'Classes',       count: classes.length },
+    { key: 'courses',       label: 'Courses',       count: courses.length },
     { key: 'lectures',      label: 'Lectures',      count: lectures.length },
     { key: 'sessions',      label: 'Live Sessions', count: sessions.length },
     { key: 'materials',     label: 'Materials',     count: materials.length },
@@ -153,20 +156,20 @@ export default function ManagePage() {
   function renderForm() {
     const f = formData
     const set = (key: string, val: string) => setFormData(prev => ({ ...prev, [key]: val }))
-    const classOptions = classes.map(c => ({ value: c.id, label: c.name }))
+    const courseOptions = courses.map(c => ({ value: c.id, label: c.name }))
 
-    // shared class + topic selector used in lectures & materials
-    const classTopicSelector = (
+    // shared course + topic selector used in lectures & materials
+    const courseTopicSelector = (
       <>
         <div className="form-group">
-          <label className="form-label">Class *</label>
+          <label className="form-label">Course *</label>
           <select
             className="form-input"
-            value={f.classId || ''}
-            onChange={e => { set('classId', e.target.value); set('topicId', ''); loadTopicsForClass(e.target.value) }}
+            value={f.courseId || ''}
+            onChange={e => { set('courseId', e.target.value); set('topicId', ''); loadTopicsForCourse(e.target.value) }}
           >
-            <option value="">Select class...</option>
-            {classOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <option value="">Select course...</option>
+            {courseOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
         <div className="form-group">
@@ -175,14 +178,14 @@ export default function ManagePage() {
             className="form-input"
             value={f.topicId || ''}
             onChange={e => set('topicId', e.target.value)}
-            disabled={!f.classId || loadingTopics}
+            disabled={!f.courseId || loadingTopics}
           >
             <option value="">{loadingTopics ? 'Loading topics…' : 'Select topic…'}</option>
-            {topicsForClass.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+            {topicsForCourse.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
           </select>
-          {f.classId && !loadingTopics && topicsForClass.length === 0 && (
+          {f.courseId && !loadingTopics && topicsForCourse.length === 0 && (
             <p style={{ fontSize: '11px', color: '#ef4444', marginTop: '4px' }}>
-              No topics found. Add a topic in the Classes tab first.
+              No topics found. Add a topic in the Courses tab first.
             </p>
           )}
         </div>
@@ -190,12 +193,12 @@ export default function ManagePage() {
     )
 
     switch (tab) {
-      case 'classes':
+      case 'courses':
         return (
           <>
-            <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="Class name" /></div>
+            <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="Course name" /></div>
             <div className="form-group"><label className="form-label">Subject</label><input className="form-input" value={f.subject || ''} onChange={e => set('subject', e.target.value)} placeholder="e.g. Computer Science" /></div>
-            <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} placeholder="Class description" rows={3} style={{ resize: 'vertical' }} /></div>
+            <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} placeholder="Course description" rows={3} style={{ resize: 'vertical' }} /></div>
             <div className="form-group">
               <label className="form-label">Expiry Date (Course Access Deadline)</label>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -247,7 +250,7 @@ export default function ManagePage() {
       case 'lectures':
         return (
           <>
-            {classTopicSelector}
+            {courseTopicSelector}
             <div className="form-group"><label className="form-label">Lecture Title *</label><input className="form-input" value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="e.g. Introduction to Variables" /></div>
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} rows={2} style={{ resize: 'vertical' }} /></div>
             <div className="form-group"><label className="form-label">Video URL *</label><input className="form-input" value={f.videoUrl || ''} onChange={e => set('videoUrl', e.target.value)} placeholder="https://youtube.com/watch?v=… or direct video link" /></div>
@@ -258,9 +261,23 @@ export default function ManagePage() {
       case 'sessions':
         return (
           <>
-            <div className="form-group"><label className="form-label">Class *</label><select className="form-input" value={f.classId || ''} onChange={e => set('classId', e.target.value)}><option value="">Select class...</option>{classOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
+            <div className="form-group"><label className="form-label">Course *</label><select className="form-input" value={f.courseId || ''} onChange={e => set('courseId', e.target.value)}><option value="">Select course...</option>{courseOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
             <div className="form-group"><label className="form-label">Title *</label><input className="form-input" value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="Session title" /></div>
-            <div className="form-group"><label className="form-label">Instructor</label><input className="form-input" value={f.instructor || ''} onChange={e => set('instructor', e.target.value)} placeholder="Instructor name" /></div>
+            <div className="form-group">
+              <label className="form-label">Teacher</label>
+              <select 
+                className="form-input" 
+                value={f.instructorId || ''} 
+                onChange={e => {
+                  set('instructorId', e.target.value);
+                  const name = instructors.find(i => i.id === e.target.value)?.name || '';
+                  set('instructor', name);
+                }}
+              >
+                <option value="">Select teacher...</option>
+                {instructors.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+              </select>
+            </div>
             <div className="form-group"><label className="form-label">Meeting Link *</label><input className="form-input" value={f.meetingLink || ''} onChange={e => set('meetingLink', e.target.value)} placeholder="https://meet.jit.si/..." /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div className="form-group"><label className="form-label">Date *</label><input type="date" className="form-input" value={f.date || ''} onChange={e => set('date', e.target.value)} /></div>
@@ -273,7 +290,7 @@ export default function ManagePage() {
       case 'materials':
         return (
           <>
-            {classTopicSelector}
+            {courseTopicSelector}
             <div className="form-group"><label className="form-label">Material Title *</label><input className="form-input" value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="e.g. Week 1 Slides" /></div>
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} rows={2} style={{ resize: 'vertical' }} /></div>
             <div className="form-group"><label className="form-label">File URL *</label><input className="form-input" value={f.pptUrl || ''} onChange={e => set('pptUrl', e.target.value)} placeholder="https://… (PDF, PPT, DOCX, etc.)" /></div>
@@ -294,7 +311,7 @@ export default function ManagePage() {
 
   function getItems(): any[] {
     switch (tab) {
-      case 'classes':       return classes
+      case 'courses':       return courses
       case 'lectures':      return lectures
       case 'sessions':      return sessions
       case 'materials':     return materials
@@ -361,20 +378,20 @@ export default function ManagePage() {
               const rawDetail = item.description || item.content || item.duration || ''
               const itemDetail = rawDetail.length > 72 ? rawDetail.slice(0, 69) + '…' : rawDetail
 
-              // For content items class lives in item.topic.class
+              // For content items course lives in item.topic.course
               const isContent = tab === 'lectures' || tab === 'materials'
-              const itemClassName = isContent ? item.topic?.class?.name : item.class?.name
-              const showClassName = tab !== 'announcements' && tab !== 'classes' && itemClassName
+              const itemCourseName = isContent ? item.topic?.course?.name : item.course?.name
+              const showCourseName = tab !== 'announcements' && tab !== 'courses' && itemCourseName
 
-              // Build subtitle: ClassName › TopicName · description
+              // Build subtitle: CourseName › TopicName · description
               const subtitleParts: string[] = []
-              if (showClassName) subtitleParts.push(itemClassName)
+              if (showCourseName) subtitleParts.push(itemCourseName)
               if (isContent && item.topic?.title) subtitleParts.push(item.topic.title)
               if (itemDetail) subtitleParts.push(itemDetail)
               const subtitle = subtitleParts.join(' › ')
 
               const iconLabel =
-                tab === 'classes'       ? item.name?.slice(0, 2).toUpperCase() :
+                tab === 'courses'       ? item.name?.slice(0, 2).toUpperCase() :
                 tab === 'sessions'      ? '▶' :
                 tab === 'announcements' ? '!' :
                 String(idx + 1).padStart(2, '0')
@@ -416,7 +433,7 @@ export default function ManagePage() {
 
                   {/* Details badge */}
                   <div style={{ flexShrink: 0 }}>
-                    {tab === 'classes' && (
+                    {tab === 'courses' && (
                       <span style={{ fontSize: '12px', color: '#9999b0' }}>{item._count?.lectures || 0} lectures</span>
                     )}
                     {tab === 'sessions' && (

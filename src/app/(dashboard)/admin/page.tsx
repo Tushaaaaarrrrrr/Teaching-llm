@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-interface ClassInfo {
+interface CourseInfo {
   id: string
   name: string
   color: string
@@ -10,13 +10,13 @@ interface ClassInfo {
 }
 
 interface Enrollment {
-  classId: string
-  class: ClassInfo
+  courseId: string
+  course: CourseInfo
 }
 
 interface InstructorAssignment {
-  classId: string
-  class: ClassInfo
+  courseId: string
+  course: CourseInfo
 }
 
 interface User {
@@ -35,7 +35,7 @@ interface User {
 
 export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([])
-  const [classes, setClasses] = useState<ClassInfo[]>([])
+  const [courses, setCourses] = useState<CourseInfo[]>([])
   const [userRole, setUserRole] = useState('')
   const [userPermissions, setUserPermissions] = useState({ canTerminate: false, canCreateStudents: false })
   const [loading, setLoading] = useState(true)
@@ -43,7 +43,7 @@ export default function AdminPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [form, setForm] = useState({ 
     name: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
-    classIds: [] as string[], assignedClassIds: [] as string[], 
+    courseIds: [] as string[], assignedCourseIds: [] as string[], 
     canTerminate: false, canCreateStudents: false 
   })
   const [saving, setSaving] = useState(false)
@@ -53,7 +53,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadUsers()
-    loadClasses()
+    loadCourses()
     loadUserRole()
   }, [])
 
@@ -71,11 +71,11 @@ export default function AdminPage() {
     }
   }
 
-  async function loadClasses() {
+  async function loadCourses() {
     try {
-      const res = await fetch('/api/classes')
+      const res = await fetch('/api/courses')
       const data = await res.json()
-      setClasses(data || [])
+      setCourses(data || [])
     } catch (e) {
       console.error(e)
     }
@@ -97,7 +97,7 @@ export default function AdminPage() {
     setEditId(null)
     setForm({ 
       name: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
-      classIds: [], assignedClassIds: [], 
+      courseIds: [], assignedCourseIds: [], 
       canTerminate: false, canCreateStudents: false 
     })
     setError('')
@@ -112,8 +112,8 @@ export default function AdminPage() {
       password: '',
       role: user.role,
       gender: user.gender || 'MALE',
-      classIds: user.enrollments?.map(e => e.classId) || [],
-      assignedClassIds: user.instructorAssignments?.map(a => a.classId) || [],
+      courseIds: user.enrollments?.map(e => e.courseId) || [],
+      assignedCourseIds: user.instructorAssignments?.map(a => a.courseId) || [],
       canTerminate: (user as any).canTerminate || false,
       canCreateStudents: (user as any).canCreateStudents || false,
     })
@@ -138,12 +138,12 @@ export default function AdminPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const body: Record<string, any> = { 
         name: form.name, email: form.email, role: form.role, gender: form.gender,
-        classIds: form.classIds,
+        courseIds: form.courseIds,
         canTerminate: form.canTerminate,
         canCreateStudents: form.canCreateStudents
       }
       if (form.password) body.password = form.password
-      if (form.role === 'INSTRUCTOR') body.assignedClassIds = form.assignedClassIds
+      if (form.role === 'INSTRUCTOR') body.assignedCourseIds = form.assignedCourseIds
 
       const res = await fetch(url, {
         method: editId ? 'PUT' : 'POST',
@@ -334,16 +334,16 @@ export default function AdminPage() {
                       )}
                     </div>
                     <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
-                    {/* Class badges for ADMIN/STUDENT users */}
+                    {/* Course badges for ADMIN/STUDENT users */}
                     {(user.role === 'ADMIN' || user.role === 'STUDENT') && user.enrollments && user.enrollments.length > 0 && (
                       <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
                         {user.enrollments.slice(0, 3).map(e => (
-                          <span key={e.classId} style={{
+                          <span key={e.courseId} style={{
                             padding: '2px 8px', borderRadius: '50px', fontSize: '10px', fontWeight: '600',
-                            background: e.class.color + '18', color: e.class.color,
+                            background: e.course.color + '18', color: e.course.color,
                             whiteSpace: 'nowrap',
                           }}>
-                            {e.class.name}
+                            {e.course.name}
                           </span>
                         ))}
                         {user.enrollments.length > 3 && (
@@ -355,12 +355,12 @@ export default function AdminPage() {
                     {user.role === 'INSTRUCTOR' && user.instructorAssignments && user.instructorAssignments.length > 0 && (
                       <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
                         {user.instructorAssignments.slice(0, 3).map(a => (
-                          <span key={a.classId} style={{
+                          <span key={a.courseId} style={{
                             padding: '2px 8px', borderRadius: '50px', fontSize: '10px', fontWeight: '600',
-                            background: a.class.color + '18', color: a.class.color,
+                            background: a.course.color + '18', color: a.course.color,
                             whiteSpace: 'nowrap',
                           }}>
-                            {a.class.name}
+                            {a.course.name}
                           </span>
                         ))}
                         {user.instructorAssignments.length > 3 && (
@@ -478,7 +478,7 @@ export default function AdminPage() {
               <div className="form-group">
                 <label className="form-label">Role</label>
                 {userRole === 'MANAGER' ? (
-                  <select className="form-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value, classIds: [], assignedClassIds: [] }))}>
+                  <select className="form-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value, courseIds: [], assignedCourseIds: [] }))}>
                     <option value="STUDENT">Student</option>
                     <option value="ADMIN">Admin</option>
                     <option value="INSTRUCTOR">Instructor</option>
@@ -572,30 +572,30 @@ export default function AdminPage() {
                   </label>
                 </div>
               )}
-              {/* Class assignment for ADMIN or STUDENT roles */}
+              {/* Course assignment for ADMIN or STUDENT roles */}
               {(form.role === 'ADMIN' || form.role === 'STUDENT') && (
                 <div className="form-group">
-                  <label className="form-label">Assigned {form.role === 'ADMIN' ? 'Subject' : 'Subject'} Classes</label>
+                  <label className="form-label">Assigned Subject Courses</label>
                   <div style={{
                     display: 'flex', flexDirection: 'column', gap: '6px',
                     maxHeight: '200px', overflowY: 'auto',
                     padding: '10px', borderRadius: '8px',
                     background: '#f3f4f6', border: '1px solid #e5e7eb',
                   }}>
-                    {classes.length === 0 ? (
-                      <span style={{ fontSize: '12px', color: '#9999b0' }}>No classes available</span>
+                    {courses.length === 0 ? (
+                      <span style={{ fontSize: '12px', color: '#9999b0' }}>No courses available</span>
                     ) : (
-                      classes.map(cls => (
+                      courses.map(cls => (
                         <label key={cls.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                           <input
                             type="checkbox"
-                            checked={form.classIds.includes(cls.id)}
+                            checked={form.courseIds.includes(cls.id)}
                             onChange={e => {
                               setForm(p => ({
                                 ...p,
-                                classIds: e.target.checked
-                                  ? [...p.classIds, cls.id]
-                                  : p.classIds.filter(id => id !== cls.id)
+                                courseIds: e.target.checked
+                                  ? [...p.courseIds, cls.id]
+                                  : p.courseIds.filter(id => id !== cls.id)
                               }))
                             }}
                           />
@@ -626,20 +626,20 @@ export default function AdminPage() {
                     padding: '10px', borderRadius: '8px',
                     background: '#f3f4f6', border: '1px solid #e5e7eb',
                   }}>
-                    {classes.length === 0 ? (
-                      <span style={{ fontSize: '12px', color: '#9999b0' }}>No classes available</span>
+                    {courses.length === 0 ? (
+                      <span style={{ fontSize: '12px', color: '#9999b0' }}>No courses available</span>
                     ) : (
-                      classes.map(cls => (
+                      courses.map(cls => (
                         <label key={cls.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                           <input
                             type="checkbox"
-                            checked={form.assignedClassIds.includes(cls.id)}
+                            checked={form.assignedCourseIds.includes(cls.id)}
                             onChange={e => {
                               setForm(p => ({
                                 ...p,
-                                assignedClassIds: e.target.checked
-                                  ? [...p.assignedClassIds, cls.id]
-                                  : p.assignedClassIds.filter(id => id !== cls.id)
+                                assignedCourseIds: e.target.checked
+                                  ? [...p.assignedCourseIds, cls.id]
+                                  : p.assignedCourseIds.filter(id => id !== cls.id)
                               }))
                             }}
                           />

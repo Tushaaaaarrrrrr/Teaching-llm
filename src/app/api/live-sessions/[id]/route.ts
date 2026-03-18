@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(
@@ -15,18 +15,32 @@ export async function GET(
 
     const { id } = await params
 
-    const liveSession = await prisma.liveSession.findUnique({
+    const event = await (prisma.calendarEvent as any).findUnique({
       where: { id },
       include: {
-        class: true,
+        course: { select: { id: true, name: true, color: true } },
+        instructor: { select: { id: true, name: true } },
       },
     })
 
-    if (!liveSession) {
+    if (!event || event.type !== 'live') {
       return NextResponse.json({ error: 'Live session not found' }, { status: 404 })
     }
 
-    return NextResponse.json(liveSession)
+    // Map to expected format
+    return NextResponse.json({
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      instructor: event.instructor?.name || 'Teacher',
+      instructorId: event.instructorId,
+      date: event.date,
+      time: event.time,
+      status: event.status,
+      meetingLink: event.meetingLink,
+      courseId: event.courseId,
+      course: event.course ? { name: event.course.name, color: event.course.color } : { name: 'General', color: '#6366f1' }
+    })
   } catch (error) {
     console.error('Error fetching live session:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -48,12 +62,33 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { classId, title, description, meetingLink, instructor, date, time, status } =
+    const { courseId, title, description, meetingLink, instructorId, instructor, date, time, status } =
       await request.json()
 
-    const updatedSession = await prisma.liveSession.update({
+    // Verify access for ADMIN
+    if (session.role === 'ADMIN' && courseId) {
+      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
+        return NextResponse.json({ error: 'No access to this course' }, { status: 403 })
+      }
+    }
+
+    const updatedEvent = await (prisma.calendarEvent as any).update({
       where: { id },
-      data: { classId, title, description, meetingLink, instructor, date, time, status },
+      data: {
+        courseId: courseId || null,
+        title,
+        description,
+        meetingLink,
+        instructorId: instructorId || null,
+        date,
+        time,
+        status,
+      },
+      include: {
+        course: { select: { name: true, color: true } },
+        instructor: { select: { name: true } }
+      }
     })
 
     logActivity({
@@ -61,12 +96,22 @@ export async function PUT(
       userName: session.name,
       userRole: session.role,
       actionType: ACTION.SESSION_UPDATED,
-      actionDescription: `${session.name} updated live session "${updatedSession.title}"`,
+      actionDescription: `${session.name} updated live session "${updatedEvent.title}"`,
       moduleName: MODULE.LIVE_SESSIONS,
       targetId: id,
     })
 
-    return NextResponse.json(updatedSession)
+    return NextResponse.json({
+      id: updatedEvent.id,
+      title: updatedEvent.title,
+      description: updatedEvent.description,
+      instructor: updatedEvent.instructor?.name || instructor || 'Teacher',
+      date: updatedEvent.date,
+      time: updatedEvent.time,
+      status: updatedEvent.status,
+      meetingLink: updatedEvent.meetingLink,
+      course: updatedEvent.course ? { name: updatedEvent.course.name, color: updatedEvent.course.color } : { name: 'General', color: '#6366f1' }
+    })
   } catch (error) {
     console.error('Error updating live session:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -89,19 +134,23 @@ export async function DELETE(
 
     const { id } = await params
 
-    const existingSession = await prisma.liveSession.findUnique({
+    const existingEvent = await (prisma.calendarEvent as any).findUnique({
       where: { id },
-      select: { title: true },
+      select: { title: true, type: true },
     })
 
-    await prisma.liveSession.delete({ where: { id } })
+    if (!existingEvent || existingEvent.type !== 'live') {
+      return NextResponse.json({ error: 'Live session not found' }, { status: 404 })
+    }
+
+    await (prisma.calendarEvent as any).delete({ where: { id } })
 
     logActivity({
       userId: session.userId,
       userName: session.name,
       userRole: session.role,
       actionType: ACTION.SESSION_DELETED,
-      actionDescription: `${session.name} deleted live session "${existingSession?.title ?? ''}"`,
+      actionDescription: `${session.name} deleted live session "${existingEvent.title}"`,
       moduleName: MODULE.LIVE_SESSIONS,
       targetId: id,
     })

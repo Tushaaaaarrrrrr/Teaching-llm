@@ -30,8 +30,8 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    href: '/classes',
-    label: 'Classes',
+    href: '/courses',
+    label: 'Courses',
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
@@ -41,7 +41,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     href: '/live',
-    label: 'Live Classes',
+    label: 'Live Sessions',
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="23 7 16 12 23 17 23 7"/>
@@ -94,15 +94,13 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     href: '/chat-transcripts',
-    label: 'Transcripts',
-    roles: ['MANAGER'],
+    label: 'Chat Transcripts',
+    roles: ['MANAGER', 'ADMIN'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-        <polyline points="10 9 9 9 8 9"/>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
       </svg>
     ),
   },
@@ -119,11 +117,34 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/exams',
+    label: 'Exams',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+      </svg>
+    ),
+  },
+  {
     href: '/announcements',
     label: 'Announcements',
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/reports',
+    label: 'Analytics & Performance',
+    roles: ['MANAGER', 'STUDENT'],
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
       </svg>
     ),
   },
@@ -139,7 +160,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/manage',
     label: 'Manage',
-    roles: ['MANAGER', 'ADMIN', 'INSTRUCTOR'],
+    roles: ['MANAGER', 'ADMIN'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 20h9"/>
@@ -229,41 +250,69 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
       </div>
 
       {/* Navigation items */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {visibleItems.map((item) => {
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', paddingRight: '4px' }}>
+        {visibleItems.map((item, idx) => {
           const isActive = pathname === item.href ||
             (item.href !== '/dashboard' && pathname.startsWith(item.href))
 
+          // Add Section Headers
+          const showGeneralHeader = idx === 0
+          const showResourcesHeader = item.href === '/materials'
+          const showCommunityHeader = item.href === '/community'
+          const showAdminHeader = item.href === '/manage'
+
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '11px 18px',
-                borderRadius: '50px',
-                color: isActive ? '#ffffff' : '#6b6b8a',
-                background: isActive ? '#3636e8' : '#e8eaf0',
-                boxShadow: isActive
-                  ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)'
-                  : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                textDecoration: 'none',
-                fontSize: '14.5px',
-                fontWeight: isActive ? '700' : '500',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <span style={{
-                color: isActive ? '#ffffff' : '#6b6b8a',
-                flexShrink: 0,
-                display: 'flex',
-              }}>
-                {item.icon}
-              </span>
-              {item.label}
-            </Link>
+            <div key={item.href}>
+              {showGeneralHeader && (
+                <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '4px', paddingLeft: '12px' }}>
+                  General
+                </div>
+              )}
+              {showResourcesHeader && (
+                <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '16px', paddingLeft: '12px' }}>
+                  Resources
+                </div>
+              )}
+              {showCommunityHeader && (
+                <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '16px', paddingLeft: '12px' }}>
+                  Engagement
+                </div>
+              )}
+              {showAdminHeader && (
+                <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '16px', paddingLeft: '12px' }}>
+                  Administration
+                </div>
+              )}
+              <Link
+                href={item.href}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '11px 18px',
+                  borderRadius: '50px',
+                  color: isActive ? '#ffffff' : '#6b6b8a',
+                  background: isActive ? '#3636e8' : '#e8eaf0',
+                  boxShadow: isActive
+                    ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)'
+                    : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                  fontWeight: isActive ? '700' : '500',
+                  transition: 'all 0.2s ease',
+                  marginBottom: '4px'
+                }}
+              >
+                <span style={{
+                  color: isActive ? '#ffffff' : '#6b6b8a',
+                  flexShrink: 0,
+                  display: 'flex',
+                }}>
+                  {item.icon}
+                </span>
+                {item.label}
+              </Link>
+            </div>
           )
         })}
       </div>

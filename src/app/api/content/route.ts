@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, getAccessibleClassIds } from '@/lib/auth'
+import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
-    const classId  = searchParams.get('classId')
+    const courseId  = searchParams.get('courseId')
     const topicId  = searchParams.get('topicId')
     const hasVideo = searchParams.get('hasVideo')
     const hasPpt   = searchParams.get('hasPpt')
@@ -16,21 +16,21 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: Record<string, any> = {}
 
-    const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
+    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
 
     if (topicId) {
       where.topicId = topicId
-    } else if (classId) {
-      // If a specific classId is requested, verify access
-      if (accessibleClassIds !== null && !accessibleClassIds.includes(classId)) {
+    } else if (courseId) {
+      // If a specific courseId is requested, verify access
+      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
         return NextResponse.json({ content: [] })
       }
-      where.topic = { classId }
+      where.topic = { courseId }
     }
 
-    // Apply enrollment filter when no specific classId/topicId is requested
-    if (!topicId && !classId && accessibleClassIds !== null) {
-      where.topic = { classId: { in: accessibleClassIds } }
+    // Apply enrollment filter when no specific courseId/topicId is requested
+    if (!topicId && !courseId && accessibleCourseIds !== null) {
+      where.topic = { courseId: { in: accessibleCourseIds } }
     }
 
     if (hasVideo === 'true') {
@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
             id: true,
             title: true,
             order: true,
-            classId: true,
-            class: { select: { id: true, name: true, color: true } },
+            courseId: true,
+            course: { select: { id: true, name: true, color: true } },
           },
         },
       },

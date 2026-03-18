@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, hashPassword, getAccessibleClassIds } from '@/lib/auth'
+import { getSession, isAdminOrManager, hashPassword, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET() {
@@ -18,11 +18,11 @@ export async function GET() {
     let where: Record<string, any> = {}
 
     if (session.role === 'ADMIN') {
-      const adminClassIds = await getAccessibleClassIds(session.userId, session.role)
+      const adminCourseIds = await getAccessibleCourseIds(session.userId, session.role)
       where = {
         role: 'STUDENT',
         enrollments: {
-          some: { classId: { in: adminClassIds || [] } },
+          some: { courseId: { in: adminCourseIds || [] } },
         },
       }
     }
@@ -39,14 +39,14 @@ export async function GET() {
         ...(session.role === 'MANAGER' ? { gender: true } : {}),
         enrollments: {
           select: {
-            classId: true,
-            class: { select: { id: true, name: true, color: true, subject: true } },
+            courseId: true,
+            course: { select: { id: true, name: true, color: true, subject: true } },
           },
         },
         instructorAssignments: {
           select: {
-            classId: true,
-            class: { select: { id: true, name: true, color: true, subject: true } },
+            courseId: true,
+            course: { select: { id: true, name: true, color: true, subject: true } },
           },
         },
       },
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     const { 
       name, email, password, role, gender,
-      classIds = [], assignedClassIds = [], 
+      courseIds = [], assignedCourseIds = [], 
       canTerminate = false, canCreateStudents = false 
     } = await request.json()
 
@@ -91,12 +91,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ADMINs can only assign classes they have access to
-    if (session.role === 'ADMIN' && classIds.length > 0) {
-      const adminClassIds = await getAccessibleClassIds(session.userId, session.role)
-      const unauthorized = classIds.filter((id: string) => !adminClassIds?.includes(id))
+    // ADMINs can only assign courses they have access to
+    if (session.role === 'ADMIN' && courseIds.length > 0) {
+      const adminCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+      const unauthorized = courseIds.filter((id: string) => !adminCourseIds?.includes(id))
       if (unauthorized.length > 0) {
-        return NextResponse.json({ error: 'Cannot assign classes you don\'t have access to' }, { status: 403 })
+        return NextResponse.json({ error: 'Cannot assign courses you don\'t have access to' }, { status: 403 })
       }
     }
 
@@ -133,21 +133,21 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      if (classIds.length > 0) {
+      if (courseIds.length > 0) {
         await tx.enrollment.createMany({
-          data: classIds.map((classId: string) => ({
+          data: courseIds.map((courseId: string) => ({
             userId: newUser.id,
-            classId,
+            courseId,
           })),
         })
       }
 
       // Create instructor assignments if role is INSTRUCTOR
-      if (role === 'INSTRUCTOR' && assignedClassIds.length > 0) {
+      if (role === 'INSTRUCTOR' && assignedCourseIds.length > 0) {
         await tx.instructorAssignment.createMany({
-          data: assignedClassIds.map((classId: string) => ({
+          data: assignedCourseIds.map((courseId: string) => ({
             instructorId: newUser.id,
-            classId,
+            courseId,
           })),
         })
       }

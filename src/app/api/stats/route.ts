@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, getAccessibleClassIds } from '@/lib/auth'
+import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 
 export async function GET() {
   try {
@@ -9,32 +9,33 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
+    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
 
-    const classFilter = accessibleClassIds !== null
-      ? { classId: { in: accessibleClassIds } }
+    const courseFilter = accessibleCourseIds !== null
+      ? { courseId: { in: accessibleCourseIds } }
       : {}
 
-    const classCountFilter = accessibleClassIds !== null
-      ? { id: { in: accessibleClassIds } }
+    const courseCountFilter = accessibleCourseIds !== null
+      ? { id: { in: accessibleCourseIds } }
       : {}
 
-    const [totalClasses, totalLectures, totalStudents, upcomingSessions, totalMaterials] =
+    const [totalCourses, totalLectures, totalStudents, upcomingSessions, totalMaterials] =
       await Promise.all([
-        prisma.class.count({ where: classCountFilter }),
-        prisma.lecture.count({ where: classFilter }),
-        prisma.user.count({ where: { role: 'STUDENT' } }),
-        prisma.liveSession.count({
+        (prisma.course as any).count({ where: courseCountFilter }),
+        (prisma.lecture as any).count({ where: courseFilter as any }),
+        (prisma.user as any).count({ where: { role: 'STUDENT' } }),
+        (prisma.calendarEvent as any).count({
           where: {
+            type: 'live',
             status: { in: ['scheduled', 'live'] },
-            ...classFilter,
-          },
+            ...courseFilter,
+          } as any,
         }),
-        prisma.material.count({ where: classFilter }),
+        (prisma.material as any).count({ where: courseFilter as any }),
       ])
 
     return NextResponse.json({
-      totalClasses,
+      totalCourses,
       totalLectures,
       totalStudents,
       upcomingSessions,

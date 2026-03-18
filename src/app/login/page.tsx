@@ -94,7 +94,7 @@ export default function LoginPage() {
           {/* Feature highlights */}
           {[
             { icon: '📚', label: 'Access course recordings' },
-            { icon: '🎯', label: 'Join live classes' },
+            { icon: '🎯', label: 'Join live courses' },
             { icon: '📅', label: 'Track your schedule' },
             { icon: '📄', label: 'Download study materials' },
           ].map((f) => (

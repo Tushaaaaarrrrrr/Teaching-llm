@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 export const MODULE = {
   AUTH: 'Authentication',
   USER_MGMT: 'User Management',
-  CLASSES: 'Classes',
+  COURSES: 'Courses',
   TOPICS: 'Topics',
   CONTENT: 'Content',
   LECTURES: 'Lectures',
@@ -15,6 +15,7 @@ export const MODULE = {
   SUPPORT: 'Support',
   PROFILE: 'Profile',
   FAQ: 'FAQ',
+  EXAMS: 'Exams',
 } as const
 
 export const ACTION = {
@@ -26,9 +27,9 @@ export const ACTION = {
   PASSWORD_CHANGED: 'PASSWORD_CHANGED',
   PROFILE_UPDATED: 'PROFILE_UPDATED',
   AVATAR_UPLOADED: 'AVATAR_UPLOADED',
-  CLASS_CREATED: 'CLASS_CREATED',
-  CLASS_UPDATED: 'CLASS_UPDATED',
-  CLASS_DELETED: 'CLASS_DELETED',
+  COURSE_CREATED: 'COURSE_CREATED',
+  COURSE_UPDATED: 'COURSE_UPDATED',
+  COURSE_DELETED: 'COURSE_DELETED',
   TOPIC_CREATED: 'TOPIC_CREATED',
   TOPIC_UPDATED: 'TOPIC_UPDATED',
   TOPIC_DELETED: 'TOPIC_DELETED',
@@ -62,6 +63,10 @@ export const ACTION = {
   FAQ_CREATED: 'FAQ_CREATED',
   FAQ_UPDATED: 'FAQ_UPDATED',
   FAQ_DELETED: 'FAQ_DELETED',
+  POLL_CREATED: 'POLL_CREATED',
+  POLL_VOTED: 'POLL_VOTED',
+  EXAM_CREATED: 'EXAM_CREATED',
+  EXAM_SUBMITTED: 'EXAM_SUBMITTED',
 } as const
 
 interface LogActivityParams {

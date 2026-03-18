@@ -11,7 +11,7 @@ interface LiveSession {
   time: string
   status: string
   meetingLink: string
-  class: { name: string; color: string }
+  course: { name: string; color: string }
 }
 
 // Status config — completed is handled separately to preserve existing faded style
@@ -152,7 +152,7 @@ export default function LivePage() {
                     {session.time}
                   </div>
                   <div style={{ fontSize: '11px', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    <span style={{ color: '#9999b0' }}>{session.class?.name || ''}</span>
+                    <span style={{ color: '#9999b0' }}>{session.course?.name || ''}</span>
                   </div>
                 </div>
 
@@ -282,7 +282,7 @@ export default function LivePage() {
         {/* End of schedule */}
         {sessions.length > 0 && (
           <div style={{ paddingLeft: '4px', paddingTop: '8px' }}>
-            <p style={{ fontSize: '13px', color: '#9999b0' }}>End of scheduled classes for today.</p>
+            <p style={{ fontSize: '13px', color: '#9999b0' }}>End of scheduled courses for today.</p>
           </div>
         )}
 

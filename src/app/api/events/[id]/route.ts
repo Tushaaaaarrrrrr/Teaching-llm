@@ -18,12 +18,12 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { title, description, date, time, type, relatedClass, classId, instructorId } =
+    const { title, description, date, time, type, relatedCourse, courseId, instructorId } =
       await request.json()
 
     const updatedEvent = await prisma.calendarEvent.update({
       where: { id },
-      data: { title, description, date, time, type, relatedClass, classId, instructorId: instructorId !== undefined ? (instructorId || null) : undefined },
+      data: { title, description, date, time, type, relatedCourse, courseId, instructorId: instructorId !== undefined ? (instructorId || null) : undefined },
     })
 
     logActivity({

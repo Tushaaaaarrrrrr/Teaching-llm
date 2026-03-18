@@ -8,9 +8,26 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
-  const user = await prisma.user.findUnique({
+  const user = await (prisma.user as any).findUnique({
     where: { id: session.userId },
-    select: { id: true, name: true, email: true, role: true, avatar: true, createdAt: true, canTerminate: true, canCreateStudents: true },
+    select: { 
+      id: true, name: true, email: true, role: true, avatar: true, createdAt: true, 
+      canTerminate: true, canCreateStudents: true,
+      enrollments: {
+        select: {
+          course: {
+            select: { id: true, name: true, subject: true }
+          }
+        }
+      },
+      instructorAssignments: {
+        select: {
+          course: {
+            select: { id: true, name: true, subject: true }
+          }
+        }
+      }
+    },
   })
 
   if (!user) {

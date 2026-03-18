@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, canManageContent, isInstructor, getInstructorClassIds } from '@/lib/auth'
+import { getSession, canManageContent, isInstructor, getInstructorCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(request: NextRequest) {
@@ -11,14 +11,14 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const classId = searchParams.get('classId')
+    const courseId = searchParams.get('courseId')
 
-    const where = classId ? { classId } : {}
+    const where = courseId ? { courseId } : {}
 
     const lectures = await prisma.lecture.findMany({
       where,
       include: {
-        class: { select: { name: true } },
+        course: { select: { name: true } },
         uploadedBy: { select: { name: true } },
       },
       orderBy: { uploadedAt: 'desc' },
@@ -42,20 +42,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { classId, title, description, videoUrl, notesUrl, duration, thumbnail } =
+    const { courseId, title, description, videoUrl, notesUrl, duration, thumbnail } =
       await request.json()
 
-    // Instructor: can only create lectures in assigned classes
+    // Instructor: can only create lectures in assigned courses
     if (isInstructor(session.role)) {
-      const assignedIds = await getInstructorClassIds(session.userId)
-      if (!assignedIds.includes(classId)) {
-        return NextResponse.json({ error: 'You are not assigned to this subject' }, { status: 403 })
+      const assignedIds = await getInstructorCourseIds(session.userId)
+      if (!assignedIds.includes(courseId)) {
+        return NextResponse.json({ error: 'You are not assigned to this course' }, { status: 403 })
       }
     }
 
     const lecture = await prisma.lecture.create({
       data: {
-        classId,
+        courseId,
         title,
         description,
         videoUrl,

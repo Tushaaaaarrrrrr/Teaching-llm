@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, getAccessibleClassIds } from '@/lib/auth'
+import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { validateLength, sanitizeInput } from '@/lib/validation'
 
 const ticketInclude = {
   user: { select: { id: true, name: true, role: true } },
-  class: { select: { id: true, name: true, color: true } },
+  course: { select: { id: true, name: true, color: true } },
   assignedTo: { select: { id: true, name: true, role: true } },
   replies: {
     include: { sender: { select: { id: true, name: true, role: true } } },
@@ -27,11 +27,11 @@ export async function GET(request: NextRequest) {
     if (session.role === 'STUDENT') {
       where = { studentId: session.userId }
     } else if (session.role === 'ADMIN') {
-      const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
+      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
       where = {
         OR: [
           { assignedToId: session.userId },
-          { classId: { in: accessibleClassIds || [] } },
+          { courseId: { in: accessibleCourseIds || [] } },
         ],
       }
     }
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { title, description, type, classId, priority } = await request.json()
+    const { title, description, type, courseId, priority } = await request.json()
  
     if (!title || !validateLength(title, 200)) {
       return NextResponse.json({ error: 'Ticket title must be between 1 and 200 characters' }, { status: 400 })
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         title: sanitizedTitle,
         description: sanitizedDescription,
         type: type || 'GENERAL',
-        classId: type === 'SUBJECT' ? classId : null,
+        courseId: type === 'SUBJECT' ? courseId : null,
         priority: priority || 'MEDIUM',
         studentId: session.userId,
       },

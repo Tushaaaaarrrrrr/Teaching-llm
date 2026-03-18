@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, canManageContent, isInstructor, getInstructorClassIds } from '@/lib/auth'
+import { getSession, canManageContent, isInstructor, getInstructorCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function PUT(
@@ -18,22 +18,22 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { classId, title, description, fileUrl, fileType, fileSize } =
+    const { courseId, title, description, fileUrl, fileType, fileSize } =
       await request.json()
 
-    // Instructor: can only edit materials in assigned classes
+    // Instructor: can only edit materials in assigned courses
     if (isInstructor(session.role)) {
-      const material = await prisma.material.findUnique({ where: { id }, select: { classId: true } })
+      const material = await prisma.material.findUnique({ where: { id }, select: { courseId: true } })
       if (!material) return NextResponse.json({ error: 'Material not found' }, { status: 404 })
-      const assignedIds = await getInstructorClassIds(session.userId)
-      if (!assignedIds.includes(material.classId)) {
-        return NextResponse.json({ error: 'You are not assigned to this subject' }, { status: 403 })
+      const assignedIds = await getInstructorCourseIds(session.userId)
+      if (!assignedIds.includes(material.courseId)) {
+        return NextResponse.json({ error: 'You are not assigned to this course' }, { status: 403 })
       }
     }
 
     const updatedMaterial = await prisma.material.update({
       where: { id },
-      data: { classId, title, description, fileUrl, fileType, fileSize },
+      data: { courseId, title, description, fileUrl, fileType, fileSize },
     })
 
     logActivity({
@@ -69,13 +69,13 @@ export async function DELETE(
 
     const { id } = await params
 
-    // Instructor: can only delete materials in assigned classes
+    // Instructor: can only delete materials in assigned courses
     if (isInstructor(session.role)) {
-      const material = await prisma.material.findUnique({ where: { id }, select: { classId: true } })
+      const material = await prisma.material.findUnique({ where: { id }, select: { courseId: true } })
       if (!material) return NextResponse.json({ error: 'Material not found' }, { status: 404 })
-      const assignedIds = await getInstructorClassIds(session.userId)
-      if (!assignedIds.includes(material.classId)) {
-        return NextResponse.json({ error: 'You are not assigned to this subject' }, { status: 403 })
+      const assignedIds = await getInstructorCourseIds(session.userId)
+      if (!assignedIds.includes(material.courseId)) {
+        return NextResponse.json({ error: 'You are not assigned to this course' }, { status: 403 })
       }
     }
 

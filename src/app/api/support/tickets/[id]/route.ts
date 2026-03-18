@@ -5,7 +5,7 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 const ticketInclude = {
   user: { select: { id: true, name: true, role: true } },
-  class: { select: { id: true, name: true, color: true } },
+  course: { select: { id: true, name: true, color: true } },
   assignedTo: { select: { id: true, name: true, role: true } },
   replies: {
     include: { sender: { select: { id: true, name: true, role: true } } },
@@ -85,7 +85,7 @@ export async function PUT(
       data,
       include: {
         user: { select: { id: true, name: true, role: true } },
-        class: { select: { id: true, name: true, color: true } },
+        course: { select: { id: true, name: true, color: true } },
         assignedTo: { select: { id: true, name: true, role: true } },
         replies: {
           include: { sender: { select: { id: true, name: true, role: true } } },

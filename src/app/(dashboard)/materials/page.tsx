@@ -13,8 +13,8 @@ interface ContentItem {
   topic: {
     id: string
     title: string
-    classId: string
-    class: { id: string; name: string; color: string }
+    courseId: string
+    course: { id: string; name: string; color: string }
   }
 }
 
@@ -40,8 +40,15 @@ export default function MaterialsPage() {
   const [materials, setMaterials] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [userRole, setUserRole] = useState('')
 
   useEffect(() => {
+    // Fetch user role
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => setUserRole(data.user?.role || ''))
+      .catch(console.error)
+
     fetch('/api/content?hasPpt=true')
       .then(r => r.json())
       .then(data => setMaterials(data.content || []))
@@ -51,7 +58,7 @@ export default function MaterialsPage() {
 
   const filtered = materials.filter(m =>
     m.title.toLowerCase().includes(search.toLowerCase()) ||
-    m.topic?.class?.name?.toLowerCase().includes(search.toLowerCase()) ||
+    m.topic?.course?.name?.toLowerCase().includes(search.toLowerCase()) ||
     m.topic?.title?.toLowerCase().includes(search.toLowerCase())
   )
 
@@ -67,27 +74,50 @@ export default function MaterialsPage() {
 
   return (
     <div className="page-container fade-in">
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <p style={{ fontSize: '13px', color: '#9999b0' }}>View and download course notes and resources.</p>
-        <div style={{ position: 'relative', minWidth: '260px' }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2"
-            style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input
-            type="text"
-            placeholder="Search materials…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{
-              width: '100%', padding: '11px 18px 11px 42px',
-              border: 'none', borderRadius: '50px',
-              background: '#e8eaf0',
-              boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-              color: '#1e1e3a', fontSize: '13px', outline: 'none',
-            }}
-          />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          {(userRole === 'MANAGER' || userRole === 'ADMIN') && (
+            <button 
+              onClick={() => window.location.href = '/study/content-bank'}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '11px 20px', borderRadius: '50px',
+                background: '#e8eaf0', color: '#3636e8',
+                boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '700',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+              Content Bank
+            </button>
+          )}
+          
+          <div style={{ position: 'relative', minWidth: '260px' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2"
+              style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Search materials…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                width: '100%', padding: '11px 18px 11px 42px',
+                border: 'none', borderRadius: '50px',
+                background: '#e8eaf0',
+                boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                color: '#1e1e3a', fontSize: '13px', outline: 'none',
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -104,7 +134,7 @@ export default function MaterialsPage() {
           filtered.map((mat) => {
             const ft    = getFileType(mat.pptUrl)
             const style = FILE_STYLES[ft] || { color: '#6b6b8a' }
-            const cls   = mat.topic?.class
+            const course = mat.topic?.course
             const dateStr = new Date(mat.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
             return (
@@ -134,14 +164,14 @@ export default function MaterialsPage() {
                     {mat.title}
                   </div>
                   <div style={{ fontSize: '12px', color: '#9999b0' }}>
-                    {cls && (
+                    {course && (
                       <span style={{
                         padding: '1px 8px', borderRadius: '50px', marginRight: '6px',
-                        background: (cls.color || '#6366f1') + '18',
-                        color: cls.color || '#6366f1',
+                        background: (course.color || '#6366f1') + '18',
+                        color: course.color || '#6366f1',
                         fontWeight: '700', fontSize: '11px',
                       }}>
-                        {cls.name}
+                        {course.name}
                       </span>
                     )}
                     {mat.topic?.title && <span>{mat.topic.title}</span>}

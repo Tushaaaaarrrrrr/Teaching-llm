@@ -17,7 +17,7 @@ interface ActivityLog {
 }
 
 const MODULE_OPTIONS = [
-  'Authentication', 'User Management', 'Classes', 'Topics', 'Content',
+  'Authentication', 'User Management', 'Courses', 'Topics', 'Content',
   'Lectures', 'Materials', 'Live Sessions', 'Calendar', 'Announcements',
   'Community', 'Support', 'Profile', 'FAQ',
 ]
@@ -25,7 +25,7 @@ const MODULE_OPTIONS = [
 const ACTION_OPTIONS = [
   'USER_LOGIN', 'USER_LOGOUT', 'USER_CREATED', 'USER_UPDATED', 'USER_DELETED',
   'PASSWORD_CHANGED', 'PROFILE_UPDATED', 'AVATAR_UPLOADED',
-  'CLASS_CREATED', 'CLASS_UPDATED', 'CLASS_DELETED',
+  'COURSE_CREATED', 'COURSE_UPDATED', 'COURSE_DELETED',
   'TOPIC_CREATED', 'TOPIC_UPDATED', 'TOPIC_DELETED',
   'CONTENT_CREATED', 'CONTENT_UPDATED', 'CONTENT_DELETED',
   'LECTURE_CREATED', 'LECTURE_UPDATED', 'LECTURE_DELETED',
@@ -185,12 +185,8 @@ export default function WorkLogPage() {
 
   return (
     <div className="page-container fade-in">
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Work Log</h1>
-          <p className="page-subtitle">Monitor all platform activity and user actions</p>
-        </div>
+      {/* Actions */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
         <button className="btn btn-primary" onClick={handleExportCsv} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

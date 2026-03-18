@@ -26,8 +26,8 @@ function buildTranscriptRows(messages: any[]): TranscriptRow[] {
     message: msg.content,
     isDeleted: msg.isDeleted,
     deletedAt: msg.deletedAt ? new Date(msg.deletedAt).toISOString() : '',
-    communityName: msg.class.name,
-    communitySubject: msg.class.subject || '',
+    communityName: msg.course.name,
+    communitySubject: msg.course.subject || '',
   }))
 }
 
@@ -72,7 +72,7 @@ function toPdfHtml(rows: TranscriptRow[], className: string): string {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Chat Transcript - ${escapeHtml(className)}</title>
+  <title>Course Transcript - ${escapeHtml(className)}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 30px; color: #1e1e3a; }
     h1 { font-size: 20px; margin-bottom: 4px; }
@@ -83,7 +83,7 @@ function toPdfHtml(rows: TranscriptRow[], className: string): string {
   </style>
 </head>
 <body>
-  <h1>Community Chat Transcript: ${escapeHtml(className)}</h1>
+  <h1>Course Chat Transcript: ${escapeHtml(className)}</h1>
   <div class="meta">Exported on ${new Date().toISOString()} &middot; ${rows.length} total messages &middot; ${rows.filter(r => r.isDeleted).length} deleted</div>
   <table>
     <thead>
@@ -118,25 +118,25 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const classId = searchParams.get('classId')
+    const courseId = searchParams.get('courseId')
     const format = searchParams.get('format') || 'json'
 
-    if (!classId) {
-      return NextResponse.json({ error: 'classId is required' }, { status: 400 })
+    if (!courseId) {
+      return NextResponse.json({ error: 'courseId is required' }, { status: 400 })
     }
 
-    const cls = await prisma.class.findUnique({ where: { id: classId }, select: { name: true, subject: true } })
+    const cls = await prisma.course.findUnique({ where: { id: courseId }, select: { name: true, subject: true } })
     if (!cls) {
-      return NextResponse.json({ error: 'Class not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
 
     const messages = await prisma.communityMessage.findMany({
-      where: { classId },
+      where: { courseId },
       include: {
         sender: {
           select: { id: true, name: true, role: true, securityNumber: true },
         },
-        class: {
+        course: {
           select: { name: true, subject: true },
         },
       },
@@ -150,9 +150,9 @@ export async function GET(request: NextRequest) {
       userName: session.name,
       userRole: session.role,
       actionType: ACTION.TRANSCRIPT_EXPORTED,
-      actionDescription: `${session.name} exported transcript for class "${cls.name}"`,
+      actionDescription: `${session.name} exported transcript for course "${cls.name}"`,
       moduleName: MODULE.COMMUNITY,
-      targetId: classId,
+      targetId: courseId,
     })
 
     if (format === 'csv') {
@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
       return new NextResponse(csv, {
         headers: {
           'Content-Type': 'text/csv; charset=utf-8',
-          'Content-Disposition': `attachment; filename="transcript-${classId}.csv"`,
+          'Content-Disposition': `attachment; filename="transcript-${courseId}.csv"`,
         },
       })
     }
@@ -170,14 +170,14 @@ export async function GET(request: NextRequest) {
       return new NextResponse(html, {
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
-          'Content-Disposition': `attachment; filename="transcript-${classId}.html"`,
+          'Content-Disposition': `attachment; filename="transcript-${courseId}.html"`,
         },
       })
     }
 
     // Default: JSON
     return new NextResponse(JSON.stringify({
-      community: { name: cls.name, subject: cls.subject },
+      course: { name: cls.name, subject: cls.subject },
       exportedAt: new Date().toISOString(),
       totalMessages: rows.length,
       deletedMessages: rows.filter(r => r.isDeleted).length,
@@ -185,7 +185,7 @@ export async function GET(request: NextRequest) {
     }, null, 2), {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Content-Disposition': `attachment; filename="transcript-${classId}.json"`,
+        'Content-Disposition': `attachment; filename="transcript-${courseId}.json"`,
       },
     })
   } catch (error) {

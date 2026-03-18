@@ -15,7 +15,7 @@ async function main() {
   await prisma.material.deleteMany();
   await prisma.liveSession.deleteMany();
   await prisma.lecture.deleteMany();
-  await prisma.class.deleteMany();
+  await prisma.course.deleteMany();
   await prisma.user.deleteMany();
   console.log("Existing data cleared.");
 
@@ -94,7 +94,7 @@ async function main() {
   // ──────────────────────────────────────────────
   console.log("Creating classes...");
 
-  const dsaClass = await prisma.class.create({
+  const dsaClass = await prisma.course.create({
     data: {
       name: "Data Structures & Algorithms",
       description:
@@ -106,7 +106,7 @@ async function main() {
     },
   });
 
-  const mlClass = await prisma.class.create({
+  const mlClass = await prisma.course.create({
     data: {
       name: "Machine Learning Fundamentals",
       description:
@@ -118,7 +118,7 @@ async function main() {
     },
   });
 
-  const webDevClass = await prisma.class.create({
+  const webDevClass = await prisma.course.create({
     data: {
       name: "Web Development",
       description:
@@ -130,7 +130,7 @@ async function main() {
     },
   });
 
-  const dbClass = await prisma.class.create({
+  const dbClass = await prisma.course.create({
     data: {
       name: "Database Systems",
       description:
@@ -142,7 +142,7 @@ async function main() {
     },
   });
 
-  const osClass = await prisma.class.create({
+  const osClass = await prisma.course.create({
     data: {
       name: "Operating Systems",
       description:
@@ -154,7 +154,7 @@ async function main() {
     },
   });
 
-  const networkClass = await prisma.class.create({
+  const networkClass = await prisma.course.create({
     data: {
       name: "Computer Networks",
       description:
@@ -180,7 +180,7 @@ async function main() {
   await prisma.lecture.createMany({
     data: [
       {
-        classId: dsaClass.id,
+        courseId: dsaClass.id,
         title: "Introduction to Arrays and Complexity Analysis",
         description:
           "Understand the fundamentals of arrays, memory layout, and Big-O notation for time and space complexity analysis.",
@@ -192,7 +192,7 @@ async function main() {
         uploadedAt: daysAgo(28),
       },
       {
-        classId: dsaClass.id,
+        courseId: dsaClass.id,
         title: "Linked Lists: Singly, Doubly, and Circular",
         description:
           "Deep dive into linked list variations, implementation patterns, and common interview problems involving linked lists.",
@@ -204,7 +204,7 @@ async function main() {
         uploadedAt: daysAgo(21),
       },
       {
-        classId: dsaClass.id,
+        courseId: dsaClass.id,
         title: "Stacks, Queues, and Their Applications",
         description:
           "Explore stack and queue data structures, their implementations using arrays and linked lists, and real-world use cases.",
@@ -216,7 +216,7 @@ async function main() {
         uploadedAt: daysAgo(14),
       },
       {
-        classId: dsaClass.id,
+        courseId: dsaClass.id,
         title: "Binary Trees and Binary Search Trees",
         description:
           "Tree traversal algorithms (inorder, preorder, postorder), BST operations, and balancing concepts.",
@@ -234,7 +234,7 @@ async function main() {
   await prisma.lecture.createMany({
     data: [
       {
-        classId: mlClass.id,
+        courseId: mlClass.id,
         title: "What is Machine Learning? Types and Applications",
         description:
           "Overview of machine learning paradigms: supervised, unsupervised, and reinforcement learning with industry examples.",
@@ -246,7 +246,7 @@ async function main() {
         uploadedAt: daysAgo(26),
       },
       {
-        classId: mlClass.id,
+        courseId: mlClass.id,
         title: "Linear Regression and Gradient Descent",
         description:
           "Mathematical foundations of linear regression, cost functions, and the gradient descent optimization algorithm.",
@@ -258,7 +258,7 @@ async function main() {
         uploadedAt: daysAgo(19),
       },
       {
-        classId: mlClass.id,
+        courseId: mlClass.id,
         title: "Classification: Logistic Regression and Decision Trees",
         description:
           "Binary and multi-class classification techniques, decision boundaries, and tree-based models.",
@@ -270,7 +270,7 @@ async function main() {
         uploadedAt: daysAgo(12),
       },
       {
-        classId: mlClass.id,
+        courseId: mlClass.id,
         title: "Neural Networks: Perceptrons to Deep Learning",
         description:
           "Introduction to artificial neural networks, activation functions, backpropagation, and multi-layer architectures.",
@@ -288,7 +288,7 @@ async function main() {
   await prisma.lecture.createMany({
     data: [
       {
-        classId: webDevClass.id,
+        courseId: webDevClass.id,
         title: "HTML5 Semantic Elements and Accessibility",
         description:
           "Modern HTML5 tags, semantic markup best practices, ARIA attributes, and building accessible web pages.",
@@ -300,7 +300,7 @@ async function main() {
         uploadedAt: daysAgo(25),
       },
       {
-        classId: webDevClass.id,
+        courseId: webDevClass.id,
         title: "CSS Flexbox, Grid, and Responsive Design",
         description:
           "Master CSS layout techniques with Flexbox and Grid, media queries, and mobile-first responsive design patterns.",
@@ -312,7 +312,7 @@ async function main() {
         uploadedAt: daysAgo(18),
       },
       {
-        classId: webDevClass.id,
+        courseId: webDevClass.id,
         title: "React Fundamentals: Components, Props, and State",
         description:
           "Building interactive UIs with React, understanding the component lifecycle, hooks, and state management.",
@@ -330,7 +330,7 @@ async function main() {
   await prisma.lecture.createMany({
     data: [
       {
-        classId: dbClass.id,
+        courseId: dbClass.id,
         title: "Relational Model and ER Diagrams",
         description:
           "Entity-relationship modeling, relational algebra basics, and translating business requirements into database schemas.",
@@ -342,7 +342,7 @@ async function main() {
         uploadedAt: daysAgo(24),
       },
       {
-        classId: dbClass.id,
+        courseId: dbClass.id,
         title: "SQL Fundamentals: Queries, Joins, and Subqueries",
         description:
           "Writing SQL queries from basic SELECT to complex multi-table joins, aggregations, and nested subqueries.",
@@ -354,7 +354,7 @@ async function main() {
         uploadedAt: daysAgo(17),
       },
       {
-        classId: dbClass.id,
+        courseId: dbClass.id,
         title: "Indexing, Query Optimization, and Execution Plans",
         description:
           "B-tree and hash indexes, query planner internals, EXPLAIN output interpretation, and performance tuning strategies.",
@@ -366,7 +366,7 @@ async function main() {
         uploadedAt: daysAgo(10),
       },
       {
-        classId: dbClass.id,
+        courseId: dbClass.id,
         title: "Transactions, ACID Properties, and Concurrency Control",
         description:
           "Transaction isolation levels, locking mechanisms, MVCC, and ensuring data consistency in concurrent environments.",
@@ -384,7 +384,7 @@ async function main() {
   await prisma.lecture.createMany({
     data: [
       {
-        classId: osClass.id,
+        courseId: osClass.id,
         title: "Introduction to Operating Systems and Process Management",
         description:
           "OS architecture overview, process states and transitions, process control blocks, and system calls.",
@@ -396,7 +396,7 @@ async function main() {
         uploadedAt: daysAgo(23),
       },
       {
-        classId: osClass.id,
+        courseId: osClass.id,
         title: "CPU Scheduling Algorithms",
         description:
           "FCFS, SJF, Round Robin, Priority scheduling, and multi-level queue scheduling with comparative analysis.",
@@ -408,7 +408,7 @@ async function main() {
         uploadedAt: daysAgo(16),
       },
       {
-        classId: osClass.id,
+        courseId: osClass.id,
         title: "Memory Management: Paging and Segmentation",
         description:
           "Virtual memory concepts, page tables, TLB, page replacement algorithms, and segmentation techniques.",
@@ -426,7 +426,7 @@ async function main() {
   await prisma.lecture.createMany({
     data: [
       {
-        classId: networkClass.id,
+        courseId: networkClass.id,
         title: "OSI Model and TCP/IP Protocol Suite",
         description:
           "Layered network architecture, OSI vs TCP/IP models, encapsulation, and protocol interactions across layers.",
@@ -438,7 +438,7 @@ async function main() {
         uploadedAt: daysAgo(22),
       },
       {
-        classId: networkClass.id,
+        courseId: networkClass.id,
         title: "IP Addressing, Subnetting, and Routing",
         description:
           "IPv4/IPv6 addressing schemes, CIDR notation, subnet calculations, and static vs dynamic routing protocols.",
@@ -450,7 +450,7 @@ async function main() {
         uploadedAt: daysAgo(15),
       },
       {
-        classId: networkClass.id,
+        courseId: networkClass.id,
         title: "Transport Layer: TCP and UDP",
         description:
           "Reliable vs unreliable transport, TCP three-way handshake, flow control, congestion control, and UDP use cases.",
@@ -462,7 +462,7 @@ async function main() {
         uploadedAt: daysAgo(8),
       },
       {
-        classId: networkClass.id,
+        courseId: networkClass.id,
         title: "Network Security: Firewalls, VPNs, and Encryption",
         description:
           "Symmetric and asymmetric encryption, SSL/TLS, firewall configurations, VPN tunneling, and common attack vectors.",
@@ -498,7 +498,7 @@ async function main() {
   await prisma.liveSession.createMany({
     data: [
       {
-        classId: dsaClass.id,
+        courseId: dsaClass.id,
         title: "DSA Doubt Clearing Session - Trees & Graphs",
         description:
           "Live interactive session to resolve doubts on tree traversals, graph BFS/DFS, and related problem-solving techniques.",
@@ -510,7 +510,7 @@ async function main() {
         createdById: admin.id,
       },
       {
-        classId: mlClass.id,
+        courseId: mlClass.id,
         title: "Hands-on: Building Your First Neural Network",
         description:
           "Step-by-step walkthrough of building, training, and evaluating a neural network using Python and TensorFlow.",
@@ -522,7 +522,7 @@ async function main() {
         createdById: admin.id,
       },
       {
-        classId: webDevClass.id,
+        courseId: webDevClass.id,
         title: "Live Coding: Building a REST API with Next.js",
         description:
           "Watch and code along as we build a complete REST API with authentication, validation, and database integration.",
@@ -534,7 +534,7 @@ async function main() {
         createdById: admin.id,
       },
       {
-        classId: dbClass.id,
+        courseId: dbClass.id,
         title: "SQL Performance Tuning Workshop",
         description:
           "Practical session on identifying slow queries, reading execution plans, and applying indexing strategies for optimal performance.",
@@ -546,7 +546,7 @@ async function main() {
         createdById: admin.id,
       },
       {
-        classId: osClass.id,
+        courseId: osClass.id,
         title: "OS Concepts Revision - Midterm Preparation",
         description:
           "Comprehensive revision covering process scheduling, memory management, and file systems for the upcoming midterm exam.",
@@ -558,7 +558,7 @@ async function main() {
         createdById: admin.id,
       },
       {
-        classId: networkClass.id,
+        courseId: networkClass.id,
         title: "Packet Analysis with Wireshark",
         description:
           "Hands-on demonstration of capturing and analyzing network packets using Wireshark to understand protocol behavior.",
@@ -570,7 +570,7 @@ async function main() {
         createdById: admin.id,
       },
       {
-        classId: dsaClass.id,
+        courseId: dsaClass.id,
         title: "Competitive Programming Strategies",
         description:
           "Tips and techniques for competitive programming, covering time management, common patterns, and practice problem walkthroughs.",
@@ -595,7 +595,7 @@ async function main() {
     data: [
       // DSA materials
       {
-        classId: dsaClass.id,
+        courseId: dsaClass.id,
         title: "DSA Complete Reference Notes",
         description:
           "Comprehensive notes covering all data structures and algorithms topics with diagrams and code examples.",
@@ -605,7 +605,7 @@ async function main() {
         uploadedById: admin.id,
       },
       {
-        classId: dsaClass.id,
+        courseId: dsaClass.id,
         title: "Algorithm Complexity Cheat Sheet",
         description:
           "Quick reference card for Big-O complexities of common data structures and sorting algorithms.",
@@ -615,7 +615,7 @@ async function main() {
         uploadedById: admin.id,
       },
       {
-        classId: dsaClass.id,
+        courseId: dsaClass.id,
         title: "Week 1-4 Lecture Slides",
         description:
           "Compiled slide deck from the first four weeks covering arrays through binary trees.",
@@ -627,7 +627,7 @@ async function main() {
 
       // ML materials
       {
-        classId: mlClass.id,
+        courseId: mlClass.id,
         title: "Machine Learning Mathematics Primer",
         description:
           "Essential linear algebra, probability, and calculus concepts needed for understanding ML algorithms.",
@@ -637,7 +637,7 @@ async function main() {
         uploadedById: admin.id,
       },
       {
-        classId: mlClass.id,
+        courseId: mlClass.id,
         title: "Python for ML - Jupyter Notebooks",
         description:
           "Collection of interactive Jupyter notebooks with code examples for regression, classification, and clustering.",
@@ -647,7 +647,7 @@ async function main() {
         uploadedById: admin.id,
       },
       {
-        classId: mlClass.id,
+        courseId: mlClass.id,
         title: "Neural Networks Architecture Diagrams",
         description:
           "Visual guide to common neural network architectures including CNNs, RNNs, and Transformers.",
@@ -659,7 +659,7 @@ async function main() {
 
       // Web Dev materials
       {
-        classId: webDevClass.id,
+        courseId: webDevClass.id,
         title: "React Best Practices Guide",
         description:
           "Industry-standard patterns for React development including hooks, context, performance optimization, and testing.",
@@ -669,7 +669,7 @@ async function main() {
         uploadedById: admin.id,
       },
       {
-        classId: webDevClass.id,
+        courseId: webDevClass.id,
         title: "Full-Stack Project Starter Template",
         description:
           "Boilerplate project with Next.js, Prisma, and Tailwind CSS pre-configured with authentication and API routes.",
@@ -681,7 +681,7 @@ async function main() {
 
       // DB materials
       {
-        classId: dbClass.id,
+        courseId: dbClass.id,
         title: "SQL Query Practice Problems",
         description:
           "50 progressively difficult SQL problems with solutions covering joins, subqueries, window functions, and CTEs.",
@@ -691,7 +691,7 @@ async function main() {
         uploadedById: admin.id,
       },
       {
-        classId: dbClass.id,
+        courseId: dbClass.id,
         title: "Database Design Assignment Brief",
         description:
           "Assignment instructions for designing and implementing a normalized database schema for an e-commerce platform.",
@@ -703,7 +703,7 @@ async function main() {
 
       // OS materials
       {
-        classId: osClass.id,
+        courseId: osClass.id,
         title: "Process Scheduling Simulation Guide",
         description:
           "Step-by-step guide for running the CPU scheduling simulator with sample workloads and analysis templates.",
@@ -713,7 +713,7 @@ async function main() {
         uploadedById: admin.id,
       },
       {
-        classId: osClass.id,
+        courseId: osClass.id,
         title: "OS Midterm Study Guide",
         description:
           "Condensed study material covering key topics, sample questions, and important formulas for the midterm exam.",
@@ -725,7 +725,7 @@ async function main() {
 
       // Network materials
       {
-        classId: networkClass.id,
+        courseId: networkClass.id,
         title: "Networking Lab Manual",
         description:
           "Complete lab manual with exercises on packet tracing, subnetting, socket programming, and Wireshark analysis.",
@@ -735,7 +735,7 @@ async function main() {
         uploadedById: admin.id,
       },
       {
-        classId: networkClass.id,
+        courseId: networkClass.id,
         title: "TCP/IP Protocol Reference Slides",
         description:
           "Detailed slides on TCP/IP protocol suite with packet format diagrams, header fields, and state machines.",
@@ -769,8 +769,8 @@ async function main() {
         date: tomorrowStr,
         time: "11:59 PM",
         type: "assignment",
-        relatedClass: "Data Structures & Algorithms",
-        classId: dsaClass.id,
+        relatedCourse: "Data Structures & Algorithms",
+        courseId: dsaClass.id,
         createdById: admin.id,
       },
       {
@@ -780,8 +780,8 @@ async function main() {
         date: in3Days,
         time: "10:00 AM",
         type: "exam",
-        relatedClass: "Machine Learning Fundamentals",
-        classId: mlClass.id,
+        relatedCourse: "Machine Learning Fundamentals",
+        courseId: mlClass.id,
         createdById: admin.id,
       },
       {
@@ -791,8 +791,8 @@ async function main() {
         date: in1Week,
         time: "2:00 PM",
         type: "class",
-        relatedClass: "Web Development",
-        classId: webDevClass.id,
+        relatedCourse: "Web Development",
+        courseId: webDevClass.id,
         createdById: admin.id,
       },
       {
@@ -802,8 +802,8 @@ async function main() {
         date: in10Days,
         time: "9:00 AM",
         type: "exam",
-        relatedClass: "Database Systems",
-        classId: dbClass.id,
+        relatedCourse: "Database Systems",
+        courseId: dbClass.id,
         createdById: admin.id,
       },
       {
@@ -813,8 +813,8 @@ async function main() {
         date: in2Weeks,
         time: "3:00 PM",
         type: "class",
-        relatedClass: "Operating Systems",
-        classId: osClass.id,
+        relatedCourse: "Operating Systems",
+        courseId: osClass.id,
         createdById: admin.id,
       },
       {
@@ -824,8 +824,8 @@ async function main() {
         date: in18Days,
         time: "11:59 PM",
         type: "assignment",
-        relatedClass: "Computer Networks",
-        classId: networkClass.id,
+        relatedCourse: "Computer Networks",
+        courseId: networkClass.id,
         createdById: admin.id,
       },
       {
@@ -835,8 +835,8 @@ async function main() {
         date: in3Weeks,
         time: "4:00 PM",
         type: "event",
-        relatedClass: null,
-        classId: null,
+        relatedCourse: null,
+        courseId: null,
         createdById: manager.id,
       },
     ],
@@ -852,24 +852,24 @@ async function main() {
   await prisma.enrollment.createMany({
     data: [
       // Admin enrolled in all classes
-      { userId: admin.id, classId: dsaClass.id },
-      { userId: admin.id, classId: mlClass.id },
-      { userId: admin.id, classId: webDevClass.id },
-      { userId: admin.id, classId: dbClass.id },
-      { userId: admin.id, classId: osClass.id },
-      { userId: admin.id, classId: networkClass.id },
+      { userId: admin.id, courseId: dsaClass.id },
+      { userId: admin.id, courseId: mlClass.id },
+      { userId: admin.id, courseId: webDevClass.id },
+      { userId: admin.id, courseId: dbClass.id },
+      { userId: admin.id, courseId: osClass.id },
+      { userId: admin.id, courseId: networkClass.id },
       // Rahul enrolled in DSA, ML, Web Dev
-      { userId: rahul.id, classId: dsaClass.id },
-      { userId: rahul.id, classId: mlClass.id },
-      { userId: rahul.id, classId: webDevClass.id },
+      { userId: rahul.id, courseId: dsaClass.id },
+      { userId: rahul.id, courseId: mlClass.id },
+      { userId: rahul.id, courseId: webDevClass.id },
       // Priya enrolled in ML, DB, OS
-      { userId: priya.id, classId: mlClass.id },
-      { userId: priya.id, classId: dbClass.id },
-      { userId: priya.id, classId: osClass.id },
+      { userId: priya.id, courseId: mlClass.id },
+      { userId: priya.id, courseId: dbClass.id },
+      { userId: priya.id, courseId: osClass.id },
       // Amit enrolled in DSA, DB, Networks
-      { userId: amit.id, classId: dsaClass.id },
-      { userId: amit.id, classId: dbClass.id },
-      { userId: amit.id, classId: networkClass.id },
+      { userId: amit.id, courseId: dsaClass.id },
+      { userId: amit.id, courseId: dbClass.id },
+      { userId: amit.id, courseId: networkClass.id },
     ],
   });
 

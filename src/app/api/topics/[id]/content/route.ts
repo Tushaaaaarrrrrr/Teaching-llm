@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, canManageContent, isInstructor, getInstructorClassIds } from '@/lib/auth'
+import { getSession, canManageContent, isInstructor, getInstructorCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function POST(
@@ -14,13 +14,13 @@ export async function POST(
 
     const { id } = await params
 
-    // Instructor: verify topic belongs to an assigned class
+    // Instructor: verify topic belongs to an assigned course
     if (isInstructor(session.role)) {
-      const topic = await prisma.topic.findUnique({ where: { id }, select: { classId: true } })
+      const topic = await prisma.topic.findUnique({ where: { id }, select: { courseId: true } })
       if (!topic) return NextResponse.json({ error: 'Topic not found' }, { status: 404 })
-      const assignedIds = await getInstructorClassIds(session.userId)
-      if (!assignedIds.includes(topic.classId)) {
-        return NextResponse.json({ error: 'You are not assigned to this subject' }, { status: 403 })
+      const assignedIds = await getInstructorCourseIds(session.userId)
+      if (!assignedIds.includes(topic.courseId)) {
+        return NextResponse.json({ error: 'You are not assigned to this course' }, { status: 403 })
       }
     }
 

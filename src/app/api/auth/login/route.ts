@@ -63,6 +63,11 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set(name, token, options)
 
+    // Record Attendance
+    await prisma.loginLog.create({
+      data: { userId: user.id }
+    })
+
     logActivity({
       userId: user.id,
       userName: user.name,

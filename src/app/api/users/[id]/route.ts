@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, hashPassword, getAccessibleClassIds } from '@/lib/auth'
+import { getSession, isAdminOrManager, hashPassword, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function PUT(
@@ -18,7 +18,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, email, role, password, isTerminated, canTerminate, canCreateStudents, classIds, assignedClassIds } = await request.json()
+    const { name, email, role, password, isTerminated, canTerminate, canCreateStudents, courseIds, assignedCourseIds } = await request.json()
 
     // ADMIN restrictions
     if (session.role === 'ADMIN') {
@@ -31,12 +31,12 @@ export async function PUT(
       }
     }
 
-    // Validate classIds for ADMINs
-    if (session.role === 'ADMIN' && classIds !== undefined && classIds.length > 0) {
-      const adminClassIds = await getAccessibleClassIds(session.userId, session.role)
-      const unauthorized = classIds.filter((cid: string) => !adminClassIds?.includes(cid))
+    // Validate courseIds for ADMINs
+    if (session.role === 'ADMIN' && courseIds !== undefined && courseIds.length > 0) {
+      const adminCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+      const unauthorized = courseIds.filter((cid: string) => !adminCourseIds?.includes(cid))
       if (unauthorized.length > 0) {
-        return NextResponse.json({ error: 'Cannot assign classes you don\'t have access to' }, { status: 403 })
+        return NextResponse.json({ error: 'Cannot assign courses you don\'t have access to' }, { status: 403 })
       }
     }
 
@@ -68,26 +68,26 @@ export async function PUT(
         },
       })
 
-      if (classIds !== undefined) {
+      if (courseIds !== undefined) {
         await tx.enrollment.deleteMany({ where: { userId: id } })
-        if (classIds.length > 0) {
+        if (courseIds.length > 0) {
           await tx.enrollment.createMany({
-            data: classIds.map((classId: string) => ({
+            data: courseIds.map((courseId: string) => ({
               userId: id,
-              classId,
+              courseId,
             })),
           })
         }
       }
 
-      // Handle instructor subject assignments (MANAGER only)
-      if (assignedClassIds !== undefined) {
+      // Handle instructor course assignments (MANAGER only)
+      if (assignedCourseIds !== undefined) {
         await tx.instructorAssignment.deleteMany({ where: { instructorId: id } })
-        if (assignedClassIds.length > 0) {
+        if (assignedCourseIds.length > 0) {
           await tx.instructorAssignment.createMany({
-            data: assignedClassIds.map((classId: string) => ({
+            data: assignedCourseIds.map((courseId: string) => ({
               instructorId: id,
-              classId,
+              courseId,
             })),
           })
         }
@@ -105,14 +105,14 @@ export async function PUT(
           createdAt: true,
           enrollments: {
             select: {
-              classId: true,
-              class: { select: { id: true, name: true, color: true, subject: true } },
+              courseId: true,
+              course: { select: { id: true, name: true, color: true, subject: true } },
             },
           },
           instructorAssignments: {
             select: {
-              classId: true,
-              class: { select: { id: true, name: true, color: true, subject: true } },
+              courseId: true,
+              course: { select: { id: true, name: true, color: true, subject: true } },
             },
           },
         },

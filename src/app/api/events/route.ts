@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, getAccessibleClassIds } from '@/lib/auth'
+import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(request: NextRequest) {
@@ -17,18 +17,18 @@ export async function GET(request: NextRequest) {
     const where: Record<string, any> = {}
     if (month) where.date = { startsWith: month }
 
-    const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
-    if (accessibleClassIds !== null) {
+    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+    if (accessibleCourseIds !== null) {
       where.OR = [
-        { classId: null },
-        { classId: { in: accessibleClassIds } },
+        { courseId: null },
+        { courseId: { in: accessibleCourseIds } },
       ]
     }
 
     const events = await prisma.calendarEvent.findMany({
       where,
       include: {
-        class: true,
+        course: true,
         instructor: { select: { id: true, name: true } },
       },
       orderBy: { date: 'desc' },
@@ -52,14 +52,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { title, description, date, time, type, relatedClass, classId, instructorId } =
+    const { title, description, date, time, type, relatedCourse, courseId, instructorId } =
       await request.json()
 
-    // Verify ADMIN has access to the target class
-    if (session.role === 'ADMIN' && classId) {
-      const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
-      if (accessibleClassIds !== null && !accessibleClassIds.includes(classId)) {
-        return NextResponse.json({ error: 'No access to this class' }, { status: 403 })
+    // Verify ADMIN has access to the target course
+    if (session.role === 'ADMIN' && courseId) {
+      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
+        return NextResponse.json({ error: 'No access to this course' }, { status: 403 })
       }
     }
 
@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
         date,
         time,
         type,
-        relatedClass,
-        classId,
+        relatedCourse,
+        courseId,
         instructorId: instructorId || null,
         createdById: session.userId,
       },

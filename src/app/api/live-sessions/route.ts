@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, getAccessibleClassIds } from '@/lib/auth'
+import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(request: NextRequest) {
@@ -12,25 +12,44 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 20
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: Record<string, any> = {}
+    const where: Record<string, any> = { type: 'live' }
     if (status) where.status = status
 
-    const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
-    if (accessibleClassIds !== null) {
-      where.classId = { in: accessibleClassIds }
+    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+    if (accessibleCourseIds !== null) {
+      where.OR = [
+        { courseId: null },
+        { courseId: { in: accessibleCourseIds } },
+      ]
     }
 
-    const liveSessions = await prisma.liveSession.findMany({
+    const events = await (prisma.calendarEvent as any).findMany({
       where,
       include: {
-        class: { select: { name: true } },
+        course: { select: { id: true, name: true, color: true } },
+        instructor: { select: { name: true } },
       },
       orderBy: { date: 'desc' },
+      take: limit,
     })
 
-    return NextResponse.json(liveSessions)
+    // Map to expected LiveSession format for the UI
+    const mapped = events.map(e => ({
+      id: e.id,
+      title: e.title,
+      description: e.description,
+      instructor: e.instructor?.name || 'Teacher',
+      date: e.date,
+      time: e.time,
+      status: e.status,
+      meetingLink: e.meetingLink,
+      course: e.course ? { name: e.course.name, color: e.course.color } : { name: 'General', color: '#6366f1' }
+    }))
+
+    return NextResponse.json(mapped)
   } catch (error) {
     console.error('Error fetching live sessions:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -48,53 +67,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { classId, title, description, meetingLink, instructor, date, time, status } =
+    const { courseId, title, description, meetingLink, instructorId, instructor, date, time, status } =
       await request.json()
 
-    // Verify ADMIN has access to the target class
-    if (session.role === 'ADMIN') {
-      const accessibleClassIds = await getAccessibleClassIds(session.userId, session.role)
-      if (accessibleClassIds !== null && !accessibleClassIds.includes(classId)) {
-        return NextResponse.json({ error: 'No access to this class' }, { status: 403 })
+    // Verify ADMIN has access to the target course
+    if (session.role === 'ADMIN' && courseId) {
+      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
+        return NextResponse.json({ error: 'No access to this course' }, { status: 403 })
       }
     }
 
-    // Get the class name for linking to the calendar event
-    let className: string | null = null
-    if (classId) {
-      const cls = await prisma.class.findUnique({ where: { id: classId }, select: { name: true } })
-      className = cls?.name || null
-    }
-
-    const liveSession = await prisma.liveSession.create({
+    // Create a calendar event with 'live' type
+    const event = await (prisma.calendarEvent as any).create({
       data: {
-        classId,
         title,
         description,
-        meetingLink,
-        instructor,
         date,
         time,
-        status,
+        type: 'live',
+        courseId: courseId || null,
+        instructorId: instructorId || null,
+        meetingLink,
+        status: status || 'scheduled',
         createdById: session.userId,
       },
+      include: {
+        course: { select: { name: true, color: true } },
+        instructor: { select: { name: true } }
+      }
     })
-
-    // Auto-create a calendar event linked to the same class
-    if (date) {
-      await prisma.calendarEvent.create({
-        data: {
-          title: `Live: ${title}`,
-          description: instructor ? `Instructor: ${instructor}` : description || null,
-          date,
-          time: time || null,
-          type: 'class',
-          classId: classId || null,
-          relatedClass: className,
-          createdById: session.userId,
-        },
-      })
-    }
 
     logActivity({
       userId: session.userId,
@@ -103,10 +105,21 @@ export async function POST(request: NextRequest) {
       actionType: ACTION.SESSION_CREATED,
       actionDescription: `${session.name} created live session "${title}"`,
       moduleName: MODULE.LIVE_SESSIONS,
-      targetId: liveSession.id,
+      targetId: event.id,
     })
 
-    return NextResponse.json(liveSession, { status: 201 })
+    // Return in the format the frontend expects
+    return NextResponse.json({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        instructor: event.instructor?.name || instructor || 'Teacher',
+        date: event.date,
+        time: event.time,
+        status: event.status,
+        meetingLink: event.meetingLink,
+        course: event.course ? { name: event.course.name, color: event.course.color } : { name: 'General', color: '#6366f1' }
+    }, { status: 201 })
   } catch (error) {
     console.error('Error creating live session:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

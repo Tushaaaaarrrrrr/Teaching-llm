@@ -14,7 +14,7 @@ const COOKIE_NAME = 'teaching_llm_token'
 export interface JWTPayload {
   userId: string
   email: string
-  role: 'MANAGER' | 'ADMIN' | 'INSTRUCTOR' | 'STUDENT'
+  role: 'MANAGER' | 'ADMIN' | 'STUDENT'
   name: string
   canTerminate?: boolean
   canCreateStudents?: boolean
@@ -72,32 +72,17 @@ export function isAdminOrManager(role: string) {
   return role === 'MANAGER' || role === 'ADMIN'
 }
 
-export function isInstructor(role: string) {
-  return role === 'INSTRUCTOR'
-}
-
-/** Returns true for any role that can manage content (MANAGER, ADMIN, INSTRUCTOR) */
+/** Returns true for any role that can manage content (MANAGER, ADMIN) */
 export function canManageContent(role: string) {
-  return role === 'MANAGER' || role === 'ADMIN' || role === 'INSTRUCTOR'
+  return role === 'MANAGER' || role === 'ADMIN'
 }
 
 /**
- * Returns the classIds the instructor is assigned to via InstructorAssignment.
+ * Returns the courseIds the user has access to via Enrollment.
+ * MANAGER: returns null (meaning "all courses, no filtering")
+ * ADMIN/STUDENT: returns string[] of enrolled courseIds (may be empty)
  */
-export async function getInstructorClassIds(userId: string): Promise<string[]> {
-  const assignments = await prisma.instructorAssignment.findMany({
-    where: { instructorId: userId },
-    select: { classId: true },
-  })
-  return assignments.map(a => a.classId)
-}
-
-/**
- * Returns the classIds the user has access to via Enrollment.
- * MANAGER: returns null (meaning "all classes, no filtering")
- * ADMIN/STUDENT: returns string[] of enrolled classIds (may be empty)
- */
-export async function getAccessibleClassIds(
+export async function getAccessibleCourseIds(
   userId: string,
   role: string
 ): Promise<string[] | null> {
@@ -105,36 +90,19 @@ export async function getAccessibleClassIds(
 
   const now = new Date()
 
-  // INSTRUCTOR: return assigned classIds that haven't expired
-  if (role === 'INSTRUCTOR') {
-    const assignments = await prisma.instructorAssignment.findMany({
-      where: { 
-        instructorId: userId,
-        class: {
-          OR: [
-            { expiresAt: null },
-            { expiresAt: { gt: now } }
-          ]
-        }
-      },
-      select: { classId: true },
-    })
-    return assignments.map(a => a.classId)
-  }
-
-  // STUDENT / ADMIN: return enrolled classIds that haven't expired
+  // STUDENT / ADMIN: return enrolled courseIds that haven't expired
   const enrollments = await prisma.enrollment.findMany({
     where: { 
       userId,
-      class: {
+      course: {
         OR: [
           { expiresAt: null },
           { expiresAt: { gt: now } }
         ]
       }
     },
-    select: { classId: true },
+    select: { courseId: true },
   })
 
-  return enrollments.map(e => e.classId)
+  return enrollments.map(e => e.courseId)
 }

@@ -17,8 +17,8 @@ export async function GET() {
         email: true,
         instructorAssignments: {
           select: {
-            classId: true,
-            class: { select: { id: true, name: true, color: true, subject: true } },
+            courseId: true,
+            course: { select: { id: true, name: true, color: true, subject: true } },
           },
         },
       },

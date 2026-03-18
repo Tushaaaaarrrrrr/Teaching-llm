@@ -23,7 +23,7 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  createdClasses        Class[]                @relation("ClassCreator")
+  createdCourses        Course[]               @relation("CourseCreator")
   uploadedLectures      Lecture[]              @relation("LectureUploader")
   uploadedMaterials     Material[]             @relation("MaterialUploader")
   createdSessions       LiveSession[]          @relation("SessionCreator")
@@ -41,9 +41,10 @@ model User {
   notifications         Notification[]
   announcements         Announcement[]         @relation("AnnouncementCreator")
   activityLogs          ActivityLog[]
+  loginLogs             LoginLog[]
 }
 
-model Class {
+model Course {
   id          String   @id @default(cuid())
   name        String
   description String?
@@ -54,7 +55,7 @@ model Class {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy             User                   @relation("ClassCreator", fields: [createdById], references: [id])
+  createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
   lectures              Lecture[]
   liveSessions          LiveSession[]
   materials             Material[]
@@ -65,24 +66,27 @@ model Class {
   supportTickets        SupportTicket[]
   communityMessages     CommunityMessage[]
   announcements         Announcement[]
+  exams                 Exam[]
   expiresAt             DateTime?
+
+  @@map("Class")
 }
 
 model Enrollment {
   id        String   @id @default(cuid())
   userId    String
-  classId   String
+  courseId  String   @map("classId")
   createdAt DateTime @default(now())
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, classId])
+  @@unique([userId, courseId])
 }
 
 model Lecture {
   id           String   @id @default(cuid())
-  classId      String
+  courseId     String   @map("classId")
   title        String
   description  String?
   videoUrl     String?
@@ -93,13 +97,13 @@ model Lecture {
   uploadedAt   DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  class      Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  uploadedBy User  @relation("LectureUploader", fields: [uploadedById], references: [id])
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  uploadedBy User   @relation("LectureUploader", fields: [uploadedById], references: [id])
 }
 
 model LiveSession {
   id          String   @id @default(cuid())
-  classId     String
+  courseId    String   @map("classId")
   title       String
   description String?
   meetingLink String
@@ -111,13 +115,13 @@ model LiveSession {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  class     Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  createdBy User  @relation("SessionCreator", fields: [createdById], references: [id])
+  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("SessionCreator", fields: [createdById], references: [id])
 }
 
 model Material {
   id           String   @id @default(cuid())
-  classId      String
+  courseId     String   @map("classId")
   title        String
   description  String?
   fileUrl      String
@@ -127,38 +131,40 @@ model Material {
   uploadedAt   DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  class      Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  uploadedBy User  @relation("MaterialUploader", fields: [uploadedById], references: [id])
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  uploadedBy User   @relation("MaterialUploader", fields: [uploadedById], references: [id])
 }
 
 model CalendarEvent {
-  id           String   @id @default(cuid())
-  title        String
-  description  String?
-  date         String
-  time         String?
-  type         String   @default("class")
-  relatedClass String?
-  classId      String?
-  createdById  String
-  instructorId String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  date          String
+  time          String?
+  type          String   @default("course")
+  relatedCourse String?  @map("relatedClass")
+  courseId      String?  @map("classId")
+  createdById   String
+  instructorId  String?
+  meetingLink   String?
+  status        String   @default("scheduled")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  class      Class? @relation(fields: [classId], references: [id])
-  createdBy  User   @relation("EventCreator", fields: [createdById], references: [id])
-  instructor User?  @relation("EventInstructor", fields: [instructorId], references: [id])
+  course     Course? @relation(fields: [courseId], references: [id])
+  createdBy  User    @relation("EventCreator", fields: [createdById], references: [id])
+  instructor User?   @relation("EventInstructor", fields: [instructorId], references: [id])
 }
 
 model Topic {
   id        String   @id @default(cuid())
-  classId   String
+  courseId  String   @map("classId")
   title     String
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  class   Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  course  Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   content Content[]
 }
 
@@ -182,13 +188,130 @@ model Announcement {
   title       String
   content     String
   type        String   @default("info")
-  classId     String?
+  courseId    String?  @map("classId")
+  pollId      String?  @unique
+  imageUrl    String?
   createdById String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  class     Class? @relation(fields: [classId], references: [id])
-  createdBy User   @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  course    Course? @relation(fields: [courseId], references: [id])
+  createdBy User    @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  poll      Poll?   @relation(fields: [pollId], references: [id])
+}
+
+model Poll {
+  id                String    @id @default(cuid())
+  question          String
+  expiresAt         DateTime
+  createdById       String
+  cachedResults     String?   // JSON stringified results
+  lastResultsUpdate DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  announcement Announcement?
+  options      PollOption[]
+  responses    PollResponse[]
+}
+
+model PollOption {
+  id     String @id @default(cuid())
+  pollId String
+  text   String
+  order  Int    @default(0)
+
+  poll      Poll           @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  responses PollResponse[]
+}
+
+model PollResponse {
+  id       String   @id @default(cuid())
+  pollId   String
+  optionId String
+  userId   String
+  createdAt DateTime @default(now())
+
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+}
+
+model Exam {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  courseId        String   @map("classId")
+  expiresAt       DateTime
+  startDate       DateTime?
+  durationMinutes Int
+  isPublished     Boolean  @default(false)
+  createdById     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  course    Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions ExamQuestion[]
+  attempts  ExamAttempt[]
+}
+
+model ExamQuestion {
+  id            String   @id @default(cuid())
+  examId        String
+  text          String
+  type          String   // MCQ, SHORT, LONG, FILL
+  options       String?  // JSON array for MCQs
+  correctAnswer String?
+  explanation   String?
+  imageUrl      String?
+  questionBankId String?
+  marks         Int      @default(1)
+  order         Int      @default(0)
+
+  exam      Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
+  responses ExamResponse[]
+}
+
+model ExamAttempt {
+  id           String    @id @default(cuid())
+  examId       String
+  userId       String
+  startedAt    DateTime  @default(now())
+  submittedAt  DateTime?
+  totalMarks   Float?
+  isEvaluated  Boolean   @default(false)
+  isPublished  Boolean   @default(false)
+  feedback     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  exam      Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
+  responses ExamResponse[]
+
+  @@unique([examId, userId])
+}
+
+model ExamResponse {
+  id         String   @id @default(cuid())
+  attemptId  String
+  questionId String
+  answer     String
+  marks      Float?
+  feedback   String?
+
+  attempt  ExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+}
+
+model LoginLog {
+  id        String   @id @default(cuid())
+  userId    String
+  timestamp DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model SupportTicket {
@@ -199,12 +322,12 @@ model SupportTicket {
   status       String   @default("OPEN")
   priority     String   @default("MEDIUM")
   studentId    String
-  classId      String?
+  courseId     String?  @map("classId")
   assignedToId String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  class      Class?        @relation(fields: [classId], references: [id])
+  course     Course?       @relation(fields: [courseId], references: [id])
   user       User          @relation("TicketStudent", fields: [studentId], references: [id])
   assignedTo User?         @relation("TicketAssignee", fields: [assignedToId], references: [id])
   replies    TicketReply[]
@@ -260,7 +383,7 @@ model ChatMessage {
 
 model CommunityMessage {
   id        String    @id @default(cuid())
-  classId   String
+  courseId  String    @map("classId")
   senderId  String
   content         String
   isDeleted       Boolean   @default(false)
@@ -268,8 +391,8 @@ model CommunityMessage {
   isSystemDeleted Boolean   @default(false)
   createdAt       DateTime  @default(now())
 
-  class  Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  sender User  @relation("CommMsgSender", fields: [senderId], references: [id])
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sender User   @relation("CommMsgSender", fields: [senderId], references: [id])
 }
 
 model Notification {
@@ -304,11 +427,27 @@ model ActivityLog {
 model InstructorAssignment {
   id           String   @id @default(cuid())
   instructorId String
-  classId      String
+  courseId     String   @map("classId")
   assignedAt   DateTime @default(now())
 
-  instructor User  @relation(fields: [instructorId], references: [id], onDelete: Cascade)
-  class      Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  instructor User   @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
-  @@unique([instructorId, classId])
+  @@unique([instructorId, courseId])
+}
+
+model QuestionBank {
+  id            String   @id @default(cuid())
+  subject       String
+  text          String
+  type          String
+  options       String?  // JSON array
+  correctAnswer String?
+  explanation   String?
+  imageUrl      String?
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([subject])
 }

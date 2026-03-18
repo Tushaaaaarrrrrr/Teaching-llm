@@ -1,101 +1,43 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
+import useSWR from 'swr'
 
-interface Stats {
-  totalClasses: number
-  totalLectures: number
-  totalStudents: number
-  upcomingSessions: number
-  totalMaterials: number
-}
-
-interface LiveSession {
-  id: string
-  title: string
-  instructor: string
-  date: string
-  time: string
-  status: string
-  meetingLink: string
-  class: { name: string }
-}
-
-interface Lecture {
-  id: string
-  title: string
-  duration: string
-  uploadedAt: string
-  class: { name: string; color: string }
-}
-
-interface Announcement {
-  id: string
-  title: string
-  content: string
-  type: string
-  createdAt: string
-}
+const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [liveSessions, setLiveSessions] = useState<LiveSession[]>([])
-  const [upNextSessions, setUpNextSessions] = useState<LiveSession[]>([])
-  const [lectures, setLectures] = useState<Lecture[]>([])
-  const [announcements, setAnnouncements] = useState<Announcement[]>([])
-  const [loading, setLoading] = useState(true)
-  const [role, setRole] = useState<string>('')
+  const { data: dashboardData, error, isLoading: loading } = useSWR('/api/dashboard', fetcher, {
+    refreshInterval: 30000, // Refresh every 30 seconds
+    revalidateOnFocus: true
+  })
+
   const [activeCard, setActiveCard] = useState(0)
   const [sliding, setSliding] = useState(false)
 
   const handleNextLive = () => {
+    if (!dashboardData?.liveSessions?.length) return
     setSliding(true)
     setTimeout(() => {
-      setActiveCard(prev => (prev + 1) % liveSessions.length)
+      setActiveCard(prev => (prev + 1) % dashboardData.liveSessions.length)
       setSliding(false)
     }, 180)
   }
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [statsRes, sessionsRes, lecturesRes, announcementsRes, meRes] = await Promise.all([
-          fetch('/api/stats'),
-          fetch('/api/live-sessions'),
-          fetch('/api/lectures'),
-          fetch('/api/announcements'),
-          fetch('/api/auth/me'),
-        ])
-        const statsData         = await statsRes.json()
-        const sessionsData      = await sessionsRes.json()
-        const lecturesData      = await lecturesRes.json()
-        const announcementsData = await announcementsRes.json()
-        const meData            = await meRes.json()
-
-        const allSessions: LiveSession[] = (sessionsData.sessions || sessionsData || [])
-        const liveNow = allSessions.filter(s => s.status === 'live').slice(0, 3)
-        const upcoming = allSessions.filter(s => s.status === 'scheduled' || s.status === 'upcoming').slice(0, 2)
-
-        setStats(statsData)
-        setRole(meData.user?.role || '')
-        setLiveSessions(liveNow)
-        setUpNextSessions(upcoming)
-        setLectures((lecturesData.lectures || lecturesData || []).slice(0, 3))
-        setAnnouncements((announcementsData.announcements || announcementsData || []).slice(0, 3))
-      } catch (e) {
-        console.error('Failed to load dashboard data:', e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
-
+  // Map data from SWR response
+  const stats = dashboardData?.stats || null
+  const role = dashboardData?.user?.role || ''
   const isManager = role === 'MANAGER'
 
+  const liveSessions = dashboardData?.liveSessions || []
+  const liveNow = liveSessions.filter((s: any) => s.status === 'live').slice(0, 3)
+  const upNextSessions = liveSessions.filter((s: any) => s.status === 'scheduled' || s.status === 'upcoming').slice(0, 2)
+
+  const lectures = (dashboardData?.lectures || []).slice(0, 3)
+  const announcements = (dashboardData?.announcements || []).slice(0, 3)
+
   const statCards = [
-    { label: 'Total Classes', value: stats?.totalClasses ?? 0, color: '#6366f1', bg: '#e0e7ff', icon: (
+    { label: 'Total Courses', value: stats?.totalCourses ?? 0, color: '#6366f1', bg: '#e0e7ff', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
     )},
     { label: 'Lectures', value: stats?.totalLectures ?? 0, color: '#8b5cf6', bg: '#ede9fe', icon: (
@@ -299,7 +241,7 @@ export default function DashboardPage() {
                         </svg>
                       </div>
                       <span style={{ fontSize: '12.5px', color: '#6b6b8a', fontWeight: '500' }}>
-                        {frontSession.instructor}{frontSession.class?.name ? ` · ${frontSession.class.name}` : ''}
+                        {frontSession.instructor}{frontSession.course?.name ? ` · ${frontSession.course.name}` : ''}
                       </span>
                     </div>
                   </div>
@@ -347,7 +289,7 @@ export default function DashboardPage() {
                         <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                       </svg>
                     </div>
-                    Join Live Class
+                    Join Live Course
                   </a>
                 </>
               ) : (
@@ -357,7 +299,7 @@ export default function DashboardPage() {
                       <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                     </svg>
                   </div>
-                  <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '500', textAlign: 'center' }}>No active classes right now</div>
+                  <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '500', textAlign: 'center' }}>No active courses right now</div>
                   <Link href="/live" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>View schedule →</Link>
                 </div>
               )}
@@ -447,7 +389,7 @@ export default function DashboardPage() {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
                 {lectures.map((lec) => {
-                  const accent = lec.class?.color || '#6366f1'
+                  const accent = lec.course?.color || '#6366f1'
                   return (
                     <div
                       key={lec.id}
@@ -480,7 +422,7 @@ export default function DashboardPage() {
                           {lec.title}
                         </div>
                         <div style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: '500' }}>
-                          {lec.class?.name}
+                          {lec.course?.name}
                           {lec.duration ? ` · ${lec.duration}` : ''}
                         </div>
                       </div>

@@ -21,20 +21,23 @@ interface Notification {
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/dashboard':  { title: 'Dashboard',        subtitle: 'Welcome back to your learning hub' },
-  '/classes':    { title: 'Classes',           subtitle: 'Manage your enrolled subjects and lectures' },
-  '/live':       { title: 'Live Classes',      subtitle: "Today's schedule" },
+  '/courses':    { title: 'Courses',          subtitle: 'Manage your enrolled subjects and lectures' },
+  '/live':       { title: 'Live Sessions',     subtitle: "Today's schedule" },
   '/calendar':   { title: 'Calendar',          subtitle: 'Your schedule and upcoming events' },
   '/recordings': { title: 'Recordings',        subtitle: 'Browse lecture recordings' },
   '/materials':  { title: 'Study Materials',   subtitle: 'Download notes and resources' },
   '/community':  { title: 'Community',         subtitle: 'Connect with your classmates' },
   '/announcements': { title: 'Announcements',  subtitle: 'Stay updated with the latest news' },
   '/support':    { title: 'Contact & Support', subtitle: 'Raise a ticket or chat with support' },
-  '/manage':     { title: 'Manage Content',    subtitle: 'Create and edit classes, lectures, and sessions' },
+  '/manage':     { title: 'Manage Content',    subtitle: 'Create and edit courses, lectures, and sessions' },
   '/admin':      { title: 'User Management',   subtitle: 'Manage platform accounts and permissions' },
   '/profile':    { title: 'My Profile',         subtitle: 'View and edit your personal information' },
   '/settings':   { title: 'Settings',          subtitle: 'Manage passwords, appearance, and notifications' },
-  '/chat-transcripts': { title: 'Transcripts', subtitle: 'View community chat transcripts' },
+  '/chat-transcripts': { title: 'Chat Transcripts', subtitle: 'View community chat transcripts' },
   '/work-log':   { title: 'Work Log',          subtitle: 'Monitor all platform activity and user actions' },
+  '/reports':    { title: 'Analytics & Performance', subtitle: 'Comprehensive platform-wide metrics and student audits' },
+  '/exams':      { title: 'Exams',             subtitle: 'Manage and participate in assessments' },
+  '/study/content-bank': { title: 'Content Bank', subtitle: 'Global repository of exam questions and resources' },
 }
 
 const TYPE_COLORS: Record<string, string> = {

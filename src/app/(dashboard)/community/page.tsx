@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import useSWR from 'swr'
 
-interface ClassItem {
+interface CourseItem {
   id: string
   name: string
   color: string
@@ -28,8 +28,8 @@ interface CommMsg {
 }
 
 export default function CommunityPage() {
-  const [classes, setClasses] = useState<ClassItem[]>([])
-  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null)
+  const [courses, setCourses] = useState<CourseItem[]>([])
+  const [selectedCourse, setSelectedCourse] = useState<CourseItem | null>(null)
   const [messages, setMessages] = useState<CommMsg[]>([])
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const [input, setInput] = useState('')
@@ -53,7 +53,7 @@ export default function CommunityPage() {
 
   // useSWR for real-time messages
   const { data: swrMessages, mutate: mutateMessages } = useSWR(
-    selectedClass ? `/api/community/${selectedClass.id}/messages?limit=20` : null,
+    selectedCourse ? `/api/community/${selectedCourse.id}/messages?limit=20` : null,
     fetcher,
     { 
       refreshInterval: isVisible ? 5000 : 0, 
@@ -78,11 +78,11 @@ export default function CommunityPage() {
   }, [swrMessages, initialLoaded])
 
   const loadHistory = async () => {
-    if (!selectedClass || loadingHistory || !hasMore || messages.length === 0) return
+    if (!selectedCourse || loadingHistory || !hasMore || messages.length === 0) return
     setLoadingHistory(true)
     const oldestId = messages[0].id
     try {
-      const res = await fetch(`/api/community/${selectedClass.id}/messages?cursor=${oldestId}&limit=20`)
+      const res = await fetch(`/api/community/${selectedCourse.id}/messages?cursor=${oldestId}&limit=20`)
       const history = await res.json()
       if (history.length < 20) setHasMore(false)
       
@@ -109,7 +109,7 @@ export default function CommunityPage() {
     }
   }
 
-  const loadMessages = useCallback(async (classId: string) => {
+  const loadMessages = useCallback(async (courseId: string) => {
     setInitialLoaded(false)
     setHasMore(true)
     setMessages([])
@@ -121,19 +121,19 @@ export default function CommunityPage() {
       setUserRole(d.user?.role || 'STUDENT')
       setUserId(d.user?.id || '')
     })
-    fetch('/api/classes').then(r => r.json()).then(data => {
-      const list = data.classes || data || []
-      setClasses(list)
-      if (list.length > 0) setSelectedClass(list[0])
+    fetch('/api/courses').then(r => r.json()).then(data => {
+      const list = data.courses || data || []
+      setCourses(list)
+      if (list.length > 0) setSelectedCourse(list[0])
     })
   }, [])
 
-  // Poll messages when a class is selected - handled by SWR
+  // Poll messages when a course is selected - handled by SWR
   useEffect(() => {
-    if (selectedClass) {
-      loadMessages(selectedClass.id)
+    if (selectedCourse) {
+      loadMessages(selectedCourse.id)
     }
-  }, [selectedClass, loadMessages])
+  }, [selectedCourse, loadMessages])
 
   // Handle scroll restoration when history loads
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function CommunityPage() {
   }, [messages, initialLoaded, loadingHistory])
 
   async function sendMessage() {
-    if (!input.trim() || !selectedClass) return
+    if (!input.trim() || !selectedCourse) return
     const optimistic: CommMsg = {
       id: 'temp-' + Date.now(),
       content: input,
@@ -169,20 +169,20 @@ export default function CommunityPage() {
     setMessages(prev => [...prev, optimistic])
     setInput('')
 
-    await fetch(`/api/community/${selectedClass.id}/messages`, {
+    await fetch(`/api/community/${selectedCourse.id}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: optimistic.content }),
     })
-    loadMessages(selectedClass.id)
+    loadMessages(selectedCourse.id)
   }
 
   async function deleteMessage(messageId: string) {
-    if (!selectedClass || deletingId) return
+    if (!selectedCourse || deletingId) return
     if (!confirm('Delete this message? It will be removed from the chat.')) return
     setDeletingId(messageId)
     try {
-      const res = await fetch(`/api/community/${selectedClass.id}/messages`, {
+      const res = await fetch(`/api/community/${selectedCourse.id}/messages`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messageId }),
@@ -202,59 +202,59 @@ export default function CommunityPage() {
   return (
     <div className="page-container fade-in" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
 
-      {/* Left: Class list */}
+      {/* Left: Course list */}
       <div style={{ width: '230px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
         <div style={{ fontSize: '12px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px', padding: '0 4px' }}>
           Communities
         </div>
-        {classes.map(cls => (
+        {courses.map(course => (
           <button
-            key={cls.id}
-            onClick={() => setSelectedClass(cls)}
+            key={course.id}
+            onClick={() => setSelectedCourse(course)}
             style={{
               display: 'flex', alignItems: 'center', gap: '12px',
               padding: '12px 16px', borderRadius: '18px', border: 'none',
               cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
               transition: 'all 0.2s',
-              background: selectedClass?.id === cls.id ? cls.color : '#e8eaf0',
-              color: selectedClass?.id === cls.id ? '#fff' : '#1e1e3a',
-              boxShadow: selectedClass?.id === cls.id
-                ? `5px 5px 12px ${cls.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
+              background: selectedCourse?.id === course.id ? course.color : '#e8eaf0',
+              color: selectedCourse?.id === course.id ? '#fff' : '#1e1e3a',
+              boxShadow: selectedCourse?.id === course.id
+                ? `5px 5px 12px ${course.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
                 : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
             }}
           >
             <div style={{
               width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0,
-              background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : cls.color + '22',
+              background: selectedCourse?.id === course.id ? 'rgba(255,255,255,0.25)' : course.color + '22',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '12px', fontWeight: '800',
-              color: selectedClass?.id === cls.id ? '#fff' : cls.color,
+              color: selectedCourse?.id === course.id ? '#fff' : course.color,
             }}>
-              {cls.name.substring(0, 2).toUpperCase()}
+              {course.name.substring(0, 2).toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {cls.name}
+                {course.name}
               </div>
-              {cls.subject && (
-                <div style={{ fontSize: '11px', opacity: selectedClass?.id === cls.id ? 0.8 : 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {cls.subject}
+              {course.subject && (
+                <div style={{ fontSize: '11px', opacity: selectedCourse?.id === course.id ? 0.8 : 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {course.subject}
                 </div>
               )}
             </div>
           </button>
         ))}
 
-        {classes.length === 0 && (
+        {courses.length === 0 && (
           <div style={{ color: '#9999b0', fontSize: '13px', textAlign: 'center', padding: '20px 10px' }}>
-            No classes available
+            No courses available
           </div>
         )}
       </div>
 
       {/* Right: Chat area */}
       <div style={{ flex: 1, borderRadius: '24px', ...neu, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        {!selectedClass ? (
+        {!selectedCourse ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', color: '#9999b0' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
             <p style={{ fontWeight: '700' }}>Select a community</p>
@@ -265,22 +265,51 @@ export default function CommunityPage() {
             <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{
                 width: '40px', height: '40px', borderRadius: '12px',
-                background: selectedClass.color + '22',
+                background: selectedCourse.color + '22',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '14px', fontWeight: '800', color: selectedClass.color,
+                fontSize: '14px', fontWeight: '800', color: selectedCourse.color,
               }}>
-                {selectedClass.name.substring(0, 2).toUpperCase()}
+                {selectedCourse.name.substring(0, 2).toUpperCase()}
               </div>
               <div>
-                <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a' }}>{selectedClass.name}</div>
-                {selectedClass.subject && (
-                  <div style={{ fontSize: '12px', color: '#9999b0' }}>{selectedClass.subject} · Community Chat</div>
+                <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a' }}>{selectedCourse.name}</div>
+                {selectedCourse.subject && (
+                  <div style={{ fontSize: '12px', color: '#9999b0' }}>{selectedCourse.subject} · Community Chat</div>
                 )}
               </div>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                {userRole === 'MANAGER' && (
+                  <button 
+                    onClick={() => window.location.href = '/chat-transcripts'}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      padding: '8px 16px', borderRadius: '50px',
+                      background: '#e8eaf0', color: '#6b6b8a',
+                      boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                      border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '700',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.color = '#3636e8'
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.color = '#6b6b8a'
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    Transcripts
+                  </button>
+                )}
                 <span style={{
                   padding: '4px 14px', borderRadius: '50px',
-                  background: selectedClass.color + '18', color: selectedClass.color,
+                  background: selectedCourse.color + '18', color: selectedCourse.color,
                   fontSize: '12px', fontWeight: '700',
                 }}>
                   {messages.length} message{messages.length !== 1 ? 's' : ''}
@@ -456,7 +485,7 @@ export default function CommunityPage() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  placeholder={`Message ${selectedClass.name} community...`}
+                  placeholder={`Message ${selectedCourse.name} community...`}
                   maxLength={2000}
                   style={{
                     width: '100%', padding: '11px 16px', borderRadius: '50px',
@@ -479,11 +508,11 @@ export default function CommunityPage() {
                 style={{
                   width: '44px', height: '44px', borderRadius: '50%', border: 'none',
                   cursor: input.trim() ? 'pointer' : 'default',
-                  background: input.trim() ? selectedClass.color : '#e8eaf0',
+                  background: input.trim() ? selectedCourse.color : '#e8eaf0',
                   color: input.trim() ? '#fff' : '#9999b0',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                   boxShadow: input.trim()
-                    ? `4px 4px 10px ${selectedClass.color}55`
+                    ? `4px 4px 10px ${selectedCourse.color}55`
                     : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                   transition: 'all 0.2s',
                 }}

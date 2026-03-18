@@ -10,8 +10,8 @@ interface Ticket {
   type: string
   status: string
   priority: string
-  classId?: string
-  class?: { id: string; name: string; color: string }
+  courseId?: string
+  course?: { id: string; name: string; color: string }
   user: { id: string; name: string; role: string }
   assignedTo?: { id: string; name: string; role: string } | null
   replies: Reply[]
@@ -39,9 +39,18 @@ interface ChatSession {
   _count?: { messages: number }
   messages?: ChatMsg[]
 }
-interface ClassItem { id: string; name: string; color: string }
+interface CourseItem { id: string; name: string; color: string }
 interface Faq { id: string; question: string; answer: string; order: number }
 interface AdminUser { id: string; name: string; role: string }
+
+const WORK_LOG_ACTIONS = [
+  'COURSE_CREATED', 'COURSE_UPDATED', 'COURSE_DELETED',
+  'TOPIC_CREATED', 'TOPIC_UPDATED', 'TOPIC_DELETED',
+  'CONTENT_CREATED', 'CONTENT_UPDATED', 'CONTENT_DELETED',
+  'LECTURE_CREATED', 'LECTURE_UPDATED', 'LECTURE_DELETED',
+  'MATERIAL_CREATED', 'MATERIAL_UPDATED', 'MATERIAL_DELETED',
+  'SESSION_CREATED', 'SESSION_UPDATED', 'SESSION_DELETED',
+]
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: '#3b82f6', IN_PROGRESS: '#f59e0b', RESOLVED: '#10b981', CLOSED: '#9999b0',
@@ -102,11 +111,11 @@ function BackButton({ onClick }: { onClick: () => void }) {
 export default function SupportPage() {
   const [view, setView] = useState<'home' | 'allTickets' | 'chat' | 'chatHistory'>('home')
   const [tickets, setTickets] = useState<Ticket[]>([])
-  const [classes, setClasses] = useState<ClassItem[]>([])
+  const [courses, setCourses] = useState<CourseItem[]>([])
   const [selected, setSelected] = useState<Ticket | null>(null)
   const [replyText, setReplyText] = useState('')
   const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState({ title: '', description: '', type: 'GENERAL', classId: '', priority: 'MEDIUM' })
+  const [form, setForm] = useState({ title: '', description: '', type: 'GENERAL', courseId: '', priority: 'MEDIUM' })
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const [userRole, setUserRole] = useState('STUDENT')
   const [userId, setUserId] = useState('')
@@ -163,8 +172,8 @@ export default function SupportPage() {
 
   const loadTickets = useCallback(async () => {
     mutateTickets()
-    const cr = await fetch('/api/classes').then(r => r.json())
-    setClasses((cr.classes || cr || []).map((c: ClassItem) => ({ id: c.id, name: c.name, color: c.color })))
+    const cr = await fetch('/api/courses').then(r => r.json())
+    setCourses((cr.courses || cr || []).map((c: CourseItem) => ({ id: c.id, name: c.name, color: c.color })))
   }, [mutateTickets])
 
   const loadFaqs = useCallback(async () => {
@@ -197,7 +206,7 @@ export default function SupportPage() {
     if (!form.title.trim() || !form.description.trim()) return
     await fetch('/api/support/tickets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
     setShowCreate(false)
-    setForm({ title: '', description: '', type: 'GENERAL', classId: '', priority: 'MEDIUM' })
+    setForm({ title: '', description: '', type: 'GENERAL', courseId: '', priority: 'MEDIUM' })
     loadTickets()
   }
 
@@ -318,10 +327,10 @@ export default function SupportPage() {
           </div>
           {form.type === 'SUBJECT' && (
             <div className="form-group">
-              <label className="form-label">Select Subject</label>
-              <select className="form-input" value={form.classId} onChange={e => setForm(f => ({ ...f, classId: e.target.value }))}>
-                <option value="">Choose a subject...</option>
-                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <label className="form-label">Select Course</label>
+              <select className="form-input" value={form.courseId} onChange={e => setForm(f => ({ ...f, courseId: e.target.value }))}>
+                <option value="">Choose a course...</option>
+                {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
           )}
@@ -560,7 +569,7 @@ export default function SupportPage() {
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                       <span style={pill(STATUS_COLORS[t.status])}>{t.status.replace('_', ' ')}</span>
                       <span style={pill(PRIORITY_COLORS[t.priority])}>{t.priority}</span>
-                      {t.class && <span style={pill(t.class.color)}>{t.class.name}</span>}
+                      {t.course && <span style={pill(t.course.color)}>{t.course.name}</span>}
                       {t.assignedTo && <span style={pill('#3636e8')}>{t.assignedTo.name}</span>}
                     </div>
                   </div>
