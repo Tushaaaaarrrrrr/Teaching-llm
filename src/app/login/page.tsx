@@ -277,7 +277,5 @@ export default function LoginPage() {
           .login-left { display: none !important; }
           .login-right { flex: 1 !important; }
         }
-      `}</style>
+          {/* Quick Access section removed for production */}
     </div>
-  )
-}
