@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
         return NextResponse.json({ content: [] })
       }
-      where.topic = { courseId }
+      where.topic = { courseId: courseId }
     }
 
     // Apply enrollment filter when no specific courseId/topicId is requested

@@ -11,31 +11,30 @@ export async function GET() {
 
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
 
-    const courseFilter = accessibleCourseIds !== null
+    const classFilter = accessibleCourseIds !== null
       ? { courseId: { in: accessibleCourseIds } }
       : {}
 
-    const courseCountFilter = accessibleCourseIds !== null
+    const classCountFilter = accessibleCourseIds !== null
       ? { id: { in: accessibleCourseIds } }
       : {}
 
-    const [totalCourses, totalLectures, totalStudents, upcomingSessions, totalMaterials] =
+    const [totalClasses, totalLectures, totalStudents, upcomingSessions, totalMaterials] =
       await Promise.all([
-        (prisma.course as any).count({ where: courseCountFilter }),
-        (prisma.lecture as any).count({ where: courseFilter as any }),
-        (prisma.user as any).count({ where: { role: 'STUDENT' } }),
-        (prisma.calendarEvent as any).count({
+        prisma.course.count({ where: classCountFilter }),
+        prisma.lecture.count({ where: classFilter }),
+        prisma.user.count({ where: { role: 'STUDENT' } }),
+        prisma.liveSession.count({
           where: {
-            type: 'live',
             status: { in: ['scheduled', 'live'] },
-            ...courseFilter,
-          } as any,
+            ...classFilter,
+          },
         }),
-        (prisma.material as any).count({ where: courseFilter as any }),
+        prisma.material.count({ where: classFilter }),
       ])
 
     return NextResponse.json({
-      totalCourses,
+      totalClasses,
       totalLectures,
       totalStudents,
       upcomingSessions,

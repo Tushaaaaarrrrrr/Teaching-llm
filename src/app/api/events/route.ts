@@ -55,11 +55,11 @@ export async function POST(request: NextRequest) {
     const { title, description, date, time, type, relatedCourse, courseId, instructorId } =
       await request.json()
 
-    // Verify ADMIN has access to the target course
+    // Verify ADMIN has access to the target class
     if (session.role === 'ADMIN' && courseId) {
       const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
       if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
-        return NextResponse.json({ error: 'No access to this course' }, { status: 403 })
+        return NextResponse.json({ error: 'No access to this class' }, { status: 403 })
       }
     }
 

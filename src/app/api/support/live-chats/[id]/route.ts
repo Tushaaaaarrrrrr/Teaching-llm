@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, isManager } from '@/lib/auth'
+import { getSession, isAdminOrManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 // Agent joins or closes a chat
@@ -14,21 +14,6 @@ export async function PUT(
 
     const { action } = await request.json()
 
-    const chat = await prisma.chatSession.findUnique({
-      where: { id: params.id }
-    })
-
-    if (!chat) return NextResponse.json({ error: 'Chat not found' }, { status: 404 })
-
-    // IDOR Check
-    const isOwner = chat.studentId === session.userId
-    const isAgent = chat.agentId === session.userId
-    const hasAccess = isOwner || isAgent || isManager(session.role) || (action === 'join' && isAdminOrManager(session.role))
-
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     let data: Record<string, unknown> = {}
     if (action === 'join' && isAdminOrManager(session.role)) {
       data = { agentId: session.userId, status: 'ACTIVE' }
@@ -36,7 +21,7 @@ export async function PUT(
       data = { status: 'CLOSED' }
     }
 
-    const updatedChat = await prisma.chatSession.update({
+    const chat = await prisma.chatSession.update({
       where: { id: params.id },
       data,
       include: {
@@ -55,7 +40,7 @@ export async function PUT(
       targetId: params.id,
     })
 
-    return NextResponse.json(updatedChat)
+    return NextResponse.json(chat)
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -143,45 +143,7 @@ export default function LoginPage() {
             </h2>
             <p style={{ color: '#9999b0', fontSize: '14px' }}>
               Sign in to your account to continue learning
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            {error && (
-              <div style={{
-                background: 'rgba(239,68,68,0.08)',
-                color: '#dc2626',
-                padding: '12px 16px',
-                borderRadius: '12px',
-                fontSize: '13px',
-                marginBottom: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: 'inset 2px 2px 5px rgba(239,68,68,0.1)',
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                {error}
-              </div>
-            )}
-
-            <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label className="form-label" htmlFor="email">Email Address</label>
-              <input
-                id="email"
-                type="email"
-                className="form-input"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-            </div>
+          {/* Quick Access section removed for production */}
 
             <div className="form-group" style={{ marginBottom: '28px' }}>
               <label className="form-label" htmlFor="password">Password</label>
@@ -277,7 +239,5 @@ export default function LoginPage() {
           .login-left { display: none !important; }
           .login-right { flex: 1 !important; }
         }
-      `}</style>
+          {/* Quick Access section removed for production */}
     </div>
-  )
-}

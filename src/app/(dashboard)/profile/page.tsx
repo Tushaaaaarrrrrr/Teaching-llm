@@ -9,7 +9,6 @@ interface UserProfile {
   email: string
   role: string
   avatar: string | null
-  gender: string | null
   securityNumber: string | null
   createdAt: string
 }
@@ -35,7 +34,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
 
   const [editName, setEditName] = useState('')
-  const [editGender, setEditGender] = useState('')
   const [savingName, setSavingName] = useState(false)
   const [nameMsg, setNameMsg] = useState({ type: '', text: '' })
 
@@ -51,7 +49,6 @@ export default function ProfilePage() {
       if (data.user) {
         setUser(data.user)
         setEditName(data.user.name)
-        setEditGender(data.user.gender || 'MALE')
       }
     } catch (e) { console.error(e) }
     setLoading(false)
@@ -59,19 +56,19 @@ export default function ProfilePage() {
 
   async function handleSaveName() {
     if (!editName.trim()) { setNameMsg({ type: 'error', text: 'Name cannot be empty' }); return }
-    if (editName.trim() === user?.name && editGender === user?.gender) { setNameMsg({ type: 'info', text: 'No changes to save' }); return }
+    if (editName.trim() === user?.name) { setNameMsg({ type: 'info', text: 'No changes to save' }); return }
     setSavingName(true)
     setNameMsg({ type: '', text: '' })
     try {
       const res = await fetch('/api/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editName.trim(), gender: editGender }),
+        body: JSON.stringify({ name: editName.trim() }),
       })
       const data = await res.json()
       if (res.ok) {
-        setUser(prev => prev ? { ...prev, name: data.user.name, gender: data.user.gender } : prev)
-        setNameMsg({ type: 'success', text: 'Profile updated successfully' })
+        setUser(prev => prev ? { ...prev, name: data.user.name } : prev)
+        setNameMsg({ type: 'success', text: 'Name updated successfully' })
       } else {
         setNameMsg({ type: 'error', text: data.error || 'Failed to update' })
       }
@@ -100,10 +97,7 @@ export default function ProfilePage() {
   }
 
   function handleDiscard() {
-    if (user) {
-      setEditName(user.name)
-      setEditGender(user.gender || 'MALE')
-    }
+    if (user) setEditName(user.name)
     setNameMsg({ type: '', text: '' })
   }
 
@@ -273,22 +267,8 @@ export default function ProfilePage() {
               <div className="form-group">
                 <label className="form-label">Email Address</label>
                 <input className="form-input" value={user.email} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+                <span style={{ fontSize: '11px', color: '#9999b0' }}>Email cannot be changed. Contact admin for updates.</span>
               </div>
-              {user.gender && (
-                <div className="form-group">
-                  <label className="form-label">Gender</label>
-                  <select 
-                    className="form-input" 
-                    value={editGender} 
-                    onChange={e => setEditGender(e.target.value)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-              )}
             </div>
           </div>
 
@@ -303,6 +283,14 @@ export default function ProfilePage() {
               Account Details
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+
+              {/* Account ID */}
+              <div style={insetRow}>
+                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Account ID</span>
+                <span style={{ fontSize: '12px', color: '#1e1e3a', fontWeight: '600', fontFamily: 'monospace', wordBreak: 'break-all', textAlign: 'right', maxWidth: '60%' }}>
+                  {user.id}
+                </span>
+              </div>
 
               {/* Security Number with eye toggle */}
               <div style={insetRow}>

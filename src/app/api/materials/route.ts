@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, canManageContent, isInstructor, getInstructorCourseIds } from '@/lib/auth'
+import { getSession, canManageContent } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(request: NextRequest) {
@@ -45,13 +45,6 @@ export async function POST(request: NextRequest) {
     const { courseId, title, description, fileUrl, fileType, fileSize } =
       await request.json()
 
-    // Instructor: can only create materials in assigned courses
-    if (isInstructor(session.role)) {
-      const assignedIds = await getInstructorCourseIds(session.userId)
-      if (!assignedIds.includes(courseId)) {
-        return NextResponse.json({ error: 'You are not assigned to this course' }, { status: 403 })
-      }
-    }
 
     const material = await prisma.material.create({
       data: {

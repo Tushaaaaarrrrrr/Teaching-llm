@@ -36,7 +36,6 @@ export async function GET() {
         role: true,
         isTerminated: true,
         createdAt: true,
-        ...(session.role === 'MANAGER' ? { gender: true } : {}),
         enrollments: {
           select: {
             courseId: true,
@@ -71,32 +70,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { 
-      name, email, password, role, gender,
-      courseIds = [], assignedCourseIds = [], 
-      canTerminate = false, canCreateStudents = false 
-    } = await request.json()
+    const { name, email, password, role, classIds = [], assignedClassIds = [] } = await request.json()
 
-    if (!gender) {
-      return NextResponse.json({ error: 'Gender is required' }, { status: 400 })
+    // ADMINs can only create STUDENT accounts
+    if (session.role === 'ADMIN' && role !== 'STUDENT') {
+      return NextResponse.json({ error: 'Admins can only create student accounts' }, { status: 403 })
     }
 
-    // ADMINs can only create STUDENT accounts and must have permission
-    if (session.role === 'ADMIN') {
-      if (role !== 'STUDENT') {
-        return NextResponse.json({ error: 'Admins can only create student accounts' }, { status: 403 })
-      }
-      if (!session.canCreateStudents) {
-        return NextResponse.json({ error: 'You do not have permission to create students' }, { status: 403 })
-      }
-    }
-
-    // ADMINs can only assign courses they have access to
-    if (session.role === 'ADMIN' && courseIds.length > 0) {
+    // ADMINs can only assign classes they have access to
+    if (session.role === 'ADMIN' && classIds.length > 0) {
       const adminCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-      const unauthorized = courseIds.filter((id: string) => !adminCourseIds?.includes(id))
+      const unauthorized = classIds.filter((id: string) => !adminCourseIds?.includes(id))
       if (unauthorized.length > 0) {
-        return NextResponse.json({ error: 'Cannot assign courses you don\'t have access to' }, { status: 403 })
+        return NextResponse.json({ error: 'Cannot assign classes you don\'t have access to' }, { status: 403 })
       }
     }
 
@@ -118,11 +104,7 @@ export async function POST(request: NextRequest) {
           email: email.toLowerCase(),
           passwordHash,
           role,
-          gender: gender.toUpperCase(),
-          avatar: gender.toUpperCase() === 'FEMALE' ? '/images/default-female.png' : '/images/default-male.png',
           securityNumber,
-          canTerminate: session.role === 'MANAGER' ? canTerminate : false,
-          canCreateStudents: session.role === 'MANAGER' ? canCreateStudents : false,
         },
         select: {
           id: true,
@@ -133,9 +115,9 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      if (courseIds.length > 0) {
+      if (classIds.length > 0) {
         await tx.enrollment.createMany({
-          data: courseIds.map((courseId: string) => ({
+          data: classIds.map((courseId: string) => ({
             userId: newUser.id,
             courseId,
           })),
@@ -143,9 +125,9 @@ export async function POST(request: NextRequest) {
       }
 
       // Create instructor assignments if role is INSTRUCTOR
-      if (role === 'INSTRUCTOR' && assignedCourseIds.length > 0) {
+      if (role === 'INSTRUCTOR' && assignedClassIds.length > 0) {
         await tx.instructorAssignment.createMany({
-          data: assignedCourseIds.map((courseId: string) => ({
+          data: assignedClassIds.map((courseId: string) => ({
             instructorId: newUser.id,
             courseId,
           })),

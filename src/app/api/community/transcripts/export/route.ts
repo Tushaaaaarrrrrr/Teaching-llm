@@ -26,8 +26,8 @@ function buildTranscriptRows(messages: any[]): TranscriptRow[] {
     message: msg.content,
     isDeleted: msg.isDeleted,
     deletedAt: msg.deletedAt ? new Date(msg.deletedAt).toISOString() : '',
-    communityName: msg.course.name,
-    communitySubject: msg.course.subject || '',
+    communityName: msg.class.name,
+    communitySubject: msg.class.subject || '',
   }))
 }
 
@@ -72,7 +72,7 @@ function toPdfHtml(rows: TranscriptRow[], className: string): string {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Course Transcript - ${escapeHtml(className)}</title>
+  <title>Chat Transcript - ${escapeHtml(className)}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 30px; color: #1e1e3a; }
     h1 { font-size: 20px; margin-bottom: 4px; }
@@ -83,7 +83,7 @@ function toPdfHtml(rows: TranscriptRow[], className: string): string {
   </style>
 </head>
 <body>
-  <h1>Course Chat Transcript: ${escapeHtml(className)}</h1>
+  <h1>Community Chat Transcript: ${escapeHtml(className)}</h1>
   <div class="meta">Exported on ${new Date().toISOString()} &middot; ${rows.length} total messages &middot; ${rows.filter(r => r.isDeleted).length} deleted</div>
   <table>
     <thead>
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
       userName: session.name,
       userRole: session.role,
       actionType: ACTION.TRANSCRIPT_EXPORTED,
-      actionDescription: `${session.name} exported transcript for course "${cls.name}"`,
+      actionDescription: `${session.name} exported transcript for class "${cls.name}"`,
       moduleName: MODULE.COMMUNITY,
       targetId: courseId,
     })
@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
 
     // Default: JSON
     return new NextResponse(JSON.stringify({
-      course: { name: cls.name, subject: cls.subject },
+      community: { name: cls.name, subject: cls.subject },
       exportedAt: new Date().toISOString(),
       totalMessages: rows.length,
       deletedMessages: rows.filter(r => r.isDeleted).length,

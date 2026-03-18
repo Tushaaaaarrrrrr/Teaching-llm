@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-interface CourseInfo {
+interface ClassInfo {
   id: string
   name: string
   subject: string | null
@@ -23,15 +23,15 @@ interface TranscriptMsg {
     role: string
     securityNumber: string | null
   }
-  course: {
+  class: {
     name: string
     subject: string | null
   }
 }
 
 export default function ChatTranscriptsPage() {
-  const [courses, setCourses] = useState<CourseInfo[]>([])
-  const [selectedCourse, setSelectedCourse] = useState<CourseInfo | null>(null)
+  const [classes, setClasses] = useState<ClassInfo[]>([])
+  const [selectedClass, setSelectedClass] = useState<ClassInfo | null>(null)
   const [messages, setMessages] = useState<TranscriptMsg[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(false)
@@ -40,35 +40,26 @@ export default function ChatTranscriptsPage() {
   const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user?.role !== 'MANAGER') {
-          window.location.href = '/dashboard'
-        } else {
-          loadCourses()
-        }
-      })
-      .catch(() => window.location.href = '/login')
+    loadClasses()
   }, [])
 
-  async function loadCourses() {
+  async function loadClasses() {
     setLoading(true)
     try {
       const data = await fetch('/api/community/transcripts').then(r => r.json())
-      setCourses(data.courses || data.classes || [])
+      setClasses(data.classes || [])
     } catch (e) {
       console.error(e)
     }
     setLoading(false)
   }
 
-  async function selectCourse(cls: CourseInfo) {
-    setSelectedCourse(cls)
+  async function selectClass(cls: ClassInfo) {
+    setSelectedClass(cls)
     setLoadingMessages(true)
     setMessages([])
     try {
-      const data = await fetch(`/api/community/transcripts?courseId=${cls.id}`).then(r => r.json())
+      const data = await fetch(`/api/community/transcripts?classId=${cls.id}`).then(r => r.json())
       setMessages(data.messages || [])
     } catch (e) {
       console.error(e)
@@ -77,16 +68,16 @@ export default function ChatTranscriptsPage() {
   }
 
   async function exportTranscript(format: 'csv' | 'json' | 'pdf') {
-    if (!selectedCourse) return
+    if (!selectedClass) return
     setExporting(true)
     try {
-      const res = await fetch(`/api/community/transcripts/export?courseId=${selectedCourse.id}&format=${format}`)
+      const res = await fetch(`/api/community/transcripts/export?classId=${selectedClass.id}&format=${format}`)
       const blob = await res.blob()
       const ext = format === 'pdf' ? 'html' : format
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `transcript-${selectedCourse.name.replace(/\s+/g, '_')}.${ext}`
+      a.download = `transcript-${selectedClass.name.replace(/\s+/g, '_')}.${ext}`
       document.body.appendChild(a)
       a.click()
       a.remove()
@@ -117,7 +108,7 @@ export default function ChatTranscriptsPage() {
   return (
     <div className="page-container fade-in" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
 
-      {/* Left: Course list */}
+      {/* Left: Class list */}
       <div style={{ width: '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
         <div style={{ fontSize: '12px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px', padding: '0 4px' }}>
           Community Transcripts
@@ -127,28 +118,28 @@ export default function ChatTranscriptsPage() {
           <div style={{ color: '#9999b0', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Loading...</div>
         )}
 
-        {courses.map(cls => (
+        {classes.map(cls => (
           <button
             key={cls.id}
-            onClick={() => selectCourse(cls)}
+            onClick={() => selectClass(cls)}
             style={{
               display: 'flex', alignItems: 'center', gap: '12px',
               padding: '12px 16px', borderRadius: '18px', border: 'none',
               cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
               transition: 'all 0.2s',
-              background: selectedCourse?.id === cls.id ? cls.color : '#e8eaf0',
-              color: selectedCourse?.id === cls.id ? '#fff' : '#1e1e3a',
-              boxShadow: selectedCourse?.id === cls.id
+              background: selectedClass?.id === cls.id ? cls.color : '#e8eaf0',
+              color: selectedClass?.id === cls.id ? '#fff' : '#1e1e3a',
+              boxShadow: selectedClass?.id === cls.id
                 ? `5px 5px 12px ${cls.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
                 : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
             }}
           >
             <div style={{
               width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0,
-              background: selectedCourse?.id === cls.id ? 'rgba(255,255,255,0.25)' : cls.color + '22',
+              background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : cls.color + '22',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '12px', fontWeight: '800',
-              color: selectedCourse?.id === cls.id ? '#fff' : cls.color,
+              color: selectedClass?.id === cls.id ? '#fff' : cls.color,
             }}>
               {cls.name.substring(0, 2).toUpperCase()}
             </div>
@@ -156,10 +147,10 @@ export default function ChatTranscriptsPage() {
               <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {cls.name}
               </div>
-              <div style={{ fontSize: '11px', opacity: selectedCourse?.id === cls.id ? 0.8 : 0.6, display: 'flex', gap: '8px' }}>
+              <div style={{ fontSize: '11px', opacity: selectedClass?.id === cls.id ? 0.8 : 0.6, display: 'flex', gap: '8px' }}>
                 <span>{cls.totalMessages} msg{cls.totalMessages !== 1 ? 's' : ''}</span>
                 {cls.deletedMessages > 0 && (
-                  <span style={{ color: selectedCourse?.id === cls.id ? 'rgba(255,255,255,0.9)' : '#ef4444' }}>
+                  <span style={{ color: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.9)' : '#ef4444' }}>
                     {cls.deletedMessages} deleted
                   </span>
                 )}
@@ -168,7 +159,7 @@ export default function ChatTranscriptsPage() {
           </button>
         ))}
 
-        {!loading && courses.length === 0 && (
+        {!loading && classes.length === 0 && (
           <div style={{ color: '#9999b0', fontSize: '13px', textAlign: 'center', padding: '20px 10px' }}>
             No communities found
           </div>
@@ -177,7 +168,7 @@ export default function ChatTranscriptsPage() {
 
       {/* Right: Transcript viewer */}
       <div style={{ flex: 1, borderRadius: '24px', ...neu, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        {!selectedCourse ? (
+        {!selectedClass ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', color: '#9999b0' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -185,7 +176,7 @@ export default function ChatTranscriptsPage() {
               <line x1="16" y1="13" x2="8" y2="13"/>
               <line x1="16" y1="17" x2="8" y2="17"/>
             </svg>
-            <p style={{ fontWeight: '700' }}>Select a course to view transcript</p>
+            <p style={{ fontWeight: '700' }}>Select a community to view transcript</p>
             <p style={{ fontSize: '13px' }}>Full chat history including deleted messages</p>
           </div>
         ) : (
@@ -194,16 +185,16 @@ export default function ChatTranscriptsPage() {
             <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <div style={{
                 width: '40px', height: '40px', borderRadius: '12px',
-                background: selectedCourse.color + '22',
+                background: selectedClass.color + '22',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '14px', fontWeight: '800', color: selectedCourse.color,
+                fontSize: '14px', fontWeight: '800', color: selectedClass.color,
               }}>
-                {selectedCourse.name.substring(0, 2).toUpperCase()}
+                {selectedClass.name.substring(0, 2).toUpperCase()}
               </div>
               <div style={{ flex: 1, minWidth: '150px' }}>
-                <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a' }}>{selectedCourse.name}</div>
+                <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a' }}>{selectedClass.name}</div>
                 <div style={{ fontSize: '12px', color: '#9999b0' }}>
-                  {selectedCourse.subject ? `${selectedCourse.subject} · ` : ''}Full Transcript · {messages.length} messages
+                  {selectedClass.subject ? `${selectedClass.subject} · ` : ''}Full Transcript · {messages.length} messages
                   {messages.filter(m => m.isDeleted).length > 0 && (
                     <span style={{ color: '#ef4444' }}> · {messages.filter(m => m.isDeleted).length} deleted</span>
                   )}

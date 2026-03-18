@@ -24,7 +24,7 @@ async function main() {
   // ──────────────────────────────────────────────
   console.log("Creating users...");
 
-  const managerPassword = await bcrypt.hash("manager123", 10);
+  const managerPassword = await bcrypt.hash("admin1234", 10);
   const adminPassword = await bcrypt.hash("admin123", 10);
   const studentPassword = await bcrypt.hash("student123", 10);
 
@@ -33,7 +33,7 @@ async function main() {
   const manager = await prisma.user.create({
     data: {
       name: "Platform Manager",
-      email: "manager@teacherai.com",
+      email: "tushar@singhai.com",
       passwordHash: managerPassword,
       role: "MANAGER",
       avatar: "/avatars/manager.png",
