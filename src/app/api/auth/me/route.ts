@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { getUserAvatar } from '@/lib/avatar'
 
 export async function GET() {
   const session = await getSession()
@@ -11,7 +12,7 @@ export async function GET() {
   const user = await (prisma.user as any).findUnique({
     where: { id: session.userId },
     select: { 
-      id: true, name: true, email: true, role: true, avatar: true, createdAt: true, 
+      id: true, name: true, email: true, role: true, avatar: true, gender: true, createdAt: true, 
       canTerminate: true, canCreateStudents: true,
       enrollments: {
         select: {
@@ -33,6 +34,8 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
+
+  user.avatar = getUserAvatar(user)
 
   return NextResponse.json({ user })
 }

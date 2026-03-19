@@ -12,6 +12,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    if (session.role !== 'ADMIN' && session.role !== 'MANAGER') {
+      return NextResponse.json({ error: 'Forbidden: Only Admins and Managers can upload avatars' }, { status: 403 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('avatar') as File | null
 

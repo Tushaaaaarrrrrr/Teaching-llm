@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { comparePassword, signToken, getCookieConfig } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { checkRateLimit } from '@/lib/ratelimit'
+import { getUserAvatar } from '@/lib/avatar'
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     const { name, options } = getCookieConfig()
     const response = NextResponse.json({
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: getUserAvatar(user) },
     })
 
     response.cookies.set(name, token, options)
