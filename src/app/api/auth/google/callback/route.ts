@@ -8,25 +8,26 @@ export const dynamic = 'force-dynamic'
 const DEFAULT_COURSE_NAME = 'Demo Course'
 
 export async function GET(request: NextRequest) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin
   try {
     const searchParams = request.nextUrl.searchParams
     const code = searchParams.get('code')
     const error = searchParams.get('error')
 
     if (error) {
-      return NextResponse.redirect(new URL(`/login?error=${error}`, request.nextUrl.origin))
+      return NextResponse.redirect(new URL(`/login?error=${error}`, baseUrl))
     }
 
     if (!code) {
-      return NextResponse.redirect(new URL('/login?error=NoCodeProvided', request.nextUrl.origin))
+      return NextResponse.redirect(new URL('/login?error=NoCodeProvided', baseUrl))
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-    const redirectUri = `${request.nextUrl.origin}/api/auth/google/callback`
+    const redirectUri = `${baseUrl}/api/auth/google/callback`
 
     if (!clientId || !clientSecret) {
-      return NextResponse.redirect(new URL('/login?error=GoogleLoginNotConfigured', request.nextUrl.origin))
+      return NextResponse.redirect(new URL('/login?error=GoogleLoginNotConfigured', baseUrl))
     }
 
     // Exchange the authorization code for an access token
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenRes.json()
     if (!tokenData.access_token) {
       console.error('Failed to get Google access token', tokenData)
-      return NextResponse.redirect(new URL('/login?error=GoogleAuthFailed', request.nextUrl.origin))
+      return NextResponse.redirect(new URL('/login?error=GoogleAuthFailed', baseUrl))
     }
 
     // Fetch user profile from Google
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
     
     const userData = await userRes.json()
     if (!userData.email) {
-      return NextResponse.redirect(new URL('/login?error=GoogleEmailMissing', request.nextUrl.origin))
+      return NextResponse.redirect(new URL('/login?error=GoogleEmailMissing', baseUrl))
     }
 
     // Check if the user already exists in our database
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest) {
     
     // Prevent login if account is terminated
     if (user.isTerminated) {
-      return NextResponse.redirect(new URL('/login?error=AccountDeactivated', request.nextUrl.origin))
+      return NextResponse.redirect(new URL('/login?error=AccountDeactivated', baseUrl))
     }
 
     // ── Login tracking (same as email login) ──
@@ -139,7 +140,7 @@ export async function GET(request: NextRequest) {
     const token = signToken(payload)
 
     // Set the cookie and redirect to the dashboard
-    const response = NextResponse.redirect(new URL('/dashboard', request.nextUrl.origin))
+    const response = NextResponse.redirect(new URL('/dashboard', baseUrl))
     const cookieConfig = getCookieConfig()
     response.cookies.set(cookieConfig.name, token, cookieConfig.options)
 
@@ -147,6 +148,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Google OAuth Callback Error:', error)
-    return NextResponse.redirect(new URL('/login?error=InternalError', request.nextUrl.origin))
+    return NextResponse.redirect(new URL('/login?error=InternalError', baseUrl))
   }
 }

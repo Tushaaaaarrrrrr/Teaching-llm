@@ -3,12 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID
   
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin
+
   if (!clientId) {
     // If credentials aren't set, redirect back with an error
-    return NextResponse.redirect(new URL('/login?error=GoogleLoginNotConfigured', request.nextUrl.origin))
+    return NextResponse.redirect(new URL('/login?error=GoogleLoginNotConfigured', baseUrl))
   }
 
-  const redirectUri = `${request.nextUrl.origin}/api/auth/google/callback`
+  const redirectUri = `${baseUrl}/api/auth/google/callback`
 
   const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
   googleAuthUrl.searchParams.append('client_id', clientId)
