@@ -3,7 +3,7 @@ import { jwtVerify } from 'jose'
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated']
 const COOKIE_NAME = 'teaching_llm_token'
-const JWT_SECRET = process.env.JWT_SECRET || 'teaching-llm-secret-key-change-in-production'
+const JWT_SECRET = (process.env.JWT_SECRET || 'teaching-llm-secret-key-change-in-production').trim()
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -53,7 +53,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   } catch (error) {
-    console.error('JWT Verification failed in middleware:', error)
+    console.error(`JWT Verification failed in middleware for path ${pathname}:`, error)
     const response = NextResponse.redirect(new URL('/login', request.url))
     response.cookies.delete(COOKIE_NAME)
     return response

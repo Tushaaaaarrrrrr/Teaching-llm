@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 
-const JWT_SECRET = process.env.JWT_SECRET
+const JWT_SECRET = process.env.JWT_SECRET?.trim()
 
 if (!JWT_SECRET || JWT_SECRET === 'teaching-llm-secret-key-change-in-production') {
   console.error('\x1b[31m%s\x1b[0m', 'FATAL ERROR: JWT_SECRET is missing or insecure! The application will not start.')
@@ -35,8 +35,9 @@ export function signToken(payload: JWTPayload): string {
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload
-  } catch {
+    return jwt.verify(token, JWT_SECRET!) as JWTPayload
+  } catch (err) {
+    console.error('JWT Verification Error (lib/auth.ts):', err)
     return null
   }
 }

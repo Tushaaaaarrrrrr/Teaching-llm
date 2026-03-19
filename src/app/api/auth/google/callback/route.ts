@@ -55,13 +55,16 @@ export async function GET(request: NextRequest) {
     })
     
     const userData = await userRes.json()
-    if (!userData.email) {
+    const email = userData.email?.toLowerCase().trim()
+    if (!email) {
       return NextResponse.redirect(new URL('/login?error=GoogleEmailMissing', baseUrl))
     }
 
+    const SUPER_ADMIN_EMAIL = 'lkiitmng2428@gmail.com'
+
     // Check if the user already exists in our database
     let user = await prisma.user.findUnique({
-      where: { email: userData.email }
+      where: { email }
     })
 
     let isNewUser = false
@@ -72,10 +75,11 @@ export async function GET(request: NextRequest) {
       const genSec = () => 'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase()
       user = await prisma.user.create({
         data: {
-          email: userData.email,
-          name: userData.name || userData.email.split('@')[0],
+          email,
+          name: userData.name || email.split('@')[0],
           passwordHash: '', // Empty = Google OAuth user (used for isGoogleAuth detection)
-          role: 'STUDENT',
+          role: email === SUPER_ADMIN_EMAIL ? 'MANAGER' : 'STUDENT',
+          isSuperManager: email === SUPER_ADMIN_EMAIL,
           avatar: userData.picture || null,
           securityNumber: genSec()
         }
@@ -104,12 +108,22 @@ export async function GET(request: NextRequest) {
         })
       }
 
-      // Enroll the new student
-      await prisma.enrollment.create({
-        data: { userId: user.id, courseId: demoCourse.id }
-      }).catch(() => {
-        // In case of unique constraint (already enrolled), silently ignore
-      })
+      // Enroll the new student if they are not a manager
+      if (user.role !== 'MANAGER') {
+        await prisma.enrollment.create({
+          data: { userId: user.id, courseId: demoCourse.id }
+        }).catch(() => {
+          // In case of unique constraint (already enrolled), silently ignore
+        })
+      }
+    } else {
+      // User exists. If it's the super admin but they lost their status (e.g. DB wiped and they logged in as student first), restore it
+      if (email === SUPER_ADMIN_EMAIL && (!user.isSuperManager || user.role !== 'MANAGER')) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { role: 'MANAGER', isSuperManager: true }
+        })
+      }
     }
     
     // Prevent login if account is terminated
