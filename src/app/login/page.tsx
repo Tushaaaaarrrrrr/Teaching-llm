@@ -143,7 +143,23 @@ export default function LoginPage() {
             </h2>
             <p style={{ color: '#9999b0', fontSize: '14px' }}>
               Sign in to your account to continue learning
-          {/* Quick Access section removed for production */}
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label className="form-label" htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                className="form-input"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+            </div>
 
             <div className="form-group" style={{ marginBottom: '28px' }}>
               <label className="form-label" htmlFor="password">Password</label>
@@ -239,5 +255,7 @@ export default function LoginPage() {
           .login-left { display: none !important; }
           .login-right { flex: 1 !important; }
         }
-          {/* Quick Access section removed for production */}
+      `}</style>
     </div>
+  )
+}

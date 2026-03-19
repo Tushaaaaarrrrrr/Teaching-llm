@@ -38,6 +38,7 @@ export default function AdminPage() {
   const [courses, setCourses] = useState<CourseInfo[]>([])
   const [userRole, setUserRole] = useState('')
   const [userPermissions, setUserPermissions] = useState({ canTerminate: false, canCreateStudents: false })
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -213,9 +214,19 @@ export default function AdminPage() {
     STUDENT: { bg: '#d1fae5', color: '#10b981' },
   }
 
-  // Filter users based on current user role
-  const visibleUsers = userRole === 'ADMIN' ? users : users
-  const filtered = filter === 'all' ? visibleUsers : visibleUsers.filter(u => u.role === filter)
+  // Filter users based on current user role and search query
+  const visibleUsers = users
+  const filtered = visibleUsers.filter(u => {
+    if (filter !== 'all' && u.role !== filter) return false
+    if (!searchQuery) return true
+    
+    const query = searchQuery.toLowerCase()
+    return (
+      u.name.toLowerCase().includes(query) ||
+      u.email.toLowerCase().includes(query) ||
+      (u.securityNumber && u.securityNumber.toLowerCase().includes(query))
+    )
+  })
 
   const counts = {
     all: visibleUsers.length,
@@ -239,15 +250,42 @@ export default function AdminPage() {
   return (
     <div className="page-container fade-in">
       <div className="page-header">
-        <p className="page-subtitle">{visibleUsers.length} total accounts</p>
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div style={{
+          flex: 1, minWidth: '300px', display: 'flex', alignItems: 'center', gap: '12px',
+          padding: '10px 20px', borderRadius: '50px', background: '#e8eaf0',
+          boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.5">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Search by Name, Email or Security Number..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{
+              background: 'none', border: 'none', width: '100%', outline: 'none',
+              fontSize: '14px', color: '#1e1e3a',
+            }}
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          )}
+        </div>
         {(userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canCreateStudents)) && (
-          <button onClick={openCreate} className="btn btn-primary">
+          <button onClick={openCreate} className="btn btn-primary" style={{ borderRadius: '50px', padding: '0 28px' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             {userRole === 'ADMIN' ? 'Add Student' : 'Add User'}
           </button>
         )}
+      </div>
       </div>
 
       {/* Stats */}

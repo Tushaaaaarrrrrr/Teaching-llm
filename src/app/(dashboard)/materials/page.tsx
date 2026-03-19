@@ -1,6 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
+
+const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 interface ContentItem {
   id: string
@@ -37,24 +40,19 @@ function getFileType(url: string): string {
 }
 
 export default function MaterialsPage() {
-  const [materials, setMaterials] = useState<ContentItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: userData } = useSWR('/api/auth/me', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  })
+  const userRole = userData?.user?.role || ''
+
+  const { data: materialsData, isLoading } = useSWR('/api/content?hasPpt=true', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  })
+  const materials: ContentItem[] = materialsData?.content || []
+
   const [search, setSearch] = useState('')
-  const [userRole, setUserRole] = useState('')
-
-  useEffect(() => {
-    // Fetch user role
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => setUserRole(data.user?.role || ''))
-      .catch(console.error)
-
-    fetch('/api/content?hasPpt=true')
-      .then(r => r.json())
-      .then(data => setMaterials(data.content || []))
-      .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [])
 
   const filtered = materials.filter(m =>
     m.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -62,7 +60,7 @@ export default function MaterialsPage() {
     m.topic?.title?.toLowerCase().includes(search.toLowerCase())
   )
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="page-container">
         {[1, 2, 3, 4].map(i => (

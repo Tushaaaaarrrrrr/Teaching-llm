@@ -1,23 +1,21 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, getAccessibleCourseIds } from '@/lib/auth'
+import { getFullSession } from '@/lib/auth'
 
 export async function GET() {
   try {
-    const session = await getSession()
+    const session = await getFullSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+    const { accessibleCourseIds } = session
     const courseFilter = accessibleCourseIds !== null
       ? { courseId: { in: accessibleCourseIds } }
       : {}
     const courseCountFilter = accessibleCourseIds !== null
       ? { id: { in: accessibleCourseIds } }
       : {}
-
-    const now = new Date()
 
     const [
       totalCourses, 
@@ -29,33 +27,33 @@ export async function GET() {
       lectures,
       announcements
     ] = await Promise.all([
-      (prisma.course as any).count({ where: courseCountFilter }),
-      (prisma.lecture as any).count({ where: courseFilter as any }),
-      (prisma.user as any).count({ where: { role: 'STUDENT' } }),
-      (prisma.calendarEvent as any).count({
+      prisma.course.count({ where: courseCountFilter }),
+      prisma.lecture.count({ where: courseFilter }),
+      prisma.user.count({ where: { role: 'STUDENT' } }),
+      prisma.calendarEvent.count({
         where: {
           type: 'live',
-          expiresAt: { gt: now },
+          status: 'scheduled',
           ...courseFilter,
-        } as any,
+        },
       }),
-      (prisma.material as any).count({ where: courseFilter as any }),
-      (prisma.calendarEvent as any).findMany({
+      prisma.material.count({ where: courseFilter }),
+      prisma.calendarEvent.findMany({
         where: {
           type: 'live',
           ...courseFilter,
-        } as any,
+        },
         include: { course: true, instructor: true },
-        orderBy: { startDate: 'asc' },
+        orderBy: { date: 'asc' },
         take: 10
       }),
-      (prisma.lecture as any).findMany({
-        where: courseFilter as any,
+      prisma.lecture.findMany({
+        where: courseFilter,
         include: { course: true },
         orderBy: { uploadedAt: 'desc' },
         take: 3
       }),
-      (prisma.announcement as any).findMany({
+      prisma.announcement.findMany({
         orderBy: { createdAt: 'desc' },
         take: 3
       })
@@ -66,8 +64,8 @@ export async function GET() {
       id: s.id,
       title: s.title,
       instructor: s.instructor?.name || 'Unknown',
-      date: new Date(s.startDate).toLocaleDateString(),
-      time: new Date(s.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: s.date,
+      time: s.time || 'TBD',
       status: s.status || 'scheduled',
       meetingLink: s.meetingLink || '',
       course: { name: s.course?.name || 'General' }

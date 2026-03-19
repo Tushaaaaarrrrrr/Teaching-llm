@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { getFullSession } from '@/lib/auth'
 import Sidebar from '@/components/layout/Sidebar'
 import Header from '@/components/layout/Header'
 
@@ -9,19 +8,14 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await getSession()
+  const session = await getFullSession()
 
   if (!session) {
     redirect('/login')
   }
 
-  // Check if user account is terminated
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { isTerminated: true },
-  })
-
-  if (user?.isTerminated) {
+  // Redirect terminated users — uses the combined query, no extra DB call
+  if (session.isTerminated) {
     redirect('/terminated')
   }
 

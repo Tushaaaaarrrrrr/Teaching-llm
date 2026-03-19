@@ -20,6 +20,15 @@ export interface JWTPayload {
   canCreateStudents?: boolean
 }
 
+/**
+ * Full user session fetched in a SINGLE DB query.
+ * Includes termination status + accessible course IDs.
+ */
+export interface FullSession extends JWTPayload {
+  isTerminated: boolean
+  accessibleCourseIds: string[] | null // null = all courses (MANAGER)
+}
+
 export function signToken(payload: JWTPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
 }
@@ -51,13 +60,61 @@ export async function getSession(): Promise<JWTPayload | null> {
   }
 }
 
+/**
+ * Combined auth: decodes JWT + fetches user (isTerminated, enrollments) in ONE DB call.
+ * Eliminates the need for separate getSession() + getAccessibleCourseIds() + isTerminated check.
+ */
+export async function getFullSession(): Promise<FullSession | null> {
+  const jwtPayload = await getSession()
+  if (!jwtPayload) return null
+
+  // MANAGER gets all courses, skip enrollment query
+  if (jwtPayload.role === 'MANAGER') {
+    const user = await prisma.user.findUnique({
+      where: { id: jwtPayload.userId },
+      select: { isTerminated: true },
+    })
+    return {
+      ...jwtPayload,
+      isTerminated: user?.isTerminated ?? false,
+      accessibleCourseIds: null, // null = all courses
+    }
+  }
+
+  // ADMIN / STUDENT: fetch isTerminated + enrollments in ONE query
+  const now = new Date()
+  const user = await prisma.user.findUnique({
+    where: { id: jwtPayload.userId },
+    select: {
+      isTerminated: true,
+      enrollments: {
+        where: {
+          course: {
+            OR: [
+              { expiresAt: null },
+              { expiresAt: { gt: now } },
+            ],
+          },
+        },
+        select: { courseId: true },
+      },
+    },
+  })
+
+  return {
+    ...jwtPayload,
+    isTerminated: user?.isTerminated ?? false,
+    accessibleCourseIds: user?.enrollments.map(e => e.courseId) ?? [],
+  }
+}
+
 export function getCookieConfig() {
   return {
     name: COOKIE_NAME,
     options: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict' as const, // Hardened for CSRF protection
+      sameSite: 'strict' as const,
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
     },
@@ -72,7 +129,6 @@ export function isAdminOrManager(role: string) {
   return role === 'MANAGER' || role === 'ADMIN'
 }
 
-/** Returns true for any role that can manage content (MANAGER, ADMIN) */
 export function canManageContent(role: string) {
   return role === 'MANAGER' || role === 'ADMIN'
 }
@@ -90,7 +146,6 @@ export async function getAccessibleCourseIds(
 
   const now = new Date()
 
-  // STUDENT / ADMIN: return enrolled courseIds that haven't expired
   const enrollments = await prisma.enrollment.findMany({
     where: { 
       userId,

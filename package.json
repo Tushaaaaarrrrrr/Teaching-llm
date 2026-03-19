@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "predev": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true",
     "dev": "next dev",
     "build": "npx prisma generate && next build",
     "start": "next start",

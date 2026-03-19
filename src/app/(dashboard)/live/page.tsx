@@ -1,6 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
+
+const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 interface LiveSession {
   id: string
@@ -24,20 +27,15 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dotColor: st
 }
 
 export default function LivePage() {
-  const [sessions, setSessions] = useState<LiveSession[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch('/api/live-sessions')
-      .then(r => r.json())
-      .then(data => setSessions(data.sessions || data || []))
-      .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [])
+  const { data, isLoading } = useSWR<LiveSession[]>('/api/live-sessions', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 15000,
+  })
+  const sessions = Array.isArray(data) ? data : (data as any)?.sessions || []
 
   const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="page-container">
         {[1,2,3].map(i => (
@@ -47,9 +45,9 @@ export default function LivePage() {
     )
   }
 
-  const liveSessions = sessions.filter(s => s.status === 'live' || s.status === 'active')
-  const upcomingSessions = sessions.filter(s => s.status === 'scheduled' || s.status === 'rescheduled')
-  const recentSessions = sessions.filter(s => s.status === 'completed' || s.status === 'cancelled')
+  const liveSessions = sessions.filter((s: LiveSession) => s.status === 'live' || s.status === 'active')
+  const upcomingSessions = sessions.filter((s: LiveSession) => s.status === 'scheduled' || s.status === 'rescheduled')
+  const recentSessions = sessions.filter((s: LiveSession) => s.status === 'completed' || s.status === 'cancelled')
 
   const nextUpcomingSessionId = upcomingSessions.length > 0 ? upcomingSessions[0].id : null
 
@@ -192,7 +190,7 @@ export default function LivePage() {
 
   return (
     <div className="page-container fade-in">
-      {/* Header row — date and actions */}
+      {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
         <p style={{ fontSize: '13px', color: '#9999b0' }}>Today&apos;s Schedule &bull; {today}</p>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -231,7 +229,7 @@ export default function LivePage() {
             <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a', marginBottom: '16px', paddingLeft: '8px' }}>Live &amp; Active Sessions</h2>
             <div style={{ position: 'relative', paddingLeft: '48px' }}>
               <div style={{ position: 'absolute', left: '15px', top: '24px', bottom: '24px', width: '2px', background: '#3b82f6', borderRadius: '2px' }} />
-              {liveSessions.map(session => renderSessionBlock(session, false))}
+              {liveSessions.map((session: LiveSession) => renderSessionBlock(session, false))}
             </div>
           </div>
         )}
@@ -242,7 +240,7 @@ export default function LivePage() {
             <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a', marginBottom: '16px', paddingLeft: '8px' }}>Upcoming Sessions</h2>
             <div style={{ position: 'relative', paddingLeft: '48px' }}>
               <div style={{ position: 'absolute', left: '15px', top: '24px', bottom: '24px', width: '2px', background: '#c5c7cf', borderRadius: '2px' }} />
-              {upcomingSessions.map(session => renderSessionBlock(session, session.id === nextUpcomingSessionId))}
+              {upcomingSessions.map((session: LiveSession) => renderSessionBlock(session, session.id === nextUpcomingSessionId))}
             </div>
           </div>
         )}
@@ -253,7 +251,7 @@ export default function LivePage() {
             <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a', marginBottom: '16px', paddingLeft: '8px' }}>Recent Sessions</h2>
             <div style={{ position: 'relative', paddingLeft: '48px' }}>
               <div style={{ position: 'absolute', left: '15px', top: '24px', bottom: '24px', width: '2px', background: '#e8eaf0', borderRadius: '2px' }} />
-              {recentSessions.map(session => renderSessionBlock(session, false))}
+              {recentSessions.map((session: LiveSession) => renderSessionBlock(session, false))}
             </div>
           </div>
         )}

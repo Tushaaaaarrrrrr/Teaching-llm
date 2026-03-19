@@ -1,7 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
+import useSWR from 'swr'
+
+const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 interface CourseItem {
   id: string
@@ -24,24 +27,19 @@ const COURSE_ICONS: Record<string, React.ReactNode> = {
 }
 
 export default function CoursesPage() {
-  const [courses, setCourses] = useState<CourseItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data, isLoading } = useSWR<CourseItem[]>('/api/courses', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  })
+  const courses = Array.isArray(data) ? data : (data as any)?.courses || []
   const [search, setSearch] = useState('')
 
-  useEffect(() => {
-    fetch('/api/courses')
-      .then(r => r.json())
-      .then(data => setCourses(data.courses || data || []))
-      .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [])
-
-  const filtered = courses.filter(c =>
+  const filtered = courses.filter((c: CourseItem) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.subject?.toLowerCase().includes(search.toLowerCase())
   )
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="page-container">
         <div className="grid-3">
@@ -73,7 +71,7 @@ export default function CoursesPage() {
       </div>
 
       <div className="grid-3">
-        {filtered.map((course) => (
+        {filtered.map((course: CourseItem) => (
           <Link key={course.id} href={`/courses/${course.id}`} style={{ textDecoration: 'none' }}>
             <div
               style={{
@@ -103,10 +101,8 @@ export default function CoursesPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-                {/* Decorative circles */}
                 <div style={{ position: 'absolute', width: '130px', height: '130px', borderRadius: '50%', background: 'rgba(255,255,255,0.12)', top: '-50px', right: '-30px' }} />
                 <div style={{ position: 'absolute', width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', bottom: '-20px', left: '24px' }} />
-                {/* Icon circle */}
                 <div style={{
                   width: '58px',
                   height: '58px',

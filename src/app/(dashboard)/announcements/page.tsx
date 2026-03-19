@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import useSWR from 'swr'
 import ImageCropper from '@/components/ui/ImageCropper'
 
 interface AnnouncementCourse {
@@ -125,15 +126,32 @@ function TypeIcon({ type }: { type: string }) {
   )
 }
 
+const fetcher = (url: string) => fetch(url).then(r => r.json())
+
 export default function AnnouncementsPage() {
   const searchParams = useSearchParams()
   const highlightId  = searchParams.get('id')
   const cardRefs     = useRef<Record<string, HTMLDivElement | null>>({})
 
-  const [announcements, setAnnouncements] = useState<Announcement[]>([])
-  const [courses,       setCourses]       = useState<CourseOption[]>([])
-  const [loading,       setLoading]       = useState(true)
-  const [userRole,      setUserRole]      = useState('')
+  // SWR hooks — parallel fetching with caching and deduplication
+  const { data: annData, isLoading: annLoading, mutate: mutateAnn } = useSWR('/api/announcements', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  })
+  const { data: meData } = useSWR('/api/auth/me', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  })
+  const { data: courseData } = useSWR('/api/courses', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  })
+
+  const announcements: Announcement[] = Array.isArray(annData) ? annData : []
+  const courses: CourseOption[] = Array.isArray(courseData) ? courseData : (courseData?.courses || [])
+  const userRole = meData?.user?.role || meData?.role || ''
+  const loading = annLoading
+
   const [showForm,      setShowForm]      = useState(false)
   const [submitting,    setSubmitting]    = useState(false)
   const [expandedId,    setExpandedId]    = useState<string | null>(highlightId)
@@ -159,38 +177,18 @@ export default function AnnouncementsPage() {
   const [votingId, setVotingId] = useState<string | null>(null)
   const [pollResults, setPollResults] = useState<Record<string, any>>({})
 
-  useEffect(() => { loadData() }, [])
-
   useEffect(() => {
     if (!loading && highlightId && cardRefs.current[highlightId]) {
       cardRefs.current[highlightId]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }, [loading, highlightId])
 
-  async function loadData() {
-    try {
-      const [annRes, meRes, courseRes] = await Promise.all([
-        fetch('/api/announcements'),
-        fetch('/api/auth/me'),
-        fetch('/api/courses'),
-      ])
-      const annData    = await annRes.json()
-      const meData     = await meRes.json()
-      const courseData = await courseRes.json()
-      setAnnouncements(Array.isArray(annData)   ? annData   : [])
-      setUserRole(meData.user?.role || meData.role || '')
-      setCourses(Array.isArray(courseData) ? courseData : [])
-    } catch { /* ignore */ } finally {
-      setLoading(false)
-    }
-  }
-
   async function handleDelete(id: string) {
     if (!confirm('Are you sure you want to delete this announcement?')) return
     try {
       const res = await fetch(`/api/announcements/${id}`, { method: 'DELETE' })
       if (res.ok) {
-        setAnnouncements(prev => prev.filter(a => a.id !== id))
+        mutateAnn() // revalidate cache
       }
     } catch { /* ignore */ }
   }
@@ -254,12 +252,7 @@ export default function AnnouncementsPage() {
         }),
       })
       if (res.ok) {
-        const newAnn = await res.json()
-        if (editId) {
-          setAnnouncements(prev => prev.map(a => a.id === editId ? newAnn : a))
-        } else {
-          setAnnouncements(prev => [newAnn, ...prev])
-        }
+        mutateAnn() // revalidate cache
         resetForm()
       }
     } catch { /* ignore */ } finally {
@@ -302,10 +295,7 @@ export default function AnnouncementsPage() {
         body: JSON.stringify({ optionId }),
       })
       if (res.ok) {
-        // Optimistic update or reload? Let's reload the announcements list
-        const annRes = await fetch('/api/announcements')
-        const annData = await annRes.json()
-        setAnnouncements(annData)
+        mutateAnn() // revalidate via SWR
       }
     } catch { /* ignore */ } finally {
       setVotingId(null)
