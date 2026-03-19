@@ -2,6 +2,16 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getFullSession } from '@/lib/auth'
 
+// Compute status dynamically
+function computeStatus(event: { startTime: Date; endTime: Date; manualStatus: string }) {
+  if (event.manualStatus === 'CANCELLED') return 'cancelled'
+  if (event.manualStatus === 'RESCHEDULED') return 'rescheduled'
+  const now = new Date()
+  if (now < event.startTime) return 'upcoming'
+  if (now >= event.startTime && now <= event.endTime) return 'live'
+  return 'completed'
+}
+
 export async function GET() {
   try {
     const session = await getFullSession()
@@ -17,34 +27,34 @@ export async function GET() {
       ? { id: { in: accessibleCourseIds } }
       : {}
 
+    // Build event filter for accessible courses
+    const eventCourseFilter = accessibleCourseIds !== null
+      ? { OR: [{ courseId: null }, { courseId: { in: accessibleCourseIds } }] }
+      : {}
+
+    const now = new Date()
+
     const [
       totalCourses, 
       totalLectures, 
       totalStudents, 
-      upcomingLiveCount, 
       totalMaterials,
-      liveSessions,
+      courseEvents,
       lectures,
       announcements
     ] = await Promise.all([
       prisma.course.count({ where: courseCountFilter }),
       prisma.lecture.count({ where: courseFilter }),
       prisma.user.count({ where: { role: 'STUDENT' } }),
-      prisma.calendarEvent.count({
-        where: {
-          type: 'live',
-          status: 'scheduled',
-          ...courseFilter,
-        },
-      }),
       prisma.material.count({ where: courseFilter }),
-      prisma.calendarEvent.findMany({
+      prisma.courseEvent.findMany({
         where: {
-          type: 'live',
-          ...courseFilter,
+          type: 'class',
+          manualStatus: { not: 'CANCELLED' },
+          ...eventCourseFilter,
         },
         include: { course: true, instructor: true },
-        orderBy: { date: 'asc' },
+        orderBy: { startTime: 'asc' },
         take: 10
       }),
       prisma.lecture.findMany({
@@ -59,17 +69,26 @@ export async function GET() {
       })
     ])
 
-    // Map CalendarEvents to the LiveSession format expected by the frontend
-    const mappedSessions = liveSessions.map((s: any) => ({
-      id: s.id,
-      title: s.title,
-      instructor: s.instructor?.name || 'Unknown',
-      date: s.date,
-      time: s.time || 'TBD',
-      status: s.status || 'scheduled',
-      meetingLink: s.meetingLink || '',
-      course: { name: s.course?.name || 'General' }
-    }))
+    // Count upcoming sessions (startTime > now, not cancelled)
+    const upcomingLiveCount = courseEvents.filter(e => {
+      const status = computeStatus(e)
+      return status === 'upcoming' || status === 'live'
+    }).length
+
+    // Map CourseEvents to the format expected by the frontend
+    const mappedSessions = courseEvents.map((s: any) => {
+      const status = computeStatus(s)
+      return {
+        id: s.id,
+        title: s.title,
+        instructor: s.instructor?.name || 'Unknown',
+        date: s.startTime.toISOString().split('T')[0],
+        time: s.startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        status,
+        meetingLink: s.meetLink || '',
+        course: { name: s.course?.name || 'General' }
+      }
+    })
 
     return NextResponse.json({
       stats: {

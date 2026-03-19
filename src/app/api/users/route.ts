@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, hashPassword, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import crypto from 'crypto'
+import { encryptPassword } from '@/lib/encryption'
 
 export async function GET() {
   try {
@@ -36,6 +38,7 @@ export async function GET() {
         role: true,
         isTerminated: true,
         createdAt: true,
+        passwordHash: true,
         enrollments: {
           select: {
             courseId: true,
@@ -52,7 +55,13 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json(users)
+    // Strip passwordHash, add isGoogleAuth flag
+    const safeUsers = users.map(({ passwordHash, ...rest }) => ({
+      ...rest,
+      isGoogleAuth: passwordHash === '',
+    }))
+
+    return NextResponse.json(safeUsers)
   } catch (error) {
     console.error('Error fetching users:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -94,7 +103,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email already in use' }, { status: 400 })
     }
 
-    const passwordHash = await hashPassword(password)
+    if (role === 'MANAGER') {
+      const managerCount = await prisma.user.count({ where: { role: 'MANAGER' } })
+      if (managerCount >= 2) {
+        return NextResponse.json({ error: 'Maximum 2 managers allowed' }, { status: 403 })
+      }
+    }
+
+    const tempPassword = crypto.randomBytes(12).toString('hex')
+    const passwordHash = await hashPassword(tempPassword)
+    const encryptedTempPassword = encryptPassword(tempPassword)
     const securityNumber = 'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase()
 
     const user = await prisma.$transaction(async (tx) => {
@@ -103,6 +121,8 @@ export async function POST(request: NextRequest) {
           name,
           email: email.toLowerCase(),
           passwordHash,
+          encryptedTempPassword,
+          passwordRevealCount: 0,
           role,
           securityNumber,
         },
@@ -124,16 +144,6 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // Create instructor assignments if role is INSTRUCTOR
-      if (role === 'INSTRUCTOR' && assignedClassIds.length > 0) {
-        await tx.instructorAssignment.createMany({
-          data: assignedClassIds.map((courseId: string) => ({
-            instructorId: newUser.id,
-            courseId,
-          })),
-        })
-      }
-
       return newUser
     })
 
@@ -147,7 +157,7 @@ export async function POST(request: NextRequest) {
       targetId: user.id,
     })
 
-    return NextResponse.json(user, { status: 201 })
+    return NextResponse.json({ ...user, tempPassword }, { status: 201 })
   } catch (error) {
     console.error('Error creating user:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

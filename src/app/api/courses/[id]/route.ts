@@ -22,14 +22,11 @@ export async function GET(
           include: { uploadedBy: { select: { name: true } } },
           orderBy: { uploadedAt: 'desc' },
         },
-        liveSessions: {
-          orderBy: { date: 'desc' },
-        },
         materials: {
           orderBy: { uploadedAt: 'desc' },
         },
-        events: {
-          orderBy: { date: 'desc' },
+        courseEvents: {
+          orderBy: { startTime: 'desc' },
         },
       },
     })

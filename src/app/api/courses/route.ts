@@ -24,7 +24,7 @@ export async function GET() {
           select: {
             lectures: true,
             materials: true,
-            liveSessions: true,
+            courseEvents: true,
           },
         },
       },

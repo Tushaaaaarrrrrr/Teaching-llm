@@ -20,6 +20,7 @@ export async function GET() {
         avatar: true,
         securityNumber: true,
         createdAt: true,
+        passwordHash: true,
       },
     })
 
@@ -41,11 +42,14 @@ export async function GET() {
           avatar: true,
           securityNumber: true,
           createdAt: true,
+          passwordHash: true,
         },
       })
     }
 
-    return NextResponse.json({ user })
+    // Compute isGoogleAuth flag (empty passwordHash = Google OAuth user)
+    const { passwordHash, ...safeUser } = user
+    return NextResponse.json({ user: { ...safeUser, isGoogleAuth: passwordHash === '' } })
   } catch (error) {
     console.error('Error fetching profile:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

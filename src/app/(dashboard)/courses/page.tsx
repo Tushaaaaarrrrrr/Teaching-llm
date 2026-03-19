@@ -14,7 +14,7 @@ interface CourseItem {
   color: string
   icon: string
   createdBy: { name: string }
-  _count: { lectures: number; materials: number; liveSessions: number }
+  _count: { lectures: number; materials: number; courseEvents: number }
 }
 
 const COURSE_ICONS: Record<string, React.ReactNode> = {
@@ -215,7 +215,7 @@ export default function CoursesPage() {
                     textAlign: 'center',
                   }}>
                     <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>
-                      {course._count?.liveSessions || 0}
+                      {course._count?.courseEvents || 0}
                     </div>
                     <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Sessions</div>
                   </div>

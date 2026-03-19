@@ -15,20 +15,21 @@ export async function GET(
 
     const { id } = await params
 
-    const liveSession = await prisma.liveSession.findUnique({
+    const event = await prisma.courseEvent.findUnique({
       where: { id },
       include: {
-        course: true,
+        course: { select: { id: true, name: true, color: true } },
+        instructor: { select: { id: true, name: true } },
       },
     })
 
-    if (!liveSession) {
-      return NextResponse.json({ error: 'Live session not found' }, { status: 404 })
+    if (!event) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    return NextResponse.json(liveSession)
+    return NextResponse.json(event)
   } catch (error) {
-    console.error('Error fetching live session:', error)
+    console.error('Error fetching course event:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -48,27 +49,39 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { courseId, title, description, meetingLink, instructor, date, time, status } =
-      await request.json()
+    const body = await request.json()
+    const { title, description, startTime, endTime, meetLink, type, courseId, instructorId, manualStatus } = body
 
-    const updatedSession = await prisma.liveSession.update({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: Record<string, any> = {}
+    if (title !== undefined) data.title = title
+    if (description !== undefined) data.description = description || null
+    if (startTime !== undefined) data.startTime = new Date(startTime)
+    if (endTime !== undefined) data.endTime = new Date(endTime)
+    if (meetLink !== undefined) data.meetLink = meetLink || null
+    if (type !== undefined) data.type = type
+    if (courseId !== undefined) data.courseId = courseId || null
+    if (instructorId !== undefined) data.instructorId = instructorId || null
+    if (manualStatus !== undefined) data.manualStatus = manualStatus
+
+    const updatedEvent = await prisma.courseEvent.update({
       where: { id },
-      data: { courseId, title, description, meetingLink, instructor, date, time, status },
+      data,
     })
 
     logActivity({
       userId: session.userId,
       userName: session.name,
       userRole: session.role,
-      actionType: ACTION.SESSION_UPDATED,
-      actionDescription: `${session.name} updated live session "${updatedSession.title}"`,
-      moduleName: MODULE.LIVE_SESSIONS,
+      actionType: ACTION.EVENT_UPDATED,
+      actionDescription: `${session.name} updated course event "${updatedEvent.title}"`,
+      moduleName: MODULE.CALENDAR,
       targetId: id,
     })
 
-    return NextResponse.json(updatedSession)
+    return NextResponse.json(updatedEvent)
   } catch (error) {
-    console.error('Error updating live session:', error)
+    console.error('Error updating course event:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -89,26 +102,26 @@ export async function DELETE(
 
     const { id } = await params
 
-    const existingSession = await prisma.liveSession.findUnique({
+    const existingEvent = await prisma.courseEvent.findUnique({
       where: { id },
       select: { title: true },
     })
 
-    await prisma.liveSession.delete({ where: { id } })
+    await prisma.courseEvent.delete({ where: { id } })
 
     logActivity({
       userId: session.userId,
       userName: session.name,
       userRole: session.role,
-      actionType: ACTION.SESSION_DELETED,
-      actionDescription: `${session.name} deleted live session "${existingSession?.title ?? ''}"`,
-      moduleName: MODULE.LIVE_SESSIONS,
+      actionType: ACTION.EVENT_DELETED,
+      actionDescription: `${session.name} deleted course event "${existingEvent?.title ?? ''}"`,
+      moduleName: MODULE.CALENDAR,
       targetId: id,
     })
 
-    return NextResponse.json({ message: 'Live session deleted successfully' })
+    return NextResponse.json({ message: 'Event deleted successfully' })
   } catch (error) {
-    console.error('Error deleting live session:', error)
+    console.error('Error deleting course event:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

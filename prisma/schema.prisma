@@ -8,38 +8,41 @@ datasource db {
 }
 
 model User {
-  id                    String                 @id @default(cuid())
-  name                  String
-  email                 String                 @unique
-  passwordHash          String
-  role                  String                 @default("STUDENT")
-  avatar                String?
-  securityNumber        String?                @unique
-  isTerminated          Boolean                @default(false)
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  canCreateStudents     Boolean                @default(false)
-  canTerminate          Boolean                @default(false)
-  gender                String?                @default("MALE")
-  activityLogs          ActivityLog[]
-  announcements         Announcement[]         @relation("AnnouncementCreator")
-  createdEvents         CalendarEvent[]        @relation("EventCreator")
-  instructorEvents      CalendarEvent[]        @relation("EventInstructor")
-  chatMessages          ChatMessage[]          @relation("ChatMsgSender")
-  agentSessions         ChatSession[]          @relation("ChatAgent")
-  chatSessions          ChatSession[]          @relation("ChatStudent")
-  createdCourses        Course[]               @relation("CourseCreator")
-  communityMessages     CommunityMessage[]     @relation("CommMsgSender")
-  enrollments           Enrollment[]
-  instructorAssignments InstructorAssignment[]
-  uploadedLectures      Lecture[]              @relation("LectureUploader")
-  createdSessions       LiveSession[]          @relation("SessionCreator")
-  loginLogs             LoginLog[]
-  uploadedMaterials     Material[]             @relation("MaterialUploader")
-  notifications         Notification[]
-  assignedTickets       SupportTicket[]        @relation("TicketAssignee")
-  supportTickets        SupportTicket[]        @relation("TicketStudent")
-  ticketReplies         TicketReply[]          @relation("ReplyAuthor")
+  id                       String                 @id @default(cuid())
+  name                     String
+  email                    String                 @unique
+  passwordHash             String
+  role                     String                 @default("STUDENT")
+  avatar                   String?
+  securityNumber           String?                @unique
+  isTerminated             Boolean                @default(false)
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  canCreateStudents        Boolean                @default(false)
+  canTerminate             Boolean                @default(false)
+  isSuperManager           Boolean                @default(false)
+  encryptedTempPassword    String?
+  passwordRevealCount      Int                    @default(0)
+  gender                   String?                @default("MALE")
+  activityLogs             ActivityLog[]
+  announcements            Announcement[]         @relation("AnnouncementCreator")
+  courseEvents             CourseEvent[]           @relation("EventCreator")
+  instructorCourseEvents   CourseEvent[]           @relation("EventInstructor")
+  chatMessages             ChatMessage[]           @relation("ChatMsgSender")
+  agentSessions            ChatSession[]          @relation("ChatAgent")
+  chatSessions             ChatSession[]          @relation("ChatStudent")
+  createdCourses           Course[]               @relation("CourseCreator")
+  communityMessages        CommunityMessage[]     @relation("CommMsgSender")
+  enrollments              Enrollment[]
+  instructorAssignments    InstructorAssignment[]
+  uploadedLectures         Lecture[]              @relation("LectureUploader")
+  loginLogs                LoginLog[]
+  uploadedMaterials        Material[]             @relation("MaterialUploader")
+  notifications            Notification[]
+  assignedTickets          SupportTicket[]        @relation("TicketAssignee")
+  supportTickets           SupportTicket[]        @relation("TicketStudent")
+  ticketReplies            TicketReply[]          @relation("ReplyAuthor")
+  googleCredential         GoogleCredential?
 }
 
 model Course {
@@ -54,14 +57,13 @@ model Course {
   updatedAt             DateTime               @updatedAt
   expiresAt             DateTime?
   announcements         Announcement[]
-  events                CalendarEvent[]
+  courseEvents          CourseEvent[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
   communityMessages     CommunityMessage[]
   enrollments           Enrollment[]
   exams                 Exam[]
   instructorAssignments InstructorAssignment[]
   lectures              Lecture[]
-  liveSessions          LiveSession[]
   materials             Material[]
   supportTickets        SupportTicket[]
   topics                Topic[]
@@ -101,26 +103,6 @@ model Lecture {
   @@index([uploadedById])
 }
 
-model LiveSession {
-  id          String   @id @default(cuid())
-  courseId    String   @map("classId")
-  title       String
-  description String?
-  meetingLink String
-  instructor  String
-  date        String
-  time        String
-  status      String   @default("scheduled")
-  createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  createdBy   User     @relation("SessionCreator", fields: [createdById], references: [id])
-
-  @@index([courseId])
-  @@index([createdById])
-}
-
 model Material {
   id           String   @id @default(cuid())
   courseId     String   @map("classId")
@@ -139,29 +121,43 @@ model Material {
   @@index([uploadedById])
 }
 
-model CalendarEvent {
-  id            String   @id @default(cuid())
-  title         String
-  description   String?
-  date          String
-  time          String?
-  type          String   @default("course")
-  relatedCourse String?  @map("relatedClass")
-  courseId      String?  @map("classId")
-  createdById   String
-  instructorId  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  meetingLink   String?
-  status        String   @default("scheduled")
-  course        Course?  @relation(fields: [courseId], references: [id])
-  createdBy     User     @relation("EventCreator", fields: [createdById], references: [id])
-  instructor    User?    @relation("EventInstructor", fields: [instructorId], references: [id])
+model CourseEvent {
+  id             String   @id @default(cuid())
+  googleEventId  String?  @unique
+  courseId       String?  @map("classId")
+  title          String
+  description    String?
+  startTime      DateTime
+  endTime        DateTime
+  meetLink       String?
+  manualStatus   String   @default("NONE")
+  type           String   @default("class")
+  instructorId   String?
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  course         Course?  @relation(fields: [courseId], references: [id])
+  instructor     User?    @relation("EventInstructor", fields: [instructorId], references: [id])
+  createdBy      User     @relation("EventCreator", fields: [createdById], references: [id])
 
   @@index([courseId])
+  @@index([startTime])
   @@index([createdById])
   @@index([instructorId])
   @@index([type])
+}
+
+model GoogleCredential {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  calendarId   String   @default("primary")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Topic {

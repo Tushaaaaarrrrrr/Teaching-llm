@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, hashPassword, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import crypto from 'crypto'
+import { encryptPassword } from '@/lib/encryption'
 
 export async function PUT(
   request: NextRequest,
@@ -20,15 +22,30 @@ export async function PUT(
     const { id } = await params
     const { name, email, role, password, isTerminated, classIds, assignedClassIds } = await request.json()
 
+    const targetUser = await prisma.user.findUnique({ where: { id }, select: { role: true, isSuperManager: true, email: true } })
+    if (!targetUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+    const sessionUser = await prisma.user.findUnique({ where: { id: session.userId } })
+
     // ADMIN restrictions
     if (session.role === 'ADMIN') {
-      const targetUser = await prisma.user.findUnique({ where: { id }, select: { role: true } })
-      if (!targetUser || targetUser.role !== 'STUDENT') {
+      if (targetUser.role !== 'STUDENT') {
         return NextResponse.json({ error: 'Admins can only edit student accounts' }, { status: 403 })
       }
       if (role !== undefined || isTerminated !== undefined) {
         return NextResponse.json({ error: 'Admins cannot change role or termination status' }, { status: 403 })
       }
+    }
+
+    // MANAGER restrictions
+    if (session.role === 'MANAGER' && !sessionUser?.isSuperManager) {
+      if (targetUser.isSuperManager) {
+         return NextResponse.json({ error: 'Cannot modify Super Manager' }, { status: 403 })
+      }
+    }
+
+    if (targetUser.isSuperManager && email !== undefined && email !== targetUser.email) {
+      return NextResponse.json({ error: 'Cannot change Super Manager email' }, { status: 403 })
     }
 
     // Validate classIds for ADMINs
@@ -42,12 +59,16 @@ export async function PUT(
 
     const data: Record<string, unknown> = {}
     if (name !== undefined) data.name = name
-    if (email !== undefined) data.email = email
-    if (role !== undefined) data.role = role
-    if (typeof isTerminated === 'boolean') data.isTerminated = isTerminated
+    if (email !== undefined && email !== targetUser.email) data.email = email
+    if (role !== undefined && !targetUser.isSuperManager) data.role = role
+    if (typeof isTerminated === 'boolean' && !targetUser.isSuperManager) data.isTerminated = isTerminated
 
+    let tempPassword = undefined
     if (password) {
-      data.passwordHash = await hashPassword(password)
+      tempPassword = crypto.randomBytes(12).toString('hex')
+      data.passwordHash = await hashPassword(tempPassword)
+      data.encryptedTempPassword = encryptPassword(tempPassword)
+      data.passwordRevealCount = 0
     }
 
     const updatedUser = await prisma.$transaction(async (tx) => {
@@ -89,6 +110,18 @@ export async function PUT(
         }
       }
 
+      // Add private notification for credential changes
+      if (data.email || data.passwordHash) {
+        await tx.notification.create({
+          data: {
+            userId: id,
+            title: 'Security Alert: Credential Update',
+            content: 'Your account credentials were updated. If this wasn\'t you, contact support immediately.',
+            type: 'WARNING',
+          }
+        })
+      }
+
       // Re-fetch with enrollments and instructor assignments
       return tx.user.findUnique({
         where: { id },
@@ -126,6 +159,9 @@ export async function PUT(
       metadata: { changedFields: Object.keys(data) },
     })
 
+    if (tempPassword) {
+      return NextResponse.json({ ...updatedUser, tempPassword })
+    }
     return NextResponse.json(updatedUser)
   } catch (error) {
     console.error('Error updating user:', error)
@@ -153,7 +189,19 @@ export async function DELETE(
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 })
     }
 
-    const targetUser = await prisma.user.findUnique({ where: { id }, select: { name: true, email: true, role: true } })
+    const targetUser = await prisma.user.findUnique({ where: { id }, select: { name: true, email: true, role: true, isSuperManager: true } })
+    if (!targetUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+    const sessionUser = await prisma.user.findUnique({ where: { id: session.userId } })
+
+    if (targetUser.isSuperManager) {
+      return NextResponse.json({ error: 'Super Manager cannot be deleted' }, { status: 403 })
+    }
+
+    if (targetUser.role === 'MANAGER' && !sessionUser?.isSuperManager) {
+      return NextResponse.json({ error: 'Only Super Manager can delete another manager' }, { status: 403 })
+    }
+
     await prisma.user.delete({ where: { id } })
 
     logActivity({
