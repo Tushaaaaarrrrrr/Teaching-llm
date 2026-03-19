@@ -75,6 +75,7 @@ function LoginContent() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '48px',
+        position: 'relative',
       }}>
         {/* Logo & Brand */}
         <div style={{ textAlign: 'center', width: '100%', maxWidth: '340px' }}>
@@ -102,7 +103,7 @@ function LoginContent() {
             letterSpacing: '-0.5px',
             marginBottom: '8px',
           }}>
-            Teaching LLM
+            The Academy LMS
           </h1>
           <p style={{
             fontSize: '15px',
@@ -110,7 +111,7 @@ function LoginContent() {
             marginBottom: '48px',
             lineHeight: '1.6',
           }}>
-            Modern Online Learning Platform
+            Your central learning workspace
           </p>
 
           {/* Feature highlights */}
@@ -135,6 +136,29 @@ function LoginContent() {
             </div>
           ))}
         </div>
+
+        {/* Contact Developer Link in lower-left corner */}
+        <a 
+          href="mailto:care.alpha.iitian@gmail.com" 
+          style={{ 
+            position: 'absolute', 
+            bottom: '24px', 
+            left: '24px', 
+            fontSize: '12px', 
+            color: '#9999b0', 
+            textDecoration: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontWeight: '500',
+            transition: 'color 0.2s ease'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.color = '#3636e8'}
+          onMouseOut={(e) => e.currentTarget.style.color = '#9999b0'}
+        >
+          <span>👉</span>
+          <span>Contact Developer</span>
+        </a>
       </div>
 
       {/* Right Panel - Login Form */}
@@ -252,7 +276,7 @@ function LoginContent() {
 
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
               <p style={{ fontSize: '13px', color: '#9999b0', fontWeight: '500' }}>
-                Please sign in with Google if you don’t have an account.
+                Use Google to sign in or create your account.
               </p>
             </div>
 
@@ -275,7 +299,7 @@ function LoginContent() {
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
-              Sign in with Google
+              Continue with Google
             </button>
           </form>
 
