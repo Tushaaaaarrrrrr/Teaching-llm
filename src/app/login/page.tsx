@@ -236,46 +236,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div style={{
-            marginTop: '28px',
-            padding: '18px',
-            background: '#e8eaf0',
-            borderRadius: '16px',
-            boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff',
-          }}>
-            <p style={{ fontSize: '11px', color: '#9999b0', marginBottom: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Quick Access</p>
-            {[
-              { role: 'Manager', email: 'tushar@singhai.com', pass: 'admin1234' },
-              { role: 'Admin', email: 'admin@teacherai.com', pass: 'admin123' },
-              { role: 'Student', email: 'student@teacherai.com', pass: 'student123' },
-            ].map(acc => (
-              <button
-                key={acc.role}
-                onClick={() => { setEmail(acc.email); setPassword(acc.pass) }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '50px',
-                  marginBottom: '6px',
-                  background: '#e8eaf0',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  transition: 'all 0.15s',
-                  color: '#6b6b8a',
-                  boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#3636e8')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#6b6b8a')}
-              >
-                <span style={{ fontWeight: '600' }}>{acc.role}</span>
-                <span style={{ opacity: 0.7, fontSize: '11px' }}>{acc.email}</span>
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 

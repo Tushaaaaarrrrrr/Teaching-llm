@@ -37,6 +37,8 @@ export async function GET() {
         email: true,
         role: true,
         isTerminated: true,
+        isSuperManager: true,
+        passwordRevealCount: true,
         createdAt: true,
         passwordHash: true,
         enrollments: {

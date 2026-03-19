@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 interface CourseInfo {
   id: string
@@ -32,6 +32,8 @@ interface User {
   enrollments?: Enrollment[]
   instructorAssignments?: InstructorAssignment[]
   isGoogleAuth?: boolean
+  isSuperManager?: boolean
+  passwordRevealCount?: number
 }
 
 export default function AdminPage() {
@@ -52,6 +54,13 @@ export default function AdminPage() {
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('all')
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [generatedPassword, setGeneratedPassword] = useState('')
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordCopied, setPasswordCopied] = useState(false)
+  const [revealingId, setRevealingId] = useState<string | null>(null)
+  const [editingUserIsSuperManager, setEditingUserIsSuperManager] = useState(false)
+
+  const managerCount = users.filter(u => u.role === 'MANAGER').length
 
   useEffect(() => {
     loadUsers()
@@ -97,6 +106,7 @@ export default function AdminPage() {
 
   function openCreate() {
     setEditId(null)
+    setEditingUserIsSuperManager(false)
     setForm({ 
       name: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
       courseIds: [], assignedCourseIds: [], 
@@ -107,6 +117,11 @@ export default function AdminPage() {
   }
 
   function openEdit(user: User) {
+    if (user.isSuperManager) {
+      setEditingUserIsSuperManager(true)
+    } else {
+      setEditingUserIsSuperManager(false)
+    }
     setEditId(user.id)
     setForm({
       name: user.name,
@@ -128,10 +143,6 @@ export default function AdminPage() {
       setError('Name and email are required')
       return
     }
-    if (!editId && !form.password) {
-      setError('Password is required for new users')
-      return
-    }
 
     setSaving(true)
     setError('')
@@ -144,7 +155,8 @@ export default function AdminPage() {
         canTerminate: form.canTerminate,
         canCreateStudents: form.canCreateStudents
       }
-      if (form.password) body.password = form.password
+      // For edit mode: signal password reset if requested
+      if (editId && form.password === 'RESET') body.password = 'RESET'
       if (form.role === 'INSTRUCTOR') body.assignedCourseIds = form.assignedCourseIds
 
       const res = await fetch(url, {
@@ -153,19 +165,51 @@ export default function AdminPage() {
         body: JSON.stringify(body),
       })
 
+      const data = await res.json()
+
       if (!res.ok) {
-        const data = await res.json()
         setError(data.error || 'Failed to save')
         setSaving(false)
         return
       }
 
       setShowModal(false)
+      // Show generated password if returned
+      if (data.tempPassword) {
+        setGeneratedPassword(data.tempPassword)
+        setPasswordCopied(false)
+        setShowPasswordModal(true)
+      }
       loadUsers()
     } catch (e) {
       setError('Something went wrong')
     }
     setSaving(false)
+  }
+
+  async function handleRevealPassword(userId: string) {
+    setRevealingId(userId)
+    try {
+      const res = await fetch(`/api/users/${userId}/reveal-password`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error || 'Failed to reveal password')
+      } else {
+        setGeneratedPassword(data.password)
+        setPasswordCopied(false)
+        setShowPasswordModal(true)
+        loadUsers() // refresh to update reveal count
+      }
+    } catch (e) {
+      alert('Something went wrong')
+    }
+    setRevealingId(null)
+  }
+
+  function copyPassword() {
+    navigator.clipboard.writeText(generatedPassword)
+    setPasswordCopied(true)
+    setTimeout(() => setPasswordCopied(false), 2000)
   }
 
   async function handleDelete(id: string) {
@@ -390,6 +434,15 @@ export default function AdminPage() {
                       {user.gender && (
                         <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: '400' }}>({user.gender})</span>
                       )}
+                      {user.isSuperManager && (
+                        <span style={{
+                          fontSize: '10px', fontWeight: '700', color: '#f59e0b',
+                          background: 'linear-gradient(135deg, #fef3c7, #fde68a)', padding: '2px 10px', borderRadius: '20px',
+                          border: '1px solid #fcd34d', letterSpacing: '0.5px',
+                        }}>
+                          ⭐ SYSTEM OWNER
+                        </span>
+                      )}
                       {user.isTerminated && (
                         <span style={{
                           fontSize: '10px', fontWeight: '700', color: '#ef4444',
@@ -458,7 +511,26 @@ export default function AdminPage() {
                       month: 'short', day: 'numeric', year: 'numeric'
                     })}
                   </span>
-                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap' }}>
+                    {/* Reveal Password - Manager only, non-super-manager target */}
+                    {userRole === 'MANAGER' && !user.isSuperManager && (user.passwordRevealCount ?? 0) < 2 && (
+                      <button
+                        onClick={() => handleRevealPassword(user.id)}
+                        disabled={revealingId === user.id}
+                        className="btn btn-sm"
+                        style={{ color: '#8b5cf6', border: '1px solid #ede9fe', background: 'rgba(139,92,246,0.04)' }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        {revealingId === user.id ? '...' : `Reveal (${2 - (user.passwordRevealCount ?? 0)} left)`}
+                      </button>
+                    )}
+                    {userRole === 'MANAGER' && !user.isSuperManager && (user.passwordRevealCount ?? 0) >= 2 && (
+                      <span style={{ fontSize: '10px', color: '#ef4444', padding: '4px 8px', background: '#fee2e2', borderRadius: '20px', alignSelf: 'center' }}>
+                        Reveal limit reached
+                      </span>
+                    )}
                     <button onClick={() => openEdit(user)} className="btn btn-ghost btn-sm">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -467,7 +539,7 @@ export default function AdminPage() {
                       Edit
                     </button>
                     {/* Terminate / Revert toggle - based on MANAGER or ADMIN with canTerminate */}
-                    {user.role === 'STUDENT' && (userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate)) && (
+                    {!user.isSuperManager && user.role === 'STUDENT' && (userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate)) && (
                       <button
                         onClick={() => handleToggleTerminate(user)}
                         disabled={togglingId === user.id}
@@ -504,8 +576,8 @@ export default function AdminPage() {
                         )}
                       </button>
                     )}
-                    {/* Delete - only for MANAGER or privileged ADMIN */}
-                    {(userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate && user.role === 'STUDENT')) && (
+                    {/* Delete - only for MANAGER or privileged ADMIN, never for Super Manager */}
+                    {!user.isSuperManager && (userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate && user.role === 'STUDENT')) && (
                       <button onClick={() => handleDelete(user.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="3 6 5 6 21 6"/>
@@ -550,20 +622,51 @@ export default function AdminPage() {
               </div>
               <div className="form-group">
                 <label className="form-label">Email *</label>
-                <input type="email" className="form-input" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="john@example.com" />
+                <input type="email" className="form-input" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="john@example.com" disabled={editingUserIsSuperManager} style={editingUserIsSuperManager ? { opacity: 0.6 } : {}} />
+                {editingUserIsSuperManager && <span style={{ fontSize: '10px', color: '#92400e' }}>Super Manager email cannot be changed</span>}
               </div>
-              <div className="form-group">
-                <label className="form-label">{editId ? 'New Password (leave blank to keep current)' : 'Password *'}</label>
-                <input type="password" className="form-input" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} placeholder={editId ? 'Leave blank to keep' : 'Enter password'} />
-              </div>
+              {/* Password field: only show reset option in edit mode, hidden for create (auto-generated) */}
+              {editId && !editingUserIsSuperManager && (
+                <div className="form-group">
+                  <label className="form-label">Password</label>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', color: '#6b7280' }}>Password is auto-generated. Use the button to reset.</span>
+                    <button
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, password: p.password === 'RESET' ? '' : 'RESET' }))}
+                      className="btn btn-sm"
+                      style={{
+                        color: form.password === 'RESET' ? '#ef4444' : '#3b82f6',
+                        border: form.password === 'RESET' ? '1px solid #fee2e2' : '1px solid #dbeafe',
+                        background: form.password === 'RESET' ? '#fee2e2' : '#eff6ff',
+                        fontSize: '11px',
+                      }}
+                    >
+                      {form.password === 'RESET' ? '✓ Will Reset' : 'Reset Password'}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {!editId && (
+                <div style={{ padding: '10px 14px', background: '#eff6ff', borderRadius: '8px', fontSize: '12px', color: '#3b82f6', border: '1px solid #dbeafe' }}>
+                  💡 Password will be auto-generated and shown once after creation.
+                </div>
+              )}
+              {editingUserIsSuperManager && (
+                <div style={{ padding: '10px 14px', background: '#fef3c7', borderRadius: '8px', fontSize: '12px', color: '#92400e', border: '1px solid #fcd34d' }}>
+                  🔒 Super Manager credentials cannot be changed here.
+                </div>
+              )}
               <div className="form-group">
                 <label className="form-label">Role</label>
-                {userRole === 'MANAGER' ? (
+                {editingUserIsSuperManager ? (
+                  <input className="form-input" value="MANAGER (System Owner)" disabled style={{ opacity: 0.6 }} />
+                ) : userRole === 'MANAGER' ? (
                   <select className="form-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value, courseIds: [], assignedCourseIds: [] }))}>
                     <option value="STUDENT">Student</option>
                     <option value="ADMIN">Admin</option>
                     <option value="INSTRUCTOR">Instructor</option>
-                    <option value="MANAGER">Manager</option>
+                    {managerCount < 2 && <option value="MANAGER">Manager</option>}
                   </select>
                 ) : (
                   <input className="form-input" value="STUDENT" disabled style={{ opacity: 0.6 }} />
@@ -743,6 +846,53 @@ export default function AdminPage() {
               <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-primary">
                 {saving ? 'Saving...' : (editId ? 'Update User' : 'Create User')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generated Password Modal */}
+      {showPasswordModal && (
+        <div className="modal-overlay" onClick={() => setShowPasswordModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+            <div className="modal-header">
+              <h3 style={{ fontSize: '16px', fontWeight: '600' }}>🔑 Generated Password</h3>
+              <button onClick={() => setShowPasswordModal(false)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ padding: '14px', background: '#fef3c7', borderRadius: '10px', fontSize: '12px', color: '#92400e', border: '1px solid #fcd34d' }}>
+                ⚠️ This password will only be shown <strong>once</strong>. Copy and store it securely. You can reveal it up to 2 more times, after which a reset will be required.
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '14px 18px', borderRadius: '10px',
+                background: '#f0fdf4', border: '1px solid #bbf7d0',
+                fontFamily: 'monospace', fontSize: '15px', fontWeight: '600', color: '#166534',
+                letterSpacing: '1px',
+              }}>
+                <span style={{ flex: 1, wordBreak: 'break-all' }}>{generatedPassword}</span>
+                <button
+                  onClick={copyPassword}
+                  className="btn btn-sm"
+                  style={{
+                    color: passwordCopied ? '#10b981' : '#3b82f6',
+                    border: passwordCopied ? '1px solid #d1fae5' : '1px solid #dbeafe',
+                    background: passwordCopied ? '#d1fae5' : '#eff6ff',
+                    flexShrink: 0,
+                  }}
+                >
+                  {passwordCopied ? '✓ Copied!' : '📋 Copy'}
+                </button>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setShowPasswordModal(false)} className="btn btn-primary" style={{ borderRadius: '50px' }}>
+                Done
               </button>
             </div>
           </div>

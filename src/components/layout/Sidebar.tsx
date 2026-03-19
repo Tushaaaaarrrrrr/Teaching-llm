@@ -93,20 +93,8 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    href: '/chat-transcripts',
-    label: 'Chat Transcripts',
-    roles: ['MANAGER', 'ADMIN'],
-    icon: (
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="7 10 12 15 17 10"/>
-        <line x1="12" y1="15" x2="12" y2="3"/>
-      </svg>
-    ),
-  },
-  {
-    href: '/work-log',
-    label: 'Work Log',
+    href: '/activity-logs',
+    label: 'Activity Log',
     roles: ['MANAGER'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -181,6 +169,7 @@ const NAV_ITEMS: NavItem[] = [
       </svg>
     ),
   },
+
 ]
 
 export default function Sidebar({ userRole, userName, userEmail }: SidebarProps) {

@@ -186,11 +186,7 @@ export default function WorkLogPage() {
   return (
     <div className="page-container fade-in">
       {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Work Log</h1>
-          <p className="page-subtitle">Monitor all platform activity and user actions</p>
-        </div>
+      <div className="page-header" style={{ justifyContent: 'flex-end', marginBottom: '20px' }}>
         <button className="btn btn-primary" onClick={handleExportCsv} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

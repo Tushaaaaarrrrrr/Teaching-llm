@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     if (user.isTerminated) {
       return NextResponse.json(
-        { error: 'Your ID has been terminated. Please contact the Admin for further details.' },
+        { error: 'Your account has been terminated. Please contact support' },
         { status: 403 }
       )
     }
