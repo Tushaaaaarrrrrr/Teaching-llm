@@ -24,27 +24,35 @@ async function initSuperManager() {
   
   try {
     let user = await prisma.user.findUnique({ where: { email } });
-    const tempPassword = crypto.randomBytes(12).toString('hex');
-    const passwordHash = await bcrypt.hash(tempPassword, 12);
-    const encryptedTempPassword = encryptPassword(tempPassword);
 
     if (user) {
-      if (!user.isSuperManager) {
-        user = await prisma.user.update({
-          where: { email },
-          data: { 
-            isSuperManager: true,
-            role: 'MANAGER',
-            passwordHash,
-            encryptedTempPassword,
-            passwordRevealCount: 0
-          }
-        });
-        console.log(`User ${email} updated to Super Manager. Temporary password set to: ${tempPassword} (Please store safely, this is shown ONCE)`);
-      } else {
-        console.log(`User ${email} is already a Super Manager.`);
+      if (user.isSuperManager) {
+        // Already a Super Manager — do NOT touch the password
+        console.log(`✅ User ${email} is already a Super Manager. No changes made.`);
+        return;
       }
+      // Exists but not yet Super Manager — promote and set a new password
+      const tempPassword = crypto.randomBytes(12).toString('hex');
+      const passwordHash = await bcrypt.hash(tempPassword, 12);
+      const encryptedTempPassword = encryptPassword(tempPassword);
+      user = await prisma.user.update({
+        where: { email },
+        data: { 
+          isSuperManager: true,
+          role: 'MANAGER',
+          passwordHash,
+          encryptedTempPassword,
+          passwordRevealCount: 0
+        }
+      });
+      console.log(`🔑 User ${email} promoted to Super Manager.`);
+      console.log(`🔑 NEW PASSWORD: ${tempPassword}`);
+      console.log(`⚠️  Store this password safely — it will NOT be shown again.`);
     } else {
+      // User doesn't exist — create with a new password
+      const tempPassword = crypto.randomBytes(12).toString('hex');
+      const passwordHash = await bcrypt.hash(tempPassword, 12);
+      const encryptedTempPassword = encryptPassword(tempPassword);
       user = await prisma.user.create({
         data: {
           email,
@@ -53,10 +61,13 @@ async function initSuperManager() {
           isSuperManager: true,
           passwordHash,
           encryptedTempPassword,
-          passwordRevealCount: 0
+          passwordRevealCount: 0,
+          securityNumber: 'SEC' + crypto.randomBytes(4).toString('hex').toUpperCase()
         }
       });
-      console.log(`User ${email} created as Super Manager. Temporary password set to: ${tempPassword} (Please store safely, this is shown ONCE)`);
+      console.log(`🔑 User ${email} created as Super Manager.`);
+      console.log(`🔑 NEW PASSWORD: ${tempPassword}`);
+      console.log(`⚠️  Store this password safely — it will NOT be shown again.`);
     }
   } catch (error) {
     console.error("Error initializing super manager:", error);

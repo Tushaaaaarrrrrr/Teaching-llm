@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db'
 import { signToken, getCookieConfig, JWTPayload } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
+export const dynamic = 'force-dynamic'
+
 const DEFAULT_COURSE_NAME = 'Demo Course'
 
 export async function GET(request: NextRequest) {
@@ -111,7 +113,7 @@ export async function GET(request: NextRequest) {
     
     // Prevent login if account is terminated
     if (user.isTerminated) {
-      return NextResponse.redirect(new URL('/login?error=AccountTerminated', request.nextUrl.origin))
+      return NextResponse.redirect(new URL('/login?error=AccountDeactivated', request.nextUrl.origin))
     }
 
     // ── Login tracking (same as email login) ──

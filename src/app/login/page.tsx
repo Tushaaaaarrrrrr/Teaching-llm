@@ -1,14 +1,36 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e8eaf0' }}><div className="spinner" /></div>}>
+      <LoginContent />
+    </Suspense>
+  )
+}
+
+function LoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const urlError = searchParams.get('error')
+    if (urlError) {
+      if (urlError === 'AccountDeactivated') {
+        setError('Your account has been deactivated. Please contact support.')
+      } else if (urlError === 'GoogleAuthFailed' || urlError === 'InternalError') {
+        setError('Google login failed. Please try again.')
+      } else {
+        setError('Login failed. Please try again.')
+      }
+    }
+  }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -145,6 +167,21 @@ export default function LoginPage() {
               Sign in to your account to continue learning
             </p>
           </div>
+
+          {error && (
+            <div style={{
+              background: '#ffebea',
+              color: '#d32f2f',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              marginBottom: '24px',
+              fontSize: '14px',
+              fontWeight: '500',
+              borderLeft: '4px solid #d32f2f'
+            }}>
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="form-group" style={{ marginBottom: '20px' }}>

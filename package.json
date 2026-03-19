@@ -6,7 +6,7 @@
   "scripts": {
     "predev": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true",
     "dev": "next dev",
-    "build": "npx prisma generate && next build",
+    "build": "npx prisma generate && npx prisma db push && node init_super_manager.js && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "npx prisma generate",

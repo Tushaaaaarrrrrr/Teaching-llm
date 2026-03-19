@@ -33,17 +33,17 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } })
 
     if (!user) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid credentials. Please try again.' }, { status: 401 })
     }
 
     const valid = await comparePassword(password, user.passwordHash)
     if (!valid) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid credentials. Please try again.' }, { status: 401 })
     }
 
     if (user.isTerminated) {
       return NextResponse.json(
-        { error: 'Your account has been terminated. Please contact support' },
+        { error: 'Your account has been deactivated. Please contact support.' },
         { status: 403 }
       )
     }
