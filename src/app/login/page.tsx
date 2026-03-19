@@ -250,6 +250,12 @@ function LoginContent() {
               <div style={{ flex: 1, height: '1px', background: '#d0d2d9' }} />
             </div>
 
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <p style={{ fontSize: '13px', color: '#9999b0', fontWeight: '500' }}>
+                Please sign in with Google if you don’t have an account.
+              </p>
+            </div>
+
             <button
               type="button"
               onClick={() => { window.location.href = '/api/auth/google' }}
