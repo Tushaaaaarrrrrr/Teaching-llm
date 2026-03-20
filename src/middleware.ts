@@ -3,7 +3,7 @@ import { jwtVerify } from 'jose'
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated']
 const COOKIE_NAME = 'teaching_llm_token'
-const JWT_SECRET = process.env.JWT_SECRET || 'teaching-llm-secret-key-change-in-production'
+const JWT_SECRET = (process.env.JWT_SECRET || 'teaching-llm-super-secret-jwt-key-2024').trim()
 
 import { checkRateLimit } from '@/lib/ratelimit'
 
