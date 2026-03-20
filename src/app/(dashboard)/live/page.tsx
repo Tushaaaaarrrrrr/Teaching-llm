@@ -15,7 +15,7 @@ interface CourseEvent {
   status: string
   manualStatus: string
   courseId: string | null
-  course: { id: string; name: string; color: string } | null
+  course: { id: string; name: string; color: string; teacherName?: string | null } | null
   instructor: { id: string; name: string } | null
 }
 
@@ -36,10 +36,10 @@ function formatDate(iso: string) {
 }
 
 export default function LivePage() {
-  const { data, isLoading } = useSWR<CourseEvent[]>('/api/course-events?type=class', fetcher, {
+  const { data, isLoading } = useSWR<CourseEvent[]>('/api/live-sessions', fetcher, {
     revalidateOnFocus: true,
-    refreshInterval: 30000, // Auto-refresh every 30s to update live statuses
-    dedupingInterval: 10000,
+    refreshInterval: 60000, // Refresh every 60s to keep live statuses current
+    dedupingInterval: 15000,
   })
   const sessions = Array.isArray(data) ? data : []
 
@@ -153,7 +153,7 @@ export default function LivePage() {
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
               </svg>
-              {session.instructor?.name || 'No instructor'}
+              {session.course?.teacherName || session.instructor?.name || 'No instructor'}
             </div>
           </div>
 
@@ -176,13 +176,15 @@ export default function LivePage() {
             }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
             </div>
-          ) : isLive && session.meetLink ? (
+          ) : (isLive || (!isCompleted && !isCancelled && !isRescheduled)) && session.meetLink ? (
             <a href={session.meetLink} target="_blank" rel="noopener noreferrer" style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '50px', flexShrink: 0,
-              background: '#16a34a', color: 'white', fontWeight: '600', fontSize: '14px', textDecoration: 'none',
-              boxShadow: '4px 4px 10px rgba(22,163,74,0.4), -2px -2px 6px rgba(255,255,255,0.8)',
+              background: isLive ? '#16a34a' : '#3636e8', color: 'white', fontWeight: '600', fontSize: '14px', textDecoration: 'none',
+              boxShadow: isLive
+                ? '4px 4px 10px rgba(22,163,74,0.4), -2px -2px 6px rgba(255,255,255,0.8)'
+                : '4px 4px 10px rgba(54,54,232,0.3), -2px -2px 6px rgba(255,255,255,0.8)',
             }}>
-              Join
+              {isLive ? 'Join Now' : 'Join'}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
           ) : (

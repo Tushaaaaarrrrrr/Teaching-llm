@@ -8,45 +8,45 @@ datasource db {
 }
 
 model User {
-  id                       String                 @id @default(cuid())
-  name                     String
-  email                    String                 @unique
-  passwordHash             String
-  role                     String                 @default("STUDENT")
-  avatar                   String?
-  securityNumber           String?                @unique
-  isTerminated             Boolean                @default(false)
-  createdAt                DateTime               @default(now())
-  updatedAt                DateTime               @updatedAt
-  canCreateStudents        Boolean                @default(false)
-  canTerminate             Boolean                @default(false)
-  isSuperManager           Boolean                @default(false)
-  encryptedTempPassword    String?
-  passwordRevealCount      Int                    @default(0)
-  gender                   String?                @default("MALE")
-  hasSeenWelcome           Boolean                @default(false)
-  lastSeenCommunityAt      DateTime?
-  lastSeenSupportAt        DateTime?
-  lastSeenNotificationsAt  DateTime?
-  activityLogs             ActivityLog[]
-  announcements            Announcement[]         @relation("AnnouncementCreator")
-  courseEvents             CourseEvent[]           @relation("EventCreator")
-  instructorCourseEvents   CourseEvent[]           @relation("EventInstructor")
-  chatMessages             ChatMessage[]           @relation("ChatMsgSender")
-  agentSessions            ChatSession[]          @relation("ChatAgent")
-  chatSessions             ChatSession[]          @relation("ChatStudent")
-  createdCourses           Course[]               @relation("CourseCreator")
-  communityMessages        CommunityMessage[]     @relation("CommMsgSender")
-  enrollments              Enrollment[]
-  instructorAssignments    InstructorAssignment[]
-  uploadedLectures         Lecture[]              @relation("LectureUploader")
-  loginLogs                LoginLog[]
-  uploadedMaterials        Material[]             @relation("MaterialUploader")
-  notifications            Notification[]
-  assignedTickets          SupportTicket[]        @relation("TicketAssignee")
-  supportTickets           SupportTicket[]        @relation("TicketStudent")
-  ticketReplies            TicketReply[]          @relation("ReplyAuthor")
-  googleCredential         GoogleCredential?
+  id                      String                 @id @default(cuid())
+  name                    String
+  email                   String                 @unique
+  passwordHash            String
+  role                    String                 @default("STUDENT")
+  avatar                  String?
+  securityNumber          String?                @unique
+  isTerminated            Boolean                @default(false)
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  canCreateStudents       Boolean                @default(false)
+  canTerminate            Boolean                @default(false)
+  isSuperManager          Boolean                @default(false)
+  encryptedTempPassword   String?
+  passwordRevealCount     Int                    @default(0)
+  gender                  String?                @default("MALE")
+  hasSeenWelcome          Boolean                @default(false)
+  lastSeenCommunityAt     DateTime?
+  lastSeenSupportAt       DateTime?
+  lastSeenNotificationsAt DateTime?
+  activityLogs            ActivityLog[]
+  announcements           Announcement[]         @relation("AnnouncementCreator")
+  chatMessages            ChatMessage[]          @relation("ChatMsgSender")
+  chatSessions            ChatSession[]          @relation("ChatStudent")
+  agentSessions           ChatSession[]          @relation("ChatAgent")
+  createdCourses          Course[]               @relation("CourseCreator")
+  communityMessages       CommunityMessage[]     @relation("CommMsgSender")
+  courseEvents            CourseEvent[]          @relation("EventCreator")
+  instructorCourseEvents  CourseEvent[]          @relation("EventInstructor")
+  enrollments             Enrollment[]
+  googleCredential        GoogleCredential?
+  instructorAssignments   InstructorAssignment[]
+  uploadedLectures        Lecture[]              @relation("LectureUploader")
+  loginLogs               LoginLog[]
+  uploadedMaterials       Material[]             @relation("MaterialUploader")
+  notifications           Notification[]
+  supportTickets          SupportTicket[]        @relation("TicketStudent")
+  assignedTickets         SupportTicket[]        @relation("TicketAssignee")
+  ticketReplies           TicketReply[]          @relation("ReplyAuthor")
 }
 
 model Course {
@@ -63,9 +63,9 @@ model Course {
   isDemo                Boolean                @default(false)
   teacherName           String?
   announcements         Announcement[]
-  courseEvents          CourseEvent[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
   communityMessages     CommunityMessage[]
+  courseEvents          CourseEvent[]
   enrollments           Enrollment[]
   exams                 Exam[]
   instructorAssignments InstructorAssignment[]
@@ -82,8 +82,8 @@ model Enrollment {
   userId    String
   courseId  String   @map("classId")
   createdAt DateTime @default(now())
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
   @@index([userId])
@@ -102,8 +102,8 @@ model Lecture {
   uploadedById String
   uploadedAt   DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   uploadedBy   User     @relation("LectureUploader", fields: [uploadedById], references: [id])
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
   @@index([uploadedById])
@@ -120,32 +120,31 @@ model Material {
   uploadedById String
   uploadedAt   DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   uploadedBy   User     @relation("MaterialUploader", fields: [uploadedById], references: [id])
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
   @@index([uploadedById])
 }
 
 model CourseEvent {
-  id             String   @id @default(cuid())
-  googleEventId  String?  @unique
-  courseId       String?  @map("classId")
-  title          String
-  description    String?
-  startTime      DateTime
-  endTime        DateTime
-  meetLink       String?
-  manualStatus   String   @default("NONE")
-  type           String   @default("class")
-  instructorId   String?
-  createdById    String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  course         Course?  @relation(fields: [courseId], references: [id])
-  instructor     User?    @relation("EventInstructor", fields: [instructorId], references: [id])
-  createdBy      User     @relation("EventCreator", fields: [createdById], references: [id])
+  id            String   @id @default(cuid())
+  googleEventId String?  @unique
+  courseId      String?  @map("classId")
+  title         String
+  description   String?
+  startTime     DateTime
+  endTime       DateTime
+  meetLink      String?
+  manualStatus  String   @default("NONE")
+  type          String   @default("class")
+  instructorId  String?
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  createdBy     User     @relation("EventCreator", fields: [createdById], references: [id])
+  instructor    User?    @relation("EventInstructor", fields: [instructorId], references: [id])
+  course        Course?  @relation(fields: [courseId], references: [id])
 
   @@index([courseId])
   @@index([startTime])
@@ -202,9 +201,9 @@ model Announcement {
   updatedAt   DateTime @updatedAt
   imageUrl    String?
   pollId      String?  @unique
-  course      Course?  @relation(fields: [courseId], references: [id])
-  createdBy   User     @relation("AnnouncementCreator", fields: [createdById], references: [id])
   poll        Poll?    @relation(fields: [pollId], references: [id])
+  createdBy   User     @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  course      Course?  @relation(fields: [courseId], references: [id])
 }
 
 model Poll {
@@ -236,8 +235,8 @@ model PollResponse {
   optionId  String
   userId    String
   createdAt DateTime   @default(now())
-  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
   poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
 
   @@unique([pollId, userId])
 }
@@ -300,8 +299,8 @@ model ExamResponse {
   answer     String
   marks      Float?
   feedback   String?
-  attempt    ExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   question   ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  attempt    ExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
   @@unique([attemptId, questionId])
 }
@@ -325,9 +324,9 @@ model SupportTicket {
   assignedToId String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  assignedTo   User?         @relation("TicketAssignee", fields: [assignedToId], references: [id])
-  course       Course?       @relation(fields: [courseId], references: [id])
   user         User          @relation("TicketStudent", fields: [studentId], references: [id])
+  course       Course?       @relation(fields: [courseId], references: [id])
+  assignedTo   User?         @relation("TicketAssignee", fields: [assignedToId], references: [id])
   replies      TicketReply[]
 }
 
@@ -337,8 +336,8 @@ model TicketReply {
   senderId  String
   content   String
   createdAt DateTime      @default(now())
-  sender    User          @relation("ReplyAuthor", fields: [senderId], references: [id])
   ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender    User          @relation("ReplyAuthor", fields: [senderId], references: [id])
 }
 
 model ChatSession {
@@ -350,8 +349,8 @@ model ChatSession {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   messages  ChatMessage[]
-  agent     User?         @relation("ChatAgent", fields: [agentId], references: [id])
   student   User          @relation("ChatStudent", fields: [studentId], references: [id])
+  agent     User?         @relation("ChatAgent", fields: [agentId], references: [id])
 }
 
 model Faq {
@@ -372,8 +371,8 @@ model ChatMessage {
   deletedAt       DateTime?
   isDeleted       Boolean     @default(false)
   isSystemDeleted Boolean     @default(false)
-  chat            ChatSession @relation(fields: [chatId], references: [id], onDelete: Cascade)
   sender          User        @relation("ChatMsgSender", fields: [senderId], references: [id])
+  chat            ChatSession @relation(fields: [chatId], references: [id], onDelete: Cascade)
 }
 
 model CommunityMessage {
@@ -385,8 +384,8 @@ model CommunityMessage {
   deletedAt       DateTime?
   createdAt       DateTime  @default(now())
   isSystemDeleted Boolean   @default(false)
-  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   sender          User      @relation("CommMsgSender", fields: [senderId], references: [id])
+  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
@@ -421,8 +420,8 @@ model InstructorAssignment {
   instructorId String
   courseId     String   @map("classId")
   assignedAt   DateTime @default(now())
-  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   instructor   User     @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([instructorId, courseId])
 }

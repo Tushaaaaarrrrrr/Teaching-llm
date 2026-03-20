@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { getSession, isManager } from '@/lib/auth'
+import { prisma } from '../../../lib/db'
+import { getSession, isManager } from '../../../lib/auth'
 
 function escapeCsvField(field: string): string {
   const str = String(field)

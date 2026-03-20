@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { getUserAvatar } from '@/lib/avatar'
 
 export async function GET() {
   try {
@@ -27,17 +26,12 @@ export async function GET() {
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        createdBy: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
+        createdBy: { select: { id: true, name: true, role: true, avatar: true } },
         course: { select: { id: true, name: true, color: true } },
       },
     })
 
-    const mappedAnnouncements = announcements.map(a => ({
-      ...a,
-      createdBy: { ...a.createdBy, avatar: getUserAvatar(a.createdBy) }
-    }))
-
-    return NextResponse.json(mappedAnnouncements)
+    return NextResponse.json(announcements)
   } catch (error) {
     console.error('Error fetching announcements:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -51,7 +45,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (session.role !== 'MANAGER') {
+    if (!isAdminOrManager(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -70,7 +64,7 @@ export async function POST(request: NextRequest) {
         createdById: session.userId,
       },
       include: {
-        createdBy: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
+        createdBy: { select: { id: true, name: true, role: true, avatar: true } },
         course: { select: { id: true, name: true, color: true } },
       },
     })
@@ -120,12 +114,7 @@ export async function POST(request: NextRequest) {
       targetId: announcement.id,
     })
 
-    const mappedAnnouncement = {
-      ...announcement,
-      createdBy: { ...announcement.createdBy, avatar: getUserAvatar(announcement.createdBy) }
-    }
-
-    return NextResponse.json(mappedAnnouncement, { status: 201 })
+    return NextResponse.json(announcement, { status: 201 })
   } catch (error) {
     console.error('Error creating announcement:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

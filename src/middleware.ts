@@ -3,7 +3,7 @@ import { jwtVerify } from 'jose'
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated']
 const COOKIE_NAME = 'teaching_llm_token'
-const JWT_SECRET = (process.env.JWT_SECRET || 'teaching-llm-super-secret-jwt-key-2024').trim()
+const JWT_SECRET = process.env.JWT_SECRET || 'teaching-llm-secret-key-change-in-production'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -53,7 +53,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   } catch (error) {
-    console.error(`JWT Verification failed in middleware for path ${pathname}:`, error)
+    console.error('JWT Verification failed in middleware:', error)
     const response = NextResponse.redirect(new URL('/login', request.url))
     response.cookies.delete(COOKIE_NAME)
     return response
@@ -63,5 +63,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+    '/api/community/:path*',
+    '/api/courses/:path*',
+  ],
 }

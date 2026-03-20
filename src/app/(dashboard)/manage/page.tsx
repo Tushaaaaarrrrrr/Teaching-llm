@@ -17,6 +17,7 @@ export default function ManagePage() {
   const [editId, setEditId]             = useState<string | null>(null)
   const [formData, setFormData]         = useState<Record<string, string>>({})
   const [saving, setSaving]             = useState(false)
+  const [copiedId, setCopiedId]         = useState<string | null>(null)
 
   // For lecture / material forms: topic selector
   const [topicsForCourse, setTopicsForCourse] = useState<any[]>([])
@@ -430,6 +431,11 @@ export default function ManagePage() {
                     <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.name || item.title}
                     </div>
+                    {tab === 'courses' && (
+                      <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#6366f1', marginTop: '2px', fontWeight: '600', letterSpacing: '0.02em' }}>
+                        LMS-COURSE-{item.id}
+                      </div>
+                    )}
                     <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {subtitle}
                     </div>
@@ -470,15 +476,21 @@ export default function ManagePage() {
                     {tab === 'courses' && (
                       <button 
                         onClick={() => {
-                          const id = `LMS-COURSE-${item.id}`;
-                          navigator.clipboard.writeText(id);
-                          alert(`Copied Calendar Sync ID:\n${id}`);
+                          const formatted = `LMS-COURSE-${item.id}`;
+                          navigator.clipboard.writeText(formatted);
+                          setCopiedId(item.id);
+                          setTimeout(() => setCopiedId(null), 2000);
                         }} 
                         className="btn btn-ghost btn-sm" 
-                        title="Copy Calendar Sync ID"
+                        title={`Copy: LMS-COURSE-${item.id}`}
+                        style={copiedId === item.id ? { color: '#10b981', borderColor: '#10b981' } : {}}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                        Copy ID
+                        {copiedId === item.id ? (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        ) : (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        )}
+                        {copiedId === item.id ? 'Copied!' : 'Copy ID'}
                       </button>
                     )}
                     <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm">

@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
     let imported = 0
     let skipped = 0
 
-    // Description Bridge format: CID: <courseId>
-    const cidRegex = /CID:\s*([\w-]+)/i
+    // Description Bridge format: LMS-COURSE-<courseId>
+    const cidRegex = /LMS-COURSE-([\w-]+)/i
 
     for (const item of events) {
       // Must have a description to contain a CID
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      const courseId = match[1] === 'GLOBAL' ? 'GLOBAL' : match[1]
+      const courseId = match[1]
       
       const startTime = item.start?.dateTime || item.start?.date
       const endTime = item.end?.dateTime || item.end?.date
@@ -108,12 +108,20 @@ export async function POST(request: NextRequest) {
       // Extract raw title
       const title = item.summary?.replace(/\[(cancelled|rescheduled)\]/i, '').trim() || 'Untitled Session'
 
-      // Valid course check (if not GLOBAL)
-      if (courseId !== 'GLOBAL') {
-        const courseExists = await prisma.course.findUnique({ where: { id: courseId } })
-        if (!courseExists) {
-          skipped++
-          continue
+      // Valid course check
+      const courseExists = await prisma.course.findUnique({ where: { id: courseId } })
+      if (!courseExists) {
+        skipped++
+        continue
+      }
+
+      // Optional Enhancement: Try to resolve instructor via creator email
+      let instructorId = null
+      const creatorEmail = item.creator?.email || item.organizer?.email
+      if (creatorEmail) {
+        const potentialInstructor = await prisma.user.findUnique({ where: { email: creatorEmail } })
+        if (potentialInstructor) {
+          instructorId = potentialInstructor.id
         }
       }
 
@@ -126,7 +134,8 @@ export async function POST(request: NextRequest) {
           startTime: new Date(startTime),
           endTime: new Date(endTime),
           meetLink,
-          manualStatus
+          manualStatus,
+          instructorId // Optionally found from email
         },
         create: {
           googleEventId: item.id,
@@ -138,6 +147,7 @@ export async function POST(request: NextRequest) {
           meetLink,
           manualStatus,
           createdById: session.userId,
+          instructorId, // Optionally found from email
           type: 'class' // default to class sync
         }
       })

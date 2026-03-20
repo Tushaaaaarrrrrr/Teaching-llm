@@ -7,21 +7,30 @@ import useSWR from 'swr'
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function DashboardPage() {
-  const { data: dashboardData, error, isLoading: loading } = useSWR('/api/dashboard', fetcher, {
-    refreshInterval: 60000, // Refresh every 60 seconds
+  const { data: dashboardData, error, isLoading: loading, mutate } = useSWR('/api/dashboard', fetcher, {
+    refreshInterval: 60000,
     revalidateOnFocus: true
   })
 
   const [activeCard, setActiveCard] = useState(0)
   const [sliding, setSliding] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [wasWelcomeShownInSession, setWasWelcomeShownInSession] = useState(false)
 
   useEffect(() => {
-    if (dashboardData?.user && dashboardData.user.hasSeenWelcome === false && !showWelcome) {
+    if (
+      dashboardData?.user && 
+      dashboardData.user.hasSeenWelcome === false && 
+      !showWelcome && 
+      !wasWelcomeShownInSession
+    ) {
       setShowWelcome(true)
-      fetch('/api/users/welcome', { method: 'POST' }).catch(console.error)
+      setWasWelcomeShownInSession(true)
+      fetch('/api/users/welcome', { method: 'POST' })
+        .then(() => mutate())
+        .catch(console.error)
     }
-  }, [dashboardData])
+  }, [dashboardData, showWelcome, wasWelcomeShownInSession, mutate])
 
   const handleNextLive = () => {
     if (!dashboardData?.liveSessions?.length) return

@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import useSWR from 'swr'
 
-interface CourseItem {
+interface ClassItem {
   id: string
   name: string
   color: string
@@ -17,7 +16,6 @@ interface CommMsg {
   content: string
   createdAt: string
   isDeleted?: boolean
-  isSystemDeleted?: boolean
   deletedAt?: string | null
   sender: {
     id: string
@@ -28,141 +26,47 @@ interface CommMsg {
 }
 
 export default function CommunityPage() {
-  const [courses, setCourses] = useState<CourseItem[]>([])
-  const [selectedCourse, setSelectedCourse] = useState<CourseItem | null>(null)
+  const [classes, setClasses] = useState<ClassItem[]>([])
+  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null)
   const [messages, setMessages] = useState<CommMsg[]>([])
-  const fetcher = (url: string) => fetch(url).then(r => r.json())
   const [input, setInput] = useState('')
   const [userId, setUserId] = useState('')
   const [userRole, setUserRole] = useState('STUDENT')
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [isVisible, setIsVisible] = useState(true)
-  const [hasMore, setHasMore] = useState(true)
-  const [loadingHistory, setLoadingHistory] = useState(false)
-  const [initialLoaded, setInitialLoaded] = useState(false)
-  const [showTranscript, setShowTranscript] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const prevScrollHeightRef = useRef<number>(0)
-  
-  // Visibility tracking
-  useEffect(() => {
-    const handleVisibility = () => setIsVisible(document.visibilityState === 'visible')
-    document.addEventListener('visibilitychange', handleVisibility)
-    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const loadMessages = useCallback(async (classId: string) => {
+    const data = await fetch(`/api/community/${classId}/messages`).then(r => r.json())
+    setMessages(data)
   }, [])
-
-  // useSWR for real-time messages
-  const { data: swrMessages, mutate: mutateMessages } = useSWR(
-    selectedCourse ? `/api/community/${selectedCourse.id}/messages?limit=20` : null,
-    fetcher,
-    { 
-      refreshInterval: isVisible ? 5000 : 0, 
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true
-    }
-  )
-
-  useEffect(() => {
-    if (swrMessages) {
-      setMessages(prev => {
-        const existingIds = new Set(prev.map(m => m.id))
-        const newMsgs = swrMessages.filter((m: CommMsg) => !existingIds.has(m.id))
-        if (newMsgs.length === 0) return prev
-        const combined = [...prev, ...newMsgs].sort((a, b) => 
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        )
-        return combined
-      })
-      if (!initialLoaded) setInitialLoaded(true)
-    }
-  }, [swrMessages, initialLoaded])
-
-  const loadHistory = async () => {
-    if (!selectedCourse || loadingHistory || !hasMore || messages.length === 0) return
-    setLoadingHistory(true)
-    const oldestId = messages[0].id
-    try {
-      const res = await fetch(`/api/community/${selectedCourse.id}/messages?cursor=${oldestId}&limit=20`)
-      const history = await res.json()
-      if (history.length < 20) setHasMore(false)
-      
-      if (history.length > 0) {
-        // Capture scroll height before prepending
-        if (scrollRef.current) {
-          prevScrollHeightRef.current = scrollRef.current.scrollHeight
-        }
-        
-        setMessages(prev => {
-          const existingIds = new Set(prev.map(m => m.id))
-          const newMsgs = history.filter((m: CommMsg) => !existingIds.has(m.id))
-          return [...newMsgs, ...prev].sort((a, b) => 
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          )
-        })
-      } else {
-        setHasMore(false)
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoadingHistory(false)
-    }
-  }
-
-  const loadMessages = useCallback(async (courseId: string) => {
-    setInitialLoaded(false)
-    setHasMore(true)
-    setMessages([])
-    mutateMessages()
-  }, [mutateMessages])
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.json()).then(d => {
       setUserRole(d.user?.role || 'STUDENT')
       setUserId(d.user?.id || '')
     })
-    fetch('/api/courses').then(r => r.json()).then(data => {
-      const list = data.courses || data || []
-      setCourses(list)
-      if (list.length > 0) setSelectedCourse(list[0])
+    fetch('/api/classes').then(r => r.json()).then(data => {
+      const list = data.classes || data || []
+      setClasses(list)
+      if (list.length > 0) setSelectedClass(list[0])
     })
-    fetch('/api/users/seen', { method: 'POST', body: JSON.stringify({ type: 'community' }) }).catch(console.error)
   }, [])
 
-  // Poll messages when a course is selected - handled by SWR
+  // Poll messages when a class is selected
   useEffect(() => {
-    if (selectedCourse) {
-      setShowTranscript(false)
-      loadMessages(selectedCourse.id)
-    }
-  }, [selectedCourse, loadMessages])
+    if (!selectedClass) return
+    loadMessages(selectedClass.id)
+    const t = setInterval(() => loadMessages(selectedClass.id), 4000)
+    return () => clearInterval(t)
+  }, [selectedClass, loadMessages])
 
-  // Handle scroll restoration when history loads
   useEffect(() => {
-    if (prevScrollHeightRef.current && scrollRef.current) {
-      const newScrollHeight = scrollRef.current.scrollHeight
-      const delta = newScrollHeight - prevScrollHeightRef.current
-      scrollRef.current.scrollTop += delta
-      prevScrollHeightRef.current = 0
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Auto-scroll to bottom only on initial load or when sending message
-  useEffect(() => {
-    if (initialLoaded && !loadingHistory && !prevScrollHeightRef.current) {
-      const el = scrollRef.current
-      if (el) {
-        const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150
-        if (isNearBottom || messages.length <= 20) {
-          el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-        }
-      }
-    }
-  }, [messages, initialLoaded, loadingHistory])
-
   async function sendMessage() {
-    if (!input.trim() || !selectedCourse) return
+    if (!input.trim() || !selectedClass) return
     const optimistic: CommMsg = {
       id: 'temp-' + Date.now(),
       content: input,
@@ -172,26 +76,26 @@ export default function CommunityPage() {
     setMessages(prev => [...prev, optimistic])
     setInput('')
 
-    await fetch(`/api/community/${selectedCourse.id}/messages`, {
+    await fetch(`/api/community/${selectedClass.id}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: optimistic.content }),
     })
-    loadMessages(selectedCourse.id)
+    loadMessages(selectedClass.id)
   }
 
   async function deleteMessage(messageId: string) {
-    if (!selectedCourse || deletingId) return
+    if (!selectedClass || deletingId) return
     if (!confirm('Delete this message? It will be removed from the chat.')) return
     setDeletingId(messageId)
     try {
-      const res = await fetch(`/api/community/${selectedCourse.id}/messages`, {
+      const res = await fetch(`/api/community/${selectedClass.id}/messages`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messageId }),
       })
       if (res.ok) {
-        mutateMessages()
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, isDeleted: true, content: '' } : m))
       }
     } catch (e) {
       console.error(e)
@@ -205,59 +109,59 @@ export default function CommunityPage() {
   return (
     <div className="page-container fade-in" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
 
-      {/* Left: Course list */}
+      {/* Left: Class list */}
       <div style={{ width: '230px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
         <div style={{ fontSize: '12px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px', padding: '0 4px' }}>
           Communities
         </div>
-        {courses.map(course => (
+        {classes.map(cls => (
           <button
-            key={course.id}
-            onClick={() => setSelectedCourse(course)}
+            key={cls.id}
+            onClick={() => setSelectedClass(cls)}
             style={{
               display: 'flex', alignItems: 'center', gap: '12px',
               padding: '12px 16px', borderRadius: '18px', border: 'none',
               cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
               transition: 'all 0.2s',
-              background: selectedCourse?.id === course.id ? course.color : '#e8eaf0',
-              color: selectedCourse?.id === course.id ? '#fff' : '#1e1e3a',
-              boxShadow: selectedCourse?.id === course.id
-                ? `5px 5px 12px ${course.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
+              background: selectedClass?.id === cls.id ? cls.color : '#e8eaf0',
+              color: selectedClass?.id === cls.id ? '#fff' : '#1e1e3a',
+              boxShadow: selectedClass?.id === cls.id
+                ? `5px 5px 12px ${cls.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
                 : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
             }}
           >
             <div style={{
               width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0,
-              background: selectedCourse?.id === course.id ? 'rgba(255,255,255,0.25)' : course.color + '22',
+              background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : cls.color + '22',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '12px', fontWeight: '800',
-              color: selectedCourse?.id === course.id ? '#fff' : course.color,
+              color: selectedClass?.id === cls.id ? '#fff' : cls.color,
             }}>
-              {course.name.substring(0, 2).toUpperCase()}
+              {cls.name.substring(0, 2).toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {course.name}
+                {cls.name}
               </div>
-              {course.subject && (
-                <div style={{ fontSize: '11px', opacity: selectedCourse?.id === course.id ? 0.8 : 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {course.subject}
+              {cls.subject && (
+                <div style={{ fontSize: '11px', opacity: selectedClass?.id === cls.id ? 0.8 : 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {cls.subject}
                 </div>
               )}
             </div>
           </button>
         ))}
 
-        {courses.length === 0 && (
+        {classes.length === 0 && (
           <div style={{ color: '#9999b0', fontSize: '13px', textAlign: 'center', padding: '20px 10px' }}>
-            No courses available
+            No classes available
           </div>
         )}
       </div>
 
       {/* Right: Chat area */}
       <div style={{ flex: 1, borderRadius: '24px', ...neu, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        {!selectedCourse ? (
+        {!selectedClass ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', color: '#9999b0' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
             <p style={{ fontWeight: '700' }}>Select a community</p>
@@ -268,43 +172,22 @@ export default function CommunityPage() {
             <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{
                 width: '40px', height: '40px', borderRadius: '12px',
-                background: selectedCourse.color + '22',
+                background: selectedClass.color + '22',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '14px', fontWeight: '800', color: selectedCourse.color,
+                fontSize: '14px', fontWeight: '800', color: selectedClass.color,
               }}>
-                {selectedCourse.name.substring(0, 2).toUpperCase()}
+                {selectedClass.name.substring(0, 2).toUpperCase()}
               </div>
               <div>
-                <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a' }}>{selectedCourse.name}</div>
-                {selectedCourse.subject && (
-                  <div style={{ fontSize: '12px', color: '#9999b0' }}>{selectedCourse.subject} · Community Chat</div>
+                <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a' }}>{selectedClass.name}</div>
+                {selectedClass.subject && (
+                  <div style={{ fontSize: '12px', color: '#9999b0' }}>{selectedClass.subject} · Community Chat</div>
                 )}
               </div>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                {userRole === 'MANAGER' && (
-                  <button 
-                    onClick={() => setShowTranscript(!showTranscript)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '8px',
-                      padding: '8px 16px', borderRadius: '50px',
-                      background: showTranscript ? '#3636e8' : '#e8eaf0', color: showTranscript ? '#fff' : '#6b6b8a',
-                      boxShadow: showTranscript ? '4px 4px 10px rgba(54,54,232,0.35)' : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                      border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '700',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <line x1="16" y1="13" x2="8" y2="13"/>
-                      <line x1="16" y1="17" x2="8" y2="17"/>
-                    </svg>
-                    {showTranscript ? 'Back to Chat' : 'Transcript'}
-                  </button>
-                )}
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center' }}>
                 <span style={{
                   padding: '4px 14px', borderRadius: '50px',
-                  background: selectedCourse.color + '18', color: selectedCourse.color,
+                  background: selectedClass.color + '18', color: selectedClass.color,
                   fontSize: '12px', fontWeight: '700',
                 }}>
                   {messages.length} message{messages.length !== 1 ? 's' : ''}
@@ -312,32 +195,9 @@ export default function CommunityPage() {
               </div>
             </div>
 
-            {/* Content Area */}
-            {showTranscript ? (
-              <TranscriptView course={selectedCourse} />
-            ) : (
-             <>
-              <div 
-                ref={scrollRef}
-                style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}
-              >
-              {hasMore && messages.length >= 20 && (
-                <button
-                  onClick={loadHistory}
-                  disabled={loadingHistory}
-                  style={{
-                    alignSelf: 'center', padding: '8px 20px', borderRadius: '50px',
-                    border: 'none', background: '#e8eaf0', color: '#6b6b8a',
-                    fontSize: '12px', fontWeight: '700', cursor: 'pointer',
-                    boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                    marginBottom: '10px'
-                  }}
-                >
-                  {loadingHistory ? 'Loading history...' : 'Load older messages'}
-                </button>
-              )}
-
-              {messages.length === 0 && !loadingHistory && (
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {messages.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9999b0' }}>
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.4 }}>
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
@@ -348,44 +208,42 @@ export default function CommunityPage() {
               )}
 
               {messages.map((msg, idx) => {
-                  const isMe = msg.sender.id === userId
-                  const isAdmin = msg.sender.role !== 'STUDENT'
-                  const showAvatar = idx === 0 || messages[idx - 1]?.sender.id !== msg.sender.id
-                  const isManagerView = userRole === 'MANAGER'
-                  const isActuallyDeleted = msg.isDeleted || msg.isSystemDeleted
+                const isMe = msg.sender.id === userId
+                const isAdmin = msg.sender.role !== 'STUDENT'
+                const showAvatar = idx === 0 || messages[idx - 1]?.sender.id !== msg.sender.id
 
-                  if (isActuallyDeleted && !isManagerView) {
-                    return (
-                      <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
-                        {!isMe && (
-                          <>
-                            {showAvatar ? (
-                              <div style={{
-                                width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                                background: '#e8eaf0',
-                                boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '11px', fontWeight: '800', color: '#9999b0',
-                              }}>
-                                {msg.sender.name.charAt(0).toUpperCase()}
-                              </div>
-                            ) : <div style={{ width: '32px', flexShrink: 0 }} />}
-                          </>
-                        )}
-                        <div style={{
-                          padding: '8px 14px', borderRadius: '14px',
-                          background: 'transparent',
-                          border: '1.5px dashed #c5c7cf',
-                          color: '#9999b0', fontSize: '13px', fontStyle: 'italic',
-                        }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}>
-                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                          </svg>
-                          Message deleted
-                        </div>
+                if (msg.isDeleted) {
+                  return (
+                    <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
+                      {!isMe && (
+                        <>
+                          {showAvatar ? (
+                            <div style={{
+                              width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                              background: '#e8eaf0',
+                              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '11px', fontWeight: '800', color: '#9999b0',
+                            }}>
+                              {msg.sender.name.charAt(0).toUpperCase()}
+                            </div>
+                          ) : <div style={{ width: '32px', flexShrink: 0 }} />}
+                        </>
+                      )}
+                      <div style={{
+                        padding: '8px 14px', borderRadius: '14px',
+                        background: 'transparent',
+                        border: '1.5px dashed #c5c7cf',
+                        color: '#9999b0', fontSize: '13px', fontStyle: 'italic',
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}>
+                          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                        Message deleted
                       </div>
-                    )
-                  }
+                    </div>
+                  )
+                }
 
                 return (
                   <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
@@ -430,18 +288,10 @@ export default function CommunityPage() {
                           background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0',
                           color: isMe ? '#fff' : '#1e1e3a',
                           fontSize: '14px', lineHeight: '1.5',
-                          opacity: isActuallyDeleted ? 0.6 : 1,
-                          position: 'relative',
-                          border: isActuallyDeleted ? '1px dashed #ef4444' : 'none',
                           boxShadow: isMe
                             ? '4px 4px 10px rgba(54,54,232,0.25)'
                             : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                         }}>
-                          {isActuallyDeleted && (
-                            <div style={{ fontSize: '10px', color: '#ef4444', fontWeight: '800', marginBottom: '4px' }}>
-                              {msg.isSystemDeleted ? 'SYSTEM DELETED' : 'DELETED BY USER'} (MANAGER OVERSIGHT)
-                            </div>
-                          )}
                           {msg.content}
                         </div>
                         {/* Delete button for own messages */}
@@ -475,6 +325,7 @@ export default function CommunityPage() {
                   </div>
                 )
               })}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}
@@ -484,8 +335,7 @@ export default function CommunityPage() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  placeholder={`Message ${selectedCourse.name} community...`}
-                  maxLength={2000}
+                  placeholder={`Message ${selectedClass.name} community...`}
                   style={{
                     width: '100%', padding: '11px 16px', borderRadius: '50px',
                     border: 'none', outline: 'none',
@@ -493,13 +343,6 @@ export default function CommunityPage() {
                     ...neuInset, color: '#1e1e3a',
                   }}
                 />
-                <div style={{ 
-                  position: 'absolute', right: '16px', bottom: '-18px', 
-                  fontSize: '10px', fontWeight: '700', 
-                  color: input.length > 1900 ? '#ef4444' : '#9999b0' 
-                }}>
-                  {input.length}/2,000
-                </div>
               </div>
               <button
                 onClick={sendMessage}
@@ -507,11 +350,11 @@ export default function CommunityPage() {
                 style={{
                   width: '44px', height: '44px', borderRadius: '50%', border: 'none',
                   cursor: input.trim() ? 'pointer' : 'default',
-                  background: input.trim() ? selectedCourse.color : '#e8eaf0',
+                  background: input.trim() ? selectedClass.color : '#e8eaf0',
                   color: input.trim() ? '#fff' : '#9999b0',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                   boxShadow: input.trim()
-                    ? `4px 4px 10px ${selectedCourse.color}55`
+                    ? `4px 4px 10px ${selectedClass.color}55`
                     : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                   transition: 'all 0.2s',
                 }}
@@ -522,209 +365,9 @@ export default function CommunityPage() {
                 </svg>
               </button>
             </div>
-           </>
-          )}
           </>
         )}
       </div>
     </div>
   )
 }
-
-function TranscriptView({ course }: { course: CourseItem }) {
-  const [messages, setMessages] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'deleted'>('all')
-  const [search, setSearch] = useState('')
-  const [exporting, setExporting] = useState(false)
-
-  useEffect(() => {
-    setLoading(true)
-    fetch(`/api/community/transcripts?courseId=${course.id}`)
-      .then(r => r.json())
-      .then(data => setMessages(data.messages || []))
-      .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [course.id])
-
-  async function exportTranscript(format: 'csv' | 'json' | 'pdf') {
-    setExporting(true)
-    try {
-      const res = await fetch(`/api/community/transcripts/export?courseId=${course.id}&format=${format}`)
-      const blob = await res.blob()
-      const ext = format === 'pdf' ? 'html' : format
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `transcript-${course.name.replace(/\s+/g, '_')}.${ext}`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      URL.revokeObjectURL(url)
-    } catch (e) {
-      console.error(e)
-    }
-    setExporting(false)
-  }
-
-  const filteredMessages = messages.filter(msg => {
-    if (filter === 'deleted' && !msg.isDeleted && !msg.isSystemDeleted) return false
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      return (
-        msg.content.toLowerCase().includes(q) ||
-        msg.sender.name.toLowerCase().includes(q) ||
-        (msg.sender.securityNumber || '').toLowerCase().includes(q)
-      )
-    }
-    return true
-  })
-
-  const neuSmall = { background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }
-  const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
-
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Filters & Export */}
-      <div style={{ padding: '10px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search transcript..."
-          style={{
-            flex: 1, padding: '9px 16px', borderRadius: '50px',
-            border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13px',
-            ...neuInset, color: '#1e1e3a', minWidth: '200px'
-          }}
-        />
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {(['all', 'deleted'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              style={{
-                padding: '6px 14px', borderRadius: '50px', border: 'none',
-                cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                background: filter === f ? '#3636e8' : '#e8eaf0',
-                color: filter === f ? '#fff' : '#6b6b8a',
-                boxShadow: filter === f
-                  ? '4px 4px 10px rgba(54,54,232,0.25)'
-                  : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                transition: 'all 0.2s',
-              }}
-            >
-              {f === 'all' ? 'All' : 'Deleted Only'}
-            </button>
-          ))}
-        </div>
-        <div style={{ width: '1px', height: '20px', background: '#c5c7cf', margin: '0 8px' }} />
-        <div style={{ display: 'flex', gap: '6px' }}>
-          {(['csv', 'json', 'pdf'] as const).map(fmt => (
-            <button
-              key={fmt}
-              onClick={() => exportTranscript(fmt)}
-              disabled={exporting || messages.length === 0}
-              style={{
-                padding: '6px 14px', borderRadius: '50px', border: 'none',
-                cursor: exporting ? 'default' : 'pointer',
-                fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                ...neuSmall, color: exporting ? '#9999b0' : '#3636e8',
-                transition: 'all 0.2s',
-              }}
-            >
-              {fmt === 'pdf' ? 'PDF' : fmt.toUpperCase()}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Transcript table */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#9999b0', fontWeight: '600' }}>Loading transcript...</div>
-        ) : filteredMessages.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#9999b0' }}>
-            <p style={{ fontWeight: '700' }}>No messages found</p>
-            <p style={{ fontSize: '13px', marginTop: '4px' }}>
-              {filter === 'deleted' ? 'No deleted messages in this community' : search ? 'Try a different search term' : 'This community has no messages yet'}
-            </p>
-          </div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-            <thead>
-              <tr style={{ position: 'sticky', top: 0, background: '#e8eaf0', zIndex: 1 }}>
-                <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>User</th>
-                <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Time</th>
-                <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Message</th>
-                <th style={{ textAlign: 'center', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMessages.map(msg => {
-                const isDel = msg.isDeleted || msg.isSystemDeleted
-                return (
-                  <tr
-                    key={msg.id}
-                    style={{ background: isDel ? '#fff5f5' : 'transparent', transition: 'background 0.15s' }}
-                    onMouseEnter={e => { if (!isDel) e.currentTarget.style.background = '#f0f0f8' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = isDel ? '#fff5f5' : 'transparent' }}
-                  >
-                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{
-                          width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
-                          background: msg.sender.role !== 'STUDENT' ? '#3636e8' : '#e8eaf0',
-                          boxShadow: msg.sender.role !== 'STUDENT' ? 'none' : '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '10px', fontWeight: '800',
-                          color: msg.sender.role !== 'STUDENT' ? '#fff' : '#6b6b8a',
-                        }}>
-                          {msg.sender.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: '700', fontSize: '13px' }}>{msg.sender.name}</div>
-                          <div style={{ fontSize: '10px', color: '#9999b0' }}>{msg.sender.role}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap', color: '#6b6b8a', fontSize: '12px' }}>
-                      {new Date(msg.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', maxWidth: '400px', wordBreak: 'break-word' }}>
-                      <span style={{ color: isDel ? '#ef4444' : '#1e1e3a' }}>
-                        {msg.content}
-                      </span>
-                      {isDel && (
-                        <span style={{
-                          marginLeft: '8px', fontSize: '10px', fontWeight: '700',
-                          background: '#fef2f2', color: '#ef4444',
-                          padding: '1px 8px', borderRadius: '50px',
-                        }}>
-                          DELETED
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                      {isDel ? (
-                        <span style={{
-                          padding: '3px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
-                          background: '#fef2f2', color: '#ef4444',
-                        }}>Deleted</span>
-                      ) : (
-                        <span style={{
-                          padding: '3px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
-                          background: '#f0fdf4', color: '#22c55e',
-                        }}>Active</span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  )
-}
-

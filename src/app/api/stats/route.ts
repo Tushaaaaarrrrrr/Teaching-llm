@@ -19,22 +19,15 @@ export async function GET() {
       ? { id: { in: accessibleCourseIds } }
       : {}
 
-    const eventCourseFilter = accessibleCourseIds !== null
-      ? { OR: [{ courseId: null }, { courseId: { in: accessibleCourseIds } }] }
-      : {}
-
-    const now = new Date()
-
     const [totalClasses, totalLectures, totalStudents, upcomingSessions, totalMaterials] =
       await Promise.all([
         prisma.course.count({ where: classCountFilter }),
         prisma.lecture.count({ where: classFilter }),
         prisma.user.count({ where: { role: 'STUDENT' } }),
-        prisma.courseEvent.count({
+        prisma.liveSession.count({
           where: {
-            startTime: { gte: now },
-            manualStatus: { not: 'CANCELLED' },
-            ...eventCourseFilter,
+            status: { in: ['scheduled', 'live'] },
+            ...classFilter,
           },
         }),
         prisma.material.count({ where: classFilter }),

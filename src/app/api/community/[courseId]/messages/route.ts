@@ -9,20 +9,24 @@ export async function GET(
   { params }: { params: { courseId: string } }
 ) {
   try {
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { courseId } = params;
+    if (!courseId) {
+      return NextResponse.json({ error: 'Missing courseId' }, { status: 400 });
+    }
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-    if (accessibleCourseIds !== null && !accessibleCourseIds.includes(params.courseId)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role);
+    if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { searchParams } = new URL(_request.url)
-    const cursor = searchParams.get('cursor')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const { searchParams } = new URL(_request.url);
+    const cursor = searchParams.get('cursor');
+    const limit = parseInt(searchParams.get('limit') || '20');
 
     const messages = await prisma.communityMessage.findMany({
-      where: { courseId: params.courseId },
+      where: { courseId },
       take: limit,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       include: {
@@ -36,7 +40,7 @@ export async function GET(
         },
       },
       orderBy: { createdAt: 'desc' },
-    })
+    });
 
     // Reverse to return in chronological order for the chat UI
     messages.reverse()

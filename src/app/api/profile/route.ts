@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { getUserAvatar } from '@/lib/avatar'
 
 export async function GET() {
   try {
@@ -19,10 +18,14 @@ export async function GET() {
         email: true,
         role: true,
         avatar: true,
-        gender: true,
         securityNumber: true,
         createdAt: true,
-        passwordHash: true,
+        googleCredential: {
+          select: {
+            id: true,
+            updatedAt: true
+          }
+        }
       },
     })
 
@@ -33,7 +36,7 @@ export async function GET() {
     // Auto-generate security number if missing
     if (!user.securityNumber) {
       const securityNumber = 'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase()
-      user = await prisma.user.update({
+      const updatedUser = await prisma.user.update({
         where: { id: session.userId },
         data: { securityNumber },
         select: {
@@ -42,17 +45,25 @@ export async function GET() {
           email: true,
           role: true,
           avatar: true,
-          gender: true,
           securityNumber: true,
           createdAt: true,
-          passwordHash: true,
+          googleCredential: {
+            select: {
+              id: true,
+              updatedAt: true
+            }
+          }
         },
       })
+      user = updatedUser
     }
 
-    // Compute isGoogleAuth flag (empty passwordHash = Google OAuth user)
-    const { passwordHash, ...safeUser } = user
-    return NextResponse.json({ user: { ...safeUser, avatar: getUserAvatar(user), isGoogleAuth: passwordHash === '' } })
+    return NextResponse.json({ 
+      user: {
+        ...user,
+        isCalendarLinked: !!user.googleCredential
+      }
+    })
   } catch (error) {
     console.error('Error fetching profile:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -81,7 +92,6 @@ export async function PUT(request: NextRequest) {
         email: true,
         role: true,
         avatar: true,
-        gender: true,
         createdAt: true,
       },
     })
@@ -95,7 +105,7 @@ export async function PUT(request: NextRequest) {
       moduleName: MODULE.PROFILE,
     })
 
-    return NextResponse.json({ user: { ...user, avatar: getUserAvatar(user) } })
+    return NextResponse.json({ user })
   } catch (error) {
     console.error('Error updating profile:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

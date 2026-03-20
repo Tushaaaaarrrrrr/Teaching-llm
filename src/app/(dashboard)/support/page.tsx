@@ -163,7 +163,6 @@ export default function SupportPage() {
     })
     loadTickets()
     loadFaqs()
-    fetch('/api/users/seen', { method: 'POST', body: JSON.stringify({ type: 'support' }) }).catch(console.error)
   }, [loadTickets, loadFaqs])
 
   // Poll chat messages

@@ -1,11 +1,9 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
-import useSWR from 'swr'
-import ImageCropper from '@/components/ui/ImageCropper'
 
-interface AnnouncementCourse {
+interface AnnouncementClass {
   id: string
   name: string
   color: string
@@ -23,27 +21,18 @@ interface Announcement {
   title: string
   content: string
   type: string
-  courseId: string | null
-  imageUrl: string | null
-  pollId: string | null
+  classId: string | null
   createdAt: string
   createdBy: AnnouncementAuthor
-  course: AnnouncementCourse | null
-  poll?: {
-    id: string
-    question: string
-    expiresAt: string
-    options: { id: string; text: string; order: number }[]
-    responses: { optionId: string }[]
-  }
+  class: AnnouncementClass | null
 }
 
-interface CourseOption {
+interface ClassOption {
   id: string
   name: string
 }
 
-type FilterTab = 'all' | 'updates' | 'course'
+type FilterTab = 'all' | 'updates' | 'class'
 
 const TYPE_OPTIONS = [
   { value: 'info',    label: 'Info',    color: '#3b82f6' },
@@ -126,56 +115,27 @@ function TypeIcon({ type }: { type: string }) {
   )
 }
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
-
 export default function AnnouncementsPage() {
   const searchParams = useSearchParams()
   const highlightId  = searchParams.get('id')
   const cardRefs     = useRef<Record<string, HTMLDivElement | null>>({})
 
-  // SWR hooks — parallel fetching with caching and deduplication
-  const { data: annData, isLoading: annLoading, mutate: mutateAnn } = useSWR('/api/announcements', fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 30000,
-  })
-  const { data: meData } = useSWR('/api/auth/me', fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 60000,
-  })
-  const { data: courseData } = useSWR('/api/courses', fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 30000,
-  })
-
-  const announcements: Announcement[] = Array.isArray(annData) ? annData : []
-  const courses: CourseOption[] = Array.isArray(courseData) ? courseData : (courseData?.courses || [])
-  const userRole = meData?.user?.role || meData?.role || ''
-  const loading = annLoading
-
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [classes,       setClasses]       = useState<ClassOption[]>([])
+  const [loading,       setLoading]       = useState(true)
+  const [userRole,      setUserRole]      = useState('')
   const [showForm,      setShowForm]      = useState(false)
   const [submitting,    setSubmitting]    = useState(false)
   const [expandedId,    setExpandedId]    = useState<string | null>(highlightId)
   const [activeTab,     setActiveTab]     = useState<FilterTab>('all')
-  const [editId,        setEditId]        = useState<string | null>(null)
 
   // Form state
   const [title,   setTitle]   = useState('')
   const [content, setContent] = useState('')
   const [type,    setType]    = useState('info')
-  const [courseId, setCourseId] = useState('')
-  
-  // Enhancement states
-  const [contentType, setContentType] = useState<'post' | 'image' | 'poll'>('post')
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [croppedImage, setCroppedImage] = useState<Blob | null>(null)
-  const [showCropper, setShowCropper] = useState(false)
-  const [pollQuestion, setPollQuestion] = useState('')
-  const [pollOptions, setPollOptions] = useState(['', ''])
-  const [pollExpiry, setPollExpiry] = useState(24) // hours
+  const [classId, setClassId] = useState('')
 
-  // Voting states
-  const [votingId, setVotingId] = useState<string | null>(null)
-  const [pollResults, setPollResults] = useState<Record<string, any>>({})
+  useEffect(() => { loadData() }, [])
 
   useEffect(() => {
     if (!loading && highlightId && cardRefs.current[highlightId]) {
@@ -183,144 +143,49 @@ export default function AnnouncementsPage() {
     }
   }, [loading, highlightId])
 
-  useEffect(() => {
-    fetch('/api/users/seen', { method: 'POST', body: JSON.stringify({ type: 'announcements' }) }).catch(console.error)
-  }, [])
-
-  async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this announcement?')) return
+  async function loadData() {
     try {
-      const res = await fetch(`/api/announcements/${id}`, { method: 'DELETE' })
-      if (res.ok) {
-        mutateAnn() // revalidate cache
-      }
-    } catch { /* ignore */ }
-  }
-
-  function handleEdit(a: Announcement) {
-    setEditId(a.id)
-    setTitle(a.title)
-    setContent(a.content)
-    setType(a.type)
-    setCourseId(a.courseId || '')
-    setContentType(a.imageUrl ? 'image' : a.poll ? 'poll' : 'post')
-    setSelectedImage(a.imageUrl ? a.imageUrl : null)
-    setCroppedImage(null)
-    if (a.poll) {
-      setPollQuestion(a.poll.question)
-      setPollOptions(a.poll.options.map(o => o.text))
-    } else {
-      setPollQuestion('')
-      setPollOptions(['', ''])
+      const [annRes, meRes, classRes] = await Promise.all([
+        fetch('/api/announcements'),
+        fetch('/api/auth/me'),
+        fetch('/api/classes'),
+      ])
+      const annData   = await annRes.json()
+      const meData    = await meRes.json()
+      const classData = await classRes.json()
+      setAnnouncements(Array.isArray(annData)   ? annData   : [])
+      setUserRole(meData.user?.role || meData.role || '')
+      setClasses(Array.isArray(classData) ? classData : [])
+    } catch { /* ignore */ } finally {
+      setLoading(false)
     }
-    setShowForm(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !content.trim()) return
     setSubmitting(true)
-    
     try {
-      let imageUrl = null
-      if (contentType === 'image' && croppedImage) {
-        const formData = new FormData()
-        formData.append('file', croppedImage, 'announcement.jpg')
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        })
-        const upData = await uploadRes.json()
-        imageUrl = upData.url
-      }
-
-      const pollData = contentType === 'poll' ? {
-        question: pollQuestion,
-        options: pollOptions.filter(o => o.trim() !== ''),
-        expiresAt: new Date(Date.now() + pollExpiry * 60 * 60 * 1000).toISOString()
-      } : null
-
-      const url = editId ? `/api/announcements/${editId}` : '/api/announcements'
-      const method = editId ? 'PUT' : 'POST'
-      const res = await fetch(url, {
-        method,
+      const res = await fetch('/api/announcements', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          title: title.trim(), 
-          content: content.trim(), 
-          type, 
-          courseId: courseId || undefined,
-          imageUrl,
-          pollData
-        }),
+        body: JSON.stringify({ title: title.trim(), content: content.trim(), type, classId: classId || undefined }),
       })
       if (res.ok) {
-        mutateAnn() // revalidate cache
-        resetForm()
+        const newAnn = await res.json()
+        setAnnouncements(prev => [newAnn, ...prev])
+        setTitle(''); setContent(''); setType('info'); setClassId(''); setShowForm(false)
       }
     } catch { /* ignore */ } finally {
       setSubmitting(false)
     }
   }
 
-  function resetForm() {
-    setEditId(null)
-    setTitle('')
-    setContent('')
-    setType('info')
-    setCourseId('')
-    setContentType('post')
-    setSelectedImage(null)
-    setCroppedImage(null)
-    setPollQuestion('')
-    setPollOptions(['', ''])
-    setShowForm(false)
-  }
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        setSelectedImage(reader.result as string)
-        setShowCropper(true)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  async function handleVote(pollId: string, optionId: string) {
-    setVotingId(pollId)
-    try {
-      const res = await fetch(`/api/polls/${pollId}/vote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ optionId }),
-      })
-      if (res.ok) {
-        mutateAnn() // revalidate via SWR
-      }
-    } catch { /* ignore */ } finally {
-      setVotingId(null)
-    }
-  }
-
-  async function fetchResults(pollId: string) {
-    try {
-      const res = await fetch(`/api/polls/${pollId}/results`)
-      if (res.ok) {
-        const data = await res.json()
-        setPollResults(prev => ({ ...prev, [pollId]: data }))
-      }
-    } catch { /* ignore */ }
-  }
-
-  const isManager = userRole === 'MANAGER'
+  const isAdminOrManager = userRole === 'MANAGER' || userRole === 'ADMIN'
 
   const filtered = announcements.filter(a => {
-    if (activeTab === 'updates') return !a.courseId
-    if (activeTab === 'course')   return !!a.courseId
+    if (activeTab === 'updates') return !a.classId
+    if (activeTab === 'class')   return !!a.classId
     return true
   })
 
@@ -363,8 +228,8 @@ export default function AnnouncementsPage() {
           borderRadius: '50px', background: '#e8eaf0',
           boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
         }}>
-          {(['all', 'updates', 'course'] as FilterTab[]).map(tab => {
-            const labels: Record<FilterTab, string> = { all: 'All', updates: 'Updates', course: 'Course' }
+          {(['all', 'updates', 'class'] as FilterTab[]).map(tab => {
+            const labels: Record<FilterTab, string> = { all: 'All', updates: 'Updates', class: 'Class' }
             const isActive = activeTab === tab
             return (
               <button
@@ -397,9 +262,9 @@ export default function AnnouncementsPage() {
         </div>
 
         {/* New Announcement button (admin/manager only) */}
-        {isManager && (
+        {isAdminOrManager && (
           <button
-            onClick={() => { resetForm(); setShowForm(v => !v) }}
+            onClick={() => setShowForm(v => !v)}
             style={{
               ...neuButton,
               background: showForm ? '#6b6b8a' : '#3636e8',
@@ -420,10 +285,10 @@ export default function AnnouncementsPage() {
       </div>
 
       {/* ── Create form ─────────────────────────────────────────────────── */}
-      {isManager && showForm && (
+      {isAdminOrManager && showForm && (
         <div style={{ ...neuCard, marginBottom: '28px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>
-            {editId ? 'Edit Announcement' : 'Create Announcement'}
+            Create Announcement
           </h3>
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -432,110 +297,11 @@ export default function AnnouncementsPage() {
                 <input type="text" value={title} onChange={e => setTitle(e.target.value)}
                   placeholder="Announcement title..." style={neuInput} required />
               </div>
-              {/* Content Type Toggle */}
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                {(['post', 'image', 'poll'] as const).map(t => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setContentType(t)}
-                    style={{
-                      padding: '8px 16px', borderRadius: '50px', border: 'none',
-                      fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                      background: contentType === t ? '#3636e8' : '#e8eaf0',
-                      color: contentType === t ? '#fff' : '#6b6b8a',
-                      boxShadow: contentType === t ? '2px 2px 6px rgba(54,54,232,0.3)' : 'inset 2px 2px 4px #c5c7cf, inset -2px -2px 4px #fff',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </button>
-                ))}
-              </div>
-
-              {contentType === 'image' && (
-                <div style={{ ...neuInput, padding: '20px', textAlign: 'center', border: '2px dashed #c5c7cf', background: 'transparent' }}>
-                  {croppedImage ? (
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
-                      <img src={URL.createObjectURL(croppedImage)} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
-                      <button 
-                        type="button"
-                        onClick={() => setCroppedImage(null)}
-                        style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer' }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ) : selectedImage ? (
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
-                      <img src={selectedImage} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
-                      <button 
-                        type="button"
-                        onClick={() => setSelectedImage(null)}
-                        style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer' }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ) : (
-                    <label style={{ cursor: 'pointer' }}>
-                      <input type="file" accept="image/*" onChange={handleImageSelect} style={{ display: 'none' }} />
-                      <div style={{ color: '#6b6b8a', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                        </svg>
-                        <span>Click to upload & crop image</span>
-                      </div>
-                    </label>
-                  )}
-                </div>
-              )}
-
-              {contentType === 'poll' && (
-                <div style={{ ...neuCard, background: '#f0f2f7', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #fff', padding: '16px' }}>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '4px' }}>Poll Question</label>
-                    <input type="text" value={pollQuestion} onChange={e => setPollQuestion(e.target.value)} placeholder="What is your question?" style={neuInput} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '4px' }}>Options</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {pollOptions.map((opt, idx) => (
-                        <div key={idx} style={{ display: 'flex', gap: '8px' }}>
-                          <input type="text" value={opt} onChange={e => {
-                            const newOpts = [...pollOptions]
-                            newOpts[idx] = e.target.value
-                            setPollOptions(newOpts)
-                          }} placeholder={`Option ${idx + 1}`} style={neuInput} />
-                          {pollOptions.length > 2 && (
-                            <button type="button" onClick={() => setPollOptions(p => p.filter((_, i) => i !== idx))} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>
-                          )}
-                        </div>
-                      ))}
-                      {pollOptions.length < 6 && (
-                        <button type="button" onClick={() => setPollOptions(p => [...p, ''])} style={{ background: 'none', border: '1px dashed #3636e8', color: '#3636e8', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>+ Add Option</button>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{ marginTop: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '4px' }}>Expires in (hours)</label>
-                    <select value={pollExpiry} onChange={e => setPollExpiry(Number(e.target.value))} style={neuInput}>
-                      <option value={1}>1 hour</option>
-                      <option value={6}>6 hours</option>
-                      <option value={12}>12 hours</option>
-                      <option value={24}>24 hours (1 day)</option>
-                      <option value={48}>48 hours (2 days)</option>
-                      <option value={168}>168 hours (1 week)</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Announcement Body</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Content</label>
                 <textarea value={content} onChange={e => setContent(e.target.value)}
-                  placeholder="Write your announcement details here..." rows={3}
-                  style={{ ...neuInput, resize: 'vertical', minHeight: '80px' }} required />
+                  placeholder="Write your announcement details here..." rows={4}
+                  style={{ ...neuInput, resize: 'vertical', minHeight: '100px' }} required />
               </div>
               <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: '200px' }}>
@@ -560,12 +326,12 @@ export default function AnnouncementsPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: '200px' }}>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>
-                    Target Course (optional)
+                    Target Class (optional)
                   </label>
-                  <select value={courseId} onChange={e => setCourseId(e.target.value)}
+                  <select value={classId} onChange={e => setClassId(e.target.value)}
                     style={{ ...neuInput, cursor: 'pointer', appearance: 'none' }}>
                     <option value="">All Students (Global)</option>
-                    {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
               </div>
@@ -580,7 +346,7 @@ export default function AnnouncementsPage() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                   </svg>
-                  {submitting ? 'Publishing...' : (editId ? 'Update Announcement' : 'Publish Announcement')}
+                  {submitting ? 'Publishing...' : 'Publish Announcement'}
                 </button>
               </div>
             </div>
@@ -598,7 +364,7 @@ export default function AnnouncementsPage() {
             {activeTab === 'all' ? 'No announcements yet' : `No ${activeTab} announcements`}
           </div>
           <div style={{ fontSize: '13px', color: '#9999b0' }}>
-            {isManager ? 'Create your first announcement using the button above.' : 'Check back later for updates.'}
+            {isAdminOrManager ? 'Create your first announcement using the button above.' : 'Check back later for updates.'}
           </div>
         </div>
       ) : (
@@ -610,7 +376,7 @@ export default function AnnouncementsPage() {
             const typeColor   = TYPE_COLORS[a.type] || '#3b82f6'
             const typeBg      = TYPE_BG[a.type]    || TYPE_BG.info
             const typeLabel   = TYPE_LABELS[a.type] || 'Info'
-            const tagLabel    = a.courseId ? 'Course Announcement' : 'System Update'
+            const tagLabel    = a.classId ? 'Class Announcement' : 'System Update'
 
             return (
               <div
@@ -641,14 +407,14 @@ export default function AnnouncementsPage() {
                         {tagLabel}
                       </span>
 
-                      {/* Course badge */}
-                      {a.course && (
+                      {/* Class badge */}
+                      {a.class && (
                         <span style={{
                           padding: '3px 10px', borderRadius: '50px',
-                          background: `${a.course.color}18`, color: a.course.color,
+                          background: `${a.class.color}18`, color: a.class.color,
                           fontSize: '11px', fontWeight: 700,
                         }}>
-                          {a.course.name}
+                          {a.class.name}
                         </span>
                       )}
 
@@ -663,21 +429,9 @@ export default function AnnouncementsPage() {
                         </span>
                       )}
 
-                      <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ fontSize: '12px', color: '#b0b2ba' }}>
-                          {relativeTime(a.createdAt)}
-                        </span>
-                        {isManager && (
-                          <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
-                            <button onClick={() => handleEdit(a)} title="Edit" style={{ background: '#e8eaf0', border: 'none', cursor: 'pointer', color: '#6366f1', width: '26px', height: '26px', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff' }}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            </button>
-                            <button onClick={() => handleDelete(a.id)} title="Delete" style={{ background: '#e8eaf0', border: 'none', cursor: 'pointer', color: '#ef4444', width: '26px', height: '26px', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff' }}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <span style={{ fontSize: '12px', color: '#b0b2ba', marginLeft: 'auto' }}>
+                        {relativeTime(a.createdAt)}
+                      </span>
                     </div>
 
                     {/* Title */}
@@ -700,93 +454,6 @@ export default function AnnouncementsPage() {
                     }}>
                       {a.content}
                     </p>
-
-                    {/* Image Placeholder */}
-                    {a.imageUrl && isExpanded && (
-                      <div style={{ marginTop: '16px', borderRadius: '12px', overflow: 'hidden', boxShadow: '4px 4px 10px #c5c7cf' }}>
-                        <img src={a.imageUrl} alt="Announcement" style={{ width: '100%', display: 'block' }} />
-                      </div>
-                    )}
-
-                    {/* Poll Rendering */}
-                    {a.poll && isExpanded && (
-                      <div style={{ marginTop: '20px', padding: '16px', background: '#f0f2f7', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
-                        <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#1e1e3a', marginBottom: '12px' }}>{a.poll.question}</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                          {a.poll.options.map(opt => {
-                            const hasVoted = a.poll?.responses && a.poll.responses.length > 0
-                            const isSelected = hasVoted && a.poll?.responses[0].optionId === opt.id
-                            const isExpired = new Date() > new Date(a.poll?.expiresAt || '')
-                            const results = pollResults[a.poll?.id || '']
-                            
-                            return (
-                              <div key={opt.id} style={{ position: 'relative' }}>
-                                <button
-                                  disabled={hasVoted || isExpired || votingId === a.poll?.id}
-                                  onClick={() => a.poll && handleVote(a.poll.id, opt.id)}
-                                  style={{
-                                    width: '100%', padding: '12px 16px', borderRadius: '12px', border: 'none',
-                                    textAlign: 'left', fontSize: '14px', fontWeight: 600,
-                                    background: '#fff',
-                                    color: isSelected ? '#3636e8' : '#1e1e3a',
-                                    boxShadow: isSelected ? '0 0 0 2px #3636e8 inset, 3px 3px 6px #c5c7cf, -2px -2px 4px #fff' : '3px 3px 6px #c5c7cf, -2px -2px 4px #fff',
-                                    cursor: (hasVoted || isExpired) ? 'default' : 'pointer',
-                                    transition: 'all 0.2s', position: 'relative', overflow: 'hidden',
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                    zIndex: 1
-                                  }}
-                                >
-                                  {/* Vote bar for Manager (from results) or Student (after vote - 100% fill if selected) */}
-                                  {(userRole === 'MANAGER' && results) ? (
-                                    <div style={{
-                                      position: 'absolute', left: 0, top: 0, bottom: 0,
-                                      width: `${(results.totalVotes > 0 ? (results.results.find((r:any)=>r.id===opt.id)?.count || 0) / results.totalVotes * 100 : 0)}%`,
-                                      background: 'rgba(54,54,232,0.1)', zIndex: -1, transition: 'width 1s ease-out'
-                                    }} />
-                                  ) : isSelected ? (
-                                    <div style={{
-                                      position: 'absolute', left: 0, top: 0, bottom: 0,
-                                      width: '100%',
-                                      background: 'rgba(54,54,232,0.08)', zIndex: -1
-                                    }} />
-                                  ) : null}
-                                  
-                                  <span>{opt.text}</span>
-                                  
-                                  {(userRole === 'MANAGER' && results) && (
-                                    <span style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? '#fff' : '#3636e8' }}>
-                                      {results.results.find((r:any)=>r.id===opt.id)?.count || 0} votes
-                                    </span>
-                                  )}
-                                  
-                                  {isSelected && (
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                      <polyline points="20 6 9 17 4 12"/>
-                                    </svg>
-                                  )}
-                                </button>
-                              </div>
-                            )
-                          })}
-                        </div>
-                        
-                        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '11px', color: '#9999b0', fontWeight: 600 }}>
-                            {new Date() > new Date(a.poll.expiresAt) ? 'Poll Expired' : `Expires: ${new Date(a.poll.expiresAt).toLocaleString()}`}
-                          </span>
-                          
-                          {userRole === 'MANAGER' && (
-                            <button 
-                              onClick={() => a.poll && fetchResults(a.poll.id)}
-                              style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: '#3636e8', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                              Refresh Results (Manager Only)
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Expanded extra: author */}
                     {isExpanded && (
@@ -845,21 +512,6 @@ export default function AnnouncementsPage() {
             Showing {filtered.length} announcement{filtered.length !== 1 ? 's' : ''}
           </span>
         </div>
-      )}
-
-      {/* ── Modal: Cropper ──────────────────────────────────────────────── */}
-      {showCropper && selectedImage && (
-        <ImageCropper 
-          image={selectedImage} 
-          onCropComplete={(blob) => {
-            setCroppedImage(blob)
-            setShowCropper(false)
-          }}
-          onCancel={() => {
-            setSelectedImage(null)
-            setShowCropper(false)
-          }}
-        />
       )}
     </div>
   )

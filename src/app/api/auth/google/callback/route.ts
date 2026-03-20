@@ -30,6 +30,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=GoogleLoginNotConfigured', baseUrl))
     }
 
+    const state = searchParams.get('state')
+    const isLinking = state === 'link_calendar'
+
     // Exchange the authorization code for an access token
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -58,6 +61,41 @@ export async function GET(request: NextRequest) {
     const email = userData.email?.toLowerCase().trim()
     if (!email) {
       return NextResponse.redirect(new URL('/login?error=GoogleEmailMissing', baseUrl))
+    }
+
+    // --- LINKING FLOW ---
+    if (isLinking) {
+      const { getSession } = await import('@/lib/auth')
+      const session = await getSession()
+      
+      if (session) {
+        // Save the Google Credential
+        await prisma.googleCredential.upsert({
+          where: { userId: session.userId },
+          update: {
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token || '', // Should be provided if access_type=offline and prompt=consent
+            expiresAt: new Date(Date.now() + (tokenData.expires_in || 3600) * 1000),
+          },
+          create: {
+            userId: session.userId,
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token || '',
+            expiresAt: new Date(Date.now() + (tokenData.expires_in || 3600) * 1000),
+          }
+        })
+
+        logActivity({
+          userId: session.userId,
+          userName: session.name,
+          userRole: session.role,
+          actionType: ACTION.USER_UPDATED,
+          actionDescription: `Linked Google Calendar account (${email})`,
+          moduleName: MODULE.AUTH,
+        })
+
+        return NextResponse.redirect(new URL('/profile?success=CalendarLinked', baseUrl))
+      }
     }
 
     const SUPER_ADMIN_EMAIL = 'lkiitmng2428@gmail.com'
