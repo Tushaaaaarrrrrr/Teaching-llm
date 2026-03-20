@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import useSWR from 'swr'
 
 interface NavItem {
   href: string
@@ -176,6 +177,11 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const pathname = usePathname()
   const router = useRouter()
 
+  const { data: unread } = useSWR('/api/unread', (url) => fetch(url).then(r => r.json()), {
+    refreshInterval: 60000,
+    revalidateOnFocus: true
+  })
+
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
@@ -249,6 +255,12 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           const showResourcesHeader = item.href === '/materials'
           const showCommunityHeader = item.href === '/community'
           const showAdminHeader = item.href === '/manage'
+          
+          const hasRedDot = (
+            (item.href === '/community' && unread?.community) ||
+            (item.href === '/support' && unread?.support) ||
+            (item.href === '/announcements' && unread?.announcements)
+          )
 
           return (
             <div key={item.href}>
@@ -289,7 +301,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   fontSize: '14px',
                   fontWeight: isActive ? '700' : '500',
                   transition: 'all 0.2s ease',
-                  marginBottom: '4px'
+                  marginBottom: '4px',
+                  position: 'relative'
                 }}
               >
                 <span style={{
@@ -300,6 +313,13 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   {item.icon}
                 </span>
                 {item.label}
+                {hasRedDot && (
+                  <div style={{
+                    position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
+                    width: '7px', height: '7px', borderRadius: '50%', background: '#ef4444',
+                    boxShadow: '0 0 6px #ef4444'
+                  }} />
+                )}
               </Link>
             </div>
           )

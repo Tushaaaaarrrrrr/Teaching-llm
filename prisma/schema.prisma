@@ -24,6 +24,10 @@ model User {
   encryptedTempPassword    String?
   passwordRevealCount      Int                    @default(0)
   gender                   String?                @default("MALE")
+  hasSeenWelcome           Boolean                @default(false)
+  lastSeenCommunityAt      DateTime?
+  lastSeenSupportAt        DateTime?
+  lastSeenNotificationsAt  DateTime?
   activityLogs             ActivityLog[]
   announcements            Announcement[]         @relation("AnnouncementCreator")
   courseEvents             CourseEvent[]           @relation("EventCreator")
@@ -56,6 +60,8 @@ model Course {
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   expiresAt             DateTime?
+  isDemo                Boolean                @default(false)
+  teacherName           String?
   announcements         Announcement[]
   courseEvents          CourseEvent[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])

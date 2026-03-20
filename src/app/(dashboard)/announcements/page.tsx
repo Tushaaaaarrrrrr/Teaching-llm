@@ -183,6 +183,10 @@ export default function AnnouncementsPage() {
     }
   }, [loading, highlightId])
 
+  useEffect(() => {
+    fetch('/api/users/seen', { method: 'POST', body: JSON.stringify({ type: 'announcements' }) }).catch(console.error)
+  }, [])
+
   async function handleDelete(id: string) {
     if (!confirm('Are you sure you want to delete this announcement?')) return
     try {

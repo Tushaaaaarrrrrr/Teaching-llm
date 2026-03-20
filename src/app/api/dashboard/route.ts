@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getFullSession } from '@/lib/auth'
 
+const statsCache = new Map<string, {
+  totalCourses: number;
+  totalLectures: number;
+  totalStudents: number;
+  totalMaterials: number;
+  timestamp: number;
+}>();
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
+
 // Compute status dynamically
 function computeStatus(event: { startTime: Date; endTime: Date; manualStatus: string }) {
   if (event.manualStatus === 'CANCELLED') return 'cancelled'
@@ -34,19 +43,35 @@ export async function GET() {
 
     const now = new Date()
 
+    const userDb = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { hasSeenWelcome: true }
+    })
+
+    const cacheKey = session.role === 'MANAGER' ? 'MANAGER' : (accessibleCourseIds?.join(',') || 'empty');
+    let cachedStats = statsCache.get(cacheKey);
+    let totalCourses = 0, totalLectures = 0, totalStudents = 0, totalMaterials = 0;
+
+    if (cachedStats && now.getTime() - cachedStats.timestamp < CACHE_TTL) {
+      totalCourses = cachedStats.totalCourses;
+      totalLectures = cachedStats.totalLectures;
+      totalStudents = cachedStats.totalStudents;
+      totalMaterials = cachedStats.totalMaterials;
+    } else {
+      [totalCourses, totalLectures, totalStudents, totalMaterials] = await Promise.all([
+        prisma.course.count({ where: courseCountFilter }),
+        prisma.lecture.count({ where: courseFilter }),
+        prisma.user.count({ where: { role: 'STUDENT' } }),
+        prisma.material.count({ where: courseFilter }),
+      ]);
+      statsCache.set(cacheKey, { totalCourses, totalLectures, totalStudents, totalMaterials, timestamp: now.getTime() });
+    }
+
     const [
-      totalCourses, 
-      totalLectures, 
-      totalStudents, 
-      totalMaterials,
       courseEvents,
       lectures,
       announcements
     ] = await Promise.all([
-      prisma.course.count({ where: courseCountFilter }),
-      prisma.lecture.count({ where: courseFilter }),
-      prisma.user.count({ where: { role: 'STUDENT' } }),
-      prisma.material.count({ where: courseFilter }),
       prisma.courseEvent.findMany({
         where: {
           type: 'class',
@@ -104,7 +129,8 @@ export async function GET() {
       user: {
         role: session.role,
         name: session.name,
-        userId: session.userId
+        userId: session.userId,
+        hasSeenWelcome: userDb?.hasSeenWelcome || false,
       }
     })
   } catch (error) {

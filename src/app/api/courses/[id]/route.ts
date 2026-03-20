@@ -57,7 +57,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, subject, color, icon, expiresAt } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo } = await request.json()
 
     // Validate expiresAt if provided
     if (expiresAt) {
@@ -75,6 +75,8 @@ export async function PUT(
         subject, 
         color, 
         icon,
+        teacherName: teacherName || null,
+        isDemo: !!isDemo,
         expiresAt: expiresAt ? new Date(expiresAt) : null 
       },
     })

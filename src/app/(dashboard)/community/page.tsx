@@ -127,6 +127,7 @@ export default function CommunityPage() {
       setCourses(list)
       if (list.length > 0) setSelectedCourse(list[0])
     })
+    fetch('/api/users/seen', { method: 'POST', body: JSON.stringify({ type: 'community' }) }).catch(console.error)
   }, [])
 
   // Poll messages when a course is selected - handled by SWR

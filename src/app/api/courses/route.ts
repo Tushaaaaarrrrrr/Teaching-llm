@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, subject, color, icon, expiresAt } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo } = await request.json()
     
     // Validate expiresAt if provided
     if (expiresAt) {
@@ -67,6 +67,8 @@ export async function POST(request: NextRequest) {
           subject,
           color,
           icon,
+          teacherName: teacherName || null,
+          isDemo: !!isDemo,
           expiresAt: expiresAt ? new Date(expiresAt) : null,
           createdById: session.userId,
         },

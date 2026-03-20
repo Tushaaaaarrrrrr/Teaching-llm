@@ -90,7 +90,7 @@ export default function CalendarPage() {
   function loadEvents() {
     setLoading(true)
     const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`
-    fetch(`/api/course-events?month=${monthStr}`)
+    fetch(`/api/calendar?month=${monthStr}`)
       .then(r => r.json())
       .then(data => setEvents(Array.isArray(data) ? data : []))
       .catch(console.error)

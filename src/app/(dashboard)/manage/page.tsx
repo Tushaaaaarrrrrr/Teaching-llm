@@ -198,6 +198,10 @@ export default function ManagePage() {
           <>
             <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="Course name" /></div>
             <div className="form-group"><label className="form-label">Subject</label><input className="form-input" value={f.subject || ''} onChange={e => set('subject', e.target.value)} placeholder="e.g. Computer Science" /></div>
+            <div className="form-group"><label className="form-label">Teacher Name (Calendar Display)</label><input className="form-input" value={f.teacherName || ''} onChange={e => set('teacherName', e.target.value)} placeholder="Manual teacher name" /></div>
+            <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input type="checkbox" checked={!!f.isDemo} onChange={e => setFormData(p => ({ ...p, isDemo: e.target.checked as any }))} /> <span style={{fontSize: '13px'}}>Mark as Demo Course</span>
+            </label>
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} placeholder="Course description" rows={3} style={{ resize: 'vertical' }} /></div>
             <div className="form-group">
               <label className="form-label">Expiry Date (Course Access Deadline)</label>
@@ -432,9 +436,12 @@ export default function ManagePage() {
                   </div>
 
                   {/* Details badge */}
-                  <div style={{ flexShrink: 0 }}>
+                  <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {tab === 'courses' && (
-                      <span style={{ fontSize: '12px', color: '#9999b0' }}>{item._count?.lectures || 0} lectures</span>
+                      <>
+                        <span style={{ fontSize: '12px', color: '#9999b0' }}>{item._count?.lectures || 0} lectures</span>
+                        {item.isDemo && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#fef3c7', color: '#d97706', fontWeight: '800' }}>DEMO</span>}
+                      </>
                     )}
                     {tab === 'sessions' && (
                       <span className={`badge badge-${item.status === 'live' ? 'danger' : item.status === 'completed' ? 'success' : 'info'}`}>
@@ -460,6 +467,20 @@ export default function ManagePage() {
 
                   {/* Actions */}
                   <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                    {tab === 'courses' && (
+                      <button 
+                        onClick={() => {
+                          const id = `LMS-COURSE-${item.id}`;
+                          navigator.clipboard.writeText(id);
+                          alert(`Copied Calendar Sync ID:\n${id}`);
+                        }} 
+                        className="btn btn-ghost btn-sm" 
+                        title="Copy Calendar Sync ID"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        Copy ID
+                      </button>
+                    )}
                     <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>

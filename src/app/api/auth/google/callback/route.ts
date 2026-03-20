@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       // ── Auto-enroll into the Demo Course ──
       // Find or create it
       let demoCourse = await prisma.course.findFirst({
-        where: { name: DEFAULT_COURSE_NAME }
+        where: { isDemo: true }
       })
 
       if (!demoCourse) {
@@ -103,6 +103,7 @@ export async function GET(request: NextRequest) {
             subject: 'General',
             color: '#6366F1',
             icon: 'BookOpen',
+            isDemo: true,
             createdById: creatorId
           }
         })
