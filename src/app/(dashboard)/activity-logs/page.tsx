@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import ManagerUserModal from '@/components/ManagerUserModal'
 
 interface ActivityLog {
   id: string
@@ -97,6 +98,7 @@ export default function WorkLogPage() {
   const [actionFilter, setActionFilter] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
   const limit = 50
 
@@ -353,7 +355,12 @@ export default function WorkLogPage() {
 
               {/* User info */}
               <div style={{ minWidth: '140px', flexShrink: 0 }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a' }}>{log.userName}</div>
+                <div 
+                  onClick={() => setSelectedUserId(log.userId)}
+                  style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  {log.userName}
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                   <span style={getRoleBadgeStyle(log.userRole)}>{log.userRole}</span>
                   {log.securityNumber && (
@@ -460,6 +467,13 @@ export default function WorkLogPage() {
             {total.toLocaleString()} total logs
           </span>
         </div>
+      )}
+      {selectedUserId && (
+        <ManagerUserModal 
+          userId={selectedUserId} 
+          onClose={() => setSelectedUserId(null)} 
+          onUpdate={fetchLogs} 
+        />
       )}
     </div>
   )

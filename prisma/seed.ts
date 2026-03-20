@@ -11,9 +11,8 @@ async function main() {
   // ──────────────────────────────────────────────
   console.log("Clearing existing data...");
   await prisma.announcement.deleteMany();
-  await prisma.calendarEvent.deleteMany();
+  await prisma.courseEvent.deleteMany();
   await prisma.material.deleteMany();
-  await prisma.liveSession.deleteMany();
   await prisma.lecture.deleteMany();
   await prisma.course.deleteMany();
   await prisma.user.deleteMany();
@@ -495,14 +494,14 @@ async function main() {
   const yesterdayStr = formatDate(new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000));
   const threeDaysAgoStr = formatDate(new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000));
 
-  await prisma.liveSession.createMany({
+  await (prisma.courseEvent as any).createMany({
     data: [
       {
         courseId: dsaClass.id,
         title: "DSA Doubt Clearing Session - Trees & Graphs",
         description:
           "Live interactive session to resolve doubts on tree traversals, graph BFS/DFS, and related problem-solving techniques.",
-        meetingLink: "https://meet.jit.si/TeachingLLM-DSA-Live",
+        meetLink: "https://meet.jit.si/TeachingLLM-DSA-Live",
         instructor: "Dr. Ananya Mehta",
         date: todayStr,
         time: "10:00 AM",
@@ -760,7 +759,7 @@ async function main() {
   const in18Days = formatDate(new Date(today.getTime() + 18 * 24 * 60 * 60 * 1000));
   const in3Weeks = formatDate(new Date(today.getTime() + 21 * 24 * 60 * 60 * 1000));
 
-  await prisma.calendarEvent.createMany({
+  await (prisma.courseEvent as any).createMany({
     data: [
       {
         title: "DSA Assignment 3 Due",

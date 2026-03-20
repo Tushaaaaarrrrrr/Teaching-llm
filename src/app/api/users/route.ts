@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, hashPassword, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
-export async function GET() {
+export async function GET(_request: NextRequest) {
   try {
     const session = await getSession()
     if (!session) {
@@ -14,17 +14,29 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const { searchParams } = new URL(_request ? _request.url : '')
+    const search = searchParams.get('search')
+    const securityNumber = searchParams.get('securityNumber')
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let where: Record<string, any> = {}
 
     if (session.role === 'ADMIN') {
       const adminCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-      where = {
-        role: 'STUDENT',
-        enrollments: {
-          some: { courseId: { in: adminCourseIds || [] } },
-        },
+      where.role = 'STUDENT'
+      where.enrollments = {
+        some: { courseId: { in: adminCourseIds || [] } },
       }
+    }
+
+    if (securityNumber) {
+      where.securityNumber = securityNumber.trim().toUpperCase()
+    } else if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { email: { contains: search } },
+        { securityNumber: { contains: search } },
+      ]
     }
 
     const users = await prisma.user.findMany({
@@ -34,6 +46,7 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
+        securityNumber: true,
         isTerminated: true,
         createdAt: true,
         enrollments: {
@@ -51,6 +64,10 @@ export async function GET() {
       },
       orderBy: { createdAt: 'desc' },
     })
+
+    if (securityNumber && users.length === 0) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
 
     return NextResponse.json(users)
   } catch (error) {

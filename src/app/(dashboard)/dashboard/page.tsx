@@ -18,14 +18,19 @@ export default function DashboardPage() {
   const [wasWelcomeShownInSession, setWasWelcomeShownInSession] = useState(false)
 
   useEffect(() => {
+    const welcomeKey = `welcome_shown_${dashboardData?.user?.userId}`
+    const hasAlreadyShownLocal = localStorage.getItem(welcomeKey)
+
     if (
       dashboardData?.user && 
       dashboardData.user.hasSeenWelcome === false && 
       !showWelcome && 
-      !wasWelcomeShownInSession
+      !wasWelcomeShownInSession &&
+      !hasAlreadyShownLocal
     ) {
       setShowWelcome(true)
       setWasWelcomeShownInSession(true)
+      localStorage.setItem(welcomeKey, 'true')
       fetch('/api/users/welcome', { method: 'POST' })
         .then(() => mutate())
         .catch(console.error)

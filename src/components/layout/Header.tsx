@@ -57,9 +57,19 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const { data: notificationsData, mutate: mutateNotifications } = useSWR('/api/notifications', fetcher, {
-    refreshInterval: 60000, // Poll every 1 minute
+    refreshInterval: 60000, 
     revalidateOnFocus: true,
   })
+
+  // Fetch current user info for real-time reactivity
+  const { data: userData } = useSWR('/api/auth/me', fetcher, {
+    revalidateOnFocus: true,
+  })
+
+  // Use SWR data if available, otherwise fall back to props
+  const currentUserName = userData?.user?.name || userName
+  const currentUserRole = userData?.user?.role || userRole
+  const currentAvatar = userData?.user?.avatar || avatar
 
   const notifications = Array.isArray(notificationsData) ? notificationsData : []
 
@@ -80,7 +90,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   // const [notifications, setNotifications] = useState<Notification[]>([]) - Removed
 
-  const initials = userName
+  const initials = currentUserName
     .split(' ')
     .map(n => n[0])
     .join('')
@@ -157,7 +167,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
         </h1>
         {matchedKey === '/dashboard' ? (
           <div style={{ fontSize: '16px', fontWeight: '400', color: '#1e1e3a' }}>
-            {userName}
+            {currentUserName}
           </div>
         ) : pageInfo.subtitle ? (
           <p style={{ fontSize: '13px', color: '#9999b0', marginTop: '2px' }}>{pageInfo.subtitle}</p>
@@ -259,21 +269,21 @@ export default function Header({ userName, userRole }: HeaderProps) {
           >
             <div style={{
               width: '32px', height: '32px', borderRadius: '50%',
-              background: avatar ? 'transparent' : '#e8eaf0',
+              background: currentAvatar ? 'transparent' : '#e8eaf0',
               boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#3636e8', fontSize: '12px', fontWeight: '800',
               overflow: 'hidden',
             }}>
-              {avatar ? (
-                <img src={avatar} alt={userName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {currentAvatar ? (
+                <img src={currentAvatar} alt={currentUserName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 initials
               )}
             </div>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1.2' }}>{userName}</div>
-              <div style={{ fontSize: '11px', color: '#9999b0' }}>{userRole.charAt(0) + userRole.slice(1).toLowerCase()}</div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1.2' }}>{currentUserName}</div>
+              <div style={{ fontSize: '11px', color: '#9999b0' }}>{currentUserRole.charAt(0) + currentUserRole.slice(1).toLowerCase()}</div>
             </div>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2" style={{ marginLeft: '4px' }}>
               <polyline points="6 9 12 15 18 9"/>

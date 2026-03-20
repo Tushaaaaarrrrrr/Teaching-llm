@@ -14,23 +14,42 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: Record<string, any> = {}
-    if (status) where.status = status
+    const where: Record<string, any> = { type: 'live' }
+    if (status) where.manualStatus = status
 
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
     if (accessibleCourseIds !== null) {
       where.courseId = { in: accessibleCourseIds }
     }
 
-    const liveSessions = await prisma.liveSession.findMany({
+    const events = await prisma.courseEvent.findMany({
       where,
       include: {
-        course: { select: { name: true } },
+        course: { select: { id: true, name: true, color: true } },
+        instructor: { select: { id: true, name: true } },
       },
-      orderBy: { date: 'desc' },
+      orderBy: { startTime: 'desc' },
     })
 
-    return NextResponse.json(liveSessions)
+    // Compute status dynamically
+    const mapped = events.map(ev => {
+      const now = new Date()
+      let status = 'upcoming'
+      if (ev.manualStatus === 'CANCELLED') status = 'cancelled'
+      else if (ev.manualStatus === 'RESCHEDULED') status = 'rescheduled'
+      else if (now >= ev.startTime && now <= ev.endTime) status = 'live'
+      else if (now > ev.endTime) status = 'completed'
+
+      return {
+        ...ev,
+        status,
+        date: ev.startTime.toISOString().split('T')[0],
+        time: ev.startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        meetingLink: ev.meetLink,
+      }
+    })
+
+    return NextResponse.json(mapped)
   } catch (error) {
     console.error('Error fetching live sessions:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -59,42 +78,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get the class name for linking to the calendar event
-    let className: string | null = null
-    if (courseId) {
-      const cls = await prisma.course.findUnique({ where: { id: courseId }, select: { name: true } })
-      className = cls?.name || null
+    // Convert date/time to startTime
+    let startTime = new Date()
+    if (date) {
+      startTime = new Date(`${date} ${time || '00:00'}`)
     }
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000) // Default 1 hour
 
-    const liveSession = await prisma.liveSession.create({
+    const liveSession = await prisma.courseEvent.create({
       data: {
         courseId,
         title,
         description,
-        meetingLink,
-        instructor,
-        date,
-        time,
-        status,
+        meetLink: meetingLink,
+        startTime,
+        endTime,
+        manualStatus: status || 'NONE',
+        type: 'live',
         createdById: session.userId,
       },
     })
-
-    // Auto-create a calendar event linked to the same class
-    if (date) {
-      await prisma.calendarEvent.create({
-        data: {
-          title: `Live: ${title}`,
-          description: instructor ? `Instructor: ${instructor}` : description || null,
-          date,
-          time: time || null,
-          type: 'class',
-          courseId: courseId || null,
-          relatedCourse: className,
-          createdById: session.userId,
-        },
-      })
-    }
 
     logActivity({
       userId: session.userId,

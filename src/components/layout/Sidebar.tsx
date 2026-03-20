@@ -177,6 +177,14 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const pathname = usePathname()
   const router = useRouter()
 
+  const { data: userData } = useSWR('/api/auth/me', (url) => fetch(url).then(r => r.json()), {
+    revalidateOnFocus: true
+  })
+
+  // Use SWR data if available, otherwise fall back to props
+  const currentUserName = userData?.user?.name || userName
+  const currentUserRole = userData?.user?.role || userRole
+
   const { data: unread } = useSWR('/api/unread', (url) => fetch(url).then(r => r.json()), {
     refreshInterval: 60000,
     revalidateOnFocus: true
@@ -189,17 +197,17 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   }
 
   const visibleItems = NAV_ITEMS.filter(
-    item => !item.roles || item.roles.includes(userRole)
+    item => !item.roles || item.roles.includes(currentUserRole)
   )
 
-  const initials = userName
+  const initials = currentUserName
     .split(' ')
     .map(n => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2)
 
-  const roleLabel = userRole.charAt(0) + userRole.slice(1).toLowerCase()
+  const roleLabel = currentUserRole.charAt(0) + currentUserRole.slice(1).toLowerCase()
 
   return (
     <nav style={{
@@ -309,17 +317,24 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   color: isActive ? '#ffffff' : '#6b6b8a',
                   flexShrink: 0,
                   display: 'flex',
+                  position: 'relative'
                 }}>
                   {item.icon}
+                  {hasRedDot && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-2px',
+                      right: '-2px',
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#ef4444',
+                      border: `2px solid ${isActive ? '#3636e8' : '#e8eaf0'}`,
+                      boxShadow: '0 0 6px rgba(239, 68, 68, 0.4)'
+                    }} />
+                  )}
                 </span>
                 {item.label}
-                {hasRedDot && (
-                  <div style={{
-                    position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
-                    width: '7px', height: '7px', borderRadius: '50%', background: '#ef4444',
-                    boxShadow: '0 0 6px #ef4444'
-                  }} />
-                )}
               </Link>
             </div>
           )

@@ -46,12 +46,18 @@ export async function GET(
     messages.reverse()
 
     // For non-managers: hide deleted message content and strip securityNumber
-    // For managers: show content but with flags
+    // For managers: show original content but with flags
     const sanitized = messages.map(msg => {
       const isActuallyDeleted = msg.isDeleted || msg.isSystemDeleted
+      let displayContent = msg.content
+      
+      if (isActuallyDeleted && session.role === 'STUDENT') {
+        displayContent = 'This message was removed by a manager'
+      }
+
       return {
         ...msg,
-        content: (isActuallyDeleted && session.role !== 'MANAGER') ? '' : msg.content,
+        content: displayContent,
         sender: {
           ...msg.sender,
           securityNumber: session.role === 'MANAGER' ? msg.sender.securityNumber : undefined,
@@ -148,22 +154,25 @@ export async function DELETE(
       return NextResponse.json({ error: 'Message does not belong to this course' }, { status: 400 })
     }
 
-    // Only the sender can delete their own message
-    if (message.senderId !== session.userId) {
-      return NextResponse.json({ error: 'You can only delete your own messages' }, { status: 403 })
+    // Only the sender can delete their own message, unless session is Manager/Admin
+    const isManager = session.role === 'MANAGER' || session.role === 'ADMIN'
+    if (message.senderId !== session.userId && !isManager) {
+      return NextResponse.json({ error: 'You do not have permission to delete this message' }, { status: 403 })
     }
 
-    if (message.isDeleted) {
+    if (message.isDeleted || message.isSystemDeleted) {
       return NextResponse.json({ error: 'Message already deleted' }, { status: 400 })
     }
 
-    // Soft delete: mark as deleted
+    // Soft delete: set flags
+    const isSystemDeleted = isManager && message.senderId !== session.userId
     await prisma.communityMessage.update({
       where: { id: messageId },
       data: {
-        isDeleted: true,
+        isDeleted: !isSystemDeleted,
+        isSystemDeleted,
         deletedAt: new Date(),
-        content: `[Message deleted by user]`, // Optional: track that it was user-deleted
+        // content is PRESERVED in DB but hidden via GET logic
       },
     })
 
@@ -172,7 +181,7 @@ export async function DELETE(
       userName: session.name,
       userRole: session.role,
       actionType: ACTION.MESSAGE_DELETED,
-      actionDescription: `${session.name} deleted a message in community chat`,
+      actionDescription: `${session.name} ${isSystemDeleted ? 'moderated (deleted)' : 'deleted'} a message in community chat`,
       moduleName: MODULE.COMMUNITY,
       targetId: messageId,
     })

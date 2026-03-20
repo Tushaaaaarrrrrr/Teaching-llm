@@ -1,18 +1,39 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import useSWR, { mutate } from 'swr'
 
 type Tab = 'courses' | 'lectures' | 'sessions' | 'materials' | 'announcements'
 
 export default function ManagePage() {
   const [tab, setTab] = useState<Tab>('courses')
-  const [courses, setCourses]           = useState<any[]>([])
-  const [lectures, setLectures]         = useState<any[]>([])
-  const [sessions, setSessions]         = useState<any[]>([])
-  const [materials, setMaterials]       = useState<any[]>([])
-  const [announcements, setAnnouncements] = useState<any[]>([])
-  const [instructors, setInstructors]     = useState<any[]>([])
-  const [loading, setLoading]           = useState(true)
+  const fetcher = (url: string) => fetch(url).then(r => r.json())
+  
+  const { data: coursesData, isLoading: loadingCourses } = useSWR('/api/courses', fetcher)
+  const { data: lecturesData, isLoading: loadingLectures } = useSWR('/api/content?hasVideo=true', fetcher)
+  const { data: sessionsData, isLoading: loadingSessions } = useSWR('/api/live-sessions', fetcher)
+  const { data: materialsData, isLoading: loadingMaterials } = useSWR('/api/content?hasPpt=true', fetcher)
+  const { data: announcementsData, isLoading: loadingAnnouncements } = useSWR('/api/announcements', fetcher)
+  const { data: instructorsData } = useSWR('/api/instructors', fetcher)
+
+  const courses = coursesData?.courses || coursesData || []
+  const lectures = lecturesData?.content || []
+  const sessions = sessionsData?.sessions || sessionsData || []
+  const materials = materialsData?.content || []
+  const announcements = announcementsData?.announcements || announcementsData || []
+  const instructors = instructorsData || []
+
+  const loading = loadingCourses || loadingLectures || loadingSessions || loadingMaterials || loadingAnnouncements
+
+  async function loadData() {
+    mutate('/api/courses')
+    mutate('/api/content?hasVideo=true')
+    mutate('/api/live-sessions')
+    mutate('/api/content?hasPpt=true')
+    mutate('/api/announcements')
+    mutate('/api/instructors')
+  }
+
   const [showModal, setShowModal]       = useState(false)
   const [editId, setEditId]             = useState<string | null>(null)
   const [formData, setFormData]         = useState<Record<string, string>>({})
@@ -22,29 +43,6 @@ export default function ManagePage() {
   // For lecture / material forms: topic selector
   const [topicsForCourse, setTopicsForCourse] = useState<any[]>([])
   const [loadingTopics, setLoadingTopics]   = useState(false)
-
-  useEffect(() => { loadData() }, [])
-
-  async function loadData() {
-    setLoading(true)
-    try {
-      const [cls, lec, sess, mat, ann, inst] = await Promise.all([
-        fetch('/api/courses').then(r => r.json()),
-        fetch('/api/content?hasVideo=true').then(r => r.json()),
-        fetch('/api/live-sessions').then(r => r.json()),
-        fetch('/api/content?hasPpt=true').then(r => r.json()),
-        fetch('/api/announcements').then(r => r.json()),
-        fetch('/api/instructors').then(r => r.json()),
-      ])
-      setCourses(cls.courses || cls || [])
-      setLectures(lec.content || [])
-      setSessions(sess.sessions || sess || [])
-      setMaterials(mat.content || [])
-      setAnnouncements(ann.announcements || ann || [])
-      setInstructors(inst || [])
-    } catch (e) { console.error(e) }
-    setLoading(false)
-  }
 
   async function loadTopicsForCourse(courseId: string) {
     if (!courseId) { setTopicsForCourse([]); return }

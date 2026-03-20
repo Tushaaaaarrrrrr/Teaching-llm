@@ -3,6 +3,59 @@ import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, hashPassword, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (!isAdminOrManager(session.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { id } = await params
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        securityNumber: true,
+        createdAt: true,
+        gender: true,
+        avatar: true,
+        isTerminated: true,
+        enrollments: {
+          select: {
+            courseId: true,
+            course: { select: { id: true, name: true, color: true, subject: true } },
+          },
+        },
+        instructorAssignments: {
+          select: {
+            courseId: true,
+            course: { select: { id: true, name: true, color: true, subject: true } },
+          },
+        },
+      },
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(user)
+  } catch (error) {
+    console.error('Error fetching user:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -77,7 +77,10 @@ export async function GET(request: NextRequest) {
         description: ev.description,
         startTime: ev.startTime.toISOString(),
         endTime: ev.endTime.toISOString(),
+        date: ev.startTime.toISOString().split('T')[0],
+        time: ev.startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
         meetLink: canSeeMeetLink ? ev.meetLink : null,
+        meetingLink: canSeeMeetLink ? ev.meetLink : null, // alias
         type: ev.type,
         manualStatus: ev.manualStatus,
         status,

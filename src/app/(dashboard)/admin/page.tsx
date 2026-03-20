@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import useSWR, { mutate } from 'swr'
+import ManagerUserModal from '@/components/ManagerUserModal'
 
 interface CourseInfo {
   id: string
@@ -37,7 +39,6 @@ interface User {
 }
 
 export default function AdminPage() {
-  const [users, setUsers] = useState<User[]>([])
   const [courses, setCourses] = useState<CourseInfo[]>([])
   const [userRole, setUserRole] = useState('')
   const [userPermissions, setUserPermissions] = useState({ canTerminate: false, canCreateStudents: false })
@@ -59,8 +60,8 @@ export default function AdminPage() {
   const [passwordCopied, setPasswordCopied] = useState(false)
   const [revealingId, setRevealingId] = useState<string | null>(null)
   const [editingUserIsSuperManager, setEditingUserIsSuperManager] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
-  const managerCount = users.filter(u => u.role === 'MANAGER').length
 
   useEffect(() => {
     loadUsers()
@@ -92,17 +93,17 @@ export default function AdminPage() {
     }
   }
 
-  async function loadUsers() {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/users')
-      const data = await res.json()
-      setUsers(data.users || data || [])
-    } catch (e) {
-      console.error(e)
-    }
-    setLoading(false)
-  }
+  const { data: usersData, mutate: mutateUsers, isLoading: usersLoading } = useSWR('/api/users', url => fetch(url).then(r => r.json()))
+  const users = usersData?.users || usersData || []
+  const managerCount = users.filter(u => u.role === 'MANAGER').length
+
+  useEffect(() => {
+    loadCourses()
+    loadUserRole()
+  }, [])
+
+  // Compatibility function for old code
+  const loadUsers = useCallback(() => mutateUsers(), [mutateUsers])
 
   function openCreate() {
     setEditId(null)
@@ -239,9 +240,7 @@ export default function AdminPage() {
         body: JSON.stringify({ isTerminated: !user.isTerminated }),
       })
       if (res.ok) {
-        setUsers(prev => prev.map(u =>
-          u.id === user.id ? { ...u, isTerminated: !u.isTerminated } : u
-        ))
+        mutateUsers()
       } else {
         const data = await res.json()
         alert(data.error || `Failed to ${action} user`)
@@ -397,7 +396,7 @@ export default function AdminPage() {
 
       {/* Users List */}
       <div className="card" style={{ overflow: 'hidden' }}>
-        {loading ? (
+        {usersLoading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading users...</div>
         ) : (
           <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -429,7 +428,10 @@ export default function AdminPage() {
                     {initials}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <div 
+                      onClick={() => setSelectedUserId(user.id)}
+                      style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
                       {user.name}
                       {user.gender && (
                         <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: '400' }}>({user.gender})</span>
@@ -531,7 +533,7 @@ export default function AdminPage() {
                         Reveal limit reached
                       </span>
                     )}
-                    <button onClick={() => openEdit(user)} className="btn btn-ghost btn-sm">
+                    <button onClick={() => setSelectedUserId(user.id)} className="btn btn-ghost btn-sm">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -897,6 +899,13 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+      )}
+      {selectedUserId && (
+        <ManagerUserModal 
+          userId={selectedUserId} 
+          onClose={() => setSelectedUserId(null)} 
+          onUpdate={loadUsers} 
+        />
       )}
     </div>
   )
