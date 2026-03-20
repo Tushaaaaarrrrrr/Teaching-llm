@@ -21,7 +21,6 @@ model User {
   canCreateStudents       Boolean                @default(false)
   canTerminate            Boolean                @default(false)
   isSuperManager          Boolean                @default(false)
-  encryptedTempPassword   String?
   gender                  String?                @default("MALE")
   hasSeenWelcome          Boolean                @default(false)
   lastSeenCommunityAt     DateTime?

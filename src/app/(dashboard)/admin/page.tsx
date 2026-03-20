@@ -829,7 +829,7 @@ export default function AdminPage() {
             </div>
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ padding: '14px', background: '#fef3c7', borderRadius: '10px', fontSize: '12px', color: '#92400e', border: '1px solid #fcd34d' }}>
-                ⚠️ This password will only be shown <strong>once</strong>. Copy and store it securely. You can reveal it up to 2 more times, after which a reset will be required.
+                ⚠️ This password will only be shown <strong>once</strong>. Copy and store it securely.
               </div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
