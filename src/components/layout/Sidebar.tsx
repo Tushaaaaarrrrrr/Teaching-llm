@@ -236,15 +236,22 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
+          overflow: 'hidden',
         }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-          </svg>
+          <img 
+            src="/logo.png" 
+            alt="Alpha IITIAN Logo" 
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'contain',
+              padding: '2px'
+            }} 
+          />
         </div>
         <div>
           <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a', lineHeight: '1.2' }}>
-            Teaching LLM
+            Alpha IITIAN
           </div>
           <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '1px', fontWeight: '600' }}>
             {roleLabel} Portal

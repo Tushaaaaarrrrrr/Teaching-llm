@@ -530,15 +530,15 @@ export default function DashboardPage() {
                 <span style={{ fontSize: '38px', lineHeight: '1' }}>👋</span>
               </div>
               <h2 style={{ fontSize: '34px', fontWeight: '800', color: '#ffffff', marginBottom: '10px', lineHeight: '1.2' }}>
-                Welcome, {dashboardData?.user?.name?.split(' ')[0] || 'Student'}!
+                Welcome to Alpha IITIAN!
               </h2>
               <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>
-                We're excited to have you on board.
+                We're thrilled to have you here, {dashboardData?.user?.name?.split(' ')[0] || 'Student'}.
               </p>
             </div>
             <div style={{ padding: '36px', textAlign: 'center', background: '#f8fafc' }}>
               <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '36px', lineHeight: '1.6' }}>
-                Dive into your courses, join live sessions, and start your learning journey today. Your central learning workspace is ready.
+                Dive into a world of excellence with Alpha IITIAN. We're committed to your success. Explore your personalized dashboard and begin your journey to the top today.
               </p>
               <button 
                 onClick={() => setShowWelcome(false)}

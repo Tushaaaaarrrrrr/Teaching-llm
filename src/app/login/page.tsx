@@ -58,14 +58,31 @@ function LoginContent() {
       <div style={{ flex: '0 0 42%', background: '#e8eaf0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px', position: 'relative' }}>
         {/* Logo & Brand */}
         <div style={{ textAlign: 'center', width: '100%', maxWidth: '340px' }}>
-          <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#e8eaf0', boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px' }}>
-            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
-              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-              <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-            </svg>
+          <div style={{ 
+            width: '100px', 
+            height: '100px', 
+            borderRadius: '24px', 
+            background: '#e8eaf0', 
+            boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            margin: '0 auto 28px',
+            overflow: 'hidden'
+          }}>
+            <img 
+              src="/logo.png" 
+              alt="Alpha IITIAN Logo" 
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'contain',
+                padding: '10px'
+              }} 
+            />
           </div>
-          <h1 style={{ fontSize: '34px', fontWeight: '800', color: '#1e1e3a', letterSpacing: '-0.5px', marginBottom: '8px' }}>Teaching LLM</h1>
-          <p style={{ fontSize: '15px', color: '#9999b0', marginBottom: '48px', lineHeight: '1.6' }}>Modern Online Learning Platform</p>
+          <h1 style={{ fontSize: '34px', fontWeight: '800', color: '#1e1e3a', letterSpacing: '-0.5px', marginBottom: '8px' }}>Alpha IITIAN</h1>
+          <p style={{ fontSize: '15px', color: '#9999b0', marginBottom: '48px', lineHeight: '1.6' }}>Upgrade How You Learn</p>
           {/* Feature highlights */}
           {[
             { icon: '📚', label: 'Access course recordings' },
