@@ -82,7 +82,7 @@ export async function POST(
       actionType: ACTION.TOPIC_CREATED,
       actionDescription: `${session.name} created topic "${title}"`,
       moduleName: MODULE.TOPICS,
-      targetId: topic.id,
+      targetId: topic.idRef,
     })
 
     return NextResponse.json(topic)

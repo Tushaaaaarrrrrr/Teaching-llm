@@ -14,7 +14,7 @@ interface ContentItem {
 }
 
 interface Topic {
-  id: string
+  idRef: string
   title: string
   order: number
   content: ContentItem[]
@@ -58,7 +58,7 @@ export default function CourseDetailPage() {
       setUserId(sessionData.user?.id || '')
       // Expand all topics by default
       if (Array.isArray(topicsData) && topicsData.length > 0) {
-        setExpandedTopics(new Set(topicsData.map((t: Topic) => t.id)))
+        setExpandedTopics(new Set(topicsData.map((t: Topic) => t.idRef)))
       }
     } catch (e) {
       console.error(e)
@@ -165,7 +165,7 @@ export default function CourseDetailPage() {
                   </span>
                 )}
                   <span style={{ background: 'rgba(255,255,255,0.15)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     Created By: {course.createdBy.name}
                   </span>
               </div>
@@ -212,10 +212,10 @@ export default function CourseDetailPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {topics.map((topic, topicIdx) => (
-            <div key={topic.id} className="card" style={{ overflow: 'hidden' }}>
+            <div key={topic.idRef} className="card" style={{ overflow: 'hidden' }}>
               {/* Topic Header */}
               <button
-                onClick={() => toggleTopic(topic.id)}
+                onClick={() => toggleTopic(topic.idRef)}
                 style={{
                   width: '100%', padding: '16px 20px', background: 'none', border: 'none',
                   display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
@@ -238,14 +238,14 @@ export default function CourseDetailPage() {
                 </div>
                 <svg
                   width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"
-                  style={{ transition: 'transform 0.2s', transform: expandedTopics.has(topic.id) ? 'rotate(180deg)' : 'none' }}
+                  style={{ transition: 'transform 0.2s', transform: expandedTopics.has(topic.idRef) ? 'rotate(180deg)' : 'none' }}
                 >
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </button>
 
               {/* Topic Content */}
-              {expandedTopics.has(topic.id) && (
+              {expandedTopics.has(topic.idRef) && (
                 <div style={{ borderTop: '1px solid #d8dae3', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {topic.content.length === 0 ? (
                     <div style={{ padding: '20px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>

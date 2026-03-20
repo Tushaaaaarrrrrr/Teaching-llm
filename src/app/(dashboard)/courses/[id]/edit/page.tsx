@@ -15,7 +15,7 @@ interface ContentItem {
 }
 
 interface Topic {
-  id: string
+  idRef: string
   title: string
   order: number
   content: ContentItem[]
@@ -85,7 +85,7 @@ export default function CourseEditPage() {
       setCourse(courseData.course || courseData)
       setTopics(Array.isArray(topicsData) ? topicsData : [])
       if (Array.isArray(topicsData) && topicsData.length > 0) {
-        setExpanded(new Set(topicsData.map((t: Topic) => t.id)))
+        setExpanded(new Set(topicsData.map((t: Topic) => t.idRef)))
       }
     } catch (e) {
       console.error(e)
@@ -148,7 +148,7 @@ export default function CourseEditPage() {
   }
 
   const moveTopic = async (id: string, direction: 'up' | 'down') => {
-    const idx = topics.findIndex(t => t.id === id)
+    const idx = topics.findIndex(t => t.idRef === id)
     if (idx < 0) return
     if (direction === 'up' && idx === 0) return
     if (direction === 'down' && idx === topics.length - 1) return
@@ -160,12 +160,12 @@ export default function CourseEditPage() {
     setSaving(true)
     try {
       await Promise.all([
-        fetch(`/api/topics/${current.id}`, {
+        fetch(`/api/topics/${current.idRef}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order: swap.order }),
         }),
-        fetch(`/api/topics/${swap.id}`, {
+        fetch(`/api/topics/${swap.idRef}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order: current.order }),
@@ -451,17 +451,17 @@ export default function CourseEditPage() {
       {/* Topics */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {topics.map((topic, topicIdx) => (
-          <div key={topic.id} className="card" style={{ overflow: 'hidden' }}>
+          <div key={topic.idRef} className="card" style={{ overflow: 'hidden' }}>
             {/* Topic Header */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: '12px',
-              padding: '14px 20px', borderBottom: expanded.has(topic.id) ? '1px solid #d8dae3' : 'none',
+              padding: '14px 20px', borderBottom: expanded.has(topic.idRef) ? '1px solid #d8dae3' : 'none',
               background: '#f0f1f5',
             }}>
               {/* Order controls */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
                 <button
-                  onClick={() => moveTopic(topic.id, 'up')}
+                  onClick={() => moveTopic(topic.idRef, 'up')}
                   disabled={topicIdx === 0 || saving}
                   style={{
                     width: '20px', height: '20px', borderRadius: '4px', background: '#e8eaf0',
@@ -473,7 +473,7 @@ export default function CourseEditPage() {
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>
                 </button>
                 <button
-                  onClick={() => moveTopic(topic.id, 'down')}
+                  onClick={() => moveTopic(topic.idRef, 'down')}
                   disabled={topicIdx === topics.length - 1 || saving}
                   style={{
                     width: '20px', height: '20px', borderRadius: '4px', background: '#e8eaf0',
@@ -495,11 +495,11 @@ export default function CourseEditPage() {
                 {String(topicIdx + 1).padStart(2, '0')}
               </div>
 
-              {editingTopicId === topic.id ? (
+              {editingTopicId === topic.idRef ? (
                 <input
                   value={editingTopicTitle}
                   onChange={e => setEditingTopicTitle(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') updateTopic(topic.id); if (e.key === 'Escape') setEditingTopicId(null) }}
+                  onKeyDown={e => { if (e.key === 'Enter') updateTopic(topic.idRef); if (e.key === 'Escape') setEditingTopicId(null) }}
                   autoFocus
                   className="form-input"
                   style={{ flex: 1, padding: '6px 10px', fontSize: '14px' }}
@@ -514,31 +514,31 @@ export default function CourseEditPage() {
               )}
 
               <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                {editingTopicId === topic.id ? (
+                {editingTopicId === topic.idRef ? (
                   <>
-                    <button onClick={() => updateTopic(topic.id)} disabled={saving} className="btn btn-primary btn-sm">Save</button>
+                    <button onClick={() => updateTopic(topic.idRef)} disabled={saving} className="btn btn-primary btn-sm">Save</button>
                     <button onClick={() => setEditingTopicId(null)} className="btn btn-ghost btn-sm">Cancel</button>
                   </>
                 ) : (
                   <>
                     <button
-                      onClick={() => { setEditingTopicId(topic.id); setEditingTopicTitle(topic.title) }}
+                      onClick={() => { setEditingTopicId(topic.idRef); setEditingTopicTitle(topic.title) }}
                       className="btn btn-ghost btn-sm"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       Rename
                     </button>
-                    <button onClick={() => openAddContent(topic.id)} className="btn btn-primary btn-sm">
+                    <button onClick={() => openAddContent(topic.idRef)} className="btn btn-primary btn-sm">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                       Add Lecture
                     </button>
                     <button
-                      onClick={() => setExpanded(prev => { const n = new Set(prev); n.has(topic.id) ? n.delete(topic.id) : n.add(topic.id); return n })}
+                      onClick={() => setExpanded(prev => { const n = new Set(prev); n.has(topic.idRef) ? n.delete(topic.idRef) : n.add(topic.idRef); return n })}
                       className="btn btn-ghost btn-sm"
                     >
-                      {expanded.has(topic.id) ? 'Collapse' : 'Expand'}
+                      {expanded.has(topic.idRef) ? 'Collapse' : 'Expand'}
                     </button>
-                    <button onClick={() => deleteTopic(topic.id)} disabled={saving} style={{
+                    <button onClick={() => deleteTopic(topic.idRef)} disabled={saving} style={{
                       background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
                       color: '#ef4444', borderRadius: '6px', display: 'flex', alignItems: 'center',
                     }}>
@@ -550,12 +550,12 @@ export default function CourseEditPage() {
             </div>
 
             {/* Content list */}
-            {expanded.has(topic.id) && (
+            {expanded.has(topic.idRef) && (
               <div>
                 {topic.content.length === 0 ? (
                   <div style={{ padding: '16px 20px', color: '#9999b0', fontSize: '13px', textAlign: 'center' }}>
                     No lectures yet.{' '}
-                    <button onClick={() => openAddContent(topic.id)} style={{ color: '#3636e8', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                    <button onClick={() => openAddContent(topic.idRef)} style={{ color: '#3636e8', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
                       Add the first one →
                     </button>
                   </div>
@@ -593,7 +593,7 @@ export default function CourseEditPage() {
                         <div style={{ fontSize: '10px', color: '#9999b0', background: '#f0f0f5', padding: '4px 8px', borderRadius: '4px', fontStyle: 'italic', marginRight: '8px' }}>
                           ID: {item.id}
                         </div>
-                        <button onClick={() => openEditContent(topic.id, item)} className="btn btn-ghost btn-sm">
+                        <button onClick={() => openEditContent(topic.idRef, item)} className="btn btn-ghost btn-sm">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           Edit
                         </button>
