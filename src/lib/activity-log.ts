@@ -84,6 +84,8 @@ interface LogActivityParams {
   moduleName: string
   targetId?: string | null
   metadata?: Record<string, unknown> | null
+  priority?: number // 0: LOW, 1: MEDIUM, 2: HIGH
+  isFailure?: boolean
 }
 
 export function logActivity(params: LogActivityParams): void {
@@ -99,6 +101,8 @@ export function logActivity(params: LogActivityParams): void {
         moduleName: params.moduleName,
         targetId: params.targetId || null,
         metadata: params.metadata ? JSON.stringify(params.metadata) : null,
+        priority: params.priority || 0,
+        isFailure: params.isFailure || false,
       },
     })
     .catch((error) => {

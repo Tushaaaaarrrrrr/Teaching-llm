@@ -20,7 +20,7 @@ export function sanitizeInput(text: string): string {
 }
 
 /**
- * Check Magic Bytes to verify if a buffer is indeed a JPEG, PNG, or WebP
+ * Check Magic Bytes to verify if a buffer is indeed a JPEG, PNG, or PDF
  */
 export async function checkMagicBytes(buffer: Buffer): Promise<string | null> {
   const hex = buffer.toString('hex', 0, 4).toUpperCase();
@@ -31,11 +31,8 @@ export async function checkMagicBytes(buffer: Buffer): Promise<string | null> {
   // PNG: 89 50 4E 47
   if (hex.startsWith('89504E47')) return 'png';
   
-  // WebP: RIFF ... WEBP (starts with 52 49 46 46, then distance, then 57 45 42 50)
-  if (hex.startsWith('52494646')) {
-    const webpHeader = buffer.toString('hex', 8, 12).toUpperCase();
-    if (webpHeader === '57454250') return 'webp';
-  }
+  // PDF: 25 50 44 46 (%PDF)
+  if (hex.startsWith('25504446')) return 'pdf';
   
   return null;
 }

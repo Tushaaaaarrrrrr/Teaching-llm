@@ -19,16 +19,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large. Maximum 2MB' }, { status: 400 })
+    // Strict validation: Max 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large. Maximum 10MB' }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
+    // Strict validation: Magic Bytes (PDF, JPG, PNG only)
     const detectedExt = await checkMagicBytes(buffer)
-    if (!detectedExt) {
-      return NextResponse.json({ error: 'Invalid file content' }, { status: 400 })
+    const allowedExtensions = ['pdf', 'jpg', 'png']
+    
+    if (!detectedExt || !allowedExtensions.includes(detectedExt)) {
+      return NextResponse.json({ error: 'Invalid file type. Only PDF, JPG, and PNG are allowed.' }, { status: 400 })
     }
 
     const secureId = crypto.randomUUID()

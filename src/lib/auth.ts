@@ -17,6 +17,7 @@ export interface JWTPayload {
   name: string
   canTerminate?: boolean
   canCreateStudents?: boolean
+  tokenVersion?: number // Added for token rotation/invalidation
 }
 
 /**
@@ -36,7 +37,7 @@ export function verifyToken(token: string): JWTPayload | null {
   try {
     return jwt.verify(token, JWT_SECRET!) as JWTPayload
   } catch (err) {
-    console.error('JWT Verification Error (lib/auth.ts):', err)
+    // Silently handle expired/invalid tokens for getSession
     return null
   }
 }
@@ -68,26 +69,14 @@ export async function getFullSession(): Promise<FullSession | null> {
   const jwtPayload = await getSession()
   if (!jwtPayload) return null
 
-  // MANAGER gets all courses, skip enrollment query
-  if (jwtPayload.role === 'MANAGER') {
-    const user = await prisma.user.findUnique({
-      where: { id: jwtPayload.userId },
-      select: { isTerminated: true },
-    })
-    return {
-      ...jwtPayload,
-      isTerminated: user?.isTerminated ?? false,
-      accessibleCourseIds: null, // null = all courses
-    }
-  }
-
-  // ADMIN / STUDENT: fetch isTerminated + enrollments in ONE query
+  // Fetch isTerminated, enrollments AND current tokenVersion in ONE query
   const now = new Date()
   const user = await prisma.user.findUnique({
     where: { id: jwtPayload.userId },
     select: {
       isTerminated: true,
-      enrollments: {
+      tokenVersion: true,
+      enrollments: jwtPayload.role !== 'MANAGER' ? {
         where: {
           course: {
             OR: [
@@ -97,14 +86,25 @@ export async function getFullSession(): Promise<FullSession | null> {
           },
         },
         select: { courseId: true },
-      },
+      } : false,
     },
   })
 
+  // Security Check: Token Version Invalidation
+  // If user has a tokenVersion in JWT, it MUST match the DB.
+  // Exception: If JWT is missing it (backward compatibility), allow it but next login will fix it.
+  if (!user || user.isTerminated) return null
+  
+  if (jwtPayload.tokenVersion !== undefined && jwtPayload.tokenVersion !== user.tokenVersion) {
+    return null
+  }
+
   return {
     ...jwtPayload,
-    isTerminated: user?.isTerminated ?? false,
-    accessibleCourseIds: user?.enrollments.map(e => e.courseId) ?? [],
+    isTerminated: user.isTerminated,
+    accessibleCourseIds: jwtPayload.role === 'MANAGER' 
+      ? null 
+      : (user.enrollments as { courseId: string }[] | undefined)?.map(e => e.courseId) ?? [],
   }
 }
 

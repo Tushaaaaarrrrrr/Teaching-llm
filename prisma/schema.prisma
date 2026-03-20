@@ -27,6 +27,10 @@ model User {
   lastSeenCommunityAt     DateTime?
   lastSeenSupportAt       DateTime?
   lastSeenNotificationsAt DateTime?
+  tokenVersion            Int                    @default(0)
+  violationCount          Int                    @default(0)
+  blockedUntil            DateTime?
+  lastViolationAt         DateTime?
   activityLogs            ActivityLog[]
   announcements           Announcement[]         @relation("AnnouncementCreator")
   chatMessages            ChatMessage[]          @relation("ChatMsgSender")
@@ -424,6 +428,8 @@ model ActivityLog {
   targetId          String?
   metadata          String?
   timestamp         DateTime @default(now())
+  priority          Int      @default(0) // 0: LOW, 1: MEDIUM, 2: HIGH
+  isFailure         Boolean  @default(false)
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])

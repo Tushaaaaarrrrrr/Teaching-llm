@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { validateLength, sanitizeInput } from '@/lib/validation'
+import { triggerAlert } from '@/lib/alerts'
 
 export async function GET(
   _request: NextRequest,
@@ -112,6 +113,89 @@ export async function POST(
     }
 
     const sanitizedContent = sanitizeInput(content)
+
+    // Anti-Spam Optimization: Fetch user with blocking details
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { 
+        id: true, name: true, role: true, 
+        violationCount: true, blockedUntil: true, lastViolationAt: true 
+      }
+    })
+
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+    // 1. Early Check: Blocking System
+    if (user.blockedUntil && user.blockedUntil > new Date()) {
+      const remainingMinutes = Math.ceil((user.blockedUntil.getTime() - Date.now()) / 60000)
+      return NextResponse.json({ 
+        error: `You are blocked for ${remainingMinutes} minutes`,
+        isBlocked: true,
+        remainingMinutes 
+      }, { status: 403 })
+    }
+
+    // 2. Cooldown Logic: Reset violationCount after 24h
+    let currentViolationCount = user.violationCount
+    const COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24 hours
+    if (user.lastViolationAt && (Date.now() - user.lastViolationAt.getTime() > COOLDOWN_MS)) {
+      currentViolationCount = 0
+    }
+
+    // 3. Repeated Message Detection (Optimized: only fetch last 3)
+    const recentMessages = await prisma.communityMessage.findMany({
+      where: { senderId: session.userId },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+      select: { content: true }
+    })
+
+    const isDuplicate = recentMessages.length === 3 && recentMessages.every(m => m.content === sanitizedContent)
+
+    if (isDuplicate) {
+      const newViolationCount = currentViolationCount + 1
+      let blockDuration = 0 // minutes
+      let errorMessage = 'Please do not repeat the same message'
+
+      if (newViolationCount === 2) {
+        blockDuration = 10
+      } else if (newViolationCount >= 3) {
+        blockDuration = 30
+      }
+
+      const blockedUntil = blockDuration > 0 ? new Date(Date.now() + blockDuration * 60000) : null
+
+      await prisma.user.update({
+        where: { id: session.userId },
+        data: {
+          violationCount: newViolationCount,
+          lastViolationAt: new Date(),
+          blockedUntil: blockedUntil
+        }
+      })
+
+      if (blockDuration > 0) {
+        errorMessage = `System detect repeated messages. You are blocked for ${blockDuration} minutes.`
+        
+        // Trigger Security Alert
+        triggerAlert({
+          userId: session.userId,
+          userName: session.name,
+          userRole: session.role,
+          actionType: 'ANTI_SPAM_BLOCK',
+          description: `${session.name} was blocked for ${blockDuration}m due to repeated messages`,
+          moduleName: MODULE.COMMUNITY,
+          level: 'MEDIUM',
+          metadata: { violationCount: newViolationCount, courseId: params.courseId }
+        })
+      }
+
+      return NextResponse.json({ 
+        error: errorMessage,
+        isBlocked: blockDuration > 0,
+        remainingMinutes: blockDuration
+      }, { status: 403 })
+    }
 
     const message = await prisma.communityMessage.create({
       data: { courseId: params.courseId, senderId: session.userId, content: sanitizedContent },

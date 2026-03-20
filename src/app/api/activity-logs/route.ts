@@ -124,7 +124,10 @@ export async function GET(request: NextRequest) {
     const [logs, total] = await Promise.all([
       prisma.activityLog.findMany({
         where,
-        orderBy: { timestamp: 'desc' },
+        orderBy: [
+          { priority: 'desc' },
+          { timestamp: 'desc' },
+        ],
         skip: (page - 1) * limit,
         take: limit,
       }),
