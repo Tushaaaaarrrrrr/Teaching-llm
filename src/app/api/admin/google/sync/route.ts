@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
 
     // Refresh token if expired
     if (new Date() > cred.expiresAt && cred.refreshToken) {
-      const clientId = process.env.GOOGLE_CLIENT_ID
-      const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+      const clientId = (process.env.GOOGLE_CLIENT_ID || '990282572765-bn1ls79tuhpa589eiici5r9mr6c98c8h.apps.googleusercontent.com')
+      const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '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')
       if (clientId && clientSecret) {
         const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
           method: 'POST',

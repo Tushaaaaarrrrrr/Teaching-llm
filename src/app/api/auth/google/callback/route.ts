@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=NoCodeProvided', baseUrl))
     }
 
-    const clientId = process.env.GOOGLE_CLIENT_ID
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+    const clientId = (process.env.GOOGLE_CLIENT_ID || '990282572765-bn1ls79tuhpa589eiici5r9mr6c98c8h.apps.googleusercontent.com')
+    const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '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')
     const redirectUri = `${baseUrl}/api/auth/google/callback`
 
     if (!clientId || !clientSecret) {

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=Unauthorized', baseUrl))
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID
+  const clientId = (process.env.GOOGLE_CLIENT_ID || '990282572765-bn1ls79tuhpa589eiici5r9mr6c98c8h.apps.googleusercontent.com')
   if (!clientId) {
     return NextResponse.redirect(new URL('/settings?error=GoogleNotConfigured', baseUrl))
   }
