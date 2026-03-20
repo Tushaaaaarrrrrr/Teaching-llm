@@ -28,6 +28,7 @@ export async function GET(
         courseEvents: {
           orderBy: { startTime: 'desc' },
         },
+        createdBy: { select: { name: true } },
       },
     })
 

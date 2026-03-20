@@ -154,6 +154,12 @@ export async function POST(request: NextRequest) {
       imported++
     }
 
+    // Update the last sync time in GoogleCredential
+    await prisma.googleCredential.update({
+      where: { id: cred.id },
+      data: { lastSyncAt: new Date() }
+    })
+
     return NextResponse.json({ success: true, imported, skipped, totalFetched: events.length })
 
   } catch (error) {

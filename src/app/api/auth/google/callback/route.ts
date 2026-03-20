@@ -164,6 +164,17 @@ export async function GET(request: NextRequest) {
         })
       }
     }
+
+    // ── Global Course Auto-Enrollment ──
+    // Ensure EVERY user (new or existing) is enrolled in the Global System Course
+    const globalCourse = await prisma.course.findFirst({ where: { isGlobal: true } })
+    if (globalCourse) {
+      await prisma.enrollment.upsert({
+        where: { userId_courseId: { userId: user.id, courseId: globalCourse.id } },
+        update: {}, // No update needed if exists
+        create: { userId: user.id, courseId: globalCourse.id }
+      }).catch(() => {})
+    }
     
     // Prevent login if account is terminated
     if (user.isTerminated) {

@@ -23,7 +23,8 @@ export async function GET() {
         googleCredential: {
           select: {
             id: true,
-            updatedAt: true
+            updatedAt: true,
+            lastSyncAt: true
           }
         }
       },
