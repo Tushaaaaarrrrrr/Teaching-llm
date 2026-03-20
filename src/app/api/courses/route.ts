@@ -12,9 +12,13 @@ export async function GET() {
 
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
 
-    const where = accessibleCourseIds !== null
-      ? { id: { in: accessibleCourseIds } }
-      : {}
+    const where: any = {
+      isGlobal: false
+    }
+
+    if (accessibleCourseIds !== null) {
+      where.id = { in: accessibleCourseIds }
+    }
 
     const courses = await prisma.course.findMany({
       where,

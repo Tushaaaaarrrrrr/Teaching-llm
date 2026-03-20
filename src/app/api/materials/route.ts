@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const materials = await prisma.material.findMany({
       where,
       include: {
-        course: { select: { name: true } },
+        course: { select: { id: true, name: true, color: true } },
         uploadedBy: { select: { name: true } },
       },
       orderBy: { uploadedAt: 'desc' },
@@ -46,13 +46,18 @@ export async function POST(request: NextRequest) {
       await request.json()
 
 
+    let finalFileType = fileType
+    if (!finalFileType && fileUrl) {
+      finalFileType = fileUrl.split('.').pop()?.split('?')[0]?.toUpperCase() || 'FILE'
+    }
+
     const material = await prisma.material.create({
       data: {
         courseId,
         title,
         description,
         fileUrl,
-        fileType,
+        fileType: finalFileType || 'FILE',
         fileSize,
         uploadedById: session.userId,
       },

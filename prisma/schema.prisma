@@ -22,7 +22,6 @@ model User {
   canTerminate            Boolean                @default(false)
   isSuperManager          Boolean                @default(false)
   encryptedTempPassword   String?
-  passwordRevealCount     Int                    @default(0)
   gender                  String?                @default("MALE")
   hasSeenWelcome          Boolean                @default(false)
   lastSeenCommunityAt     DateTime?
@@ -62,6 +61,7 @@ model Course {
   expiresAt             DateTime?
   isDemo                Boolean                @default(false)
   isGlobal              Boolean                @default(false)
+  isCommunityActive     Boolean                @default(true)
   teacherName           String?
   announcements         Announcement[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
@@ -168,7 +168,7 @@ model GoogleCredential {
 }
 
 model Topic {
-  id        String    @id @default(cuid())
+  idRef     String    @id @default(cuid()) @map("id")
   courseId  String    @map("classId")
   title     String
   order     Int       @default(0)
@@ -176,6 +176,8 @@ model Topic {
   updatedAt DateTime  @updatedAt
   content   Content[]
   course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
 }
 
 model Content {
@@ -189,7 +191,7 @@ model Content {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   videoSource String   @default("YOUTUBE")
-  topic       Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  topic       Topic    @relation(fields: [topicId], references: [idRef], onDelete: Cascade)
 }
 
 model Announcement {
@@ -258,6 +260,8 @@ model Exam {
   course          Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   attempts        ExamAttempt[]
   questions       ExamQuestion[]
+
+  @@index([courseId])
 }
 
 model ExamQuestion {
@@ -330,6 +334,9 @@ model SupportTicket {
   course       Course?       @relation(fields: [courseId], references: [id])
   assignedTo   User?         @relation("TicketAssignee", fields: [assignedToId], references: [id])
   replies      TicketReply[]
+
+  @@index([courseId])
+  @@index([studentId])
 }
 
 model TicketReply {
@@ -388,6 +395,9 @@ model CommunityMessage {
   isSystemDeleted Boolean   @default(false)
   sender          User      @relation("CommMsgSender", fields: [senderId], references: [id])
   course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([senderId])
 }
 
 model Notification {
@@ -415,6 +425,9 @@ model ActivityLog {
   metadata          String?
   timestamp         DateTime @default(now())
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([timestamp])
 }
 
 model InstructorAssignment {

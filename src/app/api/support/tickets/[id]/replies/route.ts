@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession } from '@/lib/auth'
+import { getSession, isManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(
@@ -10,6 +10,20 @@ export async function GET(
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id: params.id },
+      select: { studentId: true, assignedToId: true }
+    })
+
+    if (!ticket) return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+
+    // Access check: Student, assigned Agent, or Manager
+    if (session.userId !== ticket.studentId && 
+        session.userId !== ticket.assignedToId && 
+        !isManager(session.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const replies = await prisma.ticketReply.findMany({
       where: { ticketId: params.id },
@@ -31,6 +45,24 @@ export async function POST(
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id: params.id },
+      select: { studentId: true, assignedToId: true, status: true }
+    })
+
+    if (!ticket) return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+
+    // Access check: Student, assigned Agent, or Manager
+    if (session.userId !== ticket.studentId && 
+        session.userId !== ticket.assignedToId && 
+        !isManager(session.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (ticket.status === 'CLOSED') {
+      return NextResponse.json({ error: 'Ticket is closed' }, { status: 400 })
+    }
 
     const { content } = await request.json()
 

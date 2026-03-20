@@ -12,14 +12,14 @@ export default function ManagePage() {
   const { data: coursesData, isLoading: loadingCourses } = useSWR('/api/courses', fetcher)
   const { data: lecturesData, isLoading: loadingLectures } = useSWR('/api/content?hasVideo=true', fetcher)
   const { data: sessionsData, isLoading: loadingSessions } = useSWR('/api/live-sessions', fetcher)
-  const { data: materialsData, isLoading: loadingMaterials } = useSWR('/api/content?hasPpt=true', fetcher)
+  const { data: materialsData, isLoading: loadingMaterials } = useSWR('/api/materials', fetcher)
   const { data: announcementsData, isLoading: loadingAnnouncements } = useSWR('/api/announcements', fetcher)
   const { data: instructorsData } = useSWR('/api/instructors', fetcher)
 
   const courses = coursesData?.courses || coursesData || []
   const lectures = lecturesData?.content || []
   const sessions = sessionsData?.sessions || sessionsData || []
-  const materials = materialsData?.content || []
+  const materials = Array.isArray(materialsData) ? materialsData : materialsData?.materials || []
   const announcements = announcementsData?.announcements || announcementsData || []
   const instructors = instructorsData || []
 
@@ -29,7 +29,7 @@ export default function ManagePage() {
     mutate('/api/courses')
     mutate('/api/content?hasVideo=true')
     mutate('/api/live-sessions')
-    mutate('/api/content?hasPpt=true')
+    mutate('/api/materials')
     mutate('/api/announcements')
     mutate('/api/instructors')
   }
@@ -63,8 +63,7 @@ export default function ManagePage() {
 
   function openEdit(item: any) {
     setEditId(item.id)
-    if (tab === 'lectures' || tab === 'materials') {
-      // Content items carry their course info via topic relation
+    if (tab === 'lectures') {
       const courseId = item.topic?.courseId || ''
       setFormData({
         id: item.id,
@@ -78,6 +77,15 @@ export default function ManagePage() {
       setTopicsForCourse([])
       setShowModal(true)
       if (courseId) loadTopicsForCourse(courseId)
+    } else if (tab === 'materials') {
+      setFormData({
+        id: item.id,
+        title: item.title || '',
+        description: item.description || '',
+        fileUrl: item.fileUrl || '',
+        courseId: item.courseId || '',
+      })
+      setShowModal(true)
     } else {
       setFormData({ ...item, courseId: item.courseId || item.course?.id || '' })
       setShowModal(true)
@@ -87,7 +95,7 @@ export default function ManagePage() {
   async function handleSave() {
     setSaving(true)
     try {
-      if (tab === 'lectures' || tab === 'materials') {
+      if (tab === 'lectures') {
         const { topicId, title, description, videoUrl, pptUrl } = formData
         if (editId) {
           await fetch(`/api/content/${editId}`, {
@@ -108,7 +116,7 @@ export default function ManagePage() {
           courses:       '/api/courses',
           lectures:      '',            // handled above
           sessions:      '/api/live-sessions',
-          materials:     '',            // handled above
+          materials:     '/api/materials',
           announcements: '/api/announcements',
         }
         const base = endpoints[tab]
@@ -127,8 +135,10 @@ export default function ManagePage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Are you sure you want to delete this item?')) return
-    if (tab === 'lectures' || tab === 'materials') {
+    if (tab === 'lectures') {
       await fetch(`/api/content/${id}`, { method: 'DELETE' })
+    } else if (tab === 'materials') {
+      await fetch(`/api/materials/${id}`, { method: 'DELETE' })
     } else {
       const endpoints: Record<Tab, string> = {
         courses:       '/api/courses',
@@ -146,7 +156,7 @@ export default function ManagePage() {
     { key: 'courses',       label: 'Courses',       count: courses.length },
     { key: 'lectures',      label: 'Lectures',      count: lectures.length },
     { key: 'sessions',      label: 'Live Sessions', count: sessions.length },
-    { key: 'materials',     label: 'Materials',     count: materials.length },
+    { key: 'materials',     label: 'Study Material', count: materials.length },
     { key: 'announcements', label: 'Announcements', count: announcements.length },
   ]
 
@@ -293,11 +303,16 @@ export default function ManagePage() {
       case 'materials':
         return (
           <>
-            {courseTopicSelector}
-            <div className="form-group"><label className="form-label">Material Title *</label><input className="form-input" value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="e.g. Week 1 Slides" /></div>
+            <div className="form-group">
+              <label className="form-label">Subject *</label>
+              <select className="form-input" value={f.courseId || ''} onChange={e => set('courseId', e.target.value)}>
+                <option value="">Select subject...</option>
+                {courseOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div className="form-group"><label className="form-label">Topic Name *</label><input className="form-input" value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="e.g. Week 1 Slides" /></div>
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} rows={2} style={{ resize: 'vertical' }} /></div>
-            <div className="form-group"><label className="form-label">File URL *</label><input className="form-input" value={f.pptUrl || ''} onChange={e => set('pptUrl', e.target.value)} placeholder="https://… (PDF, PPT, DOCX, etc.)" /></div>
-            <div className="form-group"><label className="form-label">Video URL</label><input className="form-input" value={f.videoUrl || ''} onChange={e => set('videoUrl', e.target.value)} placeholder="https://… (optional)" /></div>
+            <div className="form-group"><label className="form-label">File URL *</label><input className="form-input" value={f.fileUrl || ''} onChange={e => set('fileUrl', e.target.value)} placeholder="https://… (PDF, PPT, DOCX, etc.)" /></div>
           </>
         )
 
@@ -377,6 +392,32 @@ export default function ManagePage() {
           </div>
         ) : (
           <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {tab === 'courses' && (
+              <div style={{
+                background: '#3636e8',
+                borderRadius: '16px',
+                padding: '20px',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '10px',
+                boxShadow: '0 8px 16px rgba(54,54,232,0.15)'
+              }}>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: '700', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>System Mapping</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px' }}>LMS-COURSE-global</div>
+                  <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.8 }}>Assign this ID in Google Calendar for globally visible events.</div>
+                </div>
+                <button 
+                  onClick={() => { navigator.clipboard.writeText('LMS-COURSE-global'); setCopiedId('global'); setTimeout(() => setCopiedId(null), 2000) }}
+                  className="btn btn-sm"
+                  style={{ background: 'white', color: '#3636e8', fontWeight: '800', border: 'none', borderRadius: '50px', padding: '8px 16px' }}
+                >
+                  {copiedId === 'global' ? 'Copied!' : 'Copy ID'}
+                </button>
+              </div>
+            )}
             {getItems().map((item, idx) => {
               const rawDetail = item.description || item.content || item.duration || ''
               const itemDetail = rawDetail.length > 72 ? rawDetail.slice(0, 69) + '…' : rawDetail
@@ -397,6 +438,7 @@ export default function ManagePage() {
                 tab === 'courses'       ? item.name?.slice(0, 2).toUpperCase() :
                 tab === 'sessions'      ? '▶' :
                 tab === 'announcements' ? '!' :
+                tab === 'materials'     ? (item.fileType || 'DOC').slice(0, 3).toUpperCase() :
                 String(idx + 1).padStart(2, '0')
 
               return (
@@ -452,7 +494,7 @@ export default function ManagePage() {
                         {item.status}
                       </span>
                     )}
-                    {(tab === 'lectures' || tab === 'materials') && (
+                    {tab === 'lectures' && (
                       <div style={{ display: 'flex', gap: '6px' }}>
                         {item.videoUrl && (
                           <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#e0e7ff', color: '#6366f1', fontWeight: '600' }}>Video</span>
@@ -461,6 +503,9 @@ export default function ManagePage() {
                           <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#d1fae5', color: '#10b981', fontWeight: '600' }}>File</span>
                         )}
                       </div>
+                    )}
+                    {tab === 'materials' && (
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#d1fae5', color: '#10b981', fontWeight: '600' }}>Study Material</span>
                     )}
                     {tab === 'announcements' && (
                       <span className={`badge badge-${item.type === 'warning' ? 'warning' : item.type === 'success' ? 'success' : 'info'}`}>

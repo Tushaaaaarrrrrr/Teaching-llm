@@ -10,6 +10,18 @@ export async function GET(
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const chat = await prisma.chatSession.findUnique({
+      where: { id: params.id },
+      select: { studentId: true, agentId: true }
+    })
+
+    if (!chat) return NextResponse.json({ error: 'Chat not found' }, { status: 404 })
+
+    // Access check: Student or assigned Agent
+    if (session.userId !== chat.studentId && session.userId !== chat.agentId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const messages = await prisma.chatMessage.findMany({
       where: { chatId: params.id },
       include: { sender: { select: { id: true, name: true, role: true } } },
@@ -30,6 +42,22 @@ export async function POST(
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const chat = await prisma.chatSession.findUnique({
+      where: { id: params.id },
+      select: { studentId: true, agentId: true, status: true }
+    })
+
+    if (!chat) return NextResponse.json({ error: 'Chat not found' }, { status: 404 })
+
+    // Access check: Student or assigned Agent
+    if (session.userId !== chat.studentId && session.userId !== chat.agentId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (chat.status === 'CLOSED') {
+      return NextResponse.json({ error: 'Chat is closed' }, { status: 400 })
+    }
 
     const { content } = await request.json()
 

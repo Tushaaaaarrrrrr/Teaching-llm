@@ -35,7 +35,6 @@ interface User {
   instructorAssignments?: InstructorAssignment[]
   isGoogleAuth?: boolean
   isSuperManager?: boolean
-  passwordRevealCount?: number
 }
 
 export default function AdminPage() {
@@ -58,7 +57,6 @@ export default function AdminPage() {
   const [generatedPassword, setGeneratedPassword] = useState('')
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordCopied, setPasswordCopied] = useState(false)
-  const [revealingId, setRevealingId] = useState<string | null>(null)
   const [editingUserIsSuperManager, setEditingUserIsSuperManager] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
@@ -188,24 +186,6 @@ export default function AdminPage() {
     setSaving(false)
   }
 
-  async function handleRevealPassword(userId: string) {
-    setRevealingId(userId)
-    try {
-      const res = await fetch(`/api/users/${userId}/reveal-password`, { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) {
-        alert(data.error || 'Failed to reveal password')
-      } else {
-        setGeneratedPassword(data.password)
-        setPasswordCopied(false)
-        setShowPasswordModal(true)
-        loadUsers() // refresh to update reveal count
-      }
-    } catch (e) {
-      alert('Something went wrong')
-    }
-    setRevealingId(null)
-  }
 
   function copyPassword() {
     navigator.clipboard.writeText(generatedPassword)
@@ -514,25 +494,6 @@ export default function AdminPage() {
                     })}
                   </span>
                   <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap' }}>
-                    {/* Reveal Password - Manager only, non-super-manager target */}
-                    {userRole === 'MANAGER' && !user.isSuperManager && (user.passwordRevealCount ?? 0) < 2 && (
-                      <button
-                        onClick={() => handleRevealPassword(user.id)}
-                        disabled={revealingId === user.id}
-                        className="btn btn-sm"
-                        style={{ color: '#8b5cf6', border: '1px solid #ede9fe', background: 'rgba(139,92,246,0.04)' }}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                        </svg>
-                        {revealingId === user.id ? '...' : `Reveal (${2 - (user.passwordRevealCount ?? 0)} left)`}
-                      </button>
-                    )}
-                    {userRole === 'MANAGER' && !user.isSuperManager && (user.passwordRevealCount ?? 0) >= 2 && (
-                      <span style={{ fontSize: '10px', color: '#ef4444', padding: '4px 8px', background: '#fee2e2', borderRadius: '20px', alignSelf: 'center' }}>
-                        Reveal limit reached
-                      </span>
-                    )}
                     <button onClick={() => setSelectedUserId(user.id)} className="btn btn-ghost btn-sm">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>

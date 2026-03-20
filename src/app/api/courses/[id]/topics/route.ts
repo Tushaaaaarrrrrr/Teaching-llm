@@ -8,10 +8,26 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { id } = await params
+    // Course Access Control: Check enrollment for students
+    if (session.role === 'STUDENT') {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          userId_courseId: {
+            userId: session.userId,
+            courseId: id,
+          },
+        },
+      })
+
+      if (!enrollment) {
+        return NextResponse.json({ error: 'You are not enrolled in this course' }, { status: 403 })
+      }
+    }
 
     const topics = await prisma.topic.findMany({
       where: { courseId: id },
@@ -37,9 +53,19 @@ export async function POST(
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!canManageContent(session.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { id } = await params
+
+    // Course Access Control: Check enrollment for students
+    // Admin/Manager can manage content regardless.
+    if (session.role === 'STUDENT') {
+       const enrollment = await prisma.enrollment.findUnique({
+        where: { userId_courseId: { userId: session.userId, courseId: id } }
+      })
+      if (!enrollment) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (!canManageContent(session.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { title } = await request.json()
 

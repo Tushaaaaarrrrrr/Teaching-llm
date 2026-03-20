@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 interface ClassItem {
   id: string
@@ -8,6 +9,7 @@ interface ClassItem {
   color: string
   subject?: string
   icon?: string
+  isCommunityActive?: boolean
   _count?: { lectures: number }
 }
 
@@ -25,7 +27,7 @@ interface CommMsg {
   }
 }
 
-export default function CommunityPage() {
+function CommunityContent() {
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null)
   const [messages, setMessages] = useState<CommMsg[]>([])
@@ -34,24 +36,45 @@ export default function CommunityPage() {
   const [userRole, setUserRole] = useState('STUDENT')
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [modifying, setModifying] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [showToggleConfirm, setShowToggleConfirm] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const loadMessages = useCallback(async (classId: string) => {
-    const data = await fetch(`/api/community/${classId}/messages`).then(r => r.json())
-    setMessages(data)
-  }, [])
+    try {
+      const res = await fetch(`/api/community/${classId}/messages`)
+      const data = await res.json()
+      if (res.status === 403 && data.isCommunityActive === false && userRole === 'STUDENT') {
+        setMessages([])
+        return
+      }
+      if (res.ok) {
+        setMessages(Array.isArray(data) ? data : [])
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }, [userRole])
+
+  const searchParams = useSearchParams()
+  const targetId = searchParams.get('id')
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.json()).then(d => {
       setUserRole(d.user?.role || 'STUDENT')
       setUserId(d.user?.id || '')
     })
+
     fetch('/api/classes').then(r => r.json()).then(data => {
       const list = data.classes || data || []
       setClasses(list)
-      if (list.length > 0) setSelectedClass(list[0])
+      if (list.length > 0) {
+        const found = list.find((c: any) => c.id === targetId)
+        setSelectedClass(found || list[0])
+      }
     })
-  }, [])
+  }, [targetId])
 
   // Poll messages when a class is selected
   useEffect(() => {
@@ -60,6 +83,14 @@ export default function CommunityPage() {
     const t = setInterval(() => loadMessages(selectedClass.id), 4000)
     return () => clearInterval(t)
   }, [selectedClass, loadMessages])
+
+  useEffect(() => {
+    fetch('/api/users/seen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'community' }),
+    }).catch(() => {})
+  }, [selectedClass?.id])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -82,6 +113,45 @@ export default function CommunityPage() {
       body: JSON.stringify({ content: optimistic.content }),
     })
     loadMessages(selectedClass.id)
+  }
+
+  async function toggleCommunity() {
+    if (!selectedClass || modifying) return
+    setModifying(true)
+    const newValue = !selectedClass.isCommunityActive
+    try {
+      const res = await fetch(`/api/courses/${selectedClass.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCommunityActive: newValue }),
+      })
+      if (res.ok) {
+        const updated = { ...selectedClass, isCommunityActive: newValue }
+        setSelectedClass(updated)
+        setClasses(prev => prev.map(c => c.id === selectedClass.id ? updated : c))
+        setShowToggleConfirm(false)
+      }
+    } catch (e) {
+      console.error(e)
+    }
+    setModifying(false)
+  }
+
+  async function clearMessages() {
+    if (!selectedClass || modifying) return
+    setModifying(true)
+    try {
+      const res = await fetch(`/api/community/${selectedClass.id}/clear`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        setMessages([])
+        setShowClearConfirm(false)
+      }
+    } catch (e) {
+      console.error(e)
+    }
+    setModifying(false)
   }
 
   async function deleteMessage(messageId: string) {
@@ -183,8 +253,61 @@ export default function CommunityPage() {
                 {selectedClass.subject && (
                   <div style={{ fontSize: '12px', color: '#9999b0' }}>{selectedClass.subject} · Community Chat</div>
                 )}
+                {!selectedClass.isCommunityActive && (
+                  <div style={{ fontSize: '10px', color: '#ef4444', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>
+                    ● Community Hidden from Students
+                  </div>
+                )}
               </div>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {userRole === 'MANAGER' && (
+                  <>
+                    <button
+                      onClick={() => window.location.href = `/chat-transcripts?courseId=${selectedClass.id}`}
+                      title="View Full Transcript"
+                      style={{
+                        padding: '8px 14px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                        background: '#e8eaf0', color: '#3636e8', fontSize: '12px', fontWeight: '700',
+                        display: 'flex', alignItems: 'center', gap: '6px', ...neuSmall,
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                      Transcript
+                    </button>
+                    <button
+                      onClick={() => setShowToggleConfirm(true)}
+                      title={selectedClass.isCommunityActive ? "Hide from Students" : "Show to Students"}
+                      style={{
+                        padding: '8px 14px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                        background: '#e8eaf0', color: selectedClass.isCommunityActive ? '#1e1e3a' : '#ef4444', fontSize: '12px', fontWeight: '700',
+                        display: 'flex', alignItems: 'center', gap: '6px', ...neuSmall,
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        {selectedClass.isCommunityActive ? (
+                          <>
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                          </>
+                        ) : (
+                          <>
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                          </>
+                        )}
+                      </svg>
+                      {selectedClass.isCommunityActive ? "ON" : "OFF"}
+                    </button>
+                    <button
+                      onClick={() => setShowClearConfirm(true)}
+                      title="Clear All Messages"
+                      style={{
+                        width: '34px', height: '34px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                        background: '#e8eaf0', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', ...neuSmall,
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                    </button>
+                  </>
+                )}
                 <span style={{
                   padding: '4px 14px', borderRadius: '50px',
                   background: selectedClass.color + '18', color: selectedClass.color,
@@ -196,8 +319,20 @@ export default function CommunityPage() {
             </div>
 
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {messages.length === 0 && (
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative' }}>
+              {!selectedClass.isCommunityActive && userRole === 'STUDENT' ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', textAlign: 'center' }}>
+                  <div style={{ width: '60px', height: '60px', borderRadius: '20px', background: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  </div>
+                  <h3 style={{ margin: 0, color: '#1e1e3a', fontWeight: '800' }}>Community is Temporary Disabled</h3>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#6b6b8a', maxWidth: '300px' }}>
+                    A manager has paused this community. You will be able to see history once it is enabled again.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {messages.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9999b0' }}>
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.4 }}>
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
@@ -325,11 +460,39 @@ export default function CommunityPage() {
                   </div>
                 )
               })}
-              <div ref={messagesEndRef} />
+                  <div ref={messagesEndRef} />
+                </>
+              )}
+
+              {showClearConfirm && (
+                <Modal
+                  title="Clear All Messages?"
+                  description="This will hide all messages from the community chat instantly. All messages will still be preserved in the transcript for managers."
+                  confirmText="Clear All"
+                  confirmColor="#ef4444"
+                  onConfirm={clearMessages}
+                  onCancel={() => setShowClearConfirm(false)}
+                />
+              )}
+
+              {showToggleConfirm && (
+                <Modal
+                  title={selectedClass.isCommunityActive ? "Hide Community?" : "Enable Community?"}
+                  description={selectedClass.isCommunityActive 
+                    ? "This community will disappear for all students. Managers will still have full access."
+                    : "This community will become visible to all enrolled students again."
+                  }
+                  confirmText={selectedClass.isCommunityActive ? "Hide Now" : "Enable Now"}
+                  confirmColor={selectedClass.isCommunityActive ? "#ef4444" : "#3636e8"}
+                  onConfirm={toggleCommunity}
+                  onCancel={() => setShowToggleConfirm(false)}
+                />
+              )}
             </div>
 
-            {/* Input */}
-            <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {/* Input - Hidden if disabled for students */}
+            {(selectedClass.isCommunityActive || userRole !== 'STUDENT') && (
+              <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center' }}>
               <div style={{ flex: 1, position: 'relative' }}>
                 <input
                   value={input}
@@ -365,8 +528,59 @@ export default function CommunityPage() {
                 </svg>
               </button>
             </div>
-          </>
-        )}
+          )}
+        </>
+      )}
+    </div>
+  </div>
+)
+}
+
+export default function CommunityPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading community...</div>}>
+      <CommunityContent />
+    </Suspense>
+  )
+}
+
+const neuSmall = { background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }
+
+function Modal({ title, description, onConfirm, onCancel, confirmText, confirmColor }: any) {
+  return (
+    <div style={{
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(232, 234, 240, 0.8)', backdropFilter: 'blur(8px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px',
+    }}>
+      <div style={{
+        width: '100%', maxWidth: '340px', padding: '24px', borderRadius: '24px',
+        background: '#e8eaf0', boxShadow: '10px 10px 20px #c5c7cf, -10px -10px 20px #ffffff',
+        textAlign: 'center',
+      }}>
+        <div style={{ fontSize: '18px', fontWeight: '900', color: '#1e1e3a', marginBottom: '8px' }}>{title}</div>
+        <div style={{ fontSize: '14px', color: '#6b6b8a', lineHeight: '1.5', marginBottom: '20px' }}>{description}</div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1, padding: '12px', borderRadius: '15px', border: 'none', cursor: 'pointer',
+              background: '#e8eaf0', color: '#6b6b8a', fontWeight: '700', ...neuSmall,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              flex: 1, padding: '12px', borderRadius: '15px', border: 'none', cursor: 'pointer',
+              background: confirmColor || '#3636e8', color: '#fff', fontWeight: '700',
+              boxShadow: `4px 4px 10px ${confirmColor || '#3636e8'}44`,
+            }}
+          >
+            {confirmText || 'Confirm'}
+          </button>
+        </div>
       </div>
     </div>
   )

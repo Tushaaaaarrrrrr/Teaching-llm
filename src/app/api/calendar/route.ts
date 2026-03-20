@@ -22,12 +22,18 @@ export async function GET(request: NextRequest) {
     const month = searchParams.get('month')
     const type = searchParams.get('type')
 
+    const enrolledCourses = await prisma.enrollment.findMany({
+      where: { userId: session.userId },
+      select: { courseId: true }
+    })
+    const enrolledCourseIds = enrolledCourses.map(e => e.courseId)
+
     const where: any = {
-      // Must belong to a valid course, per requirements (no courseId = ignore, unless it's explicitly GLOBAL? The prompt says "If there are no events mapped to a course... Show nothing").
-      // We will allow courseId != null ONLY. Wait, GLOBAL events might still have courseId = null. The prompt specifically said:
-      // "If there are no events mapped to a course (no matching course ID in event description), then: Show nothing. Ignore the event completely."
-      // So we only return events where courseId is NOT null.
       courseId: { not: null }
+    }
+
+    if (session.role === 'STUDENT') {
+      where.courseId = { in: enrolledCourseIds }
     }
 
     if (month) {
@@ -39,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     if (type) where.type = type
 
-    // Fetch ALL mapped events globally (visible to all users), but strip sensitive data
+    // Fetch ONLY mapped events the user has access to
     const events = await prisma.courseEvent.findMany({
       where,
       include: {

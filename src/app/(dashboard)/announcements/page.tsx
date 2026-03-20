@@ -161,6 +161,21 @@ export default function AnnouncementsPage() {
     }
   }
 
+  const filtered = announcements.filter(a => {
+    if (activeTab === 'updates') return !a.classId
+    if (activeTab === 'class')   return !!a.classId
+    return true
+  })
+
+  useEffect(() => {
+    if (!loading && filtered.length > 0) {
+      fetch('/api/users/seen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'announcements' }),
+      }).catch(() => {})
+    }
+  }, [loading, filtered.length])
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !content.trim()) return
@@ -182,12 +197,6 @@ export default function AnnouncementsPage() {
   }
 
   const isAdminOrManager = userRole === 'MANAGER' || userRole === 'ADMIN'
-
-  const filtered = announcements.filter(a => {
-    if (activeTab === 'updates') return !a.classId
-    if (activeTab === 'class')   return !!a.classId
-    return true
-  })
 
   // ── Shared styles ──────────────────────────────────────────────────────────
   const neuCard: React.CSSProperties = {

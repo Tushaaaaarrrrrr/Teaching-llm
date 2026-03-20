@@ -83,7 +83,7 @@ function getModuleBadgeStyle(): React.CSSProperties {
   }
 }
 
-export default function WorkLogPage() {
+export default function ActivityLogPage() {
   const [logs, setLogs] = useState<ActivityLog[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
@@ -118,9 +118,9 @@ export default function WorkLogPage() {
       const res = await fetch(`/api/activity-logs?${params.toString()}`)
       if (!res.ok) throw new Error('Failed to fetch')
       const data = await res.json()
-      setLogs(data.logs)
-      setTotal(data.total)
-      setTotalPages(data.totalPages)
+      setLogs(data.logs || [])
+      setTotal(data.total || 0)
+      setTotalPages(data.totalPages || 1)
     } catch (err) {
       console.error('Error fetching logs:', err)
     } finally {
@@ -128,7 +128,14 @@ export default function WorkLogPage() {
     }
   }, [page, search, roleFilter, moduleFilter, actionFilter, dateFrom, dateTo])
 
-  // Fetch today count separately
+  useEffect(() => {
+    fetchLogs()
+  }, [fetchLogs])
+
+  useEffect(() => {
+    setPage(1)
+  }, [search, roleFilter, moduleFilter, actionFilter, dateFrom, dateTo])
+
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10)
     fetch(`/api/activity-logs?dateFrom=${today}&dateTo=${today}&limit=1`)
@@ -136,15 +143,6 @@ export default function WorkLogPage() {
       .then(data => setTodayCount(data.total || 0))
       .catch(() => {})
   }, [logs])
-
-  useEffect(() => {
-    fetchLogs()
-  }, [fetchLogs])
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setPage(1)
-  }, [search, roleFilter, moduleFilter, actionFilter, dateFrom, dateTo])
 
   const handleExportCsv = async () => {
     const params = new URLSearchParams()
@@ -183,297 +181,152 @@ export default function WorkLogPage() {
     setPage(1)
   }
 
-  const hasFilters = search || roleFilter || moduleFilter || actionFilter || dateFrom || dateTo
+  const hasFilters = !!(search || roleFilter || moduleFilter || actionFilter || dateFrom || dateTo)
 
   return (
-    <div className="page-container fade-in">
-      {/* Header */}
-      <div className="page-header" style={{ justifyContent: 'flex-end', marginBottom: '20px' }}>
-        <button className="btn btn-primary" onClick={handleExportCsv} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Export CSV
-        </button>
-      </div>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: 'calc(100vh - 72px)', 
+      overflow: 'hidden',
+      padding: '24px 32px' 
+    }}>
+      {/* Header & Stats (Fixed) */}
+      <div style={{ flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+          <button className="btn btn-primary btn-sm" onClick={handleExportCsv} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export CSV
+          </button>
+        </div>
 
-      {/* Stat Cards */}
-      <div className="grid-3" style={{ marginBottom: '24px' }}>
-        <div className="card" style={{ padding: '20px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', fontWeight: '800', color: '#3636e8' }}>{total.toLocaleString()}</div>
-          <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '600', marginTop: '4px' }}>Total Logs</div>
-        </div>
-        <div className="card" style={{ padding: '20px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', fontWeight: '800', color: '#059669' }}>{todayCount.toLocaleString()}</div>
-          <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '600', marginTop: '4px' }}>Today&apos;s Actions</div>
-        </div>
-        <div className="card" style={{ padding: '20px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', fontWeight: '800', color: '#7c3aed' }}>{page}/{totalPages || 1}</div>
-          <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '600', marginTop: '4px' }}>Current Page</div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="card" style={{ padding: '20px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-          </svg>
-          <span style={{ fontSize: '14px', fontWeight: '700', color: '#1e1e3a' }}>Filters</span>
-          {hasFilters && (
-            <button className="btn btn-ghost btn-sm" onClick={clearFilters} style={{ marginLeft: 'auto', fontSize: '12px' }}>
-              Clear All
-            </button>
-          )}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-          {/* Search */}
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '4px' }}>Search</label>
-            <input
-              className="form-input"
-              type="text"
-              placeholder="Search user or action..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ width: '100%', fontSize: '13px' }}
-            />
+        <div className="grid-3" style={{ marginBottom: '20px', gap: '16px' }}>
+          <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: '#3636e8' }}>{total.toLocaleString()}</div>
+            <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '600', marginTop: '2px' }}>Total Logs</div>
           </div>
-          {/* Role */}
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '4px' }}>Role</label>
-            <select
-              className="form-input"
-              value={roleFilter}
-              onChange={e => setRoleFilter(e.target.value)}
-              style={{ width: '100%', fontSize: '13px' }}
-            >
+          <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: '#059669' }}>{todayCount.toLocaleString()}</div>
+            <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '600', marginTop: '2px' }}>Today&apos;s Actions</div>
+          </div>
+          <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: '#7c3aed' }}>{page}/{totalPages || 1}</div>
+            <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '600', marginTop: '2px' }}>Current Page</div>
+          </div>
+        </div>
+
+        {/* Filters (Fixed) */}
+        <div className="card" style={{ padding: '16px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a' }}>Filters</span>
+            {hasFilters && (
+              <button className="btn btn-ghost btn-sm" onClick={clearFilters} style={{ marginLeft: 'auto', fontSize: '11px', height: '24px' }}>
+                Clear All
+              </button>
+            )}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '8px' }}>
+            <input className="form-input" type="text" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} style={{ fontSize: '12px' }} />
+            <select className="form-input" value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ fontSize: '12px' }}>
               <option value="">All Roles</option>
               <option value="MANAGER">Manager</option>
               <option value="ADMIN">Admin</option>
               <option value="STUDENT">Student</option>
             </select>
-          </div>
-          {/* Module */}
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '4px' }}>Module</label>
-            <select
-              className="form-input"
-              value={moduleFilter}
-              onChange={e => setModuleFilter(e.target.value)}
-              style={{ width: '100%', fontSize: '13px' }}
-            >
+            <select className="form-input" value={moduleFilter} onChange={e => setModuleFilter(e.target.value)} style={{ fontSize: '12px' }}>
               <option value="">All Modules</option>
-              {MODULE_OPTIONS.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
+              {MODULE_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
-          </div>
-          {/* Action Type */}
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '4px' }}>Action Type</label>
-            <select
-              className="form-input"
-              value={actionFilter}
-              onChange={e => setActionFilter(e.target.value)}
-              style={{ width: '100%', fontSize: '13px' }}
-            >
+            <select className="form-input" value={actionFilter} onChange={e => setActionFilter(e.target.value)} style={{ fontSize: '12px' }}>
               <option value="">All Actions</option>
-              {ACTION_OPTIONS.map(a => (
-                <option key={a} value={a}>{formatActionType(a)}</option>
-              ))}
+              {ACTION_OPTIONS.map(a => <option key={a} value={a}>{formatActionType(a)}</option>)}
             </select>
-          </div>
-          {/* Date From */}
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '4px' }}>From Date</label>
-            <input
-              className="form-input"
-              type="date"
-              value={dateFrom}
-              onChange={e => setDateFrom(e.target.value)}
-              style={{ width: '100%', fontSize: '13px' }}
-            />
-          </div>
-          {/* Date To */}
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '4px' }}>To Date</label>
-            <input
-              className="form-input"
-              type="date"
-              value={dateTo}
-              onChange={e => setDateTo(e.target.value)}
-              style={{ width: '100%', fontSize: '13px' }}
-            />
+            <input className="form-input" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ fontSize: '12px' }} />
+            <input className="form-input" type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ fontSize: '12px' }} />
           </div>
         </div>
       </div>
 
-      {/* Logs List */}
-      {loading ? (
-        <div className="card" style={{ padding: '60px', textAlign: 'center' }}>
-          <div className="spinner" style={{ margin: '0 auto 16px' }} />
-          <div style={{ color: '#6b6b8a', fontSize: '14px' }}>Loading activity logs...</div>
-        </div>
-      ) : logs.length === 0 ? (
-        <div className="card" style={{ padding: '60px', textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
-              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-            </svg>
-          </div>
-          <div style={{ color: '#6b6b8a', fontSize: '14px', fontWeight: '600' }}>No activity logs found</div>
-          <div style={{ color: '#9999b0', fontSize: '13px', marginTop: '4px' }}>
-            {hasFilters ? 'Try adjusting your filters' : 'Activity will appear here as users interact with the platform'}
-          </div>
-        </div>
-      ) : (
+      {/* Logs List (Scrollable) */}
+      <div style={{ flex: 1, overflowY: 'auto', marginRight: '-12px', paddingRight: '12px' }} className="custom-scrollbar">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {logs.map((log) => (
-            <div
-              key={log.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                padding: '14px 20px',
-                borderRadius: '50px',
-                background: '#e8eaf0',
-                boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {/* Timestamp */}
-              <div style={{ minWidth: '160px', flexShrink: 0 }}>
-                <div style={{ fontSize: '12px', fontWeight: '600', color: '#1e1e3a' }}>
-                  {formatTimestamp(log.timestamp)}
-                </div>
-              </div>
-
-              {/* User info */}
-              <div style={{ minWidth: '140px', flexShrink: 0 }}>
-                <div 
-                  onClick={() => setSelectedUserId(log.userId)}
-                  style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}
-                >
-                  {log.userName}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                  <span style={getRoleBadgeStyle(log.userRole)}>{log.userRole}</span>
-                  {log.securityNumber && (
-                    <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: '600' }}>#{log.securityNumber}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Action description */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {log.actionDescription}
-                </div>
-              </div>
-
-              {/* Module badge */}
-              <div style={{ flexShrink: 0 }}>
-                <span style={getModuleBadgeStyle()}>{log.moduleName}</span>
-              </div>
-
-              {/* Action type */}
-              <div style={{ minWidth: '100px', flexShrink: 0, textAlign: 'right' }}>
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  color: '#6b6b8a',
-                  background: '#dddde8',
-                  padding: '3px 10px',
-                  borderRadius: '50px',
-                }}>
-                  {formatActionType(log.actionType)}
-                </span>
-              </div>
+          {loading ? (
+            <div className="card" style={{ padding: '60px', textAlign: 'center' }}>
+              <div className="spinner" style={{ margin: '0 auto 16px' }} />
+              <div style={{ color: '#6b6b8a', fontSize: '14px' }}>Loading activity logs...</div>
             </div>
-          ))}
+          ) : logs.length === 0 ? (
+            <div className="card" style={{ padding: '60px', textAlign: 'center' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                </svg>
+              </div>
+              <div style={{ color: '#6b6b8a', fontSize: '14px', fontWeight: '600' }}>No activity logs found</div>
+            </div>
+          ) : (
+            logs.map((log) => (
+              <div
+                key={log.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '12px 16px',
+                  gap: '12px',
+                  borderRadius: '12px',
+                  background: 'rgba(255,255,255,0.7)',
+                  border: '1px solid rgba(255,255,255,0.8)',
+                  boxShadow: '2px 2px 5px #c5c7cf, -1px -1px 3px #ffffff',
+                }}
+              >
+                <div style={{ minWidth: '150px', flexShrink: 0 }}>
+                  <div style={{ fontSize: '11px', fontWeight: '600', color: '#1e1e3a' }}>{formatTimestamp(log.timestamp)}</div>
+                </div>
+
+                <div style={{ minWidth: '120px', flexShrink: 0 }}>
+                  <div onClick={() => setSelectedUserId(log.userId)} style={{ fontSize: '12px', fontWeight: '700', color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>
+                    {log.userName}
+                  </div>
+                  <span style={getRoleBadgeStyle(log.userRole)}>{log.userRole}</span>
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '12px', color: '#1e1e3a', fontWeight: '500', wordBreak: 'break-word' }}>
+                    {log.actionDescription}
+                  </div>
+                </div>
+
+                <div style={{ flexShrink: 0, minWidth: '100px', display: 'flex', justifyContent: 'center' }}>
+                  <span style={getModuleBadgeStyle()}>{log.moduleName}</span>
+                </div>
+
+                <div style={{ minWidth: '100px', flexShrink: 0, textAlign: 'right' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: '#6b6b8a', background: '#dddde8', padding: '2px 8px', borderRadius: '50px' }}>
+                    {formatActionType(log.actionType)}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Pagination (Fixed) */}
+      {totalPages > 1 && (
+        <div style={{ flexShrink: 0, padding: '16px 0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <button className="btn btn-ghost btn-xs" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ opacity: page <= 1 ? 0.4 : 1 }}>Previous</button>
+          <div style={{ fontSize: '12px', fontWeight: '600', color: '#1e1e3a' }}>Page {page} of {totalPages}</div>
+          <button className="btn btn-ghost btn-xs" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ opacity: page >= totalPages ? 0.4 : 1 }}>Next</button>
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '12px',
-          marginTop: '24px',
-          padding: '16px',
-        }}>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            style={{ opacity: page <= 1 ? 0.4 : 1 }}
-          >
-            Previous
-          </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
-              let pageNum: number
-              if (totalPages <= 7) {
-                pageNum = i + 1
-              } else if (page <= 4) {
-                pageNum = i + 1
-              } else if (page >= totalPages - 3) {
-                pageNum = totalPages - 6 + i
-              } else {
-                pageNum = page - 3 + i
-              }
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => setPage(pageNum)}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: page === pageNum ? '700' : '500',
-                    color: page === pageNum ? '#ffffff' : '#6b6b8a',
-                    background: page === pageNum ? '#3636e8' : '#e8eaf0',
-                    boxShadow: page === pageNum
-                      ? '2px 2px 6px rgba(54,54,232,0.35)'
-                      : '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
-                    transition: 'all 0.2s ease',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  {pageNum}
-                </button>
-              )
-            })}
-          </div>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page >= totalPages}
-            style={{ opacity: page >= totalPages ? 0.4 : 1 }}
-          >
-            Next
-          </button>
-          <span style={{ fontSize: '12px', color: '#9999b0', marginLeft: '8px' }}>
-            {total.toLocaleString()} total logs
-          </span>
-        </div>
-      )}
       {selectedUserId && (
-        <ManagerUserModal 
-          userId={selectedUserId} 
-          onClose={() => setSelectedUserId(null)} 
-          onUpdate={fetchLogs} 
-        />
+        <ManagerUserModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} onUpdate={fetchLogs} />
       )}
     </div>
   )

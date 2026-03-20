@@ -5,8 +5,28 @@ const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated']
 const COOKIE_NAME = 'teaching_llm_token'
 const JWT_SECRET = process.env.JWT_SECRET || 'teaching-llm-secret-key-change-in-production'
 
+import { checkRateLimit } from '@/lib/ratelimit'
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // 1. Rate Limiting for Auth
+  if (pathname === '/api/auth/login' && request.method === 'POST') {
+    const ip = request.ip ?? '127.0.0.1'
+    const { success, reset } = await checkRateLimit(`login_${ip}`, 5, "15 m")
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((reset - Date.now()) / 1000).toString(),
+          }
+        }
+      )
+    }
+  }
 
   // Allow public paths
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {

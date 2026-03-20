@@ -21,6 +21,21 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { isCommunityActive: true }
+    });
+
+    if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 });
+
+    // If community is disabled and user is a student, deny access
+    if (!course.isCommunityActive && session.role === 'STUDENT') {
+      return NextResponse.json({ 
+        error: 'Community is temporarily disabled by managers',
+        isCommunityActive: false 
+      }, { status: 403 });
+    }
+
     const { searchParams } = new URL(_request.url);
     const cursor = searchParams.get('cursor');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -87,8 +102,13 @@ export async function POST(
 
     const { content } = await request.json()
     
-    if (!content || !validateLength(content, 2000)) {
-      return NextResponse.json({ error: 'Message content must be between 1 and 2,000 characters' }, { status: 400 })
+    if (!content || !validateLength(content, 500)) {
+      return NextResponse.json({ error: 'Message content must be between 1 and 500 characters' }, { status: 400 })
+    }
+
+    // Safety check: check payload size (approximate)
+    if (JSON.stringify(content).length > 1000) {
+      return NextResponse.json({ error: 'Payload too large' }, { status: 413 });
     }
 
     const sanitizedContent = sanitizeInput(content)

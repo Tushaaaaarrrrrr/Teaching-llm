@@ -34,7 +34,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/profile':    { title: 'My Profile',         subtitle: 'View and edit your personal information' },
   '/settings':   { title: 'Settings',          subtitle: 'Manage passwords, appearance, and notifications' },
   '/chat-transcripts': { title: 'Chat Transcripts', subtitle: 'View community chat transcripts' },
-  '/work-log':   { title: 'Work Log',          subtitle: 'Monitor all platform activity and user actions' },
+  '/activity-logs': { title: 'Activity Log',     subtitle: 'Monitor all platform activity and user actions' },
   '/reports':    { title: 'Analytics & Performance', subtitle: 'Comprehensive platform-wide metrics and student audits' },
   '/exams':      { title: 'Exams',             subtitle: 'Manage and participate in assessments' },
   '/study/content-bank': { title: 'Content Bank', subtitle: 'Global repository of exam questions and resources' },

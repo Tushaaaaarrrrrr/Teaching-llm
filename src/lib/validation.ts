@@ -7,19 +7,16 @@ export function validateLength(text: string, max: number): boolean {
   return text.length <= max;
 }
 
+import DOMPurify from 'isomorphic-dompurify';
+
 /**
- * Basic XSS sanitization - removes script tags and handles basic escaping
+ * Basic XSS sanitization - uses DOMPurify for robust protection.
  * Note: React/Next.js handles most of this by default in JSX, 
  * but this adds a layer of protection for storage.
  */
 export function sanitizeInput(text: string): string {
   if (!text) return '';
-  
-  return text
-    .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
-    .replace(/on\w+="[^"]*"/gim, "")
-    .replace(/on\w+='[^']*'/gim, "")
-    .replace(/javascript:[^"']*/gim, "");
+  return DOMPurify.sanitize(text);
 }
 
 /**

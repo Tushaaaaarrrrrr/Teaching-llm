@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 interface ClassInfo {
@@ -30,6 +31,7 @@ interface TranscriptMsg {
 }
 
 export default function ChatTranscriptsPage() {
+  const router = useRouter()
   const [classes, setClasses] = useState<ClassInfo[]>([])
   const [selectedClass, setSelectedClass] = useState<ClassInfo | null>(null)
   const [messages, setMessages] = useState<TranscriptMsg[]>([])
@@ -182,76 +184,106 @@ export default function ChatTranscriptsPage() {
         ) : (
           <>
             {/* Header */}
-            <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '14px' }}>
               <div style={{
-                width: '40px', height: '40px', borderRadius: '12px',
+                width: '44px', height: '44px', borderRadius: '50%',
                 background: selectedClass.color + '22',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '14px', fontWeight: '800', color: selectedClass.color,
+                fontSize: '15px', fontWeight: '800', color: selectedClass.color,
+                boxShadow: `0 4px 10px ${selectedClass.color}22`
               }}>
                 {selectedClass.name.substring(0, 2).toUpperCase()}
               </div>
-              <div style={{ flex: 1, minWidth: '150px' }}>
-                <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a' }}>{selectedClass.name}</div>
-                <div style={{ fontSize: '12px', color: '#9999b0' }}>
-                  {selectedClass.subject ? `${selectedClass.subject} · ` : ''}Full Transcript · {messages.length} messages
-                  {messages.filter(m => m.isDeleted).length > 0 && (
-                    <span style={{ color: '#ef4444' }}> · {messages.filter(m => m.isDeleted).length} deleted</span>
-                  )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '800', fontSize: '18px', color: '#1e1e3a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {selectedClass.name}
+                </div>
+                <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '500' }}>
+                  {selectedClass.subject ? `${selectedClass.subject} · ` : ''}Community Chat
                 </div>
               </div>
 
-              {/* Export buttons */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <button
+                  onClick={() => router.push(`/community?id=${selectedClass.id}`)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '10px 20px', borderRadius: '50px', border: 'none',
+                    cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700',
+                    background: '#3636e8', color: '#fff',
+                    boxShadow: '0 4px 12px rgba(54,54,232,0.3)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 18l-6-6 6-6"/>
+                  </svg>
+                  Back to Chat
+                </button>
+
+                <div style={{
+                  padding: '8px 16px', borderRadius: '50px',
+                  background: '#FEE2E2', color: '#EF4444',
+                  fontSize: '12px', fontWeight: '700',
+                  boxShadow: 'inset 0 2px 4px rgba(239, 68, 68, 0.1)'
+                }}>
+                  {messages.length} message{messages.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div style={{ padding: '12px 24px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div style={{ flex: 1, position: 'relative' }}>
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search transcript..."
+                  style={{
+                    width: '100%', padding: '11px 44px 11px 20px', borderRadius: '50px',
+                    border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '14px',
+                    ...neuInset, color: '#1e1e3a',
+                  }}
+                />
+              </div>
+
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                {(['all', 'deleted'] as const).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    style={{
+                      padding: '8px 18px', borderRadius: '50px', border: 'none',
+                      cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700',
+                      background: filter === f ? '#3636e8' : '#e8eaf0',
+                      color: filter === f ? '#fff' : '#6b6b8a',
+                      boxShadow: filter === f ? '0 4px 10px rgba(54,54,232,0.25)' : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {f === 'all' ? 'All' : 'Deleted Only'}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ width: '1.5px', height: '24px', background: 'rgba(0,0,0,0.08)', margin: '0 4px' }} />
+
+              <div style={{ display: 'flex', gap: '6px' }}>
                 {(['csv', 'json', 'pdf'] as const).map(fmt => (
                   <button
                     key={fmt}
                     onClick={() => exportTranscript(fmt)}
                     disabled={exporting || messages.length === 0}
                     style={{
-                      padding: '6px 14px', borderRadius: '50px', border: 'none',
+                      padding: '8px 16px', borderRadius: '12px', border: 'none',
                       cursor: exporting ? 'default' : 'pointer',
-                      fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                      fontFamily: 'inherit', fontSize: '13px', fontWeight: '700',
                       ...neuSmall,
-                      color: exporting ? '#9999b0' : '#3636e8',
+                      color: exporting ? '#9999b0' : '#4b4b4b',
                       transition: 'all 0.2s',
                     }}
                   >
                     {fmt === 'pdf' ? 'PDF' : fmt.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div style={{ padding: '10px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search messages, users, security numbers..."
-                style={{
-                  flex: 1, padding: '9px 16px', borderRadius: '50px',
-                  border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13px',
-                  ...neuInset, color: '#1e1e3a',
-                }}
-              />
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {(['all', 'deleted'] as const).map(f => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    style={{
-                      padding: '6px 14px', borderRadius: '50px', border: 'none',
-                      cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                      background: filter === f ? '#3636e8' : '#e8eaf0',
-                      color: filter === f ? '#fff' : '#6b6b8a',
-                      boxShadow: filter === f
-                        ? '4px 4px 10px rgba(54,54,232,0.25)'
-                        : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    {f === 'all' ? 'All' : 'Deleted Only'}
                   </button>
                 ))}
               </div>
@@ -272,12 +304,10 @@ export default function ChatTranscriptsPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ position: 'sticky', top: 0, background: '#e8eaf0', zIndex: 1 }}>
-                      <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>User</th>
-                      <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Security #</th>
-                      <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Time</th>
-                      <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Message</th>
-                      <th style={{ textAlign: 'center', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Status</th>
-                      <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Deleted At</th>
+                      <th style={{ textAlign: 'left', padding: '14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>User</th>
+                      <th style={{ textAlign: 'left', padding: '14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Time</th>
+                      <th style={{ textAlign: 'left', padding: '14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Message</th>
+                      <th style={{ textAlign: 'center', padding: '14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -291,62 +321,48 @@ export default function ChatTranscriptsPage() {
                         onMouseEnter={e => { if (!msg.isDeleted) e.currentTarget.style.background = '#f0f0f8' }}
                         onMouseLeave={e => { e.currentTarget.style.background = msg.isDeleted ? '#fff5f5' : 'transparent' }}
                       >
-                        <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <td style={{ padding: '14px', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{
-                              width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
+                              width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
                               background: msg.sender.role !== 'STUDENT' ? '#3636e8' : '#e8eaf0',
-                              boxShadow: msg.sender.role !== 'STUDENT' ? 'none' : '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                              boxShadow: msg.sender.role !== 'STUDENT' ? '0 4px 8px rgba(54,54,232,0.2)' : '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: '10px', fontWeight: '800',
+                              fontSize: '11px', fontWeight: '800',
                               color: msg.sender.role !== 'STUDENT' ? '#fff' : '#6b6b8a',
                             }}>
                               {msg.sender.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <div style={{ fontWeight: '700', fontSize: '13px' }}>{msg.sender.name}</div>
-                              <div style={{ fontSize: '10px', color: '#9999b0' }}>{msg.sender.role}</div>
+                              <div style={{ fontWeight: '700', fontSize: '14px', color: '#1e1e3a' }}>{msg.sender.name}</div>
+                              <div style={{ fontSize: '11px', color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{msg.sender.role}</div>
                             </div>
                           </div>
                         </td>
-                        <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', color: '#6b6b8a', fontFamily: 'monospace', fontSize: '12px' }}>
-                          {msg.sender.securityNumber || '-'}
-                        </td>
-                        <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap', color: '#6b6b8a', fontSize: '12px' }}>
+                        <td style={{ padding: '14px', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap', color: '#6b6b8a', fontSize: '13px' }}>
                           {new Date(msg.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </td>
-                        <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', maxWidth: '400px', wordBreak: 'break-word' }}>
-                          <span style={{ color: msg.isDeleted ? '#ef4444' : '#1e1e3a' }}>
-                            {msg.content}
-                          </span>
+                        <td style={{ padding: '14px', borderBottom: '1px solid rgba(0,0,0,0.05)', maxWidth: '500px', wordBreak: 'break-word', color: msg.isDeleted ? '#ef4444' : '#1e1e3a', fontSize: '14px' }}>
+                          {msg.content}
                           {msg.isDeleted && (
                             <span style={{
-                              marginLeft: '8px', fontSize: '10px', fontWeight: '700',
+                              marginLeft: '8px', fontSize: '10px', fontWeight: '800',
                               background: '#fef2f2', color: '#ef4444',
-                              padding: '1px 8px', borderRadius: '50px',
+                              padding: '2px 8px', borderRadius: '50px',
                             }}>
                               DELETED
                             </span>
                           )}
                         </td>
-                        <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                          {msg.isDeleted ? (
-                            <span style={{
-                              padding: '3px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
-                              background: '#fef2f2', color: '#ef4444',
-                            }}>Deleted</span>
-                          ) : (
-                            <span style={{
-                              padding: '3px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
-                              background: '#f0fdf4', color: '#22c55e',
-                            }}>Active</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap', color: '#6b6b8a', fontSize: '12px' }}>
-                          {msg.isDeleted && msg.deletedAt
-                            ? new Date(msg.deletedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-                            : '-'
-                          }
+                        <td style={{ padding: '14px', borderBottom: '1px solid rgba(0,0,0,0.05)', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '4px 14px', borderRadius: '50px', fontSize: '11px', fontWeight: '800',
+                            background: msg.isDeleted ? '#fff5f5' : '#f0fdf4',
+                            color: msg.isDeleted ? '#ef4444' : '#22c55e',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                          }}>
+                            {msg.isDeleted ? 'Deleted' : 'Active'}
+                          </span>
                         </td>
                       </tr>
                     ))}

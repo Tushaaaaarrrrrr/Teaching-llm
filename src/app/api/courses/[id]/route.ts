@@ -15,6 +15,21 @@ export async function GET(
 
     const { id } = await params
 
+    if (!isAdminOrManager(session.role)) {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          userId_courseId: {
+            userId: session.userId,
+            courseId: id,
+          },
+        },
+      })
+
+      if (!enrollment) {
+        return NextResponse.json({ error: 'Access denied. You are not enrolled in this course.' }, { status: 403 })
+      }
+    }
+
     const courseData = await prisma.course.findUnique({
       where: { id },
       include: {
@@ -58,7 +73,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isCommunityActive } = await request.json()
 
     // Validate expiresAt if provided
     if (expiresAt) {
@@ -78,6 +93,7 @@ export async function PUT(
         icon,
         teacherName: teacherName || null,
         isDemo: !!isDemo,
+        isCommunityActive: isCommunityActive !== undefined ? !!isCommunityActive : undefined,
         expiresAt: expiresAt ? new Date(expiresAt) : null 
       },
     })

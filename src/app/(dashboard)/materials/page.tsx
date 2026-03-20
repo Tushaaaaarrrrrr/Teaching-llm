@@ -5,20 +5,16 @@ import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
-interface ContentItem {
+interface MaterialItem {
   id: string
   title: string
   description?: string
-  pptUrl: string
-  videoUrl?: string
+  fileUrl: string
+  fileType: string
+  fileSize?: string
   createdAt: string
-  topicId: string
-  topic: {
-    id: string
-    title: string
-    courseId: string
-    course: { id: string; name: string; color: string }
-  }
+  courseId: string
+  course: { id: string; name: string; color: string }
 }
 
 const FILE_STYLES: Record<string, { color: string }> = {
@@ -34,7 +30,8 @@ const FILE_STYLES: Record<string, { color: string }> = {
   JPG:  { color: '#EC4899' },
 }
 
-function getFileType(url: string): string {
+function getFileType(url: string, explicitType?: string): string {
+  if (explicitType) return explicitType.toUpperCase()
   const ext = url?.split('.').pop()?.split('?')[0]?.toUpperCase() || ''
   return Object.keys(FILE_STYLES).includes(ext) ? ext : 'FILE'
 }
@@ -46,18 +43,16 @@ export default function MaterialsPage() {
   })
   const userRole = userData?.user?.role || ''
 
-  const { data: materialsData, isLoading } = useSWR('/api/content?hasPpt=true', fetcher, {
+  const { data: materials, isLoading } = useSWR('/api/materials', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
   })
-  const materials: ContentItem[] = materialsData?.content || []
 
   const [search, setSearch] = useState('')
 
-  const filtered = materials.filter(m =>
+  const filtered = (materials || []).filter((m: MaterialItem) =>
     m.title.toLowerCase().includes(search.toLowerCase()) ||
-    m.topic?.course?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    m.topic?.title?.toLowerCase().includes(search.toLowerCase())
+    m.course?.name?.toLowerCase().includes(search.toLowerCase())
   )
 
   if (isLoading) {
@@ -119,7 +114,7 @@ export default function MaterialsPage() {
         </div>
       </div>
 
-      {/* Materials list */}
+  {/* Materials list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9999b0' }}>
@@ -129,10 +124,10 @@ export default function MaterialsPage() {
             <p style={{ fontWeight: '500' }}>No materials found</p>
           </div>
         ) : (
-          filtered.map((mat) => {
-            const ft    = getFileType(mat.pptUrl)
+          filtered.map((mat: MaterialItem) => {
+            const ft    = getFileType(mat.fileUrl, mat.fileType)
             const style = FILE_STYLES[ft] || { color: '#6b6b8a' }
-            const course = mat.topic?.course
+            const course = mat.course
             const dateStr = new Date(mat.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
             return (
@@ -172,14 +167,14 @@ export default function MaterialsPage() {
                         {course.name}
                       </span>
                     )}
-                    {mat.topic?.title && <span>{mat.topic.title}</span>}
+                    {mat.description && <span>{mat.description}</span>}
                     {dateStr && <span> &bull; {dateStr}</span>}
                   </div>
                 </div>
 
                 {/* Download button */}
                 <a
-                  href={mat.pptUrl}
+                  href={mat.fileUrl}
                   download
                   target="_blank"
                   rel="noopener noreferrer"
