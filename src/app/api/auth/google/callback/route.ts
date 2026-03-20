@@ -124,27 +124,37 @@ export async function GET(request: NextRequest) {
       })
 
       // ── Auto-enroll into the Demo Course ──
-      // Find or create it
+      // Find or create it robustly
       let demoCourse = await prisma.course.findFirst({
         where: { isDemo: true }
       })
 
       if (!demoCourse) {
         // Find the first manager to be the course creator
-        const manager = await prisma.user.findFirst({ where: { role: 'MANAGER' } })
-        const creatorId = manager?.id || user.id // absolute fallback
+        const manager = await prisma.user.findFirst({ where: { role: 'MANAGER', isSuperManager: true } }) 
+          || await prisma.user.findFirst({ where: { role: 'MANAGER' } })
+        
+        const creatorId = manager?.id || user.id 
 
-        demoCourse = await prisma.course.create({
-          data: {
-            name: DEFAULT_COURSE_NAME,
-            description: 'Welcome! This is your starting course. Explore lectures, materials, and community features here.',
-            subject: 'General',
-            color: '#6366F1',
-            icon: 'BookOpen',
-            isDemo: true,
-            createdById: creatorId
-          }
-        })
+        try {
+          demoCourse = await prisma.course.create({
+            data: {
+              name: DEFAULT_COURSE_NAME,
+              description: 'Welcome! This is your starting course. Explore lectures, materials, and community features here.',
+              subject: 'General',
+              color: '#6366F1',
+              icon: 'BookOpen',
+              isDemo: true,
+              createdById: creatorId
+            }
+          })
+        } catch (e) {
+          // In case of race condition, try to find it again
+          demoCourse = await prisma.course.findFirst({
+            where: { isDemo: true }
+          })
+          if (!demoCourse) throw e // If still not found, rethrow
+        }
       }
 
       // Enroll the new student if they are not a manager

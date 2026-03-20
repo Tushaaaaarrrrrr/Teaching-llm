@@ -15,11 +15,23 @@ export async function POST(
     const { id } = await params
 
 
-    const { title, description, videoUrl, pptUrl } = await request.json()
+    const { title, description, videoUrl, videoSource, pptUrl } = await request.json()
+
+    if (!title?.trim() || !videoUrl?.trim()) {
+      return NextResponse.json({ error: 'Title and Video URL are mandatory' }, { status: 400 })
+    }
 
     const count = await prisma.content.count({ where: { topicId: id } })
     const content = await prisma.content.create({
-      data: { topicId: id, title, description, videoUrl, pptUrl, order: count },
+      data: {
+        topicId: id,
+        title: title.trim(),
+        description,
+        videoUrl: videoUrl.trim(),
+        videoSource: videoSource || 'YOUTUBE',
+        pptUrl,
+        order: count,
+      },
     })
 
     logActivity({

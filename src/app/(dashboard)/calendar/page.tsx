@@ -100,7 +100,7 @@ export default function CalendarPage() {
   function loadEvents() {
     setLoading(true)
     const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`
-    fetch(`/api/events?month=${monthStr}`)
+    fetch(`/api/course-events?month=${monthStr}`)
       .then(r => r.json())
       .then(data => setEvents(data.events || data || []))
       .catch(console.error)
@@ -299,6 +299,12 @@ export default function CalendarPage() {
                      Last synced: {lastSync}
                    </span>
                  )}
+                 <a 
+                   href="/api/admin/google/auth" 
+                   style={{ fontSize: '10px', color: '#3636e8', marginTop: '4px', textDecoration: 'underline', fontWeight: '600' }}
+                 >
+                   Re-link Account
+                 </a>
                </div>
              )}
             <button onClick={() => openCreate()} className="btn btn-primary">
@@ -542,12 +548,7 @@ export default function CalendarPage() {
                   <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.class?.name || 'General (All Groups)'}</div>
                 </div>
               </div>
-              {selectedEvent.instructor && (
-                <div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Instructor</div>
-                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.instructor.name}</div>
-                </div>
-              )}
+
             </div>
             {isAdminOrManager && (
               <div className="modal-footer">
@@ -648,24 +649,7 @@ export default function CalendarPage() {
                   ))}
                 </select>
               </div>
-              {instructors.length > 0 && (
-                <div className="form-group">
-                  <label className="form-label">Instructor</label>
-                  <select
-                    className="form-input"
-                    value={formData.instructorId || ''}
-                    onChange={e => set('instructorId', e.target.value)}
-                  >
-                    <option value="">None (no instructor assigned)</option>
-                    {instructors.map(inst => (
-                      <option key={inst.id} value={inst.id}>{inst.name}</option>
-                    ))}
-                  </select>
-                  <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
-                    Optionally assign an instructor to this event.
-                  </p>
-                </div>
-              )}
+
             </div>
             <div className="modal-footer">
               <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>

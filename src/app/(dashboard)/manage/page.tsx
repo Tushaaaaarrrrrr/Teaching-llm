@@ -208,8 +208,17 @@ export default function ManagePage() {
             <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="Course name" /></div>
             <div className="form-group"><label className="form-label">Subject</label><input className="form-input" value={f.subject || ''} onChange={e => set('subject', e.target.value)} placeholder="e.g. Computer Science" /></div>
             <div className="form-group"><label className="form-label">Teacher Name (Calendar Display)</label><input className="form-input" value={f.teacherName || ''} onChange={e => set('teacherName', e.target.value)} placeholder="Manual teacher name" /></div>
-            <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input type="checkbox" checked={!!f.isDemo} onChange={e => setFormData(p => ({ ...p, isDemo: e.target.checked as any }))} /> <span style={{fontSize: '13px'}}>Mark as Demo Course</span>
+            <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: editId && f.isDemo ? 0.7 : 1 }}>
+              <input 
+                type="checkbox" 
+                checked={!!f.isDemo} 
+                disabled={editId !== null && !!f.isDemo}
+                onChange={e => setFormData(p => ({ ...p, isDemo: e.target.checked as any }))} 
+              /> 
+              <span style={{fontSize: '13px'}}>Mark as Demo Course</span>
+              {editId && f.isDemo && (
+                <span style={{ fontSize: '11px', color: '#6366f1', fontWeight: '800', marginLeft: 'auto' }}>🔒 SYSTEM LOCKED</span>
+              )}
             </label>
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} placeholder="Course description" rows={3} style={{ resize: 'vertical' }} /></div>
             <div className="form-group">
@@ -276,21 +285,6 @@ export default function ManagePage() {
           <>
             <div className="form-group"><label className="form-label">Course *</label><select className="form-input" value={f.courseId || ''} onChange={e => set('courseId', e.target.value)}><option value="">Select course...</option>{courseOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
             <div className="form-group"><label className="form-label">Title *</label><input className="form-input" value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="Session title" /></div>
-            <div className="form-group">
-              <label className="form-label">Teacher</label>
-              <select 
-                className="form-input" 
-                value={f.instructorId || ''} 
-                onChange={e => {
-                  set('instructorId', e.target.value);
-                  const name = instructors.find(i => i.id === e.target.value)?.name || '';
-                  set('instructor', name);
-                }}
-              >
-                <option value="">Select teacher...</option>
-                {instructors.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
-              </select>
-            </div>
             <div className="form-group"><label className="form-label">Meeting Link *</label><input className="form-input" value={f.meetingLink || ''} onChange={e => set('meetingLink', e.target.value)} placeholder="https://meet.jit.si/..." /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div className="form-group"><label className="form-label">Date *</label><input type="date" className="form-input" value={f.date || ''} onChange={e => set('date', e.target.value)} /></div>
@@ -486,7 +480,7 @@ export default function ManagePage() {
                     {tab === 'courses' && (
                       <>
                         <span style={{ fontSize: '12px', color: '#9999b0' }}>{item._count?.lectures || 0} lectures</span>
-                        {item.isDemo && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#fef3c7', color: '#d97706', fontWeight: '800' }}>DEMO</span>}
+                        {item.isDemo && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#3636e8', color: 'white', fontWeight: '900', letterSpacing: '0.05em' }}>SYSTEM DEMO</span>}
                       </>
                     )}
                     {tab === 'sessions' && (
@@ -543,7 +537,13 @@ export default function ManagePage() {
                       </svg>
                       Edit
                     </button>
-                    <button onClick={() => handleDelete(item.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
+                    <button 
+                      onClick={() => handleDelete(item.id)} 
+                      disabled={item.isDemo}
+                      title={item.isDemo ? "Cannot delete system demo course" : "Delete course"}
+                      className="btn btn-sm" 
+                      style={{ color: item.isDemo ? '#d1d5db' : '#ef4444', border: `1px solid ${item.isDemo ? '#e5e7eb' : '#fee2e2'}`, cursor: item.isDemo ? 'not-allowed' : 'pointer' }}
+                    >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="3 6 5 6 21 6"/>
                         <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>

@@ -12,6 +12,7 @@ interface ContentItem {
   videoSource: string
   pptUrl?: string
   order: number
+  createdAt?: string
 }
 
 interface Topic {
@@ -197,24 +198,45 @@ export default function CourseEditPage() {
   }
 
   const saveContent = async () => {
-    if (!contentModal || !contentForm.title.trim()) return
+    if (!contentModal) return
+    if (!contentForm.title.trim() || !contentForm.videoUrl.trim()) {
+      alert('Lecture Title and Video URL are mandatory')
+      return
+    }
+
     setSaving(true)
     try {
+      const payload = {
+        ...contentForm,
+        title: contentForm.title.trim(),
+        videoUrl: contentForm.videoUrl.trim(),
+      }
+
+      let res
       if (contentModal.mode === 'add') {
-        await fetch(`/api/topics/${contentModal.topicId}/content`, {
+        res = await fetch(`/api/topics/${contentModal.topicId}/content`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(contentForm),
+          body: JSON.stringify(payload),
         })
       } else if (contentModal.content) {
-        await fetch(`/api/content/${contentModal.content.id}`, {
+        res = await fetch(`/api/content/${contentModal.content.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(contentForm),
+          body: JSON.stringify(payload),
         })
       }
+
+      if (res && !res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to save lecture')
+      }
+
       setContentModal(null)
       await refreshTopics()
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : 'An error occurred while saving the lecture')
     } finally {
       setSaving(false)
     }
@@ -313,7 +335,7 @@ export default function CourseEditPage() {
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
-                    Video URL
+                    Video URL *
                   </label>
                   <input
                     value={contentForm.videoUrl}
@@ -399,7 +421,7 @@ export default function CourseEditPage() {
                 <button onClick={() => setContentModal(null)} className="btn btn-ghost">Cancel</button>
                 <button
                   onClick={saveContent}
-                  disabled={saving || !contentForm.title.trim()}
+                  disabled={saving || !contentForm.title.trim() || !contentForm.videoUrl.trim()}
                   className="btn btn-primary"
                 >
                   {saving ? 'Saving...' : contentModal.mode === 'add' ? 'Add Lecture' : 'Save Changes'}
@@ -590,8 +612,15 @@ export default function CourseEditPage() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'center' }}>
-                        <div style={{ fontSize: '10px', color: '#9999b0', background: '#f0f0f5', padding: '4px 8px', borderRadius: '4px', fontStyle: 'italic', marginRight: '8px' }}>
-                          ID: {item.id}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', marginRight: '8px' }}>
+                          <div style={{ fontSize: '10px', color: '#9999b0', background: '#f0f0f5', padding: '2px 6px', borderRadius: '4px', fontStyle: 'italic' }}>
+                            ID: {item.id}
+                          </div>
+                          {item.createdAt && (
+                            <div style={{ fontSize: '10px', color: '#9999b0' }}>
+                              Added: {new Date(item.createdAt).toLocaleDateString()}
+                            </div>
+                          )}
                         </div>
                         <button onClick={() => openEditContent(topic.id, item)} className="btn btn-ghost btn-sm">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>

@@ -263,10 +263,11 @@ export default function AdminPage() {
   // For ADMIN users, only show role tabs visible to them
   const filterTabs = [
     { label: 'All Users', key: 'all', color: '#6366f1', bg: '#e0e7ff' },
-    ...(userRole === 'MANAGER' ? [
+    ...((userRole === 'MANAGER' || (userRole === 'ADMIN' && counts.MANAGER > 0)) ? [
       { label: 'Managers', key: 'MANAGER', color: '#7c3aed', bg: '#ede9fe' },
+    ] : []),
+    ...(userRole === 'MANAGER' ? [
       { label: 'Admins', key: 'ADMIN', color: '#3b82f6', bg: '#dbeafe' },
-      { label: 'Instructors', key: 'INSTRUCTOR', color: '#d97706', bg: '#fef3c7' },
     ] : []),
     { label: 'Students', key: 'STUDENT', color: '#10b981', bg: '#d1fae5' },
   ]
@@ -628,7 +629,6 @@ export default function AdminPage() {
                   <select className="form-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value, courseIds: [], assignedCourseIds: [] }))}>
                     <option value="STUDENT">Student</option>
                     <option value="ADMIN">Admin</option>
-                    <option value="INSTRUCTOR">Instructor</option>
                     {managerCount < 2 && <option value="MANAGER">Manager</option>}
                   </select>
                 ) : (

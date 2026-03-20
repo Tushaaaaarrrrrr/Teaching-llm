@@ -63,6 +63,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Prevent multiple demo courses
+    if (isDemo) {
+      const existingDemo = await prisma.course.findFirst({
+        where: { isDemo: true }
+      })
+      if (existingDemo) {
+        return NextResponse.json({ 
+          error: 'A demo course already exists. Only one course can be marked as a demo.' 
+        }, { status: 400 })
+      }
+    }
+
     const newCourse = await prisma.$transaction(async (tx) => {
       const cls = await tx.course.create({
         data: {

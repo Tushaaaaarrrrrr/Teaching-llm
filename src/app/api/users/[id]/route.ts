@@ -30,6 +30,8 @@ export async function GET(
         gender: true,
         avatar: true,
         isTerminated: true,
+        isSuperManager: true,
+        googleCredential: { select: { id: true } },
         enrollments: {
           select: {
             courseId: true,
@@ -49,7 +51,15 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    return NextResponse.json(user)
+    const superAdminEmail = 'lkiitmng2428@gmail.com'
+    const transformedUser = {
+      ...user,
+      isGoogleAuth: !!(user as any).googleCredential,
+      isSuperManager: user.isSuperManager || user.email === superAdminEmail,
+      googleCredential: undefined
+    }
+
+    return NextResponse.json(transformedUser)
   } catch (error) {
     console.error('Error fetching user:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -73,15 +83,32 @@ export async function PUT(
     const { id } = await params
     const { name, email, role, password, isTerminated, classIds, assignedClassIds } = await request.json()
 
+    const superAdminEmail = 'lkiitmng2428@gmail.com'
+
+    // Load target user to check if it's the super admin
+    const targetUser = await prisma.user.findUnique({ where: { id }, select: { email: true, role: true, isSuperManager: true } })
+    if (!targetUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+    const isTargetSuperAdmin = targetUser.isSuperManager || targetUser.email === superAdminEmail
+
     // ADMIN restrictions
     if (session.role === 'ADMIN') {
-      const targetUser = await prisma.user.findUnique({ where: { id }, select: { role: true } })
-      if (!targetUser || targetUser.role !== 'STUDENT') {
+      if (targetUser.role !== 'STUDENT') {
         return NextResponse.json({ error: 'Admins can only edit student accounts' }, { status: 403 })
       }
       if (role !== undefined || isTerminated !== undefined) {
         return NextResponse.json({ error: 'Admins cannot change role or termination status' }, { status: 403 })
       }
+    }
+
+    // Protection for Super Admin: only they can edit themselves (except for maybe a manager editing basic stuff, but usually locked down)
+    if (isTargetSuperAdmin && session.userId !== id) {
+      return NextResponse.json({ error: 'Cannot modify Super Admin account' }, { status: 403 })
+    }
+
+    // Prevent email change for Super Admin
+    if (isTargetSuperAdmin && email && email.toLowerCase() !== targetUser.email.toLowerCase()) {
+      return NextResponse.json({ error: 'Super Admin email cannot be changed' }, { status: 403 })
     }
 
     // Validate classIds for ADMINs
@@ -151,7 +178,9 @@ export async function PUT(
           email: true,
           role: true,
           isTerminated: true,
+          isSuperManager: true,
           createdAt: true,
+          googleCredential: { select: { id: true } },
           enrollments: {
             select: {
               courseId: true,
@@ -167,6 +196,13 @@ export async function PUT(
         },
       })
     })
+
+    const transformedUpdatedUser = {
+      ...updatedUser,
+      isGoogleAuth: !!(updatedUser as any).googleCredential,
+      isSuperManager: (updatedUser as any).isSuperManager || (updatedUser as any).email === superAdminEmail,
+      googleCredential: undefined
+    }
 
     logActivity({
       userId: session.userId,

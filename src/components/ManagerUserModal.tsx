@@ -219,7 +219,6 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 <select style={neuInset} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
                   <option value="STUDENT">Student</option>
                   <option value="ADMIN">Admin</option>
-                  <option value="INSTRUCTOR">Instructor</option>
                   <option value="MANAGER">Manager</option>
                 </select>
               </div>

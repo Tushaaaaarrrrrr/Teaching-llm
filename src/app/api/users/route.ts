@@ -48,7 +48,9 @@ export async function GET(_request: NextRequest) {
         role: true,
         securityNumber: true,
         isTerminated: true,
+        isSuperManager: true,
         createdAt: true,
+        googleCredential: { select: { id: true } },
         enrollments: {
           select: {
             courseId: true,
@@ -65,11 +67,37 @@ export async function GET(_request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    if (securityNumber && users.length === 0) {
+    const superAdminEmail = 'lkiitmng2428@gmail.com'
+
+    // If ADMIN, they can only see STUDENTS + the super admin (LMS Policy)
+    if (session.role === 'ADMIN') {
+      const superAdmin = await prisma.user.findUnique({
+        where: { email: superAdminEmail },
+        select: {
+          id: true, name: true, email: true, role: true, securityNumber: true, isTerminated: true, isSuperManager: true, createdAt: true,
+          googleCredential: { select: { id: true } },
+          enrollments: { select: { courseId: true, course: { select: { id: true, name: true, color: true, subject: true } } } },
+          instructorAssignments: { select: { courseId: true, course: { select: { id: true, name: true, color: true, subject: true } } } },
+        }
+      })
+      
+      if (superAdmin && !users.find(u => u.id === superAdmin.id)) {
+        users.push(superAdmin as any)
+      }
+    }
+
+    const transformedUsers = users.map((u: any) => ({
+      ...u,
+      isGoogleAuth: !!u.googleCredential,
+      isSuperManager: u.isSuperManager || u.email === superAdminEmail,
+      googleCredential: undefined
+    }))
+
+    if (securityNumber && transformedUsers.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    return NextResponse.json(users)
+    return NextResponse.json(transformedUsers)
   } catch (error) {
     console.error('Error fetching users:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

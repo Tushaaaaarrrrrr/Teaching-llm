@@ -83,8 +83,9 @@ export async function POST(request: NextRequest) {
         skipped++
         continue
       }
+      const isGlobal = match[1].toLowerCase() === 'global'
+      const courseId = isGlobal ? null : match[1]
 
-      const courseId = match[1]
       
       const startTime = item.start?.dateTime || item.start?.date
       const endTime = item.end?.dateTime || item.end?.date
@@ -108,11 +109,12 @@ export async function POST(request: NextRequest) {
       // Extract raw title
       const title = item.summary?.replace(/\[(cancelled|rescheduled)\]/i, '').trim() || 'Untitled Session'
 
-      // Valid course check
-      const courseExists = await prisma.course.findUnique({ where: { id: courseId } })
-      if (!courseExists) {
-        skipped++
-        continue
+      if (!isGlobal) {
+        const courseExists = await prisma.course.findUnique({ where: { id: courseId! } })
+        if (!courseExists) {
+          skipped++
+          continue
+        }
       }
 
       // Optional Enhancement: Try to resolve instructor via creator email
@@ -148,7 +150,7 @@ export async function POST(request: NextRequest) {
           manualStatus,
           createdById: session.userId,
           instructorId, // Optionally found from email
-          type: 'class' // default to class sync
+          type: meetLink ? 'live' : 'class' // default to live if meet link exists
         }
       })
       imported++

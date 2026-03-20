@@ -83,6 +83,30 @@ export async function PUT(
       }
     }
 
+    const existingCourse = await prisma.course.findUnique({ where: { id } })
+    if (!existingCourse) {
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    }
+
+    // Lock demo status if it's already a demo
+    if (existingCourse.isDemo && isDemo === false) {
+      return NextResponse.json({ 
+        error: 'Cannot un-mark a demo course. This is a protected system course.' 
+      }, { status: 400 })
+    }
+
+    // Prevent marking another course as demo if one already exists
+    if (!existingCourse.isDemo && isDemo === true) {
+      const otherDemo = await prisma.course.findFirst({
+        where: { isDemo: true }
+      })
+      if (otherDemo) {
+        return NextResponse.json({ 
+          error: 'Another demo course already exists. Only one course can be marked as a demo.' 
+        }, { status: 400 })
+      }
+    }
+
     const updatedCourse = await prisma.course.update({
       where: { id },
       data: { 
@@ -92,7 +116,7 @@ export async function PUT(
         color, 
         icon,
         teacherName: teacherName || null,
-        isDemo: !!isDemo,
+        isDemo: existingCourse.isDemo ? true : !!isDemo, // Force true if it was already true
         isCommunityActive: isCommunityActive !== undefined ? !!isCommunityActive : undefined,
         expiresAt: expiresAt ? new Date(expiresAt) : null 
       },
@@ -133,8 +157,18 @@ export async function DELETE(
 
     const courseToDelete = await prisma.course.findUnique({
       where: { id },
-      select: { name: true },
+      select: { name: true, isDemo: true },
     })
+
+    if (!courseToDelete) {
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    }
+
+    if (courseToDelete.isDemo) {
+      return NextResponse.json({ 
+        error: 'Cannot delete the Demo Course. It is required for new student enrollment.' 
+      }, { status: 400 })
+    }
 
     await prisma.course.delete({ where: { id } })
 
