@@ -9,9 +9,9 @@
   --sidebar-width: 215px;
   --sidebar-collapsed: 72px;
   --header-height: 64px;
-  --bg: #e8eaf0;
-  --surface: #e8eaf0;
-  --surface-2: #dfe1e8;
+  --bg: #F3F4F6;
+  --surface: #F3F4F6;
+  --surface-2: #E5E7EB;
   --border: rgba(255,255,255,0.7);
   --border-light: rgba(255,255,255,0.5);
   --primary: #3636e8;
@@ -91,12 +91,12 @@ img {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-::-webkit-scrollbar-thumb {
-  background: #c5c7cf;
+::webkit-scrollbar-thumb {
+  background: #D1D5DB;
   border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #b0b2ba;
+::webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
 }
 
 /* Utility classes */
@@ -371,6 +371,16 @@ img {
 @keyframes slideIn {
   from { transform: translateX(-100%); }
   to { transform: translateX(0); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-40px) rotate(4deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
 
 @keyframes spin {
