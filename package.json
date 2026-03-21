@@ -13,7 +13,8 @@
     "db:migrate": "npx prisma migrate dev",
     "db:migrate:deploy": "npx prisma migrate deploy",
     "db:seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio",
+    "prepare": "husky install"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -49,6 +50,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@types/dompurify": "^3.0.5"
+    "@types/dompurify": "^3.0.5",
+    "husky": "^9.1.7"
   }
 }
