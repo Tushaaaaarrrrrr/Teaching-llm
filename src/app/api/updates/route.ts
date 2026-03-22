@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isManager } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET() {
   try {
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest) {
     const {
       title, content, type, imageUrl, isActive, priority,
       animationType, showDelay, targetRole, scheduledAt, expiresAt,
+      courseId, ctaText, ctaLink,
     } = body
 
     if (!title || !content) {
@@ -57,10 +59,24 @@ export async function POST(request: NextRequest) {
         animationType: animationType || null,
         showDelay: showDelay || 0,
         targetRole: targetRole || null,
+        courseId: courseId || null,
+        ctaText: ctaText || null,
+        ctaLink: ctaLink || null,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         createdById: session.userId,
       },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.UPDATE_CREATED,
+      actionDescription: `Created ${update.type} update: ${update.title}`,
+      moduleName: MODULE.UPDATES,
+      targetId: update.id,
+      priority: 1,
     })
 
     return NextResponse.json({ update }, { status: 201 })

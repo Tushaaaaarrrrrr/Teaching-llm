@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
   // 1. Rate Limiting for Auth
   if (pathname === '/api/auth/login' && request.method === 'POST') {
     const ip = request.ip ?? '127.0.0.1'
-    const { success, reset } = await checkRateLimit(`login_${ip}`, 5, "15 m")
+    const { success, reset } = await checkRateLimit(`login_${ip}`, 'login')
     
     if (!success) {
       return NextResponse.json(

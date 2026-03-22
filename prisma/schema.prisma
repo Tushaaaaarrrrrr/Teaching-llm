@@ -83,6 +83,7 @@ model Course {
   materials             Material[]
   supportTickets        SupportTicket[]
   topics                Topic[]
+  systemUpdates         SystemUpdate[]
 
   @@map("Class")
 }
@@ -500,9 +501,13 @@ model SystemUpdate {
   targetRole    String?      // null = all, "STUDENT", "ADMIN"
   scheduledAt   DateTime?
   expiresAt     DateTime?
+  courseId      String?      @map("classId")
+  ctaText       String?
+  ctaLink       String?
   createdById   String
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  course        Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
   createdBy     User         @relation("UpdateCreator", fields: [createdById], references: [id])
   views         UpdateView[]
 

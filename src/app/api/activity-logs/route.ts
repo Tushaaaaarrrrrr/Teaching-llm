@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../lib/db'
 import { getSession, isManager } from '../../../lib/auth'
+import { validateSearch } from '../../../lib/validation'
+import { checkRateLimit } from '../../../lib/ratelimit'
 
 function escapeCsvField(field: string): string {
   const str = String(field)
@@ -29,6 +31,23 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
     const search = searchParams.get('search')
+
+    // 1. Rate Limiting
+    const rateLimit = await checkRateLimit(session.userId, 'general')
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'You are doing this too fast, please wait.' }, 
+        { status: 429 }
+      )
+    }
+
+    // 2. Validation
+    let validatedSearch = search
+    if (search) {
+      const { error, sanitized } = validateSearch(search)
+      if (error) return NextResponse.json({ error }, { status: 400 })
+      validatedSearch = sanitized
+    }
     const exportFormat = searchParams.get('export')
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')))
@@ -64,10 +83,10 @@ export async function GET(request: NextRequest) {
       where.timestamp = timestampFilter
     }
 
-    if (search) {
+    if (validatedSearch) {
       where.OR = [
-        { userName: { contains: search } },
-        { actionDescription: { contains: search } },
+        { userName: { contains: validatedSearch } },
+        { actionDescription: { contains: validatedSearch } },
       ]
     }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 
@@ -33,10 +33,18 @@ export default function CoursesPage() {
   })
   const courses = Array.isArray(data) ? data : (data as any)?.courses || []
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 500)
+    return () => clearTimeout(handler)
+  }, [search])
 
   const filtered = courses.filter((c: CourseItem) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.subject?.toLowerCase().includes(search.toLowerCase())
+    c.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+    c.subject?.toLowerCase().includes(debouncedSearch.toLowerCase())
   )
 
   if (isLoading) {

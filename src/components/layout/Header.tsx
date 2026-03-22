@@ -30,6 +30,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/announcements': { title: 'Announcements',  subtitle: 'Stay updated with the latest news' },
   '/support':    { title: 'Contact & Support', subtitle: 'Raise a ticket or chat with support' },
   '/manage':     { title: 'Manage Content',    subtitle: 'Create and edit courses, lectures, and sessions' },
+  '/manage/updates': { title: 'Update System', subtitle: 'Manage greetings, updates, and user messages' },
   '/admin':      { title: 'User Management',   subtitle: 'Manage platform accounts and permissions' },
   '/profile':    { title: 'My Profile',         subtitle: 'View and edit your personal information' },
   '/settings':   { title: 'Settings',          subtitle: 'Manage passwords, appearance, and notifications' },
@@ -75,9 +76,11 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   const unreadCount = notifications.filter(n => !n.isRead).length
 
-  const matchedKey = Object.keys(PAGE_TITLES).find(key =>
-    key === pathname || (key !== '/dashboard' && pathname.startsWith(key))
-  )
+  // Sort keys by length descending to match the most specific path first
+  const matchedKey = Object.keys(PAGE_TITLES)
+    .sort((a, b) => b.length - a.length)
+    .find(key => key === pathname || (key !== '/dashboard' && pathname.startsWith(key)))
+    
   const pageInfo = matchedKey ? PAGE_TITLES[matchedKey] : { title: 'Alpha IITIAN', subtitle: '' }
 
   const getGreeting = () => {

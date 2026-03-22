@@ -24,25 +24,46 @@ function checkMemoryLimit(identifier: string, limit: number, windowMs: number) {
 // Check if Upstash credentials exist
 const hasRedis = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 
+
 export const ratelimit = hasRedis
   ? new Ratelimit({
       redis: Redis.fromEnv(),
-      limiter: Ratelimit.slidingWindow(5, "15 m"), // 5 attempts per 15 minutes for login
+      limiter: Ratelimit.slidingWindow(5, "15 m"), // default for login
       analytics: true,
-      prefix: "@upstash/ratelimit/login",
+      prefix: "@upstash/ratelimit",
     })
   : null;
 
+// Specialized limiters for specific actions
+const commentLimit = hasRedis ? new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(1, "10 s"),
+  prefix: "@upstash/ratelimit/comment",
+}) : null;
+
+const generalLimit = hasRedis ? new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(20, "1 m"),
+  prefix: "@upstash/ratelimit/general",
+}) : null;
+
 /**
- * Helper to check rate limit for a specific identifier (e.g., IP)
- * Returns { success: true } if no redis is configured but uses in-memory fallback
+ * Helper to check rate limit for a specific identifier and action type
  */
-export async function checkRateLimit(identifier: string, limit = 5, window = "15 m") {
-  if (ratelimit) {
-    return await ratelimit.limit(identifier);
+export async function checkRateLimit(identifier: string, type: 'login' | 'comment' | 'general' = 'general') {
+  if (hasRedis) {
+    if (type === 'comment' && commentLimit) return await commentLimit.limit(identifier);
+    if (type === 'general' && generalLimit) return await generalLimit.limit(identifier);
+    if (ratelimit) return await ratelimit.limit(identifier);
   }
 
-  // Fallback to in-memory (approximate "15 m" as 15 * 60 * 1000)
-  const windowMs = window.includes("m") ? parseInt(window) * 60 * 1000 : 15 * 60 * 1000;
-  return checkMemoryLimit(identifier, limit, windowMs);
+  // Fallback to in-memory
+  const limits = {
+    login: { count: 5, window: 15 * 60 * 1000 },
+    comment: { count: 1, window: 10 * 1000 },
+    general: { count: 20, window: 60 * 1000 },
+  };
+
+  const { count, window } = limits[type];
+  return checkMemoryLimit(`${type}:${identifier}`, count, window);
 }

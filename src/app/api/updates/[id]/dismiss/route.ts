@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 /**
  * POST /api/updates/[id]/dismiss
@@ -23,7 +24,7 @@ export async function POST(
     // Verify the update exists
     const update = await prisma.systemUpdate.findUnique({
       where: { id: updateId },
-      select: { id: true, type: true },
+      select: { id: true, type: true, title: true },
     })
 
     if (!update) {
@@ -46,6 +47,17 @@ export async function POST(
         data: { hasSeenWelcome: true },
       })
     }
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.UPDATE_VIEWED,
+      actionDescription: `Viewed ${update.type} message: ${update.title}`,
+      moduleName: MODULE.UPDATES,
+      targetId: update.id,
+      priority: 0,
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

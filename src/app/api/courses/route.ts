@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { checkRateLimit } from '@/lib/ratelimit'
+import { sanitizeInput } from '@/lib/validation'
 
 export async function GET() {
   try {
@@ -90,6 +92,33 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, description, subject, color, icon, expiresAt, teacherName, isDemo } = await request.json()
+
+    // 1. Rate Limiting
+    const rateLimit = await checkRateLimit(session.userId, 'general')
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'You are doing this too fast, please wait.' }, 
+        { status: 429 }
+      )
+    }
+
+    // 2. Validation
+    if (!name || !subject) {
+      return NextResponse.json({ error: 'Name and subject are required' }, { status: 400 })
+    }
+
+    if (name.length > 200) {
+      return NextResponse.json({ error: 'Name is too long (max 200 chars)' }, { status: 400 })
+    }
+
+    if (description && description.length > 2000) {
+      return NextResponse.json({ error: 'Description is too long (max 2000 chars)' }, { status: 400 })
+    }
+    
+    const sanitizedName = sanitizeInput(name)
+    const sanitizedDescription = description ? sanitizeInput(description) : null
+    const sanitizedSubject = sanitizeInput(subject)
+    const sanitizedTeacherName = teacherName ? sanitizeInput(teacherName) : null
     
     // Validate expiresAt if provided
     if (expiresAt) {
@@ -114,12 +143,12 @@ export async function POST(request: NextRequest) {
     const newCourse = await prisma.$transaction(async (tx) => {
       const cls = await tx.course.create({
         data: {
-          name,
-          description,
-          subject,
+          name: sanitizedName,
+          description: sanitizedDescription,
+          subject: sanitizedSubject,
           color,
           icon,
-          teacherName: teacherName || null,
+          teacherName: sanitizedTeacherName,
           isDemo: !!isDemo,
           expiresAt: expiresAt ? new Date(expiresAt) : null,
           createdById: session.userId,
@@ -141,7 +170,7 @@ export async function POST(request: NextRequest) {
       userName: session.name,
       userRole: session.role,
       actionType: ACTION.COURSE_CREATED,
-      actionDescription: `${session.name} created course "${name}"`,
+      actionDescription: `${session.name} created course "${sanitizedName}"`,
       moduleName: MODULE.COURSES,
       targetId: newCourse.id,
     })

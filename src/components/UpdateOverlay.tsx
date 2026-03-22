@@ -12,6 +12,8 @@ interface PendingUpdate {
   animationType: string | null
   showDelay: number
   priority: number
+  ctaText?: string | null
+  ctaLink?: string | null
 }
 
 interface DailyDigest {
@@ -309,13 +311,32 @@ export default function UpdateOverlay() {
         <div style={{
           padding: '20px 28px', textAlign: 'center', flexShrink: 0,
           borderTop: '1px solid #e2e8f0', background: '#fff',
+          display: 'flex', gap: '12px', justifyContent: 'center',
         }}>
+          {currentUpdate.ctaText && currentUpdate.ctaLink && (
+            <button onClick={() => {
+                fetch(`/api/updates/${currentUpdate.id}/dismiss`, { method: 'POST' }).catch(console.error)
+                window.location.href = currentUpdate.ctaLink!
+            }} style={{
+              background: '#3636e8', color: '#fff', border: 'none', padding: '14px 24px',
+              borderRadius: '50px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(54,54,232,0.25)', transition: 'transform 0.2s, box-shadow 0.2s',
+              flex: 1, maxWidth: '200px'
+            }}>
+              {currentUpdate.ctaText}
+            </button>
+          )}
           <button onClick={dismiss} style={{
-            background: '#1e293b', color: '#fff', border: 'none', padding: '14px 44px',
+            background: currentUpdate.ctaText ? '#f1f5f9' : '#1e293b', 
+            color: currentUpdate.ctaText ? '#475569' : '#fff', 
+            border: 'none', padding: '14px 24px',
             borderRadius: '50px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(30,41,59,0.25)', transition: 'transform 0.2s, box-shadow 0.2s',
+            boxShadow: currentUpdate.ctaText ? 'none' : '0 4px 14px rgba(30,41,59,0.25)', 
+            transition: 'transform 0.2s, background 0.2s',
+            flex: currentUpdate.ctaText ? undefined : 1, 
+            maxWidth: currentUpdate.ctaText ? undefined : '200px'
           }}>
-            {currentUpdate.type === 'WELCOME' ? "Let's Get Started" : 'Got It'}
+            {currentUpdate.type === 'WELCOME' && !currentUpdate.ctaText ? "Let's Get Started" : (currentUpdate.ctaText ? 'Close' : 'Got It')}
           </button>
         </div>
       </div>

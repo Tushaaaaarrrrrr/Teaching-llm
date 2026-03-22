@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import useSWR, { mutate } from 'swr'
 import ImageCropper from '@/components/ui/ImageCropper'
+import DOMPurify from 'dompurify'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -19,6 +20,9 @@ interface SystemUpdate {
   animationType: string | null
   showDelay: number
   targetRole: string | null
+  courseId: string | null
+  ctaText: string | null
+  ctaLink: string | null
   scheduledAt: string | null
   expiresAt: string | null
   createdAt: string
@@ -26,13 +30,27 @@ interface SystemUpdate {
   createdBy: { name: string }
 }
 
+const TEMPLATES = {
+  WELCOME: { label: 'Welcome (New Users)', type: 'WELCOME', targetRole: '', priority: 100, animationType: 'confetti', showDelay: 0, content: '<h1>Welcome to Alpha IITIAN!</h1><p>We are thrilled to have you here.</p>' },
+  EXAM: { label: 'Exam Notification', type: 'GENERAL', targetRole: 'STUDENT', priority: 50, animationType: '', showDelay: 3, content: '<h2>Mid-term Exam Starting Soon!</h2><p>Make sure to review your study materials before it begins.</p>' },
+  DIGEST: { label: 'Daily Digest', type: 'DAILY_DIGEST', targetRole: 'STUDENT', priority: 10, animationType: '', showDelay: 3, content: '<p>Here is your summary of recent activities and updates.</p>' },
+  CUSTOM: { label: 'Custom Update', type: 'GENERAL', targetRole: '', priority: 0, animationType: '', showDelay: 3, content: '' }
+}
+
 export default function ManageUpdatesPage() {
   const { data, isLoading } = useSWR('/api/updates', fetcher)
+  const { data: coursesData } = useSWR('/api/courses', fetcher)
+  
   const updates: SystemUpdate[] = data?.updates || []
+  const courses = coursesData?.courses || coursesData || []
 
   // Form state
   const [showModal, setShowModal] = useState(false)
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  
+  const [selectedTemplate, setSelectedTemplate] = useState<keyof typeof TEMPLATES>('CUSTOM')
+  
   const [title, setTitle] = useState('')
   const [type, setType] = useState<UpdateType>('GENERAL')
   const [isActive, setIsActive] = useState(true)
@@ -40,6 +58,9 @@ export default function ManageUpdatesPage() {
   const [animationType, setAnimationType] = useState<string>('')
   const [showDelay, setShowDelay] = useState(3)
   const [targetRole, setTargetRole] = useState<string>('')
+  const [courseId, setCourseId] = useState<string>('')
+  const [ctaText, setCtaText] = useState<string>('')
+  const [ctaLink, setCtaLink] = useState<string>('')
   const [scheduledAt, setScheduledAt] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
   const [imageUrl, setImageUrl] = useState('')
@@ -53,8 +74,23 @@ export default function ManageUpdatesPage() {
   // Rich text editor ref
   const editorRef = useRef<HTMLDivElement>(null)
 
+  function applyTemplate(t: keyof typeof TEMPLATES) {
+    setSelectedTemplate(t)
+    const tmpl = TEMPLATES[t]
+    setType(tmpl.type as UpdateType)
+    setTargetRole(tmpl.targetRole)
+    setPriority(tmpl.priority)
+    setAnimationType(tmpl.animationType)
+    setShowDelay(tmpl.showDelay)
+    // Only pre-fill content if empty to prevent data loss
+    if (editorRef.current && !editorRef.current.innerHTML.trim()) {
+      editorRef.current.innerHTML = tmpl.content
+    }
+  }
+
   function resetForm() {
     setEditId(null)
+    setSelectedTemplate('CUSTOM')
     setTitle('')
     setType('GENERAL')
     setIsActive(true)
@@ -62,6 +98,9 @@ export default function ManageUpdatesPage() {
     setAnimationType('')
     setShowDelay(3)
     setTargetRole('')
+    setCourseId('')
+    setCtaText('')
+    setCtaLink('')
     setScheduledAt('')
     setExpiresAt('')
     setImageUrl('')
@@ -76,6 +115,7 @@ export default function ManageUpdatesPage() {
 
   function openEdit(u: SystemUpdate) {
     setEditId(u.id)
+    setSelectedTemplate('CUSTOM')
     setTitle(u.title)
     setType(u.type)
     setIsActive(u.isActive)
@@ -83,6 +123,9 @@ export default function ManageUpdatesPage() {
     setAnimationType(u.animationType || '')
     setShowDelay(u.showDelay)
     setTargetRole(u.targetRole || '')
+    setCourseId(u.courseId || '')
+    setCtaText(u.ctaText || '')
+    setCtaLink(u.ctaLink || '')
     setScheduledAt(u.scheduledAt ? u.scheduledAt.split('T')[0] + 'T' + u.scheduledAt.split('T')[1]?.slice(0, 5) : '')
     setExpiresAt(u.expiresAt ? u.expiresAt.split('T')[0] : '')
     setImageUrl(u.imageUrl || '')
@@ -107,6 +150,9 @@ export default function ManageUpdatesPage() {
         animationType: animationType || null,
         showDelay,
         targetRole: targetRole || null,
+        courseId: courseId || null,
+        ctaText: ctaText || null,
+        ctaLink: ctaLink || null,
         scheduledAt: scheduledAt || null,
         expiresAt: expiresAt || null,
         imageUrl: imageUrl || null,
@@ -177,13 +223,13 @@ export default function ManageUpdatesPage() {
     DAILY_DIGEST: { label: 'Daily Digest', color: '#0ea5e9', bg: '#e0f2fe' },
   }
 
+  const isWelcome = type === 'WELCOME'
+  // Welcome messages are strictly for new users, so disable targeting
+  const hideTargeting = isWelcome
+
   return (
     <div className="page-container fade-in">
-      <div className="page-header">
-        <div>
-          <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>Update System</h1>
-          <p style={{ fontSize: '12px', color: '#9999b0', marginTop: '4px' }}>Manage greetings, updates, and user messages</p>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
         <button onClick={openCreate} className="btn btn-primary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -246,6 +292,7 @@ export default function ManageUpdatesPage() {
                       {u.createdBy.name} · {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       {u.animationType && ` · 🎉 ${u.animationType}`}
                       {u.targetRole && ` · 🎯 ${u.targetRole}`}
+                      {u.courseId && ` · 📚 ${courses.find((c: any) => c.id === u.courseId)?.name || 'Course'}`}
                     </div>
                   </div>
 
@@ -291,22 +338,50 @@ export default function ManageUpdatesPage() {
         )}
       </div>
 
-      {/* Create/Edit Modal */}
+      {/* Create/Edit Form Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ zIndex: 100 }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '740px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <div className="modal-header">
               <h3 style={{ fontSize: '16px', fontWeight: '700' }}>
                 {editId ? 'Edit Update' : 'Create New Update'}
               </h3>
-              <button onClick={() => setShowModal(false)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => setShowPreviewModal(true)} className="btn btn-sm" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569' }}>
+                  👀 Preview as User
+                </button>
+                <button onClick={() => setShowModal(false)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1 }}>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1, padding: '24px' }}>
+              
+              {/* Template Selection */}
+              <div className="form-group" style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <label className="form-label" style={{ marginBottom: '12px' }}>Start from a Template</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {(Object.keys(TEMPLATES) as Array<keyof typeof TEMPLATES>).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => applyTemplate(key)}
+                      style={{
+                        padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600',
+                        border: selectedTemplate === key ? '2px solid #6366f1' : '1px solid #cbd5e1',
+                        background: selectedTemplate === key ? '#eef2ff' : '#fff',
+                        color: selectedTemplate === key ? '#4f46e5' : '#475569',
+                        cursor: 'pointer', transition: 'all 0.2s',
+                      }}
+                    >
+                      {TEMPLATES[key].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Title */}
               <div className="form-group">
                 <label className="form-label">Title *</label>
@@ -317,11 +392,18 @@ export default function ManageUpdatesPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
                   <label className="form-label">Type *</label>
-                  <select className="form-input" value={type} onChange={e => setType(e.target.value as UpdateType)}>
+                  <select className="form-input" value={type} onChange={e => {
+                    setType(e.target.value as UpdateType)
+                    if (e.target.value === 'WELCOME') {
+                      setTargetRole('')
+                      setCourseId('')
+                    }
+                  }}>
                     <option value="GENERAL">General Update</option>
                     <option value="WELCOME">Welcome Message</option>
                     <option value="DAILY_DIGEST">Daily Digest</option>
                   </select>
+                  {isWelcome && <p style={{ fontSize: '11px', color: '#f59e0b', marginTop: '4px' }}>Welcome messages are strictly for new users.</p>}
                 </div>
                 <div className="form-group">
                   <label className="form-label">Priority</label>
@@ -444,36 +526,190 @@ export default function ManageUpdatesPage() {
                 </div>
               </div>
 
-              {/* Target + Schedule row */}
+              {/* CTA buttons */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
-                  <label className="form-label">Target Audience</label>
-                  <select className="form-input" value={targetRole} onChange={e => setTargetRole(e.target.value)}>
-                    <option value="">All Users</option>
-                    <option value="STUDENT">Students Only</option>
-                    <option value="ADMIN">Admins Only</option>
-                  </select>
+                  <label className="form-label">CTA Button Text (Optional)</label>
+                  <input type="text" className="form-input" value={ctaText} onChange={e => setCtaText(e.target.value)} placeholder="e.g. Go to Exam" />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Schedule (Optional)</label>
-                  <input type="datetime-local" className="form-input" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} />
+                  <label className="form-label">CTA Button Link</label>
+                  <input type="text" className="form-input" value={ctaLink} onChange={e => setCtaLink(e.target.value)} placeholder="e.g. /exams/123" />
+                  <p style={{ fontSize: '10px', color: '#9999b0', marginTop: '2px' }}>Required if CTA Text is provided</p>
                 </div>
               </div>
 
-              {/* Expiry */}
-              <div className="form-group">
-                <label className="form-label">Expires On (Optional)</label>
-                <input type="date" className="form-input" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
+              {/* Target + Course + Schedule row */}
+              <div style={{ opacity: hideTargeting ? 0.5 : 1, pointerEvents: hideTargeting ? 'none' : 'auto', background: hideTargeting ? '#f8fafc' : 'transparent', padding: hideTargeting ? '16px' : '0', borderRadius: '12px' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '700', marginBottom: '12px', color: '#334155' }}>Targeting & Schedule</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Target Audience</label>
+                    <select className="form-input" value={targetRole} onChange={e => {
+                      setTargetRole(e.target.value)
+                      if (e.target.value !== 'STUDENT') setCourseId('')
+                    }}>
+                      <option value="">All Users</option>
+                      <option value="STUDENT">Students Only</option>
+                      <option value="ADMIN">Admins Only</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Target Course</label>
+                    <select className="form-input" value={courseId} onChange={e => setCourseId(e.target.value)} disabled={targetRole !== 'STUDENT'}>
+                      <option value="">All Courses</option>
+                      {courses.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Schedule (Optional)</label>
+                    <input type="datetime-local" className="form-input" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Expires On (Optional)</label>
+                    <input type="date" className="form-input" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="modal-footer">
-              <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
-              <button onClick={handleSave} disabled={saving} className="btn btn-primary">
-                {saving ? 'Saving…' : (editId ? 'Update' : 'Create')}
+            <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                  <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+                  Active Status
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
+                <button 
+                  onClick={handleSave} 
+                  disabled={saving || (!!ctaText && !ctaLink) || !title} 
+                  className="btn btn-primary"
+                >
+                  {saving ? 'Saving…' : (editId ? 'Update' : 'Create')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal - Replicates exact UI of UpdateOverlay */}
+      {showPreviewModal && (
+        <div className="modal-overlay" style={{ zIndex: 10000, backdropFilter: 'blur(8px)', background: 'rgba(15,23,42,0.6)' }} onClick={() => setShowPreviewModal(false)}>
+          <div
+            style={{
+              maxWidth: '560px', width: '92%', borderRadius: '24px', overflow: 'hidden',
+              background: '#ffffff', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+              animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+              maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header gradient */}
+            <div style={{
+              background: type === 'WELCOME'
+                ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)'
+                : type === 'DAILY_DIGEST'
+                ? 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)'
+                : 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+              padding: '36px 28px 24px', textAlign: 'center', position: 'relative', flexShrink: 0,
+            }}>
+              <button onClick={() => setShowPreviewModal(false)} style={{
+                position: 'absolute', top: '16px', right: '16px',
+                background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff',
+                width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+
+              {type === 'WELCOME' && (
+                <div style={{
+                  width: '72px', height: '72px', borderRadius: '50%', background: '#fff',
+                  margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                }}>
+                  <span style={{ fontSize: '36px', lineHeight: '1' }}>👋</span>
+                </div>
+              )}
+
+              <h2 style={{
+                fontSize: type === 'WELCOME' ? '28px' : '22px',
+                fontWeight: '800', color: '#fff', margin: 0, lineHeight: '1.2',
+              }}>
+                {title || 'Update Title'}
+              </h2>
+            </div>
+
+            {/* Image */}
+            {imageUrl && (
+              <div style={{ flexShrink: 0 }}>
+                <img
+                  src={imageUrl}
+                  alt=""
+                  style={{ width: '100%', maxHeight: '240px', objectFit: 'cover' }}
+                />
+              </div>
+            )}
+
+            {/* Content */}
+            <div style={{
+              padding: '28px', overflowY: 'auto', flex: 1,
+              background: '#f8fafc',
+            }}>
+              <div
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editorRef.current?.innerHTML || 'Content goes here...') }}
+                style={{
+                  fontSize: '15px', color: '#334155', lineHeight: '1.7',
+                  wordBreak: 'break-word',
+                }}
+              />
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '20px 28px', textAlign: 'center', flexShrink: 0,
+              borderTop: '1px solid #e2e8f0', background: '#fff',
+              display: 'flex', gap: '12px', justifyContent: 'center'
+            }}>
+              {ctaText && ctaLink && (
+                <button onClick={() => setShowPreviewModal(false)} style={{
+                  background: '#3636e8', color: '#fff', border: 'none', padding: '14px 24px',
+                  borderRadius: '50px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(54,54,232,0.25)', transition: 'transform 0.2s, box-shadow 0.2s',
+                  flex: 1, maxWidth: '200px'
+                }}>
+                  {ctaText}
+                </button>
+              )}
+              <button onClick={() => setShowPreviewModal(false)} style={{
+                background: ctaText ? '#f1f5f9' : '#1e293b', 
+                color: ctaText ? '#475569' : '#fff', 
+                border: 'none', padding: '14px 24px',
+                borderRadius: '50px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
+                boxShadow: ctaText ? 'none' : '0 4px 14px rgba(30,41,59,0.25)', 
+                transition: 'transform 0.2s, background 0.2s',
+                flex: ctaText ? undefined : 1, 
+                maxWidth: ctaText ? undefined : '200px'
+              }}>
+                {type === 'WELCOME' && !ctaText ? "Let's Get Started" : (ctaText ? 'Close' : 'Got It')}
               </button>
             </div>
           </div>
+
+          <style>{`
+            @keyframes bounceIn {
+              0% { opacity: 0; transform: scale(0.85); }
+              70% { opacity: 1; transform: scale(1.02); }
+              100% { opacity: 1; transform: scale(1); }
+            }
+          `}</style>
         </div>
       )}
 

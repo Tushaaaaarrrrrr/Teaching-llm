@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, hashPassword, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { validateSearch } from '@/lib/validation'
+import { checkRateLimit } from '@/lib/ratelimit'
 
 export async function GET(_request: NextRequest) {
   try {
@@ -18,6 +20,23 @@ export async function GET(_request: NextRequest) {
     const search = searchParams.get('search')
     const securityNumber = searchParams.get('securityNumber')
 
+    // 1. Rate Limiting
+    const rateLimit = await checkRateLimit(session.userId, 'general')
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'You are doing this too fast, please wait.' }, 
+        { status: 429 }
+      )
+    }
+
+    // 2. Validation
+    let validatedSearch = search
+    if (search) {
+      const { error, sanitized } = validateSearch(search)
+      if (error) return NextResponse.json({ error }, { status: 400 })
+      validatedSearch = sanitized
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let where: Record<string, any> = {}
 
@@ -31,11 +50,11 @@ export async function GET(_request: NextRequest) {
 
     if (securityNumber) {
       where.securityNumber = securityNumber.trim().toUpperCase()
-    } else if (search) {
+    } else if (validatedSearch) {
       where.OR = [
-        { name: { contains: search } },
-        { email: { contains: search } },
-        { securityNumber: { contains: search } },
+        { name: { contains: validatedSearch } },
+        { email: { contains: validatedSearch } },
+        { securityNumber: { contains: validatedSearch } },
       ]
     }
 

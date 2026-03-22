@@ -93,12 +93,21 @@ export default function ActivityLogPage() {
 
   // Filters
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [moduleFilter, setModuleFilter] = useState('')
   const [actionFilter, setActionFilter] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 500)
+    return () => clearTimeout(handler)
+  }, [search])
 
   const limit = 50
 
@@ -108,7 +117,7 @@ export default function ActivityLogPage() {
       const params = new URLSearchParams()
       params.set('page', String(page))
       params.set('limit', String(limit))
-      if (search) params.set('search', search)
+      if (debouncedSearch) params.set('search', debouncedSearch)
       if (roleFilter) params.set('role', roleFilter)
       if (moduleFilter) params.set('moduleName', moduleFilter)
       if (actionFilter) params.set('actionType', actionFilter)
@@ -126,7 +135,7 @@ export default function ActivityLogPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, roleFilter, moduleFilter, actionFilter, dateFrom, dateTo])
+  }, [page, debouncedSearch, roleFilter, moduleFilter, actionFilter, dateFrom, dateTo])
 
   useEffect(() => {
     fetchLogs()
@@ -134,7 +143,7 @@ export default function ActivityLogPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [search, roleFilter, moduleFilter, actionFilter, dateFrom, dateTo])
+  }, [debouncedSearch, roleFilter, moduleFilter, actionFilter, dateFrom, dateTo])
 
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10)
@@ -147,7 +156,7 @@ export default function ActivityLogPage() {
   const handleExportCsv = async () => {
     const params = new URLSearchParams()
     params.set('export', 'csv')
-    if (search) params.set('search', search)
+    if (debouncedSearch) params.set('search', debouncedSearch)
     if (roleFilter) params.set('role', roleFilter)
     if (moduleFilter) params.set('moduleName', moduleFilter)
     if (actionFilter) params.set('actionType', actionFilter)

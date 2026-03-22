@@ -42,6 +42,15 @@ export default function AdminPage() {
   const [userRole, setUserRole] = useState('')
   const [userPermissions, setUserPermissions] = useState({ canTerminate: false, canCreateStudents: false })
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 500)
+    return () => clearTimeout(handler)
+  }, [searchQuery])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -242,9 +251,9 @@ export default function AdminPage() {
   const visibleUsers = users
   const filtered = visibleUsers.filter(u => {
     if (filter !== 'all' && u.role !== filter) return false
-    if (!searchQuery) return true
+    if (!debouncedSearchQuery) return true
     
-    const query = searchQuery.toLowerCase()
+    const query = debouncedSearchQuery.toLowerCase()
     return (
       u.name.toLowerCase().includes(query) ||
       u.email.toLowerCase().includes(query) ||

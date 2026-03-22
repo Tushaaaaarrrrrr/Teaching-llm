@@ -48,6 +48,13 @@ export async function GET() {
             { targetRole: userRole },
           ],
         } : {}),
+        // Filter by course enrollment for students
+        ...(userRole === 'STUDENT' ? {
+          OR: [
+            { courseId: null },
+            { course: { enrollments: { some: { userId } } } },
+          ],
+        } : {}),
       },
       orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
     })
@@ -139,6 +146,8 @@ export async function GET() {
         animationType: u.animationType,
         showDelay: u.showDelay,
         priority: u.priority,
+        ctaText: u.ctaText,
+        ctaLink: u.ctaLink,
       })),
       dailyDigest,
     })

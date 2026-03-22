@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { checkRateLimit } from '@/lib/ratelimit'
+import { sanitizeInput } from '@/lib/validation'
 
 export async function GET(request: NextRequest) {
   try {
@@ -76,14 +78,38 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.formData()
-    const payload = JSON.parse(data.get('payload') as string)
+    const payloadBuffer = data.get('payload')
+    if (!payloadBuffer) {
+      return NextResponse.json({ error: 'Payload is required' }, { status: 400 })
+    }
+    const payload = JSON.parse(payloadBuffer as string)
     
     const { title, description, courseId, expiresAt, startDate, durationMinutes, questions } = payload
 
-    // Questions are now optional initially, but other general info is mandatory
+    // 1. Rate Limiting
+    const rateLimit = await checkRateLimit(session.userId, 'general')
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'You are doing this too fast, please wait.' }, 
+        { status: 429 }
+      )
+    }
+
+    // 2. Validation
     if (!title || !courseId || !expiresAt || !startDate || !durationMinutes) {
       return NextResponse.json({ error: 'Missing required exam details (title, course, dates, or duration)' }, { status: 400 })
     }
+
+    if (title.length > 200) {
+      return NextResponse.json({ error: 'Title is too long (max 200 chars)' }, { status: 400 })
+    }
+
+    if (description && description.length > 2000) {
+      return NextResponse.json({ error: 'Description is too long (max 2000 chars)' }, { status: 400 })
+    }
+
+    const sanitizedTitle = sanitizeInput(title)
+    const sanitizedDescription = description ? sanitizeInput(description) : null
 
     const exam = await prisma.$transaction(async (tx) => {
       // Fetch course to get subject
@@ -138,8 +164,8 @@ export async function POST(request: NextRequest) {
 
       return await tx.exam.create({
         data: {
-          title,
-          description,
+          title: sanitizedTitle,
+          description: sanitizedDescription,
           courseId,
           expiresAt: new Date(expiresAt),
           startDate: new Date(startDate),
@@ -159,9 +185,9 @@ export async function POST(request: NextRequest) {
       userId: session.userId,
       userName: session.name,
       userRole: session.role,
-      actionType: 'EXAM_CREATED', // Using string literal as I might need to update activity-log.ts
-      actionDescription: `${session.name} created exam "${title}"`,
-      moduleName: 'Exams',
+      actionType: ACTION.EXAM_CREATED,
+      actionDescription: `${session.name} created exam "${sanitizedTitle}"`,
+      moduleName: MODULE.EXAMS,
       targetId: exam.id
     })
 
