@@ -110,7 +110,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isCommunityActive, googleDriveFolderId } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isCommunityActive } = await request.json()
 
     // Validate expiresAt if provided
     if (expiresAt) {
@@ -155,8 +155,7 @@ export async function PUT(
         teacherName: teacherName || null,
         isDemo: existingCourse.isDemo ? true : !!isDemo, // Force true if it was already true
         isCommunityActive: isCommunityActive !== undefined ? !!isCommunityActive : undefined,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-        googleDriveFolderId: googleDriveFolderId || null
+        expiresAt: expiresAt ? new Date(expiresAt) : null 
       },
     })
 

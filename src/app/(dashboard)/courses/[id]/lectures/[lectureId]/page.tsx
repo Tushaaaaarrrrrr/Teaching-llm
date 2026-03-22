@@ -52,18 +52,6 @@ export default function LecturePage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  const getEmbedUrl = (url: string) => {
-    if (!url) return ''
-    // YouTube
-    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&\s]+)/)
-    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1&showinfo=0`
-    
-    // Google Drive
-    const driveMatch = url.match(/\/file\/d\/([^/]+)/)
-    if (driveMatch) return `https://drive.google.com/file/d/${driveMatch[1]}/preview`
-
-    return url
-  }
 
   if (loading) {
     return (
@@ -76,7 +64,6 @@ export default function LecturePage() {
 
   if (!content || !course) return null
 
-  const embedUrl = getEmbedUrl(content.videoUrl || '')
 
   return (
     <div className="page-container fade-in" style={{ maxWidth: '1000px', margin: '0 auto' }}>
@@ -94,16 +81,39 @@ export default function LecturePage() {
         background: '#fff', borderRadius: '24px', overflow: 'hidden', 
         boxShadow: '0 10px 30px rgba(0,0,0,0.08)', marginBottom: '24px' 
       }}>
-        <div style={{ position: 'relative', paddingTop: '56.25%', background: '#000' }}>
-          {embedUrl ? (
-            <iframe
-              src={embedUrl}
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+        <div style={{ 
+          padding: '40px 24px', textAlign: 'center', 
+          background: '#f8fafc', borderBottom: '1px solid #e2e8f0' 
+        }}>
+          {content.videoUrl ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+              <div style={{ 
+                width: '64px', height: '64px', borderRadius: '50%', 
+                background: '#e0e7ff', color: '#4f46e5',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '8px'
+              }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>Lecture Video Ready</h2>
+              <p style={{ fontSize: '14px', color: '#64748b', maxWidth: '400px', margin: '0 auto 8px' }}>
+                This lecture has an external video link. Click the button below to watch it in a new tab.
+              </p>
+              <a
+                href={content.videoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary"
+                style={{ padding: '12px 32px', borderRadius: '50px', fontSize: '15px' }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '8px' }}>
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Open Video in New Tab
+              </a>
+            </div>
           ) : (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <div style={{ color: '#64748b' }}>
               No video available for this lecture.
             </div>
           )}

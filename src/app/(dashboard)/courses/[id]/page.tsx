@@ -79,18 +79,6 @@ export default function CourseDetailPage() {
     })
   }
 
-  const getEmbedUrl = (url: string) => {
-    if (!url) return url
-    // YouTube
-    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&\s]+)/)
-    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`
-    
-    // Google Drive
-    const driveMatch = url.match(/\/file\/d\/([^/]+)/)
-    if (driveMatch) return `https://drive.google.com/file/d/${driveMatch[1]}/preview`
-
-    return url
-  }
 
   if (loading) {
     return (
@@ -307,13 +295,15 @@ export default function CourseDetailPage() {
                             </a>
                           )}
                           {item.videoUrl && (
-                            <Link
-                              href={`/courses/${params.id}/lectures/${item.id}`}
+                            <a
+                              href={item.videoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="btn btn-primary btn-sm"
                             >
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                               Watch
-                            </Link>
+                            </a>
                           )}
                         </div>
                       </div>
