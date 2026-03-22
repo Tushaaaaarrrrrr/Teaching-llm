@@ -83,7 +83,8 @@ export async function GET() {
       courseEvents,
       lectures,
       announcements,
-      examCountdown
+      examCountdown,
+      upcomingExams
     ] = await Promise.all([
       prisma.courseEvent.findMany({
         where: {
@@ -105,7 +106,17 @@ export async function GET() {
         orderBy: { createdAt: 'desc' },
         take: 3
       }),
-      prisma.examCountdown.findFirst()
+      prisma.examCountdown.findFirst(),
+      prisma.exam.findMany({
+        where: {
+          ...courseFilter,
+          isPublished: true,
+          expiresAt: { gt: now },
+        },
+        include: { course: { select: { name: true, color: true } } },
+        orderBy: { startDate: 'asc' },
+        take: 3
+      })
     ])
 
     // Count upcoming sessions (startTime > now, not cancelled)
@@ -140,6 +151,7 @@ export async function GET() {
       liveSessions: mappedSessions,
       lectures,
       announcements,
+      upcomingExams,
       examCountdown,
       user: {
         role: session.role,

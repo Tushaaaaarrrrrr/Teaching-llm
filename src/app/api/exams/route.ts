@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
         }
       })) : []
 
-      return await tx.exam.create({
+      const exam = await tx.exam.create({
         data: {
           title: sanitizedTitle,
           description: sanitizedDescription,
@@ -171,6 +171,7 @@ export async function POST(request: NextRequest) {
           startDate: new Date(startDate),
           durationMinutes: parseInt(durationMinutes),
           examType: examType || 'FINAL_TEST',
+          isPublished: true, // Visible immediately
           createdById: session.userId,
           questions: {
             create: questionData
@@ -180,6 +181,25 @@ export async function POST(request: NextRequest) {
           questions: true
         }
       })
+
+      // Notify enrolled students about the new exam
+      const enrollments = await tx.enrollment.findMany({
+        where: { courseId },
+        select: { userId: true }
+      })
+
+      if (enrollments.length > 0) {
+        await tx.notification.createMany({
+          data: enrollments.map(e => ({
+            userId: e.userId,
+            title: 'New Exam Created',
+            content: `A new exam "${sanitizedTitle}" has been added to your course. Check it in the Exams tab.`,
+            type: 'INFO',
+          }))
+        })
+      }
+
+      return exam
     })
 
     logActivity({
