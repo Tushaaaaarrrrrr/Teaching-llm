@@ -352,36 +352,27 @@ export default function CreateExamPage() {
               )}
 
               {questions.map((q, idx) => (
-                <div key={idx} style={{ ...neuCard, background: '#f0f2f7', border: '1px solid rgba(0,0,0,0.05)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                    <span style={{ fontWeight: 800, color: '#3636e8' }}>Question #{idx + 1}</span>
-                    <button type="button" onClick={() => handleRemoveQuestion(idx)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>Remove</button>
+                <div key={idx} style={{ ...neuCard, background: '#f8f9fc', border: '1px solid rgba(255,255,255,0.8)', padding: '24px', marginBottom: '32px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <h4 style={{ fontSize: '18px', fontWeight: 900, color: '#3636e8', margin: 0 }}>Question #{idx + 1}</h4>
+                    <button type="button" onClick={() => handleRemoveQuestion(idx)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Remove</button>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px', gap: '16px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a' }}>Question Text</label>
-                        <input type="text" value={q.text} onChange={e => handleQuestionChange(idx, 'text', e.target.value)} placeholder="Type your question..." style={neuInput} required />
-                        
-                        <div style={{ marginTop: '4px' }}>
-                           <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '4px' }}>Question Image (Optional)</label>
-                           <input 
-                              type="file" 
-                              accept="image/*" 
-                              onChange={(e) => e.target.files?.[0] && handleImageUpload(idx, e.target.files[0])}
-                              style={{ fontSize: '12px' }}
-                           />
-                           {q.imageUrl && (
-                             <div style={{ marginTop: '8px', position: 'relative', width: '120px' }}>
-                                <img src={q.imageUrl} alt="Preview" style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
-                                <button type="button" onClick={() => handleQuestionChange(idx, 'imageUrl', '')} style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px' }}>×</button>
-                             </div>
-                           )}
-                        </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    {/* Header Row: Text and Type */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: '24px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Question Text</label>
+                        <textarea 
+                          value={q.text} 
+                          onChange={e => handleQuestionChange(idx, 'text', e.target.value)} 
+                          placeholder="Type your question here..." 
+                          style={{ ...neuInput, height: '100px', resize: 'none' }} 
+                          required 
+                        />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '4px' }}>Type</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Type</label>
                         <select value={q.type} onChange={e => handleQuestionChange(idx, 'type', e.target.value)} style={neuInput}>
                           <option value="MCQ">Multiple Choice</option>
                           <option value="TRUE_FALSE">True / False</option>
@@ -390,48 +381,114 @@ export default function CreateExamPage() {
                       </div>
                     </div>
 
+                    {/* Image Upload Row */}
+                    <div style={{ background: 'rgba(255,255,255,0.4)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.6)' }}>
+                       <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '10px' }}>Question Image (Optional)</label>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                         <label style={{ ...secondaryButton, padding: '8px 20px', fontSize: '13px', cursor: 'pointer', display: 'inline-block' }}>
+                           Choose File
+                           <input 
+                              type="file" 
+                              accept="image/*" 
+                              hidden
+                              onChange={(e) => e.target.files?.[0] && handleImageUpload(idx, e.target.files[0])}
+                           />
+                         </label>
+                         <span style={{ fontSize: '13px', color: '#9999b0' }}>{q.imageUrl ? 'Image uploaded successfuly' : 'No file chosen'}</span>
+                       </div>
+                       {q.imageUrl && (
+                         <div style={{ marginTop: '16px', position: 'relative', width: '200px' }}>
+                            <img src={q.imageUrl} alt="Preview" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '14px', boxShadow: '4px 4px 12px rgba(0,0,0,0.1)' }} />
+                            <button type="button" onClick={() => handleQuestionChange(idx, 'imageUrl', '')} style={{ position: 'absolute', top: '-12px', right: '-12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>×</button>
+                         </div>
+                       )}
+                    </div>
+
+                    {/* Options Logic */}
                     {(q.type === 'MCQ' || q.type === 'TRUE_FALSE') && (
                       <div>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '8px' }}>Options</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '16px' }}>Options & Correct Answer</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                           {q.type === 'TRUE_FALSE' ? (
                             ['True', 'False'].map(opt => (
-                              <button key={opt} type="button" onClick={() => handleQuestionChange(idx, 'correctAnswer', opt)} style={{ ...neuInput, background: q.correctAnswer === opt ? '#3636e8' : '#e8eaf0', color: q.correctAnswer === opt ? '#fff' : '#1e1e3a', fontWeight: 700 }}>
-                                {opt}
-                              </button>
+                              <div key={opt} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                <input 
+                                  type="radio" 
+                                  checked={q.correctAnswer === opt} 
+                                  onChange={() => handleQuestionChange(idx, 'correctAnswer', opt)} 
+                                  style={{ width: '22px', height: '22px', accentColor: '#3636e8', cursor: 'pointer' }} 
+                                />
+                                <div style={{ ...neuInput, background: q.correctAnswer === opt ? '#3636e810' : '#e8eaf0', color: q.correctAnswer === opt ? '#3636e8' : '#1e1e3a', fontWeight: 700 }}>{opt}</div>
+                              </div>
                             ))
                           ) : (
                             q.options.map((opt, oIdx) => (
-                              <div key={oIdx} style={{ display: 'flex', gap: '8px' }}>
-                                <input type="radio" checked={q.correctAnswer === opt && opt !== ''} onChange={() => handleQuestionChange(idx, 'correctAnswer', opt)} style={{ width: '20px' }} />
-                                <input type="text" value={opt} onChange={e => {
-                                  const newOpts = [...q.options]
-                                  newOpts[oIdx] = e.target.value
-                                  handleQuestionChange(idx, 'options', newOpts)
-                                }} placeholder={`Option ${oIdx + 1}`} style={neuInput} />
+                              <div key={oIdx} style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
+                                <input 
+                                  type="radio" 
+                                  checked={q.correctAnswer === opt && opt !== ''} 
+                                  onChange={() => handleQuestionChange(idx, 'correctAnswer', opt)} 
+                                  style={{ width: '22px', height: '22px', accentColor: '#3636e8', cursor: 'pointer' }} 
+                                />
+                                <input 
+                                  type="text" 
+                                  value={opt} 
+                                  onChange={e => {
+                                    const newOpts = [...q.options]
+                                    newOpts[oIdx] = e.target.value
+                                    handleQuestionChange(idx, 'options', newOpts)
+                                  }} 
+                                  placeholder={`Option ${oIdx + 1}`} 
+                                  style={neuInput} 
+                                />
                                 {q.options.length > 2 && (
-                                  <button type="button" onClick={() => handleQuestionChange(idx, 'options', q.options.filter((_, i) => i !== oIdx))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>×</button>
+                                  <button type="button" onClick={() => handleQuestionChange(idx, 'options', q.options.filter((_, i) => i !== oIdx))} style={{ position: 'absolute', right: '-30px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '20px', fontWeight: 300 }}>×</button>
                                 )}
                               </div>
                             ))
                           )}
                         </div>
-                        {q.type === 'MCQ' && q.options.length < 5 && (
-                          <button type="button" onClick={() => handleQuestionChange(idx, 'options', [...q.options, ''])} style={{ background: 'none', border: '1px dashed #3636e8', color: '#3636e8', padding: '6px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', marginTop: '12px' }}>+ Add Option</button>
+                        {q.type === 'MCQ' && q.options.length < 6 && (
+                          <button type="button" onClick={() => handleQuestionChange(idx, 'options', [...q.options, ''])} style={{ marginTop: '20px', background: 'none', border: '2px dashed #3636e8', color: '#3636e8', padding: '10px 24px', borderRadius: '14px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>+ Add Option</button>
                         )}
                       </div>
                     )}
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '16px' }}>
+                    {/* Footer Row: Explanation & Marks */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '24px', alignItems: 'end' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '4px' }}>Explanation (Visible after submission)</label>
-                        <input type="text" value={q.explanation} onChange={e => handleQuestionChange(idx, 'explanation', e.target.value)} placeholder="Why is this correct?" style={neuInput} />
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Explanation (Optional)</label>
+                        <input 
+                          type="text" 
+                          value={q.explanation} 
+                          onChange={e => handleQuestionChange(idx, 'explanation', e.target.value)} 
+                          placeholder="Why is this correct?" 
+                          style={neuInput} 
+                        />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '4px' }}>Marks</label>
-                        <input type="number" value={q.marks} onChange={e => handleQuestionChange(idx, 'marks', parseInt(e.target.value))} style={neuInput} />
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Marks</label>
+                        <input 
+                          type="number" 
+                          value={q.marks || 1} 
+                          onChange={e => handleQuestionChange(idx, 'marks', parseInt(e.target.value))} 
+                          style={neuInput} 
+                          min="1" 
+                        />
                       </div>
                     </div>
+
+                    {q.type === 'SUBJECTIVE' && (
+                      <div style={{ background: 'rgba(54,54,232,0.05)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(54,54,232,0.1)' }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#3636e8', marginBottom: '8px' }}>Reference Answer / Keywords</label>
+                        <textarea 
+                          value={q.correctAnswer} 
+                          onChange={e => handleQuestionChange(idx, 'correctAnswer', e.target.value)} 
+                          placeholder="What should a perfect answer contain?" 
+                          style={{ ...neuInput, height: '80px', resize: 'none', background: '#fff' }} 
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

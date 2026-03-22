@@ -626,10 +626,37 @@ export default function ManageUpdatesPage() {
 
             <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
-                  <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} style={{ width: '16px', height: '16px' }} />
-                  Active Status
-                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: isActive ? '#10b981' : '#64748b' }}>
+                    {isActive ? 'ACTIVE' : 'INACTIVE'}
+                  </span>
+                  <button 
+                    type="button"
+                    onClick={() => setIsActive(!isActive)}
+                    style={{
+                      width: '50px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
+                      background: isActive ? '#10b981' : '#d1d5db',
+                      position: 'relative', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: isActive ? '0 4px 12px rgba(16,185,129,0.2)' : 'none',
+                    }}
+                  >
+                    <div style={{
+                      width: '20px', height: '20px', borderRadius: '50%', background: '#fff',
+                      position: 'absolute', top: '3px',
+                      left: isActive ? '27px' : '3px',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      {isActive ? (
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+                      ) : (
+                        <div style={{ width: '8px', height: '2px', background: '#d1d5db', borderRadius: '1px' }} />
+                      )}
+                    </div>
+                  </button>
+                  <span style={{ fontSize: '14px', fontWeight: '500', color: '#334155' }}>Update Status</span>
+                </div>
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
