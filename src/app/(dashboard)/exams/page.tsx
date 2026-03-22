@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
 
 interface Exam {
@@ -17,42 +17,20 @@ interface Exam {
   _count: { questions: number }
 }
 
-interface CourseOption {
-  id: string
-  name: string
-}
+const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function ExamsPage() {
   const router = useRouter()
-  const [exams, setExams] = useState<Exam[]>([])
-  const [courses, setCourses] = useState<CourseOption[]>([])
-  const [loading, setLoading] = useState(true)
-  const [userRole, setUserRole] = useState('')
+  
+  const { data: examsData, isLoading: loading } = useSWR('/api/exams', fetcher, {
+    refreshInterval: 30000,
+    revalidateOnFocus: true
+  })
+  
+  const { data: meData } = useSWR('/api/auth/me', fetcher)
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  async function loadData() {
-    try {
-      const [exRes, meRes, clRes] = await Promise.all([
-        fetch('/api/exams'),
-        fetch('/api/auth/me'),
-        fetch('/api/courses')
-      ])
-      const exData = await exRes.json()
-      const meData = await meRes.json()
-      const clData = await clRes.json()
-
-      setExams(Array.isArray(exData) ? exData : [])
-      setUserRole(meData.user?.role || meData.role || '')
-      setCourses(Array.isArray(clData) ? clData : [])
-    } catch (error) {
-      console.error('Error loading data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const exams: Exam[] = Array.isArray(examsData) ? examsData : []
+  const userRole = meData?.user?.role || meData?.role || ''
 
   const isAdminOrManager = userRole === 'MANAGER' || userRole === 'ADMIN'
 

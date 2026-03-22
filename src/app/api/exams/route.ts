@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
         }
       })) : []
 
-      const exam = await tx.exam.create({
+      const exam = await (tx.exam as any).create({
         data: {
           title: sanitizedTitle,
           description: sanitizedDescription,

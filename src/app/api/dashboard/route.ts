@@ -106,7 +106,7 @@ export async function GET() {
         orderBy: { createdAt: 'desc' },
         take: 3
       }),
-      prisma.examCountdown.findFirst(),
+      (prisma as any).examCountdown.findFirst(),
       prisma.exam.findMany({
         where: {
           ...courseFilter,

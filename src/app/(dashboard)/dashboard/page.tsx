@@ -518,6 +518,81 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
+
+          {/* ── Row 3: Upcoming Assessments ── */}
+          <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Upcoming Assessments</h3>
+              <Link href="/exams" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
+                View All →
+              </Link>
+            </div>
+            {!dashboardData?.upcomingExams?.length ? (
+              <div style={{ padding: '32px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
+                No upcoming exams or tests
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+                {dashboardData.upcomingExams.map((exam: any) => {
+                  const accent = exam.course?.color || '#6366f1'
+                  return (
+                    <div
+                      key={exam.id}
+                      style={{
+                        padding: '18px',
+                        borderRadius: '18px',
+                        background: '#e8eaf0',
+                        boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        transition: 'all 0.2s',
+                        borderTop: `4px solid ${accent}`
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{
+                          width: '36px', height: '36px', borderRadius: '10px',
+                          background: accent + '15',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5">
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/>
+                          </svg>
+                        </div>
+                        <span style={{ fontSize: '10px', fontWeight: '800', color: accent, background: accent + '10', padding: '2px 8px', borderRadius: '6px' }}>
+                          {exam.examType === 'FINAL_TEST' ? 'FINAL' : 'PRACTICE'}
+                        </span>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          fontSize: '14px', fontWeight: '800', color: '#1e1e3a',
+                          lineHeight: '1.3', marginBottom: '4px',
+                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                        }}>
+                          {exam.title}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#6b6b8a', fontWeight: '600' }}>
+                          {exam.course?.name}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                           <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: '600' }}>
+                             {new Date(exam.startDate || exam.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                           </span>
+                         </div>
+                        <Link href={`/exams`} style={{ fontSize: '11px', fontWeight: '700', color: '#3636e8', textDecoration: 'none' }}>
+                          View Details
+                        </Link>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </>
       )}
 
