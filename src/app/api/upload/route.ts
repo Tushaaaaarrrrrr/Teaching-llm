@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const filename = `${secureId}.${detectedExt}`
     
     const type = formData.get('type') as string || 'announcements'
-    const allowedTypes = ['announcements', 'exams']
+    const allowedTypes = ['announcements', 'exams', 'updates']
     const finalType = allowedTypes.includes(type) ? type : 'announcements'
 
     const uploadDir = path.join(process.cwd(), 'storage', finalType)

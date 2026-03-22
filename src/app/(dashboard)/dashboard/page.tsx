@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 
@@ -14,28 +14,6 @@ export default function DashboardPage() {
 
   const [activeCard, setActiveCard] = useState(0)
   const [sliding, setSliding] = useState(false)
-  const [showWelcome, setShowWelcome] = useState(false)
-  const [wasWelcomeShownInSession, setWasWelcomeShownInSession] = useState(false)
-
-  useEffect(() => {
-    const welcomeKey = `welcome_shown_${dashboardData?.user?.userId}`
-    const hasAlreadyShownLocal = localStorage.getItem(welcomeKey)
-
-    if (
-      dashboardData?.user && 
-      dashboardData.user.hasSeenWelcome === false && 
-      !showWelcome && 
-      !wasWelcomeShownInSession &&
-      !hasAlreadyShownLocal
-    ) {
-      setShowWelcome(true)
-      setWasWelcomeShownInSession(true)
-      localStorage.setItem(welcomeKey, 'true')
-      fetch('/api/users/welcome', { method: 'POST' })
-        .then(() => mutate())
-        .catch(console.error)
-    }
-  }, [dashboardData, showWelcome, wasWelcomeShownInSession, mutate])
 
   const handleNextLive = () => {
     if (!dashboardData?.liveSessions?.length) return
@@ -491,71 +469,6 @@ export default function DashboardPage() {
           }
         }
       `}</style>
-      {/* Welcome Popup */}
-      {showWelcome && (
-        <div className="modal-overlay" style={{ zIndex: 9999, backdropFilter: 'blur(8px)', background: 'rgba(15,23,42,0.6)' }} onClick={() => setShowWelcome(false)}>
-          <div 
-            className="modal" 
-            style={{ 
-              maxWidth: '560px', 
-              padding: '0', 
-              overflow: 'hidden', 
-              borderRadius: '24px', 
-              background: '#ffffff',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-            }} 
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{
-              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-              padding: '52px 32px 36px',
-              textAlign: 'center',
-              position: 'relative'
-            }}>
-              <button 
-                onClick={() => setShowWelcome(false)} 
-                style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-              
-              <div style={{ 
-                width: '84px', height: '84px', borderRadius: '50%', background: '#ffffff', 
-                margin: '0 auto 28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.1)' 
-              }}>
-                <span style={{ fontSize: '38px', lineHeight: '1' }}>👋</span>
-              </div>
-              <h2 style={{ fontSize: '34px', fontWeight: '800', color: '#ffffff', marginBottom: '10px', lineHeight: '1.2' }}>
-                Welcome to Alpha IITIAN!
-              </h2>
-              <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>
-                We're thrilled to have you here, {dashboardData?.user?.name?.split(' ')[0] || 'Student'}.
-              </p>
-            </div>
-            <div style={{ padding: '36px', textAlign: 'center', background: '#f8fafc' }}>
-              <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '36px', lineHeight: '1.6' }}>
-                Dive into a world of excellence with Alpha IITIAN. We're committed to your success. Explore your personalized dashboard and begin your journey to the top today.
-              </p>
-              <button 
-                onClick={() => setShowWelcome(false)}
-                style={{
-                  background: '#1e293b', color: '#ffffff', border: 'none', padding: '16px 44px',
-                  borderRadius: '50px', fontSize: '16px', fontWeight: '700', cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(30,41,59,0.25)', transition: 'transform 0.2s, box-shadow 0.2s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(30,41,59,0.35)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(30,41,59,0.25)' }}
-              >
-                Let's Get Started
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   )

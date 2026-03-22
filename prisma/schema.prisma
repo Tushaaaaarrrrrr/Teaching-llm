@@ -31,6 +31,7 @@ model User {
   tokenVersion            Int                    @default(0)
   violationCount          Int                    @default(0)
   encryptedTempPassword   String?
+  lastDailyDigestAt       DateTime?
   activityLogs            ActivityLog[]
   announcements           Announcement[]         @relation("AnnouncementCreator")
   chatMessages            ChatMessage[]          @relation("ChatMsgSender")
@@ -51,6 +52,8 @@ model User {
   assignedTickets         SupportTicket[]        @relation("TicketAssignee")
   supportTickets          SupportTicket[]        @relation("TicketStudent")
   ticketReplies           TicketReply[]          @relation("ReplyAuthor")
+  createdUpdates          SystemUpdate[]         @relation("UpdateCreator")
+  updateViews             UpdateView[]
 }
 
 model Course {
@@ -482,4 +485,40 @@ model QuestionBank {
   updatedAt     DateTime @updatedAt
 
   @@index([subject])
+}
+
+model SystemUpdate {
+  id            String       @id @default(cuid())
+  title         String
+  content       String       // Rich HTML content
+  type          String       @default("GENERAL") // WELCOME, GENERAL, DAILY_DIGEST
+  imageUrl      String?
+  isActive      Boolean      @default(true)
+  priority      Int          @default(0)
+  animationType String?      // null, "confetti", "fireworks", "festival"
+  showDelay     Int          @default(0) // Seconds delay before showing
+  targetRole    String?      // null = all, "STUDENT", "ADMIN"
+  scheduledAt   DateTime?
+  expiresAt     DateTime?
+  createdById   String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  createdBy     User         @relation("UpdateCreator", fields: [createdById], references: [id])
+  views         UpdateView[]
+
+  @@index([type])
+  @@index([isActive])
+  @@index([createdById])
+}
+
+model UpdateView {
+  id       String       @id @default(cuid())
+  updateId String
+  userId   String
+  viewedAt DateTime     @default(now())
+  update   SystemUpdate @relation(fields: [updateId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([updateId, userId])
+  @@index([userId])
 }
