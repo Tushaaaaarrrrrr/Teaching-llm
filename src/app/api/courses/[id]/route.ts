@@ -43,7 +43,22 @@ export async function GET(
         courseEvents: {
           orderBy: { startTime: 'desc' },
         },
+        topics: {
+          include: {
+            content: {
+              select: {
+                videoUrl: true,
+                pptUrl: true,
+              },
+            },
+          },
+        },
         createdBy: { select: { name: true } },
+        _count: {
+          select: {
+            courseEvents: true,
+          },
+        },
       },
     })
 
@@ -51,7 +66,29 @@ export async function GET(
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
 
-    return NextResponse.json(courseData)
+    // Calculate dynamic counts
+    const topicsCount = courseData.topics.length
+    let lecturesCount = 0
+    let materialsCount = 0
+
+    courseData.topics.forEach(topic => {
+      topic.content.forEach(content => {
+        if (content.videoUrl) lecturesCount++
+        if (content.pptUrl) materialsCount++
+      })
+    })
+
+    const result = {
+      ...courseData,
+      _count: {
+        ...courseData._count,
+        topics: topicsCount,
+        lectures: lecturesCount,
+        materials: materialsCount,
+      }
+    }
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error fetching course:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

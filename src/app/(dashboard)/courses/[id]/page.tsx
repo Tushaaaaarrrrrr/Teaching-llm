@@ -29,6 +29,7 @@ interface CourseDetail {
   expiresAt?: string
   createdBy: { name: string }
   instructorAssignments?: { instructor: { id: string; name: string } }[]
+  _count?: { topics: number; lectures: number; materials: number }
 }
 
 export default function CourseDetailPage() {
@@ -140,7 +141,7 @@ export default function CourseDetailPage() {
                   </span>
                 )}
                 <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  {topics.length} topic{topics.length !== 1 ? 's' : ''} &middot; {topics.reduce((acc, t) => acc + t.content.length, 0)} lectures
+                  {course._count?.topics || 0} topic{(course._count?.topics !== 1) ? 's' : ''} &middot; {course._count?.lectures || 0} lecture{(course._count?.lectures !== 1) ? 's' : ''} &middot; {course._count?.materials || 0} material{(course._count?.materials !== 1) ? 's' : ''}
                 </span>
                 {course.expiresAt && (
                   <span style={{ 

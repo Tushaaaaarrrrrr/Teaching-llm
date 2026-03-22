@@ -14,7 +14,7 @@ interface CourseItem {
   color: string
   icon: string
   createdBy: { name: string }
-  _count: { lectures: number; materials: number; courseEvents: number }
+  _count: { lectures: number; materials: number; topics: number; courseEvents: number }
 }
 
 const COURSE_ICONS: Record<string, React.ReactNode> = {
@@ -72,7 +72,7 @@ export default function CoursesPage() {
 
       <div className="grid-3">
         {filtered.map((course: CourseItem) => (
-          <Link key={course.id} href={`/courses/${course.id}`} style={{ textDecoration: 'none' }}>
+          <Link key={course.id} href={`/courses/${course.id}`} style={{ textDecoration: 'none', display: 'flex' }}>
             <div
               style={{
                 background: '#e8eaf0',
@@ -81,6 +81,10 @@ export default function CoursesPage() {
                 overflow: 'hidden',
                 cursor: 'pointer',
                 transition: 'all 0.25s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                height: '100%',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.transform = 'translateY(-4px)'
@@ -121,8 +125,18 @@ export default function CoursesPage() {
               </div>
 
               {/* Card Body */}
-              <div style={{ padding: '18px 20px 16px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px', lineHeight: '1.3' }}>
+              <div style={{ padding: '18px 20px 16px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <h3 style={{ 
+                  fontSize: '16px', 
+                  fontWeight: '700', 
+                  color: '#1e1e3a', 
+                  marginBottom: '4px', 
+                  lineHeight: '1.3',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}>
                   {course.name}
                 </h3>
 
@@ -179,7 +193,21 @@ export default function CoursesPage() {
                   gap: '10px',
                   paddingTop: '12px',
                   borderTop: '1.5px solid rgba(0,0,0,0.06)',
+                  marginTop: 'auto',
                 }}>
+                  <div style={{
+                    flex: 1,
+                    padding: '8px 10px',
+                    borderRadius: '14px',
+                    background: '#e8eaf0',
+                    boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>
+                      {course._count?.topics || 0}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Topics</div>
+                  </div>
                   <div style={{
                     flex: 1,
                     padding: '8px 10px',
@@ -205,19 +233,6 @@ export default function CoursesPage() {
                       {course._count?.materials || 0}
                     </div>
                     <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Materials</div>
-                  </div>
-                  <div style={{
-                    flex: 1,
-                    padding: '8px 10px',
-                    borderRadius: '14px',
-                    background: '#e8eaf0',
-                    boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
-                    textAlign: 'center',
-                  }}>
-                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>
-                      {course._count?.courseEvents || 0}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Sessions</div>
                   </div>
                 </div>
               </div>

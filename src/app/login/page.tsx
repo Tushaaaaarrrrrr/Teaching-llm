@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import CreepyButton from '@/components/ui/CreepyButton'
 
 function LoginContent() {
   const router = useRouter()
@@ -10,6 +11,48 @@ function LoginContent() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isAwake, setIsAwake] = useState(false)
+
+  const signInBtnRef = useRef<HTMLDivElement>(null)
+  const googleBtnRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    let idleTimeout: NodeJS.Timeout;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      let awake = false;
+      const checkDist = (ref: React.RefObject<HTMLElement>) => {
+        if (!ref.current) return false;
+        const rect = ref.current.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+        return dist < 250;
+      };
+
+      if (checkDist(signInBtnRef) || checkDist(googleBtnRef)) {
+        awake = true;
+      }
+      setIsAwake(awake);
+
+      clearTimeout(idleTimeout);
+      idleTimeout = setTimeout(() => {
+        setIsAwake(true);
+        setTimeout(() => setIsAwake(false), 2000);
+      }, 30000);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    idleTimeout = setTimeout(() => {
+      setIsAwake(true);
+      setTimeout(() => setIsAwake(false), 2000);
+    }, 30000);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      clearTimeout(idleTimeout);
+    };
+  }, []);
 
   // Show error from OAuth redirect (e.g. ?error=GoogleLoginNotConfigured)
   const oauthError = searchParams.get('error')
@@ -59,9 +102,9 @@ function LoginContent() {
         {/* Logo & Brand Horizontal Layout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '40px', width: '100%', maxWidth: '440px', background: 'rgba(255,255,255,0.4)', padding: '16px 24px', borderRadius: '32px', boxShadow: 'inset 4px 4px 8px #d1d5db, inset -4px -4px 8px #ffffff' }}>
           <div style={{ 
-            width: '80px', 
-            height: '80px', 
-            borderRadius: '20px', 
+            width: '120px', 
+            height: '120px', 
+            borderRadius: '24px', 
             background: '#F3F4F6', 
             boxShadow: '6px 6px 12px #d1d5db, -6px -6px 12px #ffffff', 
             display: 'flex', 
@@ -77,7 +120,7 @@ function LoginContent() {
                 width: '100%', 
                 height: '100%', 
                 objectFit: 'contain',
-                padding: '8px'
+                padding: '4px'
               }} 
             />
           </div>
@@ -183,21 +226,16 @@ function LoginContent() {
               <label className="form-label" htmlFor="password">Password</label>
               <input id="password" type="password" className="form-input" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{ width: '100%', padding: '14px', background: loading ? '#9999cc' : '#3636e8', color: 'white', border: 'none', borderRadius: '50px', fontSize: '15px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: loading ? 'none' : '4px 4px 10px rgba(54,54,232,0.4), -2px -2px 6px rgba(255,255,255,0.8)' }}
-            >
-              {loading ? (
-                <>
-                  <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                    <path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/>
-                  </svg>
-                  Signing In...
-                </>
-              ) : 'Sign In'}
-            </button>
+            <div ref={signInBtnRef}>
+              <CreepyButton
+                type="submit"
+                loading={loading}
+                disabled={loading}
+                isAwake={isAwake}
+              >
+                Sign In
+              </CreepyButton>
+            </div>
           </form>
 
           {/* Divider */}
@@ -214,6 +252,7 @@ function LoginContent() {
 
           {/* Google Sign-In Button */}
           <button
+            ref={googleBtnRef}
             type="button"
             onClick={() => { window.location.href = '/api/auth/google' }}
             style={{ width: '100%', padding: '13px 20px', background: '#F3F4F6', color: '#1e1e3a', border: 'none', borderRadius: '50px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff', transition: 'all 0.2s ease' }}

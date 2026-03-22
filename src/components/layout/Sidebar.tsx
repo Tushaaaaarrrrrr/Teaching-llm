@@ -227,9 +227,9 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '4px 8px', marginBottom: '36px' }}>
         <div style={{
-          width: '42px',
-          height: '42px',
-          borderRadius: '14px',
+          width: '56px',
+          height: '56px',
+          borderRadius: '16px',
           background: '#e8eaf0',
           boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
           display: 'flex',
@@ -245,7 +245,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               width: '100%', 
               height: '100%', 
               objectFit: 'contain',
-              padding: '2px'
+              padding: '0px'
             }} 
           />
         </div>

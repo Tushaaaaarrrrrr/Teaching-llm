@@ -24,10 +24,18 @@ export async function GET() {
       where,
       include: {
         createdBy: { select: { name: true } },
+        topics: {
+          include: {
+            content: {
+              select: {
+                videoUrl: true,
+                pptUrl: true,
+              },
+            },
+          },
+        },
         _count: {
           select: {
-            lectures: true,
-            materials: true,
             courseEvents: true,
           },
         },
@@ -35,7 +43,35 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json(courses)
+    const coursesWithCounts = courses.map(course => {
+      const topicsCount = course.topics.length
+      let lecturesCount = 0
+      let materialsCount = 0
+
+      course.topics.forEach(topic => {
+        topic.content.forEach(content => {
+          if (content.videoUrl) lecturesCount++
+          if (content.pptUrl) materialsCount++
+        })
+      })
+
+      // Remove topics from the response to keep payload small, 
+      // or keep it if needed. The frontend CoursesPage doesn't seem to use it yet.
+      // But we need to match the expected _count structure for compatibility.
+      
+      const { topics, ...rest } = course
+      return {
+        ...rest,
+        _count: {
+          ...course._count,
+          topics: topicsCount,
+          lectures: lecturesCount,
+          materials: materialsCount,
+        }
+      }
+    })
+
+    return NextResponse.json(coursesWithCounts)
   } catch (error) {
     console.error('Error fetching courses:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
