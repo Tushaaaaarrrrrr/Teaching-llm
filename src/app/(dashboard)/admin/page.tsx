@@ -404,7 +404,7 @@ export default function AdminPage() {
                   boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
                   transition: 'box-shadow 0.2s',
                   opacity: user.isTerminated ? 0.7 : 1,
-                  flexWrap: 'wrap',
+                  flexWrap: 'nowrap',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
@@ -480,92 +480,79 @@ export default function AdminPage() {
                       </div>
                     )}
                   </div>
-                  {/* Right side group */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexShrink: 0 }}>
-                    {/* Google Login Tag */}
-                    {user.isGoogleAuth && (
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '6px',
-                        fontSize: '11px', fontWeight: '700', color: '#1e1e3a',
-                        background: '#ffffff', padding: '5px 14px', borderRadius: '50px',
-                        boxShadow: '2px 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                        </svg>
-                        Google Login
-                      </span>
-                    )}
+                  {/* Right-side Columns for Alignment */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
+                    {/* Google Login Tag Column */}
+                    <div style={{ width: '130px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                      {user.isGoogleAuth && (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '6px',
+                          fontSize: '11px', fontWeight: '700', color: '#1e1e3a',
+                          background: '#ffffff', padding: '5px 14px', borderRadius: '50px',
+                          boxShadow: '2px 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                          </svg>
+                          Google Login
+                        </span>
+                      )}
+                    </div>
 
-                    <span className="badge" style={{ background: rc.bg, color: rc.color, flexShrink: 0, minWidth: '85px', textAlign: 'center' }}>
-                      {user.role}
-                    </span>
+                    {/* Role Badge Column */}
+                    <div style={{ width: '100px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                      <span className="badge" style={{ background: rc.bg, color: rc.color, minWidth: '85px', textAlign: 'center' }}>
+                        {user.role}
+                      </span>
+                    </div>
                     
-                    <span style={{ fontSize: '12px', color: '#9999b0', flexShrink: 0, minWidth: '95px', textAlign: 'right' }}>
+                    {/* Date Column */}
+                    <div style={{ width: '100px', flexShrink: 0, textAlign: 'right', fontSize: '12px', color: '#9999b0' }}>
                       {new Date(user.createdAt).toLocaleDateString('en-US', {
                         month: 'short', day: 'numeric', year: 'numeric'
                       })}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                    <button onClick={() => setSelectedUserId(user.id)} className="btn btn-ghost btn-sm">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
-                      Edit
-                    </button>
-                    {/* Terminate / Revert toggle - based on MANAGER or ADMIN with canTerminate */}
-                    {!user.isSuperManager && user.role === 'STUDENT' && (userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate)) && (
-                      <button
-                        onClick={() => handleToggleTerminate(user)}
-                        disabled={togglingId === user.id}
-                        className="btn btn-sm"
-                        style={{
-                          color: user.isTerminated ? '#10b981' : '#ef4444',
-                          border: user.isTerminated ? '1px solid #d1fae5' : '1px solid #fee2e2',
-                          background: user.isTerminated ? 'rgba(16,185,129,0.04)' : 'rgba(239,68,68,0.04)',
-                          minWidth: '90px',
-                        }}
-                      >
-                        {togglingId === user.id ? (
-                          <svg className="spinner" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                            <path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/>
-                          </svg>
-                        ) : user.isTerminated ? (
-                          <>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="1 4 1 10 7 10"/>
-                              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-                            </svg>
-                            Revert
-                          </>
-                        ) : (
-                          <>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10"/>
-                              <line x1="15" y1="9" x2="9" y2="15"/>
-                              <line x1="9" y1="9" x2="15" y2="15"/>
-                            </svg>
-                            Terminate
-                          </>
-                        )}
-                      </button>
-                    )}
-                    {/* Delete - only for MANAGER or privileged ADMIN, never for Super Manager */}
-                    {!user.isSuperManager && (userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate && user.role === 'STUDENT')) && (
-                      <button onClick={() => handleDelete(user.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
+                    </div>
+
+                    {/* Actions Column */}
+                    <div style={{ width: '180px', display: 'flex', gap: '6px', justifyContent: 'flex-end', flexShrink: 0 }}>
+                      <button onClick={() => setSelectedUserId(user.id)} className="btn btn-ghost btn-sm">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="3 6 5 6 21 6"/>
-                          <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
+                        Edit
                       </button>
-                    )}
+                      {!user.isSuperManager && user.role === 'STUDENT' && (userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate)) && (
+                        <button
+                          onClick={() => handleToggleTerminate(user)}
+                          disabled={togglingId === user.id}
+                          className="btn btn-sm"
+                          style={{
+                            color: user.isTerminated ? '#10b981' : '#ef4444',
+                            border: user.isTerminated ? '1px solid #d1fae5' : '1px solid #fee2e2',
+                            background: user.isTerminated ? 'rgba(16,185,129,0.04)' : 'rgba(239,68,68,0.04)',
+                            minWidth: '90px',
+                          }}
+                        >
+                          {togglingId === user.id ? (
+                            <svg className="spinner" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/></svg>
+                          ) : user.isTerminated ? (
+                            <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Revert</>
+                          ) : (
+                            <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Terminate</>
+                          )}
+                        </button>
+                      )}
+                      {!user.isSuperManager && (userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate && user.role === 'STUDENT')) && (
+                        <button onClick={() => handleDelete(user.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
