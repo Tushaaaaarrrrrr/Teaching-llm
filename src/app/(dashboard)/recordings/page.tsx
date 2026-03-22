@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 interface ContentItem {
   id: string
@@ -225,15 +226,15 @@ export default function RecordingsPage() {
                     File
                   </a>
                 )}
-                <button
-                  onClick={() => setVideoModal({ url: lec.videoUrl, title: lec.title })}
+                <Link
+                  href={`/courses/${lec.topic?.course?.id}/lectures/${lec.id}`}
                   className="btn btn-primary btn-sm"
                 >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="5 3 19 12 5 21 5 3"/>
                   </svg>
                   Watch
-                </button>
+                </Link>
               </div>
             </div>
           )
