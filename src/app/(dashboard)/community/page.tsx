@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { Plus, Send } from 'lucide-react'
+import CreatePostModal from '@/components/CreatePostModal'
 
 interface ClassItem {
   id: string
@@ -33,7 +35,10 @@ function CommunityContent() {
   const [messages, setMessages] = useState<CommMsg[]>([])
   const [input, setInput] = useState('')
   const [userId, setUserId] = useState('')
+  const [userName, setUserName] = useState('')
+  const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [userRole, setUserRole] = useState('STUDENT')
+  const [showCreatePost, setShowCreatePost] = useState(false)
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [modifying, setModifying] = useState(false)
@@ -64,6 +69,8 @@ function CommunityContent() {
     fetch('/api/auth/me').then(r => r.json()).then(d => {
       setUserRole(d.user?.role || 'STUDENT')
       setUserId(d.user?.id || '')
+      setUserName(d.user?.name || '')
+      setUserAvatar(d.user?.avatar || null)
     })
 
     fetch('/api/classes').then(r => r.json()).then(data => {
@@ -493,6 +500,20 @@ function CommunityContent() {
             {/* Input - Hidden if disabled for students */}
             {(selectedClass.isCommunityActive || userRole !== 'STUDENT') && (
               <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button
+                  onClick={() => setShowCreatePost(true)}
+                  title="Draft a Moment"
+                  style={{
+                    width: '44px', height: '44px', borderRadius: '50%', border: 'none',
+                    cursor: 'pointer', background: '#e8eaf0', color: '#3636e8',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    ...neuSmall, transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
+                  onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+                >
+                  <Plus size={20} />
+                </button>
               <div style={{ flex: 1, position: 'relative' }}>
                 <input
                   value={input}
@@ -522,13 +543,39 @@ function CommunityContent() {
                   transition: 'all 0.2s',
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="22" y1="2" x2="11" y2="13"/>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
+                <Send size={18} />
               </button>
             </div>
           )}
+
+          <CreatePostModal
+            isOpen={showCreatePost}
+            onClose={() => setShowCreatePost(false)}
+            onPublish={async (content) => {
+              const prevInput = input
+              setInput(content)
+              // We need to call sendMessage but with the new content
+              // Since sendMessage uses the 'input' state, we can adapt it or call the API directly
+              const optimistic: CommMsg = {
+                id: 'temp-' + Date.now(),
+                content: content,
+                createdAt: new Date().toISOString(),
+                sender: { id: userId, name: userName || 'You', role: userRole },
+              }
+              setMessages(prev => [...prev, optimistic])
+              setInput('') // Clear input after optimistic update
+
+              await fetch(`/api/community/${selectedClass.id}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: content }),
+              })
+              loadMessages(selectedClass.id)
+            }}
+            userName={userName}
+            userAvatar={userAvatar}
+            userRole={userRole}
+          />
         </>
       )}
     </div>

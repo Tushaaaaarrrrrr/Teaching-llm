@@ -85,10 +85,28 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   const getGreeting = () => {
     const hour = new Date().getHours()
-    if (hour >= 5 && hour < 12) return 'Good Morning'
-    if (hour >= 12 && hour < 17) return 'Good Afternoon'
-    if (hour >= 17 && hour < 21) return 'Good Evening'
-    return 'Good Night, take rest'
+    if (hour >= 5 && hour < 12) {
+      return {
+        heading: 'Good Morning',
+        subtext: 'Hope you’re ready for a productive day ahead.'
+      }
+    }
+    if (hour >= 12 && hour < 17) {
+      return {
+        heading: 'Good Afternoon',
+        subtext: 'Keep going strong, you’re making great progress.'
+      }
+    }
+    if (hour >= 17 && hour < 21) {
+      return {
+        heading: 'Good Evening',
+        subtext: 'Take a moment to relax and review your day.'
+      }
+    }
+    return {
+      heading: 'Good Night',
+      subtext: 'You’ve done well today. Get some good rest.'
+    }
   }
 
   // const [notifications, setNotifications] = useState<Notification[]>([]) - Removed
@@ -165,16 +183,25 @@ export default function Header({ userName, userRole }: HeaderProps) {
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', letterSpacing: '-0.5px' }}>
-          {matchedKey === '/dashboard' ? getGreeting() : pageInfo.title}
-        </h1>
         {matchedKey === '/dashboard' ? (
-          <div style={{ fontSize: '16px', fontWeight: '400', color: '#1e1e3a' }}>
-            {currentUserName}
-          </div>
-        ) : pageInfo.subtitle ? (
-          <p style={{ fontSize: '13px', color: '#9999b0', marginTop: '2px' }}>{pageInfo.subtitle}</p>
-        ) : null}
+          <>
+            <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', letterSpacing: '-0.5px' }}>
+              {getGreeting().heading}
+            </h1>
+            <p style={{ fontSize: '14px', color: '#6b6b8a', marginTop: '2px', fontWeight: '500' }}>
+              {getGreeting().subtext}
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', letterSpacing: '-0.5px' }}>
+              {pageInfo.title}
+            </h1>
+            {pageInfo.subtitle ? (
+              <p style={{ fontSize: '13px', color: '#9999b0', marginTop: '2px' }}>{pageInfo.subtitle}</p>
+            ) : null}
+          </>
+        )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

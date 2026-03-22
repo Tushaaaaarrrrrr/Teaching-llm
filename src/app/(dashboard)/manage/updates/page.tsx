@@ -65,6 +65,7 @@ export default function ManageUpdatesPage() {
   const [expiresAt, setExpiresAt] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [saving, setSaving] = useState(false)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
 
   // Image cropper state
   const [cropperImage, setCropperImage] = useState<string | null>(null)
@@ -179,12 +180,20 @@ export default function ManageUpdatesPage() {
   }
 
   async function toggleActive(u: SystemUpdate) {
-    await fetch(`/api/updates/${u.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isActive: !u.isActive }),
-    })
-    mutate('/api/updates')
+    if (togglingId) return
+    setTogglingId(u.id)
+    try {
+      await fetch(`/api/updates/${u.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !u.isActive }),
+      })
+      await mutate('/api/updates')
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setTogglingId(null)
+    }
   }
 
   // Image upload handler
@@ -302,19 +311,34 @@ export default function ManageUpdatesPage() {
                   </div>
 
                   {/* Active toggle */}
-                  <button onClick={() => toggleActive(u)} style={{
-                    width: '40px', height: '22px', borderRadius: '11px', border: 'none', cursor: 'pointer',
-                    background: u.isActive ? '#10b981' : '#d1d5db',
-                    position: 'relative', transition: 'background 0.2s', flexShrink: 0,
-                  }}>
-                    <div style={{
-                      width: '18px', height: '18px', borderRadius: '50%', background: '#fff',
-                      position: 'absolute', top: '2px',
-                      left: u.isActive ? '20px' : '2px',
-                      transition: 'left 0.2s',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                    }} />
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    <span style={{ fontSize: '10px', fontWeight: '700', color: u.isActive ? '#10b981' : '#9999b0', textTransform: 'uppercase' }}>
+                      {u.isActive ? 'On' : 'Off'}
+                    </span>
+                    <button 
+                      onClick={() => toggleActive(u)} 
+                      disabled={togglingId === u.id}
+                      style={{
+                        width: '44px', height: '22px', borderRadius: '11px', border: 'none', cursor: togglingId === u.id ? 'wait' : 'pointer',
+                        background: u.isActive ? '#10b981' : '#d1d5db',
+                        position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+                        opacity: togglingId === u.id ? 0.7 : 1,
+                      }}
+                    >
+                      <div style={{
+                        width: '18px', height: '18px', borderRadius: '50%', background: '#fff',
+                        position: 'absolute', top: '2px',
+                        left: u.isActive ? '24px' : '2px',
+                        transition: 'left 0.2s',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        {togglingId === u.id && (
+                          <div style={{ width: '10px', height: '10px', border: '2px solid #6366f1', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                        )}
+                      </div>
+                    </button>
+                  </div>
 
                   {/* Actions */}
                   <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
@@ -733,6 +757,9 @@ export default function ManageUpdatesPage() {
               0% { opacity: 0; transform: scale(0.85); }
               70% { opacity: 1; transform: scale(1.02); }
               100% { opacity: 1; transform: scale(1); }
+            }
+            @keyframes spin {
+              to { transform: rotate(360deg); }
             }
           `}</style>
         </div>

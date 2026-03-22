@@ -15,10 +15,29 @@ export async function PUT(
     const { id } = await params
     const { isPublished } = await request.json()
 
+    const attempt = await (prisma.examAttempt as any).findUnique({
+      where: { id },
+      include: { exam: { select: { title: true } } }
+    })
+
+    if (!attempt) return NextResponse.json({ error: 'Attempt not found' }, { status: 404 })
+
     const updatedAttempt = await (prisma.examAttempt as any).update({
       where: { id },
       data: { isPublished: !!isPublished }
     })
+
+    // Notify if publishing for the first time or re-publishing
+    if (!!isPublished && !attempt.isPublished) {
+      await prisma.notification.create({
+        data: {
+          userId: attempt.userId,
+          title: 'Exam Result Published',
+          content: `The final result for "${attempt.exam.title}" is now available for review.`,
+          type: 'INFO'
+        }
+      })
+    }
 
     return NextResponse.json(updatedAttempt)
   } catch (error) {

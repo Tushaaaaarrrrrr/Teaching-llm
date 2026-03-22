@@ -26,8 +26,39 @@ export default function DashboardPage() {
 
   // Map data from SWR response
   const stats = dashboardData?.stats || null
+  const examCountdown = dashboardData?.examCountdown || null
   const role = dashboardData?.user?.role || ''
   const isManager = role === 'MANAGER'
+
+  const [isEditingTimer, setIsEditingTimer] = useState(false)
+  const [timerTitle, setTimerTitle] = useState('')
+  const [timerDays, setTimerDays] = useState(0)
+
+  const handleUpdateTimer = async () => {
+    try {
+      const res = await fetch('/api/admin/dashboard/countdown', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: timerTitle, daysLeft: Number(timerDays) })
+      })
+      if (res.ok) {
+        mutate()
+        setIsEditingTimer(false)
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const getTimerColor = (days: number) => {
+    if (days === 0) return '#ffffff'
+    if (days <= 3) {
+      // Transition from yellow (#fef3c7) to light red (#fee2e2)
+      // For simplicity, we'll use solid colors or a gradient
+      return 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' 
+    }
+    return '#fef3c7' // Soft yellow
+  }
 
   const liveSessions = dashboardData?.liveSessions || []
   const liveNow = liveSessions.filter((s: any) => s.status === 'live').slice(0, 3)
@@ -52,16 +83,31 @@ export default function DashboardPage() {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
       )},
     ]),
+    { 
+      label: examCountdown?.title || 'Exam Countdown', 
+      value: `${examCountdown?.daysLeft ?? 0} Days`, 
+      color: (examCountdown?.daysLeft ?? 0) <= 3 && (examCountdown?.daysLeft ?? 0) > 0 ? '#ef4444' : '#f59e0b', 
+      bg: getTimerColor(examCountdown?.daysLeft ?? 0),
+      isTimer: true,
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+      )
+    }
   ]
 
   if (loading) {
     return (
       <div className="page-container">
-        <div className="grid-3">
-          {[1,2,3].map(i => (
-            <div key={i} className="card" style={{ padding: '24px' }}>
-              <div className="skeleton" style={{ height: '14px', width: '80px', marginBottom: '12px' }} />
-              <div className="skeleton" style={{ height: '28px', width: '48px' }} />
+        <div className="grid-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div className="skeleton" style={{ height: '48px', width: '48px', borderRadius: '14px' }} />
+              <div style={{ flex: 1 }}>
+                <div className="skeleton" style={{ height: '14px', width: '80px', marginBottom: '8px' }} />
+                <div className="skeleton" style={{ height: '28px', width: '48px' }} />
+              </div>
             </div>
           ))}
         </div>
@@ -75,39 +121,118 @@ export default function DashboardPage() {
   return (
     <div className="page-container fade-in">
 
-      {/* Stats Grid — untouched */}
-      <div className={isManager ? 'grid-4' : 'grid-3'} style={{ marginBottom: '24px' }}>
+      {/* Stats Grid */}
+      <div className="grid-4" style={{ marginBottom: '24px' }}>
         {statCards.map((card) => (
           <div key={card.label} className="card" style={{
-            padding: '20px',
+            padding: '22px 24px',
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            gap: '12px',
+            alignItems: 'center',
+            gap: '20px',
+            background: card.isTimer ? card.bg : undefined,
+            position: 'relative',
+            overflow: 'hidden'
           }}>
             <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: card.bg,
+              width: '48px',
+              height: '48px',
+              borderRadius: '14px',
+              background: card.isTimer ? 'rgba(255,255,255,0.4)' : card.bg,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
+              color: card.color
             }}>
               {card.icon}
             </div>
-            <div>
-              <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ 
+                fontSize: '11px', 
+                color: card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(0,0,0,0.5)' : '#9999b0', 
+                fontWeight: '700', 
+                marginBottom: '2px', 
+                textTransform: 'uppercase', 
+                letterSpacing: '0.06em' 
+              }}>
                 {card.label}
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1' }}>
+              <div style={{ 
+                fontSize: '26px', 
+                fontWeight: '800', 
+                color: card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? '#1e1e3a' : '#1e1e3a', 
+                lineHeight: '1.1' 
+              }}>
                 {card.value}
               </div>
             </div>
+
+            {card.isTimer && isManager && (
+              <button 
+                onClick={() => {
+                  setTimerTitle(examCountdown?.title || 'Exam Countdown')
+                  setTimerDays(examCountdown?.daysLeft || 0)
+                  setIsEditingTimer(true)
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e1e3a" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+            )}
           </div>
         ))}
       </div>
+
+      {/* Timer Edit Modal */}
+      {isEditingTimer && (
+        <div className="modal-overlay" style={{ zIndex: 1000 }}>
+          <div className="modal" style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h3 style={{ fontWeight: 800 }}>Edit Exam Timer</h3>
+              <button onClick={() => setIsEditingTimer(false)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="form-group">
+                <label className="form-label">Headline / Title</label>
+                <input 
+                  className="form-input"
+                  value={timerTitle}
+                  onChange={e => setTimerTitle(e.target.value)}
+                  placeholder="e.g., JEE Advanced 2026"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Days Remaining</label>
+                <input 
+                  className="form-input"
+                  type="number"
+                  value={timerDays}
+                  onChange={e => setTimerDays(Number(e.target.value))}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setIsEditingTimer(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleUpdateTimer}>Update Timer</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {!isManager && (
         <>

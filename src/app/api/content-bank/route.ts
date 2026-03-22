@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { text, type, subject, options, correctAnswer, explanation, imageUrl } = await request.json()
+  const { text, type, subject, options, correctAnswer, explanation, imageUrl, marks } = await request.json()
 
   if (!text || !subject || !correctAnswer) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
         correctAnswer,
         explanation,
         imageUrl,
+        marks: marks ? parseInt(marks) : 1,
         createdById: session.userId,
       }
     })

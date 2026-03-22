@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from 'react'
 
+interface QuestionForm {
+  text: string
+  type: string
+  options: string[]
+  correctAnswer: string
+  explanation: string
+  marks: number
+  imageUrl: string
+  subject: string
+}
+
 export default function ContentBankPage() {
   const [questions, setQuestions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -9,9 +20,18 @@ export default function ContentBankPage() {
   const [user, setUser] = useState<any>(null)
   const [showModal, setShowModal] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({
-    text: '', type: 'MCQ', subject: '', options: '', correctAnswer: '', explanation: '', imageUrl: ''
-  })
+  
+  const initialForm: QuestionForm = {
+    text: '', 
+    type: 'MCQ', 
+    subject: '', 
+    options: ['', ''], 
+    correctAnswer: '', 
+    explanation: '', 
+    imageUrl: '',
+    marks: 1
+  }
+  const [form, setForm] = useState<QuestionForm>(initialForm)
 
   useEffect(() => {
     fetch('/api/auth/me').then(res => res.json()).then(data => {
@@ -49,27 +69,57 @@ export default function ContentBankPage() {
     return true
   })
 
+  const handleImageUpload = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', 'content-bank')
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+      const data = await res.json()
+      if (data.url) {
+        setForm({ ...form, imageUrl: data.url })
+      }
+    } catch (error) {
+      console.error('Image upload failed', error)
+    }
+  }
+
   async function handleSave() {
-    if (!form.text || !form.subject || !form.correctAnswer) return alert('Please fill required fields')
+    if (!form.text || !form.subject || !form.correctAnswer) return alert('Please fill required fields (Question Text, Subject, and Correct Answer)')
+    
     setSaving(true)
     try {
+      const payload = {
+        ...form,
+        options: (form.type === 'MCQ' || form.type === 'TRUE_FALSE') ? JSON.stringify(form.options) : null
+      }
+
       const res = await fetch('/api/content-bank', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       })
+      
       if (res.ok) {
         setShowModal(false)
-        setForm({ text: '', type: 'MCQ', subject: '', options: '', correctAnswer: '', explanation: '', imageUrl: '' })
+        setForm(initialForm)
         loadQuestions()
       } else {
         const d = await res.json()
         alert(d.error || 'Failed to save')
       }
-    } catch (e) { console.error(e) }
-    setSaving(false)
+    } catch (e) { 
+      console.error(e) 
+    } finally {
+      setSaving(false)
+    }
   }
 
+  // Shared Styles from Exam system
   const neuCard: React.CSSProperties = {
     borderRadius: '20px', background: '#e8eaf0',
     boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
@@ -77,9 +127,24 @@ export default function ContentBankPage() {
   }
 
   const neuInput: React.CSSProperties = {
-    width: '100%', padding: '12px 20px', borderRadius: '15px', border: 'none',
-    background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff',
-    fontSize: '14px', outline: 'none',
+    width: '100%', padding: '12px 16px', borderRadius: '14px', border: 'none',
+    background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+    fontSize: '14px', color: '#1e1e3a', outline: 'none',
+  }
+
+  const neuButton: React.CSSProperties = {
+    padding: '12px 28px', borderRadius: '50px', border: 'none',
+    background: '#3636e8', color: '#fff', fontSize: '14px', fontWeight: 700,
+    cursor: 'pointer',
+    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)',
+    transition: 'all 0.2s ease',
+  }
+
+  const secondaryButton: React.CSSProperties = {
+    ...neuButton,
+    background: '#fff',
+    color: '#3636e8',
+    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
   }
 
   if (loading && !user) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Content Bank...</div>
@@ -87,15 +152,14 @@ export default function ContentBankPage() {
   return (
     <div style={{ padding: '24px 32px 48px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
-        <div />
+        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a' }}>Content Bank</h1>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button 
-            onClick={() => setShowModal(true)}
-            style={{
-              padding: '12px 24px', borderRadius: '50px', border: 'none',
-              background: '#3636e8', color: '#fff', fontWeight: '700', fontSize: '14px',
-              boxShadow: '4px 4px 10px rgba(54,54,232,0.3)', cursor: 'pointer'
+            onClick={() => {
+              setForm(initialForm)
+              setShowModal(true)
             }}
+            style={neuButton}
           >
             + Add Question
           </button>
@@ -116,7 +180,10 @@ export default function ContentBankPage() {
            <div key={q.id} style={neuCard}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#3636e8', background: '#fff', padding: '4px 10px', borderRadius: '50px' }}>{q.subject}</span>
-                 <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b6b8a' }}>ID: {q.id.slice(-6)}</span>
+                 <div style={{ display: 'flex', gap: '8px' }}>
+                   <span style={{ fontSize: '11px', fontWeight: 800, color: '#10b981', background: '#fff', padding: '4px 10px', borderRadius: '50px' }}>{q.marks} Marks</span>
+                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b6b8a' }}>ID: {q.id.slice(-6)}</span>
+                 </div>
               </div>
               
               {q.imageUrl && (
@@ -129,14 +196,22 @@ export default function ContentBankPage() {
                  <div style={{ fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', fontSize: '10px', marginBottom: '4px' }}>Type: {q.type}</div>
                  {q.options && (
                    <div style={{ marginTop: '4px' }}>
-                      Options: {(() => {
-                        try { return JSON.parse(q.options).join(', ') } catch(e) { return q.options }
+                      <span style={{ fontWeight: 700 }}>Options:</span> {(() => {
+                        try { 
+                          const opts = JSON.parse(q.options)
+                          return Array.isArray(opts) ? opts.join(', ') : q.options 
+                        } catch(e) { return q.options }
                       })()}
                    </div>
                  )}
                  <div style={{ marginTop: '8px', color: '#10b981', fontWeight: 700 }}>
-                    Correct: {q.correctAnswer}
+                    <span style={{ fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', fontSize: '10px' }}>Correct Answer:</span> {q.correctAnswer}
                  </div>
+                 {q.explanation && (
+                   <div style={{ marginTop: '8px', color: '#6b6b8a', fontStyle: 'italic' }}>
+                      <span style={{ fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', fontSize: '10px', fontStyle: 'normal' }}>Explanation:</span> {q.explanation}
+                   </div>
+                 )}
               </div>
            </div>
          ))}
@@ -148,50 +223,127 @@ export default function ContentBankPage() {
         </div>
       )}
 
-      {/* Add Question Modal */}
+      {/* Add Question Modal - Revamped to match Exam system */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,30,58,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-           <div style={{ ...neuCard, width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>Add Independent Question</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+           <div style={{ ...neuCard, width: '100%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a' }}>Add Independent Question</h2>
+                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontSize: '24px', cursor: 'pointer' }}>×</button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Subject</label>
+                        {isAdmin ? (
+                          <select value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} style={neuInput}>
+                            <option value="">Select Subject</option>
+                            {userSubjects.map((s: string) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        ) : (
+                          <input type="text" placeholder="e.g. Physics" value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} style={neuInput} />
+                        )}
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Question Type</label>
+                        <select value={form.type} onChange={e => setForm({...form, type: e.target.value, options: e.target.value === 'TRUE_FALSE' ? ['True', 'False'] : ['', ''], correctAnswer: ''})} style={neuInput}>
+                           <option value="MCQ">Multiple Choice</option>
+                           <option value="TRUE_FALSE">True / False</option>
+                           <option value="SUBJECTIVE">Subjective</option>
+                        </select>
+                    </div>
+                 </div>
+
                  <div>
-                    <label style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Subject</label>
-                    {isAdmin ? (
-                      <select value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} style={neuInput}>
-                        <option value="">Select Subject</option>
-                        {userSubjects.map((s: string) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    ) : (
-                      <input type="text" placeholder="e.g. Physics" value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} style={neuInput} />
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Question Text</label>
+                    <textarea value={form.text} onChange={e => setForm({...form, text: e.target.value})} placeholder="Type your question..." style={{ ...neuInput, height: '80px', resize: 'none' }} />
+                 </div>
+
+                 <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Question Image (Optional)</label>
+                    <input 
+                       type="file" 
+                       accept="image/*" 
+                       onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+                       style={{ fontSize: '12px' }}
+                    />
+                    {form.imageUrl && (
+                      <div style={{ marginTop: '12px', position: 'relative', width: '160px' }}>
+                         <img src={form.imageUrl} alt="Preview" style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '12px', boxShadow: '2px 2px 8px rgba(0,0,0,0.1)' }} />
+                         <button onClick={() => setForm({...form, imageUrl: ''})} style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>×</button>
+                      </div>
                     )}
                  </div>
-                 <div>
-                    <label style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Question Text</label>
-                    <textarea value={form.text} onChange={e => setForm({...form, text: e.target.value})} style={{ ...neuInput, height: '80px', resize: 'none' }} />
-                 </div>
-                 <div style={{ display: 'flex', gap: '12px' }}>
-                    <div style={{ flex: 1 }}>
-                       <label style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Type</label>
-                       <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} style={neuInput}>
-                          <option value="MCQ">MCQ</option>
-                          <option value="SHORT">Short Answer</option>
-                          <option value="LONG">Descriptive</option>
-                       </select>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                       <label style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Correct Answer</label>
-                       <input type="text" value={form.correctAnswer} onChange={e => setForm({...form, correctAnswer: e.target.value})} style={neuInput} />
-                    </div>
-                 </div>
-                 {form.type === 'MCQ' && (
-                   <div>
-                      <label style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Options (JSON Array, e.g. ["A","B"])</label>
-                      <input type="text" value={form.options} onChange={e => setForm({...form, options: e.target.value})} style={neuInput} />
+
+                 {/* Options for MCQ / True False */}
+                 {(form.type === 'MCQ' || form.type === 'TRUE_FALSE') && (
+                   <div style={{ padding: '20px', background: 'rgba(255,255,255,0.5)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '12px' }}>Options & Correct Answer</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                         {form.type === 'TRUE_FALSE' ? (
+                           ['True', 'False'].map(opt => (
+                             <button key={opt} onClick={() => setForm({...form, correctAnswer: opt})} style={{ ...neuInput, background: form.correctAnswer === opt ? '#3636e8' : '#e8eaf0', color: form.correctAnswer === opt ? '#fff' : '#1e1e3a', fontWeight: 700, transition: 'all 0.2s' }}>
+                               {opt}
+                             </button>
+                           ))
+                         ) : (
+                           form.options.map((opt, oIdx) => (
+                             <div key={oIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                               <input 
+                                 type="radio" 
+                                 checked={form.correctAnswer === opt && opt !== ''} 
+                                 onChange={() => setForm({...form, correctAnswer: opt})} 
+                                 style={{ width: '20px', height: '20px', accentColor: '#3636e8' }} 
+                               />
+                               <input 
+                                 type="text" 
+                                 value={opt} 
+                                 onChange={e => {
+                                   const newOpts = [...form.options]
+                                   newOpts[oIdx] = e.target.value
+                                   setForm({...form, options: newOpts})
+                                 }} 
+                                 placeholder={`Option ${oIdx + 1}`} 
+                                 style={neuInput} 
+                               />
+                               {form.options.length > 2 && (
+                                 <button onClick={() => {
+                                   const newOpts = form.options.filter((_, i) => i !== oIdx)
+                                   setForm({...form, options: newOpts})
+                                 }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '18px' }}>×</button>
+                               )}
+                             </div>
+                           ))
+                         )}
+                      </div>
+                      {form.type === 'MCQ' && form.options.length < 6 && (
+                        <button onClick={() => setForm({...form, options: [...form.options, '']})} style={{ background: 'none', border: '1px dashed #3636e8', color: '#3636e8', padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', marginTop: '16px' }}>+ Add Option</button>
+                      )}
                    </div>
                  )}
-                 <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-                    <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '50px', border: 'none', background: '#ccc', color: '#1e1e3a', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
-                    <button onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '12px', borderRadius: '50px', border: 'none', background: '#3636e8', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save Question'}</button>
+
+                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: '16px' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Explanation (Visible after submission)</label>
+                        <input type="text" value={form.explanation} onChange={e => setForm({...form, explanation: e.target.value})} placeholder="Why is this correct?" style={neuInput} />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Marks</label>
+                        <input type="number" value={form.marks} onChange={e => setForm({...form, marks: parseInt(e.target.value)})} style={neuInput} min="1" />
+                    </div>
+                 </div>
+
+                 {form.type === 'SUBJECTIVE' && (
+                    <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Expected Answer / Keywords</label>
+                        <textarea value={form.correctAnswer} onChange={e => setForm({...form, correctAnswer: e.target.value})} placeholder="What the student should ideally answer..." style={{ ...neuInput, height: '60px', resize: 'none' }} />
+                    </div>
+                 )}
+
+                 <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
+                    <button onClick={() => setShowModal(false)} style={{ ...secondaryButton, flex: 1 }}>Cancel</button>
+                    <button onClick={handleSave} disabled={saving} style={{ ...neuButton, flex: 2 }}>{saving ? 'Saving...' : 'Save Question'}</button>
                  </div>
               </div>
            </div>

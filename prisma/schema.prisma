@@ -51,8 +51,8 @@ model User {
   notifications           Notification[]
   assignedTickets         SupportTicket[]        @relation("TicketAssignee")
   supportTickets          SupportTicket[]        @relation("TicketStudent")
-  ticketReplies           TicketReply[]          @relation("ReplyAuthor")
   createdUpdates          SystemUpdate[]         @relation("UpdateCreator")
+  ticketReplies           TicketReply[]          @relation("ReplyAuthor")
   updateViews             UpdateView[]
 }
 
@@ -82,8 +82,8 @@ model Course {
   lectures              Lecture[]
   materials             Material[]
   supportTickets        SupportTicket[]
-  topics                Topic[]
   systemUpdates         SystemUpdate[]
+  topics                Topic[]
 
   @@map("Class")
 }
@@ -122,7 +122,7 @@ model Lecture {
 
 model Material {
   id           String   @id @default(cuid())
-  courseId     String   @map("classId")
+  courseId     String?  @map("classId")
   title        String
   description  String?
   fileUrl      String
@@ -131,7 +131,8 @@ model Material {
   uploadedById String
   uploadedAt   DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  isGlobal     Boolean  @default(false)
+  course       Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
   uploadedBy   User     @relation("MaterialUploader", fields: [uploadedById], references: [id])
 
   @@index([courseId])
@@ -263,12 +264,12 @@ model Exam {
   courseId        String         @map("classId")
   expiresAt       DateTime
   durationMinutes Int
-  examType        String         @default("FINAL_TEST")
   isPublished     Boolean        @default(false)
   createdById     String
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   startDate       DateTime?
+  examType        String         @default("FINAL_TEST")
   course          Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   attempts        ExamAttempt[]
   questions       ExamQuestion[]
@@ -486,6 +487,7 @@ model QuestionBank {
   createdById   String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  marks         Int      @default(1)
 
   @@index([subject])
 }
@@ -493,23 +495,23 @@ model QuestionBank {
 model SystemUpdate {
   id            String       @id @default(cuid())
   title         String
-  content       String       // Rich HTML content
-  type          String       @default("GENERAL") // WELCOME, GENERAL, DAILY_DIGEST
+  content       String
+  type          String       @default("GENERAL")
   imageUrl      String?
   isActive      Boolean      @default(true)
   priority      Int          @default(0)
-  animationType String?      // null, "confetti", "fireworks", "festival"
-  showDelay     Int          @default(0) // Seconds delay before showing
-  targetRole    String?      // null = all, "STUDENT", "ADMIN"
+  animationType String?
+  showDelay     Int          @default(0)
+  targetRole    String?
   scheduledAt   DateTime?
   expiresAt     DateTime?
-  courseId      String?      @map("classId")
-  ctaText       String?
-  ctaLink       String?
   createdById   String
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-  course        Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  courseId      String?      @map("classId")
+  ctaLink       String?
+  ctaText       String?
+  course        Course?      @relation(fields: [courseId], references: [id])
   createdBy     User         @relation("UpdateCreator", fields: [createdById], references: [id])
   views         UpdateView[]
 
@@ -528,4 +530,11 @@ model UpdateView {
 
   @@unique([updateId, userId])
   @@index([userId])
+}
+
+model ExamCountdown {
+  id        String   @id @default(cuid())
+  title     String   @default("Upcoming Exam")
+  daysLeft  Int      @default(0)
+  updatedAt DateTime @updatedAt
 }

@@ -13,9 +13,31 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const courseId = searchParams.get('courseId')
+    const role = session.role
+    const isManager = role === 'MANAGER' || role === 'ADMIN'
 
-    const where = courseId ? { courseId } : {}
+    let where: any = {}
+    
+    if (!isManager) {
+      // For students, get enrolled course IDs
+      const enrollments = await prisma.enrollment.findMany({
+        where: { userId: session.userId },
+        select: { courseId: true }
+      })
+      const courseIds = enrollments.map(e => e.courseId)
+      
+      where = {
+        OR: [
+          { isGlobal: true },
+          { courseId: { in: courseIds } }
+        ]
+      }
+    } else {
+      const courseId = searchParams.get('courseId')
+      if (courseId) {
+        where = { courseId }
+      }
+    }
 
     const materials = await prisma.material.findMany({
       where,
@@ -44,7 +66,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { courseId, title, description, fileUrl, fileType, fileSize } =
+    const { courseId, title, description, fileUrl, fileType, fileSize, isGlobal } =
       await request.json()
 
     // 1. Rate Limiting
@@ -80,7 +102,8 @@ export async function POST(request: NextRequest) {
 
     const material = await prisma.material.create({
       data: {
-        courseId,
+        courseId: isGlobal ? null : courseId,
+        isGlobal: !!isGlobal,
         title: sanitizedTitle,
         description: sanitizedDescription,
         fileUrl,

@@ -50,6 +50,17 @@ export async function PUT(
         isEvaluated: true,
         isPublished: isPublished !== undefined ? !!isPublished : attempt.isPublished,
         feedback: feedback !== undefined ? feedback : attempt.feedback
+      },
+      include: { exam: { select: { title: true } } }
+    })
+
+    // Create notification for student
+    await prisma.notification.create({
+      data: {
+        userId: updatedAttempt.userId,
+        title: 'Exam Feedback Received',
+        content: `Your submission for "${updatedAttempt.exam.title}" has been reviewed by the instructor.`,
+        type: 'SUCCESS'
       }
     })
 
