@@ -263,6 +263,7 @@ model Exam {
   courseId        String         @map("classId")
   expiresAt       DateTime
   durationMinutes Int
+  examType        String         @default("FINAL_TEST")
   isPublished     Boolean        @default(false)
   createdById     String
   createdAt       DateTime       @default(now())
@@ -306,7 +307,8 @@ model ExamAttempt {
   exam        Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
   responses   ExamResponse[]
 
-  @@unique([examId, userId])
+  @@index([examId])
+  @@index([userId])
 }
 
 model ExamResponse {

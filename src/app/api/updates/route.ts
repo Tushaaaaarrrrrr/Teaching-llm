@@ -48,10 +48,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid update type' }, { status: 400 })
     }
 
+    const isDigest = type === 'DAILY_DIGEST'
+
     const update = await prisma.systemUpdate.create({
       data: {
-        title,
-        content,
+        title: isDigest ? "Daily Digest" : title,
+        content: isDigest ? "System-generated summary of your course activity." : content,
         type: type || 'GENERAL',
         imageUrl: imageUrl || null,
         isActive: isActive !== false,

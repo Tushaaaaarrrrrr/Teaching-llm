@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
     const payload = JSON.parse(payloadBuffer as string)
     
-    const { title, description, courseId, expiresAt, startDate, durationMinutes, questions } = payload
+    const { title, description, courseId, expiresAt, startDate, durationMinutes, examType, questions } = payload
 
     // 1. Rate Limiting
     const rateLimit = await checkRateLimit(session.userId, 'general')
@@ -170,6 +170,7 @@ export async function POST(request: NextRequest) {
           expiresAt: new Date(expiresAt),
           startDate: new Date(startDate),
           durationMinutes: parseInt(durationMinutes),
+          examType: examType || 'FINAL_TEST',
           createdById: session.userId,
           questions: {
             create: questionData

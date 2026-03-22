@@ -35,9 +35,17 @@ export async function GET(
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
-      // If student hasn't submitted yet, hide correct answers and explanations
-      const hasSubmitted = exam.attempts.some(a => a.submittedAt !== null)
-      if (!hasSubmitted) {
+      const hasSubmitted = exam.attempts.some((a: any) => a.submittedAt !== null)
+      
+      let hideAnswers = false
+      if ((exam as any).examType === 'FINAL_TEST') {
+        const hasEnded = new Date() > new Date(exam.expiresAt)
+        hideAnswers = !hasEnded || !exam.isPublished
+      } else {
+        hideAnswers = !hasSubmitted
+      }
+
+      if (hideAnswers) {
         exam.questions = exam.questions.map((q: any) => ({
           ...q,
           correctAnswer: null,

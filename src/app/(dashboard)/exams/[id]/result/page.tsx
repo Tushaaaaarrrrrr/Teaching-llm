@@ -7,6 +7,8 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [exam, setExam] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [reviewMode, setReviewMode] = useState(false)
+  const [currentIdx, setCurrentIdx] = useState(0)
 
   useEffect(() => {
     fetch(`/api/exams/${params.id}`).then(res => res.json()).then(data => {
@@ -17,7 +19,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading results...</div>
 
-  const attempt = exam?.attempts?.[0]
+  const attempt = exam?.attempts?.slice().sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())?.[0]
   if (!attempt || !attempt.submittedAt) {
     router.push(`/exams/${params.id}`)
     return null
@@ -58,19 +60,96 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
             <p style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: 500, marginTop: '4px' }}>Some questions require instructor review.</p>
           </div>
         )}
+
+        <button 
+          onClick={() => setReviewMode(!reviewMode)}
+          style={{ marginTop: '24px', padding: '12px 24px', borderRadius: '50px', border: '2px solid #3636e8', background: reviewMode ? '#3636e8' : 'transparent', color: reviewMode ? '#fff' : '#3636e8', fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}
+        >
+          {reviewMode ? 'Exit Review Mode' : 'Enter Review Mode'}
+        </button>
       </div>
 
-      <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>Question Breakdown</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>
+          {reviewMode ? `Reviewing Question ${currentIdx + 1}` : 'Question Breakdown'}
+        </h2>
+        {reviewMode && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              disabled={currentIdx === 0}
+              onClick={() => setCurrentIdx(prev => prev - 1)}
+              style={{ padding: '8px 16px', borderRadius: '8px', background: '#fff', border: '1px solid #c5c7cf', opacity: currentIdx === 0 ? 0.5 : 1, cursor: 'pointer' }}
+            >
+              Previous
+            </button>
+            <button 
+              disabled={currentIdx === exam.questions.length - 1}
+              onClick={() => setCurrentIdx(prev => prev + 1)}
+              style={{ padding: '8px 16px', borderRadius: '8px', background: '#3636e8', border: 'none', color: '#fff', opacity: currentIdx === exam.questions.length - 1 ? 0.5 : 1, cursor: 'pointer' }}
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {exam.questions.map((q: any, idx: number) => {
-          const resp = attempt.responses?.find((r: any) => r.questionId === q.id)
-          const isCorrect = q.correctAnswer && resp?.answer === q.correctAnswer
-          
-          return (
-            <div key={q.id} style={neuCard}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span style={{ fontWeight: 800, color: '#6b6b8a' }}>Question {idx + 1}</span>
-                {q.type !== 'SUBJECTIVE' && (
+        {reviewMode ? (
+          (() => {
+            const q = exam.questions[currentIdx]
+            const resp = attempt.responses?.find((r: any) => r.questionId === q.id)
+            const isCorrect = q.correctAnswer && resp?.answer === q.correctAnswer
+            
+            return (
+              <div key={q.id} style={neuCard}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <span style={{ fontWeight: 800, color: '#6b6b8a' }}>{q.type} - {q.marks} Marks</span>
+                  {q.type !== 'SUBJECTIVE' && q.correctAnswer !== null && q.correctAnswer !== undefined && (
+                    <span style={{ 
+                      fontSize: '11px', fontWeight: 800, 
+                      color: isCorrect ? '#10b981' : '#ef4444',
+                      background: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                      padding: '4px 10px', borderRadius: '50px'
+                    }}>
+                      {isCorrect ? 'Correct' : 'Incorrect'}
+                    </span>
+                  )}
+                </div>
+                <p style={{ fontSize: '18px', fontWeight: 700, color: '#1e1e3a', marginBottom: '20px' }}>{q.text}</p>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                   <div style={{ padding: '16px', background: isCorrect ? '#10b98105' : '#ef444405', borderRadius: '16px', border: `1px solid ${isCorrect ? '#10b98130' : '#ef444430'}` }}>
+                      <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Your Selected Answer</div>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: isCorrect ? '#10b981' : '#ef4444' }}>{resp?.answer || 'No answer provided'}</div>
+                   </div>
+
+                   {q.correctAnswer && !isCorrect && (
+                     <div style={{ padding: '16px', background: '#3636e805', borderRadius: '16px', border: '1px solid #3636e830' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#3636e8', textTransform: 'uppercase', marginBottom: '8px' }}>Correct Answer</div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#3636e8' }}>{q.correctAnswer}</div>
+                     </div>
+                   )}
+
+                   {q.explanation && (
+                     <div style={{ padding: '16px', background: '#fff', borderRadius: '16px', border: '1px solid #c5c7cf' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a', textTransform: 'uppercase', marginBottom: '8px' }}>Explanation</div>
+                        <div style={{ fontSize: '14px', color: '#1e1e3a', lineHeight: '1.6' }}>{q.explanation}</div>
+                     </div>
+                   )}
+                </div>
+              </div>
+            )
+          })()
+        ) : (
+          exam.questions.map((q: any, idx: number) => {
+            const resp = attempt.responses?.find((r: any) => r.questionId === q.id)
+            const isCorrect = q.correctAnswer && resp?.answer === q.correctAnswer
+            
+            return (
+              <div key={q.id} style={{ ...neuCard, opacity: 0.9 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <span style={{ fontWeight: 800, color: '#6b6b8a' }}>Question {idx + 1}</span>
+                  {q.type !== 'SUBJECTIVE' && q.correctAnswer !== null && q.correctAnswer !== undefined && (
                   <span style={{ 
                     fontSize: '11px', fontWeight: 800, 
                     color: isCorrect ? '#10b981' : '#ef4444',
@@ -104,7 +183,8 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
               )}
             </div>
           )
-        })}
+        })
+      )}
       </div>
 
       <div style={{ marginTop: '40px', textAlign: 'center' }}>

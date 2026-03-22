@@ -40,21 +40,34 @@ export async function POST(
     }
 
     // Start or resume attempt
-    let attempt = await prisma.examAttempt.findUnique({
-      where: { examId_userId: { examId: id, userId: session.userId } },
+    let attempt = await prisma.examAttempt.findFirst({
+      where: { examId: id, userId: session.userId },
+      orderBy: { startedAt: 'desc' },
       include: { responses: true }
     })
 
-    if (!attempt) {
+    if (!attempt || attempt.submittedAt) {
+      if (attempt?.submittedAt) {
+        if ((exam as any).examType === 'FINAL_TEST') {
+          return NextResponse.json({ error: 'Exam already submitted' }, { status: 400 })
+        } else {
+          // GENERAL_TEST Cooldown check
+          const submittedTime = new Date(attempt.submittedAt).getTime();
+          const cooldownMs = 5 * 60 * 1000;
+          if (Date.now() < submittedTime + cooldownMs) {
+            const minutesLeft = Math.ceil((submittedTime + cooldownMs - Date.now()) / 60000);
+            return NextResponse.json({ error: `Please wait ${minutesLeft} minute(s) before starting a new attempt.` }, { status: 400 })
+          }
+        }
+      }
+
       attempt = await prisma.examAttempt.create({
         data: {
           examId: id,
           userId: session.userId,
         },
         include: { responses: true }
-      })
-    } else if (attempt.submittedAt) {
-      return NextResponse.json({ error: 'Exam already submitted' }, { status: 400 })
+      }) as any
     }
 
     return NextResponse.json(attempt)
@@ -78,8 +91,9 @@ export async function PATCH(
     const { id } = await params
     const { questionId, answer } = await request.json()
 
-    const attempt = await prisma.examAttempt.findUnique({
-      where: { examId_userId: { examId: id, userId: session.userId } }
+    const attempt = await prisma.examAttempt.findFirst({
+      where: { examId: id, userId: session.userId, submittedAt: null },
+      orderBy: { startedAt: 'desc' }
     })
 
     if (!attempt || attempt.submittedAt) {

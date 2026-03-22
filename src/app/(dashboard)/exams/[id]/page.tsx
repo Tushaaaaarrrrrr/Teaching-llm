@@ -92,7 +92,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
   const isAdminOrManager = userRole === 'MANAGER' || userRole === 'ADMIN'
   const isExpired = exam ? new Date() > new Date(exam.expiresAt) : false
-  const myAttempt = exam?.attempts?.[0]
+  const sortedAttempts = [...(exam?.attempts || [])].sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+  const latestAttempt = sortedAttempts[0]
 
   // Shared Styles
   const neuCard: React.CSSProperties = {
@@ -107,10 +108,19 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
     return (
       <div style={{ padding: '32px' }}>
          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
-           <div>
-             <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a' }}>{exam.title} Management</h1>
-             <p style={{ color: '#6b6b8a' }}>{exam.course?.name}</p>
-           </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>{exam.title} Management</h1>
+                <span style={{ 
+                  fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '6px',
+                  background: exam.examType === 'FINAL_TEST' ? '#ef444420' : '#10b98120',
+                  color: exam.examType === 'FINAL_TEST' ? '#ef4444' : '#10b981'
+                }}>
+                  {exam.examType === 'FINAL_TEST' ? 'FINAL TEST' : 'GENERAL TEST'}
+                </span>
+              </div>
+              <p style={{ color: '#6b6b8a' }}>{exam.course?.name}</p>
+            </div>
            <div style={{ display: 'flex', gap: '12px' }}>
               <button 
                 onClick={handlePublish}
@@ -156,8 +166,16 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                        {exam.attempts.map((a: any) => (
                          <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#fff', borderRadius: '12px', boxShadow: '2px 2px 4px #c5c7cf' }}>
                              <div>
-                                <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e1e3a' }}>Student {a.userId.slice(-4)}</div>
+                                <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e1e3a' }}>
+                                  Student {a.userId.slice(-4)}
+                                  {exam.examType === 'GENERAL_TEST' && (
+                                    <span style={{ marginLeft: '8px', fontSize: '11px', color: '#3636e8', background: '#3636e810', padding: '2px 6px', borderRadius: '6px' }}>
+                                      Attempt {exam.attempts.filter((att: any) => att.userId === a.userId && new Date(att.startedAt) <= new Date(a.startedAt)).length}
+                                    </span>
+                                  )}
+                                </div>
                                 <div style={{ fontSize: '11px', color: '#6b6b8a', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                  <span>{new Date(a.startedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                                   {a.submittedAt ? (
                                     <>
                                       <span style={{ color: a.isEvaluated ? '#10b981' : '#3636e8', fontWeight: 700 }}>
@@ -303,6 +321,27 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
           <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#1e1e3a', marginBottom: '8px' }}>{exam.title}</h1>
           <p style={{ color: '#6b6b8a', marginBottom: '24px' }}>{exam.course?.name}</p>
 
+          <div style={{ textAlign: 'left', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: exam.examType === 'FINAL_TEST' ? '#ef444410' : '#10b98110', borderLeft: `4px solid ${exam.examType === 'FINAL_TEST' ? '#ef4444' : '#10b981'}` }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 800, color: exam.examType === 'FINAL_TEST' ? '#ef4444' : '#10b981', marginBottom: '8px' }}>
+              {exam.examType === 'FINAL_TEST' ? 'Final Test Rules' : 'General Test Rules'}
+            </h3>
+            <ul style={{ fontSize: '13px', color: '#6b6b8a', paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {exam.examType === 'FINAL_TEST' ? (
+                <>
+                  <li>Strict time limit enforced.</li>
+                  <li>Only one attempt allowed.</li>
+                  <li>Correct answers hidden until exam evaluates and finishes.</li>
+                </>
+              ) : (
+                <>
+                  <li>No strict time limit enforced.</li>
+                  <li>Multiple attempts allowed (5 min cooldown).</li>
+                  <li>Full result and correct answers shown immediately after submission.</li>
+                </>
+              )}
+            </ul>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
              <div style={{ padding: '16px', borderRadius: '16px', background: '#fff', boxShadow: '3px 3px 6px #c5c7cf' }}>
                 <div style={{ fontSize: '10px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Questions</div>
@@ -314,15 +353,30 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
              </div>
           </div>
 
-           {myAttempt?.submittedAt ? (
+           {latestAttempt?.submittedAt ? (
              <>
-               {myAttempt.isPublished ? (
-                 <button
-                    onClick={() => router.push(`/exams/${params.id}/result`)}
-                    style={{ width: '100%', padding: '16px', borderRadius: '50px', border: 'none', background: '#3636e8', color: '#fff', fontSize: '16px', fontWeight: 800, cursor: 'pointer', boxShadow: '4px 4px 10px rgba(54,54,232,0.35)' }}
-                 >
-                   View My Score
-                 </button>
+               {latestAttempt.isPublished || exam.examType === 'GENERAL_TEST' ? (
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                   <p style={{ fontSize: '14px', fontWeight: 700, color: '#10b981', margin: 0 }}>
+                     You scored {latestAttempt.totalMarks} points on your latest attempt.
+                   </p>
+                   <div style={{ display: 'flex', gap: '12px' }}>
+                     <button
+                        onClick={() => router.push(`/exams/${params.id}/result`)}
+                        style={{ flex: 1, padding: '16px', borderRadius: '50px', border: 'none', background: '#3636e8', color: '#fff', fontSize: '14px', fontWeight: 800, cursor: 'pointer', boxShadow: '4px 4px 10px rgba(54,54,232,0.35)' }}
+                     >
+                       View Results
+                     </button>
+                     {exam.examType === 'GENERAL_TEST' && (
+                       <button
+                          onClick={() => router.push(`/exams/${params.id}/attempt`)}
+                          style={{ flex: 1, padding: '16px', borderRadius: '50px', border: '2px solid #3636e8', background: 'transparent', color: '#3636e8', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}
+                       >
+                         Retry Exam
+                       </button>
+                     )}
+                   </div>
+                 </div>
                ) : (
                  <div style={{ padding: '20px', borderRadius: '20px', background: '#f59e0b10', border: '2px dashed #f59e0b', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ color: '#f59e0b', fontWeight: 800, fontSize: '15px' }}>Assessment Submitted</div>

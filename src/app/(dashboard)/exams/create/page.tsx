@@ -29,6 +29,7 @@ export default function CreateExamPage() {
   const [startDate, setStartDate] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
   const [durationMinutes, setDurationMinutes] = useState('60')
+  const [examType, setExamType] = useState('FINAL_TEST')
   const [questions, setQuestions] = useState<Question[]>([
     { text: '', type: 'MCQ', options: ['', ''], correctAnswer: '', explanation: '', marks: 1 }
   ])
@@ -114,6 +115,7 @@ export default function CreateExamPage() {
         startDate,
         expiresAt,
         durationMinutes: parseInt(durationMinutes),
+        examType,
         questions
       }
 
@@ -201,6 +203,35 @@ export default function CreateExamPage() {
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Description</label>
                 <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Brief overview of the exam..." rows={3} style={{ ...neuInput, resize: 'vertical' }} />
               </div>
+              <div>
+                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Exam Type</label>
+                 <select value={examType} onChange={e => setExamType(e.target.value)} style={neuInput}>
+                   <option value="FINAL_TEST">Final Test (Strict Rules)</option>
+                   <option value="GENERAL_TEST">General Test (Practice)</option>
+                 </select>
+              </div>
+              
+              <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: examType === 'FINAL_TEST' ? '#ef444410' : '#10b98110', borderLeft: `4px solid ${examType === 'FINAL_TEST' ? '#ef4444' : '#10b981'}` }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 800, color: examType === 'FINAL_TEST' ? '#ef4444' : '#10b981', marginBottom: '8px' }}>
+                  {examType === 'FINAL_TEST' ? 'Final Test Rules' : 'General Test Rules'}
+                </h3>
+                <ul style={{ fontSize: '13px', color: '#6b6b8a', paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {examType === 'FINAL_TEST' ? (
+                    <>
+                      <li>Strict time limit enforced.</li>
+                      <li>Only one attempt allowed.</li>
+                      <li>Correct answers hidden until exam is ended AND results are published.</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>No strict time limit enforced during taking.</li>
+                      <li>Multiple attempts allowed (with 5 min cooldown).</li>
+                      <li>Full result and correct answers shown immediately after submission.</li>
+                    </>
+                  )}
+                </ul>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                 <div>
                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Start Date</label>

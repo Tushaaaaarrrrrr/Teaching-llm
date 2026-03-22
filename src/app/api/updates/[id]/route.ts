@@ -28,11 +28,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Update not found' }, { status: 404 })
     }
 
+    const isDigest = existing.type === 'DAILY_DIGEST'
+
     const update = await prisma.systemUpdate.update({
       where: { id: params.id },
       data: {
-        ...(title !== undefined && { title }),
-        ...(content !== undefined && { content }),
+        ...(!isDigest && title !== undefined && { title }),
+        ...(!isDigest && content !== undefined && { content }),
         ...(type !== undefined && { type }),
         ...(imageUrl !== undefined && { imageUrl: imageUrl || null }),
         ...(isActive !== undefined && { isActive }),

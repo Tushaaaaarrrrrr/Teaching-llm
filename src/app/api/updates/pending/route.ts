@@ -71,10 +71,16 @@ export async function GET() {
       pending.push(welcomeUpdates[0]) // Only the highest priority welcome
     }
 
-    // 2. Daily digest — only first login of the day
-    const todayStart = new Date(now)
-    todayStart.setHours(0, 0, 0, 0)
-    const isFirstLoginToday = !user.lastDailyDigestAt || user.lastDailyDigestAt < todayStart
+    // 2. Daily digest — only first login of the day (Reset at 5:00 AM)
+    const todayReset = new Date(now)
+    todayReset.setHours(5, 0, 0, 0)
+    
+    // If current time is before 5 AM, the "today" reset was actually yesterday 5 AM
+    if (now < todayReset) {
+      todayReset.setDate(todayReset.getDate() - 1)
+    }
+
+    const isFirstLoginToday = !user.lastDailyDigestAt || user.lastDailyDigestAt < todayReset
 
     if (isFirstLoginToday && digestUpdates.length > 0) {
       pending.push(digestUpdates[0])
@@ -137,18 +143,38 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      updates: pending.map(u => ({
-        id: u.id,
-        title: u.title,
-        content: u.content,
-        type: u.type,
-        imageUrl: u.imageUrl,
-        animationType: u.animationType,
-        showDelay: u.showDelay,
-        priority: u.priority,
-        ctaText: u.ctaText,
-        ctaLink: u.ctaLink,
-      })),
+      updates: pending.map(u => {
+        let title = u.title
+        let content = u.content
+
+        // System-controlled content for DAILY_DIGEST
+        if (u.type === 'DAILY_DIGEST' && dailyDigest) {
+          title = "Today's Summary"
+          const updatesList = []
+          if (dailyDigest.newLectures > 0) updatesList.push(`<li><b>${dailyDigest.newLectures}</b> new lectures added</li>`)
+          if (dailyDigest.newMaterials > 0) updatesList.push(`<li><b>${dailyDigest.newMaterials}</b> new materials & resources</li>`)
+          if (dailyDigest.upcomingExams > 0) updatesList.push(`<li><b>${dailyDigest.upcomingExams}</b> upcoming exams tracked</li>`)
+          
+          if (updatesList.length > 0) {
+            content = `Today in your courses:<ul style="margin-top: 10px; padding-left: 20px;">${updatesList.join('')}</ul>`
+          } else {
+            content = "Keep up the great work! No new updates in your courses since your last visit, but stay tuned for more."
+          }
+        }
+
+        return {
+          id: u.id,
+          title,
+          content,
+          type: u.type,
+          imageUrl: u.imageUrl,
+          animationType: u.animationType,
+          showDelay: u.showDelay,
+          priority: u.priority,
+          ctaText: u.ctaText,
+          ctaLink: u.ctaLink,
+        }
+      }),
       dailyDigest,
     })
   } catch (error) {

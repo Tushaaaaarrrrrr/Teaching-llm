@@ -385,7 +385,14 @@ export default function ManageUpdatesPage() {
               {/* Title */}
               <div className="form-group">
                 <label className="form-label">Title *</label>
-                <input className="form-input" value={title} onChange={e => setTitle(e.target.value)} placeholder="Update title" />
+                <input 
+                  className="form-input" 
+                  value={type === 'DAILY_DIGEST' ? "Daily Digest" : title} 
+                  onChange={e => setTitle(e.target.value)} 
+                  placeholder="Update title" 
+                  disabled={type === 'DAILY_DIGEST'}
+                  style={{ opacity: type === 'DAILY_DIGEST' ? 0.7 : 1 }}
+                />
               </div>
 
               {/* Type + Priority row */}
@@ -414,77 +421,95 @@ export default function ManageUpdatesPage() {
 
               {/* Rich Text Editor */}
               <div className="form-group">
-                <label className="form-label">Content *</label>
-                {/* Toolbar */}
-                <div style={{
-                  display: 'flex', flexWrap: 'wrap', gap: '2px', padding: '6px 8px',
-                  background: '#f1f3f9', borderRadius: '10px 10px 0 0', border: '1px solid #d0d2d9', borderBottom: 'none',
-                }}>
-                  {[
-                    { cmd: 'bold', icon: 'B', style: { fontWeight: '800' } },
-                    { cmd: 'italic', icon: 'I', style: { fontStyle: 'italic' } },
-                    { cmd: 'underline', icon: 'U', style: { textDecoration: 'underline' } },
-                    { cmd: 'strikeThrough', icon: 'S', style: { textDecoration: 'line-through' } },
-                  ].map(b => (
-                    <button key={b.cmd} type="button" onClick={() => execCmd(b.cmd)}
-                      style={{
-                        width: '30px', height: '28px', border: 'none', borderRadius: '6px',
-                        background: 'transparent', cursor: 'pointer', fontSize: '13px',
-                        color: '#1e1e3a', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        ...b.style,
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#e0e7ff'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      {b.icon}
-                    </button>
-                  ))}
-                  <div style={{ width: '1px', background: '#d0d2d9', margin: '2px 4px' }} />
-                  <button type="button" onClick={() => execCmd('insertUnorderedList')} style={{ width: '30px', height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '12px' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#e0e7ff'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >☰</button>
-                  <button type="button" onClick={() => execCmd('insertOrderedList')} style={{ width: '30px', height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '12px' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#e0e7ff'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >1.</button>
-                  <div style={{ width: '1px', background: '#d0d2d9', margin: '2px 4px' }} />
-                  <select onChange={e => { if (e.target.value) execCmd('formatBlock', e.target.value); e.target.value = '' }}
-                    style={{ height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '11px', color: '#6b6b8a', padding: '0 6px' }}
-                  >
-                    <option value="">Heading</option>
-                    <option value="h1">H1</option>
-                    <option value="h2">H2</option>
-                    <option value="h3">H3</option>
-                    <option value="p">Normal</option>
-                  </select>
-                  <div style={{ width: '1px', background: '#d0d2d9', margin: '2px 4px' }} />
-                  <input type="color" defaultValue="#1e1e3a" onChange={e => execCmd('foreColor', e.target.value)}
-                    style={{ width: '28px', height: '28px', border: 'none', borderRadius: '6px', cursor: 'pointer', padding: '2px' }}
-                    title="Text Color"
-                  />
-                  <button type="button" onClick={() => {
-                    const url = prompt('Enter link URL:')
-                    if (url) execCmd('createLink', url)
-                  }} style={{ width: '30px', height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '12px' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#e0e7ff'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >🔗</button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label className="form-label" style={{ marginBottom: 0 }}>Content *</label>
+                  {type === 'DAILY_DIGEST' && (
+                    <span style={{ fontSize: '11px', color: '#6366f1', fontWeight: '600', background: '#eef2ff', padding: '2px 8px', borderRadius: '4px' }}>
+                      ✨ System Generated
+                    </span>
+                  )}
                 </div>
+                
+                {type === 'DAILY_DIGEST' ? (
+                  <div style={{ padding: '20px', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '12px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
+                      The content for Daily Digest is automatically generated based on real-time activity in the student's enrolled courses (New lectures, materials, exams, etc.).
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Toolbar */}
+                    <div style={{
+                      display: 'flex', flexWrap: 'wrap', gap: '2px', padding: '6px 8px',
+                      background: '#f1f3f9', borderRadius: '10px 10px 0 0', border: '1px solid #d0d2d9', borderBottom: 'none',
+                    }}>
+                      {[
+                        { cmd: 'bold', icon: 'B', style: { fontWeight: '800' } },
+                        { cmd: 'italic', icon: 'I', style: { fontStyle: 'italic' } },
+                        { cmd: 'underline', icon: 'U', style: { textDecoration: 'underline' } },
+                        { cmd: 'strikeThrough', icon: 'S', style: { textDecoration: 'line-through' } },
+                      ].map(b => (
+                        <button key={b.cmd} type="button" onClick={() => execCmd(b.cmd)}
+                          style={{
+                            width: '30px', height: '28px', border: 'none', borderRadius: '6px',
+                            background: 'transparent', cursor: 'pointer', fontSize: '13px',
+                            color: '#1e1e3a', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            ...b.style,
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#e0e7ff'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          {b.icon}
+                        </button>
+                      ))}
+                      <div style={{ width: '1px', background: '#d0d2d9', margin: '2px 4px' }} />
+                      <button type="button" onClick={() => execCmd('insertUnorderedList')} style={{ width: '30px', height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '12px' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#e0e7ff'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >☰</button>
+                      <button type="button" onClick={() => execCmd('insertOrderedList')} style={{ width: '30px', height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '12px' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#e0e7ff'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >1.</button>
+                      <div style={{ width: '1px', background: '#d0d2d9', margin: '2px 4px' }} />
+                      <select onChange={e => { if (e.target.value) execCmd('formatBlock', e.target.value); e.target.value = '' }}
+                        style={{ height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '11px', color: '#6b6b8a', padding: '0 6px' }}
+                      >
+                        <option value="">Heading</option>
+                        <option value="h1">H1</option>
+                        <option value="h2">H2</option>
+                        <option value="h3">H3</option>
+                        <option value="p">Normal</option>
+                      </select>
+                      <div style={{ width: '1px', background: '#d0d2d9', margin: '2px 4px' }} />
+                      <input type="color" defaultValue="#1e1e3a" onChange={e => execCmd('foreColor', e.target.value)}
+                        style={{ width: '28px', height: '28px', border: 'none', borderRadius: '6px', cursor: 'pointer', padding: '2px' }}
+                        title="Text Color"
+                      />
+                      <button type="button" onClick={() => {
+                        const url = prompt('Enter link URL:')
+                        if (url) execCmd('createLink', url)
+                      }} style={{ width: '30px', height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '12px' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#e0e7ff'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >🔗</button>
+                    </div>
 
-                {/* Editor */}
-                <div
-                  ref={editorRef}
-                  contentEditable
-                  style={{
-                    minHeight: '160px', maxHeight: '300px', overflowY: 'auto',
-                    padding: '14px', border: '1px solid #d0d2d9', borderRadius: '0 0 10px 10px',
-                    fontSize: '14px', lineHeight: '1.6', color: '#1e1e3a',
-                    outline: 'none', background: '#fff',
-                  }}
-                  onFocus={e => e.currentTarget.style.borderColor = '#6366f1'}
-                  onBlur={e => e.currentTarget.style.borderColor = '#d0d2d9'}
-                />
+                    {/* Editor */}
+                    <div
+                      ref={editorRef}
+                      contentEditable
+                      style={{
+                        minHeight: '160px', maxHeight: '300px', overflowY: 'auto',
+                        padding: '14px', border: '1px solid #d0d2d9', borderRadius: '0 0 10px 10px',
+                        fontSize: '14px', lineHeight: '1.6', color: '#1e1e3a',
+                        outline: 'none', background: '#fff',
+                      }}
+                      onFocus={e => e.currentTarget.style.borderColor = '#6366f1'}
+                      onBlur={e => e.currentTarget.style.borderColor = '#d0d2d9'}
+                    />
+                  </>
+                )}
               </div>
 
               {/* Image Upload */}

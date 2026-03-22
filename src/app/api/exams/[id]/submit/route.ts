@@ -13,8 +13,9 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const attempt = await prisma.examAttempt.findUnique({
-      where: { examId_userId: { examId: params.id, userId: session.userId } },
+    const attempt = await prisma.examAttempt.findFirst({
+      where: { examId: params.id, userId: session.userId, submittedAt: null },
+      orderBy: { startedAt: 'desc' },
       include: { exam: { include: { questions: true } } }
     })
 
