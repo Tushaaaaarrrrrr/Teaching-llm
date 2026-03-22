@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       include: {
         topic: {
           select: {
-            idRef: true,
+            id: true,
             title: true,
             order: true,
             courseId: true,

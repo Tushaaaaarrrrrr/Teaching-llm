@@ -84,6 +84,11 @@ export default function CourseDetailPage() {
     // YouTube
     const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&\s]+)/)
     if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`
+    
+    // Google Drive
+    const driveMatch = url.match(/\/file\/d\/([^/]+)/)
+    if (driveMatch) return `https://drive.google.com/file/d/${driveMatch[1]}/preview`
+
     return url
   }
 

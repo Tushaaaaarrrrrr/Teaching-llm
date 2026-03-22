@@ -52,20 +52,16 @@ export default function LecturePage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  const getEmbedUrl = (url: string, source: string) => {
+  const getEmbedUrl = (url: string) => {
     if (!url) return ''
-    if (source === 'YOUTUBE') {
-      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&\s]+)/)
-      const videoId = ytMatch ? ytMatch[1] : url
-      // Minimal UI: rel=0, showinfo=0, modestbranding=1
-      return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&showinfo=0`
-    }
-    if (source === 'DRIVE') {
-      // Convert drive share link to preview link
-      const driveMatch = url.match(/\/file\/d\/([^/]+)/)
-      const fileId = driveMatch ? driveMatch[1] : url
-      return `https://drive.google.com/file/d/${fileId}/preview`
-    }
+    // YouTube
+    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&\s]+)/)
+    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1&showinfo=0`
+    
+    // Google Drive
+    const driveMatch = url.match(/\/file\/d\/([^/]+)/)
+    if (driveMatch) return `https://drive.google.com/file/d/${driveMatch[1]}/preview`
+
     return url
   }
 
@@ -80,7 +76,7 @@ export default function LecturePage() {
 
   if (!content || !course) return null
 
-  const embedUrl = getEmbedUrl(content.videoUrl || '', content.videoSource)
+  const embedUrl = getEmbedUrl(content.videoUrl || '')
 
   return (
     <div className="page-container fade-in" style={{ maxWidth: '1000px', margin: '0 auto' }}>

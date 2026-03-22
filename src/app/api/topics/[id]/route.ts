@@ -17,7 +17,7 @@ export async function PUT(
     const { title, order } = await request.json()
 
     const topic = await prisma.topic.update({
-      where: { idRef: id },
+      where: { id: id },
       data: { ...(title !== undefined && { title }), ...(order !== undefined && { order }) },
     })
 
@@ -50,11 +50,11 @@ export async function DELETE(
     const { id } = await params
 
     const topicToDelete = await prisma.topic.findUnique({
-      where: { idRef: id },
+      where: { id: id },
       select: { title: true },
     })
 
-    await prisma.topic.delete({ where: { idRef: id } })
+    await prisma.topic.delete({ where: { id: id } })
 
     logActivity({
       userId: session.userId,

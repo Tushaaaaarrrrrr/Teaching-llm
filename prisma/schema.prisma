@@ -67,6 +67,7 @@ model Course {
   isGlobal              Boolean                @default(false)
   isCommunityActive     Boolean                @default(true)
   teacherName           String?
+  googleDriveFolderId   String?
   announcements         Announcement[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
   communityMessages     CommunityMessage[]
@@ -172,7 +173,7 @@ model GoogleCredential {
 }
 
 model Topic {
-  idRef     String    @id @default(cuid()) @map("id")
+  id        String    @id @default(cuid())
   courseId  String    @map("classId")
   title     String
   order     Int       @default(0)
@@ -195,7 +196,7 @@ model Content {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   videoSource String   @default("YOUTUBE")
-  topic       Topic    @relation(fields: [topicId], references: [idRef], onDelete: Cascade)
+  topic       Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
 }
 
 model Announcement {

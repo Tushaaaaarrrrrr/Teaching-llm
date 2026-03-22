@@ -28,6 +28,7 @@ interface CourseDetail {
   description: string
   subject: string
   color: string
+  googleDriveFolderId?: string
 }
 
 interface ContentForm {
@@ -121,6 +122,31 @@ export default function CourseEditPage() {
     }
   }
 
+  const saveCourseSettings = async () => {
+    if (!course) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/courses/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: course.name,
+          description: course.description,
+          subject: course.subject,
+          color: course.color,
+          googleDriveFolderId: course.googleDriveFolderId
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to save settings')
+      alert('Course settings saved successfully!')
+    } catch (e) {
+      console.error(e)
+      alert('Failed to save settings')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const updateTopic = async (id: string) => {
     if (!editingTopicTitle.trim()) return
     setSaving(true)
@@ -206,10 +232,44 @@ export default function CourseEditPage() {
 
     setSaving(true)
     try {
+      let finalPptUrl = contentForm.pptUrl
+
+      // Handle File Upload
+      if (selectedFile) {
+        const formData = new FormData()
+        formData.append('file', selectedFile)
+        
+        // If course has Google Drive Folder ID, upload there
+        if (course?.googleDriveFolderId) {
+          const uploadRes = await fetch(`/api/courses/${params.id}/upload-to-drive`, {
+            method: 'POST',
+            body: formData,
+          })
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json()
+            finalPptUrl = uploadData.url
+          } else {
+            const error = await uploadRes.json()
+            throw new Error(error.error || 'Failed to upload to Google Drive')
+          }
+        } else {
+          // Fallback to local storage upload
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          })
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json()
+            finalPptUrl = uploadData.url
+          }
+        }
+      }
+
       const payload = {
         ...contentForm,
         title: contentForm.title.trim(),
         videoUrl: contentForm.videoUrl.trim(),
+        pptUrl: finalPptUrl,
       }
 
       let res
@@ -468,6 +528,39 @@ export default function CourseEditPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Course Settings (Google Drive) */}
+      <div className="card" style={{ marginBottom: '24px', padding: '20px' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Google Drive Integration
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '16px', alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label" style={{ fontSize: '12px' }}>Google Drive Folder ID (for automated uploads)</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="e.g. 1AbC2dEf3GhIjKlMnOpQrStUvWxYz"
+              value={course.googleDriveFolderId || ''}
+              onChange={(e) => setCourse({ ...course, googleDriveFolderId: e.target.value })}
+              style={{ fontSize: '13px', width: '100%' }}
+            />
+          </div>
+          <button 
+            onClick={saveCourseSettings} 
+            disabled={saving}
+            className="btn btn-primary"
+            style={{ padding: '10px 24px', borderRadius: '12px' }}
+          >
+            {saving ? 'Saving...' : 'Save Folder ID'}
+          </button>
+        </div>
+        <p style={{ fontSize: '12px', color: '#9999b0', marginTop: '10px', lineHeight: '1.5' }}>
+          <strong>How to find:</strong> Open your Google Drive folder in a browser. The ID is the long string of characters in the URL (e.g., <code>.../folders/<b>1AbC2dEf...</b></code>). 
+          Once set, any files you "Upload" when adding lectures will go directly to this folder.
+        </p>
       </div>
 
       {/* Topics */}
