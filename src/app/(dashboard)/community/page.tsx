@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Plus, Send } from 'lucide-react'
+import { Plus, Send, Image as ImageIcon, Smile } from 'lucide-react'
 import CreatePostModal from '@/components/CreatePostModal'
 
 interface ClassItem {
@@ -182,6 +182,7 @@ function CommunityContent() {
 
   const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
   const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
+  const neuSmall = { background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }
 
   return (
     <div className="page-container fade-in" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
@@ -315,18 +316,78 @@ function CommunityContent() {
                     </button>
                   </>
                 )}
-                <span style={{
-                  padding: '4px 14px', borderRadius: '50px',
-                  background: selectedClass.color + '18', color: selectedClass.color,
-                  fontSize: '12px', fontWeight: '700',
-                }}>
-                  {messages.length} message{messages.length !== 1 ? 's' : ''}
-                </span>
+                <button
+                  onClick={() => setShowCreatePost(true)}
+                  style={{
+                    padding: '8px 16px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #0156bf 0%, #3636e8 100%)', 
+                    color: '#fff', fontSize: '13px', fontWeight: '800',
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    boxShadow: '0 4px 12px rgba(1, 86, 191, 0.3)',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                  onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+                >
+                  <Plus size={16} />
+                  New Moment
+                </button>
               </div>
             </div>
 
+            {/* Quick Create Bar */}
+            {(selectedClass.isCommunityActive || userRole !== 'STUDENT') && (
+              <div 
+                onClick={() => setShowCreatePost(true)}
+                style={{ 
+                  margin: '16px 20px 8px', 
+                  padding: '12px 16px', 
+                  borderRadius: '16px', 
+                  background: '#f8fafc',
+                  border: '1.5px solid rgba(0,0,0,0.04)',
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = '#fff';
+                  e.currentTarget.style.borderColor = 'rgba(1, 86, 191, 0.2)';
+                  e.currentTarget.style.boxShadow = '0 6px 15px rgba(0,0,0,0.05)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = '#f8fafc';
+                  e.currentTarget.style.borderColor = 'rgba(0,0,0,0.04)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <div style={{ 
+                  width: '32px', height: '32px', borderRadius: '50%',
+                  background: userAvatar ? 'transparent' : '#e8eaf0',
+                  boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#0156bf', fontSize: '11px', fontWeight: '800',
+                  overflow: 'hidden'
+                }}>
+                  {userAvatar ? (
+                    <img src={userAvatar} alt={userName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    userName.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <div style={{ flex: 1, color: '#94a3b8', fontSize: '13px', fontWeight: '600' }}>
+                  What's unfolding in your atelier today?
+                </div>
+                <div style={{ display: 'flex', gap: '8px', color: '#94a3b8' }}>
+                  <ImageIcon size={18} />
+                  <Smile size={18} />
+                </div>
+              </div>
+            )}
+
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 16px', display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative' }}>
               {!selectedClass.isCommunityActive && userRole === 'STUDENT' ? (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', textAlign: 'center' }}>
                   <div style={{ width: '60px', height: '60px', borderRadius: '20px', background: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
@@ -340,133 +401,133 @@ function CommunityContent() {
               ) : (
                 <>
                   {messages.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9999b0' }}>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.4 }}>
-                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                  </svg>
-                  <p style={{ marginTop: '12px', fontWeight: '700' }}>No messages yet</p>
-                  <p style={{ fontSize: '13px', marginTop: '4px' }}>Be the first to say something!</p>
-                </div>
-              )}
-
-              {messages.map((msg, idx) => {
-                const isMe = msg.sender.id === userId
-                const isAdmin = msg.sender.role !== 'STUDENT'
-                const showAvatar = idx === 0 || messages[idx - 1]?.sender.id !== msg.sender.id
-
-                if (msg.isDeleted) {
-                  return (
-                    <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
-                      {!isMe && (
-                        <>
-                          {showAvatar ? (
-                            <div style={{
-                              width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                              background: '#e8eaf0',
-                              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: '11px', fontWeight: '800', color: '#9999b0',
-                            }}>
-                              {msg.sender.name.charAt(0).toUpperCase()}
-                            </div>
-                          ) : <div style={{ width: '32px', flexShrink: 0 }} />}
-                        </>
-                      )}
-                      <div style={{
-                        padding: '8px 14px', borderRadius: '14px',
-                        background: 'transparent',
-                        border: '1.5px dashed #c5c7cf',
-                        color: '#9999b0', fontSize: '13px', fontStyle: 'italic',
-                      }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}>
-                          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                        </svg>
-                        Message deleted
-                      </div>
+                    <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9999b0' }}>
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.4 }}>
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                      </svg>
+                      <p style={{ marginTop: '12px', fontWeight: '700' }}>No messages yet</p>
+                      <p style={{ fontSize: '13px', marginTop: '4px' }}>Be the first to say something!</p>
                     </div>
-                  )
-                }
+                  )}
 
-                return (
-                  <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
-                    {/* Avatar */}
-                    {!isMe && (
-                      <div style={{
-                        width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                        background: isAdmin ? '#3636e8' : '#e8eaf0',
-                        boxShadow: isAdmin ? 'none' : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                        display: showAvatar ? 'flex' : 'none',
-                        alignItems: 'center', justifyContent: 'center',
-                        fontSize: '11px', fontWeight: '800',
-                        color: isAdmin ? '#fff' : '#6b6b8a',
-                      }}>
-                        {msg.sender.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    {!isMe && !showAvatar && <div style={{ width: '32px', flexShrink: 0 }} />}
+                  {messages.map((msg, idx) => {
+                    const isMe = msg.sender.id === userId
+                    const isAdmin = msg.sender.role !== 'STUDENT'
+                    const showAvatar = idx === 0 || messages[idx - 1]?.sender.id !== msg.sender.id
 
-                    <div style={{ maxWidth: '65%', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                      {showAvatar && !isMe && (
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', paddingLeft: '2px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: '700', color: isAdmin ? '#3636e8' : '#6b6b8a' }}>
-                            {msg.sender.name}
-                          </span>
-                          {isAdmin && (
-                            <span style={{ fontSize: '10px', background: '#3636e8', color: '#fff', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
-                              {msg.sender.role.charAt(0) + msg.sender.role.slice(1).toLowerCase()}
-                            </span>
+                    if (msg.isDeleted) {
+                      return (
+                        <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
+                          {!isMe && (
+                            <>
+                              {showAvatar ? (
+                                <div style={{
+                                  width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                                  background: '#e8eaf0',
+                                  boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: '11px', fontWeight: '800', color: '#9999b0',
+                                }}>
+                                  {msg.sender.name.charAt(0).toUpperCase()}
+                                </div>
+                              ) : <div style={{ width: '32px', flexShrink: 0 }} />}
+                            </>
                           )}
-                          {userRole === 'MANAGER' && msg.sender.securityNumber && (
-                            <span style={{ fontSize: '10px', background: '#f59e0b22', color: '#f59e0b', padding: '1px 7px', borderRadius: '50px', fontWeight: '700' }}>
-                              {msg.sender.securityNumber}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
-                        <div style={{
-                          padding: '10px 16px',
-                          borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                          background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0',
-                          color: isMe ? '#fff' : '#1e1e3a',
-                          fontSize: '14px', lineHeight: '1.5',
-                          boxShadow: isMe
-                            ? '4px 4px 10px rgba(54,54,232,0.25)'
-                            : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                        }}>
-                          {msg.content}
-                        </div>
-                        {/* Delete button for own messages */}
-                        {isMe && !msg.id.startsWith('temp-') && (
-                          <button
-                            onClick={() => deleteMessage(msg.id)}
-                            disabled={deletingId === msg.id}
-                            title="Delete message"
-                            style={{
-                              width: '26px', height: '26px', borderRadius: '50%',
-                              border: 'none', cursor: 'pointer',
-                              background: '#e8eaf0',
-                              boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0, opacity: deletingId === msg.id ? 0.4 : 0.5,
-                              transition: 'opacity 0.2s',
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                            onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                          <div style={{
+                            padding: '8px 14px', borderRadius: '14px',
+                            background: 'transparent',
+                            border: '1.5px dashed #c5c7cf',
+                            color: '#9999b0', fontSize: '13px', fontStyle: 'italic',
+                          }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}>
+                              <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
                             </svg>
-                          </button>
+                            Message deleted
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
+                        {/* Avatar */}
+                        {!isMe && (
+                          <div style={{
+                            width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                            background: isAdmin ? '#3636e8' : '#e8eaf0',
+                            boxShadow: isAdmin ? 'none' : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                            display: showAvatar ? 'flex' : 'none',
+                            alignItems: 'center', justifyContent: 'center',
+                            fontSize: '11px', fontWeight: '800',
+                            color: isAdmin ? '#fff' : '#6b6b8a',
+                          }}>
+                            {msg.sender.name.charAt(0).toUpperCase()}
+                          </div>
                         )}
+                        {!isMe && !showAvatar && <div style={{ width: '32px', flexShrink: 0 }} />}
+
+                        <div style={{ maxWidth: '65%', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                          {showAvatar && !isMe && (
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', paddingLeft: '2px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: '700', color: isAdmin ? '#3636e8' : '#6b6b8a' }}>
+                                {msg.sender.name}
+                              </span>
+                              {isAdmin && (
+                                <span style={{ fontSize: '10px', background: '#3636e8', color: '#fff', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
+                                  {msg.sender.role.charAt(0) + msg.sender.role.slice(1).toLowerCase()}
+                                </span>
+                              )}
+                              {userRole === 'MANAGER' && msg.sender.securityNumber && (
+                                <span style={{ fontSize: '10px', background: '#f59e0b22', color: '#f59e0b', padding: '1px 7px', borderRadius: '50px', fontWeight: '700' }}>
+                                  {msg.sender.securityNumber}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                            <div style={{
+                              padding: '10px 16px',
+                              borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                              background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0',
+                              color: isMe ? '#fff' : '#1e1e3a',
+                              fontSize: '14px', lineHeight: '1.5',
+                              boxShadow: isMe
+                                ? '4px 4px 10px rgba(54,54,232,0.25)'
+                                : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                            }}>
+                              {msg.content}
+                            </div>
+                            {/* Delete button for own messages */}
+                            {isMe && !msg.id.startsWith('temp-') && (
+                              <button
+                                onClick={() => deleteMessage(msg.id)}
+                                disabled={deletingId === msg.id}
+                                title="Delete message"
+                                style={{
+                                  width: '26px', height: '26px', borderRadius: '50%',
+                                  border: 'none', cursor: 'pointer',
+                                  background: '#e8eaf0',
+                                  boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  flexShrink: 0, opacity: deletingId === msg.id ? 0.4 : 0.5,
+                                  transition: 'opacity 0.2s',
+                                }}
+                                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                                onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '10.5px', color: '#9999b0', padding: '0 4px' }}>
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: '10.5px', color: '#9999b0', padding: '0 4px' }}>
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+                    )
+                  })}
                   <div ref={messagesEndRef} />
                 </>
               )}
@@ -499,13 +560,13 @@ function CommunityContent() {
 
             {/* Input - Hidden if disabled for students */}
             {(selectedClass.isCommunityActive || userRole !== 'STUDENT') && (
-              <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center', background: '#e8eaf0' }}>
                 <button
                   onClick={() => setShowCreatePost(true)}
                   title="Draft a Moment"
                   style={{
                     width: '44px', height: '44px', borderRadius: '50%', border: 'none',
-                    cursor: 'pointer', background: '#e8eaf0', color: '#3636e8',
+                    cursor: 'pointer', background: '#e8eaf0', color: '#0156bf',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                     ...neuSmall, transition: 'all 0.2s',
                   }}
@@ -514,73 +575,67 @@ function CommunityContent() {
                 >
                   <Plus size={20} />
                 </button>
-              <div style={{ flex: 1, position: 'relative' }}>
-                <input
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  placeholder={`Message ${selectedClass.name} community...`}
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <input
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                    placeholder={`Message ${selectedClass.name} community...`}
+                    style={{
+                      width: '100%', padding: '11px 16px', borderRadius: '50px',
+                      border: 'none', outline: 'none',
+                      fontFamily: 'inherit', fontSize: '14px',
+                      ...neuInset, color: '#1e1e3a',
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim()}
                   style={{
-                    width: '100%', padding: '11px 16px', borderRadius: '50px',
-                    border: 'none', outline: 'none',
-                    fontFamily: 'inherit', fontSize: '14px',
-                    ...neuInset, color: '#1e1e3a',
+                    width: '44px', height: '44px', borderRadius: '50%', border: 'none',
+                    cursor: input.trim() ? 'pointer' : 'default',
+                    background: input.trim() ? '#0156bf' : '#e8eaf0',
+                    color: input.trim() ? '#fff' : '#94a3b8',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    boxShadow: input.trim()
+                      ? '4px 4px 10px rgba(1, 86, 191, 0.3)'
+                      : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    transition: 'all 0.2s',
                   }}
-                />
+                >
+                  <Send size={18} />
+                </button>
               </div>
-              <button
-                onClick={sendMessage}
-                disabled={!input.trim()}
-                style={{
-                  width: '44px', height: '44px', borderRadius: '50%', border: 'none',
-                  cursor: input.trim() ? 'pointer' : 'default',
-                  background: input.trim() ? selectedClass.color : '#e8eaf0',
-                  color: input.trim() ? '#fff' : '#9999b0',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  boxShadow: input.trim()
-                    ? `4px 4px 10px ${selectedClass.color}55`
-                    : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <Send size={18} />
-              </button>
-            </div>
-          )}
+            )}
 
-          <CreatePostModal
-            isOpen={showCreatePost}
-            onClose={() => setShowCreatePost(false)}
-            onPublish={async (content) => {
-              const prevInput = input
-              setInput(content)
-              // We need to call sendMessage but with the new content
-              // Since sendMessage uses the 'input' state, we can adapt it or call the API directly
-              const optimistic: CommMsg = {
-                id: 'temp-' + Date.now(),
-                content: content,
-                createdAt: new Date().toISOString(),
-                sender: { id: userId, name: userName || 'You', role: userRole },
-              }
-              setMessages(prev => [...prev, optimistic])
-              setInput('') // Clear input after optimistic update
+            <CreatePostModal
+              isOpen={showCreatePost}
+              onClose={() => setShowCreatePost(false)}
+              onPublish={async (content) => {
+                const optimistic: CommMsg = {
+                  id: 'temp-' + Date.now(),
+                  content: content,
+                  createdAt: new Date().toISOString(),
+                  sender: { id: userId, name: userName || 'You', role: userRole },
+                }
+                setMessages(prev => [...prev, optimistic])
 
-              await fetch(`/api/community/${selectedClass.id}/messages`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: content }),
-              })
-              loadMessages(selectedClass.id)
-            }}
-            userName={userName}
-            userAvatar={userAvatar}
-            userRole={userRole}
-          />
-        </>
-      )}
+                await fetch(`/api/community/${selectedClass.id}/messages`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ content: content }),
+                })
+                loadMessages(selectedClass.id)
+              }}
+              userName={userName}
+              userAvatar={userAvatar}
+            />
+          </>
+        )}
+      </div>
     </div>
-  </div>
-)
+  )
 }
 
 export default function CommunityPage() {
@@ -591,9 +646,8 @@ export default function CommunityPage() {
   )
 }
 
-const neuSmall = { background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }
-
 function Modal({ title, description, onConfirm, onCancel, confirmText, confirmColor }: any) {
+  const neuSmall = { background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }
   return (
     <div style={{
       position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,

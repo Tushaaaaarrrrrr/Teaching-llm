@@ -223,19 +223,20 @@ export default function ContentBankPage() {
         </div>
       )}
 
-      {/* Add Question Modal - Revamped to match Exam system */}
+      {/* Add Question Modal - Revamped to match Premium Design */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,30,58,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-           <div style={{ ...neuCard, width: '100%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a' }}>Add Independent Question</h2>
-                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontSize: '24px', cursor: 'pointer' }}>×</button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(232, 234, 240, 0.8)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+           <div style={{ ...neuCard, width: '100%', maxWidth: '850px', maxHeight: '95vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.8)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#3636e8' }}>New Question</h2>
+                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontSize: '28px', cursor: 'pointer', fontWeight: 300 }}>×</button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+                 {/* Subject & Type Row */}
+                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                     <div>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Subject</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Subject</label>
                         {isAdmin ? (
                           <select value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} style={neuInput}>
                             <option value="">Select Subject</option>
@@ -246,7 +247,7 @@ export default function ContentBankPage() {
                         )}
                     </div>
                     <div>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Question Type</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Type</label>
                         <select value={form.type} onChange={e => setForm({...form, type: e.target.value, options: e.target.value === 'TRUE_FALSE' ? ['True', 'False'] : ['', ''], correctAnswer: ''})} style={neuInput}>
                            <option value="MCQ">Multiple Choice</option>
                            <option value="TRUE_FALSE">True / False</option>
@@ -255,46 +256,55 @@ export default function ContentBankPage() {
                     </div>
                  </div>
 
+                 {/* Question text */}
                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Question Text</label>
-                    <textarea value={form.text} onChange={e => setForm({...form, text: e.target.value})} placeholder="Type your question..." style={{ ...neuInput, height: '80px', resize: 'none' }} />
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Question Text</label>
+                    <textarea value={form.text} onChange={e => setForm({...form, text: e.target.value})} placeholder="Type your question..." style={{ ...neuInput, height: '100px', resize: 'none' }} />
                  </div>
 
-                 <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Question Image (Optional)</label>
-                    <input 
-                       type="file" 
-                       accept="image/*" 
-                       onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
-                       style={{ fontSize: '12px' }}
-                    />
+                 {/* Image Upload */}
+                 <div style={{ background: 'rgba(255,255,255,0.4)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.6)' }}>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '10px' }}>Question Image (Optional)</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <label style={{ ...secondaryButton, padding: '8px 20px', fontSize: '13px', cursor: 'pointer', display: 'inline-block' }}>
+                        Choose File
+                        <input 
+                           type="file" 
+                           accept="image/*" 
+                           hidden
+                           onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+                        />
+                      </label>
+                      <span style={{ fontSize: '13px', color: '#9999b0' }}>{form.imageUrl ? 'Image uploaded successfuly' : 'No file chosen'}</span>
+                    </div>
                     {form.imageUrl && (
-                      <div style={{ marginTop: '12px', position: 'relative', width: '160px' }}>
-                         <img src={form.imageUrl} alt="Preview" style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '12px', boxShadow: '2px 2px 8px rgba(0,0,0,0.1)' }} />
-                         <button onClick={() => setForm({...form, imageUrl: ''})} style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>×</button>
+                      <div style={{ marginTop: '16px', position: 'relative', width: '200px' }}>
+                         <img src={form.imageUrl} alt="Preview" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '14px', boxShadow: '4px 4px 12px rgba(0,0,0,0.1)' }} />
+                         <button onClick={() => setForm({...form, imageUrl: ''})} style={{ position: 'absolute', top: '-12px', right: '-12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>×</button>
                       </div>
                     )}
                  </div>
 
-                 {/* Options for MCQ / True False */}
+                 {/* Options Logic */}
                  {(form.type === 'MCQ' || form.type === 'TRUE_FALSE') && (
-                   <div style={{ padding: '20px', background: 'rgba(255,255,255,0.5)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '12px' }}>Options & Correct Answer</label>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                   <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '16px' }}>Options</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                          {form.type === 'TRUE_FALSE' ? (
                            ['True', 'False'].map(opt => (
-                             <button key={opt} onClick={() => setForm({...form, correctAnswer: opt})} style={{ ...neuInput, background: form.correctAnswer === opt ? '#3636e8' : '#e8eaf0', color: form.correctAnswer === opt ? '#fff' : '#1e1e3a', fontWeight: 700, transition: 'all 0.2s' }}>
-                               {opt}
-                             </button>
+                             <div key={opt} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                               <input type="radio" checked={form.correctAnswer === opt} onChange={() => setForm({...form, correctAnswer: opt})} style={{ width: '22px', height: '22px', accentColor: '#3636e8', cursor: 'pointer' }} />
+                               <div style={{ ...neuInput, background: form.correctAnswer === opt ? '#3636e810' : '#e8eaf0', color: form.correctAnswer === opt ? '#3636e8' : '#1e1e3a', fontWeight: 700 }}>{opt}</div>
+                             </div>
                            ))
                          ) : (
                            form.options.map((opt, oIdx) => (
-                             <div key={oIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                             <div key={oIdx} style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
                                <input 
                                  type="radio" 
                                  checked={form.correctAnswer === opt && opt !== ''} 
                                  onChange={() => setForm({...form, correctAnswer: opt})} 
-                                 style={{ width: '20px', height: '20px', accentColor: '#3636e8' }} 
+                                 style={{ width: '22px', height: '22px', accentColor: '#3636e8', cursor: 'pointer' }} 
                                />
                                <input 
                                  type="text" 
@@ -311,39 +321,40 @@ export default function ContentBankPage() {
                                  <button onClick={() => {
                                    const newOpts = form.options.filter((_, i) => i !== oIdx)
                                    setForm({...form, options: newOpts})
-                                 }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '18px' }}>×</button>
+                                 }} style={{ position: 'absolute', right: '-30px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '20px', fontWeight: 300 }}>×</button>
                                )}
                              </div>
                            ))
                          )}
                       </div>
                       {form.type === 'MCQ' && form.options.length < 6 && (
-                        <button onClick={() => setForm({...form, options: [...form.options, '']})} style={{ background: 'none', border: '1px dashed #3636e8', color: '#3636e8', padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', marginTop: '16px' }}>+ Add Option</button>
+                        <button onClick={() => setForm({...form, options: [...form.options, '']})} style={{ marginTop: '20px', background: 'none', border: '2px dashed #3636e8', color: '#3636e8', padding: '10px 24px', borderRadius: '14px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>+ Add Option</button>
                       )}
                    </div>
                  )}
 
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: '16px' }}>
+                 {/* Footer logic: Explanation & Marks */}
+                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '24px', alignItems: 'end' }}>
                     <div>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Explanation (Visible after submission)</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Explanation (Optional)</label>
                         <input type="text" value={form.explanation} onChange={e => setForm({...form, explanation: e.target.value})} placeholder="Why is this correct?" style={neuInput} />
                     </div>
                     <div>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Marks</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Marks</label>
                         <input type="number" value={form.marks} onChange={e => setForm({...form, marks: parseInt(e.target.value)})} style={neuInput} min="1" />
                     </div>
                  </div>
 
                  {form.type === 'SUBJECTIVE' && (
-                    <div>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Expected Answer / Keywords</label>
-                        <textarea value={form.correctAnswer} onChange={e => setForm({...form, correctAnswer: e.target.value})} placeholder="What the student should ideally answer..." style={{ ...neuInput, height: '60px', resize: 'none' }} />
+                    <div style={{ background: 'rgba(54,54,232,0.05)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(54,54,232,0.1)' }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#3636e8', marginBottom: '8px' }}>Reference Answer / Keywords</label>
+                        <textarea value={form.correctAnswer} onChange={e => setForm({...form, correctAnswer: e.target.value})} placeholder="What should a perfect answer contain?" style={{ ...neuInput, height: '80px', resize: 'none', background: '#fff' }} />
                     </div>
                  )}
 
-                 <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
-                    <button onClick={() => setShowModal(false)} style={{ ...secondaryButton, flex: 1 }}>Cancel</button>
-                    <button onClick={handleSave} disabled={saving} style={{ ...neuButton, flex: 2 }}>{saving ? 'Saving...' : 'Save Question'}</button>
+                 <div style={{ display: 'flex', gap: '20px', marginTop: '20px', padding: '24px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                    <button onClick={() => setShowModal(false)} style={{ ...secondaryButton, flex: 1, padding: '16px' }}>Cancel</button>
+                    <button onClick={handleSave} disabled={saving} style={{ ...neuButton, flex: 2, padding: '16px' }}>{saving ? 'Publishing...' : 'Save Question to Bank'}</button>
                  </div>
               </div>
            </div>

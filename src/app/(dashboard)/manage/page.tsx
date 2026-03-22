@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
 
-type Tab = 'courses' | 'lectures' | 'sessions' | 'materials' | 'announcements'
+type Tab = 'courses' | 'lectures' | 'sessions' | 'materials' | 'announcements' | 'content-bank'
 
 export default function ManagePage() {
   const [tab, setTab] = useState<Tab>('courses')
@@ -14,6 +14,7 @@ export default function ManagePage() {
   const { data: sessionsData, isLoading: loadingSessions } = useSWR('/api/live-sessions', fetcher)
   const { data: materialsData, isLoading: loadingMaterials } = useSWR('/api/materials', fetcher)
   const { data: announcementsData, isLoading: loadingAnnouncements } = useSWR('/api/announcements', fetcher)
+  const { data: contentBankData, isLoading: loadingBank } = useSWR('/api/content-bank', fetcher)
   const { data: instructorsData } = useSWR('/api/instructors', fetcher)
 
   const courses = coursesData?.courses || coursesData || []
@@ -21,6 +22,7 @@ export default function ManagePage() {
   const sessions = sessionsData?.sessions || sessionsData || []
   const materials = Array.isArray(materialsData) ? materialsData : materialsData?.materials || []
   const announcements = announcementsData?.announcements || announcementsData || []
+  const bankQuestions = Array.isArray(contentBankData) ? contentBankData : []
   const instructors = instructorsData || []
 
   const loading = loadingCourses || loadingLectures || loadingSessions || loadingMaterials || loadingAnnouncements
@@ -31,6 +33,7 @@ export default function ManagePage() {
     mutate('/api/live-sessions')
     mutate('/api/materials')
     mutate('/api/announcements')
+    mutate('/api/content-bank')
     mutate('/api/instructors')
   }
 
@@ -118,6 +121,7 @@ export default function ManagePage() {
           sessions:      '/api/live-sessions',
           materials:     '/api/materials',
           announcements: '/api/announcements',
+          'content-bank': '/api/content-bank',
         }
         const base = endpoints[tab]
         const url  = editId ? `${base}/${editId}` : base
@@ -146,6 +150,7 @@ export default function ManagePage() {
         sessions:      '/api/live-sessions',
         materials:     '',
         announcements: '/api/announcements',
+        'content-bank': '/api/content-bank',
       }
       await fetch(`${endpoints[tab]}/${id}`, { method: 'DELETE' })
     }
@@ -158,6 +163,7 @@ export default function ManagePage() {
     { key: 'sessions',      label: 'Live Sessions', count: sessions.length },
     { key: 'materials',     label: 'Study Material', count: materials.length },
     { key: 'announcements', label: 'Announcements', count: announcements.length },
+    { key: 'content-bank',  label: 'Content Bank',  count: bankQuestions.length },
   ]
 
   const COLORS = ['#4F46E5', '#7C3AED', '#0EA5E9', '#F59E0B', '#10B981', '#EF4444', '#EC4899']
@@ -328,6 +334,7 @@ export default function ManagePage() {
       case 'sessions':      return sessions
       case 'materials':     return materials
       case 'announcements': return announcements
+      case 'content-bank':  return bankQuestions
     }
   }
 

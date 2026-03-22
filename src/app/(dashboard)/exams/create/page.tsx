@@ -275,32 +275,42 @@ export default function CreateExamPage() {
                 </div>
               </div>
 
-              {/* Content Bank Picker Modal */}
+              {/* Content Bank Picker Modal - Upgraded UI */}
               {showBank && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-                  <div style={{ ...neuCard, maxWidth: '800px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(232, 234, 240, 0.8)', backdropFilter: 'blur(10px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                  <div style={{ ...neuCard, maxWidth: '900px', width: '100%', maxHeight: '85vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.8)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
                        <div>
-                         <h3 style={{ fontSize: '20px', fontWeight: 800 }}>Content Bank: {courses.find(c => c.id === courseId)?.subject}</h3>
-                         <p style={{ fontSize: '12px', color: '#6b6b8a' }}>Select questions to add to your exam</p>
+                         <h3 style={{ fontSize: '22px', fontWeight: 900, color: '#3636e8' }}>Browse Content Bank</h3>
+                         <p style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: 500, marginTop: '4px' }}>
+                           Subject: <span style={{ color: '#1e1e3a', fontWeight: 800 }}>{courses.find(c => c.id === courseId)?.subject}</span>
+                         </p>
                        </div>
-                       <button onClick={() => setShowBank(false)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 700, cursor: 'pointer' }}>Close</button>
+                       <button onClick={() => setShowBank(false)} style={{ background: '#ef444410', border: 'none', color: '#ef4444', padding: '8px 16px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>Close Bank</button>
                     </div>
 
-                    <input 
-                      type="text" 
-                      placeholder="Search bank..." 
-                      value={bankSearch}
-                      onChange={e => setBankSearch(e.target.value)}
-                      style={{ ...neuInput, marginBottom: '20px' }}
-                    />
+                    <div style={{ position: 'relative', marginBottom: '24px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Search questions by text or keyword..." 
+                        value={bankSearch}
+                        onChange={e => setBankSearch(e.target.value)}
+                        style={{ ...neuInput, paddingLeft: '44px' }}
+                      />
+                      <svg style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9999b0' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                      </svg>
+                    </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                        {bankQuestions.filter(q => q.text.toLowerCase().includes(bankSearch.toLowerCase())).map(q => (
-                         <div key={q.id} style={{ padding: '16px', background: '#fff', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <div key={q.id} style={{ padding: '20px', background: 'rgba(255,255,255,0.4)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
                             <div style={{ flex: 1 }}>
-                               <div style={{ fontSize: '10px', fontWeight: 800, color: '#3636e8' }}>{q.type}</div>
-                               <div style={{ fontSize: '14px', fontWeight: 600 }}>{q.text}</div>
+                               <div style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
+                                 <span style={{ fontSize: '10px', fontWeight: 900, color: '#3636e8', background: '#3636e810', padding: '2px 8px', borderRadius: '6px' }}>{q.type}</span>
+                                 <span style={{ fontSize: '10px', fontWeight: 900, color: '#6b6b8a', background: '#00000005', padding: '2px 8px', borderRadius: '6px' }}>{q.marks || 1} Marks</span>
+                               </div>
+                               <div style={{ fontSize: '15px', fontWeight: 700, color: '#1e1e3a', lineHeight: '1.4' }}>{q.text}</div>
                             </div>
                             <button 
                               type="button"
@@ -311,19 +321,31 @@ export default function CreateExamPage() {
                                   options: q.options ? JSON.parse(q.options) : [], 
                                   correctAnswer: q.correctAnswer, 
                                   explanation: q.explanation || '', 
-                                  marks: 1,
+                                  marks: q.marks || 1,
                                   imageUrl: q.imageUrl,
-                                  questionBankId: q.id // Pass the ID to avoid duplicates in DB
+                                  questionBankId: q.id 
                                 } as any])
                                 setShowBank(false)
                               }}
-                              style={{ ...neuButton, padding: '8px 16px', fontSize: '12px' }}
+                              style={{ 
+                                padding: '10px 20px', borderRadius: '12px', border: 'none', 
+                                background: '#3636e8', color: '#fff', fontSize: '13px', fontWeight: 800, 
+                                cursor: 'pointer', boxShadow: '0 4px 12px rgba(54,54,232,0.2)',
+                                transition: 'transform 0.2s'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
                             >
                               Add to Exam
                             </button>
                          </div>
                        ))}
-                       {bankQuestions.length === 0 && <p style={{ textAlign: 'center', color: '#9999b0' }}>No questions found for this subject in the bank.</p>}
+                       {bankQuestions.length === 0 && (
+                         <div style={{ textAlign: 'center', padding: '40px', color: '#9999b0', background: 'rgba(0,0,0,0.02)', borderRadius: '16px' }}>
+                           <p style={{ fontSize: '14px', fontWeight: 600 }}>No questions found in "{courses.find(c => c.id === courseId)?.subject}" bank.</p>
+                           <p style={{ fontSize: '12px', marginTop: '4px' }}>Please go to the Content Bank page to add some questions first.</p>
+                         </div>
+                       )}
                     </div>
                   </div>
                 </div>
