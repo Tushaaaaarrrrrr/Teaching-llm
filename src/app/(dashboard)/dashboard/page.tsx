@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const examCountdown = dashboardData?.examCountdown || null
   const role = dashboardData?.user?.role || ''
   const isManager = role === 'MANAGER'
+  const isStudentView = role === 'STUDENT' || role === 'ADMIN'
 
   const [isEditingTimer, setIsEditingTimer] = useState(false)
   const [timerTitle, setTimerTitle] = useState('')
@@ -62,7 +63,7 @@ export default function DashboardPage() {
 
   const liveSessions = dashboardData?.liveSessions || []
   const liveNow = liveSessions.filter((s: any) => s.status === 'live').slice(0, 3)
-  const upNextSessions = liveSessions.filter((s: any) => s.status === 'scheduled' || s.status === 'upcoming').slice(0, 2)
+  const upNextSessions = liveSessions.filter((s: any) => s.status === 'upcoming').slice(0, 2)
 
   const lectures = (dashboardData?.lectures || []).slice(0, 3)
   const announcements = (dashboardData?.announcements || []).slice(0, 3)
@@ -74,7 +75,7 @@ export default function DashboardPage() {
     { label: 'Lectures', value: stats?.totalLectures ?? 0, color: '#8b5cf6', bg: '#ede9fe', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
     )},
-    ...(isManager ? [{
+    ...(!isStudentView ? [{
       label: 'Students Enrolled', value: stats?.totalStudents ?? 0, color: '#10b981', bg: '#d1fae5', icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
       ),
@@ -95,7 +96,7 @@ export default function DashboardPage() {
         </svg>
       )
     },
-    ...(isManager ? [
+    ...(!isStudentView ? [
       { 
         label: 'Active Sessions', 
         value: dashboardData?.stats?.activeSessions ?? 0, 

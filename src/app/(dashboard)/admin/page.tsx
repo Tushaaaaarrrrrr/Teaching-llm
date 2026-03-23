@@ -80,7 +80,12 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/auth/me')
       const data = await res.json()
-      setUserRole(data.user?.role || '')
+      const role = data.user?.role || ''
+      if (role && role !== 'MANAGER') {
+        window.location.href = '/dashboard'
+        return
+      }
+      setUserRole(role)
       setUserPermissions({
         canTerminate: data.user?.canTerminate || false,
         canCreateStudents: data.user?.canCreateStudents || false,

@@ -65,6 +65,28 @@ export async function POST(request: NextRequest) {
     const calData = await calRes.json()
     const events = calData.items || []
 
+    const fetchedEventIds = new Set(events.map((e: any) => e.id))
+    
+    // Find and delete orphaned events (present in LMS but not in GCal fresh fetch)
+    const existingSyncedEvents = await prisma.courseEvent.findMany({
+      where: {
+        googleEventId: { not: null },
+        startTime: { gte: startSync },
+        createdById: session.userId
+      },
+      select: { googleEventId: true }
+    })
+
+    const googleIdsToDelete = existingSyncedEvents
+      .map(ev => ev.googleEventId!)
+      .filter(id => !fetchedEventIds.has(id))
+
+    if (googleIdsToDelete.length > 0) {
+      await prisma.courseEvent.deleteMany({
+        where: { googleEventId: { in: googleIdsToDelete } }
+      })
+    }
+
     let imported = 0
     let skipped = 0
 
@@ -86,7 +108,6 @@ export async function POST(request: NextRequest) {
       const isGlobal = match[1].toLowerCase() === 'global'
       const courseId = isGlobal ? null : match[1]
 
-      
       const startTime = item.start?.dateTime || item.start?.date
       const endTime = item.end?.dateTime || item.end?.date
 
@@ -95,10 +116,9 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // Check for meet link in HangoutLink, description, or location
+      // Check for meet link
       const meetLink = item.hangoutLink || (item.location?.includes('meet.google.com') || item.location?.includes('zoom.us') ? item.location : null) || null
       
-      // Determine manualStatus if title implies it
       let manualStatus = 'NONE'
       if (item.summary?.toLowerCase().includes('[cancelled]') || item.status === 'cancelled') {
         manualStatus = 'CANCELLED'
@@ -106,7 +126,6 @@ export async function POST(request: NextRequest) {
         manualStatus = 'RESCHEDULED'
       }
 
-      // Extract raw title
       const title = item.summary?.replace(/\[(cancelled|rescheduled)\]/i, '').trim() || 'Untitled Session'
 
       if (!isGlobal) {
@@ -117,7 +136,6 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Optional Enhancement: Try to resolve instructor via creator email
       let instructorId = null
       const creatorEmail = item.creator?.email || item.organizer?.email
       if (creatorEmail) {
@@ -137,7 +155,7 @@ export async function POST(request: NextRequest) {
           endTime: new Date(endTime),
           meetLink,
           manualStatus,
-          instructorId // Optionally found from email
+          instructorId
         },
         create: {
           googleEventId: item.id,
@@ -149,14 +167,14 @@ export async function POST(request: NextRequest) {
           meetLink,
           manualStatus,
           createdById: session.userId,
-          instructorId, // Optionally found from email
-          type: meetLink ? 'live' : 'class' // default to live if meet link exists
+          instructorId,
+          type: meetLink ? 'live' : 'class'
         }
       })
       imported++
     }
 
-    // Update the last sync time in GoogleCredential
+    // Update the last sync time
     await prisma.googleCredential.update({
       where: { id: cred.id },
       data: { lastSyncAt: new Date() }

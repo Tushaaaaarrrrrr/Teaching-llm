@@ -162,7 +162,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/manage',
     label: 'Manage',
-    roles: ['MANAGER', 'ADMIN'],
+    roles: ['MANAGER'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 20h9"/>
@@ -184,7 +184,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/admin',
     label: 'User Admin',
-    roles: ['MANAGER', 'ADMIN'],
+    roles: ['MANAGER'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>

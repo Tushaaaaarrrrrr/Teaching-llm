@@ -79,8 +79,15 @@ export default function CourseEditPage() {
       const meData = await meRes.json()
 
       const role = meData.user?.role
+      const accessibleCourseIds = meData.user?.accessibleCourseIds || []
+
       if (role !== 'ADMIN' && role !== 'MANAGER') {
         router.replace(`/courses/${params.id}`)
+        return
+      }
+
+      if (role === 'ADMIN' && !accessibleCourseIds.includes(params.id as string)) {
+        router.replace('/dashboard')
         return
       }
 
