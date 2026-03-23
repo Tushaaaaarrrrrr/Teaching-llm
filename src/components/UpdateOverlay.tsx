@@ -14,6 +14,82 @@ interface PendingUpdate {
   ctaText?: string | null
   ctaLink?: string | null
   frequency?: string
+  animation?: string | null
+}
+
+/**
+ * VisualEffect — renders a temporary visual celebration
+ */
+function VisualEffect({ type }: { type: string }) {
+  const [active, setActive] = useState(true)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setActive(false), 8000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (!active) return null
+
+  if (type === 'CONFETTI') {
+    return (
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 10 }}>
+        {[...Array(50)].map((_, i) => (
+          <div
+            key={i}
+            className="confetti-piece"
+            style={{
+              position: 'absolute', top: '-10%', left: `${Math.random() * 100}%`,
+              width: `${Math.random() * 10 + 5}px`, height: `${Math.random() * 10 + 5}px`,
+              background: ['#ffec3d', '#ff4d4f', '#40a9ff', '#73d13d', '#9254de', '#ffa940'][Math.floor(Math.random() * 6)],
+              animation: `confetti-fall ${Math.random() * 3 + 2}s linear forwards`,
+              animationDelay: `${Math.random() * 2}s`,
+              transform: `rotate(${Math.random() * 360}deg)`,
+            }}
+          />
+        ))}
+      </div>
+    )
+  }
+
+  if (type === 'PARTY_POPS') {
+    return (
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 10 }}>
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            style={{
+              position: 'absolute', top: `${30 + Math.random() * 40}%`, left: `${Math.random() * 100}%`,
+              fontSize: '24px', animation: 'party-pop 1.5s ease-out forwards',
+              animationDelay: `${i * 0.4}s`, opacity: 0,
+            }}
+          >
+            {['🎉', '🎊', '✨', '🎈'][Math.floor(Math.random() * 4)]}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (type === 'FESTIVAL') {
+    return (
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 10 }}>
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            style={{
+              position: 'absolute', bottom: '-10%', left: `${10 + i * 18}%`,
+              fontSize: '32px', animation: 'festival-float 6s ease-in-out forwards',
+              animationDelay: `${i * 0.8}s`, filter: 'drop-shadow(0 0 10px rgba(255,100,0,0.5))',
+            }}
+          >
+            🏮
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return null
 }
 
 /**
@@ -101,9 +177,15 @@ export default function UpdateOverlay() {
           background: '#ffffff', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
           animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
           maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+          position: 'relative',
         }}
         onClick={e => e.stopPropagation()}
       >
+        {/* Visual Effect Layer */}
+        {currentUpdate.animation && currentUpdate.animation !== 'NONE' && (
+          <VisualEffect type={currentUpdate.animation} key={`effect-${currentUpdate.id}`} />
+        )}
+
         {/* Header */}
         <div style={{
           background: isWelcome
@@ -116,6 +198,7 @@ export default function UpdateOverlay() {
             background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff',
             width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 20,
           }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -190,6 +273,20 @@ export default function UpdateOverlay() {
           0% { opacity: 0; transform: scale(0.85); }
           70% { opacity: 1; transform: scale(1.02); }
           100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes confetti-fall {
+          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(600px) rotate(720deg); opacity: 0; }
+        }
+        @keyframes party-pop {
+          0% { transform: scale(0) translateY(0); opacity: 0; }
+          20% { transform: scale(1.5) translateY(-20px); opacity: 1; }
+          100% { transform: scale(1) translateY(-100px); opacity: 0; }
+        }
+        @keyframes festival-float {
+          0% { transform: translateY(0) scale(1); opacity: 0; }
+          10% { opacity: 1; }
+          100% { transform: translateY(-800px) scale(1.5); opacity: 0; }
         }
       `}</style>
     </div>

@@ -67,6 +67,10 @@ export async function GET() {
       // CUSTOM
       if (!settings.customEnabled) continue
 
+      // Scheduling check
+      if (update.startDate && now < new Date(update.startDate)) continue
+      if (update.endDate && now > new Date(update.endDate)) continue
+
       // Frequency check
       if (update.frequency === 'ONCE') {
         if (view) continue // already seen
@@ -104,6 +108,7 @@ export async function GET() {
         ctaText: u.ctaText,
         ctaLink: u.ctaLink,
         frequency: u.frequency,
+        animation: u.animation,
       })),
     })
   } catch (error) {

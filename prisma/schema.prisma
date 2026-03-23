@@ -505,6 +505,9 @@ model SystemUpdate {
   courseIds    String       @default("")         // comma-separated course IDs; empty = global
   ctaLink      String?
   ctaText      String?
+  startDate    DateTime?   // For CUSTOM scheduling
+  endDate      DateTime?   // For CUSTOM scheduling
+  animation    String?     // NONE | CONFETTI | PARTY_POPS | FESTIVAL
   createdById  String
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt

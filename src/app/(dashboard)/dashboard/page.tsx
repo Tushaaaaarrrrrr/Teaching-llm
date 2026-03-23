@@ -94,7 +94,33 @@ export default function DashboardPage() {
           <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
         </svg>
       )
-    }
+    },
+    ...(isManager ? [
+      { 
+        label: 'Active Sessions', 
+        value: dashboardData?.stats?.activeSessions ?? 0, 
+        color: '#f43f5e', 
+        bg: '#fff1f2', 
+        icon: (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+        )
+      },
+      { 
+        label: 'Support System', 
+        value: dashboardData?.supportSummary?.isSupportActive ? 'Online' : 'Offline', 
+        color: '#3636e8', 
+        bg: '#ebebff', 
+        isSupport: true,
+        summary: dashboardData?.supportSummary,
+        icon: (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        )
+      }
+    ] : [])
   ]
 
   if (loading) {
@@ -122,7 +148,7 @@ export default function DashboardPage() {
     <div className="page-container fade-in">
 
       {/* Stats Grid */}
-      <div className="grid-4" style={{ marginBottom: '24px', marginTop: '16px' }}>
+      <div className="grid-4" style={{ marginBottom: '24px', marginTop: '48px' }}>
         {statCards.map((card) => (
           <div key={card.label} className="card" style={{
             padding: '22px 24px',
@@ -165,7 +191,32 @@ export default function DashboardPage() {
               }}>
                 {card.value}
               </div>
+              {card.isSupport && (
+                <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ fontSize: '10px', color: '#6b6b8a', fontWeight: '600' }}>
+                    {card.summary?.openTickets ?? 0} Open Tickets
+                  </div>
+                </div>
+              )}
             </div>
+
+            {card.isSupport && (
+              <Link href="/support" style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                background: '#3636e8',
+                color: '#fff',
+                fontSize: '10px',
+                fontWeight: '700',
+                textDecoration: 'none',
+                boxShadow: '0 4px 10px rgba(54,54,232,0.3)'
+              }}>
+                Go to Support
+              </Link>
+            )}
 
             {card.isTimer && isManager && (
               <button 

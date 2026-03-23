@@ -17,7 +17,7 @@ export async function PUT(
     const {
       title, content, type, imageUrl, isActive, priority,
       showDelay, frequency, intervalDays, courseIds,
-      ctaText, ctaLink,
+      ctaText, ctaLink, startDate, endDate, animation,
     } = body
 
     const existing = await prisma.systemUpdate.findUnique({
@@ -43,6 +43,9 @@ export async function PUT(
         ...(courseIds !== undefined && { courseIds: Array.isArray(courseIds) ? courseIds.join(',') : (courseIds || '') }),
         ...(ctaText !== undefined && { ctaText: ctaText || null }),
         ...(ctaLink !== undefined && { ctaLink: ctaLink || null }),
+        ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
+        ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
+        ...(animation !== undefined && { animation: animation || null }),
       },
     })
 

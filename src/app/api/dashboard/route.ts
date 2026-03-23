@@ -84,7 +84,11 @@ export async function GET() {
       lectures,
       announcements,
       examCountdown,
-      upcomingExams
+      upcomingExams,
+      openTicketsCount,
+      activeChatSessionsCount,
+      activeAgentsCount,
+      activeSessionsCount
     ] = await Promise.all([
       prisma.courseEvent.findMany({
         where: {
@@ -116,6 +120,23 @@ export async function GET() {
         include: { course: { select: { name: true, color: true } } },
         orderBy: { startDate: 'asc' },
         take: 3
+      }),
+      prisma.supportTicket.count({
+        where: { status: 'OPEN' }
+      }),
+      prisma.chatSession.count({
+        where: { status: { in: ['WAITING', 'ACTIVE'] } }
+      }),
+      prisma.user.count({
+        where: {
+          role: { in: ['MANAGER', 'ADMIN'] },
+          updatedAt: { gt: new Date(Date.now() - 5 * 60 * 1000) }
+        }
+      }),
+      prisma.user.count({
+        where: {
+          updatedAt: { gt: new Date(Date.now() - 5 * 60 * 1000) }
+        }
       })
     ])
 
@@ -147,12 +168,18 @@ export async function GET() {
         totalStudents,
         upcomingSessions: upcomingLiveCount,
         totalMaterials,
+        activeSessions: activeSessionsCount,
       },
       liveSessions: mappedSessions,
       lectures,
       announcements,
       upcomingExams,
       examCountdown,
+      supportSummary: {
+        openTickets: openTicketsCount,
+        activeChats: activeChatSessionsCount,
+        isSupportActive: activeAgentsCount > 0
+      },
       user: {
         role: session.role,
         name: session.name,

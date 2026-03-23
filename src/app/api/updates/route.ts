@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const {
       title, content, type, imageUrl, isActive, priority,
       showDelay, frequency, intervalDays, courseIds,
-      ctaText, ctaLink,
+      ctaText, ctaLink, startDate, endDate, animation,
     } = body
 
     if (!title || !content) {
@@ -70,6 +70,9 @@ export async function POST(request: NextRequest) {
         courseIds: Array.isArray(courseIds) ? courseIds.join(',') : (courseIds || ''),
         ctaText: ctaText || null,
         ctaLink: ctaLink || null,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        animation: animation || null,
         createdById: session.userId,
       },
     })

@@ -180,20 +180,44 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   return (
     <header style={{
-      height: '96px', background: '#e8eaf0',
+      height: pathname === '/dashboard' ? '140px' : '96px', background: '#e8eaf0',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
+      transition: 'height 0.3s ease',
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
         {matchedKey === '/dashboard' ? (
           <>
-            <h1 style={{ fontSize: '42px', fontWeight: '900', color: '#1e1e3a', lineHeight: '1.1', letterSpacing: '-1px', display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
+            <h1 style={{ 
+              fontSize: '56px', 
+              fontWeight: '900', 
+              color: '#1e1e3a', 
+              lineHeight: '1.0', 
+              letterSpacing: '-1.5px', 
+              display: 'flex', 
+              alignItems: 'baseline', 
+              gap: '12px', 
+              flexWrap: 'wrap' 
+            }}>
               {getGreeting().heading},
-              <span style={{ fontSize: '30px', fontWeight: '700', color: '#3636e8', letterSpacing: '-0.5px' }}>
+              <span style={{ 
+                fontSize: '40px', 
+                fontWeight: '700', 
+                color: '#3636e8', 
+                letterSpacing: '-0.8px',
+                opacity: 0.9
+              }}>
                 {firstName}
               </span>
             </h1>
-            <p style={{ fontSize: '13.5px', color: '#6b6b8a', marginTop: '4px', fontWeight: '500', letterSpacing: '0.01em' }}>
+            <p style={{ 
+              fontSize: '15px', 
+              color: '#6b6b8a', 
+              marginTop: '6px', 
+              fontWeight: '500', 
+              letterSpacing: '0.01em',
+              maxWidth: '600px'
+            }}>
               {getGreeting().subtext}
             </p>
           </>

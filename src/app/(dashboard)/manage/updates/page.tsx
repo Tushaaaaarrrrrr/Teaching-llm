@@ -24,6 +24,9 @@ interface SystemUpdate {
   courseIds: string
   ctaText: string | null
   ctaLink: string | null
+  startDate: string | null
+  endDate: string | null
+  animation: string | null
   createdAt: string
   _count: { views: number }
   createdBy: { name: string }
@@ -108,6 +111,9 @@ export default function ManageUpdatesPage() {
   const [ctaText, setCtaText] = useState('')
   const [ctaLink, setCtaLink] = useState('')
   const [imageUrl, setImageUrl] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [animation, setAnimation] = useState('NONE')
   const [saving, setSaving] = useState(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
 
@@ -139,6 +145,9 @@ export default function ManageUpdatesPage() {
     setCtaText('')
     setCtaLink('')
     setImageUrl('')
+    setStartDate('')
+    setEndDate('')
+    setAnimation('NONE')
     if (editorRef.current) editorRef.current.innerHTML = ''
   }
 
@@ -162,6 +171,9 @@ export default function ManageUpdatesPage() {
     setCtaText(u.ctaText || '')
     setCtaLink(u.ctaLink || '')
     setImageUrl(u.imageUrl || '')
+    setStartDate(u.startDate ? u.startDate.split('T')[0] : '')
+    setEndDate(u.endDate ? u.endDate.split('T')[0] : '')
+    setAnimation(u.animation || 'NONE')
     setShowModal(true)
     setTimeout(() => { if (editorRef.current) editorRef.current.innerHTML = u.content }, 50)
   }
@@ -185,6 +197,9 @@ export default function ManageUpdatesPage() {
         ctaText: ctaText || null,
         ctaLink: ctaLink || null,
         imageUrl: imageUrl || null,
+        startDate: editType === 'CUSTOM' && startDate ? startDate : null,
+        endDate: editType === 'CUSTOM' && endDate ? endDate : null,
+        animation: animation === 'NONE' ? null : animation,
       }
 
       const url = editId ? `/api/updates/${editId}` : '/api/updates'
@@ -481,24 +496,82 @@ export default function ManageUpdatesPage() {
 
               {/* Image */}
               <div className="form-group">
-                <label className="form-label">Image (Optional)</label>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <label className="form-label">Attached Image (Optional)</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                   <input type="file" ref={fileInputRef} accept="image/png,image/jpeg" onChange={handleImageSelect} style={{ display: 'none' }} />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-ghost btn-sm" style={{ fontSize: '12px' }}>
-                    {uploading ? 'Uploading…' : '📷 Upload Image'}
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-sm" style={{ background: '#fff', border: '1px solid #cbd5e1', fontSize: '12px' }}>
+                    {uploading ? 'Uploading…' : '📷 Choose Image'}
                   </button>
-                  {imageUrl && (
-                    <>
-                      <img src={imageUrl} alt="" style={{ height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
-                      <button type="button" onClick={() => setImageUrl('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '12px' }}>Remove</button>
-                    </>
+                  {imageUrl ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img src={imageUrl} alt="" style={{ height: '36px', width: '36px', borderRadius: '6px', objectFit: 'cover' }} />
+                      <button type="button" onClick={() => setImageUrl('')} style={{ color: '#ef4444', fontSize: '11px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer' }}>Remove</button>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: '11px', color: '#9999b0' }}>No image selected</span>
                   )}
+                </div>
+              </div>
+
+              {/* Animation */}
+              <div className="form-group">
+                <label className="form-label">Visual Effect (Optional)</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {[
+                    { id: 'NONE', label: 'No Effect', icon: '🚫' },
+                    { id: 'CONFETTI', label: 'Confetti', icon: 'confetti' },
+                    { id: 'PARTY_POPS', label: 'Party Pops', icon: '🎉' },
+                    { id: 'FESTIVAL', label: 'Festival', icon: '🏮' },
+                  ].map(anim => (
+                    <button
+                      key={anim.id}
+                      type="button"
+                      onClick={() => setAnimation(anim.id)}
+                      style={{
+                        padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: '600',
+                        border: animation === anim.id ? '2px solid #6366f1' : '1px solid #cbd5e1',
+                        background: animation === anim.id ? '#eef2ff' : '#fff',
+                        color: animation === anim.id ? '#4f46e5' : '#475569',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {anim.id === 'CONFETTI' ? <span style={{ fontSize: '14px' }}>🎊</span> : <span style={{ fontSize: '14px' }}>{anim.icon}</span>}
+                      {anim.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Shared CTA - Now for both Welcome and Custom */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">CTA Button Text (Optional)</label>
+                  <input type="text" className="form-input" value={ctaText} onChange={e => setCtaText(e.target.value)} placeholder="e.g. View Exam" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">CTA Button Link</label>
+                  <input type="text" className="form-input" value={ctaLink} onChange={e => setCtaLink(e.target.value)} placeholder="e.g. /exams/123" />
                 </div>
               </div>
 
               {/* CUSTOM-only fields */}
               {editType === 'CUSTOM' && (
                 <>
+                  {/* Scheduling */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group">
+                      <label className="form-label">Start Date (Optional)</label>
+                      <input type="date" className="form-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                      <p style={{ fontSize: '10px', color: '#9999b0', marginTop: '2px' }}>Message becomes active on this day</p>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">End Date (Optional)</label>
+                      <input type="date" className="form-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                      <p style={{ fontSize: '10px', color: '#9999b0', marginTop: '2px' }}>Message expires at end of this day</p>
+                    </div>
+                  </div>
+
                   {/* Frequency */}
                   <div className="form-group">
                     <label className="form-label">Display Frequency</label>
@@ -586,18 +659,6 @@ export default function ManageUpdatesPage() {
                       <p style={{ fontSize: '10px', color: '#9999b0', marginTop: '2px' }}>Delay before message appears</p>
                     </div>
                   </div>
-
-                  {/* CTA */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="form-group">
-                      <label className="form-label">CTA Button Text (Optional)</label>
-                      <input type="text" className="form-input" value={ctaText} onChange={e => setCtaText(e.target.value)} placeholder="e.g. View Exam" />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">CTA Button Link</label>
-                      <input type="text" className="form-input" value={ctaLink} onChange={e => setCtaLink(e.target.value)} placeholder="e.g. /exams/123" />
-                    </div>
-                  </div>
                 </>
               )}
             </div>
@@ -656,6 +717,11 @@ export default function ManageUpdatesPage() {
               <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#fff', margin: 0, lineHeight: '1.2' }}>
                 {title || 'Message Title'}
               </h2>
+              {animation !== 'NONE' && (
+                <div style={{ marginTop: '10px', fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  ✨ {animation.replace('_', ' ')} Effect Active
+                </div>
+              )}
             </div>
             {imageUrl && <img src={imageUrl} alt="" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', flexShrink: 0 }} />}
             <div style={{ padding: '28px', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>

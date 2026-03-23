@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Plus, Send, Image as ImageIcon, Smile } from 'lucide-react'
-import CreatePostModal from '@/components/CreatePostModal'
+import { Send } from 'lucide-react'
+
 
 interface ClassItem {
   id: string
@@ -38,7 +38,7 @@ function CommunityContent() {
   const [userName, setUserName] = useState('')
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [userRole, setUserRole] = useState('STUDENT')
-  const [showCreatePost, setShowCreatePost] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [modifying, setModifying] = useState(false)
@@ -316,75 +316,11 @@ function CommunityContent() {
                     </button>
                   </>
                 )}
-                <button
-                  onClick={() => setShowCreatePost(true)}
-                  style={{
-                    padding: '8px 16px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                    background: 'linear-gradient(135deg, #0156bf 0%, #3636e8 100%)', 
-                    color: '#fff', fontSize: '13px', fontWeight: '800',
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    boxShadow: '0 4px 12px rgba(1, 86, 191, 0.3)',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
-                  onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
-                >
-                  <Plus size={16} />
-                  New Moment
-                </button>
+
               </div>
             </div>
 
-            {/* Quick Create Bar */}
-            {(selectedClass.isCommunityActive || userRole !== 'STUDENT') && (
-              <div 
-                onClick={() => setShowCreatePost(true)}
-                style={{ 
-                  margin: '16px 20px 8px', 
-                  padding: '12px 16px', 
-                  borderRadius: '16px', 
-                  background: '#f8fafc',
-                  border: '1.5px solid rgba(0,0,0,0.04)',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = '#fff';
-                  e.currentTarget.style.borderColor = 'rgba(1, 86, 191, 0.2)';
-                  e.currentTarget.style.boxShadow = '0 6px 15px rgba(0,0,0,0.05)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = '#f8fafc';
-                  e.currentTarget.style.borderColor = 'rgba(0,0,0,0.04)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <div style={{ 
-                  width: '32px', height: '32px', borderRadius: '50%',
-                  background: userAvatar ? 'transparent' : '#e8eaf0',
-                  boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#0156bf', fontSize: '11px', fontWeight: '800',
-                  overflow: 'hidden'
-                }}>
-                  {userAvatar ? (
-                    <img src={userAvatar} alt={userName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    userName.charAt(0).toUpperCase()
-                  )}
-                </div>
-                <div style={{ flex: 1, color: '#94a3b8', fontSize: '13px', fontWeight: '600' }}>
-                  What's unfolding in your atelier today?
-                </div>
-                <div style={{ display: 'flex', gap: '8px', color: '#94a3b8' }}>
-                  <ImageIcon size={18} />
-                  <Smile size={18} />
-                </div>
-              </div>
-            )}
+
 
             {/* Messages */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 16px', display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative' }}>
@@ -561,20 +497,7 @@ function CommunityContent() {
             {/* Input - Hidden if disabled for students */}
             {(selectedClass.isCommunityActive || userRole !== 'STUDENT') && (
               <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center', background: '#e8eaf0' }}>
-                <button
-                  onClick={() => setShowCreatePost(true)}
-                  title="Draft a Moment"
-                  style={{
-                    width: '44px', height: '44px', borderRadius: '50%', border: 'none',
-                    cursor: 'pointer', background: '#e8eaf0', color: '#0156bf',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                    ...neuSmall, transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
-                  onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
-                >
-                  <Plus size={20} />
-                </button>
+
                 <div style={{ flex: 1, position: 'relative' }}>
                   <input
                     value={input}
@@ -609,28 +532,7 @@ function CommunityContent() {
               </div>
             )}
 
-            <CreatePostModal
-              isOpen={showCreatePost}
-              onClose={() => setShowCreatePost(false)}
-              onPublish={async (content) => {
-                const optimistic: CommMsg = {
-                  id: 'temp-' + Date.now(),
-                  content: content,
-                  createdAt: new Date().toISOString(),
-                  sender: { id: userId, name: userName || 'You', role: userRole },
-                }
-                setMessages(prev => [...prev, optimistic])
 
-                await fetch(`/api/community/${selectedClass.id}/messages`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ content: content }),
-                })
-                loadMessages(selectedClass.id)
-              }}
-              userName={userName}
-              userAvatar={userAvatar}
-            />
           </>
         )}
       </div>
