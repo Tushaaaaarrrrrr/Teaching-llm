@@ -11,23 +11,22 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: Record<string, any> = {}
-    if (status) where.status = status
+    const where: Record<string, any> = { type: 'class' }
 
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
     if (accessibleCourseIds !== null) {
       where.courseId = { in: accessibleCourseIds }
     }
 
-    const liveSessions = await prisma.liveSession.findMany({
+    const liveSessions = await prisma.courseEvent.findMany({
       where,
       include: {
-        course: { select: { name: true } },
+        instructor: { select: { name: true } },
+        course: { select: { name: true, teacherName: true } },
       },
-      orderBy: { date: 'desc' },
+      orderBy: { startTime: 'desc' },
     })
 
     return NextResponse.json(liveSessions)
@@ -66,35 +65,22 @@ export async function POST(request: NextRequest) {
       className = cls?.name || null
     }
 
-    const liveSession = await prisma.liveSession.create({
+    const start = new Date(`${date}T${time || '00:00'}`)
+    const end = new Date(start.getTime() + 60 * 60 * 1000) // 1 hour default
+
+    const liveSession = await prisma.courseEvent.create({
       data: {
         courseId,
         title,
         description,
-        meetingLink,
-        instructor,
-        date,
-        time,
-        status,
+        meetLink: meetingLink,
+        startTime: start,
+        endTime: end,
+        type: 'class',
+        manualStatus: status || 'NONE',
         createdById: session.userId,
       },
     })
-
-    // Auto-create a calendar event linked to the same class
-    if (date) {
-      await prisma.calendarEvent.create({
-        data: {
-          title: `Live: ${title}`,
-          description: instructor ? `Instructor: ${instructor}` : description || null,
-          date,
-          time: time || null,
-          type: 'class',
-          courseId: courseId || null,
-          relatedCourse: className,
-          createdById: session.userId,
-        },
-      })
-    }
 
     logActivity({
       userId: session.userId,

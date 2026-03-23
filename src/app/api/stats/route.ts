@@ -24,9 +24,9 @@ export async function GET() {
         prisma.course.count({ where: classCountFilter }),
         prisma.lecture.count({ where: classFilter }),
         prisma.user.count({ where: { role: 'STUDENT' } }),
-        prisma.liveSession.count({
+        prisma.courseEvent.count({
           where: {
-            status: { in: ['scheduled', 'live'] },
+            startTime: { gte: new Date() },
             ...classFilter,
           },
         }),
