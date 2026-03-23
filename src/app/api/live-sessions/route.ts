@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
     const { startOfDay, endOfDay } = getISTDayBoundaries()
 
     const where: Record<string, any> = { 
-      type: { in: ['class', 'live', 'event'] },
       startTime: { gte: startOfDay, lte: endOfDay }
     }
 

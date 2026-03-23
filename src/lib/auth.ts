@@ -133,6 +133,10 @@ export function canManageContent(role: string) {
   return role === 'MANAGER' || role === 'ADMIN'
 }
 
+export function canManageEvents(role: string) {
+  return role === 'MANAGER' || role === 'ADMIN' || role === 'INSTRUCTOR'
+}
+
 /**
  * Returns the courseIds the user has access to via Enrollment.
  * MANAGER: returns null (meaning "all courses, no filtering")

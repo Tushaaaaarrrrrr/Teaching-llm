@@ -86,7 +86,6 @@ export async function GET() {
     ] = await Promise.all([
       prisma.courseEvent.findMany({
         where: {
-          type: { in: ['class', 'live', 'event'] },
           status: { not: 'CANCELLED' },
           ...eventCourseFilter,
           endTime: { gte: now } // Only show current or future events
