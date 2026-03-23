@@ -1,0 +1,466 @@
+{
+  "codebase": "Teaching-LLM (Alpha IITIAN LMS)",
+  "analyzed_at": "2026-03-23",
+  "total_files": 127,
+  "root": {
+    "name": "Teaching-LLM",
+    "file_count": 127,
+    "branches": [
+      {
+        "id": "auth",
+        "name": "Authentication",
+        "path": "src/app/api/auth",
+        "purpose": "User login, logout, session management, and current-user retrieval",
+        "files": ["login/route.ts", "logout/route.ts", "me/route.ts"],
+        "entry_point": "login/route.ts",
+        "dependencies": ["lib", "database"],
+        "sub_branches": [
+          {
+            "id": "auth_login",
+            "name": "Login API",
+            "files": ["login/route.ts"],
+            "purpose": "Handles user login with credential validation and session creation"
+          },
+          {
+            "id": "auth_logout",
+            "name": "Logout API",
+            "files": ["logout/route.ts"],
+            "purpose": "Handles user logout and session destruction"
+          },
+          {
+            "id": "auth_me",
+            "name": "Current User API",
+            "files": ["me/route.ts"],
+            "purpose": "Returns the currently authenticated user's profile"
+          }
+        ]
+      },
+      {
+        "id": "auth_pages",
+        "name": "Auth Pages (Frontend)",
+        "path": "src/app",
+        "purpose": "Login, signup, and terminated-account UI pages",
+        "files": ["login/page.tsx", "signup/page.tsx", "terminated/page.tsx"],
+        "entry_point": "login/page.tsx",
+        "dependencies": ["lib", "auth"],
+        "sub_branches": []
+      },
+      {
+        "id": "dashboard",
+        "name": "Dashboard Pages (Frontend)",
+        "path": "src/app/(dashboard)",
+        "purpose": "All authenticated user-facing pages: dashboard, courses, exams, calendar, etc.",
+        "files": [
+          "layout.tsx",
+          "dashboard/page.tsx",
+          "admin/page.tsx",
+          "manage/page.tsx",
+          "manage/updates/page.tsx",
+          "calendar/page.tsx",
+          "courses/page.tsx",
+          "courses/[id]/page.tsx",
+          "courses/[id]/edit/page.tsx",
+          "courses/[id]/lectures/[lectureId]/page.tsx",
+          "exams/page.tsx",
+          "exams/create/page.tsx",
+          "exams/[id]/page.tsx",
+          "exams/[id]/attempt/page.tsx",
+          "exams/[id]/result/page.tsx",
+          "live/page.tsx",
+          "community/page.tsx",
+          "chat-transcripts/page.tsx",
+          "announcements/page.tsx",
+          "materials/page.tsx",
+          "materials/recordings/page.tsx",
+          "materials/resources/page.tsx",
+          "study/content-bank/page.tsx",
+          "feedback/page.tsx",
+          "profile/page.tsx",
+          "settings/page.tsx",
+          "reports/page.tsx",
+          "activity-logs/page.tsx",
+          "support/page.tsx"
+        ],
+        "entry_point": "layout.tsx",
+        "dependencies": ["lib", "components", "api_routes"],
+        "sub_branches": [
+          {
+            "id": "dashboard_home",
+            "name": "Dashboard Home",
+            "files": ["dashboard/page.tsx"],
+            "purpose": "Main dashboard overview with stats, upcoming events, and quick links"
+          },
+          {
+            "id": "dashboard_admin",
+            "name": "Admin Panel",
+            "files": ["admin/page.tsx"],
+            "purpose": "Admin-only settings, user management, and system configuration"
+          },
+          {
+            "id": "dashboard_manage",
+            "name": "Manager Panel",
+            "files": ["manage/page.tsx", "manage/updates/page.tsx"],
+            "purpose": "Manager controls for calendar, courses, users, and system updates"
+          },
+          {
+            "id": "dashboard_calendar",
+            "name": "Calendar",
+            "files": ["calendar/page.tsx"],
+            "purpose": "Calendar view for scheduled events and live sessions"
+          },
+          {
+            "id": "dashboard_courses",
+            "name": "Courses",
+            "files": ["courses/page.tsx", "courses/[id]/page.tsx", "courses/[id]/edit/page.tsx", "courses/[id]/lectures/[lectureId]/page.tsx"],
+            "purpose": "Course listing, detail view, editing, and lecture playback"
+          },
+          {
+            "id": "dashboard_exams",
+            "name": "Exams",
+            "files": ["exams/page.tsx", "exams/create/page.tsx", "exams/[id]/page.tsx", "exams/[id]/attempt/page.tsx", "exams/[id]/result/page.tsx"],
+            "purpose": "Exam listing, creation, attempt-taking, and result viewing"
+          },
+          {
+            "id": "dashboard_live",
+            "name": "Live Sessions",
+            "files": ["live/page.tsx"],
+            "purpose": "Live session viewing and management"
+          },
+          {
+            "id": "dashboard_community",
+            "name": "Community & Chat",
+            "files": ["community/page.tsx", "chat-transcripts/page.tsx"],
+            "purpose": "Course community chat and transcript viewing"
+          },
+          {
+            "id": "dashboard_materials",
+            "name": "Study Materials",
+            "files": ["materials/page.tsx", "materials/recordings/page.tsx", "materials/resources/page.tsx", "study/content-bank/page.tsx"],
+            "purpose": "Study materials, recordings, resources, and content bank"
+          },
+          {
+            "id": "dashboard_misc",
+            "name": "Misc Pages",
+            "files": ["announcements/page.tsx", "feedback/page.tsx", "profile/page.tsx", "settings/page.tsx", "reports/page.tsx", "activity-logs/page.tsx", "support/page.tsx"],
+            "purpose": "Announcements, feedback, user profile, settings, reports, activity logs, and support"
+          }
+        ]
+      },
+      {
+        "id": "api_routes",
+        "name": "API Routes (Backend)",
+        "path": "src/app/api",
+        "purpose": "All REST API endpoints for the LMS backend",
+        "files": [],
+        "entry_point": "dashboard/route.ts",
+        "dependencies": ["lib", "database"],
+        "sub_branches": [
+          {
+            "id": "api_courses",
+            "name": "Courses API",
+            "path": "src/app/api/courses",
+            "files": ["courses/[id]/route.ts", "courses/route.ts"],
+            "purpose": "CRUD operations for courses"
+          },
+          {
+            "id": "api_exams",
+            "name": "Exams API",
+            "path": "src/app/api/exams",
+            "files": ["exams/route.ts", "exams/[id]/route.ts", "exams/[id]/attempt/route.ts", "exams/[id]/result/route.ts", "exams/[id]/submit/route.ts", "exams/[id]/toggle/route.ts"],
+            "purpose": "Exam CRUD, attempt submission, results, and toggling"
+          },
+          {
+            "id": "api_lectures",
+            "name": "Lectures API",
+            "path": "src/app/api/lectures",
+            "files": ["lectures/route.ts"],
+            "purpose": "Lecture management"
+          },
+          {
+            "id": "api_live_sessions",
+            "name": "Live Sessions API",
+            "path": "src/app/api/live-sessions",
+            "files": ["live-sessions/route.ts"],
+            "purpose": "Live session management and scheduling"
+          },
+          {
+            "id": "api_course_events",
+            "name": "Course Events API",
+            "path": "src/app/api/course-events",
+            "files": ["course-events/[id]/route.ts"],
+            "purpose": "Course event management (calendar events linked to courses)"
+          },
+          {
+            "id": "api_community",
+            "name": "Community API",
+            "path": "src/app/api/community",
+            "files": ["community/[courseId]/messages/route.ts", "community/[courseId]/clear/route.ts", "community/transcripts/route.ts", "community/transcripts/export/route.ts"],
+            "purpose": "Community chat messages, clearing, and transcript export"
+          },
+          {
+            "id": "api_announcements",
+            "name": "Announcements API",
+            "path": "src/app/api/announcements",
+            "files": ["announcements/route.ts", "announcements/[id]/route.ts"],
+            "purpose": "Announcement CRUD operations"
+          },
+          {
+            "id": "api_content",
+            "name": "Content API",
+            "path": "src/app/api/content",
+            "files": ["content/route.ts", "content/[id]/route.ts", "content/[id]/comments/route.ts", "content-bank/route.ts"],
+            "purpose": "Content management, comments, and content bank"
+          },
+          {
+            "id": "api_materials",
+            "name": "Materials API",
+            "path": "src/app/api/materials",
+            "files": ["materials/route.ts"],
+            "purpose": "Study materials management"
+          },
+          {
+            "id": "api_users",
+            "name": "Users API",
+            "path": "src/app/api/users",
+            "files": ["users/route.ts"],
+            "purpose": "User management (listing, updating, termination)"
+          },
+          {
+            "id": "api_students",
+            "name": "Students API",
+            "path": "src/app/api/students",
+            "files": ["students/route.ts"],
+            "purpose": "Student-specific operations"
+          },
+          {
+            "id": "api_instructors",
+            "name": "Instructors API",
+            "path": "src/app/api/instructors",
+            "files": ["instructors/route.ts"],
+            "purpose": "Instructor management"
+          },
+          {
+            "id": "api_feedback",
+            "name": "Feedback API",
+            "path": "src/app/api/feedback",
+            "files": ["feedback/route.ts"],
+            "purpose": "Feedback submission and retrieval"
+          },
+          {
+            "id": "api_notifications",
+            "name": "Notifications API",
+            "path": "src/app/api/notifications",
+            "files": ["notifications/route.ts"],
+            "purpose": "Notification management"
+          },
+          {
+            "id": "api_polls",
+            "name": "Polls API",
+            "path": "src/app/api/polls",
+            "files": ["polls/route.ts"],
+            "purpose": "Poll creation and voting"
+          },
+          {
+            "id": "api_dashboard",
+            "name": "Dashboard API",
+            "path": "src/app/api/dashboard",
+            "files": ["dashboard/route.ts"],
+            "purpose": "Dashboard data aggregation"
+          },
+          {
+            "id": "api_analytics",
+            "name": "Analytics API",
+            "path": "src/app/api/analytics",
+            "files": ["analytics/route.ts"],
+            "purpose": "Analytics and stats endpoints"
+          },
+          {
+            "id": "api_support",
+            "name": "Support & Misc APIs",
+            "path": "src/app/api",
+            "files": ["support/route.ts", "updates/route.ts", "upload/route.ts", "files/route.ts", "avatars/[id]/route.ts", "profile/route.ts", "stats/route.ts", "unread/route.ts", "topics/route.ts", "classes/route.ts", "events/route.ts", "activity-logs/route.ts"],
+            "purpose": "Support tickets, updates, file uploads, avatars, profile, stats, unread counts, topics, classes, events, and activity logs"
+          },
+          {
+            "id": "api_admin",
+            "name": "Admin API",
+            "path": "src/app/api/admin",
+            "files": ["admin/backup/route.ts", "admin/dashboard/countdown/route.ts"],
+            "purpose": "Admin-only endpoints: backup and countdown management"
+          }
+        ]
+      },
+      {
+        "id": "components",
+        "name": "Shared Components",
+        "path": "src/components",
+        "purpose": "Reusable UI components and layout elements used across all pages",
+        "files": [
+          "FeedbackModal.tsx",
+          "ManagerUserModal.tsx",
+          "UpdateOverlay.tsx",
+          "layout/Header.tsx",
+          "layout/Sidebar.tsx",
+          "ui/CreepyButton.tsx",
+          "ui/ImageCropper.tsx",
+          "ui/SupportFloatingButton.tsx"
+        ],
+        "entry_point": "layout/Header.tsx",
+        "dependencies": ["lib"],
+        "sub_branches": [
+          {
+            "id": "components_layout",
+            "name": "Layout Components",
+            "files": ["layout/Header.tsx", "layout/Sidebar.tsx"],
+            "purpose": "Main app header and sidebar navigation"
+          },
+          {
+            "id": "components_modals",
+            "name": "Modals",
+            "files": ["FeedbackModal.tsx", "ManagerUserModal.tsx", "UpdateOverlay.tsx"],
+            "purpose": "Feedback modal, user management modal, and update overlay"
+          },
+          {
+            "id": "components_ui",
+            "name": "UI Primitives",
+            "files": ["ui/CreepyButton.tsx", "ui/ImageCropper.tsx", "ui/SupportFloatingButton.tsx"],
+            "purpose": "Reusable UI elements: buttons, image cropper, floating support button"
+          }
+        ]
+      },
+      {
+        "id": "lib",
+        "name": "Shared Libraries & Utilities",
+        "path": "src/lib",
+        "purpose": "Core utility functions, database client, auth helpers, validation, and shared logic",
+        "files": [
+          "activity-log.ts",
+          "alerts.ts",
+          "auth.ts",
+          "avatar.ts",
+          "date-utils.ts",
+          "db.ts",
+          "encryption.ts",
+          "ratelimit.ts",
+          "validation.ts"
+        ],
+        "entry_point": "db.ts",
+        "dependencies": ["database"],
+        "sub_branches": [
+          {
+            "id": "lib_auth",
+            "name": "Auth Utilities",
+            "files": ["auth.ts", "encryption.ts"],
+            "purpose": "Authentication helpers, password hashing, session management"
+          },
+          {
+            "id": "lib_db",
+            "name": "Database Client",
+            "files": ["db.ts"],
+            "purpose": "Prisma client initialization and export"
+          },
+          {
+            "id": "lib_utils",
+            "name": "General Utilities",
+            "files": ["date-utils.ts", "validation.ts", "avatar.ts", "alerts.ts", "ratelimit.ts"],
+            "purpose": "Date formatting (IST), input validation, avatar generation, alerts, and rate limiting"
+          },
+          {
+            "id": "lib_activity",
+            "name": "Activity Logging",
+            "files": ["activity-log.ts"],
+            "purpose": "Activity logging for audit trail"
+          }
+        ]
+      },
+      {
+        "id": "database",
+        "name": "Database (Prisma)",
+        "path": "prisma",
+        "purpose": "Database schema, migrations, and seed data for the LMS",
+        "files": ["schema.prisma", "seed.ts"],
+        "entry_point": "schema.prisma",
+        "dependencies": [],
+        "sub_branches": [
+          {
+            "id": "database_schema",
+            "name": "Schema Definition",
+            "files": ["schema.prisma"],
+            "purpose": "All Prisma models: User, Course, Lecture, Exam, CourseEvent, Announcement, etc."
+          },
+          {
+            "id": "database_seed",
+            "name": "Seed Data",
+            "files": ["seed.ts"],
+            "purpose": "Initial database seeding with test data"
+          },
+          {
+            "id": "database_migrations",
+            "name": "Migrations",
+            "path": "prisma/migrations",
+            "files": [],
+            "purpose": "Database migration history"
+          }
+        ]
+      },
+      {
+        "id": "scripts",
+        "name": "Utility Scripts",
+        "path": "src/scripts",
+        "purpose": "One-off maintenance and migration scripts",
+        "files": [
+          "backfill-security-ids.ts",
+          "cleanup-messages.ts",
+          "initialize-global-course.ts"
+        ],
+        "entry_point": "initialize-global-course.ts",
+        "dependencies": ["lib", "database"],
+        "sub_branches": []
+      },
+      {
+        "id": "config",
+        "name": "Configuration & Root Files",
+        "path": ".",
+        "purpose": "Project configuration, build settings, and root-level files",
+        "files": [
+          "package.json",
+          "next.config.js",
+          "tsconfig.json",
+          "render.yaml",
+          "init_super_manager.js",
+          "src/middleware.ts",
+          "src/app/globals.css",
+          "src/app/layout.tsx"
+        ],
+        "entry_point": "package.json",
+        "dependencies": [],
+        "sub_branches": [
+          {
+            "id": "config_next",
+            "name": "Next.js Config",
+            "files": ["next.config.js", "tsconfig.json"],
+            "purpose": "Next.js and TypeScript configuration"
+          },
+          {
+            "id": "config_deploy",
+            "name": "Deployment",
+            "files": ["render.yaml"],
+            "purpose": "Render.com deployment configuration"
+          },
+          {
+            "id": "config_middleware",
+            "name": "Middleware",
+            "files": ["src/middleware.ts"],
+            "purpose": "Next.js middleware for auth guards, role-based routing, rate limiting"
+          },
+          {
+            "id": "config_styles",
+            "name": "Global Styles",
+            "files": ["src/app/globals.css"],
+            "purpose": "Global CSS styles and design tokens"
+          }
+        ]
+      }
+    ]
+  }
+}
