@@ -44,7 +44,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role)) {
+    if (!isAdminOrManager(session.role) && session.role !== 'INSTRUCTOR') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -71,11 +71,13 @@ export async function PUT(
     if (recurrence !== undefined) data.recurrence = recurrence
     if (interval !== undefined) data.interval = interval ? parseInt(interval as string) : null
     if (originalStartTime !== undefined) data.originalStartTime = originalStartTime ? new Date(originalStartTime) : null
+    
     // Verify ADMIN/INSTRUCTOR access to course
-    if ((session.role === 'ADMIN' || session.role === 'INSTRUCTOR') && courseId) {
+    if ((session.role === 'ADMIN' || session.role === 'INSTRUCTOR') && (data.courseId || courseId)) {
       const { getAccessibleCourseIds } = require('@/lib/auth')
+      const targetCourseId = data.courseId || courseId
       const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
+      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(targetCourseId)) {
         return NextResponse.json({ error: 'No access to this course' }, { status: 403 })
       }
     }
@@ -112,7 +114,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role)) {
+    if (!isAdminOrManager(session.role) && session.role !== 'INSTRUCTOR') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
