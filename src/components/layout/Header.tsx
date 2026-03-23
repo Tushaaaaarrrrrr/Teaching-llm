@@ -176,19 +176,24 @@ export default function Header({ userName, userRole }: HeaderProps) {
     transition: 'box-shadow 0.2s ease', border: 'none', flexShrink: 0,
   } as React.CSSProperties
 
+  const firstName = currentUserName.split(' ')[0]
+
   return (
     <header style={{
-      height: '72px', background: '#e8eaf0',
+      height: '96px', background: '#e8eaf0',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
         {matchedKey === '/dashboard' ? (
           <>
-            <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', letterSpacing: '-0.5px' }}>
-              {getGreeting().heading}
+            <h1 style={{ fontSize: '42px', fontWeight: '900', color: '#1e1e3a', lineHeight: '1.1', letterSpacing: '-1px', display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
+              {getGreeting().heading},
+              <span style={{ fontSize: '30px', fontWeight: '700', color: '#3636e8', letterSpacing: '-0.5px' }}>
+                {firstName}
+              </span>
             </h1>
-            <p style={{ fontSize: '14px', color: '#6b6b8a', marginTop: '2px', fontWeight: '500' }}>
+            <p style={{ fontSize: '13.5px', color: '#6b6b8a', marginTop: '4px', fontWeight: '500', letterSpacing: '0.01em' }}>
               {getGreeting().subtext}
             </p>
           </>

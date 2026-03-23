@@ -122,7 +122,7 @@ export default function DashboardPage() {
     <div className="page-container fade-in">
 
       {/* Stats Grid */}
-      <div className="grid-4" style={{ marginBottom: '24px' }}>
+      <div className="grid-4" style={{ marginBottom: '24px', marginTop: '16px' }}>
         {statCards.map((card) => (
           <div key={card.label} className="card" style={{
             padding: '22px 24px',
