@@ -50,7 +50,7 @@ const generalLimit = hasRedis ? new Ratelimit({
 /**
  * Helper to check rate limit for a specific identifier and action type
  */
-export async function checkRateLimit(identifier: string, type: 'login' | 'comment' | 'general' = 'general') {
+export async function checkRateLimit(identifier: string, type: 'login' | 'comment' | 'general' | 'feedback' = 'general') {
   if (hasRedis) {
     if (type === 'comment' && commentLimit) return await commentLimit.limit(identifier);
     if (type === 'general' && generalLimit) return await generalLimit.limit(identifier);
@@ -61,6 +61,7 @@ export async function checkRateLimit(identifier: string, type: 'login' | 'commen
   const limits = {
     login: { count: 5, window: 15 * 60 * 1000 },
     comment: { count: 1, window: 10 * 1000 },
+    feedback: { count: 1, window: 60 * 1000 }, // 1 per minute per IP/User
     general: { count: 20, window: 60 * 1000 },
   };
 

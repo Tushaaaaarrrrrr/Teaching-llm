@@ -14,9 +14,14 @@ export async function GET() {
     if (!user) return NextResponse.json({})
 
     // Find latest entries
-    const [lastPost, lastTicket, lastAnn] = await Promise.all([
+    const [lastPost, lastTicket, lastChat, lastAnn] = await Promise.all([
       prisma.communityMessage.findFirst({ orderBy: { createdAt: 'desc' }, select: { createdAt: true } }).catch(() => null),
       prisma.supportTicket.findFirst({
+        orderBy: { updatedAt: 'desc' },
+        select: { updatedAt: true },
+        where: user.role === 'STUDENT' ? { studentId: session.userId } : {}
+      }).catch(() => null),
+      prisma.chatSession.findFirst({
         orderBy: { updatedAt: 'desc' },
         select: { updatedAt: true },
         where: user.role === 'STUDENT' ? { studentId: session.userId } : {}
@@ -25,9 +30,12 @@ export async function GET() {
     ])
 
     const unread = {
-      community: lastPost && (!user.lastSeenCommunityAt || lastPost.createdAt > user.lastSeenCommunityAt),
-      support: lastTicket && (!user.lastSeenSupportAt || lastTicket.updatedAt > user.lastSeenSupportAt),
-      announcements: lastAnn && (!user.lastSeenNotificationsAt || lastAnn.createdAt > user.lastSeenNotificationsAt),
+      community: !!(lastPost && (!user.lastSeenCommunityAt || lastPost.createdAt > user.lastSeenCommunityAt)),
+      support: !!(
+        (lastTicket && (!user.lastSeenSupportAt || lastTicket.updatedAt > user.lastSeenSupportAt)) ||
+        (lastChat && (!user.lastSeenSupportAt || lastChat.updatedAt > user.lastSeenSupportAt))
+      ),
+      announcements: !!(lastAnn && (!user.lastSeenNotificationsAt || lastAnn.createdAt > user.lastSeenNotificationsAt)),
     }
 
     return NextResponse.json(unread)

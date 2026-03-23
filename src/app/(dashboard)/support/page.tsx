@@ -163,6 +163,13 @@ export default function SupportPage() {
     })
     loadTickets()
     loadFaqs()
+
+    // Mark support as seen
+    fetch('/api/users/seen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'support' }),
+    }).catch(() => {})
   }, [loadTickets, loadFaqs])
 
   // Poll chat messages

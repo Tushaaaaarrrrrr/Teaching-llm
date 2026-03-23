@@ -148,8 +148,8 @@ export default function DashboardPage() {
     <div className="page-container fade-in">
 
       {/* Stats Grid */}
-      <div className="grid-4" style={{ marginBottom: '24px', marginTop: '48px' }}>
-        {statCards.map((card) => (
+      <div className="grid-4" style={{ marginBottom: '24px', marginTop: '24px' }}>
+        {statCards.filter(c => !c.isSupport && c.label !== 'Active Sessions').map((card) => (
           <div key={card.label} className="card" style={{
             padding: '22px 24px',
             display: 'flex',
@@ -186,37 +186,12 @@ export default function DashboardPage() {
               <div style={{ 
                 fontSize: '26px', 
                 fontWeight: '800', 
-                color: card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? '#1e1e3a' : '#1e1e3a', 
+                color: '#1e1e3a', 
                 lineHeight: '1.1' 
               }}>
                 {card.value}
               </div>
-              {card.isSupport && (
-                <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <div style={{ fontSize: '10px', color: '#6b6b8a', fontWeight: '600' }}>
-                    {card.summary?.openTickets ?? 0} Open Tickets
-                  </div>
-                </div>
-              )}
             </div>
-
-            {card.isSupport && (
-              <Link href="/support" style={{
-                position: 'absolute',
-                top: '12px',
-                right: '12px',
-                padding: '6px 10px',
-                borderRadius: '8px',
-                background: '#3636e8',
-                color: '#fff',
-                fontSize: '10px',
-                fontWeight: '700',
-                textDecoration: 'none',
-                boxShadow: '0 4px 10px rgba(54,54,232,0.3)'
-              }}>
-                Go to Support
-              </Link>
-            )}
 
             {card.isTimer && isManager && (
               <button 
@@ -246,6 +221,215 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* Manager Specific Cards (Active Sessions & Support) */}
+      {isManager && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 2fr)',
+          gap: '20px',
+          marginBottom: '24px'
+        }}>
+          {/* Active Sessions Card (Student UI Style) */}
+          <div className="card" style={{
+            padding: '24px',
+            borderRadius: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {hasLive && frontSession ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '7px',
+                    background: 'rgba(244,63,94,0.1)',
+                    padding: '6px 14px', borderRadius: '20px',
+                  }}>
+                    <div style={{
+                      width: '7px', height: '7px', borderRadius: '50%',
+                      background: '#f43f5e', flexShrink: 0,
+                      animation: 'livePulse 1.5s infinite',
+                    }} />
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#f43f5e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Active Sessions
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600' }}>
+                      {frontSession.time}
+                    </span>
+                    {liveSessions.length > 1 && (
+                      <button
+                        onClick={handleNextLive}
+                        style={{
+                          width: '32px', height: '32px', borderRadius: '50%',
+                          background: '#e8eaf0',
+                          boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          border: 'none', cursor: 'pointer', transition: 'box-shadow 0.2s',
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2.5">
+                          <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div 
+                  key={activeCard}
+                  style={{
+                    opacity: sliding ? 0 : 1,
+                    transform: sliding ? 'translateX(-16px)' : 'translateX(0)',
+                    transition: 'all 0.2s ease',
+                    flex: 1
+                  }}
+                >
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', marginBottom: '8px' }}>
+                    {frontSession.title}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{
+                      width: '28px', height: '28px', borderRadius: '50%',
+                      background: '#fff1f2', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                      </svg>
+                    </div>
+                    <span style={{ fontSize: '14px', color: '#6b6b8a', fontWeight: '600' }}>
+                      {frontSession.instructor}{frontSession.course?.name ? ` · ${frontSession.course.name}` : ''}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                  {liveSessions.length > 1 ? (
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {liveSessions.map((_, i) => (
+                        <div
+                          key={i}
+                          onClick={() => setActiveCard(i)}
+                          style={{
+                            width: i === activeCard ? '24px' : '8px',
+                            height: '8px',
+                            borderRadius: '4px',
+                            background: i === activeCard ? '#f43f5e' : '#e2e8f0',
+                            transition: 'all 0.3s ease',
+                            cursor: 'pointer',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : <div />}
+
+                  <a
+                    href={frontSession.meetingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-primary"
+                    style={{
+                      background: '#f43f5e',
+                      boxShadow: '0 8px 20px rgba(244,63,94,0.3)',
+                      padding: '12px 24px',
+                      fontSize: '14px',
+                      fontWeight: '800'
+                    }}
+                  >
+                    Join as Instructor
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '180px', gap: '16px' }}>
+                <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: '#fff1f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+                  </svg>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '16px', color: '#1e1e3a', fontWeight: '700' }}>No Active Sessions</div>
+                  <div style={{ fontSize: '13px', color: '#9999b0', marginTop: '4px' }}>All live courses are currently offline</div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Support System Card (Refined) */}
+          <div className="card" style={{
+            padding: '24px',
+            borderRadius: '20px',
+            background: 'linear-gradient(135deg, #ebebff 0%, #e0e0ff 100%)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            position: 'relative'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                background: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#3636e8',
+                boxShadow: '0 4px 12px rgba(54,54,232,0.1)'
+              }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <div style={{
+                padding: '6px 12px',
+                borderRadius: '50px',
+                background: dashboardData?.supportSummary?.isSupportActive ? '#dcfce7' : '#fee2e2',
+                color: dashboardData?.supportSummary?.isSupportActive ? '#15803d' : '#b91c1c',
+                fontSize: '11px',
+                fontWeight: '800',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                {dashboardData?.supportSummary?.isSupportActive ? 'Online' : 'Offline'}
+              </div>
+            </div>
+
+            <div style={{ margin: '20px 0' }}>
+              <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                Support System
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: '900', color: '#1e1e3a' }}>
+                {dashboardData?.supportSummary?.openTickets ?? 0}
+              </div>
+              <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '600' }}>
+                Open Support Tickets
+              </div>
+            </div>
+
+            <Link href="/support" style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '12px',
+              background: '#3636e8',
+              color: '#fff',
+              fontSize: '13px',
+              fontWeight: '800',
+              borderRadius: '12px',
+              boxShadow: '0 8px 20px rgba(54,54,232,0.3)',
+              textDecoration: 'none',
+              transition: 'transform 0.2s'
+            }}>
+              Go to Support
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Timer Edit Modal */}
       {isEditingTimer && (

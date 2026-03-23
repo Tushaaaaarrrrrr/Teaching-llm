@@ -43,6 +43,7 @@ model User {
   courseEvents            CourseEvent[]          @relation("EventCreator")
   instructorCourseEvents  CourseEvent[]          @relation("EventInstructor")
   enrollments             Enrollment[]
+  feedbacks               Feedback[]
   googleCredential        GoogleCredential?
   instructorAssignments   InstructorAssignment[]
   uploadedLectures        Lecture[]              @relation("LectureUploader")
@@ -78,6 +79,7 @@ model Course {
   courseEvents          CourseEvent[]
   enrollments           Enrollment[]
   exams                 Exam[]
+  feedbacks             Feedback[]
   instructorAssignments InstructorAssignment[]
   lectures              Lecture[]
   materials             Material[]
@@ -495,22 +497,22 @@ model SystemUpdate {
   id           String       @id @default(cuid())
   title        String
   content      String
-  type         String       @default("CUSTOM")  // WELCOME | CUSTOM
+  type         String       @default("CUSTOM")
   imageUrl     String?
   isActive     Boolean      @default(true)
   priority     Int          @default(0)
   showDelay    Int          @default(0)
-  frequency    String       @default("ONCE")    // ONCE | RECURRING
-  intervalDays Int          @default(0)          // days between recurrences
-  courseIds    String       @default("")         // comma-separated course IDs; empty = global
-  ctaLink      String?
-  ctaText      String?
-  startDate    DateTime?   // For CUSTOM scheduling
-  endDate      DateTime?   // For CUSTOM scheduling
-  animation    String?     // NONE | CONFETTI | PARTY_POPS | FESTIVAL
   createdById  String
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  ctaLink      String?
+  ctaText      String?
+  courseIds    String       @default("")
+  frequency    String       @default("ONCE")
+  intervalDays Int          @default(0)
+  animation    String?
+  endDate      DateTime?
+  startDate    DateTime?
   createdBy    User         @relation("UpdateCreator", fields: [createdById], references: [id])
   views        UpdateView[]
 
@@ -532,9 +534,9 @@ model UpdateView {
 }
 
 model UpdateSystemSettings {
-  id              String  @id @default("singleton")
-  welcomeEnabled  Boolean @default(true)
-  customEnabled   Boolean @default(true)
+  id             String  @id @default("singleton")
+  welcomeEnabled Boolean @default(true)
+  customEnabled  Boolean @default(true)
 }
 
 model ExamCountdown {
@@ -542,4 +544,23 @@ model ExamCountdown {
   title     String   @default("Upcoming Exam")
   daysLeft  Int      @default(0)
   updatedAt DateTime @updatedAt
+}
+
+model Feedback {
+  id             String   @id @default(cuid())
+  studentId      String
+  courseId       String   @map("classId")
+  teacherRating  Int
+  conceptRating  Int
+  materialRating Int
+  examRating     Int
+  recommendScore Int
+  comment        String?
+  createdAt      DateTime @default(now())
+  course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student        User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
 }

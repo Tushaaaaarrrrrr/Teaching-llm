@@ -197,7 +197,8 @@ export default function Header({ userName, userRole }: HeaderProps) {
               display: 'flex', 
               alignItems: 'baseline', 
               gap: '12px', 
-              flexWrap: 'wrap' 
+              flexWrap: 'wrap',
+              fontFamily: "'Outfit', 'Nunito', sans-serif"
             }}>
               {getGreeting().heading},
               <span style={{ 
@@ -205,18 +206,20 @@ export default function Header({ userName, userRole }: HeaderProps) {
                 fontWeight: '700', 
                 color: '#3636e8', 
                 letterSpacing: '-0.8px',
-                opacity: 0.9
+                opacity: 0.9,
+                fontFamily: "'Outfit', 'Nunito', sans-serif"
               }}>
                 {firstName}
               </span>
             </h1>
             <p style={{ 
-              fontSize: '15px', 
+              fontSize: '16.5px', 
               color: '#6b6b8a', 
               marginTop: '6px', 
               fontWeight: '500', 
               letterSpacing: '0.01em',
-              maxWidth: '600px'
+              maxWidth: '600px',
+              lineHeight: '1.5'
             }}>
               {getGreeting().subtext}
             </p>
