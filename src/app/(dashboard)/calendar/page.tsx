@@ -54,6 +54,10 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
 
+  const [syncing, setSyncing] = useState(false)
+  const [lastSync, setLastSync] = useState<string | null>(null)
+  const [isCalendarLinked, setIsCalendarLinked] = useState(false)
+
   // Modal state
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -75,6 +79,10 @@ export default function CalendarPage() {
       fetch('/api/instructors').then(r => r.json()),
     ]).then(([meData, clsData, instrData]) => {
       setUser(meData.user || meData)
+      setIsCalendarLinked(meData.isGoogleAuth || false)
+      if (meData.lastCalendarSync) {
+        setLastSync(new Date(meData.lastCalendarSync).toLocaleString())
+      }
       setClasses(clsData.classes || clsData || [])
       setInstructors(instrData || [])
     }).catch(console.error)
@@ -84,6 +92,23 @@ export default function CalendarPage() {
     loadEvents()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month])
+
+  async function handleSync() {
+    setSyncing(true)
+    try {
+      const res = await fetch('/api/calendar/sync', { method: 'POST' })
+      if (!res.ok) {
+        throw new Error('Sync failed')
+      }
+      setLastSync(new Date().toLocaleString())
+      loadEvents()
+    } catch (err) {
+      console.error(err)
+      alert('Failed to sync calendar. Please check your connection or re-link.')
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   function loadEvents() {
     setLoading(true)
@@ -210,12 +235,45 @@ export default function CalendarPage() {
           </button>
         </div>
         {isAdminOrManager && (
-          <button onClick={() => openCreate()} className="btn btn-primary">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Add Event
-          </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {user?.role === 'MANAGER' && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: '10px' }}>
+                <button 
+                  onClick={handleSync} 
+                  disabled={syncing || !isCalendarLinked}
+                  className="btn btn-outline btn-sm"
+                  style={{ 
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    borderColor: '#c5c7cf', color: '#3a3a5c',
+                    opacity: syncing || !isCalendarLinked ? 0.6 : 1
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }}
+                  >
+                    <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+                  </svg>
+                  {syncing ? 'Syncing...' : 'Sync Calendar'}
+                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+                  {lastSync && (
+                    <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: '600' }}>
+                      Last synced: {lastSync}
+                    </span>
+                  )}
+                  <a href="/api/auth/google/login" style={{ fontSize: '10px', color: '#6366f1', fontWeight: '600', textDecoration: 'underline' }}>
+                    {isCalendarLinked ? 'Re-link Account' : 'Link Google Calendar'}
+                  </a>
+                </div>
+              </div>
+            )}
+            <button onClick={() => openCreate()} className="btn btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add Event
+            </button>
+          </div>
         )}
       </div>
 
