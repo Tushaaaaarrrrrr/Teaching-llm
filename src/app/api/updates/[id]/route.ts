@@ -16,8 +16,8 @@ export async function PUT(
     const body = await request.json()
     const {
       title, content, type, imageUrl, isActive, priority,
-      animationType, showDelay, targetRole, scheduledAt, expiresAt,
-      courseId, ctaText, ctaLink,
+      showDelay, frequency, intervalDays, courseIds,
+      ctaText, ctaLink,
     } = body
 
     const existing = await prisma.systemUpdate.findUnique({
@@ -28,25 +28,21 @@ export async function PUT(
       return NextResponse.json({ error: 'Update not found' }, { status: 404 })
     }
 
-    const isDigest = existing.type === 'DAILY_DIGEST'
-
     const update = await prisma.systemUpdate.update({
       where: { id: params.id },
       data: {
-        ...(!isDigest && title !== undefined && { title }),
-        ...(!isDigest && content !== undefined && { content }),
+        ...(title !== undefined && { title }),
+        ...(content !== undefined && { content }),
         ...(type !== undefined && { type }),
         ...(imageUrl !== undefined && { imageUrl: imageUrl || null }),
         ...(isActive !== undefined && { isActive }),
         ...(priority !== undefined && { priority }),
-        ...(animationType !== undefined && { animationType: animationType || null }),
         ...(showDelay !== undefined && { showDelay }),
-        ...(targetRole !== undefined && { targetRole: targetRole || null }),
-        ...(courseId !== undefined && { courseId: courseId || null }),
+        ...(frequency !== undefined && { frequency }),
+        ...(intervalDays !== undefined && { intervalDays }),
+        ...(courseIds !== undefined && { courseIds: Array.isArray(courseIds) ? courseIds.join(',') : (courseIds || '') }),
         ...(ctaText !== undefined && { ctaText: ctaText || null }),
         ...(ctaLink !== undefined && { ctaLink: ctaLink || null }),
-        ...(scheduledAt !== undefined && { scheduledAt: scheduledAt ? new Date(scheduledAt) : null }),
-        ...(expiresAt !== undefined && { expiresAt: expiresAt ? new Date(expiresAt) : null }),
       },
     })
 

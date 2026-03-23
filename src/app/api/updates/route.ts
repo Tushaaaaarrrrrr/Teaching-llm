@@ -10,15 +10,23 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const updates = await prisma.systemUpdate.findMany({
-      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
-      include: {
-        _count: { select: { views: true } },
-        createdBy: { select: { name: true } },
-      },
-    })
+    const [updates, settings] = await Promise.all([
+      prisma.systemUpdate.findMany({
+        where: { type: { in: ['WELCOME', 'CUSTOM'] } },
+        orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+        include: {
+          _count: { select: { views: true } },
+          createdBy: { select: { name: true } },
+        },
+      }),
+      prisma.updateSystemSettings.upsert({
+        where: { id: 'singleton' },
+        create: { id: 'singleton', welcomeEnabled: true, customEnabled: true },
+        update: {},
+      }),
+    ])
 
-    return NextResponse.json({ updates })
+    return NextResponse.json({ updates, settings })
   } catch (error) {
     console.error('Error fetching updates:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -35,37 +43,33 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       title, content, type, imageUrl, isActive, priority,
-      animationType, showDelay, targetRole, scheduledAt, expiresAt,
-      courseId, ctaText, ctaLink,
+      showDelay, frequency, intervalDays, courseIds,
+      ctaText, ctaLink,
     } = body
 
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 })
     }
 
-    const validTypes = ['WELCOME', 'GENERAL', 'DAILY_DIGEST']
+    const validTypes = ['WELCOME', 'CUSTOM']
     if (type && !validTypes.includes(type)) {
-      return NextResponse.json({ error: 'Invalid update type' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid update type. Must be WELCOME or CUSTOM.' }, { status: 400 })
     }
-
-    const isDigest = type === 'DAILY_DIGEST'
 
     const update = await prisma.systemUpdate.create({
       data: {
-        title: isDigest ? "Daily Digest" : title,
-        content: isDigest ? "System-generated summary of your course activity." : content,
-        type: type || 'GENERAL',
+        title,
+        content,
+        type: type || 'CUSTOM',
         imageUrl: imageUrl || null,
         isActive: isActive !== false,
         priority: priority || 0,
-        animationType: animationType || null,
         showDelay: showDelay || 0,
-        targetRole: targetRole || null,
-        courseId: courseId || null,
+        frequency: frequency || 'ONCE',
+        intervalDays: intervalDays || 0,
+        courseIds: Array.isArray(courseIds) ? courseIds.join(',') : (courseIds || ''),
         ctaText: ctaText || null,
         ctaLink: ctaLink || null,
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
         createdById: session.userId,
       },
     })

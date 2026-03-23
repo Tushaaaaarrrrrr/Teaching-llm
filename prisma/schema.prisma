@@ -82,7 +82,6 @@ model Course {
   lectures              Lecture[]
   materials             Material[]
   supportTickets        SupportTicket[]
-  systemUpdates         SystemUpdate[]
   topics                Topic[]
 
   @@map("Class")
@@ -493,27 +492,24 @@ model QuestionBank {
 }
 
 model SystemUpdate {
-  id            String       @id @default(cuid())
-  title         String
-  content       String
-  type          String       @default("GENERAL")
-  imageUrl      String?
-  isActive      Boolean      @default(true)
-  priority      Int          @default(0)
-  animationType String?
-  showDelay     Int          @default(0)
-  targetRole    String?
-  scheduledAt   DateTime?
-  expiresAt     DateTime?
-  createdById   String
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  courseId      String?      @map("classId")
-  ctaLink       String?
-  ctaText       String?
-  course        Course?      @relation(fields: [courseId], references: [id])
-  createdBy     User         @relation("UpdateCreator", fields: [createdById], references: [id])
-  views         UpdateView[]
+  id           String       @id @default(cuid())
+  title        String
+  content      String
+  type         String       @default("CUSTOM")  // WELCOME | CUSTOM
+  imageUrl     String?
+  isActive     Boolean      @default(true)
+  priority     Int          @default(0)
+  showDelay    Int          @default(0)
+  frequency    String       @default("ONCE")    // ONCE | RECURRING
+  intervalDays Int          @default(0)          // days between recurrences
+  courseIds    String       @default("")         // comma-separated course IDs; empty = global
+  ctaLink      String?
+  ctaText      String?
+  createdById  String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  createdBy    User         @relation("UpdateCreator", fields: [createdById], references: [id])
+  views        UpdateView[]
 
   @@index([type])
   @@index([isActive])
@@ -530,6 +526,12 @@ model UpdateView {
 
   @@unique([updateId, userId])
   @@index([userId])
+}
+
+model UpdateSystemSettings {
+  id              String  @id @default("singleton")
+  welcomeEnabled  Boolean @default(true)
+  customEnabled   Boolean @default(true)
 }
 
 model ExamCountdown {

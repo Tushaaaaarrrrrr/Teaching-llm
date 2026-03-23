@@ -6,7 +6,9 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 /**
  * POST /api/updates/[id]/dismiss
  * Marks an update as viewed by the current user.
- * Also handles welcome updates by setting hasSeenWelcome.
+ * - WELCOME: sets hasSeenWelcome = true
+ * - CUSTOM ONCE: creates UpdateView (never shows again)
+ * - CUSTOM RECURRING: upserts UpdateView with fresh viewedAt (controls the interval)
  */
 export async function POST(
   _request: NextRequest,
@@ -21,30 +23,38 @@ export async function POST(
     const updateId = params.id
     const userId = session.userId
 
-    // Verify the update exists
     const update = await prisma.systemUpdate.findUnique({
       where: { id: updateId },
-      select: { id: true, type: true, title: true },
+      select: { id: true, type: true, frequency: true, title: true },
     })
 
     if (!update) {
       return NextResponse.json({ error: 'Update not found' }, { status: 404 })
     }
 
-    // Create view record (upsert to handle duplicates)
-    await prisma.updateView.upsert({
-      where: {
-        updateId_userId: { updateId, userId },
-      },
-      create: { updateId, userId },
-      update: {},
-    })
-
-    // If this is a welcome update, also mark hasSeenWelcome
     if (update.type === 'WELCOME') {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { hasSeenWelcome: true },
+      // Mark welcome as seen + record view
+      await Promise.all([
+        prisma.user.update({ where: { id: userId }, data: { hasSeenWelcome: true } }),
+        prisma.updateView.upsert({
+          where: { updateId_userId: { updateId, userId } },
+          create: { updateId, userId },
+          update: { viewedAt: new Date() },
+        }),
+      ])
+    } else if (update.frequency === 'RECURRING') {
+      // Upsert with updated timestamp so interval restarts
+      await prisma.updateView.upsert({
+        where: { updateId_userId: { updateId, userId } },
+        create: { updateId, userId },
+        update: { viewedAt: new Date() },
+      })
+    } else {
+      // ONCE: just record once
+      await prisma.updateView.upsert({
+        where: { updateId_userId: { updateId, userId } },
+        create: { updateId, userId },
+        update: {},
       })
     }
 
