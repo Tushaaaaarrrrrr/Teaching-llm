@@ -31,6 +31,7 @@ export async function GET(
         avatar: true,
         isTerminated: true,
         isSuperManager: true,
+        passwordHash: true,
         googleCredential: { select: { id: true } },
         enrollments: {
           select: {
@@ -54,9 +55,10 @@ export async function GET(
     const superAdminEmail = 'lkiitmng2428@gmail.com'
     const transformedUser = {
       ...user,
-      isGoogleAuth: !!(user as any).googleCredential,
+      isGoogleAuth: !!(user as any).googleCredential || (user as any).passwordHash === '',
       isSuperManager: user.isSuperManager || user.email === superAdminEmail,
-      googleCredential: undefined
+      googleCredential: undefined,
+      passwordHash: undefined
     }
 
     return NextResponse.json(transformedUser)
@@ -180,6 +182,7 @@ export async function PUT(
           isTerminated: true,
           isSuperManager: true,
           createdAt: true,
+          passwordHash: true,
           googleCredential: { select: { id: true } },
           enrollments: {
             select: {
@@ -199,9 +202,10 @@ export async function PUT(
 
     const transformedUpdatedUser = {
       ...updatedUser,
-      isGoogleAuth: !!(updatedUser as any).googleCredential,
+      isGoogleAuth: !!(updatedUser as any).googleCredential || (updatedUser as any).passwordHash === '',
       isSuperManager: (updatedUser as any).isSuperManager || (updatedUser as any).email === superAdminEmail,
-      googleCredential: undefined
+      googleCredential: undefined,
+      passwordHash: undefined
     }
 
     logActivity({
@@ -215,7 +219,7 @@ export async function PUT(
       metadata: { changedFields: Object.keys(data) },
     })
 
-    return NextResponse.json(updatedUser)
+    return NextResponse.json(transformedUpdatedUser)
   } catch (error) {
     console.error('Error updating user:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

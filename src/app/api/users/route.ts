@@ -69,6 +69,7 @@ export async function GET(_request: NextRequest) {
         isTerminated: true,
         isSuperManager: true,
         createdAt: true,
+        passwordHash: true,
         googleCredential: { select: { id: true } },
         enrollments: {
           select: {
@@ -107,9 +108,10 @@ export async function GET(_request: NextRequest) {
 
     const transformedUsers = users.map((u: any) => ({
       ...u,
-      isGoogleAuth: !!u.googleCredential,
+      isGoogleAuth: !!u.googleCredential || u.passwordHash === '',
       isSuperManager: u.isSuperManager || u.email === superAdminEmail,
-      googleCredential: undefined
+      googleCredential: undefined,
+      passwordHash: undefined
     }))
 
     if (securityNumber && transformedUsers.length === 0) {

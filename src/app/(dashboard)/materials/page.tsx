@@ -5,10 +5,7 @@ import Link from 'next/link'
 export default function StudyMaterialsLandingPage() {
   return (
     <div className="page-container fade-in">
-      <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e1e3a', marginBottom: '8px' }}>Study Materials</h2>
-        <p style={{ color: '#9999b0', fontSize: '15px' }}>Access your lecture recordings and study resources in one place.</p>
-      </div>
+
 
       <div style={{ 
         display: 'grid', 

@@ -481,7 +481,13 @@ export default function AdminPage() {
                     )}
                   </div>
                   {/* Right-side Columns for Alignment */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '24px', 
+                    flexShrink: 0,
+                    marginLeft: 'auto'
+                  }}>
                     {/* Google Login Tag Column */}
                     <div style={{ width: '130px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
                       {user.isGoogleAuth && (
@@ -504,21 +510,21 @@ export default function AdminPage() {
                     </div>
 
                     {/* Role Badge Column */}
-                    <div style={{ width: '100px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: '90px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
                       <span className="badge" style={{ background: rc.bg, color: rc.color, minWidth: '85px', textAlign: 'center' }}>
                         {user.role}
                       </span>
                     </div>
                     
                     {/* Date Column */}
-                    <div style={{ width: '100px', flexShrink: 0, textAlign: 'right', fontSize: '12px', color: '#9999b0' }}>
+                    <div style={{ width: '100px', flexShrink: 0, textAlign: 'right', fontSize: '12px', color: '#9999b0', fontWeight: '500' }}>
                       {new Date(user.createdAt).toLocaleDateString('en-US', {
                         month: 'short', day: 'numeric', year: 'numeric'
                       })}
                     </div>
 
                     {/* Actions Column */}
-                    <div style={{ width: '180px', display: 'flex', gap: '6px', justifyContent: 'flex-end', flexShrink: 0 }}>
+                    <div style={{ width: '190px', display: 'flex', gap: '8px', justifyContent: 'flex-end', flexShrink: 0 }}>
                       <button onClick={() => setSelectedUserId(user.id)} className="btn btn-ghost btn-sm">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -535,7 +541,7 @@ export default function AdminPage() {
                             color: user.isTerminated ? '#10b981' : '#ef4444',
                             border: user.isTerminated ? '1px solid #d1fae5' : '1px solid #fee2e2',
                             background: user.isTerminated ? 'rgba(16,185,129,0.04)' : 'rgba(239,68,68,0.04)',
-                            minWidth: '90px',
+                            minWidth: '95px',
                           }}
                         >
                           {togglingId === user.id ? (

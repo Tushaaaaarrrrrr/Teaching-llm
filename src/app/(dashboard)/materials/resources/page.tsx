@@ -203,8 +203,7 @@ export default function StudyResourcesPage() {
 
   return (
     <div className="page-container fade-in">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>Study Resources</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           {isManager && (
             <button 
