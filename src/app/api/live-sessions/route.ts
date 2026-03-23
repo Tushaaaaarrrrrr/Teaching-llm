@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { getEventStatus } from '@/lib/date-utils'
+import { getEventStatus, getISTDayBoundaries } from '@/lib/date-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +13,12 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
 
-    const where: Record<string, any> = { type: { in: ['class', 'live', 'event'] } }
+    const { startOfDay, endOfDay } = getISTDayBoundaries()
+
+    const where: Record<string, any> = { 
+      type: { in: ['class', 'live', 'event'] },
+      startTime: { gte: startOfDay, lte: endOfDay }
+    }
 
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
     if (accessibleCourseIds !== null) {
@@ -29,7 +34,7 @@ export async function GET(request: NextRequest) {
         instructor: { select: { id: true, name: true } },
         course: { select: { id: true, name: true, color: true, teacherName: true } },
       },
-      orderBy: { startTime: 'desc' },
+      orderBy: { startTime: 'asc' },
     })
 
     const mappedSessions = liveSessions.map((s: any) => {
@@ -77,7 +82,8 @@ export async function POST(request: NextRequest) {
       className = cls?.name || null
     }
 
-    const start = new Date(`${date}T${time || '00:00'}`)
+    const timeStr = time || '00:00'
+    const start = new Date(`${date}T${timeStr}+05:30`)
     const end = new Date(start.getTime() + 60 * 60 * 1000) // 1 hour default
 
     const liveSession = await prisma.courseEvent.create({

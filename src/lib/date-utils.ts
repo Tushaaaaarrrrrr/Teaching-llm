@@ -43,3 +43,32 @@ export function getEventStatus(
   if (now >= start && now <= end) return 'live';
   return 'completed';
 }
+
+/**
+ * Returns the exact UTC boundaries corresponding to the start (00:00:00) 
+ * and end (23:59:59.999) of the given date (or current date) in IST.
+ */
+export function getISTDayBoundaries(date?: Date | string) {
+  const targetDate = date ? new Date(date) : new Date();
+  
+  // Format the target date to its corresponding YYYY-MM-DD string in IST timezone
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  
+  const formattedDates = formatter.formatToParts(targetDate);
+  const year = formattedDates.find(p => p.type === 'year')?.value;
+  const month = formattedDates.find(p => p.type === 'month')?.value;
+  const day = formattedDates.find(p => p.type === 'day')?.value;
+  
+  const isoDateString = `${year}-${month}-${day}`;
+  
+  // Create absolute UTC dates from the IST string representation
+  const startOfDay = new Date(`${isoDateString}T00:00:00.000+05:30`);
+  const endOfDay = new Date(`${isoDateString}T23:59:59.999+05:30`);
+  
+  return { startOfDay, endOfDay };
+}

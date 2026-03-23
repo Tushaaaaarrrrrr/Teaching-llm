@@ -162,12 +162,20 @@ export default function CalendarPage() {
     if (!formData.title || !formData.startTime || !formData.endTime) return
     setSaving(true)
     try {
+      const payload = { ...formData };
+      if (!payload.startTime.includes('+') && !payload.startTime.includes('Z')) {
+        payload.startTime += '+05:30';
+      }
+      if (!payload.endTime.includes('+') && !payload.endTime.includes('Z')) {
+        payload.endTime += '+05:30';
+      }
+
       const url = editId ? `/api/events/${editId}` : '/api/events'
       const method = editId ? 'PUT' : 'POST'
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) {
         const err = await res.json()

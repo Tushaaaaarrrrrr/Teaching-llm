@@ -125,10 +125,22 @@ export default function ManagePage() {
         }
         const base = endpoints[tab]
         const url  = editId ? `${base}/${editId}` : base
+
+        let payload = formData;
+        if (tab === 'events') {
+          payload = { ...formData };
+          if (payload.startTime && !payload.startTime.includes('+') && !payload.startTime.includes('Z')) {
+            payload.startTime += '+05:30';
+          }
+          if (payload.endTime && !payload.endTime.includes('+') && !payload.endTime.includes('Z')) {
+            payload.endTime += '+05:30';
+          }
+        }
+
         await fetch(url, {
           method: editId ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         })
       }
       setShowModal(false)

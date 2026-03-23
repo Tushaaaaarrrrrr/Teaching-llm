@@ -1,6 +1,6 @@
 'use client'
 
-import useSWR from 'swr'
+import useSWR, { mutate } from 'swr'
 import { formatIST, formatISTDate } from '@/lib/date-utils'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
@@ -210,14 +210,20 @@ export default function LivePage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
         <p style={{ fontSize: '13px', color: '#9999b0' }}>Today&apos;s Schedule &bull; {today}</p>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button style={{
-            width: '44px', height: '44px', borderRadius: '50%', border: 'none',
-            background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b6b8a',
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+          <button 
+            onClick={() => mutate('/api/live-sessions')}
+            style={{
+              padding: '0 16px', height: '42px', borderRadius: '50px', border: 'none',
+              background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+              display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', 
+              color: '#3636e8', fontSize: '13px', fontWeight: '700',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M21.5 2v6h-6M2 22v-6h6M21.34 15.57a10 10 0 1 1-.92-10.45l3.08 2.88L2 22l-3.08-2.88a10 10 0 1 1 .92 10.45"/>
+              <path d="M21.5 2v6h-6M2 22v-6h6M2 22l3.08-2.88a10 10 0 1 1 16.26-6.69M21.5 8l-3.08 2.88A10 10 0 1 1 2 15.31"/>
             </svg>
+            Sync
           </button>
           <button style={{
             width: '44px', height: '44px', borderRadius: '50%', border: 'none',
