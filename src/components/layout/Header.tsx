@@ -39,6 +39,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/reports':    { title: 'Analytics & Performance', subtitle: 'Comprehensive platform-wide metrics and student audits' },
   '/exams':      { title: 'Exams',             subtitle: 'Manage and participate in assessments' },
   '/study/content-bank': { title: 'Content Bank', subtitle: 'Global repository of exam questions and resources' },
+  '/feedback':   { title: 'Course Feedback',    subtitle: 'Average ratings and student reviews.' },
 }
 
 const TYPE_COLORS: Record<string, string> = {

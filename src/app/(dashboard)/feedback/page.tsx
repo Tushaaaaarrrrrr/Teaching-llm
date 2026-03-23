@@ -67,8 +67,6 @@ function StudentFeedbackView({ userId }: { userId: string }) {
           </svg>
           Back
         </button>
-        <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#1e1e3a', marginBottom: '8px' }}>Your Voice Matters</h1>
-        <p style={{ fontSize: '16px', color: '#6b6b8a' }}>Provide feedback for your enrolled subjects.</p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -167,12 +165,7 @@ function ManagerFeedbackView() {
 
   return (
     <div className="page-container fade-in">
-      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e1e3a', marginBottom: '4px' }}>Course Feedback</h1>
-          <p style={{ fontSize: '14px', color: '#6b6b8a' }}>Average ratings and student reviews.</p>
-        </div>
-        
+      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end' }}>
         <div style={{ display: 'flex', gap: '12px' }}>
           <div style={{ position: 'relative' }}>
             <select 
