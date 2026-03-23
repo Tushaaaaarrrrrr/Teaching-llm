@@ -86,7 +86,7 @@ export async function GET() {
     ] = await Promise.all([
       prisma.courseEvent.findMany({
         where: {
-          type: { in: ['class', 'live'] },
+          type: { in: ['class', 'live', 'event'] },
           status: { not: 'CANCELLED' },
           ...eventCourseFilter,
           endTime: { gte: now } // Only show current or future events
@@ -143,7 +143,7 @@ export async function GET() {
 
     // Map CourseEvents to the format expected by the frontend
     const mappedSessions = courseEvents.map((s: any) => {
-      const status = getEventStatus(s.startTime, s.endTime, s.manualStatus)
+      const status = getEventStatus(s.startTime, s.endTime, s.status)
       return {
         id: s.id,
         title: s.title,

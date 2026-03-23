@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { getEventStatus } from '@/lib/date-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,12 +13,14 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: Record<string, any> = { type: 'class' }
+    const where: Record<string, any> = { type: { in: ['class', 'live', 'event'] } }
 
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
     if (accessibleCourseIds !== null) {
-      where.courseId = { in: accessibleCourseIds }
+      where.OR = [
+        { courseId: null, isGlobal: true },
+        { courseId: { in: accessibleCourseIds } }
+      ]
     }
 
     const liveSessions = await prisma.courseEvent.findMany({
@@ -29,7 +32,16 @@ export async function GET(request: NextRequest) {
       orderBy: { startTime: 'desc' },
     })
 
-    return NextResponse.json(liveSessions)
+    const mappedSessions = liveSessions.map((s: any) => {
+      const status = getEventStatus(s.startTime, s.endTime, s.status)
+      return {
+        ...s,
+        status, // This correctly computes upcoming, live, completed
+        internalStatus: s.status, // Preserve DB status
+      }
+    })
+
+    return NextResponse.json(mappedSessions)
   } catch (error) {
     console.error('Error fetching live sessions:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
