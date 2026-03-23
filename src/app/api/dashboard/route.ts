@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getFullSession } from '@/lib/auth'
+import { formatIST, getEventStatus } from '@/lib/date-utils'
 
 const statsCache = new Map<string, {
   totalCourses: number;
@@ -12,14 +13,7 @@ const statsCache = new Map<string, {
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
 // Compute status dynamically
-function computeStatus(event: { startTime: Date; endTime: Date; manualStatus: string }) {
-  if (event.manualStatus === 'CANCELLED') return 'cancelled'
-  if (event.manualStatus === 'RESCHEDULED') return 'rescheduled'
-  const now = new Date()
-  if (now < event.startTime) return 'upcoming'
-  if (now >= event.startTime && now <= event.endTime) return 'live'
-  return 'completed'
-}
+// Status calculation now handled by getEventStatus in @/lib/date-utils
 
 export async function GET() {
   try {
@@ -143,19 +137,21 @@ export async function GET() {
 
     // Count upcoming sessions (startTime > now, not cancelled)
     const upcomingLiveCount = courseEvents.filter(e => {
-      const status = computeStatus(e)
+      const status = getEventStatus(e.startTime, e.endTime, e.manualStatus)
       return status === 'upcoming' || status === 'live'
     }).length
 
     // Map CourseEvents to the format expected by the frontend
     const mappedSessions = courseEvents.map((s: any) => {
-      const status = computeStatus(s)
+      const status = getEventStatus(s.startTime, s.endTime, s.manualStatus)
       return {
         id: s.id,
         title: s.title,
         instructor: s.instructor?.name || 'Unknown',
         date: s.startTime.toISOString().split('T')[0],
-        time: s.startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        startTime: s.startTime.toISOString(),
+        endTime: s.endTime.toISOString(),
+        time: formatIST(s.startTime),
         status,
         meetingLink: s.meetLink || '',
         course: { name: s.course?.name || 'General' }

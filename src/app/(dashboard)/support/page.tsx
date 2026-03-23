@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { formatIST } from '@/lib/date-utils'
 
 interface Ticket {
   id: string
@@ -563,7 +564,7 @@ export default function SupportPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px' }}>{new Date(t.updatedAt).toLocaleDateString()}</span>
+                    <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px' }}>{formatIST(t.updatedAt, { month: '2-digit', day: '2-digit', year: 'numeric' })}</span>
                     {userRole === 'MANAGER' && (
                       <button onClick={e => { e.stopPropagation(); deleteTicket(t.id) }}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '2px', display: 'flex' }} title="Delete ticket">
@@ -649,7 +650,7 @@ export default function SupportPage() {
                       <div style={{ maxWidth: '78%', padding: '10px 14px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0', boxShadow: isMe ? '3px 3px 8px rgba(54,54,232,0.3)' : '3px 3px 8px #c5c7cf, -3px -3px 8px #ffffff', color: isMe ? '#fff' : '#1e1e3a' }}>
                         <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '4px', opacity: isMe ? 0.8 : 1, color: isMe ? '#c5c8ff' : isAdmin ? '#3636e8' : '#9999b0' }}>{r.sender.name}{isAdmin && ' · Staff'}</div>
                         <div style={{ fontSize: '13.5px', lineHeight: '1.5' }}>{r.content}</div>
-                        <div style={{ fontSize: '10.5px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div style={{ fontSize: '10.5px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{formatIST(r.createdAt)}</div>
                       </div>
                     </div>
                   )
@@ -703,7 +704,7 @@ export default function SupportPage() {
                       {c.agent ? `Agent: ${c.agent.name}` : 'No agent joined'}
                       {c._count && ` · ${c._count.messages} messages`}
                     </div>
-                    <div style={{ fontSize: '11.5px', color: '#9999b0', marginTop: '2px' }}>{new Date((c as ChatSession & { updatedAt?: string }).updatedAt || '').toLocaleString()}</div>
+                    <div style={{ fontSize: '11.5px', color: '#9999b0', marginTop: '2px' }}>{formatIST((c as ChatSession & { updatedAt?: string }).updatedAt || '', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                   </div>
                   <button onClick={e => { e.stopPropagation(); deleteHistory(c.id) }}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '2px', flexShrink: 0 }} title="Delete transcript">
@@ -742,7 +743,7 @@ export default function SupportPage() {
                       <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: isStudent ? '18px 18px 18px 4px' : '18px 18px 4px 18px', background: isStudent ? '#e8eaf0' : '#f0f0ff', boxShadow: '3px 3px 8px #c5c7cf, -3px -3px 8px #ffffff', color: '#1e1e3a' }}>
                         <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isStudent ? '#9999b0' : '#3636e8' }}>{m.sender.name}{!isStudent && ' · Staff'}</div>
                         <div style={{ fontSize: '13.5px', lineHeight: '1.5' }}>{m.content}</div>
-                        <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{formatIST(m.createdAt)}</div>
                       </div>
                     </div>
                   )
@@ -835,7 +836,7 @@ export default function SupportPage() {
                     </div>
                     <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
                       {activeChat?.agent ? `Agent: ${activeChat.agent.name}` : 'Waiting for an agent...'}
-                      {activeChat?.expiresAt && ` · Expires ${new Date(activeChat.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                      {activeChat?.expiresAt && ` · Expires ${formatIST(activeChat.expiresAt)}`}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -859,7 +860,7 @@ export default function SupportPage() {
                         <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0', boxShadow: isMe ? '3px 3px 8px rgba(54,54,232,0.3)' : '3px 3px 8px #c5c7cf, -3px -3px 8px #ffffff', color: isMe ? '#fff' : '#1e1e3a' }}>
                           {!isMe && <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isAdmin ? '#3636e8' : '#9999b0' }}>{m.sender.name}</div>}
                           <div style={{ fontSize: '13.5px', lineHeight: '1.5' }}>{m.content}</div>
-                          <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{formatIST(m.createdAt)}</div>
                         </div>
                       </div>
                     )

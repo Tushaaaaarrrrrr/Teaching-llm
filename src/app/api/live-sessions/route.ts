@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { formatIST, getEventStatus } from '@/lib/date-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,18 +34,13 @@ export async function GET(request: NextRequest) {
 
     // Compute status dynamically
     const mapped = events.map(ev => {
-      const now = new Date()
-      let status = 'upcoming'
-      if (ev.manualStatus === 'CANCELLED') status = 'cancelled'
-      else if (ev.manualStatus === 'RESCHEDULED') status = 'rescheduled'
-      else if (now >= ev.startTime && now <= ev.endTime) status = 'live'
-      else if (now > ev.endTime) status = 'completed'
+      const status = getEventStatus(ev.startTime, ev.endTime, ev.manualStatus)
 
       return {
         ...ev,
         status,
         date: ev.startTime.toISOString().split('T')[0],
-        time: ev.startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        time: formatIST(ev.startTime),
         meetingLink: ev.meetLink,
       }
     })

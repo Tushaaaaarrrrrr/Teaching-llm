@@ -83,6 +83,9 @@ export default function CalendarPage() {
       fetch('/api/admin/instructors').then(r => r.json()),
     ]).then(([meData, clsData, instrData]) => {
       const u = meData.user
+      if (u) {
+        u.isCalendarLinked = u.isGoogleAuth
+      }
       setUser(u)
       setClasses(Array.isArray(clsData) ? clsData : [])
       setInstructors(Array.isArray(instrData) ? instrData : [])

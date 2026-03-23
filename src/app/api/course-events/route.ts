@@ -2,16 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { formatIST, getEventStatus } from '@/lib/date-utils'
 
 // Compute status dynamically from time
-function computeStatus(event: { startTime: Date; endTime: Date; manualStatus: string }) {
-  if (event.manualStatus === 'CANCELLED') return 'cancelled'
-  if (event.manualStatus === 'RESCHEDULED') return 'rescheduled'
-  const now = new Date()
-  if (now < event.startTime) return 'upcoming'
-  if (now >= event.startTime && now <= event.endTime) return 'live'
-  return 'completed'
-}
+// Status calculation now handled by getEventStatus in @/lib/date-utils
 
 export async function GET(request: NextRequest) {
   try {
@@ -66,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     // Map events with computed status and meetLink security
     const mapped = events.map(ev => {
-      const status = computeStatus(ev)
+      const status = getEventStatus(ev.startTime, ev.endTime, ev.manualStatus)
       const isGlobal = !ev.courseId
       const isEnrolled = isGlobal || enrolledCourseIds.includes(ev.courseId || '')
       const canSeeMeetLink = isAdminOrManager(session.role) || isEnrolled
@@ -78,7 +72,7 @@ export async function GET(request: NextRequest) {
         startTime: ev.startTime.toISOString(),
         endTime: ev.endTime.toISOString(),
         date: ev.startTime.toISOString().split('T')[0],
-        time: ev.startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        time: formatIST(ev.startTime, { hour: '2-digit', minute: '2-digit', hour12: false }),
         meetLink: canSeeMeetLink ? ev.meetLink : null,
         meetingLink: canSeeMeetLink ? ev.meetLink : null, // alias
         type: ev.type,

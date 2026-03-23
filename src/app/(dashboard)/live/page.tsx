@@ -1,6 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
+import { formatIST, formatISTDate } from '@/lib/date-utils'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -27,13 +28,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dotColor: st
   rescheduled: { label: 'RESCHEDULED', color: '#d97706', dotColor: '#d97706', bg: 'rgba(217,119,6,0.10)' },
 }
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
+// Internal formatters replaced by @/lib/date-utils
 
 export default function LivePage() {
   const { data, isLoading } = useSWR<CourseEvent[]>('/api/live-sessions', fetcher, {
@@ -102,65 +97,66 @@ export default function LivePage() {
           {/* Time block */}
           <div style={{ width: '120px', flexShrink: 0, overflow: 'hidden' }}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: isLive ? '#16a34a' : isCompleted || isCancelled ? '#9999b0' : '#6b6b8a', whiteSpace: 'nowrap' }}>
-              {formatTime(session.startTime)}
+              {formatIST(session.startTime)}
             </div>
             <div style={{ fontSize: '11px', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              <span style={{ color: '#9999b0' }}>{formatDate(session.startTime)}</span>
+              <span style={{ color: '#9999b0' }}>{formatISTDate(session.startTime)}</span>
             </div>
           </div>
 
           <div style={{ width: '1px', height: '36px', background: '#d0d2d9', flexShrink: 0 }} />
 
           {/* Title + Status */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'nowrap', overflow: 'hidden' }}>
-              <span style={{
-                fontSize: '15px', fontWeight: '600',
-                color: isCompleted || isCancelled ? '#9999b0' : '#1e1e3a',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
-                textDecoration: isCancelled ? 'line-through' : 'none',
-              }}>
-                {session.title}
-              </span>
-
-              {!isCompleted && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', overflow: 'hidden' }}>
                 <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '4px',
-                  padding: '2px 10px', borderRadius: '50px',
-                  background: statusCfg.bg, fontSize: '10px', fontWeight: '700', letterSpacing: '0.04em',
-                  color: statusCfg.color, flexShrink: 0,
-                  ...(isLive ? { boxShadow: `0 0 8px ${statusCfg.color}33` } : {}),
+                  fontSize: '15px', fontWeight: '800',
+                  color: isCompleted || isCancelled ? '#9999b0' : '#1e1e3a',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+                  textDecoration: isCancelled ? 'line-through' : 'none',
                 }}>
+                  {session.title}
+                </span>
+
+                {!isCompleted && (
                   <span style={{
-                    width: '6px', height: '6px', borderRadius: '50%', background: statusCfg.dotColor, display: 'inline-block',
-                    ...(isLive ? { boxShadow: `0 0 4px ${statusCfg.color}99`, animation: 'livePulse 1.5s infinite' } : {}),
-                  }} />
-                  {statusCfg.label}
-                </span>
-              )}
+                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                    padding: '2px 10px', borderRadius: '50px',
+                    background: statusCfg.bg, fontSize: '10px', fontWeight: '700', letterSpacing: '0.04em',
+                    color: statusCfg.color, flexShrink: 0,
+                    ...(isLive ? { boxShadow: `0 0 8px ${statusCfg.color}33` } : {}),
+                  }}>
+                    <span style={{
+                      width: '6px', height: '6px', borderRadius: '50%', background: statusCfg.dotColor, display: 'inline-block',
+                      ...(isLive ? { boxShadow: `0 0 4px ${statusCfg.color}99`, animation: 'livePulse 1.5s infinite' } : {}),
+                    }} />
+                    {statusCfg.label}
+                  </span>
+                )}
 
-              {isNextUpcoming && !isLive && (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '50px',
-                  background: 'rgba(54,54,232,0.08)', color: '#3636e8', fontSize: '10px', fontWeight: '700', letterSpacing: '0.04em', flexShrink: 0,
-                }}>
-                  UP NEXT
-                </span>
-              )}
-            </div>
-
-            <div style={{ fontSize: '12px', color: '#9999b0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                </svg>
-                {session.course?.teacherName || 'No instructor assigned'}
+                {isNextUpcoming && !isLive && (
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '50px',
+                    background: 'rgba(54,54,232,0.08)', color: '#3636e8', fontSize: '10px', fontWeight: '700', letterSpacing: '0.04em', flexShrink: 0,
+                  }}>
+                    UP NEXT
+                  </span>
+                )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.8 }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
-                </svg>
-                {session.course?.name || 'General Course'}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  Instructor: {session.course?.teacherName || 'Standard Faculty'}
+                </div>
+                <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '2px' }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  {session.course?.name || 'General Batch'}
+                </div>
               </div>
             </div>
           </div>
@@ -204,7 +200,6 @@ export default function LivePage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isNextUpcoming ? '#3636e8' : '#9999b0'} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             </div>
           )}
-        </div>
       </div>
     )
   }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import ManagerUserModal from '@/components/ManagerUserModal'
+import { formatIST } from '@/lib/date-utils'
 
 interface ActivityLog {
   id: string
@@ -45,10 +46,7 @@ function formatActionType(action: string): string {
 }
 
 function formatTimestamp(ts: string): string {
-  const d = new Date(ts)
-  const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
-  return `${date} at ${time}`
+  return formatIST(ts, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
 }
 
 function getRoleBadgeStyle(role: string): React.CSSProperties {

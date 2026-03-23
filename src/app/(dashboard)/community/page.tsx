@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Send } from 'lucide-react'
+import { formatIST } from '@/lib/date-utils'
 
 
 interface ClassItem {
@@ -458,7 +459,7 @@ function CommunityContent() {
                             )}
                           </div>
                           <div style={{ fontSize: '10.5px', color: '#9999b0', padding: '0 4px' }}>
-                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {formatIST(msg.createdAt)}
                           </div>
                         </div>
                       </div>

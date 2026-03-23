@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
+import { formatISTDate, getEventStatus } from '@/lib/date-utils'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -62,8 +63,12 @@ export default function DashboardPage() {
   }
 
   const liveSessions = dashboardData?.liveSessions || []
-  const liveNow = liveSessions.filter((s: any) => s.status === 'live').slice(0, 3)
-  const upNextSessions = liveSessions.filter((s: any) => s.status === 'upcoming').slice(0, 2)
+  const liveNow = liveSessions.filter((s: any) => 
+    getEventStatus(s.startTime, s.endTime, s.manualStatus) === 'live'
+  ).slice(0, 3)
+  const upNextSessions = liveSessions.filter((s: any) => 
+    getEventStatus(s.startTime, s.endTime, s.manualStatus) === 'upcoming'
+  ).slice(0, 2)
 
   const lectures = (dashboardData?.lectures || []).slice(0, 3)
   const announcements = (dashboardData?.announcements || []).slice(0, 3)
@@ -742,7 +747,7 @@ export default function DashboardPage() {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: '11px', color: '#b0b2c0' }}>
-                          {new Date(lec.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          {formatISTDate(lec.uploadedAt)}
                         </span>
                         <Link href="/materials/recordings" style={{ fontSize: '11.5px', fontWeight: '600', color: accent, textDecoration: 'none' }}>
                           Watch →
