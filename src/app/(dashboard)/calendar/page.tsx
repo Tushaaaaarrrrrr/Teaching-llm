@@ -581,12 +581,10 @@ export default function CalendarPage() {
               </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {formData.googleEventId && (
-                <div style={{ padding: '8px 12px', background: '#e0e7ff', borderRadius: '8px', fontSize: '12px', color: '#4338ca', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                  This event is synced from Google Calendar. Some fields are read-only.
-                </div>
-              )}
+              <div style={{ padding: '8px 12px', background: '#e0e7ff', borderRadius: '8px', fontSize: '12px', color: '#4338ca', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Controlled by Google Calendar sync. Only &quot;Type&quot; can be edited in LMS.
+              </div>
               <div className="form-group">
                 <label className="form-label">Title *</label>
                 <input
@@ -594,7 +592,7 @@ export default function CalendarPage() {
                   value={formData.title || ''}
                   onChange={e => set('title', e.target.value)}
                   placeholder="Event title"
-                  disabled={!!formData.googleEventId}
+                  disabled={true}
                 />
               </div>
               <div className="form-group">
@@ -606,7 +604,7 @@ export default function CalendarPage() {
                   placeholder="Optional description"
                   rows={2}
                   style={{ resize: 'vertical' }}
-                  disabled={!!formData.googleEventId}
+                  disabled={true}
                 />
               </div>
               <div className="form-group">
@@ -615,7 +613,7 @@ export default function CalendarPage() {
                   className="form-input"
                   value={formData.classId || ''}
                   onChange={e => set('classId', e.target.value)}
-                  disabled={!!formData.googleEventId}
+                  disabled={true}
                 >
                   <option value="">General (visible to all groups)</option>
                   {classes.map(c => (
@@ -631,7 +629,7 @@ export default function CalendarPage() {
                     className="form-input"
                     value={formData.date || ''}
                     onChange={e => set('date', e.target.value)}
-                    disabled={!!formData.googleEventId}
+                    disabled={true}
                   />
                 </div>
                 <div className="form-group">
@@ -641,7 +639,7 @@ export default function CalendarPage() {
                     className="form-input"
                     value={formData.time || ''}
                     onChange={e => set('time', e.target.value)}
-                    disabled={!!formData.googleEventId}
+                    disabled={true}
                   />
                 </div>
               </div>
@@ -658,6 +656,14 @@ export default function CalendarPage() {
                     ))}
                   </select>
                 </div>
+                 <div className="form-group">
+                   <label className="form-label">Teacher Name</label>
+                   <input
+                     className="form-input"
+                     value={formData.classId ? (classes.find(c => c.id === formData.classId) as any)?.teacherName || 'Fetching...' : 'General Instructor'}
+                     disabled
+                   />
+                 </div>
                 <div className="form-group">
                   <label className="form-label">Instructor</label>
                   <select

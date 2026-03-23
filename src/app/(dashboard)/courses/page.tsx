@@ -13,7 +13,7 @@ interface CourseItem {
   subject: string
   color: string
   icon: string
-  createdBy: { name: string }
+  teacherName: string
   _count: { lectures: number; materials: number; topics: number; courseEvents: number }
 }
 
@@ -179,7 +179,7 @@ export default function CoursesPage() {
                   </p>
                 )}
 
-                {course.createdBy?.name && (
+                {course.teacherName && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
                     <div style={{
                       width: '24px', height: '24px', borderRadius: '50%',
@@ -187,10 +187,10 @@ export default function CoursesPage() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '10px', fontWeight: '700', color: course.color,
                     }}>
-                      {course.createdBy.name.charAt(0).toUpperCase()}
+                      {course.teacherName.charAt(0).toUpperCase()}
                     </div>
                     <span style={{ fontSize: '12.5px', color: '#9999b0', fontWeight: '500' }}>
-                      {course.createdBy.name}
+                      {course.teacherName}
                     </span>
                   </div>
                 )}

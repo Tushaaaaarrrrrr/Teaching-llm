@@ -27,7 +27,7 @@ interface CourseDetail {
   subject: string
   color: string
   expiresAt?: string
-  createdBy: { name: string }
+  teacherName: string
   instructorAssignments?: { instructor: { id: string; name: string } }[]
   _count?: { topics: number; lectures: number; materials: number }
 }
@@ -187,7 +187,7 @@ export default function CourseDetailPage() {
                 )}
                   <span style={{ background: 'rgba(255,255,255,0.15)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    Created By: {course.createdBy.name}
+                    Teacher Name: {course.teacherName}
                   </span>
               </div>
             </div>

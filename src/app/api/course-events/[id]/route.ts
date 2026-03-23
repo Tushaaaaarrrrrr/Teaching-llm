@@ -18,7 +18,7 @@ export async function GET(
     const event = await prisma.courseEvent.findUnique({
       where: { id },
       include: {
-        course: { select: { id: true, name: true, color: true } },
+        course: { select: { id: true, name: true, color: true, teacherName: true } },
         instructor: { select: { id: true, name: true } },
       },
     })

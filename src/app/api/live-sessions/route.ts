@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const events = await prisma.courseEvent.findMany({
       where,
       include: {
-        course: { select: { id: true, name: true, color: true } },
+        course: { select: { id: true, name: true, color: true, teacherName: true } },
         instructor: { select: { id: true, name: true } },
       },
       orderBy: { startTime: 'desc' },

@@ -213,7 +213,7 @@ export default function ManagePage() {
           <>
             <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="Course name" /></div>
             <div className="form-group"><label className="form-label">Subject</label><input className="form-input" value={f.subject || ''} onChange={e => set('subject', e.target.value)} placeholder="e.g. Computer Science" /></div>
-            <div className="form-group"><label className="form-label">Teacher Name (Calendar Display)</label><input className="form-input" value={f.teacherName || ''} onChange={e => set('teacherName', e.target.value)} placeholder="Manual teacher name" /></div>
+            <div className="form-group"><label className="form-label">Teacher Name</label><input className="form-input" value={f.teacherName || ''} onChange={e => set('teacherName', e.target.value)} placeholder="Manual teacher name" /></div>
             <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: editId && f.isDemo ? 0.7 : 1 }}>
               <input 
                 type="checkbox" 

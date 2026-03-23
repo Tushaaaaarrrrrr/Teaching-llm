@@ -105,7 +105,7 @@ export default function LivePage() {
               {formatTime(session.startTime)}
             </div>
             <div style={{ fontSize: '11px', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              <span style={{ color: '#9999b0' }}>{formatDate(session.startTime)} · {session.course?.name || 'General'}</span>
+              <span style={{ color: '#9999b0' }}>{formatDate(session.startTime)}</span>
             </div>
           </div>
 
@@ -149,11 +149,19 @@ export default function LivePage() {
               )}
             </div>
 
-            <div style={{ fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-              </svg>
-              {session.course?.teacherName || 'No instructor assigned'}
+            <div style={{ fontSize: '12px', color: '#9999b0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                {session.course?.teacherName || 'No instructor assigned'}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.8 }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+                </svg>
+                {session.course?.name || 'General Course'}
+              </div>
             </div>
           </div>
 
