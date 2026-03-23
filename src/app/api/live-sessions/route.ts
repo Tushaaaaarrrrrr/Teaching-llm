@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
     const liveSessions = await prisma.courseEvent.findMany({
       where,
       include: {
-        instructor: { select: { name: true } },
-        course: { select: { name: true, teacherName: true } },
+        instructor: { select: { id: true, name: true } },
+        course: { select: { id: true, name: true, color: true, teacherName: true } },
       },
       orderBy: { startTime: 'desc' },
     })
@@ -70,14 +70,15 @@ export async function POST(request: NextRequest) {
 
     const liveSession = await prisma.courseEvent.create({
       data: {
-        courseId,
+        courseId: courseId || null,
+        isGlobal: !courseId,
         title,
-        description,
-        meetLink: meetingLink,
+        description: description || null,
+        meetLink: meetingLink || null,
         startTime: start,
         endTime: end,
         type: 'class',
-        manualStatus: status || 'NONE',
+        status: status || 'SCHEDULED',
         createdById: session.userId,
       },
     })

@@ -113,10 +113,6 @@ export default function LecturePage() {
     if (source === 'YOUTUBE') {
       const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&\s]+)/)
       if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`
-    } else if (url.includes('drive.google.com')) {
-      // Handle Google Drive links
-      const driveMatch = url.match(/\/file\/d\/([^\/]+)/)
-      if (driveMatch) return `https://drive.google.com/file/d/${driveMatch[1]}/preview`
     }
     
     return url

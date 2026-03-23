@@ -44,7 +44,6 @@ model User {
   instructorCourseEvents  CourseEvent[]          @relation("EventInstructor")
   enrollments             Enrollment[]
   feedbacks               Feedback[]
-  googleCredential        GoogleCredential?
   instructorAssignments   InstructorAssignment[]
   uploadedLectures        Lecture[]              @relation("LectureUploader")
   loginLogs               LoginLog[]
@@ -72,7 +71,6 @@ model Course {
   isDemo                Boolean                @default(false)
   isGlobal              Boolean                @default(false)
   teacherName           String?
-  googleDriveFolderId   String?
   announcements         Announcement[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
   communityMessages     CommunityMessage[]
@@ -141,43 +139,35 @@ model Material {
 }
 
 model CourseEvent {
-  id            String   @id @default(cuid())
-  googleEventId String?  @unique
-  courseId      String?  @map("classId")
-  title         String
-  description   String?
-  startTime     DateTime
-  endTime       DateTime
-  meetLink      String?
-  manualStatus  String   @default("NONE")
-  type          String   @default("class")
-  instructorId  String?
-  createdById   String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  course        Course?  @relation(fields: [courseId], references: [id])
-  createdBy     User     @relation("EventCreator", fields: [createdById], references: [id])
-  instructor    User?    @relation("EventInstructor", fields: [instructorId], references: [id])
+  id                String    @id @default(cuid())
+  courseId          String?   @map("classId")
+  title             String
+  description       String?
+  startTime         DateTime
+  endTime           DateTime
+  meetLink          String?
+  status            String    @default("SCHEDULED") // SCHEDULED, CANCELLED, RESCHEDULED
+  type              String    @default("class") // class, exam, assignment, introduction, holiday, etc.
+  isGlobal          Boolean   @default(false)
+  originalStartTime DateTime? // For rescheduling
+  recurrence        String?   @default("ONETIME") // ONETIME, DAILY, WEEKLY, CUSTOM
+  interval          Int?      // For CUSTOM recurrence
+  parentId          String?   // For recurring event chain
+  instructorId      String?
+  createdById       String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  course            Course?   @relation(fields: [courseId], references: [id])
+  createdBy         User      @relation("EventCreator", fields: [createdById], references: [id])
+  instructor        User?     @relation("EventInstructor", fields: [instructorId], references: [id])
 
   @@index([courseId])
   @@index([startTime])
   @@index([createdById])
-  @@index([instructorId])
   @@index([type])
+  @@index([isGlobal])
 }
 
-model GoogleCredential {
-  id           String    @id @default(cuid())
-  userId       String    @unique
-  accessToken  String
-  refreshToken String
-  expiresAt    DateTime
-  calendarId   String    @default("primary")
-  lastSyncAt   DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
 
 model Topic {
   id        String    @id @default(cuid())

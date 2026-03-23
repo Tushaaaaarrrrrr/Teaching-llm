@@ -50,7 +50,11 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
-    const { title, description, startTime, endTime, meetLink, type, courseId, instructorId, manualStatus } = body
+    const { 
+      title, description, startTime, endTime, meetLink, 
+      type, courseId, instructorId, status, isGlobal,
+      recurrence, interval, originalStartTime
+    } = body
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: Record<string, any> = {}
@@ -60,9 +64,13 @@ export async function PUT(
     if (endTime !== undefined) data.endTime = new Date(endTime)
     if (meetLink !== undefined) data.meetLink = meetLink || null
     if (type !== undefined) data.type = type
-    if (courseId !== undefined) data.courseId = courseId || null
+    if (isGlobal !== undefined) data.isGlobal = !!isGlobal
+    if (courseId !== undefined) data.courseId = isGlobal ? null : (courseId || null)
     if (instructorId !== undefined) data.instructorId = instructorId || null
-    if (manualStatus !== undefined) data.manualStatus = manualStatus
+    if (status !== undefined) data.status = status
+    if (recurrence !== undefined) data.recurrence = recurrence
+    if (interval !== undefined) data.interval = interval ? parseInt(interval as string) : null
+    if (originalStartTime !== undefined) data.originalStartTime = originalStartTime ? new Date(originalStartTime) : null
 
     const updatedEvent = await prisma.courseEvent.update({
       where: { id },

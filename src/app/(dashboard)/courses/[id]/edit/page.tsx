@@ -28,7 +28,6 @@ interface CourseDetail {
   description: string
   subject: string
   color: string
-  googleDriveFolderId?: string
 }
 
 interface ContentForm {
@@ -356,7 +355,6 @@ export default function CourseEditPage() {
                     style={{ width: '100%' }}
                   >
                     <option value="YOUTUBE">YouTube</option>
-                    <option value="DRIVE">Google Drive</option>
                   </select>
                 </div>
                 <div>
@@ -366,7 +364,7 @@ export default function CourseEditPage() {
                   <input
                     value={contentForm.videoUrl}
                     onChange={e => setContentForm(f => ({ ...f, videoUrl: e.target.value }))}
-                    placeholder={contentForm.videoSource === 'YOUTUBE' ? "https://youtube.com/watch?v=..." : "https://drive.google.com/file/d/.../view"}
+                    placeholder="https://youtube.com/watch?v=..."
                     className="form-input"
                     style={{ width: '100%' }}
                   />

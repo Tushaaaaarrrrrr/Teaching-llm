@@ -15,7 +15,6 @@ export async function GET() {
       id: true, name: true, email: true, role: true, avatar: true, gender: true, createdAt: true, 
       canTerminate: true, canCreateStudents: true,
       isSuperManager: true,
-      googleCredential: { select: { id: true } },
       enrollments: {
         select: {
           course: {
@@ -40,9 +39,7 @@ export async function GET() {
   user.avatar = getUserAvatar(user)
   const transformedUser = {
     ...user,
-    isGoogleAuth: !!(user as any).googleCredential,
     isSuperManager: user.isSuperManager || user.email === 'lkiitmng2428@gmail.com',
-    googleCredential: undefined
   }
 
   return NextResponse.json({ user: transformedUser })

@@ -41,7 +41,9 @@ export async function GET(
           orderBy: { uploadedAt: 'desc' },
         },
         courseEvents: {
-          orderBy: { startTime: 'desc' },
+          where: { status: { not: 'CANCELLED' } },
+          include: { instructor: { select: { name: true } } },
+          orderBy: { startTime: 'asc' },
         },
         topics: {
           include: {
@@ -67,21 +69,22 @@ export async function GET(
     }
 
     // Calculate dynamic counts
-    const topicsCount = courseData.topics.length
+    const cData = courseData as any
+    const topicsCount = cData.topics.length
     let lecturesCount = 0
     let materialsCount = 0
 
-    courseData.topics.forEach(topic => {
-      topic.content.forEach(content => {
+    cData.topics.forEach((topic: any) => {
+      topic.content.forEach((content: any) => {
         if (content.videoUrl) lecturesCount++
         if (content.pptUrl) materialsCount++
       })
     })
 
     const result = {
-      ...courseData,
+      ...cData,
       _count: {
-        ...courseData._count,
+        ...cData._count,
         topics: topicsCount,
         lectures: lecturesCount,
         materials: materialsCount,

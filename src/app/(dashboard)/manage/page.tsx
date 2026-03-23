@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
 
-type Tab = 'courses' | 'lectures' | 'sessions' | 'materials' | 'announcements' | 'content-bank'
+type Tab = 'courses' | 'lectures' | 'events' | 'materials' | 'announcements' | 'content-bank'
 
 export default function ManagePage() {
   const [tab, setTab] = useState<Tab>('courses')
@@ -11,7 +11,7 @@ export default function ManagePage() {
   
   const { data: coursesData, isLoading: loadingCourses } = useSWR('/api/courses', fetcher)
   const { data: lecturesData, isLoading: loadingLectures } = useSWR('/api/content?hasVideo=true', fetcher)
-  const { data: sessionsData, isLoading: loadingSessions } = useSWR('/api/live-sessions', fetcher)
+  const { data: eventsData, isLoading: loadingEvents } = useSWR('/api/events', fetcher)
   const { data: materialsData, isLoading: loadingMaterials } = useSWR('/api/materials', fetcher)
   const { data: announcementsData, isLoading: loadingAnnouncements } = useSWR('/api/announcements', fetcher)
   const { data: contentBankData, isLoading: loadingBank } = useSWR('/api/content-bank', fetcher)
@@ -19,18 +19,18 @@ export default function ManagePage() {
 
   const courses = coursesData?.courses || coursesData || []
   const lectures = lecturesData?.content || []
-  const sessions = sessionsData?.sessions || sessionsData || []
+  const events = eventsData || []
   const materials = Array.isArray(materialsData) ? materialsData : materialsData?.materials || []
   const announcements = announcementsData?.announcements || announcementsData || []
   const bankQuestions = Array.isArray(contentBankData) ? contentBankData : []
   const instructors = instructorsData || []
 
-  const loading = loadingCourses || loadingLectures || loadingSessions || loadingMaterials || loadingAnnouncements
+  const loading = loadingCourses || loadingLectures || loadingEvents || loadingMaterials || loadingAnnouncements
 
   async function loadData() {
     mutate('/api/courses')
     mutate('/api/content?hasVideo=true')
-    mutate('/api/live-sessions')
+    mutate('/api/events')
     mutate('/api/materials')
     mutate('/api/announcements')
     mutate('/api/content-bank')
@@ -118,7 +118,7 @@ export default function ManagePage() {
         const endpoints: Record<Tab, string> = {
           courses:       '/api/courses',
           lectures:      '',            // handled above
-          sessions:      '/api/live-sessions',
+          events:        '/api/events',
           materials:     '/api/materials',
           announcements: '/api/announcements',
           'content-bank': '/api/content-bank',
@@ -147,7 +147,7 @@ export default function ManagePage() {
       const endpoints: Record<Tab, string> = {
         courses:       '/api/courses',
         lectures:      '',
-        sessions:      '/api/live-sessions',
+        events:        '/api/events',
         materials:     '',
         announcements: '/api/announcements',
         'content-bank': '/api/content-bank',
@@ -160,7 +160,7 @@ export default function ManagePage() {
   const tabs: Array<{ key: Tab; label: string; count: number }> = [
     { key: 'courses',       label: 'Courses',       count: courses.length },
     { key: 'lectures',      label: 'Lectures',      count: lectures.length },
-    { key: 'sessions',      label: 'Live Sessions', count: sessions.length },
+    { key: 'events',        label: 'Calendar Events', count: events.length },
     { key: 'materials',     label: 'Study Material', count: materials.length },
     { key: 'announcements', label: 'Announcements', count: announcements.length },
     { key: 'content-bank',  label: 'Content Bank',  count: bankQuestions.length },
@@ -286,17 +286,91 @@ export default function ManagePage() {
           </>
         )
 
-      case 'sessions':
+      case 'events':
         return (
           <>
-            <div className="form-group"><label className="form-label">Course *</label><select className="form-input" value={f.courseId || ''} onChange={e => set('courseId', e.target.value)}><option value="">Select course...</option>{courseOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
-            <div className="form-group"><label className="form-label">Title *</label><input className="form-input" value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="Session title" /></div>
-            <div className="form-group"><label className="form-label">Meeting Link *</label><input className="form-input" value={f.meetingLink || ''} onChange={e => set('meetingLink', e.target.value)} placeholder="https://meet.jit.si/..." /></div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div className="form-group"><label className="form-label">Date *</label><input type="date" className="form-input" value={f.date || ''} onChange={e => set('date', e.target.value)} /></div>
-              <div className="form-group"><label className="form-label">Time *</label><input type="time" className="form-input" value={f.time || ''} onChange={e => set('time', e.target.value)} /></div>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input 
+                type="checkbox" 
+                id="isGlobal"
+                checked={!!f.isGlobal} 
+                onChange={e => setFormData(p => ({ ...p, isGlobal: e.target.checked as any }))}
+              />
+              <label htmlFor="isGlobal" className="form-label" style={{ marginBottom: 0 }}>Global Event (Visible to everyone)</label>
             </div>
-            <div className="form-group"><label className="form-label">Status</label><select className="form-input" value={f.status || 'scheduled'} onChange={e => set('status', e.target.value)}><option value="scheduled">Scheduled</option><option value="live">Live</option><option value="completed">Completed</option></select></div>
+            {!f.isGlobal && (
+              <div className="form-group">
+                <label className="form-label">Course *</label>
+                <select className="form-input" value={f.courseId || ''} onChange={e => set('courseId', e.target.value)}>
+                  <option value="">Select course...</option>
+                  {courseOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="form-group"><label className="form-label">Title *</label><input className="form-input" value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="Event title" /></div>
+            <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} placeholder="Event description" rows={2} /></div>
+            <div className="form-group"><label className="form-label">Meeting Link (Optional)</label><input className="form-input" value={f.meetLink || f.meetingLink || ''} onChange={e => set('meetLink', e.target.value)} placeholder="https://meet.jit.si/..." /></div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-group">
+                <label className="form-label">Start Date & Time *</label>
+                <input 
+                  type="datetime-local" 
+                  className="form-input" 
+                  value={f.startTime ? new Date(f.startTime).toISOString().slice(0, 16) : ''} 
+                  onChange={e => set('startTime', e.target.value)} 
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">End Date & Time *</label>
+                <input 
+                  type="datetime-local" 
+                  className="form-input" 
+                  value={f.endTime ? new Date(f.endTime).toISOString().slice(0, 16) : ''} 
+                  onChange={e => set('endTime', e.target.value)} 
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-group">
+                <label className="form-label">Event Type</label>
+                <select className="form-input" value={f.type || 'class'} onChange={e => set('type', e.target.value)}>
+                  <option value="class">Class / Lecture</option>
+                  <option value="exam">Exam / Test</option>
+                  <option value="holiday">Holiday</option>
+                  <option value="assignment">Assignment</option>
+                  <option value="introduction">Introduction</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Status</label>
+                <select className="form-input" value={f.status || 'SCHEDULED'} onChange={e => set('status', e.target.value)}>
+                  <option value="SCHEDULED">Scheduled</option>
+                  <option value="CANCELLED">Cancelled</option>
+                  <option value="RESCHEDULED">Rescheduled</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-group">
+                <label className="form-label">Recurrence</label>
+                <select className="form-input" value={f.recurrence || 'ONETIME'} onChange={e => set('recurrence', e.target.value)}>
+                  <option value="ONETIME">One-time</option>
+                  <option value="DAILY">Daily</option>
+                  <option value="WEEKLY">Weekly</option>
+                  <option value="CUSTOM">Custom Interval</option>
+                </select>
+              </div>
+              {f.recurrence === 'CUSTOM' && (
+                <div className="form-group">
+                  <label className="form-label">Interval (Days)</label>
+                  <input type="number" className="form-input" value={f.interval || ''} onChange={e => set('interval', e.target.value)} placeholder="e.g. 3" min="1" />
+                </div>
+              )}
+            </div>
           </>
         )
 
@@ -331,7 +405,7 @@ export default function ManagePage() {
     switch (tab) {
       case 'courses':       return courses
       case 'lectures':      return lectures
-      case 'sessions':      return sessions
+      case 'events':        return events
       case 'materials':     return materials
       case 'announcements': return announcements
       case 'content-bank':  return bankQuestions
@@ -341,12 +415,71 @@ export default function ManagePage() {
   return (
     <div className="page-container fade-in">
       <div className="page-header">
-        <div />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {tab === 'events' && (
+            <>
+              <button 
+                onClick={async () => {
+                  const res = await fetch('/api/events/export?format=csv');
+                  const blob = await res.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `events-${new Date().toISOString().split('T')[0]}.csv`;
+                  a.click();
+                }} 
+                className="btn btn-ghost"
+                style={{ border: '1px solid #c5c7cf' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Export CSV
+              </button>
+              <label className="btn btn-ghost" style={{ border: '1px solid #c5c7cf', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Import JSON
+                <input 
+                  type="file" 
+                  accept=".json" 
+                  style={{ display: 'none' }} 
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                      try {
+                        const json = JSON.parse(event.target?.result as string);
+                        const res = await fetch('/api/events/import', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ events: json })
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          alert(data.message);
+                          loadData();
+                        } else {
+                          alert(`Import failed: ${data.error}\n${data.details?.join('\n') || ''}`);
+                        }
+                      } catch (err) {
+                        alert('Invalid JSON file');
+                      }
+                    };
+                    reader.readAsText(file);
+                  }}
+                />
+              </label>
+            </>
+          )}
+        </div>
         <button onClick={openCreate} className="btn btn-primary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Create New
+          {tab === 'events' ? 'Add Event' : 'Create New'}
         </button>
       </div>
 
@@ -408,7 +541,7 @@ export default function ManagePage() {
                 <div>
                   <div style={{ fontSize: '11px', fontWeight: '700', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>System Mapping</div>
                   <div style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px' }}>LMS-COURSE-global</div>
-                  <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.8 }}>Assign this ID in Google Calendar for globally visible events.</div>
+                  <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.8 }}>Assign this ID to events for global visibility (all students).</div>
                 </div>
                 <button 
                   onClick={() => { navigator.clipboard.writeText('LMS-COURSE-global'); setCopiedId('global'); setTimeout(() => setCopiedId(null), 2000) }}
@@ -437,7 +570,7 @@ export default function ManagePage() {
 
               const iconLabel =
                 tab === 'courses'       ? item.name?.slice(0, 2).toUpperCase() :
-                tab === 'sessions'      ? '▶' :
+                tab === 'events'        ? '▶' :
                 tab === 'announcements' ? '!' :
                 tab === 'materials'     ? (item.fileType || 'DOC').slice(0, 3).toUpperCase() :
                 String(idx + 1).padStart(2, '0')
@@ -490,10 +623,13 @@ export default function ManagePage() {
                         {item.isDemo && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#3636e8', color: 'white', fontWeight: '900', letterSpacing: '0.05em' }}>SYSTEM DEMO</span>}
                       </>
                     )}
-                    {tab === 'sessions' && (
-                      <span className={`badge badge-${item.status === 'live' ? 'danger' : item.status === 'completed' ? 'success' : 'info'}`}>
-                        {item.status}
-                      </span>
+                    {tab === 'events' && (
+                      <>
+                        {item.isGlobal && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#3636e8', color: 'white', fontWeight: '900', letterSpacing: '0.05em', marginRight: '6px' }}>GLOBAL</span>}
+                        <span className={`badge badge-${item.status === 'live' ? 'danger' : item.status === 'CANCELLED' ? 'warning' : item.status === 'RESCHEDULED' ? 'info' : 'success'}`}>
+                          {item.status}
+                        </span>
+                      </>
                     )}
                     {tab === 'lectures' && (
                       <div style={{ display: 'flex', gap: '6px' }}>

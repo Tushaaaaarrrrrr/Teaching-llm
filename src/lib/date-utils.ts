@@ -30,10 +30,10 @@ export function formatISTDate(date: string | Date) {
 export function getEventStatus(
   startTime: string | Date, 
   endTime: string | Date, 
-  manualStatus: string = 'NONE'
+  status: string = 'SCHEDULED'
 ) {
-  if (manualStatus === 'CANCELLED') return 'cancelled';
-  if (manualStatus === 'RESCHEDULED') return 'rescheduled';
+  if (status === 'CANCELLED') return 'cancelled';
+  if (status === 'RESCHEDULED') return 'rescheduled';
 
   const now = new Date();
   const start = typeof startTime === 'string' ? new Date(startTime) : startTime;

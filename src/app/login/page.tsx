@@ -13,8 +13,7 @@ function LoginContent() {
   const [loading, setLoading] = useState(false)
   const [isAwake, setIsAwake] = useState(false)
 
-  const signInBtnRef = useRef<HTMLDivElement>(null)
-  const googleBtnRef = useRef<HTMLButtonElement>(null)
+   const signInBtnRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let idleTimeout: NodeJS.Timeout;
@@ -30,7 +29,7 @@ function LoginContent() {
         return dist < 250;
       };
 
-      if (checkDist(signInBtnRef) || checkDist(googleBtnRef)) {
+      if (checkDist(signInBtnRef)) {
         awake = true;
       }
       setIsAwake(awake);
@@ -54,14 +53,10 @@ function LoginContent() {
     };
   }, []);
 
-  // Show error from OAuth redirect (e.g. ?error=GoogleLoginNotConfigured)
-  const oauthError = searchParams.get('error')
-  const oauthErrorMap: Record<string, string> = {
-    GoogleLoginNotConfigured: 'Google login is not configured yet. Please use email & password.',
-    GoogleAuthFailed: 'Google authentication failed. Please try again.',
-    GoogleEmailMissing: 'Could not retrieve your email from Google.',
+  // Show error from query params if any
+  const queryError = searchParams.get('error')
+  const errorMap: Record<string, string> = {
     AccountDeactivated: 'Your account has been deactivated. Please contact support.',
-    NoCodeProvided: 'Google login was cancelled or failed. Please try again.',
     InternalError: 'An internal error occurred. Please try again later.',
   }
 
@@ -93,7 +88,7 @@ function LoginContent() {
     }
   }
 
-  const displayError = error || (oauthError ? oauthErrorMap[oauthError] || `Login error: ${oauthError}` : '')
+  const displayError = error || (queryError ? errorMap[queryError] || `Login error: ${queryError}` : '')
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', background: '#F3F4F6' }}>
@@ -238,36 +233,7 @@ function LoginContent() {
             </div>
           </form>
 
-          {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <div style={{ flex: 1, height: '1px', background: '#d0d2d9' }} />
-            <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' }}>or</span>
-            <div style={{ flex: 1, height: '1px', background: '#d0d2d9' }} />
-          </div>
-
-          {/* Helper text */}
-          <p style={{ fontSize: '13px', color: '#9999b0', textAlign: 'center', marginBottom: '16px', fontWeight: '500' }}>
-            Sign in or create an account using Google
-          </p>
-
-          {/* Google Sign-In Button */}
-          <button
-            ref={googleBtnRef}
-            type="button"
-            onClick={() => { window.location.href = '/api/auth/google' }}
-            style={{ width: '100%', padding: '13px 20px', background: '#F3F4F6', color: '#1e1e3a', border: 'none', borderRadius: '50px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff', transition: 'all 0.2s ease' }}
-            onMouseOver={(e) => { e.currentTarget.style.boxShadow = '2px 2px 5px #d1d5db, -2px -2px 5px #ffffff' }}
-            onMouseOut={(e) => { e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff' }}
-          >
-            {/* Google Logo SVG */}
-            <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            Continue with Google
-          </button>
+          {/* Removed Google login as per internal system requirements */}
         </div>
       </div>
     </div>

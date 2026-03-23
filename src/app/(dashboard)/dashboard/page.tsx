@@ -64,10 +64,10 @@ export default function DashboardPage() {
 
   const liveSessions = dashboardData?.liveSessions || []
   const liveNow = liveSessions.filter((s: any) => 
-    getEventStatus(s.startTime, s.endTime, s.manualStatus) === 'live'
+    getEventStatus(s.startTime, s.endTime, s.status) === 'live'
   ).slice(0, 3)
   const upNextSessions = liveSessions.filter((s: any) => 
-    getEventStatus(s.startTime, s.endTime, s.manualStatus) === 'upcoming'
+    getEventStatus(s.startTime, s.endTime, s.status) === 'upcoming'
   ).slice(0, 2)
 
   const lectures = (dashboardData?.lectures || []).slice(0, 3)
@@ -334,7 +334,7 @@ export default function DashboardPage() {
                   ) : <div />}
 
                   <a
-                    href={frontSession.meetingLink}
+                    href={frontSession.meetLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-primary"
@@ -585,7 +585,7 @@ export default function DashboardPage() {
                   ) : <div />}
 
                   <a
-                    href={frontSession.meetingLink}
+                    href={frontSession.meetLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -641,7 +641,7 @@ export default function DashboardPage() {
                   {upNextSessions.map((session, idx) => (
                     <a
                       key={session.id}
-                      href={session.meetingLink}
+                      href={session.meetLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ textDecoration: 'none' }}

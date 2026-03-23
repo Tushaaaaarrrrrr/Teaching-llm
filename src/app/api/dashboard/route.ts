@@ -32,7 +32,7 @@ export async function GET() {
 
     // Build event filter for accessible courses
     const eventCourseFilter = accessibleCourseIds !== null
-      ? { OR: [{ courseId: null }, { courseId: { in: accessibleCourseIds } }] }
+      ? { OR: [{ isGlobal: true }, { courseId: { in: accessibleCourseIds } }] }
       : {}
 
     const now = new Date()
@@ -87,7 +87,7 @@ export async function GET() {
       prisma.courseEvent.findMany({
         where: {
           type: { in: ['class', 'live'] },
-          manualStatus: { not: 'CANCELLED' },
+          status: { not: 'CANCELLED' },
           ...eventCourseFilter,
           endTime: { gte: now } // Only show current or future events
         },
@@ -137,7 +137,7 @@ export async function GET() {
 
     // Count upcoming sessions (startTime > now, not cancelled)
     const upcomingLiveCount = courseEvents.filter(e => {
-      const status = getEventStatus(e.startTime, e.endTime, e.manualStatus)
+      const status = getEventStatus(e.startTime, e.endTime, e.status)
       return status === 'upcoming' || status === 'live'
     }).length
 
@@ -147,13 +147,14 @@ export async function GET() {
       return {
         id: s.id,
         title: s.title,
-        instructor: s.instructor?.name || 'Unknown',
+        instructor: s.instructor?.name || 'TBA', // Teacher name comes from instructor relation
         date: s.startTime.toISOString().split('T')[0],
         startTime: s.startTime.toISOString(),
         endTime: s.endTime.toISOString(),
         time: formatIST(s.startTime),
         status,
-        meetingLink: s.meetLink || '',
+        meetLink: s.meetLink || '',
+        isGlobal: s.isGlobal,
         course: { name: s.course?.name || 'General' }
       }
     })

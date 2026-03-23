@@ -6,13 +6,15 @@ interface CalEvent {
   id: string
   title: string
   description: string
-  date: string
-  time: string
+  startTime: string
+  endTime: string
   type: string
-  classId?: string | null
-  class?: { id: string; name: string; color: string } | null
-  instructorId?: string | null
-  instructor?: { id: string; name: string } | null
+  status: string
+  isGlobal: boolean
+  courseId?: string | null
+  course?: { id: string; name: string; color: string } | null
+  meetLink?: string | null
+  date?: string
 }
 
 interface ClassOption {
@@ -54,14 +56,11 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
 
-  const [syncing, setSyncing] = useState(false)
-  const [lastSync, setLastSync] = useState<string | null>(null)
-  const [isCalendarLinked, setIsCalendarLinked] = useState(false)
 
   // Modal state
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [formData, setFormData] = useState<Record<string, string>>({})
+  const [formData, setFormData] = useState<any>({})
   const [saving, setSaving] = useState(false)
 
   // Detail popover for clicking event pills on calendar
@@ -79,10 +78,6 @@ export default function CalendarPage() {
       fetch('/api/instructors').then(r => r.json()),
     ]).then(([meData, clsData, instrData]) => {
       setUser(meData.user || meData)
-      setIsCalendarLinked(meData.isGoogleAuth || false)
-      if (meData.lastCalendarSync) {
-        setLastSync(new Date(meData.lastCalendarSync).toLocaleString())
-      }
       setClasses(clsData.classes || clsData || [])
       setInstructors(instrData || [])
     }).catch(console.error)
@@ -92,23 +87,6 @@ export default function CalendarPage() {
     loadEvents()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month])
-
-  async function handleSync() {
-    setSyncing(true)
-    try {
-      const res = await fetch('/api/calendar/sync', { method: 'POST' })
-      if (!res.ok) {
-        throw new Error('Sync failed')
-      }
-      setLastSync(new Date().toLocaleString())
-      loadEvents()
-    } catch (err) {
-      console.error(err)
-      alert('Failed to sync calendar. Please check your connection or re-link.')
-    } finally {
-      setSyncing(false)
-    }
-  }
 
   function loadEvents() {
     setLoading(true)
@@ -134,66 +112,62 @@ export default function CalendarPage() {
 
   const getEventsForDay = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    return events.filter(e => e.date === dateStr)
+    return events.filter(e => {
+      const eDate = new Date(e.date || (e as any).startTime).toISOString().split('T')[0]
+      return eDate === dateStr
+    })
   }
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1))
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1))
   const goToday = () => setCurrentDate(new Date())
 
-  const set = (key: string, val: string) => setFormData(prev => ({ ...prev, [key]: val }))
+  const set = (key: string, val: string | boolean) => setFormData(prev => ({ ...prev, [key]: val } as any))
 
   function openCreate(prefilledDate?: string) {
     setEditId(null)
     setFormData({
       title: '',
       description: '',
-      date: prefilledDate || '',
-      time: '',
+      startTime: prefilledDate ? `${prefilledDate}T10:00` : '',
+      endTime: prefilledDate ? `${prefilledDate}T11:00` : '',
       type: 'class',
-      classId: '',
-      instructorId: '',
+      courseId: '',
+      isGlobal: false,
+      status: 'SCHEDULED',
+      recurrence: 'ONETIME',
     })
     setShowModal(true)
   }
 
-  function openEdit(ev: CalEvent) {
+  function openEdit(ev: any) {
     setEditId(ev.id)
     setFormData({
       title: ev.title || '',
       description: ev.description || '',
-      date: ev.date || '',
-      time: ev.time || '',
+      startTime: ev.startTime ? new Date(ev.startTime).toISOString().slice(0, 16) : '',
+      endTime: ev.endTime ? new Date(ev.endTime).toISOString().slice(0, 16) : '',
       type: ev.type || 'class',
-      classId: ev.classId || '',
-      instructorId: ev.instructorId || '',
+      courseId: ev.courseId || '',
+      isGlobal: !!ev.isGlobal,
+      status: ev.status || 'SCHEDULED',
+      recurrence: ev.recurrence || 'ONETIME',
+      meetLink: ev.meetLink || '',
     })
     setSelectedEvent(null)
     setShowModal(true)
   }
 
   async function handleSave() {
-    if (!formData.title || !formData.date) return
+    if (!formData.title || !formData.startTime || !formData.endTime) return
     setSaving(true)
     try {
-      const payload = {
-        title: formData.title,
-        description: formData.description || null,
-        date: formData.date,
-        time: formData.time || null,
-        type: formData.type || 'class',
-        classId: formData.classId || null,
-        instructorId: formData.instructorId || null,
-        relatedClass: formData.classId
-          ? classes.find(c => c.id === formData.classId)?.name || null
-          : null,
-      }
       const url = editId ? `/api/events/${editId}` : '/api/events'
       const method = editId ? 'PUT' : 'POST'
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       })
       if (!res.ok) {
         const err = await res.json()
@@ -236,37 +210,6 @@ export default function CalendarPage() {
         </div>
         {isAdminOrManager && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {user?.role === 'MANAGER' && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: '10px' }}>
-                <button 
-                  onClick={handleSync} 
-                  disabled={syncing || !isCalendarLinked}
-                  className="btn btn-outline btn-sm"
-                  style={{ 
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    borderColor: '#c5c7cf', color: '#3a3a5c',
-                    opacity: syncing || !isCalendarLinked ? 0.6 : 1
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                    style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }}
-                  >
-                    <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
-                  </svg>
-                  {syncing ? 'Syncing...' : 'Sync Calendar'}
-                </button>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
-                  {lastSync && (
-                    <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: '600' }}>
-                      Last synced: {lastSync}
-                    </span>
-                  )}
-                  <a href="/api/auth/google/login" style={{ fontSize: '10px', color: '#6366f1', fontWeight: '600', textDecoration: 'underline' }}>
-                    {isCalendarLinked ? 'Re-link Account' : 'Link Google Calendar'}
-                  </a>
-                </div>
-              </div>
-            )}
             <button onClick={() => openCreate()} className="btn btn-primary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -347,12 +290,13 @@ export default function CalendarPage() {
                     </div>
                     {dayEvents.slice(0, 3).map(ev => {
                       const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
+                      const isCancelled = ev.status === 'CANCELLED'
                       return (
                         <div key={ev.id} onClick={(e) => { e.stopPropagation(); setSelectedEvent(ev) }} style={{
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          background: tc.bg,
-                          color: tc.color,
+                          background: isCancelled ? '#f1f1f1' : tc.bg,
+                          color: isCancelled ? '#999' : tc.color,
                           fontSize: '10px',
                           fontWeight: '600',
                           marginBottom: '2px',
@@ -360,8 +304,10 @@ export default function CalendarPage() {
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
                           cursor: 'pointer',
-                        }} title={`${ev.title}${ev.time ? ' at ' + ev.time : ''}`}>
-                          {ev.title}
+                          textDecoration: isCancelled ? 'line-through' : 'none',
+                          border: ev.status === 'RESCHEDULED' ? `1px dashed ${tc.color}` : 'none',
+                        }} title={`${ev.title}${ev.startTime ? ' at ' + new Date(ev.startTime).toLocaleTimeString() : ''} (${ev.status})`}>
+                          {ev.isGlobal && '🌐 '}{ev.title}
                         </div>
                       )
                     })}
@@ -387,8 +333,10 @@ export default function CalendarPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {events.sort((a, b) => a.date.localeCompare(b.date)).map(ev => {
+            {events.sort((a, b) => (a.startTime || a.date).localeCompare(b.startTime || b.date)).map(ev => {
               const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
+              const isCancelled = ev.status === 'CANCELLED'
+              const date = new Date(ev.startTime || ev.date)
               return (
                 <div key={ev.id} style={{
                   display: 'flex',
@@ -396,9 +344,10 @@ export default function CalendarPage() {
                   padding: '14px 24px',
                   gap: '14px',
                   borderRadius: '50px',
-                  background: '#e8eaf0',
+                  background: isCancelled ? '#f8f8f8' : '#e8eaf0',
                   boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
                   transition: 'box-shadow 0.2s',
+                  opacity: isCancelled ? 0.7 : 1,
                 }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
@@ -407,38 +356,38 @@ export default function CalendarPage() {
                     width: '40px',
                     height: '40px',
                     borderRadius: '10px',
-                    background: tc.bg,
+                    background: isCancelled ? '#eee' : tc.bg,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
                   }}>
-                    <span style={{ fontSize: '14px', fontWeight: '700', color: tc.color, lineHeight: 1 }}>
-                      {new Date(ev.date + 'T00:00:00').getDate()}
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: isCancelled ? '#999' : tc.color, lineHeight: 1 }}>
+                      {date.getDate()}
                     </span>
-                    <span style={{ fontSize: '9px', color: tc.color, fontWeight: '600', textTransform: 'uppercase' }}>
-                      {new Date(ev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })}
+                    <span style={{ fontSize:9, color: isCancelled ? '#999' : tc.color, fontWeight: '600', textTransform: 'uppercase' }}>
+                      {date.toLocaleDateString('en-US', { month: 'short' })}
                     </span>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px' }}>
-                      {ev.title}
+                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: isCancelled ? '#999' : '#1e1e3a', marginBottom: '2px', textDecoration: isCancelled ? 'line-through' : 'none' }}>
+                      {ev.isGlobal && '🌐 '}{ev.title}
                     </div>
                     <div style={{ fontSize: '12px', color: '#9999b0' }}>
-                      {ev.time && `${ev.time} · `}
-                      {ev.class?.name ? ev.class.name : ev.description || 'General (All Groups)'}
+                      {ev.startTime && `${new Date(ev.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · `}
+                      {ev.course?.name ? ev.course.name : ev.description || 'General (All Groups)'}
                     </div>
                   </div>
                   <span style={{
                     fontSize: '10px', padding: '3px 10px', borderRadius: '10px', fontWeight: '600',
-                    background: ev.classId ? (ev.class?.color || '#6366f1') + '18' : '#d0d2d9',
-                    color: ev.classId ? (ev.class?.color || '#6366f1') : '#6b6b8a',
+                    background: ev.courseId ? (ev.course?.color || '#6366f1') + '18' : '#d0d2d9',
+                    color: ev.courseId ? (ev.course?.color || '#6366f1') : '#6b6b8a',
                   }}>
-                    {ev.class?.name || 'General'}
+                    {ev.course?.name || 'General'}
                   </span>
-                  <span className={`badge badge-${ev.type === 'exam' ? 'danger' : ev.type === 'assignment' ? 'warning' : 'primary'}`}>
-                    {tc.label}
+                  <span className={`badge badge-${ev.status === 'CANCELLED' ? 'warning' : ev.type === 'exam' ? 'danger' : ev.type === 'assignment' ? 'warning' : 'primary'}`}>
+                    {ev.status === 'CANCELLED' ? 'CANCELLED' : tc.label}
                   </span>
                   {isAdminOrManager && (
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
@@ -478,7 +427,9 @@ export default function CalendarPage() {
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Title</div>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e1e3a' }}>{selectedEvent.title}</div>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e1e3a' }}>
+                  {selectedEvent.isGlobal && '🌐 '}{selectedEvent.title}
+                </div>
               </div>
               {selectedEvent.description && (
                 <div>
@@ -488,12 +439,12 @@ export default function CalendarPage() {
               )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Date</div>
-                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.date}</div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Start</div>
+                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.startTime ? new Date(selectedEvent.startTime).toLocaleString() : '—'}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Time</div>
-                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.time || '—'}</div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>End</div>
+                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.endTime ? new Date(selectedEvent.endTime).toLocaleString() : '—'}</div>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -504,14 +455,18 @@ export default function CalendarPage() {
                   </span>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Subject</div>
-                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.class?.name || 'General (All Groups)'}</div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Status</div>
+                  <span className={`badge badge-${selectedEvent.status === 'CANCELLED' ? 'warning' : 'success'}`}>
+                    {selectedEvent.status}
+                  </span>
                 </div>
               </div>
-              {selectedEvent.instructor && (
+              {selectedEvent.meetLink && (
                 <div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Instructor</div>
-                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.instructor.name}</div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Meeting Link</div>
+                  <a href={selectedEvent.meetLink} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#6366f1', textDecoration: 'underline' }}>
+                    {selectedEvent.meetLink}
+                  </a>
                 </div>
               )}
             </div>
@@ -544,6 +499,32 @@ export default function CalendarPage() {
               </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input 
+                  type="checkbox" 
+                  id="isGlobal"
+                  checked={!!formData.isGlobal} 
+                  onChange={e => set('isGlobal', e.target.checked)}
+                />
+                <label htmlFor="isGlobal" className="form-label" style={{ marginBottom: 0 }}>Global Event (Visible to everyone)</label>
+              </div>
+              
+              {!formData.isGlobal && (
+                <div className="form-group">
+                  <label className="form-label">Course *</label>
+                  <select
+                    className="form-input"
+                    value={formData.courseId || ''}
+                    onChange={e => set('courseId', e.target.value)}
+                  >
+                    <option value="">Select course...</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="form-group">
                 <label className="form-label">Title *</label>
                 <input
@@ -565,77 +546,97 @@ export default function CalendarPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Subject / Course</label>
-                <select
-                  className="form-input"
-                  value={formData.classId || ''}
-                  onChange={e => set('classId', e.target.value)}
-                >
-                  <option value="">General (visible to all groups)</option>
-                  {classes.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-                <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
-                  {formData.classId
-                    ? 'Only members enrolled in this subject will see this event.'
-                    : 'This event will be visible to everyone.'}
-                </p>
-              </div>
+                  <label className="form-label">Meeting Link (Optional)</label>
+                  <input
+                    className="form-input"
+                    value={formData.meetLink || ''}
+                    onChange={e => set('meetLink', e.target.value)}
+                    placeholder="https://meet.jit.si/..."
+                  />
+                </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
-                  <label className="form-label">Date *</label>
+                  <label className="form-label">Start Date & Time *</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     className="form-input"
-                    value={formData.date || ''}
-                    onChange={e => set('date', e.target.value)}
+                    value={formData.startTime || ''}
+                    onChange={e => set('startTime', e.target.value)}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Time</label>
+                  <label className="form-label">End Date & Time *</label>
                   <input
-                    type="time"
+                    type="datetime-local"
                     className="form-input"
-                    value={formData.time || ''}
-                    onChange={e => set('time', e.target.value)}
+                    value={formData.endTime || ''}
+                    onChange={e => set('endTime', e.target.value)}
                   />
                 </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Type</label>
-                <select
-                  className="form-input"
-                  value={formData.type || 'class'}
-                  onChange={e => set('type', e.target.value)}
-                >
-                  {EVENT_TYPES.map(t => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-              {instructors.length > 0 && (
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
-                  <label className="form-label">Instructor</label>
+                  <label className="form-label">Type</label>
                   <select
                     className="form-input"
-                    value={formData.instructorId || ''}
-                    onChange={e => set('instructorId', e.target.value)}
+                    value={formData.type || 'class'}
+                    onChange={e => set('type', e.target.value)}
                   >
-                    <option value="">None (no instructor assigned)</option>
-                    {instructors.map(inst => (
-                      <option key={inst.id} value={inst.id}>{inst.name}</option>
+                    {EVENT_TYPES.map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
                     ))}
+                    <option value="holiday">Holiday</option>
+                    <option value="introduction">Introduction</option>
+                    <option value="other">Other</option>
                   </select>
-                  <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
-                    Optionally assign an instructor to this event.
-                  </p>
                 </div>
-              )}
+                <div className="form-group">
+                  <label className="form-label">Status</label>
+                  <select
+                    className="form-input"
+                    value={formData.status || 'SCHEDULED'}
+                    onChange={e => set('status', e.target.value)}
+                  >
+                    <option value="SCHEDULED">Scheduled</option>
+                    <option value="CANCELLED">Cancelled</option>
+                    <option value="RESCHEDULED">Rescheduled</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Recurrence</label>
+                  <select
+                    className="form-input"
+                    value={formData.recurrence || 'ONETIME'}
+                    onChange={e => set('recurrence', e.target.value)}
+                  >
+                    <option value="ONETIME">One-time</option>
+                    <option value="DAILY">Daily</option>
+                    <option value="WEEKLY">Weekly</option>
+                    <option value="CUSTOM">Custom Interval</option>
+                  </select>
+                </div>
+                {formData.recurrence === 'CUSTOM' && (
+                  <div className="form-group">
+                    <label className="form-label">Interval (Days)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={formData.interval || ''}
+                      onChange={e => set('interval', e.target.value)}
+                      placeholder="e.g. 3"
+                      min="1"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <div className="modal-footer">
               <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
-              <button onClick={handleSave} disabled={saving || !formData.title || !formData.date} className="btn btn-primary">
+              <button onClick={handleSave} disabled={saving || !formData.title || !formData.startTime} className="btn btn-primary">
                 {saving ? 'Saving…' : (editId ? 'Update Event' : 'Create Event')}
               </button>
             </div>

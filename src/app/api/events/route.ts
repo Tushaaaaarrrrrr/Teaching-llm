@@ -60,8 +60,8 @@ export async function GET(request: NextRequest) {
 
     // Map events with computed status and meetLink security
     const mapped = events.map(ev => {
-      const status = getEventStatus(ev.startTime, ev.endTime, ev.manualStatus)
-      const isGlobal = !ev.courseId
+      const status = getEventStatus(ev.startTime, ev.endTime, ev.status)
+      const isGlobal = ev.isGlobal || !ev.courseId
       const isEnrolled = isGlobal || enrolledCourseIds.includes(ev.courseId || '')
       const canSeeMeetLink = isAdminOrManager(session.role) || isEnrolled
 
@@ -76,13 +76,15 @@ export async function GET(request: NextRequest) {
         meetLink: canSeeMeetLink ? ev.meetLink : null,
         meetingLink: canSeeMeetLink ? ev.meetLink : null, // alias
         type: ev.type,
-        manualStatus: ev.manualStatus,
         status,
+        internalStatus: ev.status, // SCHEDULED, CANCELLED, RESCHEDULED
         courseId: ev.courseId,
         course: ev.course,
         instructorId: ev.instructorId,
         instructor: ev.instructor,
-        googleEventId: ev.googleEventId,
+        isGlobal: ev.isGlobal,
+        recurrence: ev.recurrence,
+        originalStartTime: ev.originalStartTime ? ev.originalStartTime.toISOString() : null,
         createdAt: ev.createdAt.toISOString(),
       }
     })
@@ -106,7 +108,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, startTime, endTime, meetLink, type, courseId, instructorId, manualStatus } = body
+    const { 
+      title, description, startTime, endTime, meetLink, 
+      type, courseId, instructorId, status, isGlobal,
+      recurrence, interval
+    } = body
 
     if (!title || !startTime || !endTime) {
       return NextResponse.json({ error: 'Title, startTime, and endTime are required' }, { status: 400 })
@@ -128,19 +134,64 @@ export async function POST(request: NextRequest) {
         endTime: new Date(endTime),
         meetLink: meetLink || null,
         type: type || 'class',
-        courseId: courseId || null,
+        courseId: isGlobal ? null : (courseId || null),
+        isGlobal: !!isGlobal,
         instructorId: instructorId || null,
-        manualStatus: manualStatus || 'NONE',
+        status: status || 'SCHEDULED',
+        recurrence: recurrence || 'ONETIME',
+        interval: interval ? parseInt(interval) : null,
         createdById: session.userId,
       },
     })
+
+    // Handle Recurrence Generation (Simple approach)
+    if (recurrence && recurrence !== 'ONETIME') {
+      const occurrences = []
+      const start = new Date(startTime)
+      const end = new Date(endTime)
+      const duration = end.getTime() - start.getTime()
+      
+      const maxCount = 20 // Generate up to 20 future occurrences
+      for (let i = 1; i <= maxCount; i++) {
+        let nextStart = new Date(start)
+        if (recurrence === 'DAILY') {
+          nextStart.setDate(start.getDate() + i)
+        } else if (recurrence === 'WEEKLY') {
+          nextStart.setDate(start.getDate() + i * 7)
+        } else if (recurrence === 'CUSTOM') {
+          nextStart.setDate(start.getDate() + i * (interval || 1))
+        } else {
+          break
+        }
+
+        occurrences.push({
+          title,
+          description: description || null,
+          startTime: nextStart,
+          endTime: new Date(nextStart.getTime() + duration),
+          meetLink: meetLink || null,
+          type: type || 'class',
+          courseId: isGlobal ? null : (courseId || null),
+          isGlobal: !!isGlobal,
+          instructorId: instructorId || null,
+          status: 'SCHEDULED',
+          recurrence: 'ONETIME',
+          parentId: event.id,
+          createdById: session.userId,
+        })
+      }
+
+      if (occurrences.length > 0) {
+        await prisma.courseEvent.createMany({ data: occurrences })
+      }
+    }
 
     logActivity({
       userId: session.userId,
       userName: session.name,
       userRole: session.role,
       actionType: ACTION.EVENT_CREATED,
-      actionDescription: `${session.name} created course event "${title}"`,
+      actionDescription: `${session.name} created internal event "${title}"`,
       moduleName: MODULE.CALENDAR,
       targetId: event.id,
     })

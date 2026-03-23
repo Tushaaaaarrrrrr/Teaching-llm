@@ -114,7 +114,7 @@ export function getCookieConfig() {
     options: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,  // 'lax' required for OAuth cross-site redirect compatibility
+      sameSite: 'lax' as const,
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
     },
