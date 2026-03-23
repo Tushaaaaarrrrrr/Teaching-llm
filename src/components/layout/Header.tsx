@@ -24,7 +24,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/courses':    { title: 'Courses',          subtitle: 'Manage your enrolled subjects and lectures' },
   '/live':       { title: 'Live Sessions',     subtitle: "Today's schedule" },
   '/calendar':   { title: 'Calendar',          subtitle: 'Your schedule and upcoming events' },
-  '/recordings': { title: 'Recordings',        subtitle: 'Browse lecture recordings' },
+  '/materials/recordings': { title: 'Recordings',        subtitle: 'Browse lecture recordings' },
   '/materials':  { title: 'Study Materials',   subtitle: 'Download notes and resources' },
     '/community':  { title: 'Community',         subtitle: 'Connect with your coursemates' },
   '/announcements': { title: 'Announcements',  subtitle: 'Stay updated with the latest news' },

@@ -13,7 +13,7 @@ export default function SupportFloatingButton() {
     '/profile',
     '/settings',
     '/exams',
-    '/recordings',
+    '/materials/recordings',
     '/support',
     '/community'
   ]

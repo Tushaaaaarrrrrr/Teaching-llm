@@ -691,7 +691,7 @@ export default function DashboardPage() {
           <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Recent Lectures</h3>
-              <Link href="/recordings" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
+              <Link href="/materials/recordings" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
                 View All →
               </Link>
             </div>
@@ -743,7 +743,7 @@ export default function DashboardPage() {
                         <span style={{ fontSize: '11px', color: '#b0b2c0' }}>
                           {new Date(lec.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
-                        <Link href="/recordings" style={{ fontSize: '11.5px', fontWeight: '600', color: accent, textDecoration: 'none' }}>
+                        <Link href="/materials/recordings" style={{ fontSize: '11.5px', fontWeight: '600', color: accent, textDecoration: 'none' }}>
                           Watch →
                         </Link>
                       </div>

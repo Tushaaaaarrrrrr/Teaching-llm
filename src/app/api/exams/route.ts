@@ -20,24 +20,31 @@ export async function GET(request: NextRequest) {
     if (session.role === 'STUDENT') {
       // Students only see published exams in their courses
       const user = (await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { 
-      id: true, name: true, email: true, role: true, avatar: true, createdAt: true, 
-      canTerminate: true, canCreateStudents: true,
-      enrollments: {
-        select: {
-          course: {
-            select: { id: true, name: true, subject: true }
+        where: { id: session.userId },
+        select: { 
+          enrollments: {
+            select: {
+              course: {
+                select: { id: true }
+              }
+            }
           }
-        }
-      }
-    } as any,
-  })) as any
-      const courseIds = user?.enrollments.map((e: any) => e.course.id) || []
+        } as any,
+      })) as any
+      const enrolledCourseIds = user?.enrollments.map((e: any) => e.course.id) || []
       
       where = {
-        courseId: { in: courseIds },
+        courseId: { in: enrolledCourseIds },
         isPublished: true,
+      }
+
+      if (courseId) {
+        if (enrolledCourseIds.includes(courseId)) {
+          where.courseId = courseId
+        } else {
+          // Student not enrolled in this specific course
+          where.courseId = 'none' 
+        }
       }
     } else if (session.role === 'ADMIN') {
       // Admins only see exams for their assigned subjects
@@ -49,6 +56,10 @@ export async function GET(request: NextRequest) {
       
       where = {
         course: { subject: { in: subjects } }
+      }
+
+      if (courseId) {
+        where.courseId = courseId
       }
     } else if (courseId) {
       where.courseId = courseId
