@@ -30,6 +30,7 @@ model User {
   lastViolationAt         DateTime?
   tokenVersion            Int                    @default(0)
   violationCount          Int                    @default(0)
+  isGoogleUser            Boolean                @default(false)
   encryptedTempPassword   String?
   lastDailyDigestAt       DateTime?
   activityLogs            ActivityLog[]

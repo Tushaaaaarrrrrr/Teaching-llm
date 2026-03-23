@@ -35,6 +35,7 @@ export async function GET() {
         email: true,
         role: true,
         isTerminated: true,
+        isGoogleUser: true,
         createdAt: true,
         enrollments: {
           select: {
