@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { checkRateLimit } from '@/lib/ratelimit'
-import { sanitizeInput } from '@/lib/validation'
 
 export async function GET() {
   try {
@@ -53,35 +51,14 @@ export async function POST(request: NextRequest) {
 
     const { title, content, type, courseId } = await request.json()
 
-    // 1. Rate Limiting
-    const rateLimit = await checkRateLimit(session.userId, 'general')
-    if (!rateLimit.success) {
-      return NextResponse.json(
-        { error: 'You are doing this too fast, please wait.' }, 
-        { status: 429 }
-      )
-    }
-
-    // 2. Basic Validation
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 })
     }
 
-    if (title.length > 200) {
-      return NextResponse.json({ error: 'Title is too long (max 200 chars)' }, { status: 400 })
-    }
-
-    if (content.length > 5000) {
-      return NextResponse.json({ error: 'Content is too long (max 5000 chars)' }, { status: 400 })
-    }
-
-    const sanitizedTitle = sanitizeInput(title)
-    const sanitizedContent = sanitizeInput(content)
-
     const announcement = await prisma.announcement.create({
       data: {
-        title: sanitizedTitle,
-        content: sanitizedContent,
+        title,
+        content,
         type: type || 'info',
         courseId: courseId || null,
         createdById: session.userId,
@@ -112,14 +89,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (targetUsers.length > 0) {
-      const truncatedContent = sanitizedContent.length > 100
-        ? sanitizedContent.slice(0, 97) + '...'
-        : sanitizedContent
+      const truncatedContent = content.length > 100
+        ? content.slice(0, 97) + '...'
+        : content
 
       await prisma.notification.createMany({
         data: targetUsers.map(u => ({
           userId: u.id,
-          title: `New Announcement: ${sanitizedTitle}`,
+          title: `New Announcement: ${title}`,
           content: truncatedContent,
           type: type?.toUpperCase() || 'INFO',
           announcementId: announcement.id,
@@ -132,7 +109,7 @@ export async function POST(request: NextRequest) {
       userName: session.name,
       userRole: session.role,
       actionType: ACTION.ANNOUNCEMENT_CREATED,
-      actionDescription: `${session.name} created announcement "${sanitizedTitle}"`,
+      actionDescription: `${session.name} created announcement "${title}"`,
       moduleName: MODULE.ANNOUNCEMENTS,
       targetId: announcement.id,
     })

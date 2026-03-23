@@ -16,7 +16,6 @@ export const MODULE = {
   EXAMS: 'Exams',
   PROFILE: 'Profile',
   FAQ: 'FAQ',
-  UPDATES: 'Updates',
 } as const
 
 export const ACTION = {
@@ -50,8 +49,6 @@ export const ACTION = {
   EVENT_UPDATED: 'EVENT_UPDATED',
   EVENT_DELETED: 'EVENT_DELETED',
   ANNOUNCEMENT_CREATED: 'ANNOUNCEMENT_CREATED',
-  ANNOUNCEMENT_UPDATED: 'ANNOUNCEMENT_UPDATED',
-  ANNOUNCEMENT_DELETED: 'ANNOUNCEMENT_DELETED',
   MESSAGE_SENT: 'MESSAGE_SENT',
   MESSAGE_DELETED: 'MESSAGE_DELETED',
   TRANSCRIPT_EXPORTED: 'TRANSCRIPT_EXPORTED',
@@ -73,10 +70,6 @@ export const ACTION = {
   POLL_CREATED: 'POLL_CREATED',
   POLL_VOTED: 'POLL_VOTED',
   POLL_DELETED: 'POLL_DELETED',
-  UPDATE_CREATED: 'UPDATE_CREATED',
-  UPDATE_UPDATED: 'UPDATE_UPDATED',
-  UPDATE_DELETED: 'UPDATE_DELETED',
-  UPDATE_VIEWED: 'UPDATE_VIEWED',
 } as const
 
 interface LogActivityParams {
@@ -89,8 +82,6 @@ interface LogActivityParams {
   moduleName: string
   targetId?: string | null
   metadata?: Record<string, unknown> | null
-  priority?: number // 0: LOW, 1: MEDIUM, 2: HIGH
-  isFailure?: boolean
 }
 
 export function logActivity(params: LogActivityParams): void {
@@ -106,8 +97,6 @@ export function logActivity(params: LogActivityParams): void {
         moduleName: params.moduleName,
         targetId: params.targetId || null,
         metadata: params.metadata ? JSON.stringify(params.metadata) : null,
-        priority: params.priority || 0,
-        isFailure: params.isFailure || false,
       },
     })
     .catch((error) => {

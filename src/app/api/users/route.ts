@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, hashPassword, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { validateSearch } from '@/lib/validation'
-import { checkRateLimit } from '@/lib/ratelimit'
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const session = await getSession()
     if (!session) {
@@ -16,46 +14,17 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { searchParams } = new URL(_request ? _request.url : '')
-    const search = searchParams.get('search')
-    const securityNumber = searchParams.get('securityNumber')
-
-    // 1. Rate Limiting
-    const rateLimit = await checkRateLimit(session.userId, 'general')
-    if (!rateLimit.success) {
-      return NextResponse.json(
-        { error: 'You are doing this too fast, please wait.' }, 
-        { status: 429 }
-      )
-    }
-
-    // 2. Validation
-    let validatedSearch = search
-    if (search) {
-      const { error, sanitized } = validateSearch(search)
-      if (error) return NextResponse.json({ error }, { status: 400 })
-      validatedSearch = sanitized
-    }
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let where: Record<string, any> = {}
 
     if (session.role === 'ADMIN') {
       const adminCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-      where.role = 'STUDENT'
-      where.enrollments = {
-        some: { courseId: { in: adminCourseIds || [] } },
+      where = {
+        role: 'STUDENT',
+        enrollments: {
+          some: { courseId: { in: adminCourseIds || [] } },
+        },
       }
-    }
-
-    if (securityNumber) {
-      where.securityNumber = securityNumber.trim().toUpperCase()
-    } else if (validatedSearch) {
-      where.OR = [
-        { name: { contains: validatedSearch } },
-        { email: { contains: validatedSearch } },
-        { securityNumber: { contains: validatedSearch } },
-      ]
     }
 
     const users = await prisma.user.findMany({
@@ -65,12 +34,8 @@ export async function GET(_request: NextRequest) {
         name: true,
         email: true,
         role: true,
-        securityNumber: true,
         isTerminated: true,
-        isSuperManager: true,
         createdAt: true,
-        passwordHash: true,
-        googleCredential: { select: { id: true } },
         enrollments: {
           select: {
             courseId: true,
@@ -87,38 +52,7 @@ export async function GET(_request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    const superAdminEmail = 'lkiitmng2428@gmail.com'
-
-    // If ADMIN, they can only see STUDENTS + the super admin (LMS Policy)
-    if (session.role === 'ADMIN') {
-      const superAdmin = await prisma.user.findUnique({
-        where: { email: superAdminEmail },
-        select: {
-          id: true, name: true, email: true, role: true, securityNumber: true, isTerminated: true, isSuperManager: true, createdAt: true,
-          googleCredential: { select: { id: true } },
-          enrollments: { select: { courseId: true, course: { select: { id: true, name: true, color: true, subject: true } } } },
-          instructorAssignments: { select: { courseId: true, course: { select: { id: true, name: true, color: true, subject: true } } } },
-        }
-      })
-      
-      if (superAdmin && !users.find(u => u.id === superAdmin.id)) {
-        users.push(superAdmin as any)
-      }
-    }
-
-    const transformedUsers = users.map((u: any) => ({
-      ...u,
-      isGoogleAuth: !!u.googleCredential || u.passwordHash === '',
-      isSuperManager: u.isSuperManager || u.email === superAdminEmail,
-      googleCredential: undefined,
-      passwordHash: undefined
-    }))
-
-    if (securityNumber && transformedUsers.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    return NextResponse.json(transformedUsers)
+    return NextResponse.json(users)
   } catch (error) {
     console.error('Error fetching users:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

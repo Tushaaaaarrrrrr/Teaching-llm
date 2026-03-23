@@ -11,8 +11,9 @@ async function main() {
   // ──────────────────────────────────────────────
   console.log("Clearing existing data...");
   await prisma.announcement.deleteMany();
-  await prisma.courseEvent.deleteMany();
+  await prisma.calendarEvent.deleteMany();
   await prisma.material.deleteMany();
+  await prisma.liveSession.deleteMany();
   await prisma.lecture.deleteMany();
   await prisma.course.deleteMany();
   await prisma.user.deleteMany();
@@ -494,18 +495,18 @@ async function main() {
   const yesterdayStr = formatDate(new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000));
   const threeDaysAgoStr = formatDate(new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000));
 
-  await (prisma.courseEvent as any).createMany({
+  await prisma.liveSession.createMany({
     data: [
       {
         courseId: dsaClass.id,
         title: "DSA Doubt Clearing Session - Trees & Graphs",
         description:
           "Live interactive session to resolve doubts on tree traversals, graph BFS/DFS, and related problem-solving techniques.",
-        meetLink: "https://meet.jit.si/TeachingLLM-DSA-Live",
-        startTime: new Date(`${todayStr}T10:00:00`),
-        endTime: new Date(`${todayStr}T11:00:00`),
-        manualStatus: "LIVE",
-        type: "class",
+        meetingLink: "https://meet.jit.si/TeachingLLM-DSA-Live",
+        instructor: "Dr. Ananya Mehta",
+        date: todayStr,
+        time: "10:00 AM",
+        status: "live",
         createdById: admin.id,
       },
       {
@@ -513,11 +514,11 @@ async function main() {
         title: "Hands-on: Building Your First Neural Network",
         description:
           "Step-by-step walkthrough of building, training, and evaluating a neural network using Python and TensorFlow.",
-        meetLink: "https://meet.jit.si/TeachingLLM-ML-Workshop",
-        startTime: new Date(`${todayStr}T14:00:00`),
-        endTime: new Date(`${todayStr}T15:30:00`),
-        manualStatus: "SCHEDULED",
-        type: "class",
+        meetingLink: "https://meet.jit.si/TeachingLLM-ML-Workshop",
+        instructor: "Prof. Vikram Iyer",
+        date: todayStr,
+        time: "2:00 PM",
+        status: "scheduled",
         createdById: admin.id,
       },
       {
@@ -525,11 +526,11 @@ async function main() {
         title: "Live Coding: Building a REST API with Next.js",
         description:
           "Watch and code along as we build a complete REST API with authentication, validation, and database integration.",
-        meetLink: "https://meet.jit.si/TeachingLLM-WebDev-Live",
-        startTime: new Date(`${tomorrowStr}T11:00:00`),
-        endTime: new Date(`${tomorrowStr}T13:00:00`),
-        manualStatus: "SCHEDULED",
-        type: "class",
+        meetingLink: "https://meet.jit.si/TeachingLLM-WebDev-Live",
+        instructor: "Sneha Gupta",
+        date: tomorrowStr,
+        time: "11:00 AM",
+        status: "scheduled",
         createdById: admin.id,
       },
       {
@@ -537,11 +538,11 @@ async function main() {
         title: "SQL Performance Tuning Workshop",
         description:
           "Practical session on identifying slow queries, reading execution plans, and applying indexing strategies for optimal performance.",
-        meetLink: "https://meet.jit.si/TeachingLLM-DB-Workshop",
-        startTime: new Date(`${in3Days}T15:00:00`),
-        endTime: new Date(`${in3Days}T17:00:00`),
-        manualStatus: "SCHEDULED",
-        type: "class",
+        meetingLink: "https://meet.jit.si/TeachingLLM-DB-Workshop",
+        instructor: "Dr. Rajesh Nair",
+        date: in3Days,
+        time: "3:00 PM",
+        status: "scheduled",
         createdById: admin.id,
       },
       {
@@ -549,11 +550,11 @@ async function main() {
         title: "OS Concepts Revision - Midterm Preparation",
         description:
           "Comprehensive revision covering process scheduling, memory management, and file systems for the upcoming midterm exam.",
-        meetLink: "https://meet.jit.si/TeachingLLM-OS-Revision",
-        startTime: new Date(`${in5Days}T09:00:00`),
-        endTime: new Date(`${in5Days}T11:00:00`),
-        manualStatus: "SCHEDULED",
-        type: "class",
+        meetingLink: "https://meet.jit.si/TeachingLLM-OS-Revision",
+        instructor: "Prof. Kavitha Raman",
+        date: in5Days,
+        time: "9:00 AM",
+        status: "scheduled",
         createdById: admin.id,
       },
       {
@@ -561,11 +562,11 @@ async function main() {
         title: "Packet Analysis with Wireshark",
         description:
           "Hands-on demonstration of capturing and analyzing network packets using Wireshark to understand protocol behavior.",
-        meetLink: "https://meet.jit.si/TeachingLLM-Network-Lab",
-        startTime: new Date(`${yesterdayStr}T16:00:00`),
-        endTime: new Date(`${yesterdayStr}T18:00:00`),
-        manualStatus: "COMPLETED",
-        type: "class",
+        meetingLink: "https://meet.jit.si/TeachingLLM-Network-Lab",
+        instructor: "Dr. Ananya Mehta",
+        date: yesterdayStr,
+        time: "4:00 PM",
+        status: "completed",
         createdById: admin.id,
       },
       {
@@ -573,11 +574,11 @@ async function main() {
         title: "Competitive Programming Strategies",
         description:
           "Tips and techniques for competitive programming, covering time management, common patterns, and practice problem walkthroughs.",
-        meetLink: "https://meet.jit.si/TeachingLLM-DSA-CompProg",
-        startTime: new Date(`${threeDaysAgoStr}T13:00:00`),
-        endTime: new Date(`${threeDaysAgoStr}T15:00:00`),
-        manualStatus: "COMPLETED",
-        type: "class",
+        meetingLink: "https://meet.jit.si/TeachingLLM-DSA-CompProg",
+        instructor: "Sneha Gupta",
+        date: threeDaysAgoStr,
+        time: "1:00 PM",
+        status: "completed",
         createdById: admin.id,
       },
     ],
@@ -759,75 +760,82 @@ async function main() {
   const in18Days = formatDate(new Date(today.getTime() + 18 * 24 * 60 * 60 * 1000));
   const in3Weeks = formatDate(new Date(today.getTime() + 21 * 24 * 60 * 60 * 1000));
 
-  await (prisma.courseEvent as any).createMany({
+  await prisma.calendarEvent.createMany({
     data: [
       {
         title: "DSA Assignment 3 Due",
         description:
-          "Submit your solutions for Binary Tree problems (Q1-Q5) via the portal.",
-        startTime: new Date(`${tomorrowStr}T23:59:00`),
-        endTime: new Date(`${tomorrowStr}T23:59:59`),
+          "Submit your solutions for Binary Tree problems (Q1-Q5) via the portal. Late submissions will incur a 10% penalty per day.",
+        date: tomorrowStr,
+        time: "11:59 PM",
         type: "assignment",
+        relatedCourse: "Data Structures & Algorithms",
         courseId: dsaClass.id,
         createdById: admin.id,
       },
       {
         title: "ML Quiz: Regression Techniques",
         description:
-          "Online quiz covering linear regression, polynomial regression, and regularization methods.",
-        startTime: new Date(`${in3Days}T10:00:00`),
-        endTime: new Date(`${in3Days}T10:30:00`),
+          "Online quiz covering linear regression, polynomial regression, and regularization methods. Duration: 30 minutes.",
+        date: in3Days,
+        time: "10:00 AM",
         type: "exam",
+        relatedCourse: "Machine Learning Fundamentals",
         courseId: mlClass.id,
         createdById: admin.id,
       },
       {
         title: "Web Development Project Presentation",
         description:
-          "Each team presents their full-stack project.",
-        startTime: new Date(`${in1Week}T14:00:00`),
-        endTime: new Date(`${in1Week}T17:00:00`),
+          "Each team presents their full-stack project. 15 minutes per team including Q&A. Attendance is mandatory.",
+        date: in1Week,
+        time: "2:00 PM",
         type: "class",
+        relatedCourse: "Web Development",
         courseId: webDevClass.id,
         createdById: admin.id,
       },
       {
         title: "Database Systems Midterm Exam",
         description:
-          "Written exam covering ER modeling, normalization, SQL queries, and transaction management.",
-        startTime: new Date(`${in10Days}T09:00:00`),
-        endTime: new Date(`${in10Days}T12:00:00`),
+          "Written exam covering ER modeling, normalization, SQL queries, and transaction management. Bring your student ID.",
+        date: in10Days,
+        time: "9:00 AM",
         type: "exam",
+        relatedCourse: "Database Systems",
         courseId: dbClass.id,
         createdById: admin.id,
       },
       {
         title: "OS Lab: Memory Management Simulation",
         description:
-          "Hands-on lab session implementing page replacement algorithms.",
-        startTime: new Date(`${in2Weeks}T15:00:00`),
-        endTime: new Date(`${in2Weeks}T17:00:00`),
+          "Hands-on lab session implementing page replacement algorithms. Bring your laptops with the simulator installed.",
+        date: in2Weeks,
+        time: "3:00 PM",
         type: "class",
+        relatedCourse: "Operating Systems",
         courseId: osClass.id,
         createdById: admin.id,
       },
       {
         title: "Networking Assignment 2 Due",
         description:
-          "Submit Wireshark capture analysis report and subnetting exercise solutions.",
-        startTime: new Date(`${in18Days}T23:59:00`),
-        endTime: new Date(`${in18Days}T23:59:59`),
+          "Submit Wireshark capture analysis report and subnetting exercise solutions through the class portal.",
+        date: in18Days,
+        time: "11:59 PM",
         type: "assignment",
+        relatedCourse: "Computer Networks",
         courseId: networkClass.id,
         createdById: admin.id,
       },
       {
         title: "Guest Lecture: AI in Modern Software Engineering",
         description:
-          "Industry expert from Google discusses how AI is transforming software development practices.",
-        startTime: new Date(`${in3Weeks}T16:00:00`),
-        endTime: new Date(`${in3Weeks}T17:30:00`),
+          "Industry expert from Google discusses how AI is transforming software development practices. Open to all students.",
+        date: in3Weeks,
+        time: "4:00 PM",
         type: "event",
+        relatedCourse: null,
         courseId: null,
         createdById: manager.id,
       },

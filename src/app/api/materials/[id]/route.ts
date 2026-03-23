@@ -18,21 +18,13 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { courseId, title, description, fileUrl, fileType, fileSize, isGlobal } =
+    const { courseId, title, description, fileUrl, fileType, fileSize } =
       await request.json()
 
 
     const updatedMaterial = await prisma.material.update({
       where: { id },
-      data: { 
-        courseId: isGlobal ? null : courseId, 
-        isGlobal: !!isGlobal,
-        title, 
-        description, 
-        fileUrl, 
-        fileType, 
-        fileSize 
-      },
+      data: { courseId, title, description, fileUrl, fileType, fileSize },
     })
 
     logActivity({

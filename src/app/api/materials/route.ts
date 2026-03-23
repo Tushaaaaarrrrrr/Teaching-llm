@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, canManageContent } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { checkRateLimit } from '@/lib/ratelimit'
-import { sanitizeInput } from '@/lib/validation'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,36 +11,14 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const role = session.role
-    const isManager = role === 'MANAGER' || role === 'ADMIN'
+    const courseId = searchParams.get('courseId')
 
-    let where: any = {}
-    
-    if (!isManager) {
-      // For students, get enrolled course IDs
-      const enrollments = await prisma.enrollment.findMany({
-        where: { userId: session.userId },
-        select: { courseId: true }
-      })
-      const courseIds = enrollments.map(e => e.courseId)
-      
-      where = {
-        OR: [
-          { isGlobal: true },
-          { courseId: { in: courseIds } }
-        ]
-      }
-    } else {
-      const courseId = searchParams.get('courseId')
-      if (courseId) {
-        where = { courseId }
-      }
-    }
+    const where = courseId ? { courseId } : {}
 
     const materials = await prisma.material.findMany({
       where,
       include: {
-        course: { select: { id: true, name: true, color: true } },
+        course: { select: { name: true } },
         uploadedBy: { select: { name: true } },
       },
       orderBy: { uploadedAt: 'desc' },
@@ -66,48 +42,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { courseId, title, description, fileUrl, fileType, fileSize, isGlobal } =
+    const { courseId, title, description, fileUrl, fileType, fileSize } =
       await request.json()
 
-    // 1. Rate Limiting
-    const rateLimit = await checkRateLimit(session.userId, 'general')
-    if (!rateLimit.success) {
-      return NextResponse.json(
-        { error: 'You are doing this too fast, please wait.' }, 
-        { status: 429 }
-      )
-    }
-
-    // 2. Validation
-    if (!title || !fileUrl) {
-      return NextResponse.json({ error: 'Title and file URL are required' }, { status: 400 })
-    }
-
-    if (title.length > 200) {
-      return NextResponse.json({ error: 'Title is too long (max 200 chars)' }, { status: 400 })
-    }
-
-    if (description && description.length > 1000) {
-      return NextResponse.json({ error: 'Description is too long (max 1000 chars)' }, { status: 400 })
-    }
-
-    const sanitizedTitle = sanitizeInput(title)
-    const sanitizedDescription = description ? sanitizeInput(description) : null
-
-
-    let finalFileType = fileType
-    if (!finalFileType && fileUrl) {
-      finalFileType = fileUrl.split('.').pop()?.split('?')[0]?.toUpperCase() || 'FILE'
-    }
 
     const material = await prisma.material.create({
       data: {
-        courseId: isGlobal ? null : courseId,
-        isGlobal: !!isGlobal,
-        title: sanitizedTitle,
-        description: sanitizedDescription,
+        courseId,
+        title,
+        description,
         fileUrl,
-        fileType: finalFileType || 'FILE',
+        fileType,
         fileSize,
         uploadedById: session.userId,
       },
@@ -118,7 +63,7 @@ export async function POST(request: NextRequest) {
       userName: session.name,
       userRole: session.role,
       actionType: ACTION.MATERIAL_CREATED,
-      actionDescription: `${session.name} created material "${sanitizedTitle}"`,
+      actionDescription: `${session.name} created material "${title}"`,
       moduleName: MODULE.MATERIALS,
       targetId: material.id,
     })

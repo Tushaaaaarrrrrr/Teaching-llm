@@ -2,9 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import useSWR from 'swr'
-
-const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 const EyeIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -68,9 +65,6 @@ export default function SettingsPage() {
 
   // Language preference
   const [language, setLanguage] = useState('en-US')
-
-  const { data: profileData } = useSWR('/api/profile', fetcher)
-  const user = profileData?.user
 
   async function handlePasswordChange() {
     if (!pwForm.currentPassword || !pwForm.newPassword || !pwForm.confirmPassword) {
@@ -284,42 +278,6 @@ export default function SettingsPage() {
                   <option value="hi">Hindi</option>
                 </select>
               </div>
-
-              {/* Google Calendar Link (Only for Manager/Admin) */}
-              {user && (user.role === 'MANAGER' || user.role === 'ADMIN') && (
-                <div style={insetRow}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={user.isCalendarLinked ? "#10b981" : "#3636e8"} strokeWidth="2.5">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                      </svg>
-                      Google Calendar
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
-                      {user.isCalendarLinked ? 'Your account is linked' : 'Sync your course events'}
-                    </div>
-                  </div>
-                  {user.isCalendarLinked ? (
-                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', background: '#d1fae5', padding: '6px 14px', borderRadius: '50px', boxShadow: 'inset 1px 1px 3px rgba(0,0,0,0.1)' }}>
-                      LINKED
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => window.location.href = '/api/auth/google?link=true'}
-                      style={{
-                        padding: '7px 14px', borderRadius: '50px', background: '#3636e8',
-                        color: '#fff', fontSize: '12px', fontWeight: '700', border: 'none',
-                        cursor: 'pointer', boxShadow: '3px 3px 7px rgba(54,54,232,0.35)',
-                        transition: 'all 0.2s ease',
-                      }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)' }}
-                    >
-                      Link Now
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
           </div>
 

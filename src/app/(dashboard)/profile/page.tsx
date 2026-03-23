@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import useSWR from 'swr'
 
 interface UserProfile {
   id: string
@@ -12,7 +11,6 @@ interface UserProfile {
   avatar: string | null
   securityNumber: string | null
   createdAt: string
-  isCalendarLinked?: boolean
 }
 
 const EyeIcon = () => (
@@ -29,17 +27,11 @@ const EyeOffIcon = () => (
   </svg>
 )
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
-
 export default function ProfilePage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
-  const { data: profileData, mutate: mutateProfile, isLoading: loading } = useSWR('/api/profile', fetcher, {
-    revalidateOnFocus: true
-  })
-  
-  const user = profileData?.user as UserProfile | null
+  const [user, setUser] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const [editName, setEditName] = useState('')
   const [savingName, setSavingName] = useState(false)
@@ -48,11 +40,19 @@ export default function ProfilePage() {
   const [showSecurityNumber, setShowSecurityNumber] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
-  useEffect(() => { 
-    if (user) {
-        setEditName(user.name)
-    }
-  }, [user])
+  useEffect(() => { loadProfile() }, [])
+
+  async function loadProfile() {
+    try {
+      const res = await fetch('/api/profile')
+      const data = await res.json()
+      if (data.user) {
+        setUser(data.user)
+        setEditName(data.user.name)
+      }
+    } catch (e) { console.error(e) }
+    setLoading(false)
+  }
 
   async function handleSaveName() {
     if (!editName.trim()) { setNameMsg({ type: 'error', text: 'Name cannot be empty' }); return }
@@ -67,13 +67,7 @@ export default function ProfilePage() {
       })
       const data = await res.json()
       if (res.ok) {
-        // Global mutations to update Header, Sidebar, Dashboard, etc.
-        import('swr').then(({ mutate }) => {
-            mutate('/api/profile')
-            mutate('/api/auth/me')
-            mutate('/api/dashboard')
-            mutate('/api/users')
-        })
+        setUser(prev => prev ? { ...prev, name: data.user.name } : prev)
         setNameMsg({ type: 'success', text: 'Name updated successfully' })
       } else {
         setNameMsg({ type: 'error', text: data.error || 'Failed to update' })
@@ -95,13 +89,7 @@ export default function ProfilePage() {
       formData.append('avatar', file)
       const res = await fetch('/api/profile/avatar', { method: 'POST', body: formData })
       const data = await res.json()
-      if (res.ok) {
-        mutateProfile()
-        import('swr').then(({ mutate }) => {
-            mutate('/api/auth/me')
-            mutate('/api/dashboard')
-        })
-      }
+      if (res.ok) setUser(prev => prev ? { ...prev, avatar: data.avatar } : prev)
       else alert(data.error || 'Failed to upload avatar')
     } catch { alert('Upload failed') }
     setUploadingAvatar(false)
@@ -145,7 +133,7 @@ export default function ProfilePage() {
 
   return (
     <div className="page-container fade-in">
-      <div style={{ maxWidth: '880px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ maxWidth: '960px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
         {/* ── Back ── */}
         <div>
@@ -170,16 +158,16 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Profile Card ── */}
-        <div className="card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+        <div className="card" style={{ padding: '32px', display: 'flex', alignItems: 'center', gap: '28px', flexWrap: 'wrap' }}>
           {/* Avatar */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div
               onClick={() => fileInputRef.current?.click()}
               title="Click to change photo"
               style={{
-                width: '80px', height: '80px', borderRadius: '50%',
+                width: '100px', height: '100px', borderRadius: '50%',
                 background: user.avatar ? 'transparent' : '#e8eaf0',
-                boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+                boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 overflow: 'hidden', cursor: 'pointer',
               }}
@@ -218,8 +206,13 @@ export default function ProfilePage() {
 
           {/* User info */}
           <div style={{ flex: 1, minWidth: '180px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e1e3a', marginBottom: '2px' }}>{user.name}</h2>
-            <p style={{ fontSize: '13px', color: '#9999b0', marginBottom: '8px' }}>{user.email}</p>
+            <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px' }}>{user.name}</h2>
+            <p style={{ fontSize: '14px', color: '#9999b0', marginBottom: '6px' }}>{user.email}</p>
+            {user.securityNumber && (
+              <p style={{ fontSize: '12px', color: '#6b6b8a', marginBottom: '10px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+                ID: {user.securityNumber}
+              </p>
+            )}
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
               <span className="badge" style={{
                 background: user.role === 'MANAGER' ? '#ede9fe' : user.role === 'ADMIN' ? '#dbeafe' : '#d1fae5',
@@ -244,10 +237,10 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Personal Information + Account Details (side by side) ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
 
           {/* ── Personal Information ── */}
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
+          <div className="card" style={{ padding: '28px', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -280,7 +273,7 @@ export default function ProfilePage() {
           </div>
 
           {/* ── Account Details ── */}
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
+          <div className="card" style={{ padding: '28px', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -290,6 +283,14 @@ export default function ProfilePage() {
               Account Details
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+
+              {/* Account ID */}
+              <div style={insetRow}>
+                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Account ID</span>
+                <span style={{ fontSize: '12px', color: '#1e1e3a', fontWeight: '600', fontFamily: 'monospace', wordBreak: 'break-all', textAlign: 'right', maxWidth: '60%' }}>
+                  {user.id}
+                </span>
+              </div>
 
               {/* Security Number with eye toggle */}
               <div style={insetRow}>
@@ -344,13 +345,13 @@ export default function ProfilePage() {
         {/* ── Bottom Action Bar ── */}
         <div style={{
           display: 'flex', justifyContent: 'flex-end', gap: '12px',
-          padding: '16px 20px', borderRadius: '16px', background: '#e8eaf0',
-          boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+          padding: '20px 24px', borderRadius: '20px', background: '#e8eaf0',
+          boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
         }}>
           <button onClick={handleDiscard} className="btn btn-ghost">
             Discard Changes
           </button>
-          <button onClick={handleSaveName} disabled={savingName} className="btn btn-primary" style={{ padding: '10px 24px' }}>
+          <button onClick={handleSaveName} disabled={savingName} className="btn btn-primary">
             {savingName ? 'Saving...' : 'Save Changes'}
           </button>
         </div>

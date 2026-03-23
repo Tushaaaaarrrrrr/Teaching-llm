@@ -28,10 +28,6 @@ interface InstructorOption {
 
 interface UserInfo {
   role: string
-  isCalendarLinked?: boolean
-  googleCredential?: {
-    lastSyncAt?: string | null
-  }
 }
 
 const TYPE_COLORS: Record<string, { bg: string; color: string; label: string }> = {
@@ -66,33 +62,21 @@ export default function CalendarPage() {
 
   // Detail popover for clicking event pills on calendar
   const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null)
-  
-  const [syncing, setSyncing] = useState(false)
-  const [lastSync, setLastSync] = useState<string | null>(null)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
   const isAdminOrManager = user?.role === 'MANAGER' || user?.role === 'ADMIN'
-  const isManager = user?.role === 'MANAGER'
 
   useEffect(() => {
     // Load user info, classes, and instructors once
     Promise.all([
       fetch('/api/auth/me').then(r => r.json()),
-      fetch('/api/courses').then(r => r.json()),
-      fetch('/api/admin/instructors').then(r => r.json()),
+      fetch('/api/classes').then(r => r.json()),
+      fetch('/api/instructors').then(r => r.json()),
     ]).then(([meData, clsData, instrData]) => {
-      const u = meData.user
-      if (u) {
-        u.isCalendarLinked = u.isGoogleAuth
-      }
-      setUser(u)
-      setClasses(Array.isArray(clsData) ? clsData : [])
-      setInstructors(Array.isArray(instrData) ? instrData : [])
-      
-      if (u?.googleCredential?.lastSyncAt) {
-        setLastSync(new Date(u.googleCredential.lastSyncAt).toLocaleString())
-      }
+      setUser(meData.user || meData)
+      setClasses(clsData.classes || clsData || [])
+      setInstructors(instrData || [])
     }).catch(console.error)
   }, [])
 
@@ -104,9 +88,9 @@ export default function CalendarPage() {
   function loadEvents() {
     setLoading(true)
     const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`
-    fetch(`/api/course-events?month=${monthStr}`)
+    fetch(`/api/events?month=${monthStr}`)
       .then(r => r.json())
-      .then(data => setEvents(Array.isArray(data) ? data : []))
+      .then(data => setEvents(data.events || data || []))
       .catch(console.error)
       .finally(() => setLoading(false))
   }
@@ -148,7 +132,7 @@ export default function CalendarPage() {
     setShowModal(true)
   }
 
-  function openEdit(ev: any) {
+  function openEdit(ev: CalEvent) {
     setEditId(ev.id)
     setFormData({
       title: ev.title || '',
@@ -156,12 +140,11 @@ export default function CalendarPage() {
       date: ev.date || '',
       time: ev.time || '',
       type: ev.type || 'class',
-      classId: ev.courseId || ev.classId || '',
+      classId: ev.classId || '',
       instructorId: ev.instructorId || '',
-      googleEventId: ev.googleEventId || '',
     })
-    setShowModal(true)
     setSelectedEvent(null)
+    setShowModal(true)
   }
 
   async function handleSave() {
@@ -180,7 +163,7 @@ export default function CalendarPage() {
           ? classes.find(c => c.id === formData.classId)?.name || null
           : null,
       }
-      const url = editId ? `/api/course-events/${editId}` : '/api/course-events'
+      const url = editId ? `/api/events/${editId}` : '/api/events'
       const method = editId ? 'PUT' : 'POST'
       const res = await fetch(url, {
         method,
@@ -201,30 +184,10 @@ export default function CalendarPage() {
   async function handleDelete(id: string) {
     if (!confirm('Are you sure you want to delete this event?')) return
     try {
-      await fetch(`/api/course-events/${id}`, { method: 'DELETE' })
+      await fetch(`/api/events/${id}`, { method: 'DELETE' })
       setSelectedEvent(null)
       loadEvents()
     } catch (e) { console.error(e) }
-  }
-
-  async function handleSync() {
-    setSyncing(true)
-    try {
-      const res = await fetch('/api/admin/google/sync', { method: 'POST' })
-      const data = await res.json()
-      if (data.success) {
-        setLastSync(new Date().toLocaleString())
-        loadEvents()
-        alert(`Sync complete! Imported ${data.imported} events.`)
-      } else {
-        alert(data.error || 'Sync failed')
-      }
-    } catch (e) {
-      console.error(e)
-      alert('Network error during sync')
-    } finally {
-      setSyncing(false)
-    }
   }
 
   return (
@@ -246,79 +209,13 @@ export default function CalendarPage() {
             </svg>
           </button>
         </div>
-        {isManager && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-             {!user?.isCalendarLinked ? (
-               <a 
-                 href="/api/admin/google/auth"
-                 className="btn btn-ghost btn-sm"
-                 style={{ 
-                   display: 'flex', 
-                   alignItems: 'center', 
-                   gap: '12px',
-                   background: '#e8eaf0',
-                   boxShadow: '4px 4px 8px #c5c7cf, -2px -2px 6px #ffffff',
-                   borderRadius: '50px',
-                   padding: '10px 20px',
-                   color: '#3636e8',
-                   fontWeight: '700',
-                   textDecoration: 'none'
-                 }}
-               >
-                 <svg width="18" height="18" viewBox="0 0 24 24">
-                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-1 .67-2.28 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                 </svg>
-                 Link Google Calendar
-               </a>
-             ) : (
-               <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                 <button 
-                   onClick={handleSync} 
-                   disabled={syncing}
-                   className="btn btn-ghost btn-sm"
-                   style={{ 
-                     display: 'flex', 
-                     alignItems: 'center', 
-                     gap: '6px',
-                     background: '#e8eaf0',
-                     boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                     borderRadius: '50px',
-                     padding: '8px 16px',
-                     color: '#3636e8',
-                     fontWeight: '700'
-                   }}
-                 >
-                   <svg 
-                     className={syncing ? 'rotate' : ''} 
-                     width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                   >
-                     <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
-                   </svg>
-                   {syncing ? 'Syncing...' : 'Sync Calendar'}
-                 </button>
-                 {lastSync && (
-                   <span style={{ fontSize: '10px', color: '#9999b0', marginTop: '4px', fontWeight: '600' }}>
-                     Last synced: {lastSync}
-                   </span>
-                 )}
-                 <a 
-                   href="/api/admin/google/auth" 
-                   style={{ fontSize: '10px', color: '#3636e8', marginTop: '4px', textDecoration: 'underline', fontWeight: '600' }}
-                 >
-                   Re-link Account
-                 </a>
-               </div>
-             )}
-            <button onClick={() => openCreate()} className="btn btn-primary">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Add Event
-            </button>
-          </div>
+        {isAdminOrManager && (
+          <button onClick={() => openCreate()} className="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Event
+          </button>
         )}
       </div>
 
@@ -553,7 +450,12 @@ export default function CalendarPage() {
                   <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.class?.name || 'General (All Groups)'}</div>
                 </div>
               </div>
-
+              {selectedEvent.instructor && (
+                <div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Instructor</div>
+                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.instructor.name}</div>
+                </div>
+              )}
             </div>
             {isAdminOrManager && (
               <div className="modal-footer">
@@ -584,10 +486,6 @@ export default function CalendarPage() {
               </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ padding: '8px 12px', background: '#e0e7ff', borderRadius: '8px', fontSize: '12px', color: '#4338ca', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                Controlled by Google Calendar sync. Only &quot;Type&quot; can be edited in LMS.
-              </div>
               <div className="form-group">
                 <label className="form-label">Title *</label>
                 <input
@@ -595,7 +493,6 @@ export default function CalendarPage() {
                   value={formData.title || ''}
                   onChange={e => set('title', e.target.value)}
                   placeholder="Event title"
-                  disabled={true}
                 />
               </div>
               <div className="form-group">
@@ -607,7 +504,6 @@ export default function CalendarPage() {
                   placeholder="Optional description"
                   rows={2}
                   style={{ resize: 'vertical' }}
-                  disabled={true}
                 />
               </div>
               <div className="form-group">
@@ -616,13 +512,17 @@ export default function CalendarPage() {
                   className="form-input"
                   value={formData.classId || ''}
                   onChange={e => set('classId', e.target.value)}
-                  disabled={true}
                 >
                   <option value="">General (visible to all groups)</option>
                   {classes.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
+                <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                  {formData.classId
+                    ? 'Only members enrolled in this subject will see this event.'
+                    : 'This event will be visible to everyone.'}
+                </p>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
@@ -632,7 +532,6 @@ export default function CalendarPage() {
                     className="form-input"
                     value={formData.date || ''}
                     onChange={e => set('date', e.target.value)}
-                    disabled={true}
                   />
                 </div>
                 <div className="form-group">
@@ -642,31 +541,22 @@ export default function CalendarPage() {
                     className="form-input"
                     value={formData.time || ''}
                     onChange={e => set('time', e.target.value)}
-                    disabled={true}
                   />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group">
-                  <label className="form-label">Type</label>
-                  <select
-                    className="form-input"
-                    value={formData.type || 'class'}
-                    onChange={e => set('type', e.target.value)}
-                  >
-                    {EVENT_TYPES.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                </div>
-                 <div className="form-group">
-                   <label className="form-label">Teacher Name</label>
-                   <input
-                     className="form-input"
-                     value={formData.classId ? (classes.find(c => c.id === formData.classId) as any)?.teacherName || 'Fetching...' : 'General Instructor'}
-                     disabled
-                   />
-                 </div>
+              <div className="form-group">
+                <label className="form-label">Type</label>
+                <select
+                  className="form-input"
+                  value={formData.type || 'class'}
+                  onChange={e => set('type', e.target.value)}
+                >
+                  {EVENT_TYPES.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+              {instructors.length > 0 && (
                 <div className="form-group">
                   <label className="form-label">Instructor</label>
                   <select
@@ -674,22 +564,20 @@ export default function CalendarPage() {
                     value={formData.instructorId || ''}
                     onChange={e => set('instructorId', e.target.value)}
                   >
-                    <option value="">No Instructor</option>
-                    {instructors.map(ins => (
-                      <option key={ins.id} value={ins.id}>{ins.name}</option>
+                    <option value="">None (no instructor assigned)</option>
+                    {instructors.map(inst => (
+                      <option key={inst.id} value={inst.id}>{inst.name}</option>
                     ))}
                   </select>
+                  <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                    Optionally assign an instructor to this event.
+                  </p>
                 </div>
-              </div>
-
+              )}
             </div>
             <div className="modal-footer">
               <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
-              <button 
-                onClick={handleSave} 
-                disabled={saving || !formData.title || !formData.date} 
-                className="btn btn-primary"
-              >
+              <button onClick={handleSave} disabled={saving || !formData.title || !formData.date} className="btn btn-primary">
                 {saving ? 'Saving…' : (editId ? 'Update Event' : 'Create Event')}
               </button>
             </div>

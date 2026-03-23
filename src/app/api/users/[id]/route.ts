@@ -3,71 +3,6 @@ import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, hashPassword, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    if (!isAdminOrManager(session.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    const { id } = await params
-    const user = await prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        securityNumber: true,
-        createdAt: true,
-        gender: true,
-        avatar: true,
-        isTerminated: true,
-        isSuperManager: true,
-        passwordHash: true,
-        googleCredential: { select: { id: true } },
-        enrollments: {
-          select: {
-            courseId: true,
-            course: { select: { id: true, name: true, color: true, subject: true } },
-          },
-        },
-        instructorAssignments: {
-          select: {
-            courseId: true,
-            course: { select: { id: true, name: true, color: true, subject: true } },
-          },
-        },
-      },
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    const superAdminEmail = 'lkiitmng2428@gmail.com'
-    const transformedUser = {
-      ...user,
-      isGoogleAuth: !!(user as any).googleCredential || (user as any).passwordHash === '',
-      isSuperManager: user.isSuperManager || user.email === superAdminEmail,
-      googleCredential: undefined,
-      passwordHash: undefined
-    }
-
-    return NextResponse.json(transformedUser)
-  } catch (error) {
-    console.error('Error fetching user:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -85,32 +20,15 @@ export async function PUT(
     const { id } = await params
     const { name, email, role, password, isTerminated, classIds, assignedClassIds } = await request.json()
 
-    const superAdminEmail = 'lkiitmng2428@gmail.com'
-
-    // Load target user to check if it's the super admin
-    const targetUser = await prisma.user.findUnique({ where: { id }, select: { email: true, role: true, isSuperManager: true } })
-    if (!targetUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
-
-    const isTargetSuperAdmin = targetUser.isSuperManager || targetUser.email === superAdminEmail
-
     // ADMIN restrictions
     if (session.role === 'ADMIN') {
-      if (targetUser.role !== 'STUDENT') {
+      const targetUser = await prisma.user.findUnique({ where: { id }, select: { role: true } })
+      if (!targetUser || targetUser.role !== 'STUDENT') {
         return NextResponse.json({ error: 'Admins can only edit student accounts' }, { status: 403 })
       }
       if (role !== undefined || isTerminated !== undefined) {
         return NextResponse.json({ error: 'Admins cannot change role or termination status' }, { status: 403 })
       }
-    }
-
-    // Protection for Super Admin: only they can edit themselves (except for maybe a manager editing basic stuff, but usually locked down)
-    if (isTargetSuperAdmin && session.userId !== id) {
-      return NextResponse.json({ error: 'Cannot modify Super Admin account' }, { status: 403 })
-    }
-
-    // Prevent email change for Super Admin
-    if (isTargetSuperAdmin && email && email.toLowerCase() !== targetUser.email.toLowerCase()) {
-      return NextResponse.json({ error: 'Super Admin email cannot be changed' }, { status: 403 })
     }
 
     // Validate classIds for ADMINs
@@ -180,10 +98,7 @@ export async function PUT(
           email: true,
           role: true,
           isTerminated: true,
-          isSuperManager: true,
           createdAt: true,
-          passwordHash: true,
-          googleCredential: { select: { id: true } },
           enrollments: {
             select: {
               courseId: true,
@@ -200,14 +115,6 @@ export async function PUT(
       })
     })
 
-    const transformedUpdatedUser = {
-      ...updatedUser,
-      isGoogleAuth: !!(updatedUser as any).googleCredential || (updatedUser as any).passwordHash === '',
-      isSuperManager: (updatedUser as any).isSuperManager || (updatedUser as any).email === superAdminEmail,
-      googleCredential: undefined,
-      passwordHash: undefined
-    }
-
     logActivity({
       userId: session.userId,
       userName: session.name,
@@ -219,7 +126,7 @@ export async function PUT(
       metadata: { changedFields: Object.keys(data) },
     })
 
-    return NextResponse.json(transformedUpdatedUser)
+    return NextResponse.json(updatedUser)
   } catch (error) {
     console.error('Error updating user:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

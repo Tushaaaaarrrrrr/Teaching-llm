@@ -161,21 +161,6 @@ export default function AnnouncementsPage() {
     }
   }
 
-  const filtered = announcements.filter(a => {
-    if (activeTab === 'updates') return !a.classId
-    if (activeTab === 'class')   return !!a.classId
-    return true
-  })
-
-  useEffect(() => {
-    if (!loading && filtered.length > 0) {
-      fetch('/api/users/seen', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'announcements' }),
-      }).catch(() => {})
-    }
-  }, [loading, filtered.length])
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !content.trim()) return
@@ -196,7 +181,13 @@ export default function AnnouncementsPage() {
     }
   }
 
-  const isManager = userRole === 'MANAGER'
+  const isAdminOrManager = userRole === 'MANAGER' || userRole === 'ADMIN'
+
+  const filtered = announcements.filter(a => {
+    if (activeTab === 'updates') return !a.classId
+    if (activeTab === 'class')   return !!a.classId
+    return true
+  })
 
   // ── Shared styles ──────────────────────────────────────────────────────────
   const neuCard: React.CSSProperties = {
@@ -270,14 +261,17 @@ export default function AnnouncementsPage() {
           })}
         </div>
 
-        {/* New Announcement button (manager only) */}
-        {isManager && (
+        {/* New Announcement button (admin/manager only) */}
+        {isAdminOrManager && (
           <button
-            onClick={() => setShowForm(!showForm)}
-            className="btn btn-primary"
-            style={{ 
+            onClick={() => setShowForm(v => !v)}
+            style={{
+              ...neuButton,
+              background: showForm ? '#6b6b8a' : '#3636e8',
+              boxShadow: showForm
+                ? '4px 4px 10px rgba(107,107,138,0.35), -2px -2px 6px rgba(255,255,255,0.7)'
+                : '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)',
               display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '10px 24px', borderRadius: '12px'
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -291,7 +285,7 @@ export default function AnnouncementsPage() {
       </div>
 
       {/* ── Create form ─────────────────────────────────────────────────── */}
-      {isManager && showForm && (
+      {isAdminOrManager && showForm && (
         <div style={{ ...neuCard, marginBottom: '28px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>
             Create Announcement
@@ -370,7 +364,7 @@ export default function AnnouncementsPage() {
             {activeTab === 'all' ? 'No announcements yet' : `No ${activeTab} announcements`}
           </div>
           <div style={{ fontSize: '13px', color: '#9999b0' }}>
-            {isManager ? 'Create your first announcement using the button above.' : 'Check back later for updates.'}
+            {isAdminOrManager ? 'Create your first announcement using the button above.' : 'Check back later for updates.'}
           </div>
         </div>
       ) : (

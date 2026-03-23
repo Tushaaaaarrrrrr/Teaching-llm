@@ -3,44 +3,6 @@ import { prisma } from '@/lib/db'
 import { getSession, canManageContent } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { id } = await params
-
-    const content = await prisma.content.findUnique({
-      where: { id },
-      include: {
-        topic: {
-          include: {
-            course: {
-              select: {
-                id: true,
-                name: true,
-                color: true,
-              },
-            },
-          },
-        },
-      },
-    })
-
-    if (!content) {
-      return NextResponse.json({ error: 'Content not found' }, { status: 404 })
-    }
-
-    return NextResponse.json(content)
-  } catch (error) {
-    console.error(error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -52,21 +14,11 @@ export async function PUT(
 
     const { id } = await params
 
-    const { title, description, videoUrl, videoSource, pptUrl } = await request.json()
-
-    if (!title?.trim() || !videoUrl?.trim()) {
-      return NextResponse.json({ error: 'Title and Video URL are mandatory' }, { status: 400 })
-    }
+    const { title, description, videoUrl, pptUrl } = await request.json()
 
     const content = await prisma.content.update({
       where: { id },
-      data: {
-        title: title.trim(),
-        description,
-        videoUrl: videoUrl.trim(),
-        videoSource: videoSource || 'YOUTUBE',
-        pptUrl,
-      },
+      data: { title, description, videoUrl, pptUrl },
     })
 
     logActivity({

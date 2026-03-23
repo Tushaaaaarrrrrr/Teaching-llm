@@ -20,13 +20,6 @@ export async function GET() {
         avatar: true,
         securityNumber: true,
         createdAt: true,
-        googleCredential: {
-          select: {
-            id: true,
-            updatedAt: true,
-            lastSyncAt: true
-          }
-        }
       },
     })
 
@@ -37,7 +30,7 @@ export async function GET() {
     // Auto-generate security number if missing
     if (!user.securityNumber) {
       const securityNumber = 'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase()
-      const updatedUser = await prisma.user.update({
+      user = await prisma.user.update({
         where: { id: session.userId },
         data: { securityNumber },
         select: {
@@ -48,24 +41,11 @@ export async function GET() {
           avatar: true,
           securityNumber: true,
           createdAt: true,
-          googleCredential: {
-            select: {
-              id: true,
-              updatedAt: true,
-              lastSyncAt: true
-            }
-          }
         },
       })
-      user = updatedUser
     }
 
-    return NextResponse.json({ 
-      user: {
-        ...user,
-        isCalendarLinked: !!user.googleCredential
-      }
-    })
+    return NextResponse.json({ user })
   } catch (error) {
     console.error('Error fetching profile:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

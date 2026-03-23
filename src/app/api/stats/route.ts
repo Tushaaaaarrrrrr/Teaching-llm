@@ -22,28 +22,15 @@ export async function GET() {
     const [totalClasses, totalLectures, totalStudents, upcomingSessions, totalMaterials] =
       await Promise.all([
         prisma.course.count({ where: classCountFilter }),
-        prisma.content.count({ 
-          where: { 
-            topic: accessibleCourseIds !== null ? { courseId: { in: accessibleCourseIds } } : {},
-            videoUrl: { not: null },
-            NOT: { videoUrl: "" }
-          } 
-        }),
+        prisma.lecture.count({ where: classFilter }),
         prisma.user.count({ where: { role: 'STUDENT' } }),
-        prisma.courseEvent.count({
+        prisma.liveSession.count({
           where: {
-            type: 'live',
-            manualStatus: { in: ['scheduled', 'live'] },
+            status: { in: ['scheduled', 'live'] },
             ...classFilter,
           },
         }),
-        prisma.content.count({ 
-          where: { 
-            topic: accessibleCourseIds !== null ? { courseId: { in: accessibleCourseIds } } : {},
-            pptUrl: { not: null },
-            NOT: { pptUrl: "" }
-          } 
-        }),
+        prisma.material.count({ where: classFilter }),
       ])
 
     return NextResponse.json({
