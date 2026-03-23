@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       const status = getEventStatus(ev.startTime, ev.endTime, ev.status)
       const isGlobal = ev.isGlobal || !ev.courseId
       const isEnrolled = isGlobal || enrolledCourseIds.includes(ev.courseId || '')
-      const canSeeMeetLink = isAdminOrManager(session.role) || isEnrolled
+      const canSeeMeetLink = isAdminOrManager(session.role) || session.role === 'INSTRUCTOR' || isEnrolled
 
       return {
         id: ev.id,
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role)) {
+    if (!isAdminOrManager(session.role) && session.role !== 'INSTRUCTOR') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -118,8 +118,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title, startTime, and endTime are required' }, { status: 400 })
     }
 
-    // Verify ADMIN has access to the target course
-    if (session.role === 'ADMIN' && courseId) {
+    // Verify ADMIN/INSTRUCTOR has access to the target course
+    if ((session.role === 'ADMIN' || session.role === 'INSTRUCTOR') && courseId) {
       const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
       if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
         return NextResponse.json({ error: 'No access to this course' }, { status: 403 })

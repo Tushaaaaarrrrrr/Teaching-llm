@@ -68,7 +68,7 @@ export default function CalendarPage() {
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
-  const isAdminOrManager = user?.role === 'MANAGER' || user?.role === 'ADMIN'
+  const isAdminOrManager = user?.role === 'MANAGER' || user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR'
 
   useEffect(() => {
     // Load user info, classes, and instructors once
@@ -77,7 +77,10 @@ export default function CalendarPage() {
       fetch('/api/classes').then(r => r.json()),
       fetch('/api/instructors').then(r => r.json()),
     ]).then(([meData, clsData, instrData]) => {
-      setUser(meData.user || meData)
+      console.log("Calendar Debug - meData:", meData)
+      const u = meData.user || meData
+      setUser(u)
+      console.log("Calendar Debug - user role:", u?.role)
       setClasses(clsData.classes || clsData || [])
       setInstructors(instrData || [])
     }).catch(console.error)

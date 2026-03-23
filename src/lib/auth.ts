@@ -13,7 +13,7 @@ const COOKIE_NAME = 'teaching_llm_token'
 export interface JWTPayload {
   userId: string
   email: string
-  role: 'MANAGER' | 'ADMIN' | 'STUDENT'
+  role: 'MANAGER' | 'ADMIN' | 'STUDENT' | 'INSTRUCTOR'
   name: string
   canTerminate?: boolean
   canCreateStudents?: boolean
@@ -145,6 +145,14 @@ export async function getAccessibleCourseIds(
   if (role === 'MANAGER') return null
 
   const now = new Date()
+
+  if (role === 'INSTRUCTOR') {
+    const assignments = await prisma.instructorAssignment.findMany({
+      where: { instructorId: userId },
+      select: { courseId: true },
+    })
+    return assignments.map(a => a.courseId)
+  }
 
   const enrollments = await prisma.enrollment.findMany({
     where: { 

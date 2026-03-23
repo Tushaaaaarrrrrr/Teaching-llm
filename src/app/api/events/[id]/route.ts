@@ -71,6 +71,14 @@ export async function PUT(
     if (recurrence !== undefined) data.recurrence = recurrence
     if (interval !== undefined) data.interval = interval ? parseInt(interval as string) : null
     if (originalStartTime !== undefined) data.originalStartTime = originalStartTime ? new Date(originalStartTime) : null
+    // Verify ADMIN/INSTRUCTOR access to course
+    if ((session.role === 'ADMIN' || session.role === 'INSTRUCTOR') && courseId) {
+      const { getAccessibleCourseIds } = require('@/lib/auth')
+      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
+        return NextResponse.json({ error: 'No access to this course' }, { status: 403 })
+      }
+    }
 
     const updatedEvent = await prisma.courseEvent.update({
       where: { id },
