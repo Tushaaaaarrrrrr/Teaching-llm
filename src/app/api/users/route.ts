@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, hashPassword, getAccessibleCourseIds } from '@/lib/auth'
+import { getSession, hashPassword } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET() {
@@ -10,25 +10,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role)) {
+    if (session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let where: Record<string, any> = {}
-
-    if (session.role === 'ADMIN') {
-      const adminCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-      where = {
-        role: 'STUDENT',
-        enrollments: {
-          some: { courseId: { in: adminCourseIds || [] } },
-        },
-      }
-    }
-
     const users = await prisma.user.findMany({
-      where,
       select: {
         id: true,
         name: true,
@@ -51,6 +37,22 @@ export async function GET() {
             course: { select: { id: true, name: true, color: true, subject: true } },
           },
         },
+        courseBundleAssignments: {
+          select: {
+            bundleId: true,
+            bundle: {
+              select: {
+                id: true,
+                name: true,
+                courses: {
+                  select: {
+                    course: { select: { id: true, name: true, color: true, subject: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -69,26 +71,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role)) {
+    if (session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, firstName, lastName, mobileNumber, email, password, role, classIds = [], courseIds = [], assignedClassIds = [] } = await request.json()
+    const {
+      name,
+      firstName,
+      lastName,
+      mobileNumber,
+      email,
+      password,
+      role,
+      gender = 'MALE',
+      classIds = [],
+      courseIds = [],
+      assignedClassIds = [],
+      bundleIds = [],
+    } = await request.json()
     const finalClassIds = classIds.length > 0 ? classIds : courseIds
-
-    // ADMINs can only create STUDENT accounts
-    if (session.role === 'ADMIN' && role !== 'STUDENT') {
-      return NextResponse.json({ error: 'Admins can only create student accounts' }, { status: 403 })
-    }
-
-    // ADMINs can only assign classes they have access to
-    if (session.role === 'ADMIN' && finalClassIds.length > 0) {
-      const adminCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-      const unauthorized = finalClassIds.filter((id: string) => !adminCourseIds?.includes(id))
-      if (unauthorized.length > 0) {
-        return NextResponse.json({ error: 'Cannot assign classes you don\'t have access to' }, { status: 403 })
-      }
-    }
 
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
@@ -108,8 +109,40 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(actualPassword)
     const securityNumber = 'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase()
+    const uniqueBundleIds = Array.from(new Set((bundleIds || []).filter(Boolean))) as string[]
 
     const user = await prisma.$transaction(async (tx) => {
+      const bundleCourseRows = uniqueBundleIds.length > 0
+        ? await tx.courseBundleCourse.findMany({
+            where: { bundleId: { in: uniqueBundleIds } },
+            select: { courseId: true },
+          })
+        : []
+      const effectiveCourseIds = Array.from(new Set([
+        ...finalClassIds,
+        ...bundleCourseRows.map(row => row.courseId),
+      ]))
+
+      const blockedCourses = effectiveCourseIds.length > 0
+        ? await (tx.course.findMany as any)({
+            where: { id: { in: effectiveCourseIds }, isDisabled: true },
+            select: { name: true },
+          })
+        : []
+      if (blockedCourses.length > 0) {
+        throw new Error(`Disabled courses cannot be assigned: ${blockedCourses.map(course => course.name).join(', ')}`)
+      }
+
+      if (role === 'INSTRUCTOR' && assignedClassIds.length > 0) {
+        const blockedInstructorCourses = await (tx.course.findMany as any)({
+          where: { id: { in: assignedClassIds }, isDisabled: true },
+          select: { name: true },
+        })
+        if (blockedInstructorCourses.length > 0) {
+          throw new Error(`Disabled courses cannot be assigned: ${blockedInstructorCourses.map(course => course.name).join(', ')}`)
+        }
+      }
+
       const newUser = await tx.user.create({
         data: {
           name: name || `${firstName} ${lastName || ''}`.trim(),
@@ -120,7 +153,7 @@ export async function POST(request: NextRequest) {
           passwordHash,
           role,
           securityNumber,
-          gender: (request as any).gender || 'MALE', // Capture gender if provided
+          gender,
         },
         select: {
           id: true,
@@ -133,11 +166,21 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      if (classIds.length > 0) {
+      if (effectiveCourseIds.length > 0) {
         await tx.enrollment.createMany({
-          data: classIds.map((courseId: string) => ({
+          data: effectiveCourseIds.map((courseId: string) => ({
             userId: newUser.id,
             courseId,
+          })),
+        })
+      }
+
+      if (uniqueBundleIds.length > 0) {
+        await tx.userCourseBundleAssignment.createMany({
+          data: uniqueBundleIds.map((bundleId: string) => ({
+            userId: newUser.id,
+            bundleId,
+            assignedById: session.userId,
           })),
         })
       }
@@ -171,6 +214,6 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error) {
     console.error('Error creating user:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: error instanceof Error ? 400 : 500 })
   }
 }

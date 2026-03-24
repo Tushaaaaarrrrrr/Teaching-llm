@@ -71,7 +71,7 @@ export async function getFullSession(): Promise<FullSession | null> {
 
   // Fetch isTerminated, enrollments AND current tokenVersion in ONE query
   const now = new Date()
-  const user = await prisma.user.findUnique({
+  const user = await (prisma.user.findUnique as any)({
     where: { id: jwtPayload.userId },
     select: {
       isTerminated: true,
@@ -79,6 +79,7 @@ export async function getFullSession(): Promise<FullSession | null> {
       enrollments: jwtPayload.role !== 'MANAGER' ? {
         where: {
           course: {
+            isDisabled: false,
             OR: [
               { expiresAt: null },
               { expiresAt: { gt: now } },
@@ -151,17 +152,18 @@ export async function getAccessibleCourseIds(
   const now = new Date()
 
   if (role === 'INSTRUCTOR') {
-    const assignments = await prisma.instructorAssignment.findMany({
-      where: { instructorId: userId },
+    const assignments = await (prisma.instructorAssignment.findMany as any)({
+      where: { instructorId: userId, course: { isDisabled: false } },
       select: { courseId: true },
     })
     return assignments.map(a => a.courseId)
   }
 
-  const enrollments = await prisma.enrollment.findMany({
+  const enrollments = await (prisma.enrollment.findMany as any)({
     where: { 
       userId,
       course: {
+        isDisabled: false,
         OR: [
           { expiresAt: null },
           { expiresAt: { gt: now } }

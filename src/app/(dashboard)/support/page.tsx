@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface Ticket {
   id: string
@@ -99,6 +100,7 @@ function BackButton({ onClick }: { onClick: () => void }) {
 }
 
 export default function SupportPage() {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const [view, setView] = useState<'home' | 'allTickets' | 'chat' | 'chatHistory'>('home')
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [classes, setClasses] = useState<ClassItem[]>([])
@@ -218,7 +220,13 @@ export default function SupportPage() {
   }
 
   async function deleteTicket(ticketId: string) {
-    if (!confirm('Delete this ticket and all its replies permanently?')) return
+    const allowed = await confirm({
+      title: 'Delete Ticket?',
+      message: 'This will permanently delete the ticket and all replies.',
+      confirmLabel: 'Delete Ticket',
+      tone: 'danger',
+    })
+    if (!allowed) return
     await fetch(`/api/support/tickets/${ticketId}`, { method: 'DELETE' })
     setTickets(prev => prev.filter(t => t.id !== ticketId))
     if (selected?.id === ticketId) setSelected(null)
@@ -263,7 +271,13 @@ export default function SupportPage() {
   }
 
   async function deleteFaq(id: string) {
-    if (!confirm('Delete this FAQ item?')) return
+    const allowed = await confirm({
+      title: 'Delete FAQ?',
+      message: 'This FAQ item will be removed permanently.',
+      confirmLabel: 'Delete FAQ',
+      tone: 'danger',
+    })
+    if (!allowed) return
     await fetch(`/api/support/faq/${id}`, { method: 'DELETE' })
     setFaqs(prev => prev.filter(f => f.id !== id))
   }
@@ -282,7 +296,13 @@ export default function SupportPage() {
   }
 
   async function deleteHistory(id: string) {
-    if (!confirm('Permanently delete this chat transcript?')) return
+    const allowed = await confirm({
+      title: 'Delete Chat History?',
+      message: 'This chat transcript will be removed permanently.',
+      confirmLabel: 'Delete Transcript',
+      tone: 'danger',
+    })
+    if (!allowed) return
     await fetch(`/api/support/chat-history/${id}`, { method: 'DELETE' })
     setHistoryChats(prev => prev.filter(c => c.id !== id))
     if (selectedHistory?.id === id) { setSelectedHistory(null); setHistoryMsgs([]) }
@@ -377,6 +397,7 @@ export default function SupportPage() {
   if (view === 'home') {
     return (
       <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', overflowY: 'auto' }}>
+        {confirmDialog}
 
         {/* Top row: FAQ card + Live Chat card */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
@@ -525,6 +546,7 @@ export default function SupportPage() {
   if (view === 'allTickets') {
     return (
       <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', display: 'flex', flexDirection: 'column' }}>
+        {confirmDialog}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <BackButton onClick={() => { setView('home'); setSelected(null) }} />
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -671,6 +693,7 @@ export default function SupportPage() {
   if (view === 'chatHistory') {
     return (
       <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', display: 'flex', flexDirection: 'column' }}>
+        {confirmDialog}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <BackButton onClick={() => { setView('home'); setSelectedHistory(null) }} />
           <span style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600' }}>{historyChats.length} transcript{historyChats.length !== 1 ? 's' : ''}</span>
@@ -753,6 +776,7 @@ export default function SupportPage() {
   // ══════════════════════════════════════════════════════════════════════════
   return (
     <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', display: 'flex', flexDirection: 'column' }}>
+      {confirmDialog}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <BackButton onClick={() => { setView('home'); setActiveChatId(null) }} />
         {userRole === 'STUDENT' && (

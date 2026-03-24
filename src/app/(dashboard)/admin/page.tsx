@@ -3,12 +3,14 @@
 import { useEffect, useState, useCallback } from 'react'
 import useSWR, { mutate } from 'swr'
 import ManagerUserModal from '@/components/ManagerUserModal'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface CourseInfo {
   id: string
   name: string
   color: string
   subject?: string
+  isDisabled?: boolean
 }
 
 interface Enrollment {
@@ -21,9 +23,19 @@ interface InstructorAssignment {
   course: CourseInfo
 }
 
+interface CourseBundleInfo {
+  id: string
+  name: string
+  description?: string | null
+  courses?: { course: CourseInfo }[]
+}
+
 interface User {
   id: string
   name: string
+  firstName?: string | null
+  lastName?: string | null
+  mobileNumber?: string | null
   email: string
   role: string
   isTerminated: boolean
@@ -34,13 +46,14 @@ interface User {
   isGoogleUser?: boolean
   enrollments?: Enrollment[]
   instructorAssignments?: InstructorAssignment[]
+  courseBundleAssignments?: { bundleId: string; bundle: CourseBundleInfo }[]
   isSuperManager?: boolean
 }
 
 export default function AdminPage() {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const [courses, setCourses] = useState<CourseInfo[]>([])
   const [userRole, setUserRole] = useState('')
-  const [userPermissions, setUserPermissions] = useState({ canTerminate: false, canCreateStudents: false })
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
 
@@ -55,8 +68,8 @@ export default function AdminPage() {
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [form, setForm] = useState({ 
-    name: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
-    courseIds: [] as string[], assignedCourseIds: [] as string[], 
+    name: '', firstName: '', lastName: '', mobileNumber: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
+    courseIds: [] as string[], bundleIds: [] as string[], assignedCourseIds: [] as string[],
     canTerminate: false, canCreateStudents: false 
   })
   const [saving, setSaving] = useState(false)
@@ -86,10 +99,6 @@ export default function AdminPage() {
         return
       }
       setUserRole(role)
-      setUserPermissions({
-        canTerminate: data.user?.canTerminate || false,
-        canCreateStudents: data.user?.canCreateStudents || false,
-      })
     } catch (e) {
       console.error(e)
     }
@@ -106,8 +115,15 @@ export default function AdminPage() {
   }
 
   const { data: usersData, mutate: mutateUsers, isLoading: usersLoading } = useSWR('/api/users', url => fetch(url).then(r => r.json()))
+  const { data: bundlesData } = useSWR(userRole === 'MANAGER' ? '/api/course-bundles' : null, url => fetch(url).then(r => r.json()))
   const users = usersData?.users || usersData || []
+  const bundles = bundlesData?.bundles || bundlesData || []
   const managerCount = users.filter(u => u.role === 'MANAGER').length
+  const bundledCourseIds = new Set(
+    bundles
+      .filter((bundle: CourseBundleInfo) => form.bundleIds.includes(bundle.id))
+      .flatMap((bundle: CourseBundleInfo) => (bundle.courses || []).map(entry => entry.course.id))
+  )
 
   useEffect(() => {
     loadCourses()
@@ -121,8 +137,8 @@ export default function AdminPage() {
     setEditId(null)
     setEditingUserIsSuperManager(false)
     setForm({ 
-      name: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
-      courseIds: [], assignedCourseIds: [], 
+      name: '', firstName: '', lastName: '', mobileNumber: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
+      courseIds: [], bundleIds: [], assignedCourseIds: [],
       canTerminate: false, canCreateStudents: false 
     })
     setError('')
@@ -138,11 +154,15 @@ export default function AdminPage() {
     setEditId(user.id)
     setForm({
       name: user.name,
+      firstName: user.firstName || user.name.split(' ')[0] || '',
+      lastName: user.lastName || user.name.split(' ').slice(1).join(' ') || '',
+      mobileNumber: user.mobileNumber || '',
       email: user.email,
       password: '',
       role: user.role,
       gender: user.gender || 'MALE',
       courseIds: user.enrollments?.map(e => e.courseId) || [],
+      bundleIds: user.courseBundleAssignments?.map(b => b.bundleId) || [],
       assignedCourseIds: user.instructorAssignments?.map(a => a.courseId) || [],
       canTerminate: (user as any).canTerminate || false,
       canCreateStudents: (user as any).canCreateStudents || false,
@@ -152,8 +172,10 @@ export default function AdminPage() {
   }
 
   async function handleSave() {
-    if (!form.name || !form.email) {
-      setError('Name and email are required')
+    const derivedName = `${form.firstName.trim()} ${form.lastName.trim()}`.trim()
+
+    if (!derivedName || !form.email) {
+      setError('First name, last name, and email are required')
       return
     }
 
@@ -163,14 +185,21 @@ export default function AdminPage() {
       const url = editId ? `/api/users/${editId}` : '/api/users'
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const body: Record<string, any> = { 
-        name: form.name, email: form.email, role: form.role, gender: form.gender,
+        name: derivedName,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        mobileNumber: form.mobileNumber,
+        email: form.email,
+        role: form.role,
+        gender: form.gender,
         courseIds: form.courseIds,
+        bundleIds: form.bundleIds,
         canTerminate: form.canTerminate,
         canCreateStudents: form.canCreateStudents
       }
       // For edit mode: signal password reset if requested
       if (editId && form.password === 'RESET') body.password = 'RESET'
-      if (form.role === 'INSTRUCTOR') body.assignedCourseIds = form.assignedCourseIds
+      if (form.role === 'INSTRUCTOR') body.assignedClassIds = form.assignedCourseIds
 
       const res = await fetch(url, {
         method: editId ? 'PUT' : 'POST',
@@ -208,7 +237,13 @@ export default function AdminPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this user?')) return
+    const allowed = await confirm({
+      title: 'Delete User?',
+      message: 'This permanently deletes the user account.',
+      confirmLabel: 'Delete User',
+      tone: 'danger',
+    })
+    if (!allowed) return
     try {
       const res = await fetch(`/api/users/${id}`, { method: 'DELETE' })
       if (!res.ok) {
@@ -224,7 +259,13 @@ export default function AdminPage() {
 
   async function handleToggleTerminate(user: User) {
     const action = user.isTerminated ? 'restore' : 'terminate'
-    if (!confirm(`Are you sure you want to ${action} ${user.name}'s account?`)) return
+    const allowed = await confirm({
+      title: user.isTerminated ? 'Restore User?' : 'Terminate User?',
+      message: `Are you sure you want to ${action} ${user.name}'s account?`,
+      confirmLabel: user.isTerminated ? 'Restore User' : 'Terminate User',
+      tone: user.isTerminated ? 'default' : 'danger',
+    })
+    if (!allowed) return
 
     setTogglingId(user.id)
     try {
@@ -274,10 +315,9 @@ export default function AdminPage() {
     STUDENT: visibleUsers.filter(u => u.role === 'STUDENT').length,
   }
 
-  // For ADMIN users, only show role tabs visible to them
   const filterTabs = [
     { label: 'All Users', key: 'all', color: '#6366f1', bg: '#e0e7ff' },
-    ...((userRole === 'MANAGER' || (userRole === 'ADMIN' && counts.MANAGER > 0)) ? [
+    ...(userRole === 'MANAGER' ? [
       { label: 'Managers', key: 'MANAGER', color: '#7c3aed', bg: '#ede9fe' },
     ] : []),
     ...(userRole === 'MANAGER' ? [
@@ -288,6 +328,7 @@ export default function AdminPage() {
 
   return (
     <div className="page-container fade-in">
+      {confirmDialog}
       <div className="page-header">
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div style={{
@@ -343,12 +384,12 @@ export default function AdminPage() {
             Export CSV
           </button>
         )}
-        {(userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canCreateStudents)) && (
+        {userRole === 'MANAGER' && (
           <button onClick={openCreate} className="btn btn-primary" style={{ borderRadius: '50px', padding: '0 28px' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            {userRole === 'ADMIN' ? 'Add Student' : 'Add User'}
+            Add User
           </button>
         )}
       </div>
@@ -467,6 +508,19 @@ export default function AdminPage() {
                         )}
                       </div>
                     )}
+                    {user.courseBundleAssignments && user.courseBundleAssignments.length > 0 && (
+                      <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
+                        {user.courseBundleAssignments.map(bundleAssignment => (
+                          <span key={bundleAssignment.bundleId} style={{
+                            padding: '2px 8px', borderRadius: '50px', fontSize: '10px', fontWeight: '700',
+                            background: '#ede9fe', color: '#7c3aed',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            Bundle: {bundleAssignment.bundle.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {/* Assigned subjects for INSTRUCTOR users */}
                     {user.role === 'INSTRUCTOR' && user.instructorAssignments && user.instructorAssignments.length > 0 && (
                       <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
@@ -536,7 +590,7 @@ export default function AdminPage() {
                         </svg>
                         Edit
                       </button>
-                      {!user.isSuperManager && user.role === 'STUDENT' && (userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate)) && (
+                      {!user.isSuperManager && user.role === 'STUDENT' && userRole === 'MANAGER' && (
                         <button
                           onClick={() => handleToggleTerminate(user)}
                           disabled={togglingId === user.id}
@@ -557,7 +611,7 @@ export default function AdminPage() {
                           )}
                         </button>
                       )}
-                      {!user.isSuperManager && (userRole === 'MANAGER' || (userRole === 'ADMIN' && userPermissions.canTerminate && user.role === 'STUDENT')) && (
+                      {!user.isSuperManager && userRole === 'MANAGER' && (
                         <button onClick={() => handleDelete(user.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                         </button>
@@ -594,14 +648,30 @@ export default function AdminPage() {
                   {error}
                 </div>
               )}
-              <div className="form-group">
-                <label className="form-label">Full Name *</label>
-                <input className="form-input" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="John Doe" />
+              {editId && (
+                <div className="form-group">
+                  <label className="form-label">Display Name</label>
+                  <input className="form-input" value={`${form.firstName} ${form.lastName}`.trim()} disabled style={{ opacity: 0.6 }} />
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label">First Name *</label>
+                  <input className="form-input" value={form.firstName} onChange={e => setForm(p => ({ ...p, firstName: e.target.value }))} placeholder="John" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Last Name *</label>
+                  <input className="form-input" value={form.lastName} onChange={e => setForm(p => ({ ...p, lastName: e.target.value }))} placeholder="Doe" />
+                </div>
               </div>
               <div className="form-group">
                 <label className="form-label">Email *</label>
                 <input type="email" className="form-input" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="john@example.com" disabled={editingUserIsSuperManager} style={editingUserIsSuperManager ? { opacity: 0.6 } : {}} />
                 {editingUserIsSuperManager && <span style={{ fontSize: '10px', color: '#92400e' }}>Super Manager email cannot be changed</span>}
+              </div>
+              <div className="form-group">
+                <label className="form-label">Mobile Number</label>
+                <input className="form-input" value={form.mobileNumber} onChange={e => setForm(p => ({ ...p, mobileNumber: e.target.value }))} placeholder="+91 9876543210" />
               </div>
               {/* Password field: only show reset option in edit mode, hidden for create (auto-generated) */}
               {editId && !editingUserIsSuperManager && (
@@ -640,7 +710,7 @@ export default function AdminPage() {
                 {editingUserIsSuperManager ? (
                   <input className="form-input" value="MANAGER (System Owner)" disabled style={{ opacity: 0.6 }} />
                 ) : userRole === 'MANAGER' ? (
-                  <select className="form-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value, courseIds: [], assignedCourseIds: [] }))}>
+                  <select className="form-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value, courseIds: [], bundleIds: [], assignedCourseIds: [] }))}>
                     <option value="STUDENT">Student</option>
                     <option value="ADMIN">Admin</option>
                     {managerCount < 2 && <option value="MANAGER">Manager</option>}
@@ -736,6 +806,39 @@ export default function AdminPage() {
               {/* Course assignment for ADMIN or STUDENT roles */}
               {(form.role === 'ADMIN' || form.role === 'STUDENT') && (
                 <div className="form-group">
+                  {bundles.length > 0 && (
+                    <>
+                      <label className="form-label">Assigned Bundles</label>
+                      <div style={{
+                        display: 'flex', flexDirection: 'column', gap: '6px',
+                        maxHeight: '160px', overflowY: 'auto',
+                        padding: '10px', borderRadius: '8px',
+                        background: '#f3f0ff', border: '1px solid #ddd6fe',
+                        marginBottom: '12px',
+                      }}>
+                        {bundles.map((bundle: CourseBundleInfo) => (
+                          <label key={bundle.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={form.bundleIds.includes(bundle.id)}
+                              onChange={e => {
+                                setForm(p => ({
+                                  ...p,
+                                  bundleIds: e.target.checked
+                                    ? [...p.bundleIds, bundle.id]
+                                    : p.bundleIds.filter(id => id !== bundle.id)
+                                }))
+                              }}
+                            />
+                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#5b21b6' }}>{bundle.name}</span>
+                            <span style={{ fontSize: '11px', color: '#8b5cf6' }}>
+                              ({bundle.courses?.length || 0} courses)
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </>
+                  )}
                   <label className="form-label">Assigned Subject Courses</label>
                   <div style={{
                     display: 'flex', flexDirection: 'column', gap: '6px',
@@ -751,6 +854,7 @@ export default function AdminPage() {
                           <input
                             type="checkbox"
                             checked={form.courseIds.includes(cls.id)}
+                            disabled={bundledCourseIds.has(cls.id) || !!cls.isDisabled}
                             onChange={e => {
                               setForm(p => ({
                                 ...p,
@@ -767,6 +871,12 @@ export default function AdminPage() {
                           <span style={{ fontSize: '13px' }}>{cls.name}</span>
                           {cls.subject && (
                             <span style={{ fontSize: '11px', color: '#9999b0' }}>({cls.subject})</span>
+                          )}
+                          {cls.isDisabled && (
+                            <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>
+                          )}
+                          {bundledCourseIds.has(cls.id) && (
+                            <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: '600' }}>Included by selected bundle</span>
                           )}
                         </label>
                       ))
@@ -795,6 +905,7 @@ export default function AdminPage() {
                           <input
                             type="checkbox"
                             checked={form.assignedCourseIds.includes(cls.id)}
+                            disabled={!!cls.isDisabled}
                             onChange={e => {
                               setForm(p => ({
                                 ...p,
@@ -811,6 +922,9 @@ export default function AdminPage() {
                           <span style={{ fontSize: '13px' }}>{cls.name}</span>
                           {cls.subject && (
                             <span style={{ fontSize: '11px', color: '#9999b0' }}>({cls.subject})</span>
+                          )}
+                          {cls.isDisabled && (
+                            <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>
                           )}
                         </label>
                       ))

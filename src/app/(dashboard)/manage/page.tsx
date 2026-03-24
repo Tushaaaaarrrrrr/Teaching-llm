@@ -2,14 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
-type Tab = 'courses' | 'lectures' | 'events' | 'materials' | 'announcements' | 'content-bank'
+type Tab = 'courses' | 'bundles' | 'lectures' | 'events' | 'materials' | 'announcements' | 'content-bank'
 
 export default function ManagePage() {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const [tab, setTab] = useState<Tab>('courses')
   const fetcher = (url: string) => fetch(url).then(r => r.json())
+  const { data: authData } = useSWR('/api/auth/me', fetcher)
+  const userRole = authData?.user?.role || ''
   
   const { data: coursesData, isLoading: loadingCourses } = useSWR('/api/courses', fetcher)
+  const { data: bundlesData, isLoading: loadingBundles } = useSWR(userRole === 'MANAGER' ? '/api/course-bundles' : null, fetcher)
   const { data: lecturesData, isLoading: loadingLectures } = useSWR('/api/content?hasVideo=true', fetcher)
   const { data: eventsData, isLoading: loadingEvents } = useSWR('/api/events', fetcher)
   const { data: materialsData, isLoading: loadingMaterials } = useSWR('/api/materials', fetcher)
@@ -18,6 +23,7 @@ export default function ManagePage() {
   const { data: instructorsData } = useSWR('/api/instructors', fetcher)
 
   const courses = coursesData?.courses || coursesData || []
+  const bundles = bundlesData?.bundles || bundlesData || []
   const lectures = lecturesData?.content || []
   const events = eventsData || []
   const materials = Array.isArray(materialsData) ? materialsData : materialsData?.materials || []
@@ -25,10 +31,11 @@ export default function ManagePage() {
   const bankQuestions = Array.isArray(contentBankData) ? contentBankData : []
   const instructors = instructorsData || []
 
-  const loading = loadingCourses || loadingLectures || loadingEvents || loadingMaterials || loadingAnnouncements
+  const loading = loadingCourses || loadingBundles || loadingLectures || loadingEvents || loadingMaterials || loadingAnnouncements
 
   async function loadData() {
     mutate('/api/courses')
+    mutate('/api/course-bundles')
     mutate('/api/content?hasVideo=true')
     mutate('/api/events')
     mutate('/api/materials')
@@ -39,7 +46,7 @@ export default function ManagePage() {
 
   const [showModal, setShowModal]       = useState(false)
   const [editId, setEditId]             = useState<string | null>(null)
-  const [formData, setFormData]         = useState<Record<string, string>>({})
+  const [formData, setFormData]         = useState<Record<string, any>>({})
   const [saving, setSaving]             = useState(false)
   const [copiedId, setCopiedId]         = useState<string | null>(null)
 
@@ -59,9 +66,34 @@ export default function ManagePage() {
 
   function openCreate() {
     setEditId(null)
-    setFormData({})
+    setFormData(tab === 'courses' ? { isDisabled: false } : {})
     setTopicsForCourse([])
     setShowModal(true)
+  }
+
+  async function toggleCourseDisabled(item: any) {
+    const res = await fetch(`/api/courses/${item.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: item.name,
+        description: item.description,
+        subject: item.subject,
+        color: item.color,
+        icon: item.icon,
+        teacherName: item.teacherName,
+        isDemo: item.isDemo,
+        isCommunityActive: item.isCommunityActive,
+        expiresAt: item.expiresAt,
+        isDisabled: !item.isDisabled,
+      }),
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      alert(data.error || 'Failed to update course state')
+      return
+    }
+    loadData()
   }
 
   function openEdit(item: any) {
@@ -88,6 +120,14 @@ export default function ManagePage() {
         fileUrl: item.fileUrl || '',
         courseId: item.courseId || '',
       })
+      setShowModal(true)
+    } else if (tab === 'bundles') {
+      setFormData({
+        id: item.id,
+        name: item.name || '',
+        description: item.description || '',
+        courseIds: item.courses?.map((entry: any) => entry.course.id) || [],
+      } as any)
       setShowModal(true)
     } else {
       setFormData({ ...item, courseId: item.courseId || item.course?.id || '' })
@@ -117,6 +157,7 @@ export default function ManagePage() {
       } else {
         const endpoints: Record<Tab, string> = {
           courses:       '/api/courses',
+          bundles:       '/api/course-bundles',
           lectures:      '',            // handled above
           events:        '/api/events',
           materials:     '/api/materials',
@@ -150,7 +191,13 @@ export default function ManagePage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this item?')) return
+    const allowed = await confirm({
+      title: 'Delete Item?',
+      message: 'This action cannot be undone.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    })
+    if (!allowed) return
     if (tab === 'lectures') {
       await fetch(`/api/content/${id}`, { method: 'DELETE' })
     } else if (tab === 'materials') {
@@ -158,6 +205,7 @@ export default function ManagePage() {
     } else {
       const endpoints: Record<Tab, string> = {
         courses:       '/api/courses',
+        bundles:       '/api/course-bundles',
         lectures:      '',
         events:        '/api/events',
         materials:     '',
@@ -171,6 +219,7 @@ export default function ManagePage() {
 
   const tabs: Array<{ key: Tab; label: string; count: number }> = [
     { key: 'courses',       label: 'Courses',       count: courses.length },
+    ...(userRole === 'MANAGER' ? [{ key: 'bundles' as Tab, label: 'Course Bundles', count: bundles.length }] : []),
     { key: 'lectures',      label: 'Lectures',      count: lectures.length },
     { key: 'events',        label: 'Calendar Events', count: events.length },
     { key: 'materials',     label: 'Study Material', count: materials.length },
@@ -238,6 +287,17 @@ export default function ManagePage() {
                 <span style={{ fontSize: '11px', color: '#6366f1', fontWeight: '800', marginLeft: 'auto' }}>🔒 SYSTEM LOCKED</span>
               )}
             </label>
+            <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="checkbox"
+                checked={!!f.isDisabled}
+                onChange={e => setFormData(p => ({ ...p, isDisabled: e.target.checked as any }))}
+              />
+              <span style={{ fontSize: '13px' }}>Disable Course</span>
+              <span style={{ fontSize: '11px', color: '#9999b0', marginLeft: 'auto' }}>
+                Hidden from non-managers and blocked for new enrollment
+              </span>
+            </label>
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} placeholder="Course description" rows={3} style={{ resize: 'vertical' }} /></div>
             <div className="form-group">
               <label className="form-label">Expiry Date (Course Access Deadline)</label>
@@ -281,6 +341,43 @@ export default function ManagePage() {
                     border: f.color === c ? '3px solid #1e1e3a' : '2px solid transparent',
                     cursor: 'pointer', transition: 'all 0.15s',
                   }} />
+                ))}
+              </div>
+            </div>
+          </>
+        )
+
+      case 'bundles':
+        return (
+          <>
+            <div className="form-group"><label className="form-label">Bundle Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="e.g. First Semester Pack" /></div>
+            <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} rows={3} style={{ resize: 'vertical' }} placeholder="Optional note for managers" /></div>
+            <div className="form-group">
+              <label className="form-label">Included Courses *</label>
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: '6px',
+                maxHeight: '220px', overflowY: 'auto',
+                padding: '10px', borderRadius: '8px',
+                background: '#f3f0ff', border: '1px solid #ddd6fe',
+              }}>
+                {courses.map((course: any) => (
+                  <label key={course.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={(f.courseIds || []).includes(course.id)}
+                      disabled={!!course.isDisabled}
+                      onChange={e => setFormData(prev => ({
+                        ...prev,
+                        courseIds: e.target.checked
+                          ? [...(prev.courseIds || []), course.id]
+                          : (prev.courseIds || []).filter((id: string) => id !== course.id),
+                      }))}
+                    />
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: course.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: '13px' }}>{course.name}</span>
+                    {course.subject && <span style={{ fontSize: '11px', color: '#9999b0' }}>({course.subject})</span>}
+                    {course.isDisabled && <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>}
+                  </label>
                 ))}
               </div>
             </div>
@@ -416,6 +513,7 @@ export default function ManagePage() {
   function getItems(): any[] {
     switch (tab) {
       case 'courses':       return courses
+      case 'bundles':       return bundles
       case 'lectures':      return lectures
       case 'events':        return events
       case 'materials':     return materials
@@ -426,6 +524,7 @@ export default function ManagePage() {
 
   return (
     <div className="page-container fade-in">
+      {confirmDialog}
       <div className="page-header">
         <div style={{ display: 'flex', gap: '8px' }}>
           {tab === 'events' && (
@@ -582,6 +681,7 @@ export default function ManagePage() {
 
               const iconLabel =
                 tab === 'courses'       ? item.name?.slice(0, 2).toUpperCase() :
+                tab === 'bundles'       ? 'BG' :
                 tab === 'events'        ? '▶' :
                 tab === 'announcements' ? '!' :
                 tab === 'materials'     ? (item.fileType || 'DOC').slice(0, 3).toUpperCase() :
@@ -633,7 +733,13 @@ export default function ManagePage() {
                       <>
                         <span style={{ fontSize: '12px', color: '#9999b0' }}>{item._count?.lectures || 0} lectures</span>
                         {item.isDemo && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#3636e8', color: 'white', fontWeight: '900', letterSpacing: '0.05em' }}>SYSTEM DEMO</span>}
+                        {item.isDisabled && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#fee2e2', color: '#ef4444', fontWeight: '900', letterSpacing: '0.05em' }}>DISABLED</span>}
                       </>
+                    )}
+                    {tab === 'bundles' && (
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#ede9fe', color: '#7c3aed', fontWeight: '700' }}>
+                        {item._count?.courses || item.courses?.length || 0} courses
+                      </span>
                     )}
                     {tab === 'events' && (
                       <>
@@ -683,6 +789,18 @@ export default function ManagePage() {
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                         )}
                         {copiedId === item.id ? 'Copied!' : 'Copy ID'}
+                      </button>
+                    )}
+                    {tab === 'courses' && (
+                      <button
+                        onClick={() => toggleCourseDisabled(item)}
+                        className="btn btn-ghost btn-sm"
+                        style={{
+                          color: item.isDisabled ? '#10b981' : '#ef4444',
+                          border: `1px solid ${item.isDisabled ? '#d1fae5' : '#fee2e2'}`,
+                        }}
+                      >
+                        {item.isDisabled ? 'Enable' : 'Disable'}
                       </button>
                     )}
                     <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm">

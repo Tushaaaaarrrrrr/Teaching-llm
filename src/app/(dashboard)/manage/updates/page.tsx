@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import useSWR, { mutate } from 'swr'
 import ImageCropper from '@/components/ui/ImageCropper'
 import DOMPurify from 'dompurify'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -84,6 +85,7 @@ function SectionHeader({ title, subtitle, enabled, onToggle }: { title: string; 
 }
 
 export default function ManageUpdatesPage() {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const { data, isLoading } = useSWR('/api/updates', fetcher)
   const { data: coursesData } = useSWR('/api/courses', fetcher)
 
@@ -217,7 +219,13 @@ export default function ManageUpdatesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this update? This cannot be undone.')) return
+    const allowed = await confirm({
+      title: 'Delete Update?',
+      message: 'This update will be removed permanently.',
+      confirmLabel: 'Delete Update',
+      tone: 'danger',
+    })
+    if (!allowed) return
     await fetch(`/api/updates/${id}`, { method: 'DELETE' })
     mutate('/api/updates')
   }
@@ -337,6 +345,7 @@ export default function ManageUpdatesPage() {
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="page-container fade-in">
+      {confirmDialog}
 
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '28px' }}>

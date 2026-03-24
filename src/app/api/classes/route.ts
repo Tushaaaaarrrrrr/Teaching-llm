@@ -12,7 +12,11 @@ export async function GET() {
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
 
     const where: any = {
-      isGlobal: false
+      isGlobal: false,
+    }
+
+    if (session.role !== 'MANAGER') {
+      where.isDisabled = false
     }
 
     if (accessibleCourseIds !== null) {
@@ -20,7 +24,7 @@ export async function GET() {
     }
 
     // Fetch courses but return them as "classes" for frontend compatibility
-    const courses = await prisma.course.findMany({
+    const courses = await (prisma.course.findMany as any)({
       where,
       select: {
         id: true,
@@ -28,6 +32,7 @@ export async function GET() {
         subject: true,
         color: true,
         icon: true,
+        isDisabled: true,
         isCommunityActive: true,
         _count: {
           select: {

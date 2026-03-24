@@ -21,6 +21,12 @@ interface CourseEvent {
   instructor: { id: string; name: string } | null
 }
 
+interface MeResponse {
+  user?: {
+    role?: string
+  }
+}
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; dotColor: string; bg: string }> = {
   live:        { label: 'LIVE',        color: '#16a34a', dotColor: '#16a34a', bg: 'rgba(22,163,74,0.10)' },
   upcoming:    { label: 'UPCOMING',    color: '#6b6b8a', dotColor: '#c5c7cf', bg: 'transparent' },
@@ -38,6 +44,7 @@ export default function LivePage() {
   })
   const [nowTick, setNowTick] = useState(Date.now())
   const [syncing, setSyncing] = useState(false)
+  const [userRole, setUserRole] = useState('')
   const sessions = Array.isArray(data) ? data : []
 
   useEffect(() => {
@@ -45,11 +52,19 @@ export default function LivePage() {
     return () => window.clearInterval(intervalId)
   }, [])
 
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data: MeResponse) => setUserRole(data.user?.role || ''))
+      .catch(console.error)
+  }, [])
+
   const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const sessionsWithLocalStatus = sessions.map(session => ({
     ...session,
     status: getEventStatus(session.startTime, session.endTime, session.manualStatus || session.status),
   }))
+  const isManager = userRole === 'MANAGER'
 
   if (isLoading) {
     return (
@@ -222,40 +237,42 @@ export default function LivePage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
         <p style={{ fontSize: '13px', color: '#9999b0' }}>Today&apos;s Schedule &bull; {today}</p>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button 
-            onClick={async () => {
-              try {
-                setSyncing(true)
-                const res = await fetch('/api/live-sessions/sync', { method: 'POST' })
-                if (!res.ok) {
-                  const err = await res.json()
-                  alert(err.error || 'Failed to sync live sessions')
-                  return
+          {isManager && (
+            <button
+              onClick={async () => {
+                try {
+                  setSyncing(true)
+                  const res = await fetch('/api/live-sessions/sync', { method: 'POST' })
+                  if (!res.ok) {
+                    const err = await res.json()
+                    alert(err.error || 'Failed to sync live sessions')
+                    return
+                  }
+                  await Promise.all([
+                    mutate('/api/live-sessions'),
+                    mutate('/api/dashboard'),
+                  ])
+                } catch (error) {
+                  console.error(error)
+                  alert('Failed to sync live sessions')
+                } finally {
+                  setSyncing(false)
                 }
-                await Promise.all([
-                  mutate('/api/live-sessions'),
-                  mutate('/api/dashboard'),
-                ])
-              } catch (error) {
-                console.error(error)
-                alert('Failed to sync live sessions')
-              } finally {
-                setSyncing(false)
-              }
-            }}
-            style={{
-              padding: '0 16px', height: '42px', borderRadius: '50px', border: 'none',
-              background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-              display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', 
-              color: '#3636e8', fontSize: '13px', fontWeight: '700',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M21.5 2v6h-6M2 22v-6h6M21.34 15.57a10 10 0 1 1-.92-10.45l3.08 2.88L2 22l-3.08-2.88a10 10 0 1 1 .92 10.45"/>
-              <path d="M21.5 2v6h-6M2 22v-6h6M2 22l3.08-2.88a10 10 0 1 1 16.26-6.69M21.5 8l-3.08 2.88A10 10 0 1 1 2 15.31"/>
-            </svg>
-            {syncing ? 'Syncing...' : 'Sync'}
-          </button>
+              }}
+              style={{
+                padding: '0 16px', height: '42px', borderRadius: '50px', border: 'none',
+                background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                color: '#3636e8', fontSize: '13px', fontWeight: '700',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M21.5 2v6h-6M2 22v-6h6M21.34 15.57a10 10 0 1 1-.92-10.45l3.08 2.88L2 22l-3.08-2.88a10 10 0 1 1 .92 10.45"/>
+                <path d="M21.5 2v6h-6M2 22v-6h6M2 22l3.08-2.88a10 10 0 1 1 16.26-6.69M21.5 8l-3.08 2.88A10 10 0 1 1 2 15.31"/>
+              </svg>
+              {syncing ? 'Syncing...' : 'Sync'}
+            </button>
+          )}
           <button style={{
             width: '44px', height: '44px', borderRadius: '50%', border: 'none',
             background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',

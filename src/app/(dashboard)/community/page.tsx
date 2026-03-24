@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface ClassItem {
   id: string
@@ -26,6 +27,7 @@ interface CommMsg {
 }
 
 export default function CommunityPage() {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null)
   const [messages, setMessages] = useState<CommMsg[]>([])
@@ -86,7 +88,13 @@ export default function CommunityPage() {
 
   async function deleteMessage(messageId: string) {
     if (!selectedClass || deletingId) return
-    if (!confirm('Delete this message? It will be removed from the chat.')) return
+    const allowed = await confirm({
+      title: 'Delete Message?',
+      message: 'This message will be removed from the chat.',
+      confirmLabel: 'Delete Message',
+      tone: 'danger',
+    })
+    if (!allowed) return
     setDeletingId(messageId)
     try {
       const res = await fetch(`/api/community/${selectedClass.id}/messages`, {
@@ -108,6 +116,7 @@ export default function CommunityPage() {
 
   return (
     <div className="page-container fade-in" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
+      {confirmDialog}
 
       {/* Left: Class list */}
       <div style={{ width: '230px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import useSWR from 'swr'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -44,6 +45,7 @@ function getFileType(url: string, explicitType?: string): string {
 }
 
 export default function StudyResourcesPage() {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const { data: userData } = useSWR('/api/auth/me', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
@@ -100,7 +102,13 @@ export default function StudyResourcesPage() {
   }
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return
+    const allowed = await confirm({
+      title: 'Delete Material?',
+      message: `Are you sure you want to delete "${name}"?`,
+      confirmLabel: 'Delete Material',
+      tone: 'danger',
+    })
+    if (!allowed) return
     try {
       const res = await fetch(`/api/materials/${id}`, { method: 'DELETE' })
       if (res.ok) {
@@ -203,6 +211,7 @@ export default function StudyResourcesPage() {
 
   return (
     <div className="page-container fade-in">
+      {confirmDialog}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           {isManager && (

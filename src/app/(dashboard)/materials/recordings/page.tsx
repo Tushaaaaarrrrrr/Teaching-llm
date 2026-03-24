@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface ContentItem {
   id: string
   title: string
   description?: string
   videoUrl: string
+  videoSource?: string
   pptUrl?: string
   createdAt: string
+  isRecordingOnly?: boolean
   topicId: string
   topic: {
     id: string
@@ -20,12 +23,95 @@ interface ContentItem {
 }
 
 export default function RecordingsPage() {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const [lectures, setLectures] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [courseFilter, setCourseFilter] = useState('all')
   const [courses, setCourses] = useState<Array<{ id: string; name: string; color: string }>>([])
   const [videoModal, setVideoModal] = useState<{ url: string; title: string } | null>(null)
+  const [role, setRole] = useState('')
+  const [editingLecture, setEditingLecture] = useState<ContentItem | null>(null)
+  const [editForm, setEditForm] = useState({ title: '', description: '', videoUrl: '', pptUrl: '' })
+  const [saving, setSaving] = useState(false)
+
+  async function loadData() {
+    setLoading(true)
+    try {
+      const [contentData, courseData, meData] = await Promise.all([
+        fetch('/api/content?hasVideo=true').then(r => r.json()),
+        fetch('/api/courses').then(r => r.json()),
+        fetch('/api/auth/me').then(r => r.json()),
+      ])
+      setLectures(contentData.content || [])
+      setCourses((courseData.courses || courseData || []).map((c: { id: string; name: string; color: string }) => ({ id: c.id, name: c.name, color: c.color })))
+      setRole(meData.user?.role || '')
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  function openEdit(lecture: ContentItem) {
+    setEditingLecture(lecture)
+    setEditForm({
+      title: lecture.title || '',
+      description: lecture.description || '',
+      videoUrl: lecture.videoUrl || '',
+      pptUrl: lecture.pptUrl || '',
+    })
+  }
+
+  async function saveEdit() {
+    if (!editingLecture) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/content/${editingLecture.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update recording')
+      }
+      setEditingLecture(null)
+      await loadData()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to update recording')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function deleteRecording(lecture: ContentItem) {
+    const allowed = await confirm({
+      title: 'Delete Recording?',
+      message: `This will permanently remove "${lecture.title}" from recordings and every course where it is used.`,
+      confirmLabel: 'Delete Recording',
+      tone: 'danger',
+    })
+    if (!allowed) return
+
+    const res = await fetch(`/api/content/${lecture.id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ forceDelete: true }),
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      alert(data.error || 'Failed to delete recording')
+      return
+    }
+
+    await loadData()
+  }
 
   useEffect(() => {
     Promise.all([
@@ -67,6 +153,42 @@ export default function RecordingsPage() {
 
   return (
     <div className="page-container fade-in">
+      {confirmDialog}
+
+      {editingLecture && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1200,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+          }}
+          onClick={() => setEditingLecture(null)}
+        >
+          <div
+            style={{
+              background: '#e8eaf0', borderRadius: '18px', width: '100%', maxWidth: '560px',
+              padding: '22px', boxShadow: '0 24px 48px rgba(0,0,0,0.25)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a' }}>Edit Recording</h3>
+              <button onClick={() => setEditingLecture(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', color: '#6b6b8a' }}>×</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <input className="form-input" value={editForm.title} onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))} placeholder="Lecture title" />
+              <input className="form-input" value={editForm.videoUrl} onChange={e => setEditForm(prev => ({ ...prev, videoUrl: e.target.value }))} placeholder="Video URL" />
+              <input className="form-input" value={editForm.pptUrl} onChange={e => setEditForm(prev => ({ ...prev, pptUrl: e.target.value }))} placeholder="Material link" />
+              <textarea className="form-input" rows={4} value={editForm.description} onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Description" style={{ resize: 'vertical' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '18px' }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setEditingLecture(null)}>Cancel</button>
+              <button type="button" className="btn btn-primary" disabled={saving} onClick={saveEdit}>
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Video Modal */}
       {videoModal && (
@@ -212,6 +334,11 @@ export default function RecordingsPage() {
                       {lec.topic.title}
                     </span>
                   )}
+                  {lec.isRecordingOnly && (
+                    <span style={{ fontSize: '12px', color: '#7c3aed', fontWeight: '700' }}>
+                      Recording only
+                    </span>
+                  )}
                   <span>&bull; {new Date(lec.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 </div>
               </div>
@@ -219,11 +346,17 @@ export default function RecordingsPage() {
               {/* Actions */}
               <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                 {lec.pptUrl && (
-                  <a href={lec.pptUrl} download target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">
+                  <a
+                    href={lec.pptUrl}
+                    download={lec.pptUrl.startsWith('/api/files/materials/') ? true : undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost btn-sm"
+                  >
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
-                    File
+                    View Material
                   </a>
                 )}
                 <Link
@@ -235,6 +368,16 @@ export default function RecordingsPage() {
                   </svg>
                   Watch
                 </Link>
+                {role === 'MANAGER' && (
+                  <>
+                    <button type="button" onClick={() => openEdit(lec)} className="btn btn-ghost btn-sm">
+                      Edit
+                    </button>
+                    <button type="button" onClick={() => deleteRecording(lec)} className="btn btn-ghost btn-sm" style={{ color: '#ef4444' }}>
+                      Delete
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )

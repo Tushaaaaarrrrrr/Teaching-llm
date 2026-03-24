@@ -3,6 +3,40 @@ import { prisma } from '@/lib/db'
 import { getSession, canManageContent } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
+
+    const content = await prisma.content.findUnique({
+      where: { id },
+      include: {
+        topic: {
+          include: {
+            course: {
+              select: { id: true, name: true, color: true },
+            },
+          },
+        },
+      },
+    })
+
+    if (!content) {
+      return NextResponse.json({ error: 'Lecture not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(content)
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -48,8 +82,55 @@ export async function DELETE(
     if (!canManageContent(session.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { id } = await params
+    const body = await request.json().catch(() => null)
+    const topicId = body?.topicId as string | undefined
+    const forceDelete = Boolean(body?.forceDelete)
 
-    const existing = await prisma.content.findUnique({ where: { id }, select: { title: true } })
+    const existing = await (prisma.content.findUnique as any)({
+      where: { id },
+      select: {
+        title: true,
+        topicId: true,
+        videoUrl: true,
+        isRecordingOnly: true,
+        sharedTopics: {
+          select: { id: true, topicId: true },
+        },
+      },
+    })
+    if (!existing) {
+      return NextResponse.json({ error: 'Lecture not found' }, { status: 404 })
+    }
+
+    if (forceDelete) {
+      await prisma.content.delete({ where: { id } })
+
+      logActivity({
+        userId: session.userId,
+        userName: session.name,
+        userRole: session.role,
+        actionType: ACTION.CONTENT_DELETED,
+        actionDescription: `${session.name} permanently deleted recording "${existing.title}"`,
+        moduleName: MODULE.CONTENT,
+        targetId: id,
+      })
+
+      return NextResponse.json({ message: 'Recording deleted permanently' })
+    }
+
+    if (topicId && existing.topicId !== topicId) {
+      await prisma.topicSharedContent.deleteMany({ where: { topicId, contentId: id } })
+      return NextResponse.json({ message: 'Lecture removed from this topic' })
+    }
+
+    if (topicId && existing.topicId === topicId && existing.videoUrl) {
+      await (prisma.content.update as any)({
+        where: { id },
+        data: { isRecordingOnly: true },
+      })
+      return NextResponse.json({ message: 'Lecture removed from this course and kept in recordings' })
+    }
+
     await prisma.content.delete({ where: { id } })
 
     logActivity({

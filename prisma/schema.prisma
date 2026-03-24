@@ -45,11 +45,13 @@ model User {
   comments                Comment[]
   communityMessages       CommunityMessage[]     @relation("CommMsgSender")
   courseEvents            CourseEvent[]          @relation("EventCreator")
+  createdCourseBundles    CourseBundle[]         @relation("BundleCreator")
   instructorCourseEvents  CourseEvent[]          @relation("EventInstructor")
   syncedSessionEvents     DailySessionSnapshot[] @relation("SnapshotInstructor")
   enrollments             Enrollment[]
   feedbacks               Feedback[]
   instructorAssignments   InstructorAssignment[]
+  courseBundleAssignments UserCourseBundleAssignment[]
   uploadedLectures        Lecture[]              @relation("LectureUploader")
   loginLogs               LoginLog[]
   uploadedMaterials       Material[]             @relation("MaterialUploader")
@@ -73,6 +75,7 @@ model Course {
   updatedAt             DateTime               @updatedAt
   expiresAt             DateTime?
   isCommunityActive     Boolean                @default(true)
+  isDisabled            Boolean                @default(false)
   isDemo                Boolean                @default(false)
   isGlobal              Boolean                @default(false)
   teacherName           String?
@@ -81,6 +84,7 @@ model Course {
   communityMessages     CommunityMessage[]
   courseEvents          CourseEvent[]
   dailySessionSnapshots DailySessionSnapshot[]
+  courseBundles         CourseBundleCourse[]
   enrollments           Enrollment[]
   exams                 Exam[]
   feedbacks             Feedback[]
@@ -104,6 +108,46 @@ model Enrollment {
   @@unique([userId, courseId])
   @@index([userId])
   @@index([courseId])
+}
+
+model CourseBundle {
+  id              String                      @id @default(cuid())
+  name            String
+  description     String?
+  createdById     String
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+  createdBy       User                        @relation("BundleCreator", fields: [createdById], references: [id])
+  courses         CourseBundleCourse[]
+  userAssignments UserCourseBundleAssignment[]
+
+  @@unique([createdById, name])
+}
+
+model CourseBundleCourse {
+  id        String       @id @default(cuid())
+  bundleId  String
+  courseId  String       @map("classId")
+  bundle    CourseBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  course    Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([bundleId, courseId])
+  @@index([bundleId])
+  @@index([courseId])
+}
+
+model UserCourseBundleAssignment {
+  id           String       @id @default(cuid())
+  userId       String
+  bundleId     String
+  assignedById String?
+  createdAt    DateTime     @default(now())
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bundle       CourseBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bundleId])
+  @@index([userId])
+  @@index([bundleId])
 }
 
 model Lecture {
@@ -207,6 +251,7 @@ model Topic {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   content   Content[]
+  sharedContentLinks TopicSharedContent[]
   course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
@@ -219,12 +264,27 @@ model Content {
   description String?
   videoUrl    String?
   pptUrl      String?
+  isRecordingOnly Boolean @default(false)
   order       Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   videoSource String    @default("YOUTUBE")
   comments    Comment[]
+  sharedTopics TopicSharedContent[]
   topic       Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model TopicSharedContent {
+  id        String   @id @default(cuid())
+  topicId    String
+  contentId  String
+  createdAt DateTime @default(now())
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([topicId, contentId])
+  @@index([topicId])
+  @@index([contentId])
 }
 
 model Announcement {

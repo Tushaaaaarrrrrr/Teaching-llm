@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface ContentItem {
   id: string
@@ -13,6 +14,8 @@ interface ContentItem {
   pptUrl?: string
   order: number
   createdAt?: string
+  isImported?: boolean
+  importedIntoTopicId?: string
 }
 
 interface Topic {
@@ -35,12 +38,40 @@ interface ContentForm {
   description: string
   videoUrl: string
   videoSource: string
-  pptUrl: string
 }
 
-const emptyForm: ContentForm = { title: '', description: '', videoUrl: '', videoSource: 'YOUTUBE', pptUrl: '' }
+interface MaterialItem {
+  id: string
+  title: string
+  description?: string
+  fileUrl: string
+  fileType: string
+  fileSize?: string
+}
+
+interface RecordingItem {
+  id: string
+  title: string
+  description?: string
+  videoUrl?: string
+  videoSource?: string
+  pptUrl?: string
+  createdAt?: string
+  topic?: {
+    id: string
+    title: string
+    course?: {
+      id: string
+      name: string
+      color?: string
+    }
+  }
+}
+
+const emptyForm: ContentForm = { title: '', description: '', videoUrl: '', videoSource: 'YOUTUBE' }
 
 export default function CourseEditPage() {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const params = useParams()
   const router = useRouter()
   const [course, setCourse] = useState<CourseDetail | null>(null)
@@ -63,8 +94,21 @@ export default function CourseEditPage() {
     content?: ContentItem
   } | null>(null)
   const [contentForm, setContentForm] = useState<ContentForm>(emptyForm)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [materialLink, setMaterialLink] = useState('')
+  const [selectedMaterial, setSelectedMaterial] = useState<MaterialItem | null>(null)
+  const [materialModalOpen, setMaterialModalOpen] = useState(false)
+  const [materials, setMaterials] = useState<MaterialItem[]>([])
+  const [loadingMaterials, setLoadingMaterials] = useState(false)
+  const [materialSearch, setMaterialSearch] = useState('')
+  const [materialUploadFile, setMaterialUploadFile] = useState<File | null>(null)
+  const [materialUploadTitle, setMaterialUploadTitle] = useState('')
+  const [uploadingMaterial, setUploadingMaterial] = useState(false)
+  const [recordings, setRecordings] = useState<RecordingItem[]>([])
+  const [recordingsModalOpen, setRecordingsModalOpen] = useState(false)
+  const [loadingRecordings, setLoadingRecordings] = useState(false)
+  const [recordingSearch, setRecordingSearch] = useState('')
+  const [recordingSort, setRecordingSort] = useState<'newest' | 'oldest'>('newest')
 
   const fetchData = useCallback(async () => {
     try {
@@ -110,6 +154,32 @@ export default function CourseEditPage() {
     setTopics(Array.isArray(data) ? data : [])
   }
 
+  const loadMaterials = useCallback(async () => {
+    setLoadingMaterials(true)
+    try {
+      const res = await fetch('/api/materials')
+      const data = await res.json()
+      setMaterials(Array.isArray(data) ? data : [])
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingMaterials(false)
+    }
+  }, [])
+
+  const loadRecordings = useCallback(async () => {
+    setLoadingRecordings(true)
+    try {
+      const res = await fetch('/api/content?hasVideo=true')
+      const data = await res.json()
+      setRecordings(data.content || [])
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingRecordings(false)
+    }
+  }, [])
+
   // ── Topic CRUD ───────────────────────────────────────────────────────────────
   const createTopic = async () => {
     if (!newTopicTitle.trim()) return
@@ -145,7 +215,13 @@ export default function CourseEditPage() {
   }
 
   const deleteTopic = async (id: string) => {
-    if (!confirm('Delete this topic and all its content?')) return
+    const allowed = await confirm({
+      title: 'Delete Topic?',
+      message: 'This will remove the topic and every lecture still attached to it from the course.',
+      confirmLabel: 'Delete Topic',
+      tone: 'danger',
+    })
+    if (!allowed) return
     setSaving(true)
     try {
       await fetch(`/api/topics/${id}`, { method: 'DELETE' })
@@ -189,7 +265,11 @@ export default function CourseEditPage() {
   const openAddContent = (topicId: string) => {
     setContentModal({ mode: 'add', topicId })
     setContentForm(emptyForm)
-    setSelectedFile(null)
+    setMaterialLink('')
+    setSelectedMaterial(null)
+    setMaterialUploadFile(null)
+    setMaterialUploadTitle('')
+    setRecordingSearch('')
   }
 
   const openEditContent = (topicId: string, item: ContentItem) => {
@@ -199,9 +279,75 @@ export default function CourseEditPage() {
       description: item.description || '',
       videoUrl: item.videoUrl || '',
       videoSource: item.videoSource || 'YOUTUBE',
-      pptUrl: item.pptUrl || '',
     })
-    setSelectedFile(null)
+    setMaterialLink(item.pptUrl || '')
+    setSelectedMaterial(null)
+    setMaterialUploadFile(null)
+    setMaterialUploadTitle('')
+    setRecordingSearch('')
+  }
+
+  const openMaterialModal = async () => {
+    setMaterialModalOpen(true)
+    setMaterialUploadFile(null)
+    setMaterialUploadTitle('')
+    setMaterialSearch('')
+    await loadMaterials()
+  }
+
+  const handleMaterialUpload = async () => {
+    if (!materialUploadFile) {
+      alert('Choose a file first')
+      return
+    }
+
+    setUploadingMaterial(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', materialUploadFile)
+      formData.append('type', 'materials')
+
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData })
+      const uploadData = await uploadRes.json()
+      if (!uploadRes.ok || !uploadData.url) {
+        throw new Error(uploadData.error || 'Upload failed')
+      }
+
+      const title = materialUploadTitle.trim() || materialUploadFile.name.replace(/\.[^.]+$/, '')
+      const createRes = await fetch('/api/materials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description: '',
+          fileUrl: uploadData.url,
+          fileType: materialUploadFile.name.split('.').pop()?.toUpperCase() || 'FILE',
+          fileSize: `${(materialUploadFile.size / 1024 / 1024).toFixed(2)} MB`,
+          isGlobal: false,
+          courseId: params.id,
+        }),
+      })
+      const createdMaterial = await createRes.json()
+      if (!createRes.ok) {
+        throw new Error(createdMaterial.error || 'Failed to save material')
+      }
+
+      setSelectedMaterial(createdMaterial)
+      setMaterialLink('')
+      setMaterialModalOpen(false)
+      await loadMaterials()
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : 'Failed to upload material')
+    } finally {
+      setUploadingMaterial(false)
+    }
+  }
+
+  const openRecordingsModal = async () => {
+    setRecordingsModalOpen(true)
+    setRecordingSearch('')
+    await loadRecordings()
   }
 
   const saveContent = async () => {
@@ -213,28 +359,21 @@ export default function CourseEditPage() {
 
     setSaving(true)
     try {
-      let finalPptUrl = contentForm.pptUrl
-
-      // Handle File Upload
-      if (selectedFile) {
-        const formData = new FormData()
-        formData.append('file', selectedFile)
-        
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        })
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json()
-          finalPptUrl = uploadData.url
-        }
+      const trimmedMaterialLink = materialLink.trim()
+      if (trimmedMaterialLink && selectedMaterial) {
+        alert('Choose either one external material link or one uploaded material')
+        return
+      }
+      if (!trimmedMaterialLink && !selectedMaterial) {
+        alert('Choose one material source: external link or uploaded material')
+        return
       }
 
       const payload = {
         ...contentForm,
         title: contentForm.title.trim(),
         videoUrl: contentForm.videoUrl.trim(),
-        pptUrl: finalPptUrl,
+        pptUrl: trimmedMaterialLink || selectedMaterial?.fileUrl || '',
       }
 
       let res
@@ -267,11 +406,21 @@ export default function CourseEditPage() {
     }
   }
 
-  const deleteContent = async (contentId: string) => {
-    if (!confirm('Delete this lecture?')) return
+  const deleteContent = async (contentId: string, topicId: string) => {
+    const allowed = await confirm({
+      title: 'Remove Lecture?',
+      message: 'This removes the lecture from this course/topic. Full recording deletion must be done from the Recordings section.',
+      confirmLabel: 'Remove Lecture',
+      tone: 'danger',
+    })
+    if (!allowed) return
     setSaving(true)
     try {
-      await fetch(`/api/content/${contentId}`, { method: 'DELETE' })
+      await fetch(`/api/content/${contentId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topicId }),
+      })
       await refreshTopics()
     } finally {
       setSaving(false)
@@ -300,6 +449,7 @@ export default function CourseEditPage() {
 
   return (
     <div className="page-container fade-in">
+      {confirmDialog}
       {/* Content Form Modal */}
       {contentModal && (
         <div style={{
@@ -371,14 +521,120 @@ export default function CourseEditPage() {
                 </div>
               </div>
 
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <button type="button" onClick={openRecordingsModal} className="btn btn-ghost">
+                  Import From Recording
+                </button>
+              </div>
+
+              {recordingsModalOpen && (
+                <div style={{
+                  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1100,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+                }}
+                onClick={() => setRecordingsModalOpen(false)}
+                >
+                  <div
+                    style={{ background: '#e8eaf0', borderRadius: '16px', width: '100%', maxWidth: '760px', maxHeight: '80vh', overflow: 'auto', padding: '20px' }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Import From Recording</h3>
+                      <button type="button" onClick={() => setRecordingsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 180px', gap: '12px', marginBottom: '12px' }}>
+                      <input
+                        value={recordingSearch}
+                        onChange={e => setRecordingSearch(e.target.value)}
+                        placeholder="Search recordings by lecture, topic, or course..."
+                        className="form-input"
+                        style={{ width: '100%' }}
+                      />
+                      <select
+                        value={recordingSort}
+                        onChange={e => setRecordingSort(e.target.value as 'newest' | 'oldest')}
+                        className="form-input"
+                        style={{ width: '100%' }}
+                      >
+                        <option value="newest">Newest to Oldest</option>
+                        <option value="oldest">Oldest to Newest</option>
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto' }}>
+                      {loadingRecordings ? (
+                        <div style={{ fontSize: '12px', color: '#9999b0' }}>Loading recordings...</div>
+                      ) : recordings
+                        .filter(recording => {
+                          const query = recordingSearch.toLowerCase()
+                          return (
+                            recording.title.toLowerCase().includes(query) ||
+                            (recording.description || '').toLowerCase().includes(query) ||
+                            (recording.topic?.title || '').toLowerCase().includes(query) ||
+                            (recording.topic?.course?.name || '').toLowerCase().includes(query)
+                          )
+                        })
+                        .sort((a, b) => {
+                          const aTime = new Date(a.createdAt || 0).getTime()
+                          const bTime = new Date(b.createdAt || 0).getTime()
+                          return recordingSort === 'newest' ? bTime - aTime : aTime - bTime
+                        })
+                        .map(recording => (
+                          <button
+                            key={recording.id}
+                            type="button"
+                            onClick={() => {
+                              if (!contentModal) return
+                              fetch(`/api/topics/${contentModal.topicId}/shared-content`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ contentId: recording.id }),
+                              })
+                                .then(async res => {
+                                  const data = await res.json()
+                                  if (!res.ok) {
+                                    throw new Error(data.error || 'Failed to import recording')
+                                  }
+                                  setRecordingsModalOpen(false)
+                                  setContentModal(null)
+                                  await refreshTopics()
+                                })
+                                .catch(err => {
+                                  alert(err instanceof Error ? err.message : 'Failed to import recording')
+                                })
+                            }}
+                            style={{
+                              textAlign: 'left', padding: '12px 14px', borderRadius: '12px', border: 'none',
+                              background: '#f0f2f8', boxShadow: '3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a' }}>{recording.title}</div>
+                            <div style={{ fontSize: '11px', color: '#6b6b8a', marginTop: '2px' }}>
+                              {recording.topic?.course?.name || 'Unknown Course'} • {recording.topic?.title || 'No Topic'}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                              {recording.createdAt ? new Date(recording.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'No date'}
+                            </div>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
-                  PPT / File URL
+                  Material Link
                 </label>
                 <input
-                  value={contentForm.pptUrl}
-                  onChange={e => setContentForm(f => ({ ...f, pptUrl: e.target.value }))}
-                  placeholder="https://... (link to PPT, PDF, or any file)"
+                  value={materialLink}
+                  onChange={e => {
+                    setMaterialLink(e.target.value)
+                    if (e.target.value) setSelectedMaterial(null)
+                  }}
+                  placeholder="https://... (external material link)"
                   className="form-input"
                   style={{ width: '100%' }}
                 />
@@ -386,46 +642,89 @@ export default function CourseEditPage() {
 
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
-                  Upload File
+                  Uploaded Material
                 </label>
-                <label style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '10px 14px', borderRadius: '10px',
-                  background: '#e8eaf0', border: '1.5px dashed #b0b2c0',
-                  cursor: 'pointer', transition: 'border-color 0.15s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = '#3636e8')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = '#b0b2c0')}
-                >
-                  <input
-                    type="file"
-                    style={{ display: 'none' }}
-                    onChange={e => setSelectedFile(e.target.files?.[0] ?? null)}
-                  />
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                  <span style={{ fontSize: '13px', color: selectedFile ? '#1e1e3a' : '#9999b0', fontWeight: selectedFile ? '500' : '400' }}>
-                    {selectedFile ? selectedFile.name : 'Choose a file to upload'}
-                  </span>
-                  {selectedFile && (
-                    <span style={{ fontSize: '11px', color: '#9999b0', marginLeft: 'auto' }}>
-                      {(selectedFile.size / 1024).toFixed(1)} KB
-                    </span>
-                  )}
-                </label>
-                {selectedFile && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedFile(null)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: '#ef4444', marginTop: '4px', padding: '0' }}
-                  >
-                    Remove file
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <button type="button" onClick={openMaterialModal} className="btn btn-ghost" style={{ alignSelf: 'flex-start' }}>
+                    Choose Uploaded Material
                   </button>
-                )}
+                  {selectedMaterial && (
+                    <div style={{
+                      padding: '10px 14px', borderRadius: '10px', background: '#e0e7ff',
+                      color: '#3636e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
+                    }}>
+                      <span style={{ fontSize: '12px', fontWeight: '600' }}>{selectedMaterial.title}</span>
+                      <button type="button" onClick={() => setSelectedMaterial(null)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                  <span style={{ fontSize: '11px', color: '#9999b0' }}>Choose exactly one: external link or uploaded material.</span>
+                </div>
               </div>
+
+              {materialModalOpen && (
+                <div style={{
+                  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1100,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+                }}
+                onClick={() => setMaterialModalOpen(false)}
+                >
+                  <div
+                    style={{ background: '#e8eaf0', borderRadius: '16px', width: '100%', maxWidth: '680px', maxHeight: '80vh', overflow: 'auto', padding: '20px' }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Select Lecture Material</h3>
+                      <button type="button" onClick={() => setMaterialModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '18px' }}>
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>Upload New File</label>
+                        <input type="text" value={materialUploadTitle} onChange={e => setMaterialUploadTitle(e.target.value)} placeholder="Material title" className="form-input" style={{ width: '100%', marginBottom: '8px' }} />
+                        <input type="file" onChange={e => setMaterialUploadFile(e.target.files?.[0] ?? null)} />
+                        <button type="button" onClick={handleMaterialUpload} disabled={uploadingMaterial || !materialUploadFile} className="btn btn-primary" style={{ marginTop: '10px' }}>
+                          {uploadingMaterial ? 'Uploading...' : 'Upload Material'}
+                        </button>
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>Use Previous Upload</label>
+                        <input value={materialSearch} onChange={e => setMaterialSearch(e.target.value)} placeholder="Search uploaded materials..." className="form-input" style={{ width: '100%', marginBottom: '8px' }} />
+                        <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {loadingMaterials ? (
+                            <div style={{ fontSize: '12px', color: '#9999b0' }}>Loading materials...</div>
+                          ) : materials
+                            .filter(material =>
+                              material.title.toLowerCase().includes(materialSearch.toLowerCase()) ||
+                              (material.description || '').toLowerCase().includes(materialSearch.toLowerCase())
+                            )
+                            .map(material => (
+                              <button
+                                key={material.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedMaterial(material)
+                                  setMaterialLink('')
+                                  setMaterialModalOpen(false)
+                                }}
+                                style={{
+                                  textAlign: 'left', padding: '10px 12px', borderRadius: '10px', border: 'none',
+                                  background: '#f0f2f8', boxShadow: '3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a' }}>{material.title}</div>
+                                <div style={{ fontSize: '11px', color: '#9999b0' }}>{material.fileType} {material.fileSize ? `• ${material.fileSize}` : ''}</div>
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
@@ -630,6 +929,11 @@ export default function CourseEditPage() {
                             {item.description}
                           </p>
                         )}
+                        {item.isImported && (
+                          <div style={{ fontSize: '11px', color: '#7c3aed', fontWeight: '600', marginTop: '2px' }}>
+                            Shared lecture
+                          </div>
+                        )}
                         <div style={{ display: 'flex', gap: '10px', marginTop: '3px' }}>
                           {item.videoUrl && <span style={{ fontSize: '11px', color: '#3636e8' }}>📹 Video linked</span>}
                           {item.pptUrl && <span style={{ fontSize: '11px', color: '#10b981' }}>📄 PPT linked</span>}
@@ -650,7 +954,7 @@ export default function CourseEditPage() {
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           Edit
                         </button>
-                        <button onClick={() => deleteContent(item.id)} disabled={saving} style={{
+                        <button onClick={() => deleteContent(item.id, topic.id)} disabled={saving} style={{
                           background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
                           color: '#ef4444', borderRadius: '6px', display: 'flex', alignItems: 'center',
                         }}>

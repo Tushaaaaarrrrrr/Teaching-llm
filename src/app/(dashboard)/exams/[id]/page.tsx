@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 export default function ExamDetailPage({ params }: { params: { id: string } }) {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const router = useRouter()
   const [exam, setExam] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -107,6 +109,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
   if (isAdminOrManager) {
     return (
       <div style={{ padding: '32px' }}>
+         {confirmDialog}
          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -132,10 +135,15 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                 {exam.isPublished ? 'Unpublish' : 'Publish'}
               </button>
               <button onClick={async () => {
-                if (confirm('Are you sure you want to delete this exam?')) {
-                  await fetch(`/api/exams/${params.id}`, { method: 'DELETE' })
-                  router.push('/exams')
-                }
+                const allowed = await confirm({
+                  title: 'Delete Exam?',
+                  message: 'This exam will be removed permanently.',
+                  confirmLabel: 'Delete Exam',
+                  tone: 'danger',
+                })
+                if (!allowed) return
+                await fetch(`/api/exams/${params.id}`, { method: 'DELETE' })
+                router.push('/exams')
               }} style={{ padding: '10px 20px', borderRadius: '50px', background: '#ef4444', border: 'none', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>Delete Exam</button>
            </div>
          </div>
@@ -317,6 +325,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
   // Student View
   return (
     <div style={{ padding: '64px 32px', display: 'flex', justifyContent: 'center' }}>
+       {confirmDialog}
        <div style={{ ...neuCard, maxWidth: '500px', width: '100%', textAlign: 'center' }}>
           <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#1e1e3a', marginBottom: '8px' }}>{exam.title}</h1>
           <p style={{ color: '#6b6b8a', marginBottom: '24px' }}>{exam.course?.name}</p>

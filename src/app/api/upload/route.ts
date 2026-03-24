@@ -27,16 +27,19 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Strict validation: Magic Bytes (PDF, JPG, PNG only)
+    // Validate by magic bytes when possible, with a controlled extension fallback
     const detectedExt = await checkMagicBytes(buffer)
-    const allowedExtensions = ['pdf', 'jpg', 'png']
-    
-    if (!detectedExt || !allowedExtensions.includes(detectedExt)) {
-      return NextResponse.json({ error: 'Invalid file type. Only PDF, JPG, and PNG are allowed.' }, { status: 400 })
+    const originalExt = (file.name.split('.').pop() || '').toLowerCase()
+    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'ppt', 'pptx', 'doc', 'docx', 'xls', 'xlsx', 'zip']
+    const finalExt = detectedExt || originalExt
+
+    if (!finalExt || !allowedExtensions.includes(finalExt)) {
+      return NextResponse.json({ error: 'Invalid file type. Allowed: PDF, JPG, PNG, PPT, PPTX, DOC, DOCX, XLS, XLSX, ZIP.' }, { status: 400 })
     }
 
     const secureId = crypto.randomUUID()
-    const filename = `${secureId}.${detectedExt}`
+    const normalizedExt = finalExt === 'jpeg' ? 'jpg' : finalExt
+    const filename = `${secureId}.${normalizedExt}`
     
     const type = formData.get('type') as string || 'announcements'
     const allowedTypes = ['announcements', 'exams', 'updates', 'materials']

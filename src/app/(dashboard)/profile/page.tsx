@@ -71,7 +71,8 @@ export default function ProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           firstName: editFirstName.trim(),
-          lastName: editLastName.trim()
+          lastName: editLastName.trim(),
+          mobileNumber: editMobile.trim()
         }),
       })
       const data = await res.json()
@@ -285,8 +286,8 @@ export default function ProfilePage() {
               </div>
               <div className="form-group">
                 <label className="form-label">Mobile Number</label>
-                <input className="form-input" value={editMobile} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
-                <span style={{ fontSize: '11px', color: '#9999b0' }}>Mobile number is read-only. Contact admin to change.</span>
+                <input className="form-input" value={editMobile} onChange={e => setEditMobile(e.target.value)} placeholder="Mobile Number" />
+                <span style={{ fontSize: '11px', color: '#9999b0' }}>Managers can update their own mobile number here.</span>
               </div>
               <div className="form-group">
                 <label className="form-label">Email Address</label>

@@ -3,17 +3,28 @@
 import { useState, useEffect } from 'react'
 import { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface CourseInfo {
   id: string
   name: string
   color: string
   subject?: string
+  isDisabled?: boolean
+}
+
+interface CourseBundleInfo {
+  id: string
+  name: string
+  courses?: { course: CourseInfo }[]
 }
 
 interface User {
   id: string
   name: string
+  firstName?: string | null
+  lastName?: string | null
+  mobileNumber?: string | null
   email: string
   role: string
   securityNumber?: string | null
@@ -22,6 +33,7 @@ interface User {
   avatar?: string | null
   enrollments?: { courseId: string; course: CourseInfo }[]
   instructorAssignments?: { courseId: string; course: CourseInfo }[]
+  courseBundleAssignments?: { bundleId: string; bundle: CourseBundleInfo }[]
 }
 
 interface ManagerUserModalProps {
@@ -31,23 +43,35 @@ interface ManagerUserModalProps {
 }
 
 export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerUserModalProps) {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const router = useRouter()
   const [user, setUser] = useState<User|null>(null)
   const [courses, setCourses] = useState<CourseInfo[]>([])
+  const [bundles, setBundles] = useState<CourseBundleInfo[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     name: '',
+    firstName: '',
+    lastName: '',
+    mobileNumber: '',
     email: '',
     role: '',
     courseIds: [] as string[],
+    bundleIds: [] as string[],
   })
+  const bundledCourseIds = new Set(
+    bundles
+      .filter(bundle => formData.bundleIds.includes(bundle.id))
+      .flatMap(bundle => (bundle.courses || []).map(entry => entry.course.id))
+  )
 
   useEffect(() => {
     if (userId) {
       loadUser(userId)
       loadCourses()
+      loadBundles()
     }
   }, [userId])
 
@@ -60,9 +84,13 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
         setUser(data)
         setFormData({
             name: data.name || '',
+            firstName: data.firstName || '',
+            lastName: data.lastName || '',
+            mobileNumber: data.mobileNumber || '',
             email: data.email || '',
             role: data.role || '',
             courseIds: data.enrollments?.map((e: any) => e.courseId) || [],
+            bundleIds: data.courseBundleAssignments?.map((b: any) => b.bundleId) || [],
         })
       }
     } catch (e) {
@@ -82,6 +110,16 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     }
   }
 
+  async function loadBundles() {
+    try {
+      const res = await fetch('/api/course-bundles')
+      const data = await res.json()
+      setBundles(data.bundles || data || [])
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   async function handleUpdate() {
     if (!userId) return
     setSaving(true)
@@ -91,10 +129,14 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            name: formData.name,
+            name: `${formData.firstName} ${formData.lastName}`.trim() || formData.name,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            mobileNumber: formData.mobileNumber,
             email: formData.email,
             role: formData.role,
-            classIds: formData.courseIds
+            courseIds: formData.courseIds,
+            bundleIds: formData.bundleIds
         }),
       })
       if (res.ok) {
@@ -117,7 +159,13 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
 
   async function handleResetPassword() {
     if (!userId) return
-    if (!confirm('Reset password for this user?')) return
+    const allowed = await confirm({
+      title: 'Reset Password?',
+      message: 'A new temporary password will be generated for this user.',
+      confirmLabel: 'Reset Password',
+      tone: 'default',
+    })
+    if (!allowed) return
     try {
       const res = await fetch(`/api/users/${userId}`, {
         method: 'PUT',
@@ -162,6 +210,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
       background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
     }} onClick={onClose}>
+      {confirmDialog}
       
       <div style={{
         width: '100%', maxWidth: '560px', maxHeight: '95vh', overflowY: 'auto',
@@ -232,8 +281,24 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>First Name</label>
+                <input style={neuInset} value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+              </div>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Last Name</label>
+                <input style={neuInset} value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Mobile Number</label>
+              <input style={neuInset} value={formData.mobileNumber} onChange={e => setFormData({...formData, mobileNumber: e.target.value})} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
                 <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Role</label>
-                <select style={neuInset} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
+                <select style={neuInset} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value, courseIds: e.target.value === 'MANAGER' ? [] : formData.courseIds, bundleIds: e.target.value === 'MANAGER' ? [] : formData.bundleIds})}>
                   <option value="STUDENT">Student</option>
                   <option value="ADMIN">Admin</option>
                   <option value="MANAGER">Manager</option>
@@ -276,8 +341,52 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
               </button>
             </div>
 
-            {user.role !== 'MANAGER' && (
+            {formData.role !== 'MANAGER' && (
               <div style={{ marginBottom: '20px' }}>
+                {bundles.length > 0 && (
+                  <>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '10px', display: 'block' }}>Assigned Bundles</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+                      {bundles.filter(bundle => formData.bundleIds.includes(bundle.id)).map(bundle => (
+                        <div key={bundle.id} style={{
+                          padding: '8px 16px', borderRadius: '14px', background: '#f3f0ff',
+                          boxShadow: '3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff',
+                          display: 'flex', alignItems: 'center', gap: '8px'
+                        }}>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#6d28d9' }}>{bundle.name}</span>
+                          <button
+                            onClick={() => setFormData({...formData, bundleIds: formData.bundleIds.filter(id => id !== bundle.id)})}
+                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#ef4444', display: 'flex' }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
+                        </div>
+                      ))}
+
+                      <div style={{ position: 'relative' }}>
+                        <select
+                          onChange={(e) => {
+                            if (e.target.value && !formData.bundleIds.includes(e.target.value)) {
+                              setFormData({...formData, bundleIds: [...formData.bundleIds, e.target.value]})
+                            }
+                          }}
+                          style={{
+                            padding: '8px 16px', borderRadius: '14px', border: 'none', background: 'none',
+                            boxShadow: 'inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff',
+                            fontSize: '12px', fontWeight: '700', color: '#7c3aed', cursor: 'pointer',
+                            appearance: 'none', borderStyle: 'dashed', borderWidth: '1.5px', borderColor: '#ddd6fe'
+                          }}
+                          value=""
+                        >
+                          <option value="">+ Add Bundle</option>
+                          {bundles.filter(bundle => !formData.bundleIds.includes(bundle.id)).map(bundle => (
+                            <option key={bundle.id} value={bundle.id}>{bundle.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
                 <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '10px', display: 'block' }}>Enrolled Courses</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                   {courses.filter(c => formData.courseIds.includes(c.id)).map(c => (
@@ -288,6 +397,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     }}>
                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: c.color }} />
                        <span style={{ fontSize: '12px', fontWeight: '700', color: '#1e1e3a' }}>{c.name}</span>
+                       {c.isDisabled && <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>}
                        <button 
                           onClick={() => setFormData({...formData, courseIds: formData.courseIds.filter(id => id !== c.id)})}
                           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#ef4444', display: 'flex' }}
@@ -300,7 +410,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   <div style={{ position: 'relative' }}>
                      <select 
                         onChange={(e) => {
-                          if (e.target.value && !formData.courseIds.includes(e.target.value)) {
+                         if (e.target.value && !formData.courseIds.includes(e.target.value)) {
                             setFormData({...formData, courseIds: [...formData.courseIds, e.target.value]})
                           }
                         }}
@@ -313,12 +423,17 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         value=""
                      >
                        <option value="">+ Add New</option>
-                       {courses.filter(c => !formData.courseIds.includes(c.id)).map(c => (
+                       {courses.filter(c => !formData.courseIds.includes(c.id) && !bundledCourseIds.has(c.id) && !c.isDisabled).map(c => (
                           <option key={c.id} value={c.id}>{c.name}</option>
                        ))}
                      </select>
                   </div>
                 </div>
+                {bundledCourseIds.size > 0 && (
+                  <div style={{ marginTop: '10px', fontSize: '11px', color: '#7c3aed', fontWeight: '600' }}>
+                    Courses already included through selected bundles are not added twice.
+                  </div>
+                )}
               </div>
             )}
 

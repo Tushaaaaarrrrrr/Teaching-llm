@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface CalEvent {
   id: string
@@ -79,6 +80,7 @@ const RECURRENCE_OPTIONS = [
 ]
 
 function CalendarPageContent() {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const [mounted, setMounted] = useState(false)
   const [events, setEvents] = useState<CalEvent[]>([])
   const [classes, setClasses] = useState<ClassOption[]>([])
@@ -260,7 +262,13 @@ function CalendarPageContent() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this event?')) return
+    const allowed = await confirm({
+      title: 'Delete Event?',
+      message: 'This event will be removed from the calendar.',
+      confirmLabel: 'Delete Event',
+      tone: 'danger',
+    })
+    if (!allowed) return
     try {
       await fetch(`/api/events/${id}`, { method: 'DELETE' })
       setSelectedEvent(null)
@@ -272,6 +280,7 @@ function CalendarPageContent() {
 
   return (
     <div className="page-container fade-in">
+      {confirmDialog}
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button onClick={goToday} className="btn btn-ghost btn-sm">Today</button>

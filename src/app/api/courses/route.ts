@@ -15,7 +15,11 @@ export async function GET() {
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
 
     const where: any = {
-      isGlobal: false
+      isGlobal: false,
+    }
+
+    if (session.role !== 'MANAGER') {
+      where.isDisabled = false
     }
 
     if (accessibleCourseIds !== null) {
@@ -91,7 +95,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isDisabled } = await request.json()
 
     // 1. Rate Limiting
     const rateLimit = await checkRateLimit(session.userId, 'general')
@@ -141,7 +145,7 @@ export async function POST(request: NextRequest) {
     }
 
     const newCourse = await prisma.$transaction(async (tx) => {
-      const cls = await tx.course.create({
+      const cls = await (tx.course.create as any)({
         data: {
           name: sanitizedName,
           description: sanitizedDescription,
@@ -150,6 +154,7 @@ export async function POST(request: NextRequest) {
           icon,
           teacherName: sanitizedTeacherName,
           isDemo: !!isDemo,
+          isDisabled: !!isDisabled,
           expiresAt: expiresAt ? new Date(expiresAt) : null,
           createdById: session.userId,
         },

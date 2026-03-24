@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { courseId, title, description, fileUrl, fileType, fileSize } =
+    const { courseId, title, description, fileUrl, fileType, fileSize, isGlobal } =
       await request.json()
 
 
@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
         fileUrl,
         fileType,
         fileSize,
+        isGlobal: !!isGlobal,
         uploadedById: session.userId,
       },
     })

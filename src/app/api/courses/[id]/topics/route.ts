@@ -13,6 +13,15 @@ export async function GET(
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const course = await (prisma.course.findUnique as any)({
+      where: { id },
+      select: { isDisabled: true },
+    })
+    if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    if (course.isDisabled && session.role !== 'MANAGER') {
+      return NextResponse.json({ error: 'Course is currently disabled' }, { status: 403 })
+    }
+
     // Course Access Control: Check enrollment for students
     if (session.role === 'STUDENT') {
       const enrollment = await prisma.enrollment.findUnique({
@@ -29,17 +38,39 @@ export async function GET(
       }
     }
 
-    const topics = await prisma.topic.findMany({
+    const topics = await (prisma.topic.findMany as any)({
       where: { courseId: id },
       orderBy: { order: 'asc' },
       include: {
         content: {
+          where: {
+            isRecordingOnly: false,
+          },
           orderBy: { order: 'asc' },
+        },
+        sharedContentLinks: {
+          include: {
+            content: true,
+          },
+          orderBy: { createdAt: 'asc' },
         },
       },
     })
 
-    return NextResponse.json(topics)
+    const mergedTopics = topics.map(topic => {
+      const importedContent = topic.sharedContentLinks.map(link => ({
+        ...link.content,
+        isImported: true,
+        importedIntoTopicId: topic.id,
+      }))
+
+      return {
+        ...topic,
+        content: [...topic.content.map(item => ({ ...item, isImported: false })), ...importedContent],
+      }
+    })
+
+    return NextResponse.json(mergedTopics)
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -55,6 +86,15 @@ export async function POST(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
+
+    const course = await (prisma.course.findUnique as any)({
+      where: { id },
+      select: { isDisabled: true },
+    })
+    if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    if (course.isDisabled && session.role !== 'MANAGER') {
+      return NextResponse.json({ error: 'Course is currently disabled' }, { status: 403 })
+    }
 
     // Course Access Control: Check enrollment for students
     // Admin/Manager can manage content regardless.
@@ -72,7 +112,7 @@ export async function POST(
     const count = await prisma.topic.count({ where: { courseId: id } })
     const topic = await prisma.topic.create({
       data: { courseId: id, title, order: count },
-      include: { content: true },
+      include: { content: true, sharedContentLinks: true },
     })
 
     logActivity({

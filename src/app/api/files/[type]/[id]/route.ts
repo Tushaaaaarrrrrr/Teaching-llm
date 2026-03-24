@@ -10,7 +10,7 @@ export async function GET(
     const { type, id } = params
     
     // Validate type to prevent traversing
-    const allowedTypes = ['avatars', 'announcements', 'exams']
+    const allowedTypes = ['avatars', 'announcements', 'exams', 'updates', 'materials']
     if (!allowedTypes.includes(type)) {
       return new NextResponse('Not Found', { status: 404 })
     }
@@ -26,12 +26,21 @@ export async function GET(
         '.jpg': 'image/jpeg',
         '.jpeg': 'image/jpeg',
         '.png': 'image/png',
-        '.webp': 'image/webp'
+        '.webp': 'image/webp',
+        '.pdf': 'application/pdf',
+        '.ppt': 'application/vnd.ms-powerpoint',
+        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.zip': 'application/zip',
       }
 
       return new NextResponse(data, {
         headers: {
           'Content-Type': contentTypeMap[ext] || 'application/octet-stream',
+          'Content-Disposition': `attachment; filename="${id}"`,
           'Cache-Control': 'public, max-age=31536000, immutable'
         }
       })

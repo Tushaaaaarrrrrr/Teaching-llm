@@ -65,12 +65,13 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { name, firstName, lastName } = await request.json()
+    const { name, firstName, lastName, mobileNumber } = await request.json()
 
     const data: any = {}
     if (name) data.name = name
     if (firstName) data.firstName = firstName
     if (lastName) data.lastName = lastName
+    if (mobileNumber !== undefined) data.mobileNumber = mobileNumber
 
     // Ensure name is updated if firstName/lastName provided
     if (!name && (firstName || lastName)) {

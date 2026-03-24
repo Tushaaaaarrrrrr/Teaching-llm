@@ -15,6 +15,19 @@ export async function GET(
 
     const { id } = await params
 
+    const courseState = await (prisma.course.findUnique as any)({
+      where: { id },
+      select: { id: true, isDisabled: true },
+    })
+
+    if (!courseState) {
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    }
+
+    if (courseState.isDisabled && !isManager(session.role)) {
+      return NextResponse.json({ error: 'Course is currently disabled' }, { status: 403 })
+    }
+
     if (!isAdminOrManager(session.role)) {
       const enrollment = await prisma.enrollment.findUnique({
         where: {
@@ -113,7 +126,11 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isCommunityActive } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isCommunityActive, isDisabled } = await request.json()
+
+    if (isDisabled !== undefined && !isManager(session.role)) {
+      return NextResponse.json({ error: 'Only managers can enable or disable courses' }, { status: 403 })
+    }
 
     // Validate expiresAt if provided
     if (expiresAt) {
@@ -147,7 +164,7 @@ export async function PUT(
       }
     }
 
-    const updatedCourse = await prisma.course.update({
+    const updatedCourse = await (prisma.course.update as any)({
       where: { id },
       data: { 
         name, 
@@ -158,6 +175,7 @@ export async function PUT(
         teacherName: teacherName || null,
         isDemo: existingCourse.isDemo ? true : !!isDemo, // Force true if it was already true
         isCommunityActive: isCommunityActive !== undefined ? !!isCommunityActive : undefined,
+        isDisabled: isDisabled !== undefined ? !!isDisabled : undefined,
         expiresAt: expiresAt ? new Date(expiresAt) : null 
       },
     })
