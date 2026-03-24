@@ -134,7 +134,7 @@ export function canManageContent(role: string) {
 }
 
 export function canManageEvents(role: string) {
-  return role === 'MANAGER' || role === 'ADMIN' || role === 'INSTRUCTOR'
+  return role === 'MANAGER'
 }
 
 /**

@@ -15,6 +15,9 @@ export async function GET() {
       select: {
         id: true,
         name: true,
+        firstName: true,
+        lastName: true,
+        mobileNumber: true,
         email: true,
         role: true,
         avatar: true,
@@ -36,6 +39,9 @@ export async function GET() {
         select: {
           id: true,
           name: true,
+          firstName: true,
+          lastName: true,
+          mobileNumber: true,
           email: true,
           role: true,
           avatar: true,
@@ -59,18 +65,30 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { name } = await request.json()
+    const { name, firstName, lastName } = await request.json()
 
-    if (!name || !name.trim()) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    const data: any = {}
+    if (name) data.name = name
+    if (firstName) data.firstName = firstName
+    if (lastName) data.lastName = lastName
+
+    // Ensure name is updated if firstName/lastName provided
+    if (!name && (firstName || lastName)) {
+        const current = await prisma.user.findUnique({ where: { id: session.userId }, select: { firstName: true, lastName: true } })
+        const fn = firstName || current?.firstName || ''
+        const ln = lastName || current?.lastName || ''
+        data.name = `${fn} ${ln}`.trim()
     }
 
     const user = await prisma.user.update({
       where: { id: session.userId },
-      data: { name: name.trim() },
+      data,
       select: {
         id: true,
         name: true,
+        firstName: true,
+        lastName: true,
+        mobileNumber: true,
         email: true,
         role: true,
         avatar: true,

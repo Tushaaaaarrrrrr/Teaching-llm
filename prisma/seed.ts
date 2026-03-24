@@ -477,8 +477,111 @@ async function main() {
 
   console.log("Created lectures for all classes.");
 
-  // 5. Build live sessions (Skipped as CourseEvent schema changed)
-  console.log("Skipping live sessions generation (model merged into CourseEvent).");
+  // ──────────────────────────────────────────────
+  // 5. Create live sessions
+  // ──────────────────────────────────────────────
+  console.log("Creating live sessions...");
+
+  // Helper for date offsets
+  const today = new Date();
+  const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 24 * 60 * 60 * 1000);
+  const makeEvent = (base: Date, hourStart: number, durationHours = 1) => ({
+    start: new Date(base.getFullYear(), base.getMonth(), base.getDate(), hourStart, 0, 0),
+    end:   new Date(base.getFullYear(), base.getMonth(), base.getDate(), hourStart + durationHours, 0, 0),
+  });
+
+  // Live sessions as CourseEvents (type='class')
+  const e1 = makeEvent(today, 10);
+  const e2 = makeEvent(today, 14);
+  const e3 = makeEvent(addDays(today, 1), 11);
+  const e4 = makeEvent(addDays(today, 3), 15);
+  const e5 = makeEvent(addDays(today, 5), 9);
+  const e6 = makeEvent(addDays(today, -1), 16);
+  const e7 = makeEvent(addDays(today, -3), 13);
+
+  await prisma.courseEvent.createMany({
+    data: [
+      {
+        courseId: dsaClass.id,
+        title: "DSA Doubt Clearing Session - Trees & Graphs",
+        description: "Live interactive session to resolve doubts on tree traversals, graph BFS/DFS, and related problem-solving techniques.",
+        meetLink: "https://meet.jit.si/TeachingLLM-DSA-Live",
+        startTime: e1.start,
+        endTime: e1.end,
+        type: "class",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: mlClass.id,
+        title: "Hands-on: Building Your First Neural Network",
+        description: "Step-by-step walkthrough of building, training, and evaluating a neural network using Python and TensorFlow.",
+        meetLink: "https://meet.jit.si/TeachingLLM-ML-Workshop",
+        startTime: e2.start,
+        endTime: e2.end,
+        type: "class",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: webDevClass.id,
+        title: "Live Coding: Building a REST API with Next.js",
+        description: "Watch and code along as we build a complete REST API with authentication, validation, and database integration.",
+        meetLink: "https://meet.jit.si/TeachingLLM-WebDev-Live",
+        startTime: e3.start,
+        endTime: e3.end,
+        type: "class",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: dbClass.id,
+        title: "SQL Performance Tuning Workshop",
+        description: "Practical session on identifying slow queries, reading execution plans, and applying indexing strategies for optimal performance.",
+        meetLink: "https://meet.jit.si/TeachingLLM-DB-Workshop",
+        startTime: e4.start,
+        endTime: e4.end,
+        type: "class",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: osClass.id,
+        title: "OS Concepts Revision - Midterm Preparation",
+        description: "Comprehensive revision covering process scheduling, memory management, and file systems for the upcoming midterm exam.",
+        meetLink: "https://meet.jit.si/TeachingLLM-OS-Revision",
+        startTime: e5.start,
+        endTime: e5.end,
+        type: "class",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: networkClass.id,
+        title: "Packet Analysis with Wireshark",
+        description: "Hands-on demonstration of capturing and analyzing network packets using Wireshark to understand protocol behavior.",
+        meetLink: "https://meet.jit.si/TeachingLLM-Network-Lab",
+        startTime: e6.start,
+        endTime: e6.end,
+        type: "class",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: dsaClass.id,
+        title: "Competitive Programming Strategies",
+        description: "Tips and techniques for competitive programming, covering time management, common patterns, and practice problem walkthroughs.",
+        meetLink: "https://meet.jit.si/TeachingLLM-DSA-CompProg",
+        startTime: e7.start,
+        endTime: e7.end,
+        type: "class",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+    ],
+  });
+
+  console.log("Created 7 live sessions (as CourseEvents).");
 
   // ──────────────────────────────────────────────
   // 6. Create materials for classes
@@ -643,8 +746,97 @@ async function main() {
 
   console.log("Created 14 materials.");
 
-  // 7. Calendar events (Skipped as CourseEvent schema changed)
-  console.log("Skipping calendar events generation.");
+  // ──────────────────────────────────────────────
+  // 7. Create calendar events
+  // ──────────────────────────────────────────────
+  console.log("Creating calendar events...");
+
+  // Calendar events as CourseEvents
+  const c1 = makeEvent(addDays(today, 1), 23);
+  const c2 = makeEvent(addDays(today, 3), 10);
+  const c3 = makeEvent(addDays(today, 7), 14);
+  const c4 = makeEvent(addDays(today, 10), 9);
+  const c5 = makeEvent(addDays(today, 14), 15);
+  const c6 = makeEvent(addDays(today, 18), 23);
+  const c7 = makeEvent(addDays(today, 21), 16);
+
+  await prisma.courseEvent.createMany({
+    data: [
+      {
+        courseId: dsaClass.id,
+        title: "DSA Assignment 3 Due",
+        description: "Submit your solutions for Binary Tree problems (Q1-Q5) via the portal. Late submissions will incur a 10% penalty per day.",
+        startTime: c1.start,
+        endTime: c1.end,
+        type: "assignment",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: mlClass.id,
+        title: "ML Quiz: Regression Techniques",
+        description: "Online quiz covering linear regression, polynomial regression, and regularization methods. Duration: 30 minutes.",
+        startTime: c2.start,
+        endTime: c2.end,
+        type: "exam",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: webDevClass.id,
+        title: "Web Development Project Presentation",
+        description: "Each team presents their full-stack project. 15 minutes per team including Q&A. Attendance is mandatory.",
+        startTime: c3.start,
+        endTime: c3.end,
+        type: "class",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: dbClass.id,
+        title: "Database Systems Midterm Exam",
+        description: "Written exam covering ER modeling, normalization, SQL queries, and transaction management. Bring your student ID.",
+        startTime: c4.start,
+        endTime: c4.end,
+        type: "exam",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: osClass.id,
+        title: "OS Lab: Memory Management Simulation",
+        description: "Hands-on lab session implementing page replacement algorithms. Bring your laptops with the simulator installed.",
+        startTime: c5.start,
+        endTime: c5.end,
+        type: "class",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: networkClass.id,
+        title: "Networking Assignment 2 Due",
+        description: "Submit Wireshark capture analysis report and subnetting exercise solutions through the class portal.",
+        startTime: c6.start,
+        endTime: c6.end,
+        type: "assignment",
+        status: "SCHEDULED",
+        createdById: admin.id,
+      },
+      {
+        courseId: null,
+        title: "Guest Lecture: AI in Modern Software Engineering",
+        description: "Industry expert from Google discusses how AI is transforming software development practices. Open to all students.",
+        startTime: c7.start,
+        endTime: c7.end,
+        type: "class",
+        isGlobal: true,
+        status: "SCHEDULED",
+        createdById: manager.id,
+      },
+    ],
+  });
+
+  console.log("Created 7 calendar events (as CourseEvents).");
 
   // ──────────────────────────────────────────────
   // 7.5. Create enrollments

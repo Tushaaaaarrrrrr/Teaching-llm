@@ -466,7 +466,7 @@ export default function AnnouncementsPage() {
                         }}>
                           {a.createdBy.avatar
                             ? <img src={a.createdBy.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : a.createdBy.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                            : (a.createdBy.name || 'User').split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)
                           }
                         </div>
                         <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: 600 }}>{a.createdBy.name}</span>

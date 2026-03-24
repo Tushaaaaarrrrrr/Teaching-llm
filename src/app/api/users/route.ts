@@ -32,10 +32,12 @@ export async function GET() {
       select: {
         id: true,
         name: true,
+        firstName: true,
+        lastName: true,
+        mobileNumber: true,
         email: true,
         role: true,
         isTerminated: true,
-        isGoogleUser: true,
         createdAt: true,
         enrollments: {
           select: {
@@ -71,7 +73,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, email, password, role, classIds = [], assignedClassIds = [] } = await request.json()
+    const { name, firstName, lastName, mobileNumber, email, password, role, classIds = [], courseIds = [], assignedClassIds = [] } = await request.json()
+    const finalClassIds = classIds.length > 0 ? classIds : courseIds
 
     // ADMINs can only create STUDENT accounts
     if (session.role === 'ADMIN' && role !== 'STUDENT') {
@@ -79,9 +82,9 @@ export async function POST(request: NextRequest) {
     }
 
     // ADMINs can only assign classes they have access to
-    if (session.role === 'ADMIN' && classIds.length > 0) {
+    if (session.role === 'ADMIN' && finalClassIds.length > 0) {
       const adminCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-      const unauthorized = classIds.filter((id: string) => !adminCourseIds?.includes(id))
+      const unauthorized = finalClassIds.filter((id: string) => !adminCourseIds?.includes(id))
       if (unauthorized.length > 0) {
         return NextResponse.json({ error: 'Cannot assign classes you don\'t have access to' }, { status: 403 })
       }
@@ -95,21 +98,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email already in use' }, { status: 400 })
     }
 
-    const passwordHash = await hashPassword(password)
+    // Handle auto-password generation if missing
+    let tempPassword = ''
+    let actualPassword = password
+    if (!password || password.trim() === '') {
+      tempPassword = Math.random().toString(36).substring(2, 10).toUpperCase()
+      actualPassword = tempPassword
+    }
+
+    const passwordHash = await hashPassword(actualPassword)
     const securityNumber = 'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase()
 
     const user = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
-          name,
+          name: name || `${firstName} ${lastName || ''}`.trim(),
+          firstName: firstName || name?.split(' ')[0] || '',
+          lastName: lastName || name?.split(' ').slice(1).join(' ') || '',
+          mobileNumber,
           email: email.toLowerCase(),
           passwordHash,
           role,
           securityNumber,
+          gender: (request as any).gender || 'MALE', // Capture gender if provided
         },
         select: {
           id: true,
           name: true,
+          firstName: true,
+          lastName: true,
           email: true,
           role: true,
           createdAt: true,
@@ -148,7 +165,10 @@ export async function POST(request: NextRequest) {
       targetId: user.id,
     })
 
-    return NextResponse.json(user, { status: 201 })
+    return NextResponse.json({
+      ...user,
+      tempPassword: tempPassword || undefined
+    }, { status: 201 })
   } catch (error) {
     console.error('Error creating user:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { formatISTDate, getEventStatus } from '@/lib/date-utils'
@@ -9,12 +9,17 @@ const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function DashboardPage() {
   const { data: dashboardData, error, isLoading: loading, mutate } = useSWR('/api/dashboard', fetcher, {
-    refreshInterval: 60000,
-    revalidateOnFocus: true
+    revalidateOnFocus: false
   })
 
   const [activeCard, setActiveCard] = useState(0)
   const [sliding, setSliding] = useState(false)
+  const [nowTick, setNowTick] = useState(Date.now())
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNowTick(Date.now()), 30000)
+    return () => window.clearInterval(intervalId)
+  }, [])
 
   const handleNextLive = () => {
     if (!dashboardData?.liveSessions?.length) return
@@ -63,12 +68,19 @@ export default function DashboardPage() {
   }
 
   const liveSessions = dashboardData?.liveSessions || []
+  void nowTick
   const liveNow = liveSessions.filter((s: any) => 
-    getEventStatus(s.startTime, s.endTime, s.status) === 'live'
+    getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'live'
   ).slice(0, 3)
+  const liveNowCount = liveSessions.filter((s: any) =>
+    getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'live'
+  ).length
   const upNextSessions = liveSessions.filter((s: any) => 
-    getEventStatus(s.startTime, s.endTime, s.status) === 'upcoming'
+    getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'upcoming'
   ).slice(0, 2)
+  const upNextCount = liveSessions.filter((s: any) =>
+    getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'upcoming'
+  ).length
 
   const lectures = (dashboardData?.lectures || []).slice(0, 3)
   const announcements = (dashboardData?.announcements || []).slice(0, 3)
@@ -85,7 +97,7 @@ export default function DashboardPage() {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
       ),
     }] : [
-      { label: 'Upcoming Sessions', value: stats?.upcomingSessions ?? 0, color: '#f59e0b', bg: '#fef3c7', icon: (
+      { label: 'Upcoming Sessions', value: upNextCount, color: '#f59e0b', bg: '#fef3c7', icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
       )},
     ]),
@@ -104,7 +116,7 @@ export default function DashboardPage() {
     ...(!isStudentView ? [
       { 
         label: 'Active Sessions', 
-        value: dashboardData?.stats?.activeSessions ?? 0, 
+        value: liveNowCount, 
         color: '#f43f5e', 
         bg: '#fff1f2', 
         icon: (

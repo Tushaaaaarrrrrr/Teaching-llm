@@ -1,7 +1,8 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
-import { formatIST, formatISTDate } from '@/lib/date-utils'
+import { formatIST, formatISTDate, getEventStatus } from '@/lib/date-utils'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -32,13 +33,23 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dotColor: st
 
 export default function LivePage() {
   const { data, isLoading } = useSWR<CourseEvent[]>('/api/live-sessions', fetcher, {
-    revalidateOnFocus: true,
-    refreshInterval: 60000, // Refresh every 60s to keep live statuses current
+    revalidateOnFocus: false,
     dedupingInterval: 15000,
   })
+  const [nowTick, setNowTick] = useState(Date.now())
+  const [syncing, setSyncing] = useState(false)
   const sessions = Array.isArray(data) ? data : []
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNowTick(Date.now()), 30000)
+    return () => window.clearInterval(intervalId)
+  }, [])
+
   const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const sessionsWithLocalStatus = sessions.map(session => ({
+    ...session,
+    status: getEventStatus(session.startTime, session.endTime, session.manualStatus || session.status),
+  }))
 
   if (isLoading) {
     return (
@@ -50,9 +61,10 @@ export default function LivePage() {
     )
   }
 
-  const liveSessions = sessions.filter(s => s.status === 'live')
-  const upcomingSessions = sessions.filter(s => s.status === 'upcoming' || s.status === 'rescheduled')
-  const recentSessions = sessions.filter(s => s.status === 'completed' || s.status === 'cancelled')
+  void nowTick
+  const liveSessions = sessionsWithLocalStatus.filter(s => s.status === 'live')
+  const upcomingSessions = sessionsWithLocalStatus.filter(s => s.status === 'upcoming' || s.status === 'rescheduled')
+  const recentSessions = sessionsWithLocalStatus.filter(s => s.status === 'completed' || s.status === 'cancelled')
 
   const nextUpcomingSessionId = upcomingSessions.length > 0 ? upcomingSessions[0].id : null
 
@@ -211,7 +223,26 @@ export default function LivePage() {
         <p style={{ fontSize: '13px', color: '#9999b0' }}>Today&apos;s Schedule &bull; {today}</p>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button 
-            onClick={() => mutate('/api/live-sessions')}
+            onClick={async () => {
+              try {
+                setSyncing(true)
+                const res = await fetch('/api/live-sessions/sync', { method: 'POST' })
+                if (!res.ok) {
+                  const err = await res.json()
+                  alert(err.error || 'Failed to sync live sessions')
+                  return
+                }
+                await Promise.all([
+                  mutate('/api/live-sessions'),
+                  mutate('/api/dashboard'),
+                ])
+              } catch (error) {
+                console.error(error)
+                alert('Failed to sync live sessions')
+              } finally {
+                setSyncing(false)
+              }
+            }}
             style={{
               padding: '0 16px', height: '42px', borderRadius: '50px', border: 'none',
               background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
@@ -223,7 +254,7 @@ export default function LivePage() {
               <path d="M21.5 2v6h-6M2 22v-6h6M21.34 15.57a10 10 0 1 1-.92-10.45l3.08 2.88L2 22l-3.08-2.88a10 10 0 1 1 .92 10.45"/>
               <path d="M21.5 2v6h-6M2 22v-6h6M2 22l3.08-2.88a10 10 0 1 1 16.26-6.69M21.5 8l-3.08 2.88A10 10 0 1 1 2 15.31"/>
             </svg>
-            Sync
+            {syncing ? 'Syncing...' : 'Sync'}
           </button>
           <button style={{
             width: '44px', height: '44px', borderRadius: '50%', border: 'none',

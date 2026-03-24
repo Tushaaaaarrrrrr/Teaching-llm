@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, isManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(
@@ -44,7 +44,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role) && session.role !== 'INSTRUCTOR') {
+    if (!isManager(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -53,8 +53,16 @@ export async function PUT(
     const { 
       title, description, startTime, endTime, meetLink, 
       type, courseId, instructorId, status, isGlobal,
-      recurrence, interval, originalStartTime
+      recurrence, interval, originalStartTime, applyToFuture
     } = body
+
+    const existingEvent = await prisma.courseEvent.findUnique({
+      where: { id },
+    })
+
+    if (!existingEvent) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: Record<string, any> = {}
@@ -72,27 +80,75 @@ export async function PUT(
     if (interval !== undefined) data.interval = interval ? parseInt(interval as string) : null
     if (originalStartTime !== undefined) data.originalStartTime = originalStartTime ? new Date(originalStartTime) : null
     
-    // Verify ADMIN/INSTRUCTOR access to course
-    if ((session.role === 'ADMIN' || session.role === 'INSTRUCTOR') && (data.courseId || courseId)) {
-      const { getAccessibleCourseIds } = require('@/lib/auth')
-      const targetCourseId = data.courseId || courseId
-      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(targetCourseId)) {
-        return NextResponse.json({ error: 'No access to this course' }, { status: 403 })
-      }
-    }
+    let updatedEvent
 
-    const updatedEvent = await prisma.courseEvent.update({
-      where: { id },
-      data,
-    })
+    const isRecurringSeriesEvent =
+      !!existingEvent.parentId || (existingEvent.recurrence && existingEvent.recurrence !== 'ONETIME')
+
+    if (applyToFuture && isRecurringSeriesEvent) {
+      const chainRootId = existingEvent.parentId || existingEvent.id
+      const nextStart = startTime !== undefined ? new Date(startTime) : existingEvent.startTime
+      const nextEnd = endTime !== undefined ? new Date(endTime) : existingEvent.endTime
+      const startShiftMs = nextStart.getTime() - existingEvent.startTime.getTime()
+      const nextDurationMs = nextEnd.getTime() - nextStart.getTime()
+
+      const futureEvents = await prisma.courseEvent.findMany({
+        where: {
+          OR: [
+            { id: chainRootId },
+            { parentId: chainRootId },
+          ],
+          startTime: { gte: existingEvent.startTime },
+        },
+        orderBy: { startTime: 'asc' },
+      })
+
+      const commonData: Record<string, any> = {}
+      if (title !== undefined) commonData.title = title
+      if (description !== undefined) commonData.description = description || null
+      if (meetLink !== undefined) commonData.meetLink = meetLink || null
+      if (type !== undefined) commonData.type = type
+      if (isGlobal !== undefined) commonData.isGlobal = !!isGlobal
+      if (courseId !== undefined) commonData.courseId = isGlobal ? null : (courseId || null)
+      if (instructorId !== undefined) commonData.instructorId = instructorId || null
+      if (status !== undefined) commonData.status = status
+
+      await prisma.$transaction(
+        futureEvents.map((event) => {
+          const shiftedStart = new Date(event.startTime.getTime() + startShiftMs)
+          const shiftedEnd = new Date(shiftedStart.getTime() + nextDurationMs)
+          const updateData: Record<string, any> = {
+            ...commonData,
+            startTime: shiftedStart,
+            endTime: shiftedEnd,
+          }
+
+          if (event.id === chainRootId) {
+            if (recurrence !== undefined) updateData.recurrence = recurrence
+            if (interval !== undefined) updateData.interval = interval ? parseInt(interval as string) : null
+          }
+
+          return prisma.courseEvent.update({
+            where: { id: event.id },
+            data: updateData,
+          })
+        })
+      )
+
+      updatedEvent = await prisma.courseEvent.findUnique({ where: { id } })
+    } else {
+      updatedEvent = await prisma.courseEvent.update({
+        where: { id },
+        data,
+      })
+    }
 
     logActivity({
       userId: session.userId,
       userName: session.name,
       userRole: session.role,
       actionType: ACTION.EVENT_UPDATED,
-      actionDescription: `${session.name} updated course event "${updatedEvent.title}"`,
+      actionDescription: `${session.name} updated course event "${updatedEvent?.title ?? existingEvent.title}"`,
       moduleName: MODULE.CALENDAR,
       targetId: id,
     })
@@ -114,7 +170,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role) && session.role !== 'INSTRUCTOR') {
+    if (!isManager(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

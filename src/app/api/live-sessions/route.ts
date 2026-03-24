@@ -1,51 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
+import { getFullSession, getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { getEventStatus, getISTDayBoundaries } from '@/lib/date-utils'
+import { getTodaySessionSnapshots } from '@/lib/daily-session-sync'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession()
+    const session = await getFullSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
+    const status = searchParams.get('status')
+    const sessions = await getTodaySessionSnapshots(session)
 
-    const { startOfDay, endOfDay } = getISTDayBoundaries()
+    const filtered = !status
+      ? sessions
+      : sessions.filter((item) => {
+          if (status === 'live') return item.status === 'live'
+          if (status === 'scheduled') return item.status === 'upcoming' || item.status === 'rescheduled'
+          if (status === 'completed') return item.status === 'completed' || item.status === 'cancelled'
+          return true
+        })
 
-    const where: Record<string, any> = { 
-      startTime: { gte: startOfDay, lte: endOfDay }
-    }
-
-    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-    if (accessibleCourseIds !== null) {
-      where.OR = [
-        { courseId: null, isGlobal: true },
-        { courseId: { in: accessibleCourseIds } }
-      ]
-    }
-
-    const liveSessions = await prisma.courseEvent.findMany({
-      where,
-      include: {
-        instructor: { select: { id: true, name: true } },
-        course: { select: { id: true, name: true, color: true, teacherName: true } },
-      },
-      orderBy: { startTime: 'asc' },
-    })
-
-    const mappedSessions = liveSessions.map((s: any) => {
-      const status = getEventStatus(s.startTime, s.endTime, s.status)
-      return {
-        ...s,
-        status, // This correctly computes upcoming, live, completed
-        internalStatus: s.status, // Preserve DB status
-      }
-    })
-
-    return NextResponse.json(mappedSessions)
+    return NextResponse.json(filtered)
   } catch (error) {
     console.error('Error fetching live sessions:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -63,7 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { courseId, title, description, meetingLink, instructor, date, time, status } =
+    const { courseId, title, description, meetLink, instructorId, startTime, endTime } =
       await request.json()
 
     // Verify ADMIN has access to the target class
@@ -74,28 +53,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get the class name for linking to the calendar event
-    let className: string | null = null
-    if (courseId) {
-      const cls = await prisma.course.findUnique({ where: { id: courseId }, select: { name: true } })
-      className = cls?.name || null
-    }
-
-    const timeStr = time || '00:00'
-    const start = new Date(`${date}T${timeStr}+05:30`)
-    const end = new Date(start.getTime() + 60 * 60 * 1000) // 1 hour default
-
-    const liveSession = await prisma.courseEvent.create({
+    const courseEvent = await prisma.courseEvent.create({
       data: {
         courseId: courseId || null,
-        isGlobal: !courseId,
         title,
         description: description || null,
-        meetLink: meetingLink || null,
-        startTime: start,
-        endTime: end,
+        meetLink: meetLink || null,
+        instructorId: instructorId || null,
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
         type: 'class',
-        status: status || 'SCHEDULED',
+        status: 'SCHEDULED',
         createdById: session.userId,
       },
     })
@@ -107,10 +75,10 @@ export async function POST(request: NextRequest) {
       actionType: ACTION.SESSION_CREATED,
       actionDescription: `${session.name} created live session "${title}"`,
       moduleName: MODULE.LIVE_SESSIONS,
-      targetId: liveSession.id,
+      targetId: courseEvent.id,
     })
 
-    return NextResponse.json(liveSession, { status: 201 })
+    return NextResponse.json(courseEvent, { status: 201 })
   } catch (error) {
     console.error('Error creating live session:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

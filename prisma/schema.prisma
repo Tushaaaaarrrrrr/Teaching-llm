@@ -43,6 +43,7 @@ model User {
   communityMessages       CommunityMessage[]     @relation("CommMsgSender")
   courseEvents            CourseEvent[]          @relation("EventCreator")
   instructorCourseEvents  CourseEvent[]          @relation("EventInstructor")
+  syncedSessionEvents     DailySessionSnapshot[] @relation("SnapshotInstructor")
   enrollments             Enrollment[]
   feedbacks               Feedback[]
   instructorAssignments   InstructorAssignment[]
@@ -76,6 +77,7 @@ model Course {
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
   communityMessages     CommunityMessage[]
   courseEvents          CourseEvent[]
+  dailySessionSnapshots DailySessionSnapshot[]
   enrollments           Enrollment[]
   exams                 Exam[]
   feedbacks             Feedback[]
@@ -167,6 +169,30 @@ model CourseEvent {
   @@index([createdById])
   @@index([type])
   @@index([isGlobal])
+}
+
+model DailySessionSnapshot {
+  id            String   @id @default(cuid())
+  snapshotDate  DateTime
+  sourceEventId String
+  title         String
+  description   String?
+  startTime     DateTime
+  endTime       DateTime
+  meetLink      String?
+  status        String   @default("SCHEDULED")
+  courseId      String?  @map("classId")
+  isGlobal      Boolean  @default(false)
+  instructorId  String?
+  syncedAt      DateTime @default(now())
+  createdById   String
+  course        Course?  @relation(fields: [courseId], references: [id])
+  instructor    User?    @relation("SnapshotInstructor", fields: [instructorId], references: [id])
+
+  @@index([snapshotDate])
+  @@index([sourceEventId])
+  @@index([courseId])
+  @@unique([snapshotDate, sourceEventId])
 }
 
 

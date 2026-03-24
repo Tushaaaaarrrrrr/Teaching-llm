@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation'
 interface UserProfile {
   id: string
   name: string
+  firstName?: string | null
+  lastName?: string | null
+  mobileNumber?: string | null
   email: string
   role: string
   avatar: string | null
@@ -33,9 +36,11 @@ export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const [editName, setEditName] = useState('')
-  const [savingName, setSavingName] = useState(false)
-  const [nameMsg, setNameMsg] = useState({ type: '', text: '' })
+  const [editFirstName, setEditFirstName] = useState('')
+  const [editLastName, setEditLastName] = useState('')
+  const [editMobile, setEditMobile] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [profileMsg, setProfileMsg] = useState({ type: '', text: '' })
 
   const [showSecurityNumber, setShowSecurityNumber] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
@@ -48,32 +53,36 @@ export default function ProfilePage() {
       const data = await res.json()
       if (data.user) {
         setUser(data.user)
-        setEditName(data.user.name)
+        setEditFirstName(data.user.firstName || data.user.name.split(' ')[0] || '')
+        setEditLastName(data.user.lastName || data.user.name.split(' ').slice(1).join(' ') || '')
+        setEditMobile(data.user.mobileNumber || '')
       }
     } catch (e) { console.error(e) }
     setLoading(false)
   }
 
-  async function handleSaveName() {
-    if (!editName.trim()) { setNameMsg({ type: 'error', text: 'Name cannot be empty' }); return }
-    if (editName.trim() === user?.name) { setNameMsg({ type: 'info', text: 'No changes to save' }); return }
-    setSavingName(true)
-    setNameMsg({ type: '', text: '' })
+  async function handleSaveProfile() {
+    if (!editFirstName.trim()) { setProfileMsg({ type: 'error', text: 'First name cannot be empty' }); return }
+    setSaving(true)
+    setProfileMsg({ type: '', text: '' })
     try {
       const res = await fetch('/api/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editName.trim() }),
+        body: JSON.stringify({ 
+          firstName: editFirstName.trim(),
+          lastName: editLastName.trim()
+        }),
       })
       const data = await res.json()
       if (res.ok) {
-        setUser(prev => prev ? { ...prev, name: data.user.name } : prev)
-        setNameMsg({ type: 'success', text: 'Name updated successfully' })
+        setUser(data.user)
+        setProfileMsg({ type: 'success', text: 'Profile updated successfully' })
       } else {
-        setNameMsg({ type: 'error', text: data.error || 'Failed to update' })
+        setProfileMsg({ type: 'error', text: data.error || 'Failed to update' })
       }
-    } catch { setNameMsg({ type: 'error', text: 'Something went wrong' }) }
-    setSavingName(false)
+    } catch { setProfileMsg({ type: 'error', text: 'Something went wrong' }) }
+    setSaving(false)
   }
 
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -97,11 +106,15 @@ export default function ProfilePage() {
   }
 
   function handleDiscard() {
-    if (user) setEditName(user.name)
-    setNameMsg({ type: '', text: '' })
+    if (user) {
+      setEditFirstName(user.firstName || user.name.split(' ')[0] || '')
+      setEditLastName(user.lastName || user.name.split(' ').slice(1).join(' ') || '')
+      setEditMobile(user.mobileNumber || '')
+    }
+    setProfileMsg({ type: '', text: '' })
   }
 
-  const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'
+  const initials = (user?.firstName?.[0] || user?.name?.[0] || '?') + (user?.lastName?.[0] || user?.name?.split(' ')[1]?.[0] || '')
   const roleLabel = user?.role ? user.role.charAt(0) + user.role.slice(1).toLowerCase() : ''
 
   const insetRow: React.CSSProperties = {
@@ -249,20 +262,31 @@ export default function ProfilePage() {
               Personal Information
             </h3>
 
-            {nameMsg.text && (
+            {profileMsg.text && (
               <div style={{
                 padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '14px',
-                background: nameMsg.type === 'success' ? '#d1fae5' : nameMsg.type === 'error' ? '#fee2e2' : '#dbeafe',
-                color: nameMsg.type === 'success' ? '#065f46' : nameMsg.type === 'error' ? '#991b1b' : '#1e40af',
+                background: profileMsg.type === 'success' ? '#d1fae5' : profileMsg.type === 'error' ? '#fee2e2' : '#dbeafe',
+                color: profileMsg.type === 'success' ? '#065f46' : profileMsg.type === 'error' ? '#991b1b' : '#1e40af',
               }}>
-                {nameMsg.text}
+                {profileMsg.text}
               </div>
             )}
-
+ 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">First Name</label>
+                  <input className="form-input" value={editFirstName} onChange={e => setEditFirstName(e.target.value)} placeholder="First Name" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Last Name</label>
+                  <input className="form-input" value={editLastName} onChange={e => setEditLastName(e.target.value)} placeholder="Last Name" />
+                </div>
+              </div>
               <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input className="form-input" value={editName} onChange={e => setEditName(e.target.value)} placeholder="Enter your name" />
+                <label className="form-label">Mobile Number</label>
+                <input className="form-input" value={editMobile} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+                <span style={{ fontSize: '11px', color: '#9999b0' }}>Mobile number is read-only. Contact admin to change.</span>
               </div>
               <div className="form-group">
                 <label className="form-label">Email Address</label>
@@ -351,8 +375,8 @@ export default function ProfilePage() {
           <button onClick={handleDiscard} className="btn btn-ghost">
             Discard Changes
           </button>
-          <button onClick={handleSaveName} disabled={savingName} className="btn btn-primary">
-            {savingName ? 'Saving...' : 'Save Changes'}
+          <button onClick={handleSaveProfile} disabled={saving} className="btn btn-primary">
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
 

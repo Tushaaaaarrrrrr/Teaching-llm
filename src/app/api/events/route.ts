@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
+import { getSession, isAdminOrManager, getAccessibleCourseIds, isManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { formatIST, getEventStatus } from '@/lib/date-utils'
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next
+}
 
 // Compute status dynamically from time
 // Status calculation now handled by getEventStatus in @/lib/date-utils
@@ -70,9 +76,9 @@ export async function GET(request: NextRequest) {
         title: ev.title,
         description: ev.description,
         startTime: ev.startTime.toISOString(),
-        endTime: ev.endTime.toISOString(),
         date: ev.startTime.toISOString().split('T')[0],
         time: formatIST(ev.startTime, { hour: '2-digit', minute: '2-digit', hour12: false }),
+        endTime: formatIST(ev.endTime, { hour: '2-digit', minute: '2-digit', hour12: false }),
         meetLink: canSeeMeetLink ? ev.meetLink : null,
         meetingLink: canSeeMeetLink ? ev.meetLink : null, // alias
         type: ev.type,
@@ -84,6 +90,8 @@ export async function GET(request: NextRequest) {
         instructor: ev.instructor,
         isGlobal: ev.isGlobal,
         recurrence: ev.recurrence,
+        interval: ev.interval,
+        parentId: ev.parentId,
         originalStartTime: ev.originalStartTime ? ev.originalStartTime.toISOString() : null,
         createdAt: ev.createdAt.toISOString(),
       }
@@ -103,7 +111,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role) && session.role !== 'INSTRUCTOR') {
+    if (!isManager(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -116,14 +124,6 @@ export async function POST(request: NextRequest) {
 
     if (!title || !startTime || !endTime) {
       return NextResponse.json({ error: 'Title, startTime, and endTime are required' }, { status: 400 })
-    }
-
-    // Verify ADMIN/INSTRUCTOR has access to the target course
-    if ((session.role === 'ADMIN' || session.role === 'INSTRUCTOR') && courseId) {
-      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
-        return NextResponse.json({ error: 'No access to this course' }, { status: 403 })
-      }
     }
 
     const event = await prisma.courseEvent.create({
@@ -144,15 +144,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Handle Recurrence Generation (Simple approach)
+    // Generate recurring instances only within the next 30 days.
     if (recurrence && recurrence !== 'ONETIME') {
       const occurrences = []
       const start = new Date(startTime)
       const end = new Date(endTime)
       const duration = end.getTime() - start.getTime()
-      
-      const maxCount = 20 // Generate up to 20 future occurrences
-      for (let i = 1; i <= maxCount; i++) {
+      const maxWindowEnd = addDays(start, 30)
+
+      for (let i = 1; ; i++) {
         let nextStart = new Date(start)
         if (recurrence === 'DAILY') {
           nextStart.setDate(start.getDate() + i)
@@ -163,6 +163,8 @@ export async function POST(request: NextRequest) {
         } else {
           break
         }
+
+        if (nextStart > maxWindowEnd) break
 
         occurrences.push({
           title,

@@ -26,7 +26,8 @@ export async function GET() {
         prisma.user.count({ where: { role: 'STUDENT' } }),
         prisma.courseEvent.count({
           where: {
-            startTime: { gte: new Date() },
+            endTime: { gte: new Date() },
+            status: { not: 'CANCELLED' },
             ...classFilter,
           },
         }),

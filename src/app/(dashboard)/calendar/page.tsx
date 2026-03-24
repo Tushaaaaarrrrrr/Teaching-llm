@@ -1,20 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 
 interface CalEvent {
   id: string
   title: string
   description: string
-  startTime: string
-  endTime: string
+  date: string
+  time: string
+  endTime?: string
   type: string
-  status: string
-  isGlobal: boolean
-  courseId?: string | null
-  course?: { id: string; name: string; color: string } | null
   meetLink?: string | null
-  date?: string
+  status?: string
+  internalStatus?: string
+  classId?: string | null
+  isGlobal?: boolean
+  recurrence?: string | null
+  interval?: number | null
+  parentId?: string | null
+  class?: { id: string; name: string; color: string } | null
+  instructorId?: string | null
+  instructor?: { id: string; name: string } | null
 }
 
 interface ClassOption {
@@ -30,6 +37,16 @@ interface InstructorOption {
 
 interface UserInfo {
   role: string
+}
+
+function buildEventDateTime(date: string, startTimeValue: string, endTimeValue: string) {
+  const startTime = new Date(`${date}T${startTimeValue}:00`)
+  const endTime = new Date(`${date}T${endTimeValue}:00`)
+
+  return {
+    startTime: startTime.toISOString(),
+    endTime: endTime.toISOString(),
+  }
 }
 
 const TYPE_COLORS: Record<string, { bg: string; color: string; label: string }> = {
@@ -48,27 +65,48 @@ const EVENT_TYPES = [
   { value: 'holiday', label: 'Holiday' },
 ]
 
-export default function CalendarPage() {
+const EVENT_STATUS_OPTIONS = [
+  { value: 'SCHEDULED', label: 'Scheduled' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+  { value: 'RESCHEDULED', label: 'Rescheduled' },
+]
+
+const RECURRENCE_OPTIONS = [
+  { value: 'ONETIME', label: 'One Time' },
+  { value: 'DAILY', label: 'Daily' },
+  { value: 'WEEKLY', label: 'Weekly' },
+  { value: 'CUSTOM', label: 'Custom Interval' },
+]
+
+function CalendarPageContent() {
+  const [mounted, setMounted] = useState(false)
   const [events, setEvents] = useState<CalEvent[]>([])
   const [classes, setClasses] = useState<ClassOption[]>([])
   const [instructors, setInstructors] = useState<InstructorOption[]>([])
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(true)
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const [currentDate, setCurrentDate] = useState<Date | null>(null)
+  const [todayState, setTodayState] = useState<Date | null>(null)
 
+  useEffect(() => {
+    setMounted(true)
+    setCurrentDate(new Date())
+    setTodayState(new Date())
+  }, [])
 
   // Modal state
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [formData, setFormData] = useState<any>({})
+  const [formData, setFormData] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
 
   // Detail popover for clicking event pills on calendar
   const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null)
 
-  const year = currentDate.getFullYear()
-  const month = currentDate.getMonth()
-  const isAdminOrManager = user?.role === 'MANAGER' || user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR'
+  const year = currentDate?.getFullYear() || new Date().getFullYear()
+  const month = currentDate?.getMonth() ?? new Date().getMonth()
+  const monthName = currentDate ? currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : ''
+  const isManager = user?.role === 'MANAGER'
 
   useEffect(() => {
     // Load user info, classes, and instructors once
@@ -100,82 +138,115 @@ export default function CalendarPage() {
 
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const firstDay = new Date(year, month, 1).getDay()
-  const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
   const days: (number | null)[] = []
   for (let i = 0; i < firstDay; i++) days.push(null)
   for (let i = 1; i <= daysInMonth; i++) days.push(i)
 
-  const today = new Date()
-  const isToday = (day: number) =>
-    day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
+  const isToday = (day: number) => {
+    if (!todayState) return false
+    return day === todayState.getDate() && month === todayState.getMonth() && year === todayState.getFullYear()
+  }
 
   const getEventsForDay = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    return events.filter(e => {
-      const eDate = new Date(e.date || (e as any).startTime).toISOString().split('T')[0]
-      return eDate === dateStr
-    })
+    return events.filter(e => e.date === dateStr)
   }
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1))
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1))
   const goToday = () => setCurrentDate(new Date())
 
-  const set = (key: string, val: string | boolean) => setFormData(prev => ({ ...prev, [key]: val } as any))
+  const set = (key: string, val: string) => setFormData(prev => ({ ...prev, [key]: val }))
 
   function openCreate(prefilledDate?: string) {
     setEditId(null)
     setFormData({
       title: '',
       description: '',
-      startTime: prefilledDate ? `${prefilledDate}T10:00` : '',
-      endTime: prefilledDate ? `${prefilledDate}T11:00` : '',
+      date: prefilledDate || '',
+      time: '',
+      endTime: '',
       type: 'class',
-      courseId: '',
-      isGlobal: false,
+      classId: 'GLOBAL',
+      instructorId: '',
+      meetLink: '',
       status: 'SCHEDULED',
       recurrence: 'ONETIME',
+      interval: '1',
+      parentId: '',
     })
     setShowModal(true)
   }
 
-  function openEdit(ev: any) {
+  function openEdit(ev: CalEvent) {
     setEditId(ev.id)
     setFormData({
       title: ev.title || '',
       description: ev.description || '',
-      startTime: ev.startTime ? new Date(ev.startTime).toISOString().slice(0, 16) : '',
-      endTime: ev.endTime ? new Date(ev.endTime).toISOString().slice(0, 16) : '',
+      date: ev.date || '',
+      time: ev.time || '',
+      endTime: ev.endTime || '',
       type: ev.type || 'class',
-      courseId: ev.courseId || '',
-      isGlobal: !!ev.isGlobal,
-      status: ev.status || 'SCHEDULED',
-      recurrence: ev.recurrence || 'ONETIME',
+      classId: ev.isGlobal ? 'GLOBAL' : (ev.classId || ''),
+      instructorId: ev.instructorId || '',
       meetLink: ev.meetLink || '',
+      status: ev.internalStatus || 'SCHEDULED',
+      recurrence: ev.recurrence || 'ONETIME',
+      interval: ev.interval ? String(ev.interval) : '1',
+      parentId: ev.parentId || '',
     })
     setSelectedEvent(null)
     setShowModal(true)
   }
 
   async function handleSave() {
-    if (!formData.title || !formData.startTime || !formData.endTime) return
+    if (!formData.title || !formData.date || !formData.time || !formData.endTime) return
     setSaving(true)
     try {
-      const payload = { ...formData };
-      if (!payload.startTime.includes('+') && !payload.startTime.includes('Z')) {
-        payload.startTime += '+05:30';
+      const { startTime, endTime } = buildEventDateTime(formData.date, formData.time, formData.endTime)
+      if (new Date(endTime) <= new Date(startTime)) {
+        alert('End time must be later than start time')
+        setSaving(false)
+        return
       }
-      if (!payload.endTime.includes('+') && !payload.endTime.includes('Z')) {
-        payload.endTime += '+05:30';
+      const isGlobal = formData.classId === 'GLOBAL'
+      const recurrence = formData.recurrence || 'ONETIME'
+      const isSeriesEvent = !!formData.parentId || recurrence !== 'ONETIME'
+      const payload = {
+        title: formData.title,
+        description: formData.description || null,
+        date: formData.date,
+        time: formData.time,
+        startTime,
+        endTime,
+        meetLink: formData.meetLink || null,
+        status: formData.status || 'SCHEDULED',
+        recurrence,
+        interval: recurrence === 'CUSTOM' ? (formData.interval || '1') : null,
+        type: formData.type || 'class',
+        classId: isGlobal ? null : (formData.classId || null),
+        isGlobal,
+        instructorId: formData.instructorId || null,
+        parentId: formData.parentId || null,
+        relatedClass: !isGlobal && formData.classId
+          ? classes.find(c => c.id === formData.classId)?.name || null
+          : null,
       }
-
       const url = editId ? `/api/events/${editId}` : '/api/events'
       const method = editId ? 'PUT' : 'POST'
+      const requestBody = editId && isSeriesEvent
+        ? {
+            ...payload,
+            applyToFuture: window.confirm(
+              'Apply these changes to this event and all future events in the series?\n\nPress OK for this and future events.\nPress Cancel for only this event.'
+            ),
+          }
+        : payload
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestBody),
       })
       if (!res.ok) {
         const err = await res.json()
@@ -197,6 +268,8 @@ export default function CalendarPage() {
     } catch (e) { console.error(e) }
   }
 
+  if (!mounted || !currentDate) return null
+
   return (
     <div className="page-container fade-in">
       <div className="page-header">
@@ -216,15 +289,13 @@ export default function CalendarPage() {
             </svg>
           </button>
         </div>
-        {isAdminOrManager && (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button onClick={() => openCreate()} className="btn btn-primary">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Add Event
-            </button>
-          </div>
+        {isManager && (
+          <button onClick={() => openCreate()} className="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Event
+          </button>
         )}
       </div>
 
@@ -259,21 +330,22 @@ export default function CalendarPage() {
         }}>
           {days.map((day, i) => {
             const dayEvents = day ? getEventsForDay(day) : []
+            const dayKey = day ? `day-${year}-${month}-${day}` : `empty-${i}`
             return (
-              <div key={i} style={{
+              <div key={dayKey} style={{
                 minHeight: '100px',
                 padding: '6px 8px',
                 borderBottom: '1px solid #d8dae3',
                 borderRight: (i + 1) % 7 !== 0 ? '1px solid #d8dae3' : 'none',
                 background: day && isToday(day) ? '#f0f0ff' : 'transparent',
                 transition: 'background 0.15s',
-                cursor: day && isAdminOrManager ? 'pointer' : 'default',
+                cursor: day && isManager ? 'pointer' : 'default',
                 position: 'relative',
               }}
               onMouseEnter={e => { if (day) e.currentTarget.style.background = day && isToday(day) ? '#e8e8ff' : '#f8fafc' }}
               onMouseLeave={e => { if (day) e.currentTarget.style.background = day && isToday(day) ? '#f0f0ff' : 'transparent' }}
               onDoubleClick={() => {
-                if (day && isAdminOrManager) {
+                if (day && isManager) {
                   const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                   openCreate(dateStr)
                 }
@@ -298,13 +370,12 @@ export default function CalendarPage() {
                     </div>
                     {dayEvents.slice(0, 3).map(ev => {
                       const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
-                      const isCancelled = ev.status === 'CANCELLED'
                       return (
                         <div key={ev.id} onClick={(e) => { e.stopPropagation(); setSelectedEvent(ev) }} style={{
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          background: isCancelled ? '#f1f1f1' : tc.bg,
-                          color: isCancelled ? '#999' : tc.color,
+                          background: tc.bg,
+                          color: tc.color,
                           fontSize: '10px',
                           fontWeight: '600',
                           marginBottom: '2px',
@@ -312,10 +383,8 @@ export default function CalendarPage() {
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
                           cursor: 'pointer',
-                          textDecoration: isCancelled ? 'line-through' : 'none',
-                          border: ev.status === 'RESCHEDULED' ? `1px dashed ${tc.color}` : 'none',
-                        }} title={`${ev.title}${ev.startTime ? ' at ' + new Date(ev.startTime).toLocaleTimeString() : ''} (${ev.status})`}>
-                          {ev.isGlobal && '🌐 '}{ev.title}
+                        }} title={`${ev.title}${ev.time ? ` ${ev.time}${ev.endTime ? ` - ${ev.endTime}` : ''}` : ''}`}>
+                          {ev.title}
                         </div>
                       )
                     })}
@@ -341,10 +410,8 @@ export default function CalendarPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {events.sort((a, b) => (a.startTime || a.date).localeCompare(b.startTime || b.date)).map(ev => {
+            {events.sort((a, b) => a.date.localeCompare(b.date)).map(ev => {
               const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
-              const isCancelled = ev.status === 'CANCELLED'
-              const date = new Date(ev.startTime || ev.date)
               return (
                 <div key={ev.id} style={{
                   display: 'flex',
@@ -352,10 +419,9 @@ export default function CalendarPage() {
                   padding: '14px 24px',
                   gap: '14px',
                   borderRadius: '50px',
-                  background: isCancelled ? '#f8f8f8' : '#e8eaf0',
+                  background: '#e8eaf0',
                   boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
                   transition: 'box-shadow 0.2s',
-                  opacity: isCancelled ? 0.7 : 1,
                 }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
@@ -364,40 +430,40 @@ export default function CalendarPage() {
                     width: '40px',
                     height: '40px',
                     borderRadius: '10px',
-                    background: isCancelled ? '#eee' : tc.bg,
+                    background: tc.bg,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
                   }}>
-                    <span style={{ fontSize: '14px', fontWeight: '700', color: isCancelled ? '#999' : tc.color, lineHeight: 1 }}>
-                      {date.getDate()}
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: tc.color, lineHeight: 1 }}>
+                      {new Date(ev.date + 'T00:00:00').getDate()}
                     </span>
-                    <span style={{ fontSize:9, color: isCancelled ? '#999' : tc.color, fontWeight: '600', textTransform: 'uppercase' }}>
-                      {date.toLocaleDateString('en-US', { month: 'short' })}
+                    <span style={{ fontSize: '9px', color: tc.color, fontWeight: '600', textTransform: 'uppercase' }}>
+                      {new Date(ev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })}
                     </span>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: isCancelled ? '#999' : '#1e1e3a', marginBottom: '2px', textDecoration: isCancelled ? 'line-through' : 'none' }}>
-                      {ev.isGlobal && '🌐 '}{ev.title}
+                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px' }}>
+                      {ev.title}
                     </div>
                     <div style={{ fontSize: '12px', color: '#9999b0' }}>
-                      {ev.startTime && `${new Date(ev.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · `}
-                      {ev.course?.name ? ev.course.name : ev.description || 'General (All Groups)'}
+                      {ev.time && `${ev.time}${ev.endTime ? ` - ${ev.endTime}` : ''} · `}
+                      {ev.class?.name ? ev.class.name : ev.description || 'Global (All Users)'}
                     </div>
                   </div>
                   <span style={{
                     fontSize: '10px', padding: '3px 10px', borderRadius: '10px', fontWeight: '600',
-                    background: ev.courseId ? (ev.course?.color || '#6366f1') + '18' : '#d0d2d9',
-                    color: ev.courseId ? (ev.course?.color || '#6366f1') : '#6b6b8a',
+                    background: ev.classId ? (ev.class?.color || '#6366f1') + '18' : '#d0d2d9',
+                    color: ev.classId ? (ev.class?.color || '#6366f1') : '#6b6b8a',
                   }}>
-                    {ev.course?.name || 'General'}
+                    {ev.class?.name || 'Global'}
                   </span>
-                  <span className={`badge badge-${ev.status === 'CANCELLED' ? 'warning' : ev.type === 'exam' ? 'danger' : ev.type === 'assignment' ? 'warning' : 'primary'}`}>
-                    {ev.status === 'CANCELLED' ? 'CANCELLED' : tc.label}
+                  <span className={`badge badge-${ev.type === 'exam' ? 'danger' : ev.type === 'assignment' ? 'warning' : 'primary'}`}>
+                    {tc.label}
                   </span>
-                  {isAdminOrManager && (
+                  {isManager && (
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                       <button onClick={() => openEdit(ev)} className="btn btn-ghost btn-sm" title="Edit">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -435,9 +501,7 @@ export default function CalendarPage() {
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Title</div>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e1e3a' }}>
-                  {selectedEvent.isGlobal && '🌐 '}{selectedEvent.title}
-                </div>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e1e3a' }}>{selectedEvent.title}</div>
               </div>
               {selectedEvent.description && (
                 <div>
@@ -447,12 +511,16 @@ export default function CalendarPage() {
               )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Start</div>
-                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.startTime ? new Date(selectedEvent.startTime).toLocaleString() : '—'}</div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Date</div>
+                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.date}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>End</div>
-                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.endTime ? new Date(selectedEvent.endTime).toLocaleString() : '—'}</div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Time</div>
+                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>
+                    {selectedEvent.time
+                      ? `${selectedEvent.time}${selectedEvent.endTime ? ` - ${selectedEvent.endTime}` : ''}`
+                      : '—'}
+                  </div>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -463,22 +531,40 @@ export default function CalendarPage() {
                   </span>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Status</div>
-                  <span className={`badge badge-${selectedEvent.status === 'CANCELLED' ? 'warning' : 'success'}`}>
-                    {selectedEvent.status}
-                  </span>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Subject</div>
+                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.class?.name || 'Global (All Users)'}</div>
                 </div>
               </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Status</div>
+                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.internalStatus || selectedEvent.status || 'SCHEDULED'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Recurrence</div>
+                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>
+                    {selectedEvent.recurrence === 'CUSTOM' && selectedEvent.interval
+                      ? `Every ${selectedEvent.interval} day(s)`
+                      : (selectedEvent.recurrence || 'ONETIME')}
+                  </div>
+                </div>
+              </div>
+              {selectedEvent.instructor && (
+                <div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Instructor</div>
+                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.instructor.name}</div>
+                </div>
+              )}
               {selectedEvent.meetLink && (
                 <div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Meeting Link</div>
-                  <a href={selectedEvent.meetLink} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#6366f1', textDecoration: 'underline' }}>
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Meet Link</div>
+                  <a href={selectedEvent.meetLink} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#2563eb', wordBreak: 'break-all' }}>
                     {selectedEvent.meetLink}
                   </a>
                 </div>
               )}
             </div>
-            {isAdminOrManager && (
+            {isManager && (
               <div className="modal-footer">
                 <button onClick={() => handleDelete(selectedEvent.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
                   Delete
@@ -507,32 +593,6 @@ export default function CalendarPage() {
               </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input 
-                  type="checkbox" 
-                  id="isGlobal"
-                  checked={!!formData.isGlobal} 
-                  onChange={e => set('isGlobal', e.target.checked)}
-                />
-                <label htmlFor="isGlobal" className="form-label" style={{ marginBottom: 0 }}>Global Event (Visible to everyone)</label>
-              </div>
-              
-              {!formData.isGlobal && (
-                <div className="form-group">
-                  <label className="form-label">Course *</label>
-                  <select
-                    className="form-input"
-                    value={formData.courseId || ''}
-                    onChange={e => set('courseId', e.target.value)}
-                  >
-                    <option value="">Select course...</option>
-                    {classes.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
               <div className="form-group">
                 <label className="form-label">Title *</label>
                 <input
@@ -554,51 +614,77 @@ export default function CalendarPage() {
                 />
               </div>
               <div className="form-group">
-                  <label className="form-label">Meeting Link (Optional)</label>
+                <label className="form-label">Subject / Course</label>
+                <select
+                  className="form-input"
+                  value={formData.classId || ''}
+                  onChange={e => set('classId', e.target.value)}
+                >
+                  <option value="GLOBAL">Global (visible to all users)</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                  {formData.classId && formData.classId !== 'GLOBAL'
+                    ? 'Only members enrolled in this subject will see this event.'
+                    : 'This event will be visible to all users.'}
+                </p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Date *</label>
                   <input
+                    type="date"
                     className="form-input"
-                    value={formData.meetLink || ''}
-                    onChange={e => set('meetLink', e.target.value)}
-                    placeholder="https://meet.jit.si/..."
+                    value={formData.date || ''}
+                    onChange={e => set('date', e.target.value)}
                   />
                 </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
-                  <label className="form-label">Start Date & Time *</label>
+                  <label className="form-label">Start Time *</label>
                   <input
-                    type="datetime-local"
+                    type="time"
                     className="form-input"
-                    value={formData.startTime || ''}
-                    onChange={e => set('startTime', e.target.value)}
+                    value={formData.time || ''}
+                    onChange={e => set('time', e.target.value)}
+                    required
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">End Date & Time *</label>
+                  <label className="form-label">End Time *</label>
                   <input
-                    type="datetime-local"
+                    type="time"
                     className="form-input"
                     value={formData.endTime || ''}
                     onChange={e => set('endTime', e.target.value)}
+                    required
                   />
                 </div>
               </div>
-              
+              <div className="form-group">
+                <label className="form-label">Meet Link</label>
+                <input
+                  type="url"
+                  className="form-input"
+                  value={formData.meetLink || ''}
+                  onChange={e => set('meetLink', e.target.value)}
+                  placeholder="https://meet.google.com/..."
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Type</label>
+                <select
+                  className="form-input"
+                  value={formData.type || 'class'}
+                  onChange={e => set('type', e.target.value)}
+                >
+                  {EVENT_TYPES.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group">
-                  <label className="form-label">Type</label>
-                  <select
-                    className="form-input"
-                    value={formData.type || 'class'}
-                    onChange={e => set('type', e.target.value)}
-                  >
-                    {EVENT_TYPES.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                    <option value="holiday">Holiday</option>
-                    <option value="introduction">Introduction</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
                 <div className="form-group">
                   <label className="form-label">Status</label>
                   <select
@@ -606,14 +692,11 @@ export default function CalendarPage() {
                     value={formData.status || 'SCHEDULED'}
                     onChange={e => set('status', e.target.value)}
                   >
-                    <option value="SCHEDULED">Scheduled</option>
-                    <option value="CANCELLED">Cancelled</option>
-                    <option value="RESCHEDULED">Rescheduled</option>
+                    {EVENT_STATUS_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
                 </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
                   <label className="form-label">Recurrence</label>
                   <select
@@ -621,30 +704,46 @@ export default function CalendarPage() {
                     value={formData.recurrence || 'ONETIME'}
                     onChange={e => set('recurrence', e.target.value)}
                   >
-                    <option value="ONETIME">One-time</option>
-                    <option value="DAILY">Daily</option>
-                    <option value="WEEKLY">Weekly</option>
-                    <option value="CUSTOM">Custom Interval</option>
+                    {RECURRENCE_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
                 </div>
-                {formData.recurrence === 'CUSTOM' && (
-                  <div className="form-group">
-                    <label className="form-label">Interval (Days)</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      value={formData.interval || ''}
-                      onChange={e => set('interval', e.target.value)}
-                      placeholder="e.g. 3"
-                      min="1"
-                    />
-                  </div>
-                )}
               </div>
+              {formData.recurrence === 'CUSTOM' && (
+                <div className="form-group">
+                  <label className="form-label">Repeat Every (Days)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="form-input"
+                    value={formData.interval || '1'}
+                    onChange={e => set('interval', e.target.value)}
+                  />
+                </div>
+              )}
+              {instructors.length > 0 && (
+                <div className="form-group">
+                  <label className="form-label">Instructor</label>
+                  <select
+                    className="form-input"
+                    value={formData.instructorId || ''}
+                    onChange={e => set('instructorId', e.target.value)}
+                  >
+                    <option value="">None (no instructor assigned)</option>
+                    {instructors.map(inst => (
+                      <option key={inst.id} value={inst.id}>{inst.name}</option>
+                    ))}
+                  </select>
+                  <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                    Optionally assign an instructor to this event.
+                  </p>
+                </div>
+              )}
             </div>
             <div className="modal-footer">
               <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
-              <button onClick={handleSave} disabled={saving || !formData.title || !formData.startTime} className="btn btn-primary">
+              <button onClick={handleSave} disabled={saving || !formData.title || !formData.date || !formData.time || !formData.endTime} className="btn btn-primary">
                 {saving ? 'Saving…' : (editId ? 'Update Event' : 'Create Event')}
               </button>
             </div>
@@ -654,3 +753,5 @@ export default function CalendarPage() {
     </div>
   )
 }
+
+export default dynamic(() => Promise.resolve(CalendarPageContent), { ssr: false })

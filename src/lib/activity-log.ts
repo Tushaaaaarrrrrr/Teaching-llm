@@ -11,12 +11,12 @@ export const MODULE = {
   LIVE_SESSIONS: 'Live Sessions',
   CALENDAR: 'Calendar',
   ANNOUNCEMENTS: 'Announcements',
+  UPDATES: 'Updates',
   COMMUNITY: 'Community',
   SUPPORT: 'Support',
   EXAMS: 'Exams',
   PROFILE: 'Profile',
   FAQ: 'FAQ',
-  UPDATES: 'Updates',
 } as const
 
 export const ACTION = {
@@ -50,6 +50,12 @@ export const ACTION = {
   EVENT_UPDATED: 'EVENT_UPDATED',
   EVENT_DELETED: 'EVENT_DELETED',
   ANNOUNCEMENT_CREATED: 'ANNOUNCEMENT_CREATED',
+  ANNOUNCEMENT_UPDATED: 'ANNOUNCEMENT_UPDATED',
+  ANNOUNCEMENT_DELETED: 'ANNOUNCEMENT_DELETED',
+  UPDATE_CREATED: 'UPDATE_CREATED',
+  UPDATE_UPDATED: 'UPDATE_UPDATED',
+  UPDATE_DELETED: 'UPDATE_DELETED',
+  UPDATE_VIEWED: 'UPDATE_VIEWED',
   MESSAGE_SENT: 'MESSAGE_SENT',
   MESSAGE_DELETED: 'MESSAGE_DELETED',
   TRANSCRIPT_EXPORTED: 'TRANSCRIPT_EXPORTED',
@@ -71,15 +77,6 @@ export const ACTION = {
   POLL_CREATED: 'POLL_CREATED',
   POLL_VOTED: 'POLL_VOTED',
   POLL_DELETED: 'POLL_DELETED',
-  ANNOUNCEMENT_UPDATED: 'ANNOUNCEMENT_UPDATED',
-  ANNOUNCEMENT_DELETED: 'ANNOUNCEMENT_DELETED',
-  SESSION_EXPORTED: 'SESSION_EXPORTED',
-  STATS_VIEWED: 'STATS_VIEWED',
-  UPDATE_CREATED: 'UPDATE_CREATED',
-  UPDATE_UPDATED: 'UPDATE_UPDATED',
-  UPDATE_DELETED: 'UPDATE_DELETED',
-  UPDATE_DISMISSED: 'UPDATE_DISMISSED',
-  UPDATE_VIEWED: 'UPDATE_VIEWED',
 } as const
 
 interface LogActivityParams {
@@ -109,8 +106,8 @@ export function logActivity(params: LogActivityParams): void {
         moduleName: params.moduleName,
         targetId: params.targetId || null,
         metadata: params.metadata ? JSON.stringify(params.metadata) : null,
-        priority: params.priority || 0,
-        isFailure: params.isFailure || false,
+        priority: params.priority ?? 0,
+        isFailure: params.isFailure ?? false,
       },
     })
     .catch((error) => {

@@ -3,65 +3,6 @@ import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, hashPassword, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    if (!isAdminOrManager(session.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    const { id } = await params
-
-    const user = await prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isTerminated: true,
-        isGoogleUser: true,
-        createdAt: true,
-        gender: true,
-        avatar: true,
-        securityNumber: true,
-        isSuperManager: true,
-        canTerminate: true,
-        canCreateStudents: true,
-        enrollments: {
-          select: {
-            courseId: true,
-            course: { select: { id: true, name: true, color: true, subject: true } },
-          },
-        },
-        instructorAssignments: {
-          select: {
-            courseId: true,
-            course: { select: { id: true, name: true, color: true, subject: true } },
-          },
-        },
-      },
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    return NextResponse.json(user)
-  } catch (error) {
-    console.error('Error fetching user:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -77,7 +18,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, email, role, password, isTerminated, classIds, assignedClassIds } = await request.json()
+    const { name, firstName, lastName, mobileNumber, email, role, password, isTerminated, classIds, assignedClassIds } = await request.json()
 
     // ADMIN restrictions
     if (session.role === 'ADMIN') {
@@ -99,8 +40,33 @@ export async function PUT(
       }
     }
 
-    const data: Record<string, unknown> = {}
-    if (name !== undefined) data.name = name
+    const data: Record<string, any> = {}
+    if (firstName !== undefined) data.firstName = firstName
+    if (lastName !== undefined) data.lastName = lastName
+    
+    // Derived name update or explicit name update
+    if (name !== undefined) {
+      data.name = name
+    } else if (firstName !== undefined || lastName !== undefined) {
+      // Reconstruct name for legacy support
+      const current = await prisma.user.findUnique({ where: { id }, select: { firstName: true, lastName: true, name: true } })
+      const fn = firstName !== undefined ? firstName : (current?.firstName || '')
+      const ln = lastName !== undefined ? lastName : (current?.lastName || '')
+      data.name = `${fn} ${ln}`.trim()
+    }
+
+    // Role-based mobileNumber restriction
+    if (mobileNumber !== undefined) {
+      if (session.role === 'MANAGER') {
+        data.mobileNumber = mobileNumber
+      } else {
+        const current = await prisma.user.findUnique({ where: { id }, select: { mobileNumber: true } })
+        if (current?.mobileNumber !== mobileNumber) {
+          return NextResponse.json({ error: 'Only Managers can edit mobile numbers' }, { status: 403 })
+        }
+      }
+    }
+
     if (email !== undefined) data.email = email
     if (role !== undefined) data.role = role
     if (typeof isTerminated === 'boolean') data.isTerminated = isTerminated
@@ -116,6 +82,9 @@ export async function PUT(
         select: {
           id: true,
           name: true,
+          firstName: true,
+          lastName: true,
+          mobileNumber: true,
           email: true,
           role: true,
           isTerminated: true,
@@ -154,6 +123,9 @@ export async function PUT(
         select: {
           id: true,
           name: true,
+          firstName: true,
+          lastName: true,
+          mobileNumber: true,
           email: true,
           role: true,
           isTerminated: true,
