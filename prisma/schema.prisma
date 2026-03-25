@@ -340,6 +340,7 @@ model PollResponse {
 
 model Exam {
   id              String         @id @default(cuid())
+  externalId      String?        @unique
   title           String
   description     String?
   courseId        String         @map("classId")
@@ -356,6 +357,7 @@ model Exam {
   questions       ExamQuestion[]
 
   @@index([courseId])
+  @@index([externalId])
 }
 
 model ExamQuestion {
@@ -614,9 +616,10 @@ model UpdateView {
 }
 
 model UpdateSystemSettings {
-  id             String  @id @default("singleton")
-  welcomeEnabled Boolean @default(true)
-  customEnabled  Boolean @default(true)
+  id              String  @id @default("singleton")
+  welcomeEnabled  Boolean @default(true)
+  customEnabled   Boolean @default(true)
+  maintenanceMode Boolean @default(false)
 }
 
 model ExamCountdown {

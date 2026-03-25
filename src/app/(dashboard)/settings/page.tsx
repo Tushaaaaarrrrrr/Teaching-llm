@@ -66,6 +66,34 @@ export default function SettingsPage() {
   // Language preference
   const [language, setLanguage] = useState('en-US')
 
+  // Global Maintenance Mode (Manager only)
+  const [maintenanceMode, setMaintenanceMode] = useState(false)
+  const [loadingSettings, setLoadingSettings] = useState(false)
+  // Fetch initial settings
+  useState(() => {
+    fetch('/api/updates/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.settings) {
+          setMaintenanceMode(data.settings.maintenanceMode || false)
+        }
+      })
+      .catch(err => console.error('Failed to fetch settings:', err))
+  })
+
+  async function handleToggleMaintenance(val: boolean) {
+    setMaintenanceMode(val)
+    try {
+      await fetch('/api/updates/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maintenanceMode: val }),
+      })
+    } catch (err) {
+      console.error('Failed to update maintenance mode:', err)
+      setMaintenanceMode(!val) // revert on error
+    }
+  }
   async function handlePasswordChange() {
     if (!pwForm.currentPassword || !pwForm.newPassword || !pwForm.confirmPassword) {
       setPwMsg({ type: 'error', text: 'All fields are required' }); return
@@ -277,6 +305,24 @@ export default function SettingsPage() {
                   <option value="en-GB">English (UK)</option>
                   <option value="hi">Hindi</option>
                 </select>
+              </div>
+
+              {/* Maintenance Mode - Highly Visible for Managers */}
+              <div style={{
+                ...insetRow,
+                background: maintenanceMode ? '#fff1f2' : '#e8eaf0',
+                transition: 'background 0.3s ease',
+                border: maintenanceMode ? '1px solid #fda4af' : '1px solid transparent'
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: '700', color: maintenanceMode ? '#be123c' : '#1e1e3a' }}>
+                    Maintenance Mode
+                  </div>
+                  <div style={{ fontSize: '12px', color: maintenanceMode ? '#e11d48' : '#9999b0', marginTop: '2px' }}>
+                    Restrict access for all non-manager users
+                  </div>
+                </div>
+                <Toggle checked={maintenanceMode} onChange={handleToggleMaintenance} />
               </div>
             </div>
           </div>

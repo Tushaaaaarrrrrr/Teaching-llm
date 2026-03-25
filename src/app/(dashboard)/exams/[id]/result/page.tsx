@@ -10,6 +10,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true)
   const [reviewMode, setReviewMode] = useState(false)
   const [currentIdx, setCurrentIdx] = useState(0)
+  const [cooldownSeconds, setCooldownSeconds] = useState(0)
 
   useEffect(() => {
     let active = true
@@ -18,6 +19,16 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
         if (!active) return
         setExam(data)
         setLoading(false)
+        
+        // Calculate cooldown if GENERAL_TEST
+        const attempt = data?.attempts?.slice().sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())?.[0]
+        if (attempt?.submittedAt && data?.examType === 'GENERAL_TEST') {
+          const submittedTime = new Date(attempt.submittedAt).getTime()
+          const cooldownMs = 5 * 60 * 1000
+          const now = Date.now()
+          const remaining = submittedTime + cooldownMs - now
+          setCooldownSeconds(remaining > 0 ? Math.ceil(remaining / 1000) : 0)
+        }
       })
     }
     load()
@@ -28,6 +39,15 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
     }
   }, [params.id])
 
+  // Countdown timer for GENERAL_TEST
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return
+    const timer = setInterval(() => {
+      setCooldownSeconds(prev => prev > 0 ? prev - 1 : 0)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [cooldownSeconds])
+
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading results...</div>
 
   const attempt = exam?.attempts?.slice().sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())?.[0]
@@ -36,7 +56,6 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
     return null
   }
 
-  // Shared Styles
   const neuCard: React.CSSProperties = {
     borderRadius: '20px', background: '#e8eaf0',
     boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
@@ -46,6 +65,8 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
   const scorePercentage = attempt.totalMarks !== null 
     ? (attempt.totalMarks / exam.questions.reduce((acc: number, q: any) => acc + q.marks, 0)) * 100 
     : null
+
+  const isGeneralTest = exam?.examType === 'GENERAL_TEST'
 
   return (
     <div style={{ padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
@@ -79,6 +100,50 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
           {reviewMode ? 'Exit Review Mode' : 'Enter Review Mode'}
         </button>
       </div>
+
+      {isGeneralTest && (
+        <div style={{ ...neuCard, textAlign: 'center', marginBottom: '40px', background: cooldownSeconds > 0 ? '#fff3cd' : '#d4edda' }}>
+          {cooldownSeconds > 0 ? (
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '12px' }}>
+                Cooldown Active
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: 900, color: '#f59e0b', marginBottom: '8px' }}>
+                {Math.floor(cooldownSeconds / 60)}m {cooldownSeconds % 60}s
+              </div>
+              <p style={{ fontSize: '13px', color: '#6b6b8a', margin: '0' }}>You can retake this exam in the time shown above</p>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', marginBottom: '8px' }}>
+                ✓ Ready to Retake
+              </div>
+              <p style={{ fontSize: '13px', color: '#6b6b8a', margin: '0 0 12px 0' }}>The cooldown period has ended. You can now attempt this exam again.</p>
+              <button
+                onClick={() => router.push(`/exams/${params.id}/attempt`)}
+                style={{
+                  padding: '12px 32px', borderRadius: '50px', border: 'none',
+                  background: '#10b981', color: '#fff', fontSize: '14px', fontWeight: 800,
+                  cursor: 'pointer', boxShadow: '4px 4px 10px rgba(16,185,129,0.35)'
+                }}
+              >
+                Retake Exam
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!isGeneralTest && (
+        <div style={{ ...neuCard, textAlign: 'center', marginBottom: '40px', background: '#e8d7e8' }}>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>
+            Final Assessment
+          </div>
+          <p style={{ fontSize: '15px', fontWeight: 700, color: '#6b6b8a', margin: '0' }}>
+            You have completed this final assessment. You cannot retake this exam.
+          </p>
+        </div>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>

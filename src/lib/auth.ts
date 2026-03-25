@@ -28,6 +28,7 @@ export interface JWTPayload {
 export interface FullSession extends JWTPayload {
   isTerminated: boolean
   accessibleCourseIds: string[] | null // null = all courses (MANAGER)
+  isMaintenanceMode?: boolean
 }
 
 export function signToken(payload: JWTPayload): string {
@@ -72,25 +73,30 @@ export async function getFullSession(): Promise<FullSession | null> {
 
   // Fetch isTerminated, enrollments AND current tokenVersion in ONE query
   const now = new Date()
-  const user = await (prisma.user.findUnique as any)({
-    where: { id: jwtPayload.userId },
-    select: {
-      isTerminated: true,
-      tokenVersion: true,
-      enrollments: jwtPayload.role !== 'MANAGER' ? {
-        where: {
-          course: {
-            isDisabled: false,
-            OR: [
-              { expiresAt: null },
-              { expiresAt: { gt: now } },
-            ],
+  const [user, settings] = await Promise.all([
+    (prisma.user.findUnique as any)({
+      where: { id: jwtPayload.userId },
+      select: {
+        isTerminated: true,
+        tokenVersion: true,
+        enrollments: jwtPayload.role !== 'MANAGER' ? {
+          where: {
+            course: {
+              isDisabled: false,
+              OR: [
+                { expiresAt: null },
+                { expiresAt: { gt: now } },
+              ],
+            },
           },
-        },
-        select: { courseId: true },
-      } : false,
-    },
-  })
+          select: { courseId: true },
+        } : false,
+      },
+    }),
+    prisma.updateSystemSettings.findUnique({
+      where: { id: 'singleton' }
+    })
+  ])
 
   // Security Check: Token Version Invalidation
   // If user has a tokenVersion in JWT, it MUST match the DB.
@@ -107,6 +113,7 @@ export async function getFullSession(): Promise<FullSession | null> {
     accessibleCourseIds: jwtPayload.role === 'MANAGER' 
       ? null 
       : (user.enrollments as { courseId: string }[] | undefined)?.map(e => e.courseId) ?? [],
+    isMaintenanceMode: settings?.maintenanceMode && jwtPayload.role !== 'MANAGER'
   }
 }
 

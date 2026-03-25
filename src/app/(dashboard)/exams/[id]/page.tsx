@@ -73,9 +73,20 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
     if (!value) return ''
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return ''
+    // Convert UTC to local time for display in datetime-local input
     const offset = date.getTimezoneOffset()
     const local = new Date(date.getTime() - offset * 60_000)
     return local.toISOString().slice(0, 16)
+  }
+
+  function toUTCString(localDateTimeString: string) {
+    if (!localDateTimeString) return null
+    // Convert from datetime-local (local time string) back to UTC for server
+    const local = new Date(localDateTimeString)
+    if (Number.isNaN(local.getTime())) return null
+    const offset = local.getTimezoneOffset()
+    const utc = new Date(local.getTime() + offset * 60_000)
+    return utc.toISOString()
   }
 
   function openExamEditor() {
@@ -137,8 +148,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
         body: JSON.stringify({
           title: examForm.title,
           description: examForm.description,
-          startDate: examForm.startDate || null,
-          expiresAt: examForm.expiresAt,
+          startDate: examForm.startDate ? toUTCString(examForm.startDate) : null,
+          expiresAt: toUTCString(examForm.expiresAt),
           durationMinutes: parseInt(examForm.durationMinutes, 10)
         })
       })

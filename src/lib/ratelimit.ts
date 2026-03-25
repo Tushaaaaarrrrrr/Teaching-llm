@@ -24,10 +24,13 @@ function checkMemoryLimit(identifier: string, limit: number, windowMs: number) {
 // Check if Upstash credentials exist
 const hasRedis = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 
+export const redis = hasRedis ? Redis.fromEnv() : null;
+export const MAINTENANCE_KEY = 'system:maintenance_mode';
+
 
 export const ratelimit = hasRedis
   ? new Ratelimit({
-      redis: Redis.fromEnv(),
+      redis: redis!,
       limiter: Ratelimit.slidingWindow(5, "15 m"), // default for login
       analytics: true,
       prefix: "@upstash/ratelimit",
@@ -42,10 +45,24 @@ const commentLimit = hasRedis ? new Ratelimit({
 }) : null;
 
 const generalLimit = hasRedis ? new Ratelimit({
-  redis: Redis.fromEnv(),
+  redis: redis!,
   limiter: Ratelimit.slidingWindow(20, "1 m"),
   prefix: "@upstash/ratelimit/general",
 }) : null;
+
+export async function setMaintenanceMode(enabled: boolean) {
+  if (redis) {
+    await redis.set(MAINTENANCE_KEY, enabled ? 'on' : 'off');
+  }
+}
+
+export async function isMaintenanceModeActive(): Promise<boolean> {
+  if (redis) {
+    const val = await redis.get(MAINTENANCE_KEY);
+    return val === 'on';
+  }
+  return false;
+}
 
 /**
  * Helper to check rate limit for a specific identifier and action type

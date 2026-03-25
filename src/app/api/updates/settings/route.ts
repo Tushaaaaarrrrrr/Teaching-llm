@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isManager } from '@/lib/auth'
+import { setMaintenanceMode } from '@/lib/ratelimit'
 
 /**
  * GET /api/updates/settings  - returns global welcomeEnabled / customEnabled
@@ -15,7 +16,12 @@ export async function GET() {
 
     const settings = await prisma.updateSystemSettings.upsert({
       where: { id: 'singleton' },
-      create: { id: 'singleton', welcomeEnabled: true, customEnabled: true },
+      create: { 
+        id: 'singleton', 
+        welcomeEnabled: true, 
+        customEnabled: true,
+        maintenanceMode: false
+      },
       update: {},
     })
 
@@ -34,7 +40,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { welcomeEnabled, customEnabled } = body
+    const { welcomeEnabled, customEnabled, maintenanceMode } = body
 
     const settings = await prisma.updateSystemSettings.upsert({
       where: { id: 'singleton' },
@@ -42,12 +48,18 @@ export async function PUT(request: NextRequest) {
         id: 'singleton',
         welcomeEnabled: welcomeEnabled ?? true,
         customEnabled: customEnabled ?? true,
+        maintenanceMode: maintenanceMode ?? false,
       },
       update: {
         ...(welcomeEnabled !== undefined && { welcomeEnabled }),
         ...(customEnabled !== undefined && { customEnabled }),
+        ...(maintenanceMode !== undefined && { maintenanceMode }),
       },
     })
+
+    if (maintenanceMode !== undefined) {
+      await setMaintenanceMode(maintenanceMode)
+    }
 
     return NextResponse.json({ settings })
   } catch (error) {

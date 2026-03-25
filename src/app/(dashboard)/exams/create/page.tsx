@@ -84,6 +84,15 @@ export default function CreateExamPage() {
   const handleQuestionChange = (index: number, field: keyof Question, value: any) => {
     const newQuestions = [...questions]
     newQuestions[index] = { ...newQuestions[index], [field]: value }
+    
+    // Auto-set options when changing type to TRUE_FALSE
+    if (field === 'type' && value === 'TRUE_FALSE') {
+      newQuestions[index].options = ['True', 'False']
+    } else if (field === 'type' && value === 'MCQ' && newQuestions[index].options.length === 2 && newQuestions[index].options[0] === 'True') {
+      // If switching from TRUE_FALSE to MCQ, reset to empty options
+      newQuestions[index].options = ['', '']
+    }
+    
     setQuestions(newQuestions)
   }
 

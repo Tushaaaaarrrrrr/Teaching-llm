@@ -27,6 +27,11 @@ export async function GET(
 
     // Role-based logic
     if (session.role === 'STUDENT') {
+      // Check if exam is published (students can't see unpublished exams)
+      if (!exam.isPublished) {
+        return NextResponse.json({ error: 'Exam not found or not available' }, { status: 404 })
+      }
+
       // Check if student belongs to the course
       const enrollment = await prisma.enrollment.findUnique({
         where: { userId_courseId: { userId: session.userId, courseId: exam.courseId } }
@@ -52,7 +57,9 @@ export async function GET(
         }))
       }
 
-      return NextResponse.json({ ...exam, attempts })
+      // Hide externalId from students
+      const { externalId, ...examWithoutExternalId } = exam as any
+      return NextResponse.json({ ...examWithoutExternalId, attempts })
     } else {
       // ADMIN or MANAGER
       const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)

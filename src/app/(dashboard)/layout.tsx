@@ -21,6 +21,11 @@ export default async function DashboardLayout({
     redirect('/terminated')
   }
 
+  // Maintenance mode guard
+  if (session.isMaintenanceMode) {
+    redirect('/maintenance')
+  }
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#e8eaf0' }}>
       <Sidebar

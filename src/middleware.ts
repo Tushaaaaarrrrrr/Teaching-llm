@@ -5,7 +5,7 @@ const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated']
 const COOKIE_NAME = 'teaching_llm_token'
 const JWT_SECRET = (process.env.JWT_SECRET || 'teaching-llm-super-secret-jwt-key-2024').trim()
 
-import { checkRateLimit } from '@/lib/ratelimit'
+import { checkRateLimit, isMaintenanceModeActive } from '@/lib/ratelimit'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -31,6 +31,37 @@ export async function middleware(request: NextRequest) {
   // Allow public paths
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next()
+  }
+
+  // 2. Global Maintenance Mode Check
+  const isMaintenance = await isMaintenanceModeActive()
+  
+  if (isMaintenance) {
+    // Check if it's a contact route or auth route that should be allowed
+    const isEssential = pathname.startsWith('/api/auth') || 
+                       pathname.startsWith('/api/support') || // "contact developer" logic
+                       pathname === '/maintenance'
+
+    if (!isEssential) {
+      // Get session to check role
+      const token = request.cookies.get(COOKIE_NAME)?.value
+      if (token) {
+        try {
+          const secret = new TextEncoder().encode(JWT_SECRET)
+          const { payload } = await jwtVerify(token, secret)
+          // If manager, bypass maintenance
+          if (payload.role === 'MANAGER') {
+            return NextResponse.next()
+          }
+        } catch (e) {}
+      }
+      
+      // Redirect to maintenance page or block API
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'System is under maintenance' }, { status: 503 })
+      }
+      return NextResponse.redirect(new URL('/maintenance', request.url))
+    }
   }
 
   // Allow API auth routes

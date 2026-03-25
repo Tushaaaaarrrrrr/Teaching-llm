@@ -5,6 +5,7 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { sanitizeInput } from '@/lib/validation'
 import { DEFAULT_FINAL_TEST_WINDOW_MS, isFinalTest } from '@/lib/exam-policy'
+import { randomUUID } from 'crypto'
 
 export async function GET(request: NextRequest) {
   try {
@@ -196,6 +197,7 @@ export async function POST(request: NextRequest) {
 
       const exam = await (tx.exam as any).create({
         data: {
+          externalId: randomUUID(),
           title: sanitizedTitle,
           description: sanitizedDescription,
           courseId,
