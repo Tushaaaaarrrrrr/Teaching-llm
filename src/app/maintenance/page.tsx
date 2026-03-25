@@ -4,15 +4,15 @@ import React from 'react'
 
 export default function MaintenancePage() {
   return (
-    <div className="min-h-screen bg-white text-black font-sans flex flex-col items-center justify-center p-6 md:p-12 overflow-y-auto">
+    <div className="h-screen bg-white text-black font-sans flex flex-col items-center justify-center p-4 md:p-8 overflow-hidden">
       <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@800&display=swap');
-        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: white !important; }
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: white !important; overflow: hidden; }
       `}} />
 
-      <div className="w-full max-w-4xl flex flex-col items-center text-center py-10">
+      <div className="w-full max-w-4xl flex flex-col items-center text-center py-4 md:py-8">
         {/* SVG Illustration */}
-        <div className="w-full max-h-[40vh] flex items-center justify-center mb-10 md:mb-16">
+        <div className="w-full max-h-[35vh] flex items-center justify-center mb-6 md:mb-10">
           <svg fill="none" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" className="max-w-full h-full w-auto drop-shadow-sm">
             <g stroke="black" strokeWidth="2">
               <path d="M150 50v50m0 0l-20 20h40l-20-20z"></path>
@@ -56,31 +56,31 @@ export default function MaintenancePage() {
         </div>
 
         {/* Textual Content */}
-        <h1 className="text-3xl md:text-5xl lg:text-7xl font-extrabold text-black uppercase tracking-tight leading-tight mb-4 px-4">
+        <h1 className="text-2xl md:text-4xl lg:text-5xl font-extrabold text-black uppercase tracking-tight leading-tight mb-4 px-4">
           SYSTEM IS UNDER MAINTENANCE
         </h1>
         
-        <p className="text-gray-600 max-w-2xl text-lg md:text-xl font-medium mb-12 px-6 leading-relaxed opacity-90">
+        <p className="text-gray-600 max-w-xl text-base md:text-lg font-medium mb-8 px-6 leading-relaxed opacity-90">
           We're currently performing some scheduled maintenance to improve your experience. 
           We'll be back shortly!
         </p>
 
         {/* Bulletproof Contact Button */}
-        <div className="flex justify-center pb-12">
+        <div className="flex justify-center pb-6">
           <a 
-            href="mailto:support@alphaiitian.in"
+            href="mailto:care.alpha.iitian@gmail.com"
             style={{
               backgroundColor: '#000000',
               color: '#ffffff',
-              padding: '16px 48px',
+              padding: '12px 36px',
               borderRadius: '9999px',
               fontWeight: 'bold',
-              fontSize: '14px',
+              fontSize: '13px',
               letterSpacing: '0.2em',
               textDecoration: 'none',
               textTransform: 'uppercase',
               display: 'inline-block',
-              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+              boxShadow: '0 8px 20px -5px rgba(0, 0, 0, 0.3)',
               transition: 'all 0.2s ease-in-out'
             }}
             onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#333333'; e.currentTarget.style.transform = 'scale(1.05)'; }}
