@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { ExamTimingState, formatCountdownDuration, formatISTDateTime, getExamTimingState } from '@/lib/date-utils'
 
 interface ExamTimingStatusProps {
@@ -23,36 +23,70 @@ function getTone(state: ExamTimingState): { background: string; color: string } 
 }
 
 export default function ExamTimingStatus({ startDate, expiresAt, compact = false }: ExamTimingStatusProps) {
-  const [now, setNow] = useState(() => new Date())
+  // We only track the macroscopic "phase" in React state to avoid re-rendering every second.
+  const [examPhase, setExamPhase] = useState<ExamTimingState>(() => getExamTimingState(startDate, expiresAt, new Date()))
+  const primaryTextRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(new Date())
-    }, 1000)
+    let animationFrameId: number
+    let lastSecond = -1
 
-    return () => clearInterval(timer)
-  }, [])
+    const tick = () => {
+      const now = new Date()
+      const currentSec = now.getSeconds()
 
-  const state = getExamTimingState(startDate, expiresAt, now)
+      if (currentSec !== lastSecond) {
+        lastSecond = currentSec
+        const currentPhase = getExamTimingState(startDate, expiresAt, now)
+
+        if (currentPhase !== examPhase) {
+          // Phase changed (e.g., from 'before' to 'ending'), trigger a full React re-render to update UI styles
+          setExamPhase(currentPhase)
+        } else if (primaryTextRef.current) {
+          // Direct DOM mutation for the countdown text to bypass React overhead
+          const start = startDate ? new Date(startDate) : null
+          const end = new Date(expiresAt)
+          let primaryText = 'Exam is live'
+
+          if (currentPhase === 'before' && start) {
+            primaryText = formatCountdownDuration(start.getTime() - now.getTime())
+          } else if (currentPhase === 'ending') {
+            primaryText = formatCountdownDuration(end.getTime() - now.getTime())
+          } else if (currentPhase === 'ended') {
+            primaryText = 'Exam window has closed'
+          }
+          
+          if (primaryTextRef.current.innerText !== primaryText) {
+            primaryTextRef.current.innerText = primaryText
+          }
+        }
+      }
+      animationFrameId = requestAnimationFrame(tick)
+    }
+
+    animationFrameId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(animationFrameId)
+  }, [startDate, expiresAt, examPhase])
+
   const start = startDate ? new Date(startDate) : null
   const end = new Date(expiresAt)
-  const tone = getTone(state)
+  const tone = getTone(examPhase)
 
   let label = 'Started'
-  let primaryText = 'Exam is live'
   let secondaryText = `Ends ${formatISTDateTime(end)}`
+  let initialPrimaryText = 'Exam is live'
 
-  if (state === 'before' && start) {
+  if (examPhase === 'before' && start) {
     label = 'Starts In'
-    primaryText = formatCountdownDuration(start.getTime() - now.getTime())
+    initialPrimaryText = formatCountdownDuration(start.getTime() - new Date().getTime())
     secondaryText = `Scheduled for ${formatISTDateTime(start)}`
-  } else if (state === 'ending') {
+  } else if (examPhase === 'ending') {
     label = 'Ends In'
-    primaryText = formatCountdownDuration(end.getTime() - now.getTime())
+    initialPrimaryText = formatCountdownDuration(end.getTime() - new Date().getTime())
     secondaryText = `Ends at ${formatISTDateTime(end)}`
-  } else if (state === 'ended') {
+  } else if (examPhase === 'ended') {
     label = 'Ended'
-    primaryText = 'Exam window has closed'
+    initialPrimaryText = 'Exam window has closed'
     secondaryText = `Ended on ${formatISTDateTime(end)}`
   }
 
@@ -62,8 +96,8 @@ export default function ExamTimingStatus({ startDate, expiresAt, compact = false
         <span style={{ alignSelf: 'flex-start', padding: '4px 10px', borderRadius: '50px', background: tone.background, color: tone.color, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>
           {label}
         </span>
-        <div style={{ fontSize: '18px', fontWeight: 900, color: tone.color, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-          {primaryText}
+        <div ref={primaryTextRef} style={{ fontSize: '18px', fontWeight: 900, color: tone.color, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+          {initialPrimaryText}
         </div>
         <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: 600 }}>
           {secondaryText}
@@ -77,8 +111,8 @@ export default function ExamTimingStatus({ startDate, expiresAt, compact = false
       <span style={{ alignSelf: 'flex-start', padding: '5px 12px', borderRadius: '50px', background: tone.background, color: tone.color, fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {label}
       </span>
-      <div style={{ fontSize: '24px', fontWeight: 900, color: tone.color, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-        {primaryText}
+      <div ref={primaryTextRef} style={{ fontSize: '24px', fontWeight: 900, color: tone.color, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+        {initialPrimaryText}
       </div>
       <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: 600 }}>
         {secondaryText}

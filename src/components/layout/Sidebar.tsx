@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import useSWR from 'swr'
 
 interface NavItem {
@@ -209,10 +210,23 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const currentUserName = userData?.user?.name || userName
   const currentUserRole = userData?.user?.role || userRole
 
-  const { data: unread } = useSWR('/api/unread', (url) => fetch(url).then(r => r.json()), {
-    refreshInterval: 60000,
+  const { data: unread, mutate: mutateUnread } = useSWR('/api/unread', (url) => fetch(url).then(r => r.json()), {
     revalidateOnFocus: true
   })
+
+  // Listen for real-time ping to invalidate unread counts SWR cache
+  useEffect(() => {
+    const es = new EventSource('/api/user/stream')
+    es.addEventListener('invalidate', (e) => {
+      try {
+        const payload = JSON.parse(e.data)
+        if (payload.target === 'all' || payload.target === 'unread') {
+          mutateUnread()
+        }
+      } catch (err) {}
+    })
+    return () => es.close()
+  }, [mutateUnread])
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })

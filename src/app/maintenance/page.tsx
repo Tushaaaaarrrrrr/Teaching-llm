@@ -1,19 +1,52 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function MaintenancePage() {
+  const router = useRouter()
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+    let currentDelay = 5000 // Start at 5 seconds
+    const maxDelay = 120000 // Cap at 2 minutes
+    
+    const checkStatus = async () => {
+      try {
+        const res = await fetch('/api/maintenance-status')
+        const data = await res.json()
+        if (data.active === false) {
+          // Maintenance is over, go to dashboard
+          router.push('/dashboard')
+          return // Stop polling
+        }
+      } catch (error) {
+        console.error('Failed to check maintenance status:', error)
+      }
+
+      // Exponential backoff
+      currentDelay = Math.min(currentDelay * 2, maxDelay)
+      
+      // Schedule next check
+      timeoutId = setTimeout(checkStatus, currentDelay)
+    }
+
+    // Start the process
+    timeoutId = setTimeout(checkStatus, currentDelay)
+
+    return () => clearTimeout(timeoutId)
+  }, [router])
   return (
-    <div className="h-screen bg-white text-black font-sans flex flex-col items-center justify-center p-4 md:p-8 overflow-hidden">
+    <div className="h-screen bg-white text-black font-sans flex flex-col items-center justify-center p-2 md:p-4 overflow-hidden box-border">
       <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@800&display=swap');
-        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: white !important; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: white !important; overflow: hidden; height: 100vh; }
       `}} />
 
-      <div className="w-full max-w-4xl flex flex-col items-center text-center py-4 md:py-8">
-        {/* SVG Illustration */}
-        <div className="w-full max-h-[35vh] flex items-center justify-center mb-6 md:mb-10">
-          <svg fill="none" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" className="max-w-full h-full w-auto drop-shadow-sm">
+      <div className="w-full max-w-4xl h-full flex flex-col items-center text-center py-2 md:py-4 box-border">
+        {/* SVG Illustration - Flexible Height */}
+        <div className="w-full flex-1 min-h-0 flex items-center justify-center mb-2 md:mb-4">
+          <svg fill="none" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" className="max-w-full h-full w-auto drop-shadow-sm transition-all duration-300">
             <g stroke="black" strokeWidth="2">
               <path d="M150 50v50m0 0l-20 20h40l-20-20z"></path>
               <path d="M220 50v50m0 0l-20 20h40l-20-20z"></path>
@@ -55,39 +88,41 @@ export default function MaintenancePage() {
           </svg>
         </div>
 
-        {/* Textual Content */}
-        <h1 className="text-2xl md:text-4xl lg:text-5xl font-extrabold text-black uppercase tracking-tight leading-tight mb-4 px-4">
-          SYSTEM IS UNDER MAINTENANCE
-        </h1>
-        
-        <p className="text-gray-600 max-w-xl text-base md:text-lg font-medium mb-8 px-6 leading-relaxed opacity-90">
-          We're currently performing some scheduled maintenance to improve your experience. 
-          We'll be back shortly!
-        </p>
+        {/* Textual Content - Fixed Height Constraints */}
+        <div className="flex-none w-full px-4">
+          <h1 className="text-xl md:text-3xl lg:text-4xl font-extrabold text-black uppercase tracking-tight leading-tight mb-2 italic">
+            SYSTEM IS UNDER MAINTENANCE
+          </h1>
+          
+          <p className="text-gray-600 max-w-lg mx-auto text-sm md:text-base font-medium mb-4 leading-relaxed opacity-90">
+            We're currently performing some scheduled maintenance to improve your experience. 
+            We'll be back shortly!
+          </p>
 
-        {/* Bulletproof Contact Button */}
-        <div className="flex justify-center pb-6">
-          <a 
-            href="mailto:care.alpha.iitian@gmail.com"
-            style={{
-              backgroundColor: '#000000',
-              color: '#ffffff',
-              padding: '12px 36px',
-              borderRadius: '9999px',
-              fontWeight: 'bold',
-              fontSize: '13px',
-              letterSpacing: '0.2em',
-              textDecoration: 'none',
-              textTransform: 'uppercase',
-              display: 'inline-block',
-              boxShadow: '0 8px 20px -5px rgba(0, 0, 0, 0.3)',
-              transition: 'all 0.2s ease-in-out'
-            }}
-            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#333333'; e.currentTarget.style.transform = 'scale(1.05)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#000000'; e.currentTarget.style.transform = 'scale(1)'; }}
-          >
-            CONTACT DEVELOPER
-          </a>
+          {/* Bulletproof Contact Button */}
+          <div className="flex justify-center pb-4">
+            <a 
+              href="mailto:care.alpha.iitian@gmail.com"
+              style={{
+                backgroundColor: '#000000',
+                color: '#ffffff',
+                padding: '10px 28px',
+                borderRadius: '9999px',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                letterSpacing: '0.2em',
+                textDecoration: 'none',
+                textTransform: 'uppercase',
+                display: 'inline-block',
+                boxShadow: '0 6px 15px -5px rgba(0, 0, 0, 0.3)',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#333333'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#000000'; e.currentTarget.style.transform = 'scale(1)'; }}
+            >
+              CONTACT DEVELOPER
+            </a>
+          </div>
         </div>
       </div>
     </div>

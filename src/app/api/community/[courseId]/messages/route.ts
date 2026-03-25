@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { validateLength, sanitizeInput } from '@/lib/validation'
+import { sseEmitter } from '@/lib/sse'
 
 export async function GET(
   _request: NextRequest,
@@ -126,6 +127,10 @@ export async function POST(
       targetId: message.id,
     })
 
+    // Subtly broadcast the raw message to all listeners currently attached to this course.
+    // The stream component handles masking the securityNumber based on individual listener's roles!
+    sseEmitter.emit(`chat:${params.courseId}:message`, message)
+
     return NextResponse.json({
       ...message,
       sender: {
@@ -209,6 +214,9 @@ export async function DELETE(
       moduleName: MODULE.COMMUNITY,
       targetId: messageId,
     })
+
+    // Announce to connected peers that the message vanished
+    sseEmitter.emit(`chat:${params.courseId}:delete`, messageId)
 
     return NextResponse.json({ success: true })
   } catch (error) {

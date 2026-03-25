@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { checkRateLimit, isMaintenanceModeActive } from '@/lib/ratelimit'
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated']
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated', '/api/maintenance-status']
 const COOKIE_NAME = 'teaching_llm_token'
 const JWT_SECRET = process.env.JWT_SECRET?.trim() || ''
 
@@ -114,6 +114,9 @@ export async function middleware(request: NextRequest) {
       }
       return NextResponse.redirect(new URL('/maintenance', request.url))
     }
+  } else if (pathname === '/maintenance') {
+    // If not in maintenance mode, redirect away from the maintenance page
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   // Allow API auth routes

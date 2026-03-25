@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { sseEmitter } from '@/lib/sse'
 
 export async function POST(
   request: NextRequest,
@@ -48,6 +49,8 @@ export async function POST(
       targetId: courseId,
       metadata: { count: result.count }
     })
+
+    sseEmitter.emit(`chat:${courseId}:clear`)
 
     return NextResponse.json({ success: true, count: result.count })
   } catch (error) {

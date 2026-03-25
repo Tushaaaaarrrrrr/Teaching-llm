@@ -82,12 +82,40 @@ export default function CommunityPage() {
     })
   }
 
-  // Poll messages when a class is selected
+  // SSE connection for real-time messages
   useEffect(() => {
     if (!selectedClass) return
     loadMessages(selectedClass.id)
-    const t = setInterval(() => loadMessages(selectedClass.id), 4000)
-    return () => clearInterval(t)
+
+    const eventSource = new EventSource(`/api/community/${selectedClass.id}/messages/stream`)
+
+    eventSource.addEventListener('message', (e) => {
+      try {
+        const newMsg = JSON.parse(e.data)
+        setMessages(prev => {
+          if (prev.some(m => m.id === newMsg.id)) return prev
+          const filtered = prev.filter(m => !m.id.startsWith('temp-'))
+          return [...filtered, newMsg]
+        })
+      } catch (err) {
+        console.error('SSE Message Error', err)
+      }
+    })
+
+    eventSource.addEventListener('delete', (e) => {
+      try {
+        const { messageId } = JSON.parse(e.data)
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, isDeleted: true, content: '' } : m))
+      } catch (err) {
+        console.error('SSE Delete Error', err)
+      }
+    })
+
+    eventSource.addEventListener('clear', () => {
+      setMessages([])
+    })
+
+    return () => eventSource.close()
   }, [selectedClass, loadMessages])
 
   useEffect(() => {

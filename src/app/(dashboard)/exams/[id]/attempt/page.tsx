@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { hasStrictTimer } from '@/lib/exam-policy'
 
@@ -27,8 +27,13 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true)
   const [currentIdx, setCurrentIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [timeLeft, setTimeLeft] = useState<number>(0)
   const [submitting, setSubmitting] = useState(false)
+  
+  const timeTextRef = useRef<HTMLDivElement>(null)
+  const attemptStartedAtRef = useRef<number | null>(null)
+  const durationMsRef = useRef<number | null>(null)
+  const hasStrictTimerRef = useRef<boolean>(false)
+  const submittingRef = useRef<boolean>(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -53,13 +58,20 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
       })
       setAnswers(initialAnswers)
 
-      // Calculate time left: duration vs startedAt
       const startedAt = new Date(attemptData.startedAt).getTime()
       const durationMs = examData.durationMinutes * 60 * 1000
+      attemptStartedAtRef.current = startedAt
+      durationMsRef.current = durationMs
+      hasStrictTimerRef.current = hasStrictTimer(examData.examType)
+      
       const now = Date.now()
       const elapsed = now - startedAt
       const remaining = Math.max(0, Math.floor((durationMs - elapsed) / 1000))
-      setTimeLeft(remaining)
+      
+      if (timeTextRef.current) {
+         timeTextRef.current.innerText = formatTime(remaining)
+         timeTextRef.current.style.color = remaining < 300 ? '#ef4444' : '#3636e8'
+      }
 
     } catch (error) {
       console.error(error)
@@ -71,17 +83,45 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   useEffect(() => { loadData() }, [loadData])
 
   useEffect(() => {
-    if (!hasStrictTimer((exam as any)?.examType)) return
+    let animationFrameId: number
+    let lastSecond = -1
     
-    if (timeLeft <= 0 && !loading && exam) {
-      handleSubmit()
-      return
+    // We cannot capture handleSubmit directly if it depends on changing state, but we rely on the component being alive
+    // Also, we use an inline trigger for auto-submission.
+    const tick = () => {
+      if (!hasStrictTimerRef.current || attemptStartedAtRef.current === null || durationMsRef.current === null) {
+        animationFrameId = requestAnimationFrame(tick)
+        return
+      }
+
+      const now = Date.now()
+      const elapsed = now - attemptStartedAtRef.current
+      const remainingSecs = Math.max(0, Math.floor((durationMsRef.current - elapsed) / 1000))
+
+      if (remainingSecs <= 0 && !submittingRef.current && !loading && exam) {
+        // Auto-submit when time is up
+        submittingRef.current = true
+        setSubmitting(true)
+        fetch(`/api/exams/${params.id}/submit`, { method: 'POST' }).then(res => {
+          if (res.ok) router.push(`/exams/${params.id}/result`)
+        }).catch(err => console.error(err))
+        return
+      }
+
+      if (remainingSecs !== lastSecond) {
+        lastSecond = remainingSecs
+        if (timeTextRef.current) {
+          timeTextRef.current.innerText = formatTime(remainingSecs)
+          timeTextRef.current.style.color = remainingSecs < 300 ? '#ef4444' : '#3636e8'
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(tick)
     }
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1)
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [timeLeft, loading, exam])
+
+    animationFrameId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(animationFrameId)
+  }, [loading, exam, params.id, router])
 
   const saveAnswer = async (questionId: string, answer: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }))
@@ -95,7 +135,8 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   }
 
   const handleSubmit = async () => {
-    if (submitting) return
+    if (submittingRef.current) return
+    submittingRef.current = true
     setSubmitting(true)
     try {
       const res = await fetch(`/api/exams/${params.id}/submit`, { method: 'POST' })
@@ -106,9 +147,9 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
       }
     } catch (error) {
       console.error(error)
-    } finally {
+      submittingRef.current = false
       setSubmitting(false)
-    }
+    } // deliberately not doing finally to keep submitting=true during redirect
   }
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading assessment...</div>
@@ -141,8 +182,8 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
           {hasStrictTimer((exam as any)?.examType) && (
             <div style={{ textAlign: 'right' }}>
               <span style={{ fontSize: '12px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Time Remaining</span>
-              <div style={{ fontSize: '24px', fontWeight: 900, color: timeLeft < 300 ? '#ef4444' : '#3636e8', fontVariantNumeric: 'tabular-nums' }}>
-                {formatTime(timeLeft)}
+              <div ref={timeTextRef} style={{ fontSize: '24px', fontWeight: 900, color: '#3636e8', fontVariantNumeric: 'tabular-nums' }}>
+                --:--
               </div>
             </div>
           )}

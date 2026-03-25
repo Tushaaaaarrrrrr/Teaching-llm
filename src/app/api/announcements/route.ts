@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds, canCreateAnnouncements } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { sseEmitter } from '@/lib/sse'
 
 export async function GET() {
   try {
@@ -102,6 +103,9 @@ export async function POST(request: NextRequest) {
           announcementId: announcement.id,
         })),
       })
+
+      // Notify connected clients
+      targetUsers.forEach(u => sseEmitter.emit(`user:${u.id}:notify`))
     }
 
     logActivity({

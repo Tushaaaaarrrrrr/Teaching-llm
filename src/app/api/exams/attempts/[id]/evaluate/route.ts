@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
+import { sseEmitter } from '@/lib/sse'
 
 export async function PUT(
   request: NextRequest,
@@ -63,6 +64,9 @@ export async function PUT(
         type: 'SUCCESS'
       }
     })
+    
+    // Notify connected client
+    sseEmitter.emit(`user:${updatedAttempt.userId}:notify`)
 
     return NextResponse.json(updatedAttempt)
   } catch (error) {

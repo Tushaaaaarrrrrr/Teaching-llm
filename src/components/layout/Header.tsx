@@ -59,9 +59,22 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const { data: notificationsData, mutate: mutateNotifications } = useSWR('/api/notifications', fetcher, {
-    refreshInterval: 60000, 
     revalidateOnFocus: true,
   })
+
+  // Listen for real-time ping to invalidate notification SWR cache
+  useEffect(() => {
+    const es = new EventSource('/api/user/stream')
+    es.addEventListener('invalidate', (e) => {
+      try {
+        const payload = JSON.parse(e.data)
+        if (payload.target === 'all' || payload.target === 'notifications') {
+          mutateNotifications()
+        }
+      } catch (err) {}
+    })
+    return () => es.close()
+  }, [mutateNotifications])
 
   // Fetch current user info for real-time reactivity
   const { data: userData } = useSWR('/api/auth/me', fetcher, {
