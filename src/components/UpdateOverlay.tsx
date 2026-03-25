@@ -164,6 +164,7 @@ export default function UpdateOverlay() {
 
   const isWelcome = currentUpdate.type === 'WELCOME'
   const sanitizedContent = DOMPurify.sanitize(currentUpdate.content)
+  const hasImage = currentUpdate.imageUrl && currentUpdate.imageUrl.trim() !== ''
 
   return (
     <div
@@ -173,10 +174,10 @@ export default function UpdateOverlay() {
     >
       <div
         style={{
-          maxWidth: '560px', width: '92%', borderRadius: '24px', overflow: 'hidden',
+          maxWidth: '840px', width: '92%', borderRadius: '24px', overflow: 'hidden',
           background: '#ffffff', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
           animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-          maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+          maxHeight: '85vh', display: 'flex', flexDirection: 'row',
           position: 'relative',
         }}
         onClick={e => e.stopPropagation()}
@@ -186,86 +187,85 @@ export default function UpdateOverlay() {
           <VisualEffect type={currentUpdate.animation} key={`effect-${currentUpdate.id}`} />
         )}
 
-        {/* Header */}
+        {/* LEFT SIDE - Content */}
         <div style={{
-          background: isWelcome
-            ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)'
-            : 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-          padding: '36px 28px 24px', textAlign: 'center', position: 'relative', flexShrink: 0,
+          flex: 1, display: 'flex', flexDirection: 'column', padding: '32px', background: '#ffffff',
+          position: 'relative', overflowY: 'auto', maxHeight: 'calc(85vh)',
         }}>
+          {/* Close Button */}
           <button onClick={dismiss} style={{
-            position: 'absolute', top: '16px', right: '16px',
-            background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff',
-            width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer',
+            position: 'absolute', top: '20px', right: '20px',
+            background: '#f1f5f9', border: 'none', color: '#1e293b',
+            width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 20,
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            zIndex: 20, transition: 'all 0.2s',
+          }} className="close-btn-update">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
 
-          {isWelcome && (
-            <div style={{
-              width: '72px', height: '72px', borderRadius: '50%', background: '#fff',
-              margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-            }}>
-              <span style={{ fontSize: '36px', lineHeight: '1' }}>👋</span>
-            </div>
-          )}
-
+          {/* Title */}
           <h2 style={{
-            fontSize: isWelcome ? '28px' : '22px',
-            fontWeight: '800', color: '#fff', margin: 0, lineHeight: '1.2',
+            fontSize: '28px', fontWeight: '800', color: '#1e293b', margin: '0 0 12px 0',
+            lineHeight: '1.2', paddingRight: '40px',
           }}>
             {currentUpdate.title}
           </h2>
-        </div>
 
-        {/* Image */}
-        {currentUpdate.imageUrl && (
-          <div style={{ flexShrink: 0 }}>
-            <img src={currentUpdate.imageUrl} alt="" style={{ width: '100%', maxHeight: '240px', objectFit: 'cover' }} />
-          </div>
-        )}
-
-        {/* Content */}
-        <div style={{ padding: '28px', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>
+          {/* Content/Subtitle */}
           <div
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-            style={{ fontSize: '15px', color: '#334155', lineHeight: '1.7', wordBreak: 'break-word' }}
+            style={{ 
+              fontSize: '15px', color: '#64748b', lineHeight: '1.7', wordBreak: 'break-word',
+              marginBottom: '24px', flex: 1,
+            }}
           />
+
+          {/* Footer Buttons */}
+          <div style={{
+            display: 'flex', gap: '12px', flexShrink: 0, marginTop: 'auto',
+          }}>
+            {currentUpdate.ctaText && currentUpdate.ctaLink && (
+              <button onClick={() => {
+                fetch(`/api/updates/${currentUpdate.id}/dismiss`, { method: 'POST' }).catch(console.error)
+                window.location.href = currentUpdate.ctaLink!
+              }} style={{
+                background: '#3636e8', color: '#fff', border: 'none', padding: '12px 24px',
+                borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(54,54,232,0.25)', flex: 1,
+              }}>
+                {currentUpdate.ctaText}
+              </button>
+            )}
+            <button onClick={dismiss} style={{
+              background: '#f1f5f9', color: '#475569',
+              border: 'none', padding: '12px 24px',
+              borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer',
+              flex: currentUpdate.ctaText ? 0 : 1,
+            }}>
+              Close
+            </button>
+          </div>
         </div>
 
-        {/* Footer */}
-        <div style={{
-          padding: '20px 28px', textAlign: 'center', flexShrink: 0,
-          borderTop: '1px solid #e2e8f0', background: '#fff',
-          display: 'flex', gap: '12px', justifyContent: 'center',
-        }}>
-          {currentUpdate.ctaText && currentUpdate.ctaLink && (
-            <button onClick={() => {
-              fetch(`/api/updates/${currentUpdate.id}/dismiss`, { method: 'POST' }).catch(console.error)
-              window.location.href = currentUpdate.ctaLink!
-            }} style={{
-              background: '#3636e8', color: '#fff', border: 'none', padding: '14px 24px',
-              borderRadius: '50px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(54,54,232,0.25)', flex: 1, maxWidth: '200px',
-            }}>
-              {currentUpdate.ctaText}
-            </button>
-          )}
-          <button onClick={dismiss} style={{
-            background: currentUpdate.ctaText ? '#f1f5f9' : '#1e293b',
-            color: currentUpdate.ctaText ? '#475569' : '#fff',
-            border: 'none', padding: '14px 24px',
-            borderRadius: '50px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
-            flex: 1, maxWidth: '200px',
+        {/* RIGHT SIDE - Image (Square) */}
+        {hasImage && (
+          <div style={{
+            flexShrink: 0, width: '320px', height: '480px',
+            background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '24px', overflow: 'hidden',
           }}>
-            {isWelcome && !currentUpdate.ctaText ? "Let's Get Started" : (currentUpdate.ctaText ? 'Close' : 'Got It')}
-          </button>
-        </div>
+            <img
+              src={currentUpdate.imageUrl}
+              alt=""
+              style={{
+                width: '100%', height: '100%', objectFit: 'contain',
+                borderRadius: '12px',
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <style>{`
@@ -287,6 +287,9 @@ export default function UpdateOverlay() {
           0% { transform: translateY(0) scale(1); opacity: 0; }
           10% { opacity: 1; }
           100% { transform: translateY(-800px) scale(1.5); opacity: 0; }
+        }
+        .close-btn-update:hover {
+          background: #e2e8f0 !important;
         }
       `}</style>
     </div>
