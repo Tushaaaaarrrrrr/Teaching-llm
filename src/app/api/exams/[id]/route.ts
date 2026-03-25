@@ -209,7 +209,7 @@ export async function PATCH(
             examId: params.id,
             text: q.text,
             type: q.type,
-            options: q.options ? JSON.stringify(q.options) : null,
+            options: q.options ? (typeof q.options === 'string' ? q.options : JSON.stringify(q.options)) : null,
             correctAnswer: q.correctAnswer,
             explanation: q.explanation,
             imageUrl: q.imageUrl,

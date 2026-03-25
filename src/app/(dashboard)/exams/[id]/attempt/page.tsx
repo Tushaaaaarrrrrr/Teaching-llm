@@ -162,22 +162,42 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
             {currentQuestion?.type === 'MCQ' || currentQuestion?.type === 'TRUE_FALSE' ? (
-              JSON.parse(currentQuestion.options || '[]').map((opt: string) => (
-                <button
-                  key={opt}
-                  onClick={() => saveAnswer(currentQuestion.id, opt)}
-                  style={{
-                    padding: '16px 20px', borderRadius: '16px', border: 'none',
-                    textAlign: 'left', fontSize: '15px', fontWeight: 600,
-                    background: answers[currentQuestion.id] === opt ? '#3636e8' : '#fff',
-                    color: answers[currentQuestion.id] === opt ? '#fff' : '#1e1e3a',
-                    boxShadow: answers[currentQuestion.id] === opt ? 'inset 2px 2px 5px rgba(0,0,0,0.2)' : '3px 3px 8px #c5c7cf, -2px -2px 6px #fff',
-                    cursor: 'pointer', transition: 'all 0.2s'
-                  }}
-                >
-                  {opt}
-                </button>
-              ))
+              (() => {
+                // Safely parse options — handles double-stringified JSON
+                let opts: string[] = []
+                try {
+                  let parsed = JSON.parse(currentQuestion.options || '[]')
+                  // If it's still a string after parsing, parse again (double-stringified)
+                  if (typeof parsed === 'string') {
+                    parsed = JSON.parse(parsed)
+                  }
+                  opts = Array.isArray(parsed) ? parsed : []
+                } catch {
+                  opts = []
+                }
+                
+                // For TRUE_FALSE, ensure we only show True/False
+                if (currentQuestion.type === 'TRUE_FALSE' && opts.length === 0) {
+                  opts = ['True', 'False']
+                }
+                
+                return opts.filter(opt => typeof opt === 'string' && opt.trim()).map((opt: string) => (
+                  <button
+                    key={opt}
+                    onClick={() => saveAnswer(currentQuestion.id, opt)}
+                    style={{
+                      padding: '16px 20px', borderRadius: '16px', border: 'none',
+                      textAlign: 'left', fontSize: '15px', fontWeight: 600,
+                      background: answers[currentQuestion.id] === opt ? '#3636e8' : '#fff',
+                      color: answers[currentQuestion.id] === opt ? '#fff' : '#1e1e3a',
+                      boxShadow: answers[currentQuestion.id] === opt ? 'inset 2px 2px 5px rgba(0,0,0,0.2)' : '3px 3px 8px #c5c7cf, -2px -2px 6px #fff',
+                      cursor: 'pointer', transition: 'all 0.2s'
+                    }}
+                  >
+                    {opt}
+                  </button>
+                ))
+              })()
             ) : (
               <textarea
                 value={answers[currentQuestion.id] || ''}
