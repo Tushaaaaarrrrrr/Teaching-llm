@@ -28,6 +28,20 @@ interface CommMsg {
   }
 }
 
+interface TranscriptMsg {
+  id: string
+  content: string
+  isDeleted: boolean
+  deletedAt?: string | null
+  createdAt: string
+  sender: {
+    id: string
+    name: string
+    role: string
+    securityNumber?: string
+  }
+}
+
 export default function CommunityPage() {
   const { confirm, confirmDialog } = useConfirmDialog()
   const [classes, setClasses] = useState<ClassItem[]>([])
@@ -39,6 +53,9 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [managingCommunity, setManagingCommunity] = useState(false)
+  const [transcriptOpen, setTranscriptOpen] = useState(false)
+  const [transcriptMessages, setTranscriptMessages] = useState<TranscriptMsg[]>([])
+  const [loadingTranscript, setLoadingTranscript] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const loadMessages = useCallback(async (classId: string) => {
@@ -207,6 +224,25 @@ export default function CommunityPage() {
     }
   }
 
+  async function openTranscript() {
+    if (!selectedClass || userRole !== 'MANAGER') return
+    setTranscriptOpen(true)
+    setLoadingTranscript(true)
+    try {
+      const res = await fetch(`/api/community/transcripts?courseId=${selectedClass.id}`)
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load transcript')
+      }
+      setTranscriptMessages(data.messages || [])
+    } catch (error) {
+      console.error(error)
+      alert(error instanceof Error ? error.message : 'Failed to load transcript')
+    } finally {
+      setLoadingTranscript(false)
+    }
+  }
+
   const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
   const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
 
@@ -314,14 +350,14 @@ export default function CommunityPage() {
                 {userRole === 'MANAGER' && (
                   <>
                     <button
-                      onClick={() => exportTranscript('csv')}
+                      onClick={openTranscript}
                       style={{
                         padding: '6px 12px', borderRadius: '50px', border: 'none',
                         cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
                         ...neu, boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', color: '#3636e8',
                       }}
                     >
-                      Export
+                      Transcript
                     </button>
                     <button
                       onClick={toggleCommunityStatus}
@@ -536,6 +572,81 @@ export default function CommunityPage() {
           </>
         )}
       </div>
+
+      {transcriptOpen && selectedClass && (
+        <div className="modal-overlay" onClick={() => setTranscriptOpen(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '900px' }}>
+            <div className="modal-header">
+              <h3 style={{ fontSize: '16px', fontWeight: '600' }}>{selectedClass.name} Transcript</h3>
+              <button onClick={() => setTranscriptOpen(false)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ fontSize: '12px', color: '#6b6b8a' }}>
+                  Individual transcript for this community only. Deleted and active messages are both shown here.
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {(['csv', 'json', 'pdf'] as const).map(format => (
+                    <button key={format} onClick={() => exportTranscript(format)} className="btn btn-ghost btn-sm">
+                      {format === 'pdf' ? 'Export HTML' : `Export ${format.toUpperCase()}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ maxHeight: '60vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '4px' }}>
+                {loadingTranscript ? (
+                  <div style={{ fontSize: '13px', color: '#9999b0' }}>Loading transcript...</div>
+                ) : transcriptMessages.length === 0 ? (
+                  <div style={{ fontSize: '13px', color: '#9999b0' }}>No transcript messages found for this group.</div>
+                ) : (
+                  transcriptMessages.map(msg => (
+                    <div
+                      key={msg.id}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: '14px',
+                        background: msg.isDeleted ? '#fff5f5' : '#f8fafc',
+                        border: msg.isDeleted ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#1e1e3a' }}>{msg.sender.name}</span>
+                          <span style={{ fontSize: '10px', background: '#3636e8', color: '#fff', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
+                            {msg.sender.role}
+                          </span>
+                          {msg.sender.securityNumber && (
+                            <span style={{ fontSize: '10px', background: '#f59e0b22', color: '#f59e0b', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
+                              {msg.sender.securityNumber}
+                            </span>
+                          )}
+                          {msg.isDeleted && (
+                            <span style={{ fontSize: '10px', background: '#fee2e2', color: '#ef4444', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
+                              Deleted
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#6b6b8a' }}>
+                          {new Date(msg.createdAt).toLocaleString()}
+                          {msg.deletedAt ? ` • Deleted ${new Date(msg.deletedAt).toLocaleString()}` : ''}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#1e1e3a', whiteSpace: 'pre-wrap' }}>
+                        {msg.content || '[No visible content]'}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
