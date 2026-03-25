@@ -4,10 +4,10 @@ import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { isCourseEffectivelyDisabled } from '@/lib/course-state'
 
-const JWT_SECRET = (process.env.JWT_SECRET || 'teaching-llm-super-secret-jwt-key-2024').trim()
+const JWT_SECRET = process.env.JWT_SECRET?.trim()
 
 if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required.')
+  throw new Error('JWT_SECRET environment variable is required. Generate one with: openssl rand -hex 32')
 }
 const COOKIE_NAME = 'teaching_llm_token'
 
@@ -32,7 +32,7 @@ export interface FullSession extends JWTPayload {
 }
 
 export function signToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
+  return jwt.sign(payload, JWT_SECRET!, { expiresIn: '1d' })
 }
 
 export function verifyToken(token: string): JWTPayload | null {
@@ -57,7 +57,24 @@ export async function getSession(): Promise<JWTPayload | null> {
     const cookieStore = await cookies()
     const token = cookieStore.get(COOKIE_NAME)?.value
     if (!token) return null
-    return verifyToken(token)
+    
+    const payload = verifyToken(token)
+    if (!payload) return null
+
+    // Security: Verify token version and termination status from DB
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { isTerminated: true, tokenVersion: true },
+    })
+
+    if (!user || user.isTerminated) return null
+
+    // Token version mismatch = token was invalidated (password change, forced logout, etc.)
+    if (payload.tokenVersion !== undefined && payload.tokenVersion !== user.tokenVersion) {
+      return null
+    }
+
+    return payload
   } catch {
     return null
   }
@@ -124,7 +141,7 @@ export function getCookieConfig() {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax' as const,
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24 * 1, // 1 day — matches JWT expiry
       path: '/',
     },
   }

@@ -6,9 +6,15 @@ import { processSyncQueue, cleanupOldSyncQueue } from '@/lib/sync-queue'
 
 export async function POST(req: Request) {
   try {
-    // Optional: Add auth token verification for security
+    // CRON_SECRET is REQUIRED — reject all requests if not configured
+    const cronSecret = process.env.CRON_SECRET
+    if (!cronSecret) {
+      console.error('[Cron] CRON_SECRET environment variable is not set. Rejecting request.')
+      return NextResponse.json({ error: 'Server misconfigured' }, { status: 503 })
+    }
+
     const authToken = req.headers.get('x-cron-secret')
-    if (process.env.CRON_SECRET && authToken !== process.env.CRON_SECRET) {
+    if (authToken !== cronSecret) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -28,17 +34,22 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('[Cron] Sync queue processor error:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: String(error) },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
 }
 
-// GET for monitoring/debugging
+// GET for monitoring/debugging — also requires auth
 export async function GET(req: Request) {
   try {
+    const cronSecret = process.env.CRON_SECRET
+    if (!cronSecret) {
+      return NextResponse.json({ error: 'Server misconfigured' }, { status: 503 })
+    }
+
     const authToken = req.headers.get('x-cron-secret')
-    if (process.env.CRON_SECRET && authToken !== process.env.CRON_SECRET) {
+    if (authToken !== cronSecret) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

@@ -52,14 +52,23 @@ const generalLimit = hasRedis ? new Ratelimit({
 
 export async function setMaintenanceMode(enabled: boolean) {
   if (redis) {
-    await redis.set(MAINTENANCE_KEY, enabled ? 'on' : 'off');
+    try {
+      await redis.set(MAINTENANCE_KEY, enabled ? 'on' : 'off');
+    } catch (err) {
+      console.error('Redis: Failed to set maintenance mode:', err);
+    }
   }
 }
 
 export async function isMaintenanceModeActive(): Promise<boolean> {
   if (redis) {
-    const val = await redis.get(MAINTENANCE_KEY);
-    return val === 'on';
+    try {
+      const val = await redis.get(MAINTENANCE_KEY);
+      return val === 'on';
+    } catch (err) {
+      console.error('Redis: Failed to check maintenance mode:', err);
+      return false; // fail-open — layout guard (DB) is the safety net
+    }
   }
   return false;
 }

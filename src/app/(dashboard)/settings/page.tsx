@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 const EyeIcon = () => (
@@ -68,18 +68,19 @@ export default function SettingsPage() {
 
   // Global Maintenance Mode (Manager only)
   const [maintenanceMode, setMaintenanceMode] = useState(false)
-  const [loadingSettings, setLoadingSettings] = useState(false)
-  // Fetch initial settings
-  useState(() => {
+  const [isManagerUser, setIsManagerUser] = useState(false)
+  // Fetch initial settings on mount (only succeeds for managers)
+  useEffect(() => {
     fetch('/api/updates/settings')
-      .then(res => res.json())
+      .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data.settings) {
+        if (data?.settings) {
+          setIsManagerUser(true)
           setMaintenanceMode(data.settings.maintenanceMode || false)
         }
       })
       .catch(err => console.error('Failed to fetch settings:', err))
-  })
+  }, [])
 
   async function handleToggleMaintenance(val: boolean) {
     setMaintenanceMode(val)
@@ -307,23 +308,25 @@ export default function SettingsPage() {
                 </select>
               </div>
 
-              {/* Maintenance Mode - Highly Visible for Managers */}
-              <div style={{
-                ...insetRow,
-                background: maintenanceMode ? '#fff1f2' : '#e8eaf0',
-                transition: 'background 0.3s ease',
-                border: maintenanceMode ? '1px solid #fda4af' : '1px solid transparent'
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13.5px', fontWeight: '700', color: maintenanceMode ? '#be123c' : '#1e1e3a' }}>
-                    Maintenance Mode
+              {/* Maintenance Mode - Only visible for Managers */}
+              {isManagerUser && (
+                <div style={{
+                  ...insetRow,
+                  background: maintenanceMode ? '#fff1f2' : '#e8eaf0',
+                  transition: 'background 0.3s ease',
+                  border: maintenanceMode ? '1px solid #fda4af' : '1px solid transparent'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: '700', color: maintenanceMode ? '#be123c' : '#1e1e3a' }}>
+                      Maintenance Mode
+                    </div>
+                    <div style={{ fontSize: '12px', color: maintenanceMode ? '#e11d48' : '#9999b0', marginTop: '2px' }}>
+                      Restrict access for all non-manager users
+                    </div>
                   </div>
-                  <div style={{ fontSize: '12px', color: maintenanceMode ? '#e11d48' : '#9999b0', marginTop: '2px' }}>
-                    Restrict access for all non-manager users
-                  </div>
+                  <Toggle checked={maintenanceMode} onChange={handleToggleMaintenance} />
                 </div>
-                <Toggle checked={maintenanceMode} onChange={handleToggleMaintenance} />
-              </div>
+              )}
             </div>
           </div>
 
