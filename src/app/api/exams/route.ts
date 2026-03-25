@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { sanitizeInput } from '@/lib/validation'
@@ -96,6 +96,11 @@ export async function POST(request: NextRequest) {
     const payload = JSON.parse(payloadBuffer as string)
     
     const { title, description, courseId, expiresAt, startDate, durationMinutes, examType, questions } = payload
+
+    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+    if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
+      return NextResponse.json({ error: 'You do not have access to create exams for this course' }, { status: 403 })
+    }
 
     // 1. Rate Limiting
     const rateLimit = await checkRateLimit(session.userId, 'general')

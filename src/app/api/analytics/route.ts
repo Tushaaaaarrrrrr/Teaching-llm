@@ -16,9 +16,15 @@ export async function GET(request: NextRequest) {
     if (!studentIdParam && session.role === 'MANAGER') {
       const allAttempts = await (prisma.examAttempt as any).findMany({
         where: { submittedAt: { not: null } },
-        include: { user: { select: { id: true, name: true, email: true } }, exam: { include: { questions: true } } },
+        include: { exam: { include: { questions: true } } },
         orderBy: { submittedAt: 'desc' },
       })
+
+      const users = await prisma.user.findMany({
+        where: { id: { in: Array.from(new Set(allAttempts.map((attempt: any) => attempt.userId))) } },
+        select: { id: true, name: true, email: true },
+      })
+      const userMap = new Map(users.map(user => [user.id, user]))
 
       const totalPresence = await (prisma.loginLog as any).count()
       const totalStudents = await (prisma.user as any).count({ where: { role: 'STUDENT' } })
@@ -30,9 +36,10 @@ export async function GET(request: NextRequest) {
         const totalPossible = a.exam.questions.reduce((acc: number, q: any) => acc + q.marks, 0)
         if (totalPossible === 0) return
         const percentage = (a.totalMarks / totalPossible) * 100
+        const user = userMap.get(a.userId)
         
         if (!studentMap[a.userId]) {
-          studentMap[a.userId] = { totalPercentage: 0, count: 0, name: a.user.name, email: a.user.email }
+          studentMap[a.userId] = { totalPercentage: 0, count: 0, name: user?.name || 'Unknown Student', email: user?.email || '' }
         }
         studentMap[a.userId].totalPercentage += percentage
         studentMap[a.userId].count += 1
@@ -55,7 +62,7 @@ export async function GET(request: NextRequest) {
         },
         topPerformers: performers,
         recentSubmissions: allAttempts.slice(0, 8).map((a: any) => ({
-          student: a.user.name,
+          student: userMap.get(a.userId)?.name || 'Unknown Student',
           exam: a.exam.title,
           date: a.submittedAt,
           status: a.isEvaluated ? 'Evaluated' : 'Pending'

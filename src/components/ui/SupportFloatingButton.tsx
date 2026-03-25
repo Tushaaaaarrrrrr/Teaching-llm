@@ -8,14 +8,19 @@ export default function SupportFloatingButton() {
   const pathname = usePathname()
 
   // Visibility Rules:
-  // Hide on: Profile, Settings, Exam pages, Lecture pages (recordings), Support tab, Community section
+  // Hide on: Profile, Settings, Exam pages, Lecture pages (recordings), Support tab, Community section,
+  // Courses, Calendar, Study Materials, and taking exam
   const hiddenPaths = [
     '/profile',
     '/settings',
     '/exams',
     '/materials/recordings',
     '/support',
-    '/community'
+    '/community',
+    '/courses',
+    '/calendar',
+    '/materials',
+    '/study/content-bank'
   ]
 
   const isHidden = hiddenPaths.some(path => pathname === path || pathname.startsWith(path + '/'))

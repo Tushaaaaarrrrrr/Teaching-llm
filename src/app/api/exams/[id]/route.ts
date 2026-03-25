@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
+import { shouldHideAnswersForStudent } from '@/lib/exam-policy'
 
 export async function GET(
   request: NextRequest,
@@ -40,13 +41,8 @@ export async function GET(
 
       const hasSubmitted = attempts.some((a: any) => a.submittedAt !== null)
       
-      let hideAnswers = false
-      if ((exam as any).examType === 'FINAL_TEST') {
-        const hasEnded = new Date() > new Date(exam.expiresAt)
-        hideAnswers = !hasEnded || !exam.isPublished
-      } else {
-        hideAnswers = !hasSubmitted
-      }
+      const hasEnded = new Date() > new Date(exam.expiresAt)
+      const hideAnswers = shouldHideAnswersForStudent((exam as any).examType, hasSubmitted, hasEnded, exam.isPublished)
 
       if (hideAnswers) {
         exam.questions = exam.questions.map((q: any) => ({
@@ -82,8 +78,18 @@ export async function GET(
         },
         include: { responses: true }
       })
+      const users = await prisma.user.findMany({
+        where: { id: { in: Array.from(new Set(attempts.map((attempt: any) => attempt.userId))) } },
+        select: { id: true, name: true, email: true, securityNumber: true },
+      })
+      const userMap = new Map(users.map(user => [user.id, user]))
 
-      return NextResponse.json({ ...exam, attempts })
+      const attemptsWithUsers = attempts.map((attempt: any) => ({
+        ...attempt,
+        user: userMap.get(attempt.userId) || null,
+      }))
+
+      return NextResponse.json({ ...exam, attempts: attemptsWithUsers })
     }
   } catch (error) {
     console.error('Error fetching exam:', error)
@@ -103,6 +109,24 @@ export async function PATCH(
 
     const payload = await request.json()
     const { title, description, courseId, expiresAt, startDate, durationMinutes, isPublished } = payload
+
+    const existingExam = await prisma.exam.findUnique({
+      where: { id: params.id },
+      select: { id: true, courseId: true },
+    })
+    if (!existingExam) {
+      return NextResponse.json({ error: 'Exam not found' }, { status: 404 })
+    }
+
+    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+    if (accessibleCourseIds !== null) {
+      if (!accessibleCourseIds.includes(existingExam.courseId)) {
+        return NextResponse.json({ error: 'Unauthorized access to this exam' }, { status: 403 })
+      }
+      if (courseId && !accessibleCourseIds.includes(courseId)) {
+        return NextResponse.json({ error: 'You do not have access to move this exam to that course' }, { status: 403 })
+      }
+    }
 
     const exam = await prisma.exam.update({
       where: { id: params.id },
@@ -132,6 +156,19 @@ export async function DELETE(
     const session = await getSession()
     if (!session || !isAdminOrManager(session.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const existingExam = await prisma.exam.findUnique({
+      where: { id: params.id },
+      select: { courseId: true },
+    })
+    if (!existingExam) {
+      return NextResponse.json({ error: 'Exam not found' }, { status: 404 })
+    }
+
+    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+    if (accessibleCourseIds !== null && !accessibleCourseIds.includes(existingExam.courseId)) {
+      return NextResponse.json({ error: 'Unauthorized access to this exam' }, { status: 403 })
     }
 
     await prisma.exam.delete({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { allowsMultipleAttempts } from '@/lib/exam-policy'
 
 export async function POST(
   request: NextRequest,
@@ -48,7 +49,7 @@ export async function POST(
 
     if (!attempt || attempt.submittedAt) {
       if (attempt?.submittedAt) {
-        if ((exam as any).examType === 'FINAL_TEST') {
+        if (!allowsMultipleAttempts((exam as any).examType)) {
           return NextResponse.json({ error: 'Exam already submitted' }, { status: 400 })
         } else {
           // GENERAL_TEST Cooldown check
