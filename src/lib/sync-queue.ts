@@ -61,16 +61,8 @@ export async function processSyncQueue() {
       return { processed: 0 }
     }
 
-    // Update users' lastSyncAt and mark jobs as processed
+    // Mark jobs as processed once their delayed refresh window has elapsed
     await prisma.$transaction(async (tx) => {
-      // Update lastSyncAt for all users in this batch
-      await (tx as any).user.updateMany({
-        where: {
-          id: { in: pendingJobs.map((j) => j.userId) },
-        },
-        data: { lastSyncAt: now },
-      })
-
       // Mark jobs as processed
       await (tx as any).syncQueue.updateMany({
         where: {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
 import { formatIST, formatISTDate, getEventStatus } from '@/lib/date-utils'
 
@@ -24,7 +24,6 @@ interface CourseEvent {
 interface MeResponse {
   user?: {
     role?: string
-    lastSyncAt?: string | null
   }
 }
 
@@ -48,11 +47,6 @@ export default function LivePage() {
   const [userRole, setUserRole] = useState('')
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
   
-  // Auto-refresh safety guards
-  const lastRefreshTimeRef = useRef<number>(0)
-  const lastProcessedSyncRef = useRef<string | null>(null)
-  const syncCheckIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  
   const sessions = Array.isArray(data) ? data : []
 
   // Update time every 30 seconds
@@ -67,47 +61,9 @@ export default function LivePage() {
       .then((res) => res.json())
       .then((data: MeResponse) => {
         setUserRole(data.user?.role || '')
-        setLastSyncAt(data.user?.lastSyncAt || null)
-        lastProcessedSyncRef.current = data.user?.lastSyncAt || null
       })
       .catch(console.error)
   }, [])
-
-  // Monitor for sync changes (every 30 seconds for non-managers)
-  useEffect(() => {
-    if (userRole === 'MANAGER') return
-
-    // Check every 30 seconds
-    syncCheckIntervalRef.current = setInterval(async () => {
-      try {
-        const res = await fetch('/api/auth/me')
-        const data: MeResponse = await res.json()
-        const currentSyncAt = data.user?.lastSyncAt
-
-        // If sync timestamp changed AND we haven't refreshed in last 60 seconds
-        if (
-          currentSyncAt &&
-          currentSyncAt !== lastProcessedSyncRef.current &&
-          Date.now() - lastRefreshTimeRef.current > 60_000
-        ) {
-          console.log('[Auto-Refresh] Sync detected, refreshing live sessions...')
-          lastRefreshTimeRef.current = Date.now()
-          lastProcessedSyncRef.current = currentSyncAt
-          
-          // Trigger single refresh via SWR (deduping prevents duplicate requests)
-          await mutate('/api/live-sessions')
-        }
-      } catch (error) {
-        console.error('[Auto-Refresh] Error checking sync:', error)
-      }
-    }, 30_000)
-
-    return () => {
-      if (syncCheckIntervalRef.current) {
-        clearInterval(syncCheckIntervalRef.current)
-      }
-    }
-  }, [userRole])
 
   const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const sessionsWithLocalStatus = sessions.map(session => ({

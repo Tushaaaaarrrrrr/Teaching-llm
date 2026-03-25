@@ -558,22 +558,35 @@ export default function DashboardPage() {
                       animation: sliding ? 'none' : 'slideInRight 0.32s ease',
                     }}
                   >
-                    <div style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.3', marginBottom: '8px' }}>
-                      {frontSession.title}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                      <div style={{
-                        width: '24px', height: '24px', borderRadius: '50%',
-                        background: '#e0e7ff', flexShrink: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-                          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                        </svg>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.3' }}>
+                          {frontSession.title}
+                        </div>
                       </div>
-                      <span style={{ fontSize: '12.5px', color: '#6b6b8a', fontWeight: '500' }}>
-                        {frontSession.instructor}{frontSession.course?.name ? ` · ${frontSession.course.name}` : ''}
-                      </span>
+                      <div style={{
+                        minWidth: '180px',
+                        maxWidth: '240px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        alignItems: 'flex-end',
+                        textAlign: 'right',
+                        flexShrink: 0,
+                      }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6b6b8a', fontWeight: '600' }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                          </svg>
+                          <span>{frontSession.instructor || frontSession.course?.teacherName || 'Standard Faculty'}</span>
+                        </div>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#9999b0', fontWeight: '600' }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                          </svg>
+                          <span>{frontSession.course?.subject || frontSession.course?.name || 'General Batch'}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 

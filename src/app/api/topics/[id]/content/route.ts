@@ -15,11 +15,19 @@ export async function POST(
     const { id } = await params
 
 
-    const { title, description, videoUrl, pptUrl } = await request.json()
+    const { title, description, videoUrl, pptUrl, videoSource } = await request.json()
 
     const count = await prisma.content.count({ where: { topicId: id } })
     const content = await prisma.content.create({
-      data: { topicId: id, title, description, videoUrl, pptUrl, order: count },
+      data: {
+        topicId: id,
+        title,
+        description,
+        videoUrl,
+        pptUrl,
+        videoSource: videoSource || 'YOUTUBE',
+        order: count,
+      },
     })
 
     logActivity({

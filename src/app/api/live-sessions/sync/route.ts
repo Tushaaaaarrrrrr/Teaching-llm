@@ -18,12 +18,7 @@ export async function POST() {
 
     const result = await syncTodaySessions(session.userId)
 
-    // Update manager's lastSyncAt immediately
     const now = new Date()
-    await prisma.user.update({
-      where: { id: session.userId },
-      data: { lastSyncAt: now },
-    })
 
     // Queue all other users for staggered sync
     await queueUsersForSync(session.userId)
