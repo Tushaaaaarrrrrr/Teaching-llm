@@ -14,9 +14,16 @@ export function hasStrictTimer(examType?: string | null) {
   return isFinalTest(examType)
 }
 
-export function shouldHideAnswersForStudent(examType: string | null | undefined, hasSubmitted: boolean, hasEnded: boolean, isPublished: boolean) {
+export function shouldHideAnswersForStudent(
+  examType: string | null | undefined, 
+  hasSubmitted: boolean, 
+  hasEnded: boolean, 
+  isPublished: boolean,
+  attemptIsPublished: boolean = false
+) {
   if (isFinalTest(examType)) {
-    return !hasEnded || !isPublished
+    // Hide if hasn't ended OR isn't published OR the specific attempt results aren't published
+    return !hasEnded || !isPublished || !attemptIsPublished
   }
 
   return !hasSubmitted

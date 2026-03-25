@@ -69,32 +69,18 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
     }
   }
 
-  function toDateTimeLocal(value?: string | null) {
+  function formatDateTimeForDisplay(value?: string | null) {
     if (!value) return ''
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return ''
-    // Convert UTC to local time for display in datetime-local input
-    const offset = date.getTimezoneOffset()
-    const local = new Date(date.getTime() - offset * 60_000)
-    return local.toISOString().slice(0, 16)
-  }
-
-  function toUTCString(localDateTimeString: string) {
-    if (!localDateTimeString) return null
-    // Convert from datetime-local (local time string) back to UTC for server
-    const local = new Date(localDateTimeString)
-    if (Number.isNaN(local.getTime())) return null
-    const offset = local.getTimezoneOffset()
-    const utc = new Date(local.getTime() + offset * 60_000)
-    return utc.toISOString()
+    // Return the value as-is (stored in user's local timezone)
+    return value.slice(0, 16) || ''
   }
 
   function openExamEditor() {
     setExamForm({
       title: exam.title || '',
       description: exam.description || '',
-      startDate: toDateTimeLocal(exam.startDate),
-      expiresAt: toDateTimeLocal(exam.expiresAt),
+      startDate: formatDateTimeForDisplay(exam.startDate),
+      expiresAt: formatDateTimeForDisplay(exam.expiresAt),
       durationMinutes: String(exam.durationMinutes || 60)
     })
     setShowExamEditor(true)
@@ -148,8 +134,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
         body: JSON.stringify({
           title: examForm.title,
           description: examForm.description,
-          startDate: examForm.startDate ? toUTCString(examForm.startDate) : null,
-          expiresAt: toUTCString(examForm.expiresAt),
+          startDate: examForm.startDate ? `${examForm.startDate}:00.000Z` : null,
+          expiresAt: `${examForm.expiresAt}:00.000Z`,
           durationMinutes: parseInt(examForm.durationMinutes, 10)
         })
       })

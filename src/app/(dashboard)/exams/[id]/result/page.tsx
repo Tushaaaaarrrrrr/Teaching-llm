@@ -93,12 +93,14 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        <button 
-          onClick={() => setReviewMode(!reviewMode)}
-          style={{ marginTop: '24px', padding: '12px 24px', borderRadius: '50px', border: '2px solid #3636e8', background: reviewMode ? '#3636e8' : 'transparent', color: reviewMode ? '#fff' : '#3636e8', fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}
-        >
-          {reviewMode ? 'Exit Review Mode' : 'Enter Review Mode'}
-        </button>
+        {!(exam?.examType === 'FINAL_TEST' && !attempt.isPublished) && (
+          <button 
+            onClick={() => setReviewMode(!reviewMode)}
+            style={{ marginTop: '24px', padding: '12px 24px', borderRadius: '50px', border: '2px solid #3636e8', background: reviewMode ? '#3636e8' : 'transparent', color: reviewMode ? '#fff' : '#3636e8', fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}
+          >
+            {reviewMode ? 'Exit Review Mode' : 'Enter Review Mode'}
+          </button>
+        )}
       </div>
 
       {isGeneralTest && (
@@ -147,7 +149,9 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>
-          {reviewMode ? `Reviewing Question ${currentIdx + 1}` : 'Question Breakdown'}
+          {exam?.examType === 'FINAL_TEST' && !attempt.isPublished
+            ? 'Results Status'
+            : (reviewMode ? `Reviewing Question ${currentIdx + 1}` : 'Question Breakdown')}
         </h2>
         {reviewMode && (
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -170,7 +174,15 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {reviewMode ? (
+        {exam?.examType === 'FINAL_TEST' && !attempt.isPublished ? (
+          <div style={{ ...neuCard, textAlign: 'center', padding: '48px 32px' }}>
+            <div style={{ fontSize: '40px', marginBottom: '16px' }}>⏳</div>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '12px' }}>Detailed Results Pending</h3>
+            <p style={{ color: '#6b6b8a', fontSize: '14px', lineHeight: '1.6', maxWidth: '500px', margin: '0 auto' }}>
+              Your instructor is currently reviewing the assessment. Detailed question feedback and the option to review your answers in "Review Mode" will be available once the final results are officially published.
+            </p>
+          </div>
+        ) : reviewMode ? (
           (() => {
             const q = exam.questions[currentIdx]
             const resp = attempt.responses?.find((r: any) => r.questionId === q.id)

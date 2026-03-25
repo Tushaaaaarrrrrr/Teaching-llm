@@ -45,9 +45,17 @@ export async function GET(
       })
 
       const hasSubmitted = attempts.some((a: any) => a.submittedAt !== null)
+      const latestAttempt = attempts.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0]
+      const attemptIsPublished = latestAttempt?.isPublished || false
       
       const hasEnded = new Date() > new Date(exam.expiresAt)
-      const hideAnswers = shouldHideAnswersForStudent((exam as any).examType, hasSubmitted, hasEnded, exam.isPublished)
+      const hideAnswers = shouldHideAnswersForStudent(
+        (exam as any).examType, 
+        hasSubmitted, 
+        hasEnded, 
+        exam.isPublished,
+        attemptIsPublished
+      )
 
       if (hideAnswers) {
         exam.questions = exam.questions.map((q: any) => ({
