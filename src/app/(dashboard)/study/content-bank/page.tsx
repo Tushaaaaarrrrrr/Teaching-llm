@@ -20,6 +20,8 @@ export default function ContentBankPage() {
   const [user, setUser] = useState<any>(null)
   const [showModal, setShowModal] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
   
   const initialForm: QuestionForm = {
     text: '', 
@@ -98,8 +100,8 @@ export default function ContentBankPage() {
         options: (form.type === 'MCQ' || form.type === 'TRUE_FALSE') ? JSON.stringify(form.options) : null
       }
 
-      const res = await fetch('/api/content-bank', {
-        method: 'POST',
+      const res = await fetch(editingQuestionId ? `/api/content-bank/${editingQuestionId}` : '/api/content-bank', {
+        method: editingQuestionId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
@@ -107,6 +109,7 @@ export default function ContentBankPage() {
       if (res.ok) {
         setShowModal(false)
         setForm(initialForm)
+        setEditingQuestionId(null)
         loadQuestions()
       } else {
         const d = await res.json()
@@ -116,6 +119,58 @@ export default function ContentBankPage() {
       console.error(e) 
     } finally {
       setSaving(false)
+    }
+  }
+
+  function handleEdit(question: any) {
+    let parsedOptions = ['', '']
+    if (question.type === 'TRUE_FALSE') {
+      parsedOptions = ['True', 'False']
+    } else if (question.options) {
+      try {
+        const opts = JSON.parse(question.options)
+        if (Array.isArray(opts) && opts.length > 0) {
+          parsedOptions = opts
+        }
+      } catch {
+        parsedOptions = ['', '']
+      }
+    }
+
+    setForm({
+      text: question.text || '',
+      type: question.type || 'MCQ',
+      subject: question.subject || '',
+      options: parsedOptions,
+      correctAnswer: question.correctAnswer || '',
+      explanation: question.explanation || '',
+      imageUrl: question.imageUrl || '',
+      marks: question.marks || 1
+    })
+    setEditingQuestionId(question.id)
+    setShowModal(true)
+  }
+
+  async function handleDelete(questionId: string) {
+    if (!window.confirm('Delete this content bank question?')) return
+
+    setDeletingId(questionId)
+    try {
+      const res = await fetch(`/api/content-bank/${questionId}`, {
+        method: 'DELETE'
+      })
+
+      if (res.ok) {
+        loadQuestions()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete question')
+      }
+    } catch (error) {
+      console.error(error)
+      alert('An error occurred while deleting')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -156,6 +211,7 @@ export default function ContentBankPage() {
           <button 
             onClick={() => {
               setForm(initialForm)
+              setEditingQuestionId(null)
               setShowModal(true)
             }}
             style={neuButton}
@@ -212,6 +268,21 @@ export default function ContentBankPage() {
                    </div>
                  )}
               </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+                <button
+                  onClick={() => handleEdit(q)}
+                  style={{ ...secondaryButton, padding: '10px 18px', fontSize: '13px' }}
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(q.id)}
+                  disabled={deletingId === q.id}
+                  style={{ ...secondaryButton, padding: '10px 18px', fontSize: '13px', color: '#ef4444' }}
+                >
+                  {deletingId === q.id ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
            </div>
          ))}
       </div>
@@ -227,8 +298,12 @@ export default function ContentBankPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(232, 234, 240, 0.8)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
            <div style={{ ...neuCard, width: '100%', maxWidth: '850px', maxHeight: '95vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.8)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#3636e8' }}>New Question</h2>
-                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontSize: '28px', cursor: 'pointer', fontWeight: 300 }}>×</button>
+                <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#3636e8' }}>{editingQuestionId ? 'Edit Question' : 'New Question'}</h2>
+                <button onClick={() => {
+                  setShowModal(false)
+                  setEditingQuestionId(null)
+                  setForm(initialForm)
+                }} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontSize: '28px', cursor: 'pointer', fontWeight: 300 }}>×</button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
@@ -352,8 +427,12 @@ export default function ContentBankPage() {
                  )}
 
                  <div style={{ display: 'flex', gap: '20px', marginTop: '20px', padding: '24px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                    <button onClick={() => setShowModal(false)} style={{ ...secondaryButton, flex: 1, padding: '16px' }}>Cancel</button>
-                    <button onClick={handleSave} disabled={saving} style={{ ...neuButton, flex: 2, padding: '16px' }}>{saving ? 'Publishing...' : 'Save Question to Bank'}</button>
+                    <button onClick={() => {
+                      setShowModal(false)
+                      setEditingQuestionId(null)
+                      setForm(initialForm)
+                    }} style={{ ...secondaryButton, flex: 1, padding: '16px' }}>Cancel</button>
+                    <button onClick={handleSave} disabled={saving} style={{ ...neuButton, flex: 2, padding: '16px' }}>{saving ? (editingQuestionId ? 'Updating...' : 'Publishing...') : (editingQuestionId ? 'Update Question' : 'Save Question to Bank')}</button>
                  </div>
               </div>
            </div>

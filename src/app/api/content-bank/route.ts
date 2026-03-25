@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
 
+async function getAccessibleSubjects(userId: string) {
+  const enrollments = await (prisma as any).enrollment.findMany({
+    where: { userId },
+    include: { course: { select: { subject: true } } }
+  }) as any[]
+  const assignments = await (prisma as any).instructorAssignment.findMany({
+    where: { instructorId: userId },
+    include: { course: { select: { subject: true } } }
+  }) as any[]
+
+  return new Set([
+    ...enrollments.map(e => e.course?.subject),
+    ...assignments.map(a => a.course?.subject)
+  ].filter(Boolean))
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession()
@@ -15,20 +31,7 @@ export async function GET(request: NextRequest) {
     let where: any = {}
 
     if (session.role === 'ADMIN') {
-      // Admins only see subjects related to their classes
-      const enrollments = await (prisma as any).enrollment.findMany({
-        where: { userId: session.userId },
-        include: { course: { select: { subject: true } } }
-      }) as any[]
-      const assignments = await (prisma as any).instructorAssignment.findMany({
-        where: { instructorId: session.userId },
-        include: { course: { select: { subject: true } } }
-      }) as any[]
-      
-      const accessibleSubjects = new Set([
-        ...enrollments.map(e => e.course?.subject),
-        ...assignments.map(a => a.course?.subject)
-      ].filter(Boolean))
+      const accessibleSubjects = await getAccessibleSubjects(session.userId)
 
       if (subject) {
         if (!accessibleSubjects.has(subject)) {
@@ -69,19 +72,7 @@ export async function POST(request: NextRequest) {
 
   // Role-based restrictions for Admins
   if (session.role === 'ADMIN') {
-    const enrollments = await (prisma as any).enrollment.findMany({
-      where: { userId: session.userId },
-      include: { course: { select: { subject: true } } }
-    }) as any[]
-    const assignments = await (prisma as any).instructorAssignment.findMany({
-      where: { instructorId: session.userId },
-      include: { course: { select: { subject: true } } }
-    }) as any[]
-    
-    const accessibleSubjects = new Set([
-      ...enrollments.map(e => e.course?.subject),
-      ...assignments.map(a => a.course?.subject)
-    ].filter(Boolean))
+    const accessibleSubjects = await getAccessibleSubjects(session.userId)
 
     if (!accessibleSubjects.has(subject)) {
       return NextResponse.json({ error: 'Forbidden: You can only add questions for your assigned subjects' }, { status: 403 })

@@ -35,6 +35,7 @@ export default function CreateExamPage() {
   const [questions, setQuestions] = useState<Question[]>([
     { text: '', type: 'MCQ', options: ['', ''], correctAnswer: '', explanation: '', marks: 1 }
   ])
+  const requiresSchedule = !isFinalTest(examType) || useScheduleWindow
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -114,8 +115,8 @@ export default function CreateExamPage() {
         title,
         description,
         courseId,
-        startDate: useScheduleWindow ? startDate : '',
-        expiresAt: useScheduleWindow ? expiresAt : '',
+        startDate: requiresSchedule ? startDate : '',
+        expiresAt: requiresSchedule ? expiresAt : '',
         durationMinutes: parseInt(durationMinutes),
         examType,
         questions
@@ -246,8 +247,8 @@ export default function CreateExamPage() {
                 </ul>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: useScheduleWindow || !isFinalTest(examType) ? '1fr 1fr 1fr' : '1fr', gap: '16px' }}>
-                {(useScheduleWindow || !isFinalTest(examType)) && (
+              <div style={{ display: 'grid', gridTemplateColumns: requiresSchedule ? '1fr 1fr 1fr' : '1fr', gap: '16px' }}>
+                {requiresSchedule && (
                   <>
                     <div>
                       <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>
@@ -268,10 +269,9 @@ export default function CreateExamPage() {
                   <input type="number" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value)} style={neuInput} required min="1" />
                 </div>
               </div>
-              <button 
+                <button 
                 type="button" 
                 onClick={() => {
-                  const requiresSchedule = !isFinalTest(examType) || useScheduleWindow
                   if (!title || !courseId || !durationMinutes || (requiresSchedule && (!startDate || !expiresAt))) {
                     alert('Please fill all mandatory fields before proceeding.')
                     return

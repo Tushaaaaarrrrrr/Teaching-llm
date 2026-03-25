@@ -108,11 +108,14 @@ export async function PATCH(
     }
 
     const payload = await request.json()
-    const { title, description, courseId, expiresAt, startDate, durationMinutes, isPublished } = payload
+    const { title, description, courseId, expiresAt, startDate, durationMinutes, isPublished, questions } = payload
 
     const existingExam = await prisma.exam.findUnique({
       where: { id: params.id },
-      select: { id: true, courseId: true },
+      include: {
+        questions: { orderBy: { order: 'asc' } },
+        _count: { select: { attempts: true } }
+      },
     })
     if (!existingExam) {
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 })
@@ -128,17 +131,94 @@ export async function PATCH(
       }
     }
 
-    const exam = await prisma.exam.update({
-      where: { id: params.id },
-      data: {
-        title,
-        description,
-        courseId,
-        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
-        startDate: startDate ? new Date(startDate) : undefined,
-        durationMinutes,
-        isPublished
+    const hasNonPublishEdit = [
+      title,
+      description,
+      courseId,
+      expiresAt,
+      startDate,
+      durationMinutes,
+      questions
+    ].some(value => value !== undefined)
+
+    if (hasNonPublishEdit && existingExam.isPublished) {
+      return NextResponse.json({ error: 'Unpublish this exam before editing it' }, { status: 400 })
+    }
+
+    if (questions !== undefined) {
+      if (!Array.isArray(questions) || questions.length === 0) {
+        return NextResponse.json({ error: 'At least one question is required' }, { status: 400 })
       }
+
+      if (existingExam._count.attempts > 0) {
+        return NextResponse.json({ error: 'Cannot change question structure after students have started attempts' }, { status: 400 })
+      }
+    }
+
+    const nextStartDate = startDate !== undefined
+      ? (startDate ? new Date(startDate) : null)
+      : existingExam.startDate
+    const nextExpiresAt = expiresAt !== undefined
+      ? (expiresAt ? new Date(expiresAt) : null)
+      : existingExam.expiresAt
+
+    if (!nextExpiresAt) {
+      return NextResponse.json({ error: 'End date is required for this exam type' }, { status: 400 })
+    }
+
+    if (nextStartDate && nextExpiresAt <= nextStartDate) {
+      return NextResponse.json({ error: 'End date must be later than the start date' }, { status: 400 })
+    }
+
+    const parsedDurationMinutes = durationMinutes !== undefined
+      ? parseInt(String(durationMinutes), 10)
+      : undefined
+
+    if (parsedDurationMinutes !== undefined && (!Number.isFinite(parsedDurationMinutes) || parsedDurationMinutes <= 0)) {
+      return NextResponse.json({ error: 'Duration must be at least 1 minute' }, { status: 400 })
+    }
+
+    const exam = await prisma.$transaction(async (tx) => {
+      const updatedExam = await tx.exam.update({
+        where: { id: params.id },
+        data: {
+          title,
+          description,
+          courseId,
+          expiresAt: nextExpiresAt ?? undefined,
+          startDate: nextStartDate,
+          durationMinutes: parsedDurationMinutes,
+          isPublished
+        }
+      })
+
+      if (questions !== undefined) {
+        await tx.examQuestion.deleteMany({
+          where: { examId: params.id }
+        })
+
+        await tx.examQuestion.createMany({
+          data: questions.map((q: any, index: number) => ({
+            examId: params.id,
+            text: q.text,
+            type: q.type,
+            options: q.options ? JSON.stringify(q.options) : null,
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation,
+            imageUrl: q.imageUrl,
+            marks: q.marks || 1,
+            order: index,
+            questionBankId: q.questionBankId || null
+          }))
+        })
+      }
+
+      return tx.exam.findUnique({
+        where: { id: updatedExam.id },
+        include: {
+          questions: { orderBy: { order: 'asc' } }
+        }
+      })
     })
 
     return NextResponse.json(exam)

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { allowsMultipleAttempts, EXAM_RESULT_REFRESH_INTERVAL_MS, isFinalTest } from '@/lib/exam-policy'
+import ExamTimingStatus from '@/components/exams/ExamTimingStatus'
+import { getExamTimingState } from '@/lib/date-utils'
 
 export default function ExamDetailPage({ params }: { params: { id: string } }) {
   const { confirm, confirmDialog } = useConfirmDialog()
@@ -15,11 +17,39 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
   const [evaluations, setEvaluations] = useState<Record<string, { marks: number, feedback: string }>>({})
   const [examFeedback, setExamFeedback] = useState('')
   const [publishImmediately, setPublishImmediately] = useState(false)
+  const [now, setNow] = useState(() => new Date())
+  const [showExamEditor, setShowExamEditor] = useState(false)
+  const [savingExam, setSavingExam] = useState(false)
+  const [showQuestionEditor, setShowQuestionEditor] = useState(false)
+  const [editingQuestionIndex, setEditingQuestionIndex] = useState<number | null>(null)
+  const [savingQuestions, setSavingQuestions] = useState(false)
+  const [examForm, setExamForm] = useState({
+    title: '',
+    description: '',
+    startDate: '',
+    expiresAt: '',
+    durationMinutes: '60'
+  })
+  const [questionForm, setQuestionForm] = useState({
+    text: '',
+    type: 'MCQ',
+    options: ['', ''],
+    correctAnswer: '',
+    explanation: '',
+    marks: 1,
+    imageUrl: '',
+    questionBankId: ''
+  })
 
   useEffect(() => {
     loadData()
     const interval = setInterval(loadData, EXAM_RESULT_REFRESH_INTERVAL_MS)
     return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(timer)
   }, [])
 
   async function loadData() {
@@ -37,6 +67,197 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  function toDateTimeLocal(value?: string | null) {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    const offset = date.getTimezoneOffset()
+    const local = new Date(date.getTime() - offset * 60_000)
+    return local.toISOString().slice(0, 16)
+  }
+
+  function openExamEditor() {
+    setExamForm({
+      title: exam.title || '',
+      description: exam.description || '',
+      startDate: toDateTimeLocal(exam.startDate),
+      expiresAt: toDateTimeLocal(exam.expiresAt),
+      durationMinutes: String(exam.durationMinutes || 60)
+    })
+    setShowExamEditor(true)
+  }
+
+  function openQuestionEditor(question?: any, index?: number) {
+    let options = ['', '']
+    if (question?.type === 'TRUE_FALSE') {
+      options = ['True', 'False']
+    } else if (question?.options) {
+      try {
+        const parsed = typeof question.options === 'string' ? JSON.parse(question.options) : question.options
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          options = parsed
+        }
+      } catch {
+        options = ['', '']
+      }
+    }
+
+    setQuestionForm({
+      text: question?.text || '',
+      type: question?.type || 'MCQ',
+      options,
+      correctAnswer: question?.correctAnswer || '',
+      explanation: question?.explanation || '',
+      marks: question?.marks || 1,
+      imageUrl: question?.imageUrl || '',
+      questionBankId: question?.questionBankId || ''
+    })
+    setEditingQuestionIndex(index ?? null)
+    setShowQuestionEditor(true)
+  }
+
+  async function saveExamDetails() {
+    if (!examForm.title || !examForm.expiresAt || !examForm.durationMinutes) {
+      alert('Please fill title, end date, and duration.')
+      return
+    }
+
+    if (examForm.startDate && new Date(examForm.expiresAt) <= new Date(examForm.startDate)) {
+      alert('End date must be later than the start date.')
+      return
+    }
+
+    setSavingExam(true)
+    try {
+      const res = await fetch(`/api/exams/${params.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: examForm.title,
+          description: examForm.description,
+          startDate: examForm.startDate || null,
+          expiresAt: examForm.expiresAt,
+          durationMinutes: parseInt(examForm.durationMinutes, 10)
+        })
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        alert(error.error || 'Failed to update exam')
+        return
+      }
+
+      setShowExamEditor(false)
+      await loadData()
+    } catch (error) {
+      console.error(error)
+      alert('Failed to update exam')
+    } finally {
+      setSavingExam(false)
+    }
+  }
+
+  async function saveQuestionSet(nextQuestions: any[]) {
+    setSavingQuestions(true)
+    try {
+      const res = await fetch(`/api/exams/${params.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questions: nextQuestions.map((q, index) => ({
+            text: q.text,
+            type: q.type,
+            options: q.type === 'MCQ' || q.type === 'TRUE_FALSE'
+              ? (Array.isArray(q.options) ? q.options : (() => {
+                  try {
+                    return JSON.parse(q.options || '[]')
+                  } catch {
+                    return []
+                  }
+                })())
+              : null,
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation,
+            marks: q.marks,
+            imageUrl: q.imageUrl,
+            questionBankId: q.questionBankId,
+            order: index
+          }))
+        })
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        alert(error.error || 'Failed to update questions')
+        return false
+      }
+
+      setShowQuestionEditor(false)
+      setEditingQuestionIndex(null)
+      await loadData()
+      return true
+    } catch (error) {
+      console.error(error)
+      alert('Failed to update questions')
+      return false
+    } finally {
+      setSavingQuestions(false)
+    }
+  }
+
+  async function handleSaveQuestion() {
+    if (!questionForm.text || !questionForm.correctAnswer) {
+      alert('Please fill question text and correct answer.')
+      return
+    }
+
+    const normalizedQuestion = {
+      ...questionForm,
+      options: questionForm.type === 'TRUE_FALSE'
+        ? ['True', 'False']
+        : questionForm.options
+    }
+
+    const nextQuestions = [...(exam.questions || [])]
+    if (editingQuestionIndex === null) {
+      nextQuestions.push(normalizedQuestion)
+    } else {
+      nextQuestions[editingQuestionIndex] = normalizedQuestion
+    }
+
+    const updated = await saveQuestionSet(nextQuestions)
+    if (updated) {
+      setQuestionForm({
+        text: '',
+        type: 'MCQ',
+        options: ['', ''],
+        correctAnswer: '',
+        explanation: '',
+        marks: 1,
+        imageUrl: '',
+        questionBankId: ''
+      })
+    }
+  }
+
+  async function handleDeleteQuestion(index: number) {
+    const allowed = await confirm({
+      title: 'Delete Question?',
+      message: 'This question will be removed from the exam.',
+      confirmLabel: 'Delete Question',
+      tone: 'danger',
+    })
+    if (!allowed) return
+
+    const nextQuestions = exam.questions.filter((_: any, currentIndex: number) => currentIndex !== index)
+    if (nextQuestions.length === 0) {
+      alert('An exam must have at least one question.')
+      return
+    }
+
+    await saveQuestionSet(nextQuestions)
   }
 
   const handlePublish = async () => {
@@ -96,7 +317,11 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
   }
 
   const isAdminOrManager = userRole === 'MANAGER' || userRole === 'ADMIN'
-  const isExpired = exam ? new Date() > new Date(exam.expiresAt) : false
+  const timingState = exam ? getExamTimingState(exam.startDate, exam.expiresAt, now) : 'ended'
+  const isExpired = timingState === 'ended'
+  const isUpcoming = timingState === 'before'
+  const canEditExam = isAdminOrManager && exam && !exam.isPublished
+  const hasAttempts = (exam?.attempts?.length || 0) > 0
   const sortedAttempts = [...(exam?.attempts || [])].sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
   const latestAttempt = sortedAttempts[0]
 
@@ -114,7 +339,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
       <div style={{ padding: '32px' }}>
          {confirmDialog}
          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
-            <div>
+           <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>{exam.title} Management</h1>
                 <span style={{ 
@@ -126,8 +351,21 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                 </span>
               </div>
               <p style={{ color: '#6b6b8a' }}>{exam.course?.name}</p>
+              {canEditExam && (
+                <p style={{ color: '#10b981', fontSize: '13px', fontWeight: 700, margin: '6px 0 0' }}>
+                  This exam is unpublished. You can edit exam details, and question changes are allowed until attempts begin.
+                </p>
+              )}
             </div>
            <div style={{ display: 'flex', gap: '12px' }}>
+              {canEditExam && (
+                <button
+                  onClick={openExamEditor}
+                  style={{ padding: '10px 20px', borderRadius: '50px', background: '#3636e815', color: '#3636e8', border: 'none', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  Edit Exam
+                </button>
+              )}
               <button 
                 onClick={handlePublish}
                 style={{ 
@@ -154,15 +392,62 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
             {/* Questions List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-               <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a' }}>Question Structure</h2>
+               <ExamTimingStatus startDate={exam.startDate} expiresAt={exam.expiresAt} />
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                 <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>Question Structure</h2>
+                 {canEditExam && (
+                   <button
+                     onClick={() => openQuestionEditor()}
+                     disabled={hasAttempts}
+                     style={{ padding: '10px 18px', borderRadius: '50px', background: hasAttempts ? '#cbd5e1' : '#3636e8', color: '#fff', border: 'none', fontSize: '12px', fontWeight: 800, cursor: hasAttempts ? 'not-allowed' : 'pointer' }}
+                   >
+                     + Add Question
+                   </button>
+                 )}
+               </div>
+               {canEditExam && hasAttempts && (
+                 <div style={{ padding: '12px 16px', borderRadius: '14px', background: '#f59e0b10', color: '#b45309', fontSize: '13px', fontWeight: 700 }}>
+                   Question changes are locked because this exam already has attempts.
+                 </div>
+               )}
                {exam.questions.map((q: any, i: number) => (
                  <div key={q.id} style={{ ...neuCard, padding: '20px 24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <span style={{ fontSize: '12px', fontWeight: 800, color: '#3636e8' }}>Q{i+1} - {q.type}</span>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a' }}>{q.marks} Marks</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a' }}>{q.marks} Marks</span>
+                        {canEditExam && !hasAttempts && (
+                          <>
+                            <button
+                              onClick={() => openQuestionEditor(q, i)}
+                              style={{ background: 'none', border: 'none', color: '#3636e8', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteQuestion(i)}
+                              style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <p style={{ fontWeight: 600, color: '#1e1e3a' }}>{q.text}</p>
-                 </div>
+                    {q.options && (
+                      <p style={{ fontSize: '12px', color: '#6b6b8a', marginTop: '10px' }}>
+                        Options: {(() => {
+                          try {
+                            const options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options
+                            return Array.isArray(options) ? options.join(', ') : q.options
+                          } catch {
+                            return q.options
+                          }
+                        })()}
+                      </p>
+                    )}
+                  </div>
                ))}
             </div>
 
@@ -326,6 +611,93 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                </div>
             </div>
          )}
+
+         {showExamEditor && (
+           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+             <div style={{ ...neuCard, maxWidth: '700px', width: '100%' }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>Edit Exam</h2>
+                 <button onClick={() => setShowExamEditor(false)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
+               </div>
+               <div style={{ display: 'grid', gap: '16px' }}>
+                 <input value={examForm.title} onChange={(e) => setExamForm({ ...examForm, title: e.target.value })} placeholder="Exam title" style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
+                 <textarea value={examForm.description} onChange={(e) => setExamForm({ ...examForm, description: e.target.value })} placeholder="Description" rows={3} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', resize: 'vertical' }} />
+                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 160px', gap: '16px' }}>
+                   <input type="datetime-local" value={examForm.startDate} onChange={(e) => setExamForm({ ...examForm, startDate: e.target.value })} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
+                   <input type="datetime-local" value={examForm.expiresAt} onChange={(e) => setExamForm({ ...examForm, expiresAt: e.target.value })} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
+                   <input type="number" min="1" value={examForm.durationMinutes} onChange={(e) => setExamForm({ ...examForm, durationMinutes: e.target.value })} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
+                 </div>
+                 <button onClick={saveExamDetails} disabled={savingExam} style={{ padding: '14px 18px', borderRadius: '50px', border: 'none', background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
+                   {savingExam ? 'Saving...' : 'Save Exam Changes'}
+                 </button>
+               </div>
+             </div>
+           </div>
+         )}
+
+         {showQuestionEditor && (
+           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+             <div style={{ ...neuCard, maxWidth: '760px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>{editingQuestionIndex === null ? 'Add Question' : 'Edit Question'}</h2>
+                 <button onClick={() => { setShowQuestionEditor(false); setEditingQuestionIndex(null) }} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
+               </div>
+               <div style={{ display: 'grid', gap: '16px' }}>
+                 <select value={questionForm.type} onChange={(e) => setQuestionForm({
+                   ...questionForm,
+                   type: e.target.value,
+                   options: e.target.value === 'TRUE_FALSE' ? ['True', 'False'] : ['', ''],
+                   correctAnswer: ''
+                 })} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }}>
+                   <option value="MCQ">Multiple Choice</option>
+                   <option value="TRUE_FALSE">True / False</option>
+                   <option value="SUBJECTIVE">Subjective</option>
+                 </select>
+                 <textarea value={questionForm.text} onChange={(e) => setQuestionForm({ ...questionForm, text: e.target.value })} placeholder="Question text" rows={3} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', resize: 'vertical' }} />
+                 {(questionForm.type === 'MCQ' || questionForm.type === 'TRUE_FALSE') && (
+                   <div style={{ display: 'grid', gap: '12px' }}>
+                     {(questionForm.type === 'TRUE_FALSE' ? ['True', 'False'] : questionForm.options).map((option, index) => (
+                       <div key={`${option}-${index}`} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                         <input
+                           type="radio"
+                           checked={questionForm.correctAnswer === option}
+                           onChange={() => setQuestionForm({ ...questionForm, correctAnswer: option })}
+                         />
+                         {questionForm.type === 'TRUE_FALSE' ? (
+                           <div style={{ padding: '12px 14px', borderRadius: '12px', background: '#fff', flex: 1 }}>{option}</div>
+                         ) : (
+                           <input
+                             value={option}
+                             onChange={(e) => {
+                               const nextOptions = [...questionForm.options]
+                               nextOptions[index] = e.target.value
+                               setQuestionForm({ ...questionForm, options: nextOptions })
+                             }}
+                             placeholder={`Option ${index + 1}`}
+                             style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', flex: 1 }}
+                           />
+                         )}
+                       </div>
+                     ))}
+                     {questionForm.type === 'MCQ' && questionForm.options.length < 6 && (
+                       <button onClick={() => setQuestionForm({ ...questionForm, options: [...questionForm.options, ''] })} style={{ padding: '10px 16px', borderRadius: '12px', border: '1px dashed #3636e8', background: 'transparent', color: '#3636e8', fontWeight: 700, cursor: 'pointer' }}>
+                         Add Option
+                       </button>
+                     )}
+                   </div>
+                 )}
+                 {questionForm.type === 'SUBJECTIVE' && (
+                   <textarea value={questionForm.correctAnswer} onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })} placeholder="Reference answer / keywords" rows={3} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', resize: 'vertical' }} />
+                 )}
+                 <input value={questionForm.explanation} onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })} placeholder="Explanation (optional)" style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
+                 <input type="number" min="1" value={questionForm.marks} onChange={(e) => setQuestionForm({ ...questionForm, marks: parseInt(e.target.value, 10) || 1 })} placeholder="Marks" style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
+                 <button onClick={handleSaveQuestion} disabled={savingQuestions} style={{ padding: '14px 18px', borderRadius: '50px', border: 'none', background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
+                   {savingQuestions ? 'Saving...' : 'Save Question'}
+                 </button>
+               </div>
+             </div>
+           </div>
+         )}
       </div>
     )
   }
@@ -337,6 +709,10 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
        <div style={{ ...neuCard, maxWidth: '500px', width: '100%', textAlign: 'center' }}>
           <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#1e1e3a', marginBottom: '8px' }}>{exam.title}</h1>
           <p style={{ color: '#6b6b8a', marginBottom: '24px' }}>{exam.course?.name}</p>
+
+          <div style={{ marginBottom: '24px' }}>
+            <ExamTimingStatus startDate={exam.startDate} expiresAt={exam.expiresAt} />
+          </div>
 
           <div style={{ textAlign: 'left', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: exam.examType === 'FINAL_TEST' ? '#ef444410' : '#10b98110', borderLeft: `4px solid ${exam.examType === 'FINAL_TEST' ? '#ef4444' : '#10b981'}` }}>
             <h3 style={{ fontSize: '14px', fontWeight: 800, color: exam.examType === 'FINAL_TEST' ? '#ef4444' : '#10b981', marginBottom: '8px' }}>
@@ -401,9 +777,14 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                  </div>
                )}
              </>
+          ) : isUpcoming ? (
+            <div style={{ padding: '20px', borderRadius: '20px', background: '#3636e810', border: '2px dashed #3636e8', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ color: '#3636e8', fontWeight: 800, fontSize: '15px' }}>Exam Not Started Yet</div>
+              <p style={{ fontSize: '13px', color: '#6b6b8a', margin: 0 }}>You will be able to start this exam when the countdown reaches zero.</p>
+            </div>
           ) : isExpired ? (
             <div style={{ padding: '16px', borderRadius: '50px', background: '#ef444410', color: '#ef4444', fontWeight: 700 }}>
-              This exam has expired.
+              This exam has ended.
             </div>
           ) : (
             <button

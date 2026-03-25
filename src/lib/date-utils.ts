@@ -27,6 +27,55 @@ export function formatISTDate(date: string | Date) {
   return formatIST(date, { month: 'short', day: 'numeric' });
 }
 
+export function formatISTDateTime(date: string | Date) {
+  return formatIST(date, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+export type ExamTimingState = 'before' | 'active' | 'ending' | 'ended'
+
+export function getExamTimingState(
+  startTime: string | Date | null | undefined,
+  endTime: string | Date,
+  now: Date = new Date()
+): ExamTimingState {
+  const start = startTime ? new Date(startTime) : null
+  const end = typeof endTime === 'string' ? new Date(endTime) : endTime
+
+  if (Number.isNaN(end.getTime())) return 'ended'
+  if (start && !Number.isNaN(start.getTime()) && now < start) return 'before'
+  if (now >= end) return 'ended'
+
+  const remainingMs = end.getTime() - now.getTime()
+  if (remainingMs <= 60 * 60 * 1000) return 'ending'
+
+  return 'active'
+}
+
+export function formatCountdownDuration(totalMs: number) {
+  const totalSeconds = Math.max(0, Math.floor(totalMs / 1000))
+  const days = Math.floor(totalSeconds / 86400)
+  const hours = Math.floor((totalSeconds % 86400) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m`
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`
+  }
+
+  return `${minutes}m ${seconds}s`
+}
+
 export function getEventStatus(
   startTime: string | Date, 
   endTime: string | Date, 

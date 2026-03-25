@@ -2,6 +2,9 @@
 
 import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import ExamTimingStatus from '@/components/exams/ExamTimingStatus'
+import { getExamTimingState } from '@/lib/date-utils'
 
 interface Exam {
   id: string
@@ -21,6 +24,12 @@ const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function ExamsPage() {
   const router = useRouter()
+  const [now, setNow] = useState(() => new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
   
   const { data: examsData, isLoading: loading } = useSWR('/api/exams', fetcher, {
     refreshInterval: 30000,
@@ -35,14 +44,12 @@ export default function ExamsPage() {
   const isAdminOrManager = userRole === 'MANAGER' || userRole === 'ADMIN'
 
   // Categorize exams
-  const now = new Date()
-  const upcomingExams = exams.filter(e => e.startDate && new Date(e.startDate) > now)
+  const upcomingExams = exams.filter(e => getExamTimingState(e.startDate, e.expiresAt, now) === 'before')
   const activeExams = exams.filter(e => {
-    const start = e.startDate ? new Date(e.startDate) : null
-    const end = new Date(e.expiresAt)
-    return (!start || start <= now) && end > now
+    const state = getExamTimingState(e.startDate, e.expiresAt, now)
+    return state === 'active' || state === 'ending'
   })
-  const expiredExams = exams.filter(e => new Date(e.expiresAt) <= now)
+  const expiredExams = exams.filter(e => getExamTimingState(e.startDate, e.expiresAt, now) === 'ended')
 
   // Shared Styles
   const neuCard: React.CSSProperties = {
@@ -60,8 +67,9 @@ export default function ExamsPage() {
   }
 
   const renderExamCard = (exam: Exam) => {
-    const isUpcoming = exam.startDate && new Date(exam.startDate) > now
-    const isExpired = new Date(exam.expiresAt) <= now
+    const timingState = getExamTimingState(exam.startDate, exam.expiresAt, now)
+    const isUpcoming = timingState === 'before'
+    const isExpired = timingState === 'ended'
     
     return (
       <div 
@@ -103,6 +111,8 @@ export default function ExamsPage() {
           </p>
         </div>
 
+        <ExamTimingStatus startDate={exam.startDate} expiresAt={exam.expiresAt} compact />
+
         <div style={{ display: 'flex', gap: '16px', marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: 700, textTransform: 'uppercase' }}>Duration</span>
@@ -111,12 +121,6 @@ export default function ExamsPage() {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: 700, textTransform: 'uppercase' }}>Questions</span>
             <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: 700 }}>{exam._count.questions}</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 'auto' }}>
-            <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: 700, textTransform: 'uppercase' }}>{isUpcoming ? 'Starts At' : 'Deadline'}</span>
-            <span style={{ fontSize: '13px', color: isExpired ? '#ef4444' : '#1e1e3a', fontWeight: 700 }}>
-              {new Date(isUpcoming ? exam.startDate! : exam.expiresAt).toLocaleDateString()}
-            </span>
           </div>
         </div>
 
