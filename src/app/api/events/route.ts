@@ -85,10 +85,12 @@ export async function GET(request: NextRequest) {
         status,
         internalStatus: ev.status, // SCHEDULED, CANCELLED, RESCHEDULED
         courseId: ev.courseId,
+        classId: ev.courseId,
         course: ev.course,
+        class: ev.course,
         instructorId: ev.instructorId,
         instructor: ev.instructor,
-        isGlobal: ev.isGlobal,
+        isGlobal: ev.isGlobal || !ev.courseId,
         recurrence: ev.recurrence,
         interval: ev.interval,
         parentId: ev.parentId,
