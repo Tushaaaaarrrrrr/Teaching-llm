@@ -23,7 +23,7 @@ interface TranscriptMsg {
     role: string
     securityNumber: string | null
   }
-  class: {
+  course: {
     name: string
     subject: string | null
   }
@@ -59,7 +59,7 @@ export default function ChatTranscriptsPage() {
     setLoadingMessages(true)
     setMessages([])
     try {
-      const data = await fetch(`/api/community/transcripts?classId=${cls.id}`).then(r => r.json())
+      const data = await fetch(`/api/community/transcripts?courseId=${cls.id}`).then(r => r.json())
       setMessages(data.messages || [])
     } catch (e) {
       console.error(e)
@@ -71,7 +71,7 @@ export default function ChatTranscriptsPage() {
     if (!selectedClass) return
     setExporting(true)
     try {
-      const res = await fetch(`/api/community/transcripts/export?classId=${selectedClass.id}&format=${format}`)
+      const res = await fetch(`/api/community/transcripts/export?courseId=${selectedClass.id}&format=${format}`)
       const blob = await res.blob()
       const ext = format === 'pdf' ? 'html' : format
       const url = URL.createObjectURL(blob)

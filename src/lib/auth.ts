@@ -130,6 +130,10 @@ export function isAdminOrManager(role: string) {
   return role === 'MANAGER' || role === 'ADMIN'
 }
 
+export function canCreateAnnouncements(role: string) {
+  return role === 'MANAGER'
+}
+
 export function canManageContent(role: string) {
   return role === 'MANAGER' || role === 'ADMIN'
 }

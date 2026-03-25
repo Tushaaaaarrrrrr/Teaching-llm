@@ -115,6 +115,16 @@ export default function LecturePage() {
       if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`
     }
     
+    if (source === 'GOOGLE_DRIVE') {
+      // Extract file ID from Google Drive URL
+      // Formats: https://drive.google.com/file/d/{ID}/view
+      //          https://drive.google.com/open?id={ID}
+      const fileIdMatch = url.match(/\/d\/([\w-]+)/) || url.match(/[?&]id=([\w-]+)/)
+      if (fileIdMatch) {
+        return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
+      }
+    }
+    
     return url
   }
 

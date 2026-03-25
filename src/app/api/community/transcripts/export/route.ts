@@ -26,8 +26,8 @@ function buildTranscriptRows(messages: any[]): TranscriptRow[] {
     message: msg.content,
     isDeleted: msg.isDeleted,
     deletedAt: msg.deletedAt ? new Date(msg.deletedAt).toISOString() : '',
-    communityName: msg.class.name,
-    communitySubject: msg.class.subject || '',
+    communityName: msg.course.name,
+    communitySubject: msg.course.subject || '',
   }))
 }
 

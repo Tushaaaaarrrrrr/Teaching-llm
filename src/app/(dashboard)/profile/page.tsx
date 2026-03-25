@@ -308,15 +308,6 @@ export default function ProfilePage() {
               Account Details
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-
-              {/* Account ID */}
-              <div style={insetRow}>
-                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Account ID</span>
-                <span style={{ fontSize: '12px', color: '#1e1e3a', fontWeight: '600', fontFamily: 'monospace', wordBreak: 'break-all', textAlign: 'right', maxWidth: '60%' }}>
-                  {user.id}
-                </span>
-              </div>
-
               {/* Security Number with eye toggle */}
               <div style={insetRow}>
                 <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Security Number</span>

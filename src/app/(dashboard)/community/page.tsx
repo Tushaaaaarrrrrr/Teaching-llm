@@ -9,6 +9,8 @@ interface ClassItem {
   color: string
   subject?: string
   icon?: string
+  isCommunityActive?: boolean
+  isDisabled?: boolean
   _count?: { lectures: number }
 }
 
@@ -36,6 +38,7 @@ export default function CommunityPage() {
   const [userRole, setUserRole] = useState('STUDENT')
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [managingCommunity, setManagingCommunity] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const loadMessages = useCallback(async (classId: string) => {
@@ -48,12 +51,19 @@ export default function CommunityPage() {
       setUserRole(d.user?.role || 'STUDENT')
       setUserId(d.user?.id || '')
     })
-    fetch('/api/classes').then(r => r.json()).then(data => {
-      const list = data.classes || data || []
-      setClasses(list)
-      if (list.length > 0) setSelectedClass(list[0])
-    })
+    loadClasses()
   }, [])
+
+  async function loadClasses(preferredId?: string) {
+    const data = await fetch('/api/classes').then(r => r.json())
+    const list = data.classes || data || []
+    setClasses(list)
+    setSelectedClass(current => {
+      const nextId = preferredId || current?.id
+      const match = nextId ? list.find((item: ClassItem) => item.id === nextId) : null
+      return match || list[0] || null
+    })
+  }
 
   // Poll messages when a class is selected
   useEffect(() => {
@@ -111,6 +121,92 @@ export default function CommunityPage() {
     setDeletingId(null)
   }
 
+  async function clearCommunityMessages() {
+    if (!selectedClass || userRole !== 'MANAGER' || managingCommunity) return
+    const allowed = await confirm({
+      title: 'Clear Community Chat?',
+      message: 'This will remove all messages from this community for everyone.',
+      confirmLabel: 'Clear Messages',
+      tone: 'danger',
+    })
+    if (!allowed) return
+
+    setManagingCommunity(true)
+    try {
+      const res = await fetch(`/api/community/${selectedClass.id}/clear`, {
+        method: 'POST',
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to clear community')
+      }
+      await loadMessages(selectedClass.id)
+    } catch (error) {
+      console.error(error)
+      alert(error instanceof Error ? error.message : 'Failed to clear community')
+    } finally {
+      setManagingCommunity(false)
+    }
+  }
+
+  async function toggleCommunityStatus() {
+    if (!selectedClass || userRole !== 'MANAGER' || managingCommunity) return
+    const nextActive = !selectedClass.isCommunityActive
+    const allowed = await confirm({
+      title: nextActive ? 'Enable Community?' : 'Disable Community?',
+      message: nextActive
+        ? 'Students and admins will be able to see and use this community again.'
+        : 'Students and admins will no longer see this community, but managers will still have access.',
+      confirmLabel: nextActive ? 'Enable Community' : 'Disable Community',
+      tone: nextActive ? 'default' : 'danger',
+    })
+    if (!allowed) return
+
+    setManagingCommunity(true)
+    try {
+      const res = await fetch(`/api/courses/${selectedClass.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCommunityActive: nextActive }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to update community')
+      }
+      await loadClasses(selectedClass.id)
+      await loadMessages(selectedClass.id)
+    } catch (error) {
+      console.error(error)
+      alert(error instanceof Error ? error.message : 'Failed to update community')
+    } finally {
+      setManagingCommunity(false)
+    }
+  }
+
+  async function exportTranscript(format: 'csv' | 'json' | 'pdf') {
+    if (!selectedClass || userRole !== 'MANAGER') return
+    try {
+      const res = await fetch(`/api/community/transcripts/export?courseId=${selectedClass.id}&format=${format}`)
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to export transcript')
+      }
+      const blob = await res.blob()
+      const ext = format === 'pdf' ? 'html' : format
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `transcript-${selectedClass.name.replace(/\s+/g, '_')}.${ext}`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error(error)
+      alert(error instanceof Error ? error.message : 'Failed to export transcript')
+    }
+  }
+
   const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
   const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
 
@@ -157,6 +253,11 @@ export default function CommunityPage() {
                   {cls.subject}
                 </div>
               )}
+              {userRole === 'MANAGER' && cls.isCommunityActive === false && (
+                <div style={{ fontSize: '10px', fontWeight: '800', marginTop: '4px', color: selectedClass?.id === cls.id ? '#fff' : '#ef4444' }}>
+                  COMMUNITY OFF
+                </div>
+              )}
             </div>
           </button>
         ))}
@@ -194,6 +295,15 @@ export default function CommunityPage() {
                 )}
               </div>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                {selectedClass.isCommunityActive === false && (
+                  <span style={{
+                    padding: '4px 14px', borderRadius: '50px',
+                    background: '#fef2f2', color: '#ef4444',
+                    fontSize: '12px', fontWeight: '700',
+                  }}>
+                    Community Off
+                  </span>
+                )}
                 <span style={{
                   padding: '4px 14px', borderRadius: '50px',
                   background: selectedClass.color + '18', color: selectedClass.color,
@@ -201,6 +311,50 @@ export default function CommunityPage() {
                 }}>
                   {messages.length} message{messages.length !== 1 ? 's' : ''}
                 </span>
+                {userRole === 'MANAGER' && (
+                  <>
+                    <button
+                      onClick={() => exportTranscript('csv')}
+                      style={{
+                        padding: '6px 12px', borderRadius: '50px', border: 'none',
+                        cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                        ...neu, boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', color: '#3636e8',
+                      }}
+                    >
+                      Export
+                    </button>
+                    <button
+                      onClick={toggleCommunityStatus}
+                      disabled={managingCommunity}
+                      style={{
+                        padding: '6px 12px', borderRadius: '50px', border: 'none',
+                        cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                        background: selectedClass.isCommunityActive === false ? '#22c55e' : '#f59e0b',
+                        color: '#fff',
+                        boxShadow: selectedClass.isCommunityActive === false
+                          ? '4px 4px 10px rgba(34,197,94,0.25)'
+                          : '4px 4px 10px rgba(245,158,11,0.25)',
+                        opacity: managingCommunity ? 0.6 : 1,
+                      }}
+                    >
+                      {selectedClass.isCommunityActive === false ? 'Enable' : 'Disable'}
+                    </button>
+                    <button
+                      onClick={clearCommunityMessages}
+                      disabled={managingCommunity || messages.length === 0}
+                      style={{
+                        padding: '6px 12px', borderRadius: '50px', border: 'none',
+                        cursor: managingCommunity || messages.length === 0 ? 'default' : 'pointer',
+                        fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                        background: '#ef4444', color: '#fff',
+                        boxShadow: '4px 4px 10px rgba(239,68,68,0.25)',
+                        opacity: managingCommunity || messages.length === 0 ? 0.5 : 1,
+                      }}
+                    >
+                      Clear Chat
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -303,12 +457,11 @@ export default function CommunityPage() {
                         }}>
                           {msg.content}
                         </div>
-                        {/* Delete button for own messages */}
-                        {isMe && !msg.id.startsWith('temp-') && (
+                        {(userRole === 'MANAGER' || isMe) && !msg.id.startsWith('temp-') && (
                           <button
                             onClick={() => deleteMessage(msg.id)}
                             disabled={deletingId === msg.id}
-                            title="Delete message"
+                            title={userRole === 'MANAGER' && !isMe ? 'Delete message as manager' : 'Delete message'}
                             style={{
                               width: '26px', height: '26px', borderRadius: '50%',
                               border: 'none', cursor: 'pointer',
@@ -344,23 +497,29 @@ export default function CommunityPage() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  placeholder={`Message ${selectedClass.name} community...`}
+                  placeholder={
+                    selectedClass.isCommunityActive === false && userRole !== 'MANAGER'
+                      ? 'This community is disabled'
+                      : `Message ${selectedClass.name} community...`
+                  }
+                  disabled={selectedClass.isCommunityActive === false && userRole !== 'MANAGER'}
                   style={{
                     width: '100%', padding: '11px 16px', borderRadius: '50px',
                     border: 'none', outline: 'none',
                     fontFamily: 'inherit', fontSize: '14px',
                     ...neuInset, color: '#1e1e3a',
+                    opacity: selectedClass.isCommunityActive === false && userRole !== 'MANAGER' ? 0.6 : 1,
                   }}
                 />
               </div>
               <button
                 onClick={sendMessage}
-                disabled={!input.trim()}
+                disabled={!input.trim() || (selectedClass.isCommunityActive === false && userRole !== 'MANAGER')}
                 style={{
                   width: '44px', height: '44px', borderRadius: '50%', border: 'none',
-                  cursor: input.trim() ? 'pointer' : 'default',
-                  background: input.trim() ? selectedClass.color : '#e8eaf0',
-                  color: input.trim() ? '#fff' : '#9999b0',
+                  cursor: input.trim() && !(selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? 'pointer' : 'default',
+                  background: input.trim() && !(selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? selectedClass.color : '#e8eaf0',
+                  color: input.trim() && !(selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? '#fff' : '#9999b0',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                   boxShadow: input.trim()
                     ? `4px 4px 10px ${selectedClass.color}55`

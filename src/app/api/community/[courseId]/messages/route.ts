@@ -21,6 +21,17 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { isCommunityActive: true },
+    })
+    if (!course) {
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    }
+    if (!course.isCommunityActive && session.role !== 'MANAGER') {
+      return NextResponse.json({ error: 'This community is currently disabled' }, { status: 403 })
+    }
+
     const { searchParams } = new URL(_request.url);
     const cursor = searchParams.get('cursor');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -79,6 +90,17 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const course = await prisma.course.findUnique({
+      where: { id: params.courseId },
+      select: { isCommunityActive: true },
+    })
+    if (!course) {
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    }
+    if (!course.isCommunityActive && session.role !== 'MANAGER') {
+      return NextResponse.json({ error: 'This community is currently disabled' }, { status: 403 })
+    }
+
     const { content } = await request.json()
     
     if (!content || !validateLength(content, 2000)) {
@@ -130,6 +152,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const course = await prisma.course.findUnique({
+      where: { id: params.courseId },
+      select: { isCommunityActive: true },
+    })
+    if (!course) {
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    }
+    if (!course.isCommunityActive && session.role !== 'MANAGER') {
+      return NextResponse.json({ error: 'This community is currently disabled' }, { status: 403 })
+    }
+
     const { messageId } = await request.json()
     if (!messageId) {
       return NextResponse.json({ error: 'messageId is required' }, { status: 400 })
@@ -148,8 +181,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Message does not belong to this course' }, { status: 400 })
     }
 
-    // Only the sender can delete their own message
-    if (message.senderId !== session.userId) {
+    // Managers can moderate any message. Others can delete only their own.
+    if (session.role !== 'MANAGER' && message.senderId !== session.userId) {
       return NextResponse.json({ error: 'You can only delete your own messages' }, { status: 403 })
     }
 
@@ -163,7 +196,7 @@ export async function DELETE(
       data: {
         isDeleted: true,
         deletedAt: new Date(),
-        content: `[Message deleted by user]`, // Optional: track that it was user-deleted
+        content: session.role === 'MANAGER' ? '[Message deleted by manager]' : '[Message deleted by user]',
       },
     })
 

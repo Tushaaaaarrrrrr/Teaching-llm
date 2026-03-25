@@ -36,6 +36,7 @@ model User {
   isGoogleUser            Boolean                @default(false)
   encryptedTempPassword   String?
   lastDailyDigestAt       DateTime?
+  lastSyncAt              DateTime?
   activityLogs            ActivityLog[]
   announcements           Announcement[]         @relation("AnnouncementCreator")
   chatMessages            ChatMessage[]          @relation("ChatMsgSender")
@@ -643,4 +644,15 @@ model Feedback {
   @@unique([studentId, courseId])
   @@index([studentId])
   @@index([courseId])
+}
+
+model SyncQueue {
+  id        String   @id @default(cuid())
+  userId    String
+  processAt DateTime
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([processed])
+  @@index([processAt])
 }

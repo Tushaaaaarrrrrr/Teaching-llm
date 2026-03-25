@@ -118,10 +118,21 @@ export async function POST(request: NextRequest) {
             select: { courseId: true },
           })
         : []
-      const effectiveCourseIds = Array.from(new Set([
+      let effectiveCourseIds = Array.from(new Set([
         ...finalClassIds,
         ...bundleCourseRows.map(row => row.courseId),
       ]))
+
+      // Auto-enroll in demo course if one exists and user is a STUDENT
+      if (role === 'STUDENT') {
+        const demoCourse = await (tx.course.findFirst as any)({
+          where: { isDemo: true },
+          select: { id: true }
+        })
+        if (demoCourse && !effectiveCourseIds.includes(demoCourse.id)) {
+          effectiveCourseIds.push(demoCourse.id)
+        }
+      }
 
       const blockedCourses = effectiveCourseIds.length > 0
         ? await (tx.course.findMany as any)({

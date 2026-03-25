@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
+import { getSession, isAdminOrManager, getAccessibleCourseIds, canCreateAnnouncements } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET() {
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isAdminOrManager(session.role)) {
+    if (!canCreateAnnouncements(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

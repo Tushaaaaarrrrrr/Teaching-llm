@@ -17,6 +17,7 @@ export async function GET() {
 
     if (session.role !== 'MANAGER') {
       where.isDisabled = false
+      where.isCommunityActive = true
     }
 
     if (accessibleCourseIds !== null) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface AnnouncementClass {
   id: string
@@ -119,6 +120,7 @@ export default function AnnouncementsPage() {
   const searchParams = useSearchParams()
   const highlightId  = searchParams.get('id')
   const cardRefs     = useRef<Record<string, HTMLDivElement | null>>({})
+  const { confirm, confirmDialog } = useConfirmDialog()
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [classes,       setClasses]       = useState<ClassOption[]>([])
@@ -181,7 +183,30 @@ export default function AnnouncementsPage() {
     }
   }
 
-  const isAdminOrManager = userRole === 'MANAGER' || userRole === 'ADMIN'
+  async function handleDelete(id: string) {
+    const allowed = await confirm({
+      title: 'Delete Announcement?',
+      message: 'Are you sure you want to delete this announcement? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    })
+    if (!allowed) return
+
+    try {
+      const res = await fetch(`/api/announcements/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setAnnouncements(prev => prev.filter(a => a.id !== id))
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete announcement')
+      }
+    } catch {
+      alert('Something went wrong. Please try again.')
+    }
+  }
+
+  const isPowerUser = userRole === 'MANAGER' || userRole === 'ADMIN'
+  const canCreate = userRole === 'MANAGER'
 
   const filtered = announcements.filter(a => {
     if (activeTab === 'updates') return !a.classId
@@ -262,7 +287,7 @@ export default function AnnouncementsPage() {
         </div>
 
         {/* New Announcement button (admin/manager only) */}
-        {isAdminOrManager && (
+        {canCreate && (
           <button
             onClick={() => setShowForm(v => !v)}
             style={{
@@ -285,7 +310,7 @@ export default function AnnouncementsPage() {
       </div>
 
       {/* ── Create form ─────────────────────────────────────────────────── */}
-      {isAdminOrManager && showForm && (
+      {canCreate && showForm && (
         <div style={{ ...neuCard, marginBottom: '28px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>
             Create Announcement
@@ -364,7 +389,7 @@ export default function AnnouncementsPage() {
             {activeTab === 'all' ? 'No announcements yet' : `No ${activeTab} announcements`}
           </div>
           <div style={{ fontSize: '13px', color: '#9999b0' }}>
-            {isAdminOrManager ? 'Create your first announcement using the button above.' : 'Check back later for updates.'}
+            {canCreate ? 'Create your first announcement using the button above.' : 'Check back later for updates.'}
           </div>
         </div>
       ) : (
@@ -473,6 +498,27 @@ export default function AnnouncementsPage() {
                         <span style={{ fontSize: '12px', color: '#c0c2ca', marginLeft: '4px' }}>
                           {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </span>
+                        
+                        {/* Delete button (Manager only) */}
+                        {canCreate && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDelete(a.id) }}
+                            style={{
+                              marginLeft: 'auto', background: 'none', border: 'none',
+                              color: '#ef4444', cursor: 'pointer', padding: '4px',
+                              borderRadius: '4px', display: 'flex', alignItems: 'center',
+                              justifyContent: 'center', transition: 'background 0.2s',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                            title="Delete Announcement"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -513,6 +559,7 @@ export default function AnnouncementsPage() {
           </span>
         </div>
       )}
+      {confirmDialog}
     </div>
   )
 }

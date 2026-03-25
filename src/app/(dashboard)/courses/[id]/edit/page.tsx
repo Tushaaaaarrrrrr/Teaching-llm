@@ -505,6 +505,7 @@ export default function CourseEditPage() {
                     style={{ width: '100%' }}
                   >
                     <option value="YOUTUBE">YouTube</option>
+                    <option value="GOOGLE_DRIVE">Google Drive</option>
                   </select>
                 </div>
                 <div>

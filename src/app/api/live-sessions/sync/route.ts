@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { getSession, isManager } from '@/lib/auth'
 import { syncTodaySessions } from '@/lib/daily-session-sync'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { prisma } from '@/lib/db'
+import { queueUsersForSync } from '@/lib/sync-queue'
 
 export async function POST() {
   try {
@@ -16,6 +18,16 @@ export async function POST() {
 
     const result = await syncTodaySessions(session.userId)
 
+    // Update manager's lastSyncAt immediately
+    const now = new Date()
+    await prisma.user.update({
+      where: { id: session.userId },
+      data: { lastSyncAt: now },
+    })
+
+    // Queue all other users for staggered sync
+    await queueUsersForSync(session.userId)
+
     logActivity({
       userId: session.userId,
       userName: session.name,
@@ -29,6 +41,7 @@ export async function POST() {
       message: 'Today sessions synced successfully',
       count: result.count,
       snapshotDate: result.snapshotDate.toISOString(),
+      lastSyncAt: now.toISOString(),
     })
   } catch (error) {
     console.error('Error syncing live sessions:', error)

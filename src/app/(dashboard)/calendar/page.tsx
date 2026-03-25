@@ -170,7 +170,7 @@ function CalendarPageContent() {
       time: '',
       endTime: '',
       type: 'class',
-      classId: 'GLOBAL',
+      classId: "",
       instructorId: '',
       meetLink: '',
       status: 'SCHEDULED',
@@ -204,6 +204,13 @@ function CalendarPageContent() {
 
   async function handleSave() {
     if (!formData.title || !formData.date || !formData.time || !formData.endTime) return
+    
+    // Ensure course is selected (not accidentally global)
+    if (!formData.classId || formData.classId === '') {
+      alert("Please select a course for this event.\n\nTo make it visible to all users, select 'Global (visible to all users)'.")
+      return
+    }
+    
     setSaving(true)
     try {
       const { startTime, endTime } = buildEventDateTime(formData.date, formData.time, formData.endTime)
@@ -628,7 +635,9 @@ function CalendarPageContent() {
                   className="form-input"
                   value={formData.classId || ''}
                   onChange={e => set('classId', e.target.value)}
+                  required
                 >
+                  <option value="">-- Select a Course --</option>
                   <option value="GLOBAL">Global (visible to all users)</option>
                   {classes.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>

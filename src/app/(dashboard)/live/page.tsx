@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import useSWR, { mutate } from 'swr'
 import { formatIST, formatISTDate, getEventStatus } from '@/lib/date-utils'
 
@@ -24,6 +24,7 @@ interface CourseEvent {
 interface MeResponse {
   user?: {
     role?: string
+    lastSyncAt?: string | null
   }
 }
 
@@ -35,29 +36,78 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dotColor: st
   rescheduled: { label: 'RESCHEDULED', color: '#d97706', dotColor: '#d97706', bg: 'rgba(217,119,6,0.10)' },
 }
 
-// Internal formatters replaced by @/lib/date-utils
-
 export default function LivePage() {
   const { data, isLoading } = useSWR<CourseEvent[]>('/api/live-sessions', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 15000,
   })
+  const { data: userData } = useSWR<MeResponse>('/api/auth/me', fetcher)
+  
   const [nowTick, setNowTick] = useState(Date.now())
   const [syncing, setSyncing] = useState(false)
   const [userRole, setUserRole] = useState('')
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
+  
+  // Auto-refresh safety guards
+  const lastRefreshTimeRef = useRef<number>(0)
+  const lastProcessedSyncRef = useRef<string | null>(null)
+  const syncCheckIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  
   const sessions = Array.isArray(data) ? data : []
 
+  // Update time every 30 seconds
   useEffect(() => {
     const intervalId = window.setInterval(() => setNowTick(Date.now()), 30000)
     return () => window.clearInterval(intervalId)
   }, [])
 
+  // Get user role once
   useEffect(() => {
     fetch('/api/auth/me')
       .then((res) => res.json())
-      .then((data: MeResponse) => setUserRole(data.user?.role || ''))
+      .then((data: MeResponse) => {
+        setUserRole(data.user?.role || '')
+        setLastSyncAt(data.user?.lastSyncAt || null)
+        lastProcessedSyncRef.current = data.user?.lastSyncAt || null
+      })
       .catch(console.error)
   }, [])
+
+  // Monitor for sync changes (every 30 seconds for non-managers)
+  useEffect(() => {
+    if (userRole === 'MANAGER') return
+
+    // Check every 30 seconds
+    syncCheckIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await fetch('/api/auth/me')
+        const data: MeResponse = await res.json()
+        const currentSyncAt = data.user?.lastSyncAt
+
+        // If sync timestamp changed AND we haven't refreshed in last 60 seconds
+        if (
+          currentSyncAt &&
+          currentSyncAt !== lastProcessedSyncRef.current &&
+          Date.now() - lastRefreshTimeRef.current > 60_000
+        ) {
+          console.log('[Auto-Refresh] Sync detected, refreshing live sessions...')
+          lastRefreshTimeRef.current = Date.now()
+          lastProcessedSyncRef.current = currentSyncAt
+          
+          // Trigger single refresh via SWR (deduping prevents duplicate requests)
+          await mutate('/api/live-sessions')
+        }
+      } catch (error) {
+        console.error('[Auto-Refresh] Error checking sync:', error)
+      }
+    }, 30_000)
+
+    return () => {
+      if (syncCheckIntervalRef.current) {
+        clearInterval(syncCheckIntervalRef.current)
+      }
+    }
+  }, [userRole])
 
   const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const sessionsWithLocalStatus = sessions.map(session => ({
@@ -65,6 +115,15 @@ export default function LivePage() {
     status: getEventStatus(session.startTime, session.endTime, session.manualStatus || session.status),
   }))
   const isManager = userRole === 'MANAGER'
+
+  // Format lastSyncAt for display
+  const formatLastSync = (isoString: string | null) => {
+    if (!isoString) return 'Never'
+    const date = new Date(isoString)
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${hours}:${minutes}`
+  }
 
   if (isLoading) {
     return (
@@ -236,7 +295,12 @@ export default function LivePage() {
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
         <p style={{ fontSize: '13px', color: '#9999b0' }}>Today&apos;s Schedule &bull; {today}</p>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {isManager && lastSyncAt && (
+            <span style={{ fontSize: '12px', color: '#9999b0', padding: '0 12px' }}>
+              Last Sync: <span style={{ fontWeight: '600', color: '#6b6b8a' }}>{formatLastSync(lastSyncAt)}</span>
+            </span>
+          )}
           {isManager && (
             <button
               onClick={async () => {
@@ -248,6 +312,8 @@ export default function LivePage() {
                     alert(err.error || 'Failed to sync live sessions')
                     return
                   }
+                  const result = await res.json()
+                  setLastSyncAt(result.lastSyncAt)
                   await Promise.all([
                     mutate('/api/live-sessions'),
                     mutate('/api/dashboard'),

@@ -73,6 +73,20 @@ export async function POST(request: NextRequest) {
           securityNumber,
         }
       })
+
+      // Auto-enroll in demo course if one exists
+      const demoCourse = await prisma.course.findFirst({
+        where: { isDemo: true }
+      })
+
+      if (demoCourse) {
+        await prisma.enrollment.create({
+          data: {
+            userId: user.id,
+            courseId: demoCourse.id
+          }
+        })
+      }
     }
 
     // Increment tokenVersion for session rotation
