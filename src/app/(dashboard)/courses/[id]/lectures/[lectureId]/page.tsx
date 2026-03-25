@@ -291,22 +291,6 @@ export default function LecturePage() {
               </span>
             </div>
           </div>
-          {content.pptUrl && (
-            <a 
-              href={content.pptUrl} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="btn"
-              style={{ 
-                borderRadius: '12px', background: '#6366f1', color: 'white', padding: '10px 20px',
-                display: 'flex', alignItems: 'center', gap: '8px', border: 'none', fontWeight: '700',
-                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
-              }}
-            >
-              <Download size={18} />
-              Download Material
-            </a>
-          )}
         </div>
       </div>
 
@@ -489,7 +473,7 @@ export default function LecturePage() {
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
-                <p style={{ fontSize: '13px' }}>No study materials attached to this lecture.</p>
+                <p style={{ fontSize: '13px' }}>No material available.</p>
               </div>
             )}
 
