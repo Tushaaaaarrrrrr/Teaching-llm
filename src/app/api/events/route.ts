@@ -120,9 +120,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { 
       title, description, startTime, endTime, meetLink, 
-      type, courseId, instructorId, status, isGlobal,
+      type, courseId, classId, instructorId, status, isGlobal,
       recurrence, interval
     } = body
+    const resolvedCourseId = courseId ?? classId ?? null
 
     if (!title || !startTime || !endTime) {
       return NextResponse.json({ error: 'Title, startTime, and endTime are required' }, { status: 400 })
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
         endTime: new Date(endTime),
         meetLink: meetLink || null,
         type: type || 'class',
-        courseId: isGlobal ? null : (courseId || null),
+        courseId: isGlobal ? null : resolvedCourseId,
         isGlobal: !!isGlobal,
         instructorId: instructorId || null,
         status: status || 'SCHEDULED',
@@ -175,7 +176,7 @@ export async function POST(request: NextRequest) {
           endTime: new Date(nextStart.getTime() + duration),
           meetLink: meetLink || null,
           type: type || 'class',
-          courseId: isGlobal ? null : (courseId || null),
+          courseId: isGlobal ? null : resolvedCourseId,
           isGlobal: !!isGlobal,
           instructorId: instructorId || null,
           status: 'SCHEDULED',

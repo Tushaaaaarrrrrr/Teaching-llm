@@ -52,9 +52,10 @@ export async function PUT(
     const body = await request.json()
     const { 
       title, description, startTime, endTime, meetLink, 
-      type, courseId, instructorId, status, isGlobal,
+      type, courseId, classId, instructorId, status, isGlobal,
       recurrence, interval, originalStartTime, applyToFuture
     } = body
+    const resolvedCourseId = courseId ?? classId ?? null
 
     const existingEvent = await prisma.courseEvent.findUnique({
       where: { id },
@@ -73,7 +74,7 @@ export async function PUT(
     if (meetLink !== undefined) data.meetLink = meetLink || null
     if (type !== undefined) data.type = type
     if (isGlobal !== undefined) data.isGlobal = !!isGlobal
-    if (courseId !== undefined) data.courseId = isGlobal ? null : (courseId || null)
+    if (courseId !== undefined || classId !== undefined) data.courseId = isGlobal ? null : resolvedCourseId
     if (instructorId !== undefined) data.instructorId = instructorId || null
     if (status !== undefined) data.status = status
     if (recurrence !== undefined) data.recurrence = recurrence
@@ -109,7 +110,7 @@ export async function PUT(
       if (meetLink !== undefined) commonData.meetLink = meetLink || null
       if (type !== undefined) commonData.type = type
       if (isGlobal !== undefined) commonData.isGlobal = !!isGlobal
-      if (courseId !== undefined) commonData.courseId = isGlobal ? null : (courseId || null)
+      if (courseId !== undefined || classId !== undefined) commonData.courseId = isGlobal ? null : resolvedCourseId
       if (instructorId !== undefined) commonData.instructorId = instructorId || null
       if (status !== undefined) commonData.status = status
 

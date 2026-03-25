@@ -15,12 +15,12 @@ interface CalEvent {
   meetLink?: string | null
   status?: string
   internalStatus?: string
-  classId?: string | null
+  courseId?: string | null
   isGlobal?: boolean
   recurrence?: string | null
   interval?: number | null
   parentId?: string | null
-  class?: { id: string; name: string; color: string } | null
+  course?: { id: string; name: string; color: string } | null
   instructorId?: string | null
   instructor?: { id: string; name: string } | null
 }
@@ -170,7 +170,7 @@ function CalendarPageContent() {
       time: '',
       endTime: '',
       type: 'class',
-      classId: "",
+      courseId: "",
       instructorId: '',
       meetLink: '',
       status: 'SCHEDULED',
@@ -190,7 +190,7 @@ function CalendarPageContent() {
       time: ev.time || '',
       endTime: ev.endTime || '',
       type: ev.type || 'class',
-      classId: ev.isGlobal ? 'GLOBAL' : (ev.classId || ''),
+      courseId: ev.isGlobal ? 'GLOBAL' : (ev.courseId || ''),
       instructorId: ev.instructorId || '',
       meetLink: ev.meetLink || '',
       status: ev.internalStatus || 'SCHEDULED',
@@ -206,7 +206,7 @@ function CalendarPageContent() {
     if (!formData.title || !formData.date || !formData.time || !formData.endTime) return
     
     // Ensure course is selected (not accidentally global)
-    if (!formData.classId || formData.classId === '') {
+    if (!formData.courseId || formData.courseId === '') {
       alert("Please select a course for this event.\n\nTo make it visible to all users, select 'Global (visible to all users)'.")
       return
     }
@@ -219,7 +219,7 @@ function CalendarPageContent() {
         setSaving(false)
         return
       }
-      const isGlobal = formData.classId === 'GLOBAL'
+      const isGlobal = formData.courseId === 'GLOBAL'
       const recurrence = formData.recurrence || 'ONETIME'
       const isSeriesEvent = !!formData.parentId || recurrence !== 'ONETIME'
       const payload = {
@@ -234,12 +234,12 @@ function CalendarPageContent() {
         recurrence,
         interval: recurrence === 'CUSTOM' ? (formData.interval || '1') : null,
         type: formData.type || 'class',
-        classId: isGlobal ? null : (formData.classId || null),
+        courseId: isGlobal ? null : (formData.courseId || null),
         isGlobal,
         instructorId: formData.instructorId || null,
         parentId: formData.parentId || null,
-        relatedClass: !isGlobal && formData.classId
-          ? classes.find(c => c.id === formData.classId)?.name || null
+        relatedCourse: !isGlobal && formData.courseId
+          ? classes.find(c => c.id === formData.courseId)?.name || null
           : null,
       }
       const url = editId ? `/api/events/${editId}` : '/api/events'
@@ -466,15 +466,15 @@ function CalendarPageContent() {
                     </div>
                     <div style={{ fontSize: '12px', color: '#9999b0' }}>
                       {ev.time && `${ev.time}${ev.endTime ? ` - ${ev.endTime}` : ''} · `}
-                      {ev.class?.name ? ev.class.name : ev.description || 'Global (All Users)'}
+                      {ev.course?.name ? ev.course.name : ev.description || 'Global (All Users)'}
                     </div>
                   </div>
                   <span style={{
                     fontSize: '10px', padding: '3px 10px', borderRadius: '10px', fontWeight: '600',
-                    background: ev.classId ? (ev.class?.color || '#6366f1') + '18' : '#d0d2d9',
-                    color: ev.classId ? (ev.class?.color || '#6366f1') : '#6b6b8a',
+                    background: ev.courseId ? (ev.course?.color || '#6366f1') + '18' : '#d0d2d9',
+                    color: ev.courseId ? (ev.course?.color || '#6366f1') : '#6b6b8a',
                   }}>
-                    {ev.class?.name || 'Global'}
+                    {ev.course?.name || 'Global'}
                   </span>
                   <span className={`badge badge-${ev.type === 'exam' ? 'danger' : ev.type === 'assignment' ? 'warning' : 'primary'}`}>
                     {tc.label}
@@ -548,7 +548,7 @@ function CalendarPageContent() {
                 </div>
                 <div>
                   <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Subject</div>
-                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.class?.name || 'Global (All Users)'}</div>
+                  <div style={{ fontSize: '13px', color: '#1e1e3a' }}>{selectedEvent.course?.name || 'Global (All Users)'}</div>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -633,8 +633,8 @@ function CalendarPageContent() {
                 <label className="form-label">Subject / Course</label>
                 <select
                   className="form-input"
-                  value={formData.classId || ''}
-                  onChange={e => set('classId', e.target.value)}
+                  value={formData.courseId || ''}
+                  onChange={e => set('courseId', e.target.value)}
                   required
                 >
                   <option value="">-- Select a Course --</option>
@@ -644,7 +644,7 @@ function CalendarPageContent() {
                   ))}
                 </select>
                 <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
-                  {formData.classId && formData.classId !== 'GLOBAL'
+                  {formData.courseId && formData.courseId !== 'GLOBAL'
                     ? 'Only members enrolled in this subject will see this event.'
                     : 'This event will be visible to all users.'}
                 </p>

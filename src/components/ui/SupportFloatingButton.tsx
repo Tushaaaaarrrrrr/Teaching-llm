@@ -3,9 +3,17 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import useSWR from 'swr'
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export default function SupportFloatingButton() {
   const pathname = usePathname()
+  const { data } = useSWR('/api/auth/me', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  })
+  const userRole = data?.user?.role || data?.role || ''
 
   // Visibility Rules:
   // Hide on: Profile, Settings, Exam pages, Lecture pages (recordings), Support tab, Community section,
@@ -25,7 +33,7 @@ export default function SupportFloatingButton() {
 
   const isHidden = hiddenPaths.some(path => pathname === path || pathname.startsWith(path + '/'))
 
-  if (isHidden) return null
+  if (isHidden || userRole === 'MANAGER') return null
 
   return (
     <Link
