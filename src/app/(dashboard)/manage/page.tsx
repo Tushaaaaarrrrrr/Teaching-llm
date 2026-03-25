@@ -365,7 +365,7 @@ export default function ManagePage() {
                     <input
                       type="checkbox"
                       checked={(f.courseIds || []).includes(course.id)}
-                      disabled={!!course.isDisabled}
+                      disabled={!!course.isEffectivelyDisabled}
                       onChange={e => setFormData(prev => ({
                         ...prev,
                         courseIds: e.target.checked
@@ -376,7 +376,8 @@ export default function ManagePage() {
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: course.color, flexShrink: 0 }} />
                     <span style={{ fontSize: '13px' }}>{course.name}</span>
                     {course.subject && <span style={{ fontSize: '11px', color: '#9999b0' }}>({course.subject})</span>}
-                    {course.isDisabled && <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>}
+                    {course.isExpired && <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700' }}>Expired</span>}
+                    {course.isEffectivelyDisabled && !course.isExpired && <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>}
                   </label>
                 ))}
               </div>
@@ -733,7 +734,8 @@ export default function ManagePage() {
                       <>
                         <span style={{ fontSize: '12px', color: '#9999b0' }}>{item._count?.lectures || 0} lectures</span>
                         {item.isDemo && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#3636e8', color: 'white', fontWeight: '900', letterSpacing: '0.05em' }}>SYSTEM DEMO</span>}
-                        {item.isDisabled && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#fee2e2', color: '#ef4444', fontWeight: '900', letterSpacing: '0.05em' }}>DISABLED</span>}
+                        {item.isExpired && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#fff7ed', color: '#ea580c', fontWeight: '900', letterSpacing: '0.05em' }}>EXPIRED</span>}
+                        {item.isEffectivelyDisabled && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#fee2e2', color: '#ef4444', fontWeight: '900', letterSpacing: '0.05em' }}>DISABLED</span>}
                       </>
                     )}
                     {tab === 'bundles' && (
@@ -799,6 +801,7 @@ export default function ManagePage() {
                           color: item.isDisabled ? '#10b981' : '#ef4444',
                           border: `1px solid ${item.isDisabled ? '#d1fae5' : '#fee2e2'}`,
                         }}
+                        title={item.isExpired && !item.isDisabled ? 'This course is currently disabled by expiry. Change the expiry date to re-enable it.' : undefined}
                       >
                         {item.isDisabled ? 'Enable' : 'Disable'}
                       </button>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, isManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
 
 export async function GET(
   request: NextRequest,
@@ -17,14 +18,14 @@ export async function GET(
 
     const courseState = await (prisma.course.findUnique as any)({
       where: { id },
-      select: { id: true, isDisabled: true },
+      select: { id: true, isDisabled: true, expiresAt: true },
     })
 
     if (!courseState) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
 
-    if (courseState.isDisabled && !isManager(session.role)) {
+    if (isCourseEffectivelyDisabled(courseState) && !isManager(session.role)) {
       return NextResponse.json({ error: 'Course is currently disabled' }, { status: 403 })
     }
 
@@ -96,6 +97,8 @@ export async function GET(
 
     const result = {
       ...cData,
+      isExpired: isCourseExpired(cData),
+      isEffectivelyDisabled: isCourseEffectivelyDisabled(cData),
       _count: {
         ...cData._count,
         topics: topicsCount,
@@ -132,17 +135,20 @@ export async function PUT(
       return NextResponse.json({ error: 'Only managers can enable or disable courses' }, { status: 403 })
     }
 
-    // Validate expiresAt if provided
-    if (expiresAt) {
-      const expiryDate = new Date(expiresAt)
-      if (expiryDate <= new Date()) {
-        return NextResponse.json({ error: 'Expiry date must be in the future' }, { status: 400 })
-      }
-    }
-
     const existingCourse = await prisma.course.findUnique({ where: { id } })
     if (!existingCourse) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    }
+
+    // Validate expiresAt if provided
+    if (expiresAt) {
+      const expiryDate = new Date(expiresAt)
+      if (expiryDate.toString() === 'Invalid Date') {
+        return NextResponse.json({ error: 'Invalid expiry date' }, { status: 400 })
+      }
+      if (expiryDate <= new Date() && !existingCourse.expiresAt) {
+        return NextResponse.json({ error: 'Expiry date must be in the future' }, { status: 400 })
+      }
     }
 
     // Lock demo status if it's already a demo

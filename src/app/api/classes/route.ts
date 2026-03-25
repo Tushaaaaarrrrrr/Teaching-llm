@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, getAccessibleCourseIds } from '@/lib/auth'
+import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
 
 export async function GET() {
   try {
@@ -44,7 +45,13 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json(courses)
+    return NextResponse.json(
+      courses.map(course => ({
+        ...course,
+        isExpired: isCourseExpired(course),
+        isEffectivelyDisabled: isCourseEffectivelyDisabled(course),
+      }))
+    )
   } catch (error) {
     console.error('Error fetching classes:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

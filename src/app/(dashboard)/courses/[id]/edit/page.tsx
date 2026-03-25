@@ -364,10 +364,6 @@ export default function CourseEditPage() {
         alert('Choose either one external material link or one uploaded material')
         return
       }
-      if (!trimmedMaterialLink && !selectedMaterial) {
-        alert('Choose one material source: external link or uploaded material')
-        return
-      }
 
       const payload = {
         ...contentForm,
@@ -660,7 +656,7 @@ export default function CourseEditPage() {
                       </button>
                     </div>
                   )}
-                  <span style={{ fontSize: '11px', color: '#9999b0' }}>Choose exactly one: external link or uploaded material.</span>
+                  <span style={{ fontSize: '11px', color: '#9999b0' }}>Optional. If you add material, choose only one source: external link or uploaded material.</span>
                 </div>
               </div>
 

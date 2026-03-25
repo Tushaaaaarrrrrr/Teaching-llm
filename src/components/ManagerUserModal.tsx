@@ -11,6 +11,8 @@ interface CourseInfo {
   color: string
   subject?: string
   isDisabled?: boolean
+  isExpired?: boolean
+  isEffectivelyDisabled?: boolean
 }
 
 interface CourseBundleInfo {
@@ -397,7 +399,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     }}>
                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: c.color }} />
                        <span style={{ fontSize: '12px', fontWeight: '700', color: '#1e1e3a' }}>{c.name}</span>
-                       {c.isDisabled && <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>}
+                       {c.isExpired && <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700' }}>Expired</span>}
+                       {c.isEffectivelyDisabled && !c.isExpired && <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>}
                        <button 
                           onClick={() => setFormData({...formData, courseIds: formData.courseIds.filter(id => id !== c.id)})}
                           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#ef4444', display: 'flex' }}
@@ -423,7 +426,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         value=""
                      >
                        <option value="">+ Add New</option>
-                       {courses.filter(c => !formData.courseIds.includes(c.id) && !bundledCourseIds.has(c.id) && !c.isDisabled).map(c => (
+                       {courses.filter(c => !formData.courseIds.includes(c.id) && !bundledCourseIds.has(c.id) && !c.isEffectivelyDisabled).map(c => (
                           <option key={c.id} value={c.id}>{c.name}</option>
                        ))}
                      </select>

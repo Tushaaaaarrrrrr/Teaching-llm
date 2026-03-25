@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, hashPassword } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { isCourseExpired } from '@/lib/course-state'
 
 export async function GET() {
   try {
@@ -136,21 +137,23 @@ export async function POST(request: NextRequest) {
 
       const blockedCourses = effectiveCourseIds.length > 0
         ? await (tx.course.findMany as any)({
-            where: { id: { in: effectiveCourseIds }, isDisabled: true },
-            select: { name: true },
+            where: { id: { in: effectiveCourseIds } },
+            select: { name: true, isDisabled: true, expiresAt: true },
           })
         : []
-      if (blockedCourses.length > 0) {
-        throw new Error(`Disabled courses cannot be assigned: ${blockedCourses.map(course => course.name).join(', ')}`)
+      const unavailableCourses = blockedCourses.filter((course: any) => course.isDisabled || isCourseExpired(course))
+      if (unavailableCourses.length > 0) {
+        throw new Error(`Disabled or expired courses cannot be assigned: ${unavailableCourses.map(course => course.name).join(', ')}`)
       }
 
       if (role === 'INSTRUCTOR' && assignedClassIds.length > 0) {
         const blockedInstructorCourses = await (tx.course.findMany as any)({
-          where: { id: { in: assignedClassIds }, isDisabled: true },
-          select: { name: true },
+          where: { id: { in: assignedClassIds } },
+          select: { name: true, isDisabled: true, expiresAt: true },
         })
-        if (blockedInstructorCourses.length > 0) {
-          throw new Error(`Disabled courses cannot be assigned: ${blockedInstructorCourses.map(course => course.name).join(', ')}`)
+        const unavailableInstructorCourses = blockedInstructorCourses.filter((course: any) => course.isDisabled || isCourseExpired(course))
+        if (unavailableInstructorCourses.length > 0) {
+          throw new Error(`Disabled or expired courses cannot be assigned: ${unavailableInstructorCourses.map(course => course.name).join(', ')}`)
         }
       }
 

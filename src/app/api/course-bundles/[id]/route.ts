@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { isCourseExpired } from '@/lib/course-state'
 
 export async function PUT(
   request: NextRequest,
@@ -38,11 +39,12 @@ export async function PUT(
 
     const uniqueCourseIds = Array.from(new Set(courseIds.filter(Boolean)))
     const disabledCourses = await (prisma.course.findMany as any)({
-      where: { id: { in: uniqueCourseIds }, isDisabled: true },
-      select: { name: true },
+      where: { id: { in: uniqueCourseIds } },
+      select: { name: true, isDisabled: true, expiresAt: true },
     })
-    if (disabledCourses.length > 0) {
-      return NextResponse.json({ error: `Disabled courses cannot be added to bundles: ${disabledCourses.map(course => course.name).join(', ')}` }, { status: 400 })
+    const unavailableCourses = disabledCourses.filter((course: any) => course.isDisabled || isCourseExpired(course))
+    if (unavailableCourses.length > 0) {
+      return NextResponse.json({ error: `Disabled or expired courses cannot be added to bundles: ${unavailableCourses.map(course => course.name).join(', ')}` }, { status: 400 })
     }
 
     const updated = await prisma.$transaction(async tx => {

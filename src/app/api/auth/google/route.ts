@@ -29,7 +29,9 @@ export async function POST(request: NextRequest) {
     }
 
     const email = googlePayload.email?.toLowerCase()
-    const name = googlePayload.name || googlePayload.email?.split('@')[0] || 'Google User'
+    const fullName = googlePayload.name || googlePayload.email?.split('@')[0] || 'Google User'
+    const firstName = fullName.split(' ')[0] || ''
+    const lastName = fullName.split(' ').slice(1).join(' ') || ''
 
     if (!email) {
       return NextResponse.json({ error: 'Email not found in Google token' }, { status: 400 })
@@ -65,7 +67,9 @@ export async function POST(request: NextRequest) {
 
       user = await prisma.user.create({
         data: {
-          name,
+          name: fullName,
+          firstName,
+          lastName,
           email,
           passwordHash,
           role: 'STUDENT',

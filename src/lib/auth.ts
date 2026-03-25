@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
+import { isCourseEffectivelyDisabled } from '@/lib/course-state'
 
 const JWT_SECRET = (process.env.JWT_SECRET || 'teaching-llm-super-secret-jwt-key-2024').trim()
 
@@ -157,10 +158,20 @@ export async function getAccessibleCourseIds(
 
   if (role === 'INSTRUCTOR') {
     const assignments = await (prisma.instructorAssignment.findMany as any)({
-      where: { instructorId: userId, course: { isDisabled: false } },
-      select: { courseId: true },
+      where: { instructorId: userId },
+      select: {
+        courseId: true,
+        course: {
+          select: {
+            isDisabled: true,
+            expiresAt: true,
+          },
+        },
+      },
     })
-    return assignments.map(a => a.courseId)
+    return assignments
+      .filter(a => !isCourseEffectivelyDisabled(a.course, now))
+      .map(a => a.courseId)
   }
 
   const enrollments = await (prisma.enrollment.findMany as any)({

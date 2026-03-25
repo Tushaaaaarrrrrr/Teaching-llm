@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, canManageContent } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { isCourseEffectivelyDisabled } from '@/lib/course-state'
 
 export async function GET(
   request: NextRequest,
@@ -15,10 +16,10 @@ export async function GET(
 
     const course = await (prisma.course.findUnique as any)({
       where: { id },
-      select: { isDisabled: true },
+      select: { isDisabled: true, expiresAt: true },
     })
     if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
-    if (course.isDisabled && session.role !== 'MANAGER') {
+    if (isCourseEffectivelyDisabled(course) && session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Course is currently disabled' }, { status: 403 })
     }
 
@@ -89,10 +90,10 @@ export async function POST(
 
     const course = await (prisma.course.findUnique as any)({
       where: { id },
-      select: { isDisabled: true },
+      select: { isDisabled: true, expiresAt: true },
     })
     if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
-    if (course.isDisabled && session.role !== 'MANAGER') {
+    if (isCourseEffectivelyDisabled(course) && session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Course is currently disabled' }, { status: 403 })
     }
 

@@ -4,6 +4,7 @@ import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { sanitizeInput } from '@/lib/validation'
+import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
 
 export async function GET() {
   try {
@@ -68,6 +69,8 @@ export async function GET() {
       const { topics, ...rest } = course
       return {
         ...rest,
+        isExpired: isCourseExpired(course),
+        isEffectivelyDisabled: isCourseEffectivelyDisabled(course),
         _count: {
           ...course._count,
           topics: topicsCount,

@@ -11,6 +11,8 @@ interface CourseInfo {
   color: string
   subject?: string
   isDisabled?: boolean
+  isExpired?: boolean
+  isEffectivelyDisabled?: boolean
 }
 
 interface Enrollment {
@@ -854,7 +856,7 @@ export default function AdminPage() {
                           <input
                             type="checkbox"
                             checked={form.courseIds.includes(cls.id)}
-                            disabled={bundledCourseIds.has(cls.id) || !!cls.isDisabled}
+                            disabled={bundledCourseIds.has(cls.id) || !!cls.isEffectivelyDisabled}
                             onChange={e => {
                               setForm(p => ({
                                 ...p,
@@ -872,7 +874,10 @@ export default function AdminPage() {
                           {cls.subject && (
                             <span style={{ fontSize: '11px', color: '#9999b0' }}>({cls.subject})</span>
                           )}
-                          {cls.isDisabled && (
+                          {cls.isExpired && (
+                            <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700' }}>Expired</span>
+                          )}
+                          {cls.isEffectivelyDisabled && !cls.isExpired && (
                             <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>
                           )}
                           {bundledCourseIds.has(cls.id) && (
@@ -905,7 +910,7 @@ export default function AdminPage() {
                           <input
                             type="checkbox"
                             checked={form.assignedCourseIds.includes(cls.id)}
-                            disabled={!!cls.isDisabled}
+                            disabled={!!cls.isEffectivelyDisabled}
                             onChange={e => {
                               setForm(p => ({
                                 ...p,
@@ -923,7 +928,10 @@ export default function AdminPage() {
                           {cls.subject && (
                             <span style={{ fontSize: '11px', color: '#9999b0' }}>({cls.subject})</span>
                           )}
-                          {cls.isDisabled && (
+                          {cls.isExpired && (
+                            <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700' }}>Expired</span>
+                          )}
+                          {cls.isEffectivelyDisabled && !cls.isExpired && (
                             <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>
                           )}
                         </label>

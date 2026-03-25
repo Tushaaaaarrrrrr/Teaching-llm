@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, hashPassword } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { isCourseExpired } from '@/lib/course-state'
 
 export async function GET(
   request: NextRequest,
@@ -156,12 +157,13 @@ export async function PUT(
 
         const blockedCourses = effectiveCourseIds.length > 0
           ? await (tx.course.findMany as any)({
-              where: { id: { in: effectiveCourseIds }, isDisabled: true },
-              select: { name: true },
+              where: { id: { in: effectiveCourseIds } },
+              select: { name: true, isDisabled: true, expiresAt: true },
             })
           : []
-        if (blockedCourses.length > 0) {
-          throw new Error(`Disabled courses cannot be assigned: ${blockedCourses.map(course => course.name).join(', ')}`)
+        const unavailableCourses = blockedCourses.filter((course: any) => course.isDisabled || isCourseExpired(course))
+        if (unavailableCourses.length > 0) {
+          throw new Error(`Disabled or expired courses cannot be assigned: ${unavailableCourses.map(course => course.name).join(', ')}`)
         }
 
         await tx.enrollment.deleteMany({ where: { userId: id } })
@@ -179,12 +181,13 @@ export async function PUT(
       if (nextAssignedCourseIds !== undefined) {
         const blockedInstructorCourses = nextAssignedCourseIds.length > 0
           ? await (tx.course.findMany as any)({
-              where: { id: { in: nextAssignedCourseIds }, isDisabled: true },
-              select: { name: true },
+              where: { id: { in: nextAssignedCourseIds } },
+              select: { name: true, isDisabled: true, expiresAt: true },
             })
           : []
-        if (blockedInstructorCourses.length > 0) {
-          throw new Error(`Disabled courses cannot be assigned: ${blockedInstructorCourses.map(course => course.name).join(', ')}`)
+        const unavailableInstructorCourses = blockedInstructorCourses.filter((course: any) => course.isDisabled || isCourseExpired(course))
+        if (unavailableInstructorCourses.length > 0) {
+          throw new Error(`Disabled or expired courses cannot be assigned: ${unavailableInstructorCourses.map(course => course.name).join(', ')}`)
         }
         await tx.instructorAssignment.deleteMany({ where: { instructorId: id } })
         if (nextAssignedCourseIds.length > 0) {
