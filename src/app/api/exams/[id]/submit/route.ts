@@ -13,6 +13,20 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const exam = await prisma.exam.findUnique({
+      where: { id: params.id },
+      select: { id: true, title: true, expiresAt: true, isPublished: true },
+    })
+    if (!exam) {
+      return NextResponse.json({ error: 'Exam not found' }, { status: 404 })
+    }
+    if (!exam.isPublished) {
+      return NextResponse.json({ error: 'Exam is not active' }, { status: 403 })
+    }
+    if (new Date() > new Date(exam.expiresAt)) {
+      return NextResponse.json({ error: 'Exam has expired and can no longer be submitted' }, { status: 403 })
+    }
+
     const attempt = await prisma.examAttempt.findFirst({
       where: { examId: params.id, userId: session.userId, submittedAt: null },
       orderBy: { startedAt: 'desc' },

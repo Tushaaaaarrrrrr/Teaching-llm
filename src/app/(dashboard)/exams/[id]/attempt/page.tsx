@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { hasStrictTimer } from '@/lib/exam-policy'
 
 interface Question {
   id: string
@@ -70,7 +71,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   useEffect(() => { loadData() }, [loadData])
 
   useEffect(() => {
-    if ((exam as any)?.examType === 'GENERAL_TEST') return
+    if (!hasStrictTimer((exam as any)?.examType)) return
     
     if (timeLeft <= 0 && !loading && exam) {
       handleSubmit()
@@ -137,7 +138,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
             <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a' }}>{exam?.title}</h1>
             <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: 600 }}>Question {currentIdx + 1} of {exam?.questions.length}</span>
           </div>
-          {(exam as any)?.examType !== 'GENERAL_TEST' && (
+          {hasStrictTimer((exam as any)?.examType) && (
             <div style={{ textAlign: 'right' }}>
               <span style={{ fontSize: '12px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Time Remaining</span>
               <div style={{ fontSize: '24px', fontWeight: 900, color: timeLeft < 300 ? '#ef4444' : '#3636e8', fontVariantNumeric: 'tabular-nums' }}>

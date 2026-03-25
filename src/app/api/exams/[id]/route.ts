@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
-import { shouldHideAnswersForStudent } from '@/lib/exam-policy'
+import { EXAM_SUBMISSION_VISIBILITY_DELAY_MS, shouldHideAnswersForStudent } from '@/lib/exam-policy'
 
 export async function GET(
   request: NextRequest,
@@ -65,7 +65,7 @@ export async function GET(
       // 5-minute visibility delay logic for submissions
       const now = new Date()
       // Delay: only show submissions that are older than 5 minutes
-      const delayMs = 5 * 60 * 1000
+      const delayMs = EXAM_SUBMISSION_VISIBILITY_DELAY_MS
       const threshold = new Date(now.getTime() - delayMs)
 
       const attempts = await prisma.examAttempt.findMany({

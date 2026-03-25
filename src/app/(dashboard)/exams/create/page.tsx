@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { isFinalTest } from '@/lib/exam-policy'
 
 interface Question {
   text: string
@@ -28,6 +29,7 @@ export default function CreateExamPage() {
   const [courseId, setCourseId] = useState('')
   const [startDate, setStartDate] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
+  const [useScheduleWindow, setUseScheduleWindow] = useState(false)
   const [durationMinutes, setDurationMinutes] = useState('60')
   const [examType, setExamType] = useState('FINAL_TEST')
   const [questions, setQuestions] = useState<Question[]>([
@@ -112,8 +114,8 @@ export default function CreateExamPage() {
         title,
         description,
         courseId,
-        startDate,
-        expiresAt,
+        startDate: useScheduleWindow ? startDate : '',
+        expiresAt: useScheduleWindow ? expiresAt : '',
         durationMinutes: parseInt(durationMinutes),
         examType,
         questions
@@ -210,6 +212,17 @@ export default function CreateExamPage() {
                    <option value="GENERAL_TEST">General Test (Practice)</option>
                  </select>
               </div>
+
+              {isFinalTest(examType) && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', fontWeight: 700, color: '#6b6b8a' }}>
+                  <input
+                    type="checkbox"
+                    checked={useScheduleWindow}
+                    onChange={e => setUseScheduleWindow(e.target.checked)}
+                  />
+                  Use custom start and end schedule for this final test
+                </label>
+              )}
               
               <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: examType === 'FINAL_TEST' ? '#ef444410' : '#10b98110', borderLeft: `4px solid ${examType === 'FINAL_TEST' ? '#ef4444' : '#10b981'}` }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 800, color: examType === 'FINAL_TEST' ? '#ef4444' : '#10b981', marginBottom: '8px' }}>
@@ -221,6 +234,7 @@ export default function CreateExamPage() {
                       <li>Strict time limit enforced.</li>
                       <li>Only one attempt allowed.</li>
                       <li>Correct answers hidden until exam is ended AND results are published.</li>
+                      <li>If no custom schedule is set, the exam starts immediately and stays active for 7 days.</li>
                     </>
                   ) : (
                     <>
@@ -232,15 +246,23 @@ export default function CreateExamPage() {
                 </ul>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-                <div>
-                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Start Date</label>
-                   <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} style={neuInput} required />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Deadline</label>
-                  <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} style={neuInput} required />
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: useScheduleWindow || !isFinalTest(examType) ? '1fr 1fr 1fr' : '1fr', gap: '16px' }}>
+                {(useScheduleWindow || !isFinalTest(examType)) && (
+                  <>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>
+                        Start Date {isFinalTest(examType) ? '(Optional)' : ''}
+                      </label>
+                      <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} style={neuInput} required={!isFinalTest(examType)} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>
+                        End Date {isFinalTest(examType) ? '(Optional)' : ''}
+                      </label>
+                      <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} style={neuInput} required={!isFinalTest(examType)} />
+                    </div>
+                  </>
+                )}
                 <div>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Duration (min)</label>
                   <input type="number" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value)} style={neuInput} required min="1" />
@@ -249,8 +271,13 @@ export default function CreateExamPage() {
               <button 
                 type="button" 
                 onClick={() => {
-                  if (!title || !courseId || !startDate || !expiresAt || !durationMinutes) {
-                    alert('Please fill all mandatory fields (Title, Course, Start Date, Deadline, Duration) before proceeding.')
+                  const requiresSchedule = !isFinalTest(examType) || useScheduleWindow
+                  if (!title || !courseId || !durationMinutes || (requiresSchedule && (!startDate || !expiresAt))) {
+                    alert('Please fill all mandatory fields before proceeding.')
+                    return
+                  }
+                  if (requiresSchedule && new Date(expiresAt) <= new Date(startDate)) {
+                    alert('End date must be later than start date.')
                     return
                   }
                   setStep(2)

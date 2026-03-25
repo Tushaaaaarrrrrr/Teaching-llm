@@ -4,6 +4,7 @@ import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { sanitizeInput } from '@/lib/validation'
+import { DEFAULT_FINAL_TEST_WINDOW_MS, isFinalTest } from '@/lib/exam-policy'
 
 export async function GET(request: NextRequest) {
   try {
@@ -112,8 +113,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Validation
-    if (!title || !courseId || !expiresAt || !startDate || !durationMinutes) {
-      return NextResponse.json({ error: 'Missing required exam details (title, course, dates, or duration)' }, { status: 400 })
+    if (!title || !courseId || !durationMinutes) {
+      return NextResponse.json({ error: 'Missing required exam details (title, course, or duration)' }, { status: 400 })
     }
 
     if (title.length > 200) {
@@ -126,6 +127,21 @@ export async function POST(request: NextRequest) {
 
     const sanitizedTitle = sanitizeInput(title)
     const sanitizedDescription = description ? sanitizeInput(description) : null
+
+    const finalTest = isFinalTest(examType)
+    const now = new Date()
+    const computedStartDate = startDate ? new Date(startDate) : (finalTest ? now : null)
+    const computedExpiresAt = expiresAt
+      ? new Date(expiresAt)
+      : (finalTest ? new Date(now.getTime() + DEFAULT_FINAL_TEST_WINDOW_MS) : null)
+
+    if (!computedExpiresAt) {
+      return NextResponse.json({ error: 'End date is required for this exam type' }, { status: 400 })
+    }
+
+    if (computedStartDate && computedExpiresAt <= computedStartDate) {
+      return NextResponse.json({ error: 'End date must be later than the start date' }, { status: 400 })
+    }
 
     const exam = await prisma.$transaction(async (tx) => {
       // Fetch course to get subject
@@ -183,8 +199,8 @@ export async function POST(request: NextRequest) {
           title: sanitizedTitle,
           description: sanitizedDescription,
           courseId,
-          expiresAt: new Date(expiresAt),
-          startDate: new Date(startDate),
+          expiresAt: computedExpiresAt,
+          startDate: computedStartDate,
           durationMinutes: parseInt(durationMinutes),
           examType: examType || 'FINAL_TEST',
           isPublished: true, // Visible immediately

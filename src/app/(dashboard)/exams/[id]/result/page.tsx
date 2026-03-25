@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { EXAM_RESULT_REFRESH_INTERVAL_MS } from '@/lib/exam-policy'
 
 export default function ExamResultPage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -11,10 +12,20 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
   const [currentIdx, setCurrentIdx] = useState(0)
 
   useEffect(() => {
-    fetch(`/api/exams/${params.id}`).then(res => res.json()).then(data => {
-      setExam(data)
-      setLoading(false)
-    })
+    let active = true
+    const load = () => {
+      fetch(`/api/exams/${params.id}`).then(res => res.json()).then(data => {
+        if (!active) return
+        setExam(data)
+        setLoading(false)
+      })
+    }
+    load()
+    const interval = setInterval(load, EXAM_RESULT_REFRESH_INTERVAL_MS)
+    return () => {
+      active = false
+      clearInterval(interval)
+    }
   }, [params.id])
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading results...</div>

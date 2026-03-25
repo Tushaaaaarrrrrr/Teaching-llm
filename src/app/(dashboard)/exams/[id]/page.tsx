@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import { allowsMultipleAttempts, EXAM_RESULT_REFRESH_INTERVAL_MS, isFinalTest } from '@/lib/exam-policy'
 
 export default function ExamDetailPage({ params }: { params: { id: string } }) {
   const { confirm, confirmDialog } = useConfirmDialog()
@@ -17,6 +18,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     loadData()
+    const interval = setInterval(loadData, EXAM_RESULT_REFRESH_INTERVAL_MS)
+    return () => clearInterval(interval)
   }, [])
 
   async function loadData() {
@@ -116,10 +119,10 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                 <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>{exam.title} Management</h1>
                 <span style={{ 
                   fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '6px',
-                  background: exam.examType === 'FINAL_TEST' ? '#ef444420' : '#10b98120',
-                  color: exam.examType === 'FINAL_TEST' ? '#ef4444' : '#10b981'
+                  background: isFinalTest(exam.examType) ? '#ef444420' : '#10b98120',
+                  color: isFinalTest(exam.examType) ? '#ef4444' : '#10b981'
                 }}>
-                  {exam.examType === 'FINAL_TEST' ? 'FINAL TEST' : 'GENERAL TEST'}
+                  {isFinalTest(exam.examType) ? 'FINAL TEST' : 'GENERAL TEST'}
                 </span>
               </div>
               <p style={{ color: '#6b6b8a' }}>{exam.course?.name}</p>
@@ -175,13 +178,18 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                          <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#fff', borderRadius: '12px', boxShadow: '2px 2px 4px #c5c7cf' }}>
                              <div>
                                 <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e1e3a' }}>
-                                  Student {a.userId.slice(-4)}
-                                  {exam.examType === 'GENERAL_TEST' && (
+                                  {a.user?.name || `Student ${a.userId.slice(-4)}`}
+                                  {allowsMultipleAttempts(exam.examType) && (
                                     <span style={{ marginLeft: '8px', fontSize: '11px', color: '#3636e8', background: '#3636e810', padding: '2px 6px', borderRadius: '6px' }}>
                                       Attempt {exam.attempts.filter((att: any) => att.userId === a.userId && new Date(att.startedAt) <= new Date(a.startedAt)).length}
                                     </span>
                                   )}
                                 </div>
+                                {a.user?.email && (
+                                  <div style={{ fontSize: '11px', color: '#9999b0' }}>
+                                    {a.user.email}{a.user.securityNumber ? ` • ${a.user.securityNumber}` : ''}
+                                  </div>
+                                )}
                                 <div style={{ fontSize: '11px', color: '#6b6b8a', display: 'flex', gap: '8px', alignItems: 'center' }}>
                                   <span>{new Date(a.startedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                                   {a.submittedAt ? (
@@ -332,10 +340,10 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
           <div style={{ textAlign: 'left', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: exam.examType === 'FINAL_TEST' ? '#ef444410' : '#10b98110', borderLeft: `4px solid ${exam.examType === 'FINAL_TEST' ? '#ef4444' : '#10b981'}` }}>
             <h3 style={{ fontSize: '14px', fontWeight: 800, color: exam.examType === 'FINAL_TEST' ? '#ef4444' : '#10b981', marginBottom: '8px' }}>
-              {exam.examType === 'FINAL_TEST' ? 'Final Test Rules' : 'General Test Rules'}
+                      {isFinalTest(exam.examType) ? 'Final Test Rules' : 'General Test Rules'}
             </h3>
             <ul style={{ fontSize: '13px', color: '#6b6b8a', paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {exam.examType === 'FINAL_TEST' ? (
+              {isFinalTest(exam.examType) ? (
                 <>
                   <li>Strict time limit enforced.</li>
                   <li>Only one attempt allowed.</li>
@@ -376,7 +384,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                      >
                        View Results
                      </button>
-                     {exam.examType === 'GENERAL_TEST' && (
+                     {allowsMultipleAttempts(exam.examType) && (
                        <button
                           onClick={() => router.push(`/exams/${params.id}/attempt`)}
                           style={{ flex: 1, padding: '16px', borderRadius: '50px', border: '2px solid #3636e8', background: 'transparent', color: '#3636e8', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}
