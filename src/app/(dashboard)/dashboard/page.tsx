@@ -574,17 +574,17 @@ export default function DashboardPage() {
                         textAlign: 'right',
                         flexShrink: 0,
                       }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6b6b8a', fontWeight: '600' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '15px', color: '#1e1e3a', fontWeight: '800' }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                          </svg>
+                          <span>{frontSession.course?.subject || 'General'}</span>
+                        </div>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#6b6b8a', fontWeight: '600' }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
                             <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
                           </svg>
                           <span>{frontSession.instructor || frontSession.course?.teacherName || 'Standard Faculty'}</span>
-                        </div>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#9999b0', fontWeight: '600' }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                          </svg>
-                          <span>{frontSession.course?.subject || frontSession.course?.name || 'General Batch'}</span>
                         </div>
                       </div>
                     </div>
