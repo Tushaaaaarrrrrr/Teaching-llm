@@ -12,6 +12,8 @@ interface UserProfile {
   email: string
   role: string
   avatar: string | null
+  gender?: string | null
+  genderChangedAt?: string | null
   securityNumber: string | null
   createdAt: string
 }
@@ -39,6 +41,7 @@ export default function ProfilePage() {
   const [editFirstName, setEditFirstName] = useState('')
   const [editLastName, setEditLastName] = useState('')
   const [editMobile, setEditMobile] = useState('')
+  const [editGender, setEditGender] = useState('')
   const [saving, setSaving] = useState(false)
   const [profileMsg, setProfileMsg] = useState({ type: '', text: '' })
 
@@ -56,6 +59,7 @@ export default function ProfilePage() {
         setEditFirstName(data.user.firstName || data.user.name.split(' ')[0] || '')
         setEditLastName(data.user.lastName || data.user.name.split(' ').slice(1).join(' ') || '')
         setEditMobile(data.user.mobileNumber || '')
+        setEditGender(data.user.gender || 'MALE')
       }
     } catch (e) { console.error(e) }
     setLoading(false)
@@ -66,14 +70,21 @@ export default function ProfilePage() {
     setSaving(true)
     setProfileMsg({ type: '', text: '' })
     try {
+      const payload: any = { 
+        firstName: editFirstName.trim(),
+        lastName: editLastName.trim(),
+        mobileNumber: editMobile.trim()
+      }
+      
+      // Include gender if it hasn't been changed yet
+      if (!user?.genderChangedAt) {
+        payload.gender = editGender
+      }
+      
       const res = await fetch('/api/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          firstName: editFirstName.trim(),
-          lastName: editLastName.trim(),
-          mobileNumber: editMobile.trim()
-        }),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (res.ok) {
@@ -111,6 +122,7 @@ export default function ProfilePage() {
       setEditFirstName(user.firstName || user.name.split(' ')[0] || '')
       setEditLastName(user.lastName || user.name.split(' ').slice(1).join(' ') || '')
       setEditMobile(user.mobileNumber || '')
+      setEditGender(user.gender || 'MALE')
     }
     setProfileMsg({ type: '', text: '' })
   }
@@ -222,11 +234,6 @@ export default function ProfilePage() {
           <div style={{ flex: 1, minWidth: '180px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px' }}>{user.name}</h2>
             <p style={{ fontSize: '14px', color: '#9999b0', marginBottom: '6px' }}>{user.email}</p>
-            {user.securityNumber && (
-              <p style={{ fontSize: '12px', color: '#6b6b8a', marginBottom: '10px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
-                ID: {user.securityNumber}
-              </p>
-            )}
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
               <span className="badge" style={{
                 background: user.role === 'MANAGER' ? '#ede9fe' : user.role === 'ADMIN' ? '#dbeafe' : '#d1fae5',
@@ -353,7 +360,48 @@ export default function ProfilePage() {
                 </span>
               </div>
 
-            </div>
+              {/* Gender */}
+              <div style={{ ...insetRow, justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500', display: 'block', marginBottom: '8px' }}>Gender</span>
+                  {user?.genderChangedAt ? (
+                    <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>
+                      {user.gender || 'Not specified'}
+                    </span>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                        <input
+                          type="radio"
+                          name="gender"
+                          value="MALE"
+                          checked={editGender === 'MALE'}
+                          onChange={(e) => setEditGender(e.target.value)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                        Male
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                        <input
+                          type="radio"
+                          name="gender"
+                          value="FEMALE"
+                          checked={editGender === 'FEMALE'}
+                          onChange={(e) => setEditGender(e.target.value)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                        Female
+                      </label>
+                    </div>
+                  )}
+                  {!user?.genderChangedAt && (
+                    <span style={{ fontSize: '11px', color: '#9999b0', display: 'block', marginTop: '4px' }}>
+                      You can change your gender one time only
+                    </span>
+                  )}
+                </div>
+              </div>
+
           </div>
 
         </div>

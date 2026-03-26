@@ -21,6 +21,8 @@ export async function GET() {
         email: true,
         role: true,
         avatar: true,
+        gender: true,
+        genderChangedAt: true,
         securityNumber: true,
         createdAt: true,
       },
@@ -45,6 +47,8 @@ export async function GET() {
           email: true,
           role: true,
           avatar: true,
+          gender: true,
+          genderChangedAt: true,
           securityNumber: true,
           createdAt: true,
         },
@@ -65,13 +69,39 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { name, firstName, lastName, mobileNumber } = await request.json()
+    const { name, firstName, lastName, mobileNumber, gender } = await request.json()
 
     const data: any = {}
     if (name) data.name = name
     if (firstName) data.firstName = firstName
     if (lastName) data.lastName = lastName
     if (mobileNumber !== undefined) data.mobileNumber = mobileNumber
+
+    // Handle gender update - only allow if not previously changed
+    if (gender) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.userId },
+        select: { genderChangedAt: true }
+      })
+      
+      if (user?.genderChangedAt) {
+        return NextResponse.json(
+          { error: 'Gender can only be changed once' }, 
+          { status: 400 }
+        )
+      }
+      
+      // Allow gender update and set the timestamp
+      if (['MALE', 'FEMALE'].includes(gender.toUpperCase())) {
+        data.gender = gender.toUpperCase()
+        data.genderChangedAt = new Date()
+      } else {
+        return NextResponse.json(
+          { error: 'Invalid gender value. Must be MALE or FEMALE' }, 
+          { status: 400 }
+        )
+      }
+    }
 
     // Ensure name is updated if firstName/lastName provided
     if (!name && (firstName || lastName)) {
@@ -93,6 +123,8 @@ export async function PUT(request: NextRequest) {
         email: true,
         role: true,
         avatar: true,
+        gender: true,
+        genderChangedAt: true,
         createdAt: true,
       },
     })

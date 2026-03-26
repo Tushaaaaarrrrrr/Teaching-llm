@@ -68,7 +68,7 @@ interface RecordingItem {
   }
 }
 
-const emptyForm: ContentForm = { title: '', description: '', videoUrl: '', videoSource: 'YOUTUBE' }
+const emptyForm: ContentForm = { title: '', description: '', videoUrl: '', videoSource: 'GOOGLE_DRIVE' }
 
 export default function CourseEditPage() {
   const { confirm, confirmDialog } = useConfirmDialog()
@@ -278,7 +278,7 @@ export default function CourseEditPage() {
       title: item.title,
       description: item.description || '',
       videoUrl: item.videoUrl || '',
-      videoSource: item.videoSource || 'YOUTUBE',
+      videoSource: item.videoSource || 'GOOGLE_DRIVE',
     })
     setMaterialLink(item.pptUrl || '')
     setSelectedMaterial(null)
@@ -511,7 +511,7 @@ export default function CourseEditPage() {
                   <input
                     value={contentForm.videoUrl}
                     onChange={e => setContentForm(f => ({ ...f, videoUrl: e.target.value }))}
-                    placeholder="https://youtube.com/watch?v=..."
+                    placeholder="YouTube URL or Google Drive file ID"
                     className="form-input"
                     style={{ width: '100%' }}
                   />

@@ -24,6 +24,7 @@ model User {
   canCreateStudents       Boolean                @default(false)
   canTerminate            Boolean                @default(false)
   gender                  String?                @default("MALE")
+  genderChangedAt         DateTime?
   blockedUntil            DateTime?
   hasSeenWelcome          Boolean                @default(false)
   isSuperManager          Boolean                @default(false)
@@ -268,7 +269,7 @@ model Content {
   order       Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  videoSource String    @default("YOUTUBE")
+  videoSource String    @default("GOOGLE_DRIVE")
   comments    Comment[]
   sharedTopics TopicSharedContent[]
   topic       Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)

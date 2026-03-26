@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Content" ALTER COLUMN "videoSource" SET DEFAULT 'GOOGLE_DRIVE';

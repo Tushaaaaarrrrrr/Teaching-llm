@@ -549,14 +549,14 @@ export default function AdminPage() {
                     flexShrink: 0,
                     marginLeft: 'auto'
                   }}>
-                    {/* Google Login Tag Column */}
-                    <div style={{ width: '130px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                    {/* Google/Newbie Tag Column */}
+                    <div style={{ width: '170px', display: 'flex', justifyContent: 'center', flexShrink: 0, gap: '6px', flexWrap: 'wrap' }}>
                       {user.isGoogleUser && (
                         <span style={{
                           fontSize: '10px', fontWeight: '700', color: '#4285f4',
-                          background: 'linear-gradient(135deg, #e8f0fe, #d2e3fc)', padding: '3px 12px', borderRadius: '20px',
+                          background: 'linear-gradient(135deg, #e8f0fe, #d2e3fc)', padding: '3px 10px', borderRadius: '20px',
                           border: '1px solid #c6d9f1', letterSpacing: '0.5px',
-                          display: 'flex', alignItems: 'center', gap: '5px',
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
                         }}>
                           <svg width="12" height="12" viewBox="0 0 24 24">
                             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -565,6 +565,16 @@ export default function AdminPage() {
                             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                           </svg>
                           GOOGLE
+                        </span>
+                      )}
+                      {((new Date().getTime() - new Date(user.createdAt).getTime()) <= 10 * 24 * 60 * 60 * 1000) && (
+                        <span style={{
+                          fontSize: '10px', fontWeight: '700', color: '#065f46',
+                          background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)', padding: '3px 10px', borderRadius: '20px',
+                          border: '1px solid #86efac', letterSpacing: '0.5px',
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                        }}>
+                          NEWBIEE
                         </span>
                       )}
                     </div>
@@ -747,6 +757,35 @@ export default function AdminPage() {
                       Female
                     </label>
                   </div>
+                </div>
+              )}
+
+              {editId && (
+                <div className="form-group">
+                  <label className="form-label">Gender</label>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                      <input 
+                        type="radio" 
+                        name="gender" 
+                        value="MALE" 
+                        checked={form.gender === 'MALE'} 
+                        onChange={() => setForm(p => ({ ...p, gender: 'MALE' }))} 
+                      />
+                      Male
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                      <input 
+                        type="radio" 
+                        name="gender" 
+                        value="FEMALE" 
+                        checked={form.gender === 'FEMALE'} 
+                        onChange={() => setForm(p => ({ ...p, gender: 'FEMALE' }))} 
+                      />
+                      Female
+                    </label>
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px', display: 'block' }}>Managers can update gender anytime.</span>
                 </div>
               )}
               

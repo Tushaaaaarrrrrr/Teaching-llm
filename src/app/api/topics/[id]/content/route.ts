@@ -25,7 +25,7 @@ export async function POST(
         description,
         videoUrl,
         pptUrl,
-        videoSource: videoSource || 'YOUTUBE',
+        videoSource: videoSource || 'GOOGLE_DRIVE',
         order: count,
       },
     })

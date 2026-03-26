@@ -93,7 +93,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, firstName, lastName, mobileNumber, email, role, password, isTerminated, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds } = await request.json()
+    const { name, firstName, lastName, mobileNumber, email, role, password, isTerminated, gender, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds } = await request.json()
     const nextCourseIds = classIds !== undefined ? classIds : courseIds
     const nextAssignedCourseIds = assignedClassIds !== undefined ? assignedClassIds : assignedCourseIds
     const nextBundleIds = Array.isArray(bundleIds) ? Array.from(new Set(bundleIds.filter(Boolean))) : undefined
@@ -120,6 +120,18 @@ export async function PUT(
     if (email !== undefined) data.email = email
     if (role !== undefined) data.role = role
     if (typeof isTerminated === 'boolean') data.isTerminated = isTerminated
+    
+    // Manager can update gender anytime
+    if (gender !== undefined) {
+      if (['MALE', 'FEMALE'].includes(gender.toUpperCase())) {
+        data.gender = gender.toUpperCase()
+      } else {
+        return NextResponse.json(
+          { error: 'Invalid gender value. Must be MALE or FEMALE' }, 
+          { status: 400 }
+        )
+      }
+    }
 
     if (password) {
       data.passwordHash = await hashPassword(password)
@@ -137,6 +149,7 @@ export async function PUT(
           mobileNumber: true,
           email: true,
           role: true,
+          gender: true,
           isTerminated: true,
           createdAt: true,
         },
@@ -224,6 +237,7 @@ export async function PUT(
           mobileNumber: true,
           email: true,
           role: true,
+          gender: true,
           isTerminated: true,
           createdAt: true,
           enrollments: {
