@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { getDefaultAvatar } from '@/lib/avatar'
 
 interface UserProfile {
   id: string
@@ -129,6 +130,7 @@ export default function ProfilePage() {
 
   const initials = (user?.firstName?.[0] || user?.name?.[0] || '?') + (user?.lastName?.[0] || user?.name?.split(' ')[1]?.[0] || '')
   const roleLabel = user?.role ? user.role.charAt(0) + user.role.slice(1).toLowerCase() : ''
+  const resolvedAvatar = user?.avatar || getDefaultAvatar(user?.gender)
 
   const insetRow: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -192,16 +194,13 @@ export default function ProfilePage() {
               title="Click to change photo"
               style={{
                 width: '100px', height: '100px', borderRadius: '50%',
-                background: user.avatar ? 'transparent' : '#e8eaf0',
+                background: 'transparent',
                 boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 overflow: 'hidden', cursor: 'pointer',
               }}
             >
-              {user.avatar
-                ? <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <span style={{ fontSize: '32px', fontWeight: '800', color: '#3636e8' }}>{initials}</span>
-              }
+              <img src={resolvedAvatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             {/* Camera badge */}
             <div
