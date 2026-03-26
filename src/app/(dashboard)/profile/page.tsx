@@ -407,6 +407,8 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Bottom Action Bar ── */}
+              </div> {/* close grid container */}
+
         <div style={{
           display: 'flex', justifyContent: 'flex-end', gap: '12px',
           padding: '20px 24px', borderRadius: '20px', background: '#e8eaf0',
