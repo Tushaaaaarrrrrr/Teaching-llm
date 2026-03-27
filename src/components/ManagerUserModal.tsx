@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import { getDefaultAvatar } from '@/lib/avatar'
 
 interface CourseInfo {
   id: string
@@ -61,6 +62,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     mobileNumber: '',
     email: '',
     role: '',
+    gender: 'MALE',
     courseIds: [] as string[],
     bundleIds: [] as string[],
   })
@@ -92,6 +94,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             mobileNumber: data.mobileNumber || '',
             email: data.email || '',
             role: data.role || '',
+            gender: data.gender || 'MALE',
             courseIds: data.enrollments?.map((e: any) => e.courseId) || [],
             bundleIds: data.courseBundleAssignments?.map((b: any) => b.bundleId) || [],
         })
@@ -138,6 +141,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             mobileNumber: formData.mobileNumber,
             email: formData.email,
             role: formData.role,
+            gender: formData.gender,
             courseIds: formData.courseIds,
             bundleIds: formData.bundleIds
         }),
@@ -244,8 +248,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
                 border: '3px solid #fff'
               }}>
-                {user.avatar ? (
-                  <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {user.avatar || user.gender ? (
+                  <img src={user.avatar || getDefaultAvatar(formData.gender || user.gender)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ fontSize: '32px', fontWeight: '800', color: '#6366f1' }}>{user.name.charAt(0).toUpperCase()}</div>
                 )}
@@ -322,6 +326,55 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Account Created</label>
                 <div style={neuInset}>{new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
               </div>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '10px', display: 'block' }}>Gender</label>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '10px 14px', borderRadius: '14px',
+                  background: formData.gender === 'MALE' ? '#e0e7ff' : '#f0f2f8',
+                  boxShadow: formData.gender === 'MALE'
+                    ? 'inset 2px 2px 5px rgba(99,102,241,0.18), inset -2px -2px 5px rgba(255,255,255,0.8)'
+                    : '3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff',
+                  cursor: 'pointer',
+                  color: '#1e1e3a',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                }}>
+                  <input
+                    type="radio"
+                    name="gender"
+                    checked={formData.gender === 'MALE'}
+                    onChange={() => setFormData({ ...formData, gender: 'MALE' })}
+                  />
+                  Male
+                </label>
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '10px 14px', borderRadius: '14px',
+                  background: formData.gender === 'FEMALE' ? '#fce7f3' : '#f0f2f8',
+                  boxShadow: formData.gender === 'FEMALE'
+                    ? 'inset 2px 2px 5px rgba(236,72,153,0.14), inset -2px -2px 5px rgba(255,255,255,0.8)'
+                    : '3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff',
+                  cursor: 'pointer',
+                  color: '#1e1e3a',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                }}>
+                  <input
+                    type="radio"
+                    name="gender"
+                    checked={formData.gender === 'FEMALE'}
+                    onChange={() => setFormData({ ...formData, gender: 'FEMALE' })}
+                  />
+                  Female
+                </label>
+              </div>
+              <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px', display: 'block' }}>
+                Managers can view and update this anytime.
+              </span>
             </div>
 
             <div style={{ 

@@ -6,11 +6,6 @@ export function getDefaultAvatar(gender?: string | null): string {
 
 export function getUserAvatar(user: { avatar?: string | null; gender?: string | null; role?: string } | null): string {
   if (!user) return '/avatars/default-neutral.png'
-
-  const isPrivileged = user.role === 'ADMIN' || user.role === 'MANAGER'
-  if (isPrivileged && user.avatar) {
-    return user.avatar
-  }
-
+  if (user.avatar) return user.avatar
   return getDefaultAvatar(user.gender)
 }

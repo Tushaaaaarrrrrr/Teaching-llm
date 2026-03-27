@@ -24,7 +24,13 @@ export async function GET() {
         mobileNumber: true,
         email: true,
         role: true,
+        gender: true,
+        securityNumber: true,
         isTerminated: true,
+        canTerminate: true,
+        canCreateStudents: true,
+        isGoogleUser: true,
+        isSuperManager: true,
         createdAt: true,
         enrollments: {
           select: {
