@@ -13,11 +13,15 @@ export async function GET(request: NextRequest) {
     const studentIdParam = searchParams.get('studentId')
     const courseIdParam = searchParams.get('courseId')
 
+    let accessibleCourseIdsForAdmin: string[] | null = null
+    if (session.role === 'ADMIN') {
+      accessibleCourseIdsForAdmin = await getAccessibleCourseIds(session.userId, session.role)
+    }
+
     // --- Access Control for course filter ---
     // Managers can see all courses. Other roles can only see their assigned courses.
     if (courseIdParam && session.role !== 'MANAGER') {
-      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseIdParam)) {
+      if (accessibleCourseIdsForAdmin !== null && !accessibleCourseIdsForAdmin.includes(courseIdParam)) {
         return NextResponse.json({ error: 'Access denied for this course' }, { status: 403 })
       }
     }
@@ -26,10 +30,12 @@ export async function GET(request: NextRequest) {
     const examWhere: any = {}
     if (courseIdParam) {
       examWhere.courseId = courseIdParam
+    } else if (session.role === 'ADMIN' && accessibleCourseIdsForAdmin) {
+      examWhere.courseId = { in: accessibleCourseIdsForAdmin }
     }
 
     // --- Manager Overview Logic ---
-    if (!studentIdParam && session.role === 'MANAGER') {
+    if (!studentIdParam && ['MANAGER', 'ADMIN'].includes(session.role)) {
       const allAttempts = await (prisma.examAttempt as any).findMany({
         where: { 
           submittedAt: { not: null },
@@ -47,11 +53,12 @@ export async function GET(request: NextRequest) {
 
       const totalPresence = await (prisma.loginLog as any).count()
       
-      const studentCountWhere: any = { role: 'STUDENT' }
-      if (courseIdParam) {
+      const studentCountWhere: any = { role: 'STUDENT', isTerminated: false }
+      if (courseIdParam || (session.role === 'ADMIN' && accessibleCourseIdsForAdmin)) {
+        const filterCourseIds = courseIdParam ? [courseIdParam] : accessibleCourseIdsForAdmin
         // Count only students enrolled in this course
         const enrolledStudentIds = await prisma.enrollment.findMany({
-          where: { courseId: courseIdParam },
+          where: { courseId: { in: filterCourseIds! } },
           select: { userId: true },
         })
         studentCountWhere.id = { in: enrolledStudentIds.map(e => e.userId) }
@@ -102,7 +109,7 @@ export async function GET(request: NextRequest) {
 
     // --- Specific Student/Self Analytics ---
     let userId = session.userId
-    if (studentIdParam && session.role === 'MANAGER') {
+    if (studentIdParam && ['MANAGER', 'ADMIN'].includes(session.role)) {
       userId = studentIdParam
     }
 

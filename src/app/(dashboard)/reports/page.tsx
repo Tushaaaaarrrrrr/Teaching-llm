@@ -31,20 +31,25 @@ export default function ReportsPage() {
   const { data: coursesData } = useSWR('/api/courses', fetcher)
   const courses = coursesData?.courses || coursesData || []
 
+  const fetchStudents = (passedCourseId?: string) => {
+    const url = passedCourseId ? `/api/students?courseId=${passedCourseId}` : '/api/students'
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setStudents(data)
+        }
+      })
+  }
+
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(d => {
         const userRole = d.user?.role || ''
         setRole(userRole)
-        if (userRole === 'MANAGER') {
-          fetch('/api/students')
-            .then(res => res.json())
-            .then(data => {
-              if (Array.isArray(data)) {
-                setStudents(data)
-              }
-            })
+        if (['MANAGER', 'ADMIN'].includes(userRole)) {
+          fetchStudents(selectedCourseId)
           loadData()
         } else if (userRole) {
           loadData()
@@ -53,7 +58,7 @@ export default function ReportsPage() {
   }, [])
 
   useEffect(() => {
-    if (role === 'MANAGER') {
+    if (['MANAGER', 'ADMIN'].includes(role)) {
       if (view === 'STUDENT_AUDIT' && selectedStudentId) {
         loadData(selectedStudentId)
       } else if (view === 'OVERVIEW') {
@@ -67,7 +72,8 @@ export default function ReportsPage() {
   // Re-fetch when course filter changes
   useEffect(() => {
     if (!role) return
-    if (role === 'MANAGER') {
+    if (['MANAGER', 'ADMIN'].includes(role)) {
+      fetchStudents(selectedCourseId)
       if (view === 'STUDENT_AUDIT' && selectedStudentId) {
         loadData(selectedStudentId)
       } else if (view === 'OVERVIEW') {
@@ -99,9 +105,9 @@ export default function ReportsPage() {
       .catch(() => setLoading(false))
   }
 
-  const isManager = role === 'MANAGER'
+  const isAdminOrManager = ['MANAGER', 'ADMIN'].includes(role)
 
-  if (loading && !data && !isManager) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Analytics...</div>
+  if (loading && !data && !isAdminOrManager) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Analytics...</div>
 
   // Shared Styles
   const neuCard: React.CSSProperties = {
@@ -152,7 +158,7 @@ export default function ReportsPage() {
           )}
         </div>
 
-        {isManager && (
+        {isAdminOrManager && (
           <div style={{ display: 'flex', gap: '12px' }}>
              <button 
                onClick={() => setView('OVERVIEW')}
@@ -178,7 +184,7 @@ export default function ReportsPage() {
         )}
       </div>
 
-      {isManager && view === 'STUDENT_AUDIT' && (
+      {isAdminOrManager && view === 'STUDENT_AUDIT' && (
         <div style={{ ...neuCard, marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ flex: 1, maxWidth: '500px' }}>
              <label style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Search Student</label>
@@ -268,7 +274,7 @@ export default function ReportsPage() {
               </div>
            </div>
         </div>
-      ) : (isManager && view === 'STUDENT_AUDIT' && !selectedStudentId) ? (
+      ) : (isAdminOrManager && view === 'STUDENT_AUDIT' && !selectedStudentId) ? (
         <div style={{ ...neuCard, textAlign: 'center', padding: '100px 40px', color: '#9999b0' }}>
            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e1e3a', marginBottom: '8px' }}>Select a Student</h3>
            <p>Use the search above to audit a specific student's performance.</p>
@@ -349,7 +355,7 @@ export default function ReportsPage() {
                              }}>
                                Pending Evaluation
                              </div>
-                           ) : !ex.isPublished && !isManager ? (
+                           ) : !ex.isPublished && !isAdminOrManager ? (
                              <div style={{ 
                                fontSize: '11px', fontWeight: '800', color: '#f59e0b', 
                                background: '#fef3c7', padding: '4px 12px', borderRadius: '20px',
@@ -365,7 +371,7 @@ export default function ReportsPage() {
                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#9999b0' }}>
                                   {ex.score !== null ? `${ex.score} / ${ex.total}` : '-- / --'} Marks
                                </div>
-                               {!ex.isPublished && isManager && (
+                               {!ex.isPublished && isAdminOrManager && (
                                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#f59e0b', marginTop: '4px' }}>
                                     (Admin Only: Not Published)
                                  </div>
