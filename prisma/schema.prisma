@@ -78,6 +78,7 @@ model Course {
   isCommunityActive     Boolean                @default(true)
   isDisabled            Boolean                @default(false)
   isDemo                Boolean                @default(false)
+  isFree                Boolean                @default(false)
   isGlobal              Boolean                @default(false)
   teacherName           String?
   announcements         Announcement[]
@@ -99,12 +100,13 @@ model Course {
 }
 
 model Enrollment {
-  id        String   @id @default(cuid())
-  userId    String
-  courseId  String   @map("classId")
-  createdAt DateTime @default(now())
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  userId           String
+  courseId         String   @map("classId")
+  isFreeEnrollment Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
   @@index([userId])
@@ -182,6 +184,7 @@ model Material {
   uploadedAt   DateTime @default(now())
   updatedAt    DateTime @updatedAt
   isGlobal     Boolean  @default(false)
+  isFree       Boolean  @default(false)
   course       Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
   uploadedBy   User     @relation("MaterialUploader", fields: [uploadedById], references: [id])
 

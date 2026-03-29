@@ -49,7 +49,6 @@ export default function CommunityPage() {
   const [messages, setMessages] = useState<CommMsg[]>([])
   const [input, setInput] = useState('')
   const [userId, setUserId] = useState('')
-  const [userName, setUserName] = useState('')
   const [userRole, setUserRole] = useState('STUDENT')
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -68,7 +67,6 @@ export default function CommunityPage() {
     fetch('/api/auth/me').then(r => r.json()).then(d => {
       setUserRole(d.user?.role || 'STUDENT')
       setUserId(d.user?.id || '')
-      setUserName(d.user?.name || '')
     })
     loadClasses()
   }, [])
@@ -440,25 +438,6 @@ export default function CommunityPage() {
                 const isMe = msg.sender.id === userId
                 const isAdmin = msg.sender.role !== 'STUDENT'
                 const showAvatar = idx === 0 || messages[idx - 1]?.sender.id !== msg.sender.id
-                const senderDisplayName = isMe ? (userName || 'You') : msg.sender.name
-                const senderLabelColor = isMe ? selectedClass.color : isAdmin ? '#3636e8' : '#6b6b8a'
-                const senderMeta = (
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', padding: isMe ? '0 4px 0 0' : '0 0 0 2px', flexWrap: 'wrap', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: senderLabelColor }}>
-                      {senderDisplayName}
-                    </span>
-                    {isAdmin && (
-                      <span style={{ fontSize: '10px', background: isMe ? selectedClass.color : '#3636e8', color: '#fff', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
-                        {msg.sender.role.charAt(0) + msg.sender.role.slice(1).toLowerCase()}
-                      </span>
-                    )}
-                    {userRole === 'MANAGER' && msg.sender.securityNumber && (
-                      <span style={{ fontSize: '10px', background: '#f59e0b22', color: '#f59e0b', padding: '1px 7px', borderRadius: '50px', fontWeight: '700' }}>
-                        ID: {msg.sender.securityNumber}
-                      </span>
-                    )}
-                  </div>
-                )
 
                 if (msg.isDeleted) {
                   return (
@@ -478,19 +457,16 @@ export default function CommunityPage() {
                           ) : <div style={{ width: '32px', flexShrink: 0 }} />}
                         </>
                       )}
-                      <div style={{ maxWidth: '65%', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                        {senderMeta}
-                        <div style={{
-                          padding: '8px 14px', borderRadius: '14px',
-                          background: 'transparent',
-                          border: '1.5px dashed #c5c7cf',
-                          color: '#9999b0', fontSize: '13px', fontStyle: 'italic',
-                        }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}>
-                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                          </svg>
-                          Message deleted
-                        </div>
+                      <div style={{
+                        padding: '8px 14px', borderRadius: '14px',
+                        background: 'transparent',
+                        border: '1.5px dashed #c5c7cf',
+                        color: '#9999b0', fontSize: '13px', fontStyle: 'italic',
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}>
+                          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                        Message deleted
                       </div>
                     </div>
                   )
@@ -515,7 +491,23 @@ export default function CommunityPage() {
                     {!isMe && !showAvatar && <div style={{ width: '32px', flexShrink: 0 }} />}
 
                     <div style={{ maxWidth: '65%', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                      {senderMeta}
+                      {showAvatar && !isMe && (
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', paddingLeft: '2px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: isAdmin ? '#3636e8' : '#6b6b8a' }}>
+                            {msg.sender.name}
+                          </span>
+                          {isAdmin && (
+                            <span style={{ fontSize: '10px', background: '#3636e8', color: '#fff', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
+                              {msg.sender.role.charAt(0) + msg.sender.role.slice(1).toLowerCase()}
+                            </span>
+                          )}
+                          {userRole === 'MANAGER' && msg.sender.securityNumber && (
+                            <span style={{ fontSize: '10px', background: '#f59e0b22', color: '#f59e0b', padding: '1px 7px', borderRadius: '50px', fontWeight: '700' }}>
+                              {msg.sender.securityNumber}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
                         <div style={{
                           padding: '10px 16px',

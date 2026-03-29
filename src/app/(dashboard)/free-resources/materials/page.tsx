@@ -1,0 +1,173 @@
+'use client'
+
+import { useState } from 'react'
+import useSWR, { mutate } from 'swr'
+
+const fetcher = (url: string) => fetch(url).then(r => r.json())
+
+export default function FreeMaterialsPage() {
+  const { data: authData } = useSWR('/api/auth/me', fetcher)
+  const { data: materials, isLoading } = useSWR<any[]>('/api/free-resources/materials', fetcher)
+
+  const userRole = authData?.user?.role || ''
+  const canManage = userRole === 'MANAGER' || userRole === 'ADMIN'
+
+  const [showModal, setShowModal] = useState(false)
+  const [formData, setFormData] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
+
+  const set = (key: string, val: string) => setFormData(prev => ({ ...prev, [key]: val }))
+
+  async function handleSave() {
+    if (!formData.title || !formData.fileUrl) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/free-resources/materials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+      if (res.ok) {
+        setShowModal(false)
+        setFormData({})
+        mutate('/api/free-resources/materials')
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to create material')
+      }
+    } catch (e) {
+      console.error(e)
+    }
+    setSaving(false)
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Delete this free material?')) return
+    await fetch(`/api/materials/${id}`, { method: 'DELETE' })
+    mutate('/api/free-resources/materials')
+  }
+
+  function getFileIcon(fileType: string) {
+    const type = (fileType || '').toLowerCase()
+    if (type.includes('pdf')) return '📄'
+    if (type.includes('doc') || type.includes('word')) return '📝'
+    if (type.includes('ppt') || type.includes('presentation')) return '📊'
+    if (type.includes('xls') || type.includes('sheet')) return '📈'
+    if (type.includes('image') || type.includes('png') || type.includes('jpg')) return '🖼️'
+    if (type.includes('video') || type.includes('mp4')) return '🎬'
+    return '📎'
+  }
+
+  if (isLoading) {
+    return <div className="page-container fade-in"><div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading Free Materials...</div></div>
+  }
+
+  return (
+    <div className="page-container fade-in">
+      <div className="page-header">
+        <div>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>Free Materials</h1>
+          <p style={{ margin: '8px 0 0', color: '#6b6b8a', fontSize: '14px' }}>Download study materials without enrollment.</p>
+        </div>
+        {canManage && (
+          <button onClick={() => { setFormData({}); setShowModal(true) }} className="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Free Material
+          </button>
+        )}
+      </div>
+
+      {!materials || materials.length === 0 ? (
+        <div className="card" style={{ padding: '60px 20px', textAlign: 'center', color: '#6b6b8a' }}>
+          No free materials available yet.
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+          {materials.map(mat => (
+            <div key={mat.id} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '28px' }}>{getFileIcon(mat.fileType)}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {mat.title}
+                  </div>
+                  {mat.description && (
+                    <div style={{ fontSize: '12px', color: '#6b6b8a', marginTop: '2px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {mat.description}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#d1fae5', color: '#10b981', fontWeight: '600' }}>
+                  {(mat.fileType || 'File').toUpperCase()}
+                </span>
+                {mat.fileSize && (
+                  <span style={{ fontSize: '11px', color: '#9999b0' }}>{mat.fileSize}</span>
+                )}
+                <span style={{ fontSize: '11px', color: '#9999b0', marginLeft: 'auto' }}>
+                  {new Date(mat.uploadedAt).toLocaleDateString()}
+                </span>
+              </div>
+
+              <div style={{ marginTop: 'auto', display: 'flex', gap: '8px' }}>
+                <a
+                  href={mat.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                  style={{ flex: 1, textAlign: 'center', textDecoration: 'none', fontSize: '13px' }}
+                >
+                  Download / View
+                </a>
+                {canManage && (
+                  <button onClick={() => handleDelete(mat.id)} className="btn btn-ghost" style={{ padding: '0 12px', color: '#ef4444', borderColor: '#fee2e2' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {showModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => setShowModal(false)}
+        >
+          <div className="card" style={{ width: '500px', maxWidth: '95vw', padding: '28px' }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '20px', color: '#1e1e3a' }}>Add Free Material</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="form-group">
+                <label className="form-label">Title *</label>
+                <input className="form-input" value={formData.title || ''} onChange={e => set('title', e.target.value)} placeholder="e.g. Physics Formula Sheet" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <textarea className="form-input" value={formData.description || ''} onChange={e => set('description', e.target.value)} rows={2} style={{ resize: 'vertical' }} placeholder="Optional description" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">File URL *</label>
+                <input className="form-input" value={formData.fileUrl || ''} onChange={e => set('fileUrl', e.target.value)} placeholder="https://… (PDF, PPT, DOCX, etc.)" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">File Type</label>
+                <input className="form-input" value={formData.fileType || ''} onChange={e => set('fileType', e.target.value)} placeholder="e.g. pdf, pptx, docx" />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
+              <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+                {saving ? 'Saving...' : 'Create Material'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

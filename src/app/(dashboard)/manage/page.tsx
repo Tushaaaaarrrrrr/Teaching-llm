@@ -275,16 +275,16 @@ export default function ManagePage() {
             <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="Course name" /></div>
             <div className="form-group"><label className="form-label">Subject</label><input className="form-input" value={f.subject || ''} onChange={e => set('subject', e.target.value)} placeholder="e.g. Computer Science" /></div>
             <div className="form-group"><label className="form-label">Teacher Name</label><input className="form-input" value={f.teacherName || ''} onChange={e => set('teacherName', e.target.value)} placeholder="Manual teacher name" /></div>
-            <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: editId && f.isDemo ? 0.7 : 1 }}>
+            <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: editId ? 0.7 : 1 }}>
               <input 
                 type="checkbox" 
-                checked={!!f.isDemo} 
-                disabled={editId !== null && !!f.isDemo}
-                onChange={e => setFormData(p => ({ ...p, isDemo: e.target.checked as any }))} 
+                checked={!!f.isFree} 
+                disabled={editId !== null}
+                onChange={e => setFormData(p => ({ ...p, isFree: e.target.checked as any }))} 
               /> 
-              <span style={{fontSize: '13px'}}>Mark as Demo Course</span>
-              {editId && f.isDemo && (
-                <span style={{ fontSize: '11px', color: '#6366f1', fontWeight: '800', marginLeft: 'auto' }}>🔒 SYSTEM LOCKED</span>
+              <span style={{fontSize: '13px'}}>Mark as Free Course</span>
+              {editId && (
+                <span style={{ fontSize: '11px', color: '#6366f1', fontWeight: '800', marginLeft: 'auto' }}>🔒 FIXED AFTER CREATION</span>
               )}
             </label>
             <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -734,6 +734,7 @@ export default function ManagePage() {
                       <>
                         <span style={{ fontSize: '12px', color: '#9999b0' }}>{item._count?.lectures || 0} lectures</span>
                         {item.isDemo && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#3636e8', color: 'white', fontWeight: '900', letterSpacing: '0.05em' }}>SYSTEM DEMO</span>}
+                        {item.isFree && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#10b981', color: 'white', fontWeight: '900', letterSpacing: '0.05em' }}>FREE</span>}
                         {item.isExpired && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#fff7ed', color: '#ea580c', fontWeight: '900', letterSpacing: '0.05em' }}>EXPIRED</span>}
                         {item.isEffectivelyDisabled && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#fee2e2', color: '#ef4444', fontWeight: '900', letterSpacing: '0.05em' }}>DISABLED</span>}
                       </>

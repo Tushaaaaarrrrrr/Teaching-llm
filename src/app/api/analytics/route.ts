@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession } from '@/lib/auth'
+import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,11 +11,30 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const studentIdParam = searchParams.get('studentId')
-    
+    const courseIdParam = searchParams.get('courseId')
+
+    // --- Access Control for course filter ---
+    // Managers can see all courses. Other roles can only see their assigned courses.
+    if (courseIdParam && session.role !== 'MANAGER') {
+      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseIdParam)) {
+        return NextResponse.json({ error: 'Access denied for this course' }, { status: 403 })
+      }
+    }
+
+    // Build exam filter
+    const examWhere: any = {}
+    if (courseIdParam) {
+      examWhere.courseId = courseIdParam
+    }
+
     // --- Manager Overview Logic ---
     if (!studentIdParam && session.role === 'MANAGER') {
       const allAttempts = await (prisma.examAttempt as any).findMany({
-        where: { submittedAt: { not: null } },
+        where: { 
+          submittedAt: { not: null },
+          exam: examWhere,
+        },
         include: { exam: { include: { questions: true } } },
         orderBy: { submittedAt: 'desc' },
       })
@@ -27,7 +46,17 @@ export async function GET(request: NextRequest) {
       const userMap = new Map(users.map(user => [user.id, user]))
 
       const totalPresence = await (prisma.loginLog as any).count()
-      const totalStudents = await (prisma.user as any).count({ where: { role: 'STUDENT' } })
+      
+      const studentCountWhere: any = { role: 'STUDENT' }
+      if (courseIdParam) {
+        // Count only students enrolled in this course
+        const enrolledStudentIds = await prisma.enrollment.findMany({
+          where: { courseId: courseIdParam },
+          select: { userId: true },
+        })
+        studentCountWhere.id = { in: enrolledStudentIds.map(e => e.userId) }
+      }
+      const totalStudents = await (prisma.user as any).count({ where: studentCountWhere })
 
       // Calculate aggregate stats
       const studentMap: Record<string, { totalPercentage: number, count: number, name: string, email: string }> = {}
@@ -54,6 +83,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         type: 'MANAGER_OVERVIEW',
+        courseId: courseIdParam || null,
         summary: {
           totalStudents,
           totalExams: allAttempts.length,
@@ -82,12 +112,17 @@ export async function GET(request: NextRequest) {
       orderBy: { timestamp: 'asc' }
     })
 
-    // 2. Exam Data - include ALL submitted attempts
+    // 2. Exam Data - include ALL submitted attempts, optionally filtered by course
+    const attemptWhere: any = {
+      userId,
+      submittedAt: { not: null },
+    }
+    if (courseIdParam) {
+      attemptWhere.exam = { courseId: courseIdParam }
+    }
+
     const attempts = await (prisma.examAttempt as any).findMany({
-      where: { 
-        userId,
-        submittedAt: { not: null } 
-      },
+      where: attemptWhere,
       include: { exam: { include: { questions: true } } }
     })
 
@@ -114,6 +149,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       type: 'STUDENT_DETAIL',
+      courseId: courseIdParam || null,
       attendance: logs,
       exams: examStats,
       summary: {

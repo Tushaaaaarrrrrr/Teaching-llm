@@ -129,13 +129,13 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isCommunityActive, isDisabled } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled } = await request.json()
 
     if (isDisabled !== undefined && !isManager(session.role)) {
       return NextResponse.json({ error: 'Only managers can enable or disable courses' }, { status: 403 })
     }
 
-    const existingCourse = await prisma.course.findUnique({ where: { id } })
+    const existingCourse = await (prisma.course.findUnique as any)({ where: { id } })
     if (!existingCourse) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
@@ -151,24 +151,7 @@ export async function PUT(
       }
     }
 
-    // Lock demo status if it's already a demo
-    if (existingCourse.isDemo && isDemo === false) {
-      return NextResponse.json({ 
-        error: 'Cannot un-mark a demo course. This is a protected system course.' 
-      }, { status: 400 })
-    }
-
-    // Prevent marking another course as demo if one already exists
-    if (!existingCourse.isDemo && isDemo === true) {
-      const otherDemo = await prisma.course.findFirst({
-        where: { isDemo: true }
-      })
-      if (otherDemo) {
-        return NextResponse.json({ 
-          error: 'Another demo course already exists. Only one course can be marked as a demo.' 
-        }, { status: 400 })
-      }
-    }
+    // Demo state and Free state are immutable on edit.
 
     const updatedCourse = await (prisma.course.update as any)({
       where: { id },
@@ -179,7 +162,8 @@ export async function PUT(
         color, 
         icon,
         teacherName: teacherName || null,
-        isDemo: existingCourse.isDemo ? true : !!isDemo, // Force true if it was already true
+        isDemo: existingCourse.isDemo, // Never change on update
+        isFree: existingCourse.isFree, // Never change on update
         isCommunityActive: isCommunityActive !== undefined ? !!isCommunityActive : undefined,
         isDisabled: isDisabled !== undefined ? !!isDisabled : undefined,
         expiresAt: expiresAt ? new Date(expiresAt) : null 

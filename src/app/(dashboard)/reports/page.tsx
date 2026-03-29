@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 
 interface Log {
   id: string
@@ -15,6 +16,8 @@ interface ExamStat {
   date: string
 }
 
+const fetcher = (url: string) => fetch(url).then(r => r.json())
+
 export default function ReportsPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -23,6 +26,10 @@ export default function ReportsPage() {
   const [students, setStudents] = useState<any[]>([])
   const [studentSearch, setStudentSearch] = useState('')
   const [selectedStudentId, setSelectedStudentId] = useState('')
+  const [selectedCourseId, setSelectedCourseId] = useState('')
+
+  const { data: coursesData } = useSWR('/api/courses', fetcher)
+  const courses = coursesData?.courses || coursesData || []
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -57,9 +64,28 @@ export default function ReportsPage() {
     }
   }, [selectedStudentId, role, view])
 
+  // Re-fetch when course filter changes
+  useEffect(() => {
+    if (!role) return
+    if (role === 'MANAGER') {
+      if (view === 'STUDENT_AUDIT' && selectedStudentId) {
+        loadData(selectedStudentId)
+      } else if (view === 'OVERVIEW') {
+        loadData()
+      }
+    } else {
+      loadData()
+    }
+  }, [selectedCourseId])
+
   function loadData(studentId?: string) {
     setLoading(true)
-    const url = studentId ? `/api/analytics?studentId=${studentId}` : '/api/analytics'
+    let url = '/api/analytics'
+    const params = new URLSearchParams()
+    if (studentId) params.set('studentId', studentId)
+    if (selectedCourseId) params.set('courseId', selectedCourseId)
+    if (params.toString()) url += `?${params.toString()}`
+
     fetch(url)
       .then(res => res.json())
       .then(d => {
@@ -93,7 +119,39 @@ export default function ReportsPage() {
 
   return (
     <div style={{ padding: '24px 32px 48px' }}>
-      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+        {/* Course Filter */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <label style={{ fontSize: '12px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Filter by Course</label>
+          <select
+            value={selectedCourseId}
+            onChange={(e) => setSelectedCourseId(e.target.value)}
+            style={{
+              padding: '10px 16px', borderRadius: '12px', border: 'none',
+              background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+              outline: 'none', fontSize: '13px', fontWeight: 600, color: '#1e1e3a',
+              minWidth: '200px',
+            }}
+          >
+            <option value="">All Courses</option>
+            {Array.isArray(courses) && courses.map((c: any) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          {selectedCourseId && (
+            <button
+              onClick={() => setSelectedCourseId('')}
+              style={{
+                padding: '6px 12px', borderRadius: '8px', border: 'none',
+                background: '#fee2e2', color: '#ef4444', fontSize: '12px',
+                fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
         {isManager && (
           <div style={{ display: 'flex', gap: '12px' }}>
              <button 
@@ -149,6 +207,12 @@ export default function ReportsPage() {
         <div style={{ padding: '80px', textAlign: 'center', color: '#9999b0' }}>Analyzing data...</div>
       ) : data?.type === 'MANAGER_OVERVIEW' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+           {selectedCourseId && (
+             <div style={{ padding: '12px 20px', borderRadius: '12px', background: '#e0e7ff', color: '#6366f1', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+               Showing analytics filtered by: {courses.find((c: any) => c.id === selectedCourseId)?.name || 'Selected Course'}
+             </div>
+           )}
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
               <div style={neuCard}>
                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Total Students</div>
@@ -211,6 +275,12 @@ export default function ReportsPage() {
         </div>
       ) : data?.type === 'STUDENT_DETAIL' ? (
         <>
+          {selectedCourseId && (
+            <div style={{ padding: '12px 20px', borderRadius: '12px', background: '#e0e7ff', color: '#6366f1', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Showing analytics filtered by: {courses.find((c: any) => c.id === selectedCourseId)?.name || 'Selected Course'}
+            </div>
+          )}
           {/* Summary Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
             <div style={neuCard}>
@@ -261,7 +331,7 @@ export default function ReportsPage() {
           <div style={neuCard}>
              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>Exam History</h2>
              {data.exams.length === 0 ? (
-               <p style={{ textAlign: 'center', color: '#9999b0', padding: '24px' }}>No exam data available.</p>
+               <p style={{ textAlign: 'center', color: '#9999b0', padding: '24px' }}>No exam data available{selectedCourseId ? ' for this course' : ''}.</p>
              ) : (
                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {data.exams.map((ex: any, i: number) => (

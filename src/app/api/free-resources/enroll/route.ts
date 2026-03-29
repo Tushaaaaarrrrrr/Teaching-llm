@@ -1,0 +1,103 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+import { getSession } from '@/lib/auth'
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { courseId } = await request.json()
+    if (!courseId) {
+      return NextResponse.json({ error: 'Course ID is required' }, { status: 400 })
+    }
+
+    const course = await (prisma.course.findUnique as any)({
+      where: { id: courseId },
+    })
+
+    if (!course || !course.isFree) {
+      return NextResponse.json({ error: 'Free course not found' }, { status: 404 })
+    }
+
+    if (course.isDisabled) {
+      return NextResponse.json({ error: 'This course is currently disabled' }, { status: 403 })
+    }
+
+    const existingEnrollment = await prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId: session.userId,
+          courseId,
+        },
+      },
+    })
+
+    if (existingEnrollment) {
+      return NextResponse.json({ message: 'Already enrolled' })
+    }
+
+    await (prisma.enrollment.create as any)({
+      data: {
+        userId: session.userId,
+        courseId,
+        isFreeEnrollment: true,
+      },
+    })
+
+    return NextResponse.json({ message: 'Successfully enrolled' }, { status: 201 })
+  } catch (error) {
+    console.error('Error in free course enrollment:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const courseId = searchParams.get('courseId')
+
+    if (!courseId) {
+      return NextResponse.json({ error: 'Course ID is required' }, { status: 400 })
+    }
+
+    const enrollment = await (prisma.enrollment.findUnique as any)({
+      where: {
+        userId_courseId: {
+          userId: session.userId,
+          courseId,
+        },
+      },
+      include: {
+        course: true,
+      },
+    })
+
+    if (!enrollment) {
+      return NextResponse.json({ error: 'Not enrolled' }, { status: 400 })
+    }
+
+    // Only allow unenrollment if it's a free enrollment OR the course is currently free
+    if (!enrollment.isFreeEnrollment && !enrollment.course.isFree) {
+       return NextResponse.json({ error: 'Cannot self-unenroll from paid courses' }, { status: 403 })
+    }
+
+    await prisma.enrollment.delete({
+      where: {
+        id: enrollment.id,
+      },
+    })
+
+    return NextResponse.json({ message: 'Successfully unenrolled' })
+  } catch (error) {
+    console.error('Error in free course unenrollment:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

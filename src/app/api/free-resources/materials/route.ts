@@ -3,23 +3,19 @@ import { prisma } from '@/lib/db'
 import { getSession, canManageContent } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const courseId = searchParams.get('courseId')
-
-    const where: any = { isFree: false }
-    if (courseId) where.courseId = courseId
-
     const materials = await (prisma.material.findMany as any)({
-      where,
+      where: {
+        isFree: true,
+        courseId: null,
+      },
       include: {
-        course: { select: { name: true } },
         uploadedBy: { select: { name: true } },
       },
       orderBy: { uploadedAt: 'desc' },
@@ -27,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(materials)
   } catch (error) {
-    console.error('Error fetching materials:', error)
+    console.error('Error fetching free materials:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -43,19 +39,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { courseId, title, description, fileUrl, fileType, fileSize, isGlobal } =
-      await request.json()
+    const { title, description, fileUrl, fileType, fileSize } = await request.json()
 
+    if (!title || !fileUrl) {
+      return NextResponse.json({ error: 'Title and file URL are required' }, { status: 400 })
+    }
 
-    const material = await prisma.material.create({
+    const material = await (prisma.material.create as any)({
       data: {
-        courseId,
+        courseId: null,
         title,
         description,
         fileUrl,
-        fileType,
+        fileType: fileType || 'unknown',
         fileSize,
-        isGlobal: !!isGlobal,
+        isFree: true,
+        isGlobal: false,
         uploadedById: session.userId,
       },
     })
@@ -65,14 +64,14 @@ export async function POST(request: NextRequest) {
       userName: session.name,
       userRole: session.role,
       actionType: ACTION.MATERIAL_CREATED,
-      actionDescription: `${session.name} created material "${title}"`,
+      actionDescription: `${session.name} created free material "${title}"`,
       moduleName: MODULE.MATERIALS,
       targetId: material.id,
     })
 
     return NextResponse.json(material, { status: 201 })
   } catch (error) {
-    console.error('Error creating material:', error)
+    console.error('Error creating free material:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

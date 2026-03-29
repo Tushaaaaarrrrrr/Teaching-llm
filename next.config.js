@@ -11,8 +11,6 @@ const nextConfig = {
         headers: [
           // Prevent clickjacking — only allow your own site to iframe the app
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          // Allow cross-origin popups/iframes like Google Drive to communicate via postMessage
-          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
           // Prevent MIME-type sniffing
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           // Control referrer information sent with requests
