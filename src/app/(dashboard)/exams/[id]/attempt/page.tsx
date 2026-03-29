@@ -218,7 +218,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                 }
                 
                 // For TRUE_FALSE, ensure we only show True/False
-                if (currentQuestion.type === 'TRUE_FALSE' && opts.length === 0) {
+                if (currentQuestion.type === 'TRUE_FALSE') {
                   opts = ['True', 'False']
                 }
                 

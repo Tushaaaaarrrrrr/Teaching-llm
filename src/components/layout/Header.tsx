@@ -40,6 +40,9 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/exams':      { title: 'Exams',             subtitle: 'Manage and participate in assessments' },
   '/study/content-bank': { title: 'Content Bank', subtitle: 'Global repository of exam questions and resources' },
   '/feedback':   { title: 'Course Feedback',    subtitle: 'Average ratings and student reviews.' },
+  '/free-resources/courses': { title: 'Free Courses', subtitle: 'Browse and self-enroll in free courses' },
+  '/free-resources/materials': { title: 'Free Materials', subtitle: 'Download study materials available for free' },
+  '/free-resources': { title: 'Free Resources', subtitle: 'Access free courses and study materials' },
 }
 
 const TYPE_COLORS: Record<string, string> = {
