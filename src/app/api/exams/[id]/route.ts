@@ -17,7 +17,7 @@ export async function GET(
       where: { id: params.id },
       include: {
         questions: { orderBy: { order: 'asc' } },
-        course: { select: { id: true, name: true, color: true } },
+        course: { select: { id: true, name: true, color: true, subject: true } },
       }
     })
 

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { hasStrictTimer } from '@/lib/exam-policy'
+import ExamConfirmationModal from '@/components/exams/ExamConfirmationModal'
 
 interface Question {
   id: string
@@ -18,6 +19,11 @@ interface Exam {
   durationMinutes: number
   expiresAt: string
   questions: Question[]
+  examType?: string
+  course?: {
+    name: string
+    subject?: string
+  }
 }
 
 export default function ExamAttemptPage({ params }: { params: { id: string } }) {
@@ -27,13 +33,19 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true)
   const [currentIdx, setCurrentIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [visitedIndices, setVisitedIndices] = useState<Set<number>>(new Set([0]))
   const [submitting, setSubmitting] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
   
+  // Timer State
+  const [isPaused, setIsPaused] = useState(false)
   const timeTextRef = useRef<HTMLDivElement>(null)
   const attemptStartedAtRef = useRef<number | null>(null)
   const durationMsRef = useRef<number | null>(null)
   const hasStrictTimerRef = useRef<boolean>(false)
   const submittingRef = useRef<boolean>(false)
+  const pauseOffsetRef = useRef<number>(0)
+  const lastTickTimeRef = useRef<number | null>(null)
 
   const loadData = useCallback(async () => {
     try {
@@ -86,20 +98,30 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
     let animationFrameId: number
     let lastSecond = -1
     
-    // We cannot capture handleSubmit directly if it depends on changing state, but we rely on the component being alive
-    // Also, we use an inline trigger for auto-submission.
     const tick = () => {
-      if (!hasStrictTimerRef.current || attemptStartedAtRef.current === null || durationMsRef.current === null) {
+      if (attemptStartedAtRef.current === null || durationMsRef.current === null || submittingRef.current) {
         animationFrameId = requestAnimationFrame(tick)
         return
       }
 
       const now = Date.now()
-      const elapsed = now - attemptStartedAtRef.current
+
+      // Handle Pause Logic for Practice Mode
+      if (isPaused && !hasStrictTimerRef.current) {
+        if (lastTickTimeRef.current) {
+            pauseOffsetRef.current += (now - lastTickTimeRef.current)
+        }
+        lastTickTimeRef.current = now
+        animationFrameId = requestAnimationFrame(tick)
+        return
+      }
+      lastTickTimeRef.current = now
+
+      const elapsed = (now - attemptStartedAtRef.current) - pauseOffsetRef.current
       const remainingSecs = Math.max(0, Math.floor((durationMsRef.current - elapsed) / 1000))
 
       if (remainingSecs <= 0 && !submittingRef.current && !loading && exam) {
-        // Auto-submit when time is up
+        // Auto-submit when time is up in BOTH modes if it hits zero, but mostly critical for FINAL
         submittingRef.current = true
         setSubmitting(true)
         fetch(`/api/exams/${params.id}/submit`, { method: 'POST' }).then(res => {
@@ -121,7 +143,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
     animationFrameId = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(animationFrameId)
-  }, [loading, exam, params.id, router])
+  }, [loading, exam, params.id, router, isPaused])
 
   const saveAnswer = async (questionId: string, answer: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }))
@@ -131,7 +153,22 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questionId, answer })
       })
-    } catch {}
+    } catch (err) {
+      console.error('Failed to save answer:', err)
+    }
+  }
+
+  const handleNavigate = (idx: number) => {
+    setCurrentIdx(idx)
+    setVisitedIndices(prev => new Set(prev).add(idx))
+  }
+
+  const handleResetTimer = () => {
+    if (confirm('Are you sure you want to reset the timer? This will restart your time from the beginning.')) {
+        attemptStartedAtRef.current = Date.now()
+        pauseOffsetRef.current = 0
+        setIsPaused(false)
+    }
   }
 
   const handleSubmit = async () => {
@@ -144,12 +181,14 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
         router.push(`/exams/${params.id}/result`)
       } else {
         alert('Failed to submit exam')
+        submittingRef.current = false
+        setSubmitting(false)
       }
     } catch (error) {
       console.error(error)
       submittingRef.current = false
       setSubmitting(false)
-    } // deliberately not doing finally to keep submitting=true during redirect
+    }
   }
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading assessment...</div>
@@ -161,162 +200,323 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   }
 
   const currentQuestion = exam?.questions[currentIdx]
+  const answeredCount = Object.keys(answers).length
+  const isFinal = hasStrictTimer(exam?.examType)
 
   // Shared Styles
   const neuCard: React.CSSProperties = {
-    borderRadius: '20px', background: '#e8eaf0',
-    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+    borderRadius: '24px', background: '#f0f2f8',
+    boxShadow: '8px 8px 16px #cfd6e1, -8px -8px 16px #ffffff',
     padding: '32px',
   }
 
+  const sidebarStyle: React.CSSProperties = {
+    width: '360px',
+    height: '100vh',
+    position: 'sticky',
+    top: 0,
+    background: '#f0f2f8',
+    borderRight: '1px solid #cfd6e1',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '24px',
+    overflowY: 'auto',
+    zIndex: 10
+  }
+
+  const mainContentStyle: React.CSSProperties = {
+    flex: 1,
+    height: '100vh',
+    overflowY: 'auto',
+    padding: '32px',
+    background: '#f0f2f8',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: '#e8eaf0', padding: '32px' }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f2f8' }}>
+      
+      {/* LEFT PANEL - Fixed Sidebar */}
+      <aside style={sidebarStyle}>
         
-        {/* Header/Timer */}
-        <div style={{ ...neuCard, marginBottom: '24px', padding: '20px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a' }}>{exam?.title}</h1>
-            <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: 600 }}>Question {currentIdx + 1} of {exam?.questions.length}</span>
+        {/* Exam Metadata */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: '#3636e8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+            {exam?.course?.name || 'Course'} • {exam?.course?.subject || 'Assessment'}
           </div>
-          {hasStrictTimer((exam as any)?.examType) && (
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '12px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Time Remaining</span>
-              <div ref={timeTextRef} style={{ fontSize: '24px', fontWeight: 900, color: '#3636e8', fontVariantNumeric: 'tabular-nums' }}>
-                --:--
-              </div>
-            </div>
+          <h1 style={{ fontSize: '22px', fontWeight: 900, color: '#1e1e3a', lineHeight: '1.2', marginBottom: '8px' }}>
+            {exam?.title}
+          </h1>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#6b6b8a' }}>
+              Total: {exam?.questions.reduce((acc, q) => acc + (q.marks || 0), 0)} Marks
+            </span>
+            <span style={{ 
+                fontSize: '11px', fontWeight: 800, 
+                background: isFinal ? '#ef444415' : '#3636e815', 
+                color: isFinal ? '#ef4444' : '#3636e8', 
+                padding: '4px 10px', borderRadius: '50px' 
+            }}>
+              {isFinal ? 'FINAL EXAM' : 'PRACTICE MODE'}
+            </span>
+          </div>
+        </div>
+
+        <hr style={{ border: 'none', borderTop: '1px solid #cfd6e1', margin: '0 -24px 24px -24px' }} />
+
+        {/* Timer Section */}
+        <div style={{ ...neuCard, padding: '20px', marginBottom: '24px', textAlign: 'center' }}>
+          <div style={{ fontSize: '12px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '4px' }}>
+            Time Remaining
+          </div>
+          <div ref={timeTextRef} style={{ fontSize: '36px', fontWeight: 900, color: '#3636e8', fontVariantNumeric: 'tabular-nums', marginBottom: '12px' }}>
+            --:--
+          </div>
+          
+          {!isFinal && (
+             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                <button 
+                    onClick={() => setIsPaused(!isPaused)}
+                    style={{ 
+                        padding: '8px 16px', borderRadius: '50px', border: 'none',
+                        background: isPaused ? '#10b981' : '#fff', color: isPaused ? '#fff' : '#1e1e3a',
+                        fontSize: '12px', fontWeight: 800, cursor: 'pointer',
+                        boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
+                    }}
+                >
+                    {isPaused ? 'Resume' : 'Pause'}
+                </button>
+                <button 
+                    onClick={handleResetTimer}
+                    style={{ 
+                        padding: '8px 16px', borderRadius: '50px', border: 'none',
+                        background: '#fff', color: '#1e1e3a',
+                        fontSize: '12px', fontWeight: 800, cursor: 'pointer',
+                        boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
+                    }}
+                >
+                    Reset
+                </button>
+             </div>
           )}
         </div>
 
-        {/* Question Area */}
-        <div style={neuCard}>
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-               <span style={{ fontSize: '11px', fontWeight: 800, background: '#3636e812', color: '#3636e8', padding: '4px 10px', borderRadius: '50px' }}>
-                 {currentQuestion?.type}
-               </span>
-               <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a' }}>{currentQuestion?.marks} Marks</span>
-            </div>
-            <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', lineHeight: '1.4' }}>{currentQuestion?.text}</h2>
+        {/* Question Navigator */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e1e3a' }}>Question Navigator</span>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a' }}>{answeredCount}/{exam?.questions.length} Answered</span>
           </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+            {exam?.questions.map((q, i) => {
+              const isCurrent = currentIdx === i
+              const isAnswered = !!answers[q.id]
+              const isVisited = visitedIndices.has(i)
+              
+              let bgColor = '#fff'
+              let textColor = '#1e1e3a'
+              let shadow = '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
-            {currentQuestion?.type === 'MCQ' || currentQuestion?.type === 'TRUE_FALSE' ? (
-              (() => {
-                // Safely parse options — handles double-stringified JSON
-                let opts: string[] = []
-                try {
-                  let parsed = JSON.parse(currentQuestion.options || '[]')
-                  // If it's still a string after parsing, parse again (double-stringified)
-                  if (typeof parsed === 'string') {
-                    parsed = JSON.parse(parsed)
-                  }
-                  opts = Array.isArray(parsed) ? parsed : []
-                } catch {
-                  opts = []
-                }
-                
-                // For TRUE_FALSE, ensure we only show True/False
-                if (currentQuestion.type === 'TRUE_FALSE') {
-                  opts = ['True', 'False']
-                }
-                
-                return opts.filter(opt => typeof opt === 'string' && opt.trim()).map((opt: string) => (
-                  <button
-                    key={opt}
-                    onClick={() => saveAnswer(currentQuestion.id, opt)}
-                    style={{
-                      padding: '16px 20px', borderRadius: '16px', border: 'none',
-                      textAlign: 'left', fontSize: '15px', fontWeight: 600,
-                      background: answers[currentQuestion.id] === opt ? '#3636e8' : '#fff',
-                      color: answers[currentQuestion.id] === opt ? '#fff' : '#1e1e3a',
-                      boxShadow: answers[currentQuestion.id] === opt ? 'inset 2px 2px 5px rgba(0,0,0,0.2)' : '3px 3px 8px #c5c7cf, -2px -2px 6px #fff',
-                      cursor: 'pointer', transition: 'all 0.2s'
-                    }}
-                  >
-                    {opt}
-                  </button>
-                ))
-              })()
-            ) : (
-              <textarea
-                value={answers[currentQuestion.id] || ''}
-                onChange={e => saveAnswer(currentQuestion.id, e.target.value)}
-                placeholder="Type your answer here..."
-                rows={6}
-                style={{
-                  width: '100%', padding: '20px', borderRadius: '16px', border: 'none',
-                  background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff',
-                  fontSize: '15px', lineHeight: '1.6', outline: 'none', color: '#1e1e3a'
-                }}
-              />
-            )}
+              if (isCurrent) {
+                bgColor = '#3636e8'
+                textColor = '#fff'
+                shadow = 'inset 2px 2px 5px rgba(0,0,0,0.2)'
+              } else if (isAnswered) {
+                bgColor = '#10b981'
+                textColor = '#fff'
+              } else if (!isVisited) {
+                bgColor = '#e0e0e0'
+                textColor = '#999'
+                shadow = 'none'
+              }
+
+              return (
+                <button
+                  key={q.id}
+                  onClick={() => handleNavigate(i)}
+                  style={{
+                    aspectRatio: '1', borderRadius: '12px', border: 'none',
+                    background: bgColor, color: textColor,
+                    fontSize: '14px', fontWeight: 800, cursor: 'pointer',
+                    boxShadow: shadow, transition: 'all 0.2s',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}
+                >
+                  {i + 1}
+                </button>
+              )
+            })}
           </div>
+        </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <button
-               disabled={currentIdx === 0}
-               onClick={() => setCurrentIdx(prev => prev - 1)}
-               style={{ 
-                 padding: '12px 24px', borderRadius: '50px', border: 'none', 
-                 background: '#fff', color: '#1e1e3a', fontWeight: 700, 
-                 cursor: currentIdx === 0 ? 'default' : 'pointer',
-                 opacity: currentIdx === 0 ? 0.5 : 1,
-                 boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #fff'
-               }}
-            >
-              Previous
-            </button>
+        {/* Submit Button */}
+        <button 
+            onClick={() => setShowConfirmModal(true)}
+            disabled={submitting}
+            style={{ 
+                marginTop: '24px',
+                padding: '16px', borderRadius: '16px', border: 'none', 
+                background: '#ef4444', color: '#fff', fontSize: '15px', fontWeight: 800, cursor: 'pointer',
+                boxShadow: '0 8px 20px rgba(239,68,68,0.3)',
+                width: '100%'
+            }}
+        >
+            {submitting ? 'Submitting...' : 'FINISH ASSESSMENT'}
+        </button>
+
+      </aside>
+
+      {/* RIGHT PANEL - Dynamic Question Content */}
+      <main style={mainContentStyle}>
+        <div style={{ width: '100%', maxWidth: '900px' }}>
             
-            {currentIdx === (exam?.questions.length || 0) - 1 ? (
-              <button 
-                onClick={handleSubmit}
-                disabled={submitting}
-                style={{ 
-                  padding: '12px 32px', borderRadius: '50px', border: 'none', 
-                  background: '#ef4444', color: '#fff', fontWeight: 800, cursor: 'pointer',
-                  boxShadow: '4px 4px 10px rgba(239,68,68,0.35)'
-                }}
-              >
-                {submitting ? 'Submitting...' : 'Complete & Submit'}
-              </button>
-            ) : (
-              <button 
-                onClick={() => setCurrentIdx(prev => prev + 1)}
-                style={{ 
-                  padding: '12px 32px', borderRadius: '50px', border: 'none', 
-                  background: '#3636e8', color: '#fff', fontWeight: 700, cursor: 'pointer',
-                  boxShadow: '4px 4px 10px rgba(54,54,232,0.35)'
-                }}
-              >
-                Next Question
-              </button>
-            )}
-          </div>
-        </div>
+            <div style={neuCard}>
+                
+                {/* Question Info Bar */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span style={{ 
+                            fontSize: '10px', fontWeight: 900, letterSpacing: '0.05em',
+                            background: '#3636e815', color: '#3636e8', padding: '6px 12px', borderRadius: '50px' 
+                        }}>
+                          QUESTION {currentIdx + 1}
+                        </span>
+                        <span style={{ 
+                            fontSize: '10px', fontWeight: 900, letterSpacing: '0.05em',
+                            background: '#1e1e3a10', color: '#1e1e3a', padding: '6px 12px', borderRadius: '50px' 
+                        }}>
+                          {currentQuestion?.type.replace('_', ' ')}
+                        </span>
+                    </div>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#6b6b8a' }}>{currentQuestion?.marks} Marks</span>
+                </div>
 
-        {/* Navigator Dots */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginTop: '32px' }}>
-          {exam?.questions.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentIdx(i)}
-              style={{
-                width: '32px', height: '32px', borderRadius: '50%', border: 'none',
-                background: currentIdx === i ? '#3636e8' : (answers[exam.questions[i].id] ? '#10b981' : '#fff'),
-                color: currentIdx === i || answers[exam.questions[i].id] ? '#fff' : '#1e1e3a',
-                fontSize: '12px', fontWeight: 800, cursor: 'pointer',
-                boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #fff',
-                transition: 'all 0.2s'
-              }}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
+                {/* Question Text */}
+                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a', lineHeight: '1.4', marginBottom: '32px' }}>
+                    {currentQuestion?.text}
+                </h2>
 
-      </div>
+                {/* Options Area */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '40px' }}>
+                    {currentQuestion?.type === 'MCQ' || currentQuestion?.type === 'TRUE_FALSE' ? (
+                    (() => {
+                        let opts: string[] = []
+                        try {
+                            let parsed = JSON.parse(currentQuestion.options || '[]')
+                            if (typeof parsed === 'string') parsed = JSON.parse(parsed)
+                            opts = Array.isArray(parsed) ? parsed : []
+                        } catch { opts = [] }
+                        
+                        if (currentQuestion.type === 'TRUE_FALSE') opts = ['True', 'False']
+                        
+                        return opts.filter(opt => typeof opt === 'string' && opt.trim()).map((opt: string) => (
+                            <button
+                                key={opt}
+                                onClick={() => saveAnswer(currentQuestion.id, opt)}
+                                style={{
+                                    padding: '20px 24px', borderRadius: '20px', border: 'none',
+                                    textAlign: 'left', fontSize: '16px', fontWeight: 600,
+                                    background: answers[currentQuestion.id] === opt ? '#3636e8' : '#fff',
+                                    color: answers[currentQuestion.id] === opt ? '#fff' : '#1e1e3a',
+                                    boxShadow: answers[currentQuestion.id] === opt 
+                                        ? 'inset 4px 4px 10px rgba(0,0,0,0.2)' 
+                                        : '4px 4px 10px #cfd6e1, -4px -4px 10px #ffffff',
+                                    cursor: 'pointer', transition: 'all 0.2s',
+                                    display: 'flex', alignItems: 'center', gap: '16px'
+                                }}
+                            >
+                                <div style={{ 
+                                    width: '24px', height: '24px', borderRadius: '50%', 
+                                    border: `2px solid ${answers[currentQuestion.id] === opt ? '#fff' : '#cfd6e1'}`,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    {answers[currentQuestion.id] === opt && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fff' }} />}
+                                </div>
+                                {opt}
+                            </button>
+                        ))
+                    })()
+                    ) : (
+                    <textarea
+                        value={answers[currentQuestion.id] || ''}
+                        onChange={e => saveAnswer(currentQuestion.id, e.target.value)}
+                        placeholder="Type your detailed answer here..."
+                        rows={10}
+                        style={{
+                            width: '100%', padding: '24px', borderRadius: '20px', border: 'none',
+                            background: '#f0f2f8', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px #ffffff',
+                            fontSize: '16px', lineHeight: '1.6', outline: 'none', color: '#1e1e3a',
+                            fontFamily: 'inherit'
+                        }}
+                    />
+                    )}
+                </div>
+
+                {/* Navigation Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '24px', borderTop: '1px solid #cfd6e1' }}>
+                    <button
+                        disabled={currentIdx === 0}
+                        onClick={() => handleNavigate(currentIdx - 1)}
+                        style={{ 
+                            padding: '14px 32px', borderRadius: '50px', border: 'none', 
+                            background: '#fff', color: '#1e1e3a', fontWeight: 800, 
+                            cursor: currentIdx === 0 ? 'default' : 'pointer',
+                            opacity: currentIdx === 0 ? 0.5 : 1,
+                            boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px #ffffff'
+                        }}
+                    >
+                        ← Previous
+                    </button>
+                    
+                    {currentIdx === (exam?.questions.length || 0) - 1 ? (
+                        <button 
+                            onClick={() => setShowConfirmModal(true)}
+                            style={{ 
+                                padding: '14px 40px', borderRadius: '50px', border: 'none', 
+                                background: '#ef4444', color: '#fff', fontWeight: 800, cursor: 'pointer',
+                                boxShadow: '0 8px 20px rgba(239,68,68,0.3)'
+                            }}
+                        >
+                            Finish & Submit
+                        </button>
+                    ) : (
+                        <button 
+                            onClick={() => handleNavigate(currentIdx + 1)}
+                            style={{ 
+                                padding: '14px 40px', borderRadius: '50px', border: 'none', 
+                                background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer',
+                                boxShadow: '0 8px 20px rgba(54,54,232,0.3)'
+                            }}
+                        >
+                            Next Question →
+                        </button>
+                    )}
+                </div>
+
+            </div>
+
+            {/* Bottom Info */}
+            <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '13px', color: '#9999b0', fontWeight: 600 }}>
+                Questions are auto-saved in real-time. Do not reload the page unless necessary.
+            </div>
+
+        </div>
+      </main>
+
+      {/* Confirmation Modal */}
+      {exam && (
+          <ExamConfirmationModal
+            open={showConfirmModal}
+            onConfirm={handleSubmit}
+            onCancel={() => setShowConfirmModal(false)}
+            totalQuestions={exam.questions.length}
+            answeredCount={answeredCount}
+            submitting={submitting}
+          />
+      )}
+
     </div>
   )
 }
