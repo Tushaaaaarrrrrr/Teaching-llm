@@ -58,6 +58,7 @@ export default function AdminPage() {
   const [userRole, setUserRole] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
+  const [selectedCourseId, setSelectedCourseId] = useState('all')
 
   // Debounce search
   useEffect(() => {
@@ -320,6 +321,9 @@ export default function AdminPage() {
   const visibleUsers = users
   const filtered = visibleUsers.filter(u => {
     if (filter !== 'all' && u.role !== filter) return false
+    if (selectedCourseId !== 'all' && !(u.enrollments || []).some(enrollment => enrollment.courseId === selectedCourseId)) {
+      return false
+    }
     if (!debouncedSearchQuery) return true
     
     const query = debouncedSearchQuery.toLowerCase()
@@ -379,6 +383,40 @@ export default function AdminPage() {
               </svg>
             </button>
           )}
+        </div>
+        <div style={{
+          minWidth: '220px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '10px 18px',
+          borderRadius: '50px',
+          background: '#e8eaf0',
+          boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+          </svg>
+          <select
+            value={selectedCourseId}
+            onChange={e => setSelectedCourseId(e.target.value)}
+            style={{
+              background: 'none',
+              border: 'none',
+              width: '100%',
+              outline: 'none',
+              fontSize: '14px',
+              color: '#1e1e3a',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="all">All Courses</option>
+            {courses.map(course => (
+              <option key={course.id} value={course.id}>
+                {course.name}
+              </option>
+            ))}
+          </select>
         </div>
         {userRole === 'MANAGER' && (
           <button

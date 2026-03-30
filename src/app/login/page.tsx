@@ -94,34 +94,38 @@ function LoginContent() {
     <div style={{ minHeight: '100vh', display: 'flex', background: '#F3F4F6' }}>
       {/* Left Panel - Branding */}
       <div style={{ flex: '0 0 42%', background: '#F3F4F6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px', position: 'relative' }}>
-        {/* Logo & Brand Horizontal Layout */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '40px', width: '100%', maxWidth: '440px', background: 'rgba(255,255,255,0.4)', padding: '16px 24px', borderRadius: '32px', boxShadow: 'inset 4px 4px 8px #d1d5db, inset -4px -4px 8px #ffffff' }}>
+        {/* Logo & Tagline Centered Layout */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '40px', width: '100%', maxWidth: '440px' }}>
           <div style={{ 
-            width: '120px', 
-            height: '120px', 
-            borderRadius: '24px', 
-            background: '#F3F4F6', 
-            boxShadow: '6px 6px 12px #d1d5db, -6px -6px 12px #ffffff', 
             display: 'flex', 
+            flexDirection: 'column',
             alignItems: 'center', 
             justifyContent: 'center', 
             overflow: 'hidden',
-            flexShrink: 0
+            flexShrink: 0,
+            width: '100%',
+            maxWidth: '320px',
+            minHeight: '148px',
+            padding: '22px 22px 18px',
+            borderRadius: '28px',
+            background: '#F3F4F6',
+            boxShadow: '10px 10px 22px #d1d5db, -10px -10px 22px #ffffff',
           }}>
             <img 
               src="/logo.png" 
-              alt="Alpha IITIAN Logo" 
+              alt="GENz IITIAN Logo" 
               style={{ 
-                width: '100%', 
-                height: '100%', 
+                width: '100%',
+                maxWidth: '260px',
+                height: 'auto',
+                maxHeight: '84px',
                 objectFit: 'contain',
-                padding: '4px'
+                display: 'block',
               }} 
             />
-          </div>
-          <div style={{ textAlign: 'left' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e1e3a', letterSpacing: '-0.5px', marginBottom: '2px' }}>Alpha IITIAN</h1>
-            <p style={{ fontSize: '14px', color: '#9999b0', fontWeight: '500' }}>Upgrade How You Learn</p>
+            <p style={{ fontSize: '18px', color: '#6b6b8a', fontWeight: '500', letterSpacing: '0.02em', marginTop: '14px', textAlign: 'center' }}>
+              Upgrade How You Learn
+            </p>
           </div>
         </div>
           

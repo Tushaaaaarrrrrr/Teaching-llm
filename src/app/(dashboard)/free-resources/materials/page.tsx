@@ -14,22 +14,47 @@ export default function FreeMaterialsPage() {
 
   const [showModal, setShowModal] = useState(false)
   const [formData, setFormData] = useState<Record<string, string>>({})
+  const [sourceType, setSourceType] = useState<'FILE' | 'LINK'>('FILE')
   const [saving, setSaving] = useState(false)
 
   const set = (key: string, val: string) => setFormData(prev => ({ ...prev, [key]: val }))
 
   async function handleSave() {
-    if (!formData.title || !formData.fileUrl) return
+    if (!formData.title) {
+      alert('Title is required')
+      return
+    }
+
+    // Validate source
+    if (sourceType === 'FILE' && !formData.fileUrl) {
+      alert('Please provide a file URL')
+      return
+    }
+    if (sourceType === 'LINK' && !formData.fileUrl) {
+      alert('Please provide a link URL')
+      return
+    }
+
+    // Validate URL format
+    if (!formData.fileUrl.startsWith('http://') && !formData.fileUrl.startsWith('https://')) {
+      alert('Please enter a valid URL starting with http:// or https://')
+      return
+    }
+
     setSaving(true)
     try {
       const res = await fetch('/api/free-resources/materials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          sourceType,
+        }),
       })
       if (res.ok) {
         setShowModal(false)
         setFormData({})
+        setSourceType('FILE')
         mutate('/api/free-resources/materials')
       } else {
         const data = await res.json()
@@ -37,6 +62,7 @@ export default function FreeMaterialsPage() {
       }
     } catch (e) {
       console.error(e)
+      alert('Error creating material')
     }
     setSaving(false)
   }
@@ -49,6 +75,7 @@ export default function FreeMaterialsPage() {
 
   function getFileIcon(fileType: string) {
     const type = (fileType || '').toLowerCase()
+    if (type === 'link') return '🔗'
     if (type.includes('pdf')) return '📄'
     if (type.includes('doc') || type.includes('word')) return '📝'
     if (type.includes('ppt') || type.includes('presentation')) return '📊'
@@ -70,7 +97,7 @@ export default function FreeMaterialsPage() {
           <p style={{ margin: '8px 0 0', color: '#6b6b8a', fontSize: '14px' }}>Download study materials without enrollment.</p>
         </div>
         {canManage && (
-          <button onClick={() => { setFormData({}); setShowModal(true) }} className="btn btn-primary">
+          <button onClick={() => { setFormData({}); setSourceType('FILE'); setShowModal(true) }} className="btn btn-primary">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
@@ -102,8 +129,8 @@ export default function FreeMaterialsPage() {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#d1fae5', color: '#10b981', fontWeight: '600' }}>
-                  {(mat.fileType || 'File').toUpperCase()}
+                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: mat.sourceType === 'LINK' ? '#dbeafe' : '#d1fae5', color: mat.sourceType === 'LINK' ? '#0ea5e9' : '#10b981', fontWeight: '600' }}>
+                  {mat.sourceType === 'LINK' ? 'LINK' : (mat.fileType || 'File').toUpperCase()}
                 </span>
                 {mat.fileSize && (
                   <span style={{ fontSize: '11px', color: '#9999b0' }}>{mat.fileSize}</span>
@@ -121,7 +148,7 @@ export default function FreeMaterialsPage() {
                   className="btn btn-primary"
                   style={{ flex: 1, textAlign: 'center', textDecoration: 'none', fontSize: '13px' }}
                 >
-                  Download / View
+                  {mat.sourceType === 'LINK' ? 'Open Link' : 'Download / View'}
                 </a>
                 {canManage && (
                   <button onClick={() => handleDelete(mat.id)} className="btn btn-ghost" style={{ padding: '0 12px', color: '#ef4444', borderColor: '#fee2e2' }}>
@@ -146,19 +173,61 @@ export default function FreeMaterialsPage() {
                 <label className="form-label">Title *</label>
                 <input className="form-input" value={formData.title || ''} onChange={e => set('title', e.target.value)} placeholder="e.g. Physics Formula Sheet" />
               </div>
+
               <div className="form-group">
                 <label className="form-label">Description</label>
                 <textarea className="form-input" value={formData.description || ''} onChange={e => set('description', e.target.value)} rows={2} style={{ resize: 'vertical' }} placeholder="Optional description" />
               </div>
+
+              {/* Source Type Toggle */}
               <div className="form-group">
-                <label className="form-label">File URL *</label>
-                <input className="form-input" value={formData.fileUrl || ''} onChange={e => set('fileUrl', e.target.value)} placeholder="https://… (PDF, PPT, DOCX, etc.)" />
+                <label className="form-label">Source Type *</label>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'FILE' ? '#6366f1' : '#e5e7eb'}`, background: sourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
+                    <input
+                      type="radio"
+                      name="sourceType"
+                      value="FILE"
+                      checked={sourceType === 'FILE'}
+                      onChange={() => setSourceType('FILE')}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: '14px', fontWeight: sourceType === 'FILE' ? '600' : '500', color: '#1e1e3a' }}>📄 Upload File</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'LINK' ? '#6366f1' : '#e5e7eb'}`, background: sourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
+                    <input
+                      type="radio"
+                      name="sourceType"
+                      value="LINK"
+                      checked={sourceType === 'LINK'}
+                      onChange={() => setSourceType('LINK')}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: '14px', fontWeight: sourceType === 'LINK' ? '600' : '500', color: '#1e1e3a' }}>🔗 External Link</span>
+                  </label>
+                </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">File Type</label>
-                <input className="form-input" value={formData.fileType || ''} onChange={e => set('fileType', e.target.value)} placeholder="e.g. pdf, pptx, docx" />
-              </div>
+
+              {/* Show File Upload or Link Input */}
+              {sourceType === 'FILE' ? (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">File URL *</label>
+                    <input className="form-input" value={formData.fileUrl || ''} onChange={e => set('fileUrl', e.target.value)} placeholder="https://… (PDF, PPT, DOCX, etc.)" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">File Type</label>
+                    <input className="form-input" value={formData.fileType || ''} onChange={e => set('fileType', e.target.value)} placeholder="e.g. pdf, pptx, docx" />
+                  </div>
+                </>
+              ) : (
+                <div className="form-group">
+                  <label className="form-label">External Link URL *</label>
+                  <input className="form-input" value={formData.fileUrl || ''} onChange={e => set('fileUrl', e.target.value)} placeholder="https://example.com/resource" />
+                </div>
+              )}
             </div>
+
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-primary">

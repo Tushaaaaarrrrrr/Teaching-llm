@@ -46,13 +46,6 @@ export default function FreeResourcesPage() {
 
   return (
     <div className="page-container fade-in">
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>Free Resources</h1>
-        <p style={{ margin: '8px 0 0', color: '#6b6b8a', fontSize: '14px', maxWidth: '600px' }}>
-          Access free courses and study materials. Enroll in courses to track your progress or download materials directly.
-        </p>
-      </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
         {cards.map(card => (
           <Link key={card.href} href={card.href} style={{ textDecoration: 'none' }}>

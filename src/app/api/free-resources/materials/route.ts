@@ -39,11 +39,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { title, description, fileUrl, fileType, fileSize } = await request.json()
+    const { title, description, fileUrl, fileType, fileSize, sourceType } = await request.json()
 
     if (!title || !fileUrl) {
       return NextResponse.json({ error: 'Title and file URL are required' }, { status: 400 })
     }
+
+    // Validate sourceType
+    const validSourceType = sourceType === 'LINK' ? 'LINK' : 'FILE'
 
     const material = await (prisma.material.create as any)({
       data: {
@@ -51,8 +54,9 @@ export async function POST(request: NextRequest) {
         title,
         description,
         fileUrl,
-        fileType: fileType || 'unknown',
+        fileType: validSourceType === 'LINK' ? 'link' : (fileType || 'unknown'),
         fileSize,
+        sourceType: validSourceType,
         isFree: true,
         isGlobal: false,
         uploadedById: session.userId,

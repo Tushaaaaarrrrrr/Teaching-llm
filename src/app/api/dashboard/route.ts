@@ -96,6 +96,14 @@ export async function GET() {
     const upcomingSessionsCount = syncedSessions.filter((session: any) => session.status === 'upcoming').length
     const activeSessionsCount = syncedSessions.filter((session: any) => session.status === 'live').length
 
+    // Calculate daysLeft from deadlineDate for examCountdown
+    const examCountdownWithDays = examCountdown && examCountdown.deadlineDate
+      ? {
+          ...examCountdown,
+          daysLeft: Math.max(0, Math.ceil((new Date(examCountdown.deadlineDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+        }
+      : examCountdown
+
     return NextResponse.json({
       stats: {
         totalCourses,
@@ -109,7 +117,7 @@ export async function GET() {
       lectures,
       announcements,
       upcomingExams,
-      examCountdown,
+      examCountdown: examCountdownWithDays,
       supportSummary: {
         openTickets: openTicketsCount,
         activeChats: activeChatSessionsCount,

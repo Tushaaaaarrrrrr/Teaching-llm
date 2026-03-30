@@ -49,6 +49,7 @@ export default function ManagePage() {
   const [formData, setFormData]         = useState<Record<string, any>>({})
   const [saving, setSaving]             = useState(false)
   const [copiedId, setCopiedId]         = useState<string | null>(null)
+  const [materialSourceType, setMaterialSourceType] = useState<'FILE' | 'LINK'>('FILE')
 
   // For lecture / material forms: topic selector
   const [topicsForCourse, setTopicsForCourse] = useState<any[]>([])
@@ -68,6 +69,7 @@ export default function ManagePage() {
     setEditId(null)
     setFormData(tab === 'courses' ? { isDisabled: false } : {})
     setTopicsForCourse([])
+    setMaterialSourceType('FILE')
     setShowModal(true)
   }
 
@@ -113,11 +115,13 @@ export default function ManagePage() {
       setShowModal(true)
       if (courseId) loadTopicsForCourse(courseId)
     } else if (tab === 'materials') {
+      setMaterialSourceType(item.sourceType || 'FILE')
       setFormData({
         id: item.id,
         title: item.title || '',
         description: item.description || '',
         fileUrl: item.fileUrl || '',
+        fileType: item.fileType || '',
         courseId: item.courseId || '',
       })
       setShowModal(true)
@@ -176,6 +180,8 @@ export default function ManagePage() {
           if (payload.endTime && !payload.endTime.includes('+') && !payload.endTime.includes('Z')) {
             payload.endTime += '+05:30';
           }
+        } else if (tab === 'materials') {
+          payload = { ...formData, sourceType: materialSourceType };
         }
 
         await fetch(url, {
@@ -188,6 +194,39 @@ export default function ManagePage() {
       loadData()
     } catch (e) { console.error(e) }
     setSaving(false)
+  }
+
+  async function handleDuplicate(course: any) {
+    const allowed = await confirm({
+      title: 'Duplicate Course?',
+      message: 'This will create a complete copy of the course with all topics, lectures, and materials.',
+      confirmLabel: 'Duplicate',
+      tone: 'default',
+    })
+    if (!allowed) return
+
+    try {
+      setSaving(true)
+      const res = await fetch(`/api/courses/${course.id}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || 'Failed to duplicate course')
+        return
+      }
+
+      const result = await res.json()
+      loadData()
+      alert(`Course duplicated successfully! New course ID: ${result.id}`)
+    } catch (e) {
+      console.error(e)
+      alert('Error duplicating course')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function handleDelete(id: string) {
@@ -496,7 +535,45 @@ export default function ManagePage() {
             </div>
             <div className="form-group"><label className="form-label">Topic Name *</label><input className="form-input" value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="e.g. Week 1 Slides" /></div>
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} rows={2} style={{ resize: 'vertical' }} /></div>
-            <div className="form-group"><label className="form-label">File URL *</label><input className="form-input" value={f.fileUrl || ''} onChange={e => set('fileUrl', e.target.value)} placeholder="https://… (PDF, PPT, DOCX, etc.)" /></div>
+
+            {/* Source Type Toggle */}
+            <div className="form-group">
+              <label className="form-label">Source Type *</label>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'FILE' ? '#6366f1' : '#e5e7eb'}`, background: materialSourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
+                  <input
+                    type="radio"
+                    name="materialSourceType"
+                    value="FILE"
+                    checked={materialSourceType === 'FILE'}
+                    onChange={() => setMaterialSourceType('FILE')}
+                    style={{ cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'FILE' ? '600' : '500', color: '#1e1e3a' }}>📄 Upload File</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'LINK' ? '#6366f1' : '#e5e7eb'}`, background: materialSourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
+                  <input
+                    type="radio"
+                    name="materialSourceType"
+                    value="LINK"
+                    checked={materialSourceType === 'LINK'}
+                    onChange={() => setMaterialSourceType('LINK')}
+                    style={{ cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'LINK' ? '600' : '500', color: '#1e1e3a' }}>🔗 External Link</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Show File URL or Link Input */}
+            {materialSourceType === 'FILE' ? (
+              <>
+                <div className="form-group"><label className="form-label">File URL *</label><input className="form-input" value={f.fileUrl || ''} onChange={e => set('fileUrl', e.target.value)} placeholder="https://… (PDF, PPT, DOCX, etc.)" /></div>
+                <div className="form-group"><label className="form-label">File Type</label><input className="form-input" value={f.fileType || ''} onChange={e => set('fileType', e.target.value)} placeholder="e.g. pdf, pptx, docx" /></div>
+              </>
+            ) : (
+              <div className="form-group"><label className="form-label">External Link URL *</label><input className="form-input" value={f.fileUrl || ''} onChange={e => set('fileUrl', e.target.value)} placeholder="https://example.com/resource" /></div>
+            )}
           </>
         )
 
@@ -805,6 +882,23 @@ export default function ManagePage() {
                         title={item.isExpired && !item.isDisabled ? 'This course is currently disabled by expiry. Change the expiry date to re-enable it.' : undefined}
                       >
                         {item.isDisabled ? 'Enable' : 'Disable'}
+                      </button>
+                    )}
+                    {tab === 'courses' && (
+                      <button
+                        onClick={() => handleDuplicate(item)}
+                        disabled={saving}
+                        className="btn btn-ghost btn-sm"
+                        style={{
+                          color: '#0ea5e9',
+                          border: '1px solid #cffafe',
+                        }}
+                        title="Duplicate this course"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><path d="M3 4h2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4h2"/><path d="M9 9h6v6H9z"/>
+                        </svg>
+                        Duplicate
                       </button>
                     )}
                     <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm">

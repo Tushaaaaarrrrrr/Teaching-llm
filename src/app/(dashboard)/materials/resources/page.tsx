@@ -36,6 +36,7 @@ const FILE_STYLES: Record<string, { color: string }> = {
   ZIP:  { color: '#8B5CF6' },
   PNG:  { color: '#EC4899' },
   JPG:  { color: '#EC4899' },
+  LINK: { color: '#0EA5E9' },
 }
 
 function getFileType(url: string, explicitType?: string): string {
@@ -66,6 +67,7 @@ export default function StudyResourcesPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [currentId, setCurrentId] = useState<string | null>(null)
+  const [sourceType, setSourceType] = useState<'FILE' | 'LINK'>('FILE')
 
   // Form states
   const [title, setTitle] = useState('')
@@ -84,6 +86,7 @@ export default function StudyResourcesPage() {
     setFileSize('')
     setIsGlobal(true)
     setCourseId('')
+    setSourceType('FILE')
     setIsEditing(false)
     setCurrentId(null)
   }
@@ -96,6 +99,7 @@ export default function StudyResourcesPage() {
     setFileSize(mat.fileSize || '')
     setIsGlobal(mat.isGlobal)
     setCourseId(mat.courseId || '')
+    setSourceType((mat as any).sourceType === 'LINK' ? 'LINK' : 'FILE')
     setIsEditing(true)
     setCurrentId(mat.id)
     setIsModalOpen(true)
@@ -153,11 +157,17 @@ export default function StudyResourcesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title || !fileUrl) {
-      alert('Title and file are required')
+      alert('Title and file/link are required')
       return
     }
     if (!isGlobal && !courseId) {
       alert('Please assign to a course or mark as global')
+      return
+    }
+
+    // Validate URL format
+    if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
+      alert('Please enter a valid URL starting with http:// or https://')
       return
     }
 
@@ -166,10 +176,11 @@ export default function StudyResourcesPage() {
       title,
       description,
       fileUrl,
-      fileType,
+      fileType: sourceType === 'LINK' ? 'link' : fileType,
       fileSize,
       isGlobal,
       courseId: isGlobal ? null : courseId,
+      sourceType,
     }
 
     try {
@@ -414,40 +425,79 @@ export default function StudyResourcesPage() {
                     style={{ minHeight: '80px', borderRadius: '18px', padding: '12px 16px' }}
                   />
                 </div>
-                
+
                 <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 700 }}>FILE SOURCE</label>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <div style={{ flex: 1, position: 'relative' }}>
-                      <input 
-                        type="file" 
-                        onChange={handleFileUpload}
-                        style={{ display: 'none' }}
-                        id="mat-file-upload"
+                  <label className="form-label" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 700 }}>SOURCE TYPE *</label>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'FILE' ? '#6366f1' : '#e5e7eb'}`, background: sourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
+                      <input
+                        type="radio"
+                        name="sourceType"
+                        checked={sourceType === 'FILE'}
+                        onChange={() => setSourceType('FILE')}
+                        style={{ cursor: 'pointer' }}
                       />
-                      <label 
-                        htmlFor="mat-file-upload"
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '10px',
-                          padding: '12px 20px', borderRadius: '14px',
-                          background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
-                          cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#6b6b8a'
-                        }}
-                      >
-                        {isUploading ? 'Uploading...' : fileUrl ? 'File selected' : 'Choose file...'}
-                      </label>
-                    </div>
-                    {fileUrl && (
-                      <div style={{ 
-                        padding: '12px 16px', borderRadius: '14px', 
-                        background: '#e0e7ff', color: '#6366f1',
-                        fontSize: '11px', fontWeight: '800'
-                      }}>
-                        {fileType}
-                      </div>
-                    )}
+                      <span style={{ fontSize: '13px', fontWeight: sourceType === 'FILE' ? '600' : '500', color: '#1e1e3a' }}>📄 Upload File</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'LINK' ? '#6366f1' : '#e5e7eb'}`, background: sourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
+                      <input
+                        type="radio"
+                        name="sourceType"
+                        checked={sourceType === 'LINK'}
+                        onChange={() => setSourceType('LINK')}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <span style={{ fontSize: '13px', fontWeight: sourceType === 'LINK' ? '600' : '500', color: '#1e1e3a' }}>🔗 External Link</span>
+                    </label>
                   </div>
                 </div>
+
+                {sourceType === 'FILE' ? (
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 700 }}>FILE SOURCE *</label>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <div style={{ flex: 1, position: 'relative' }}>
+                        <input
+                          type="file"
+                          onChange={handleFileUpload}
+                          style={{ display: 'none' }}
+                          id="mat-file-upload"
+                        />
+                        <label
+                          htmlFor="mat-file-upload"
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '12px 20px', borderRadius: '14px',
+                            background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                            cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#6b6b8a'
+                          }}
+                        >
+                          {isUploading ? 'Uploading...' : fileUrl ? 'File selected' : 'Choose file...'}
+                        </label>
+                      </div>
+                      {fileUrl && (
+                        <div style={{
+                          padding: '12px 16px', borderRadius: '14px',
+                          background: '#e0e7ff', color: '#6366f1',
+                          fontSize: '11px', fontWeight: '800'
+                        }}>
+                          {fileType}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 700 }}>EXTERNAL LINK URL *</label>
+                    <input
+                      className="form-input"
+                      value={fileUrl}
+                      onChange={e => setFileUrl(e.target.value)}
+                      placeholder="https://example.com/resource"
+                      style={{ borderRadius: '16px' }}
+                    />
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 700 }}>ASSIGNMENT</label>

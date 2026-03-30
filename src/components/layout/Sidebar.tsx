@@ -271,38 +271,37 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
       bottom: 0,
       zIndex: 100,
     }}>
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '4px 8px', marginBottom: '36px' }}>
+      {/* Logo & Portal Label */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px', padding: '4px 8px', marginBottom: '36px' }}>
         <div style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '16px',
-          background: '#e8eaf0',
-          boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
           flexShrink: 0,
           overflow: 'hidden',
+          width: '100%',
+          maxWidth: '175px',
+          minHeight: '72px',
+          padding: '10px 14px',
+          borderRadius: '20px',
+          background: '#e8eaf0',
+          boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
         }}>
           <img 
             src="/logo.png" 
-            alt="Alpha IITIAN Logo" 
+            alt="GENz IITIAN Logo" 
             style={{ 
-              width: '100%', 
-              height: '100%', 
+              width: '100%',
+              maxWidth: '150px',
+              height: 'auto', 
+              maxHeight: '48px',
               objectFit: 'contain',
-              padding: '0px'
+              display: 'block',
             }} 
           />
         </div>
-        <div>
-          <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a', lineHeight: '1.2' }}>
-            Alpha IITIAN
-          </div>
-          <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '1px', fontWeight: '600' }}>
-            {roleLabel} Portal
-          </div>
+        <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '800', letterSpacing: '0.01em', textTransform: 'uppercase', paddingLeft: '2px' }}>
+          {roleLabel} Portal
         </div>
       </div>
 

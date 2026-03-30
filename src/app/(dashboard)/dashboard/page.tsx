@@ -21,6 +21,28 @@ export default function DashboardPage() {
     return () => window.clearInterval(intervalId)
   }, [])
 
+  // Auto-refresh countdown timer at 12:01 AM each day
+  useEffect(() => {
+    const refreshAtMidnight = () => {
+      const now = new Date()
+      const tomorrow = new Date(now)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(0, 1, 0, 0) // 12:01 AM
+
+      const timeUntilMidnight = tomorrow.getTime() - now.getTime()
+
+      const timerId = window.setTimeout(() => {
+        mutate() // Refresh data at 12:01 AM
+        refreshAtMidnight() // Schedule next refresh
+      }, timeUntilMidnight)
+
+      return () => window.clearTimeout(timerId)
+    }
+
+    const cleanup = refreshAtMidnight()
+    return cleanup
+  }, [])
+
   const handleNextLive = () => {
     if (!dashboardData?.liveSessions?.length) return
     setSliding(true)

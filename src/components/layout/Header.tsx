@@ -98,7 +98,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
     .sort((a, b) => b.length - a.length)
     .find(key => key === pathname || (key !== '/dashboard' && pathname.startsWith(key)))
     
-  const pageInfo = matchedKey ? PAGE_TITLES[matchedKey] : { title: 'Alpha IITIAN', subtitle: '' }
+  const pageInfo = matchedKey ? PAGE_TITLES[matchedKey] : { title: 'Dashboard', subtitle: '' }
 
   const getGreeting = () => {
     const hour = new Date().getHours()

@@ -177,9 +177,10 @@ model Material {
   courseId     String?  @map("classId")
   title        String
   description  String?
-  fileUrl      String
-  fileType     String
+  fileUrl      String      // URL to file (either uploaded file or external link)
+  fileType     String      // Original file type (pdf, docx, etc.) or "link"
   fileSize     String?
+  sourceType   String   @default("FILE")  // "FILE" for uploads, "LINK" for external links
   uploadedById String
   uploadedAt   DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -627,10 +628,10 @@ model UpdateSystemSettings {
 }
 
 model ExamCountdown {
-  id        String   @id @default(cuid())
-  title     String   @default("Upcoming Exam")
-  daysLeft  Int      @default(0)
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(cuid())
+  title          String    @default("Upcoming Exam")
+  deadlineDate   DateTime? // When the countdown ends (calculated from deadline date at 12:01 AM IST)
+  updatedAt      DateTime  @updatedAt
 }
 
 model Feedback {

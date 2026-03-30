@@ -43,9 +43,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { courseId, title, description, fileUrl, fileType, fileSize, isGlobal } =
+    const { courseId, title, description, fileUrl, fileType, fileSize, isGlobal, sourceType } =
       await request.json()
 
+    // Validate sourceType
+    const validSourceType = sourceType === 'LINK' ? 'LINK' : 'FILE'
 
     const material = await prisma.material.create({
       data: {
@@ -53,8 +55,9 @@ export async function POST(request: NextRequest) {
         title,
         description,
         fileUrl,
-        fileType,
+        fileType: validSourceType === 'LINK' ? 'link' : fileType,
         fileSize,
+        sourceType: validSourceType,
         isGlobal: !!isGlobal,
         uploadedById: session.userId,
       },

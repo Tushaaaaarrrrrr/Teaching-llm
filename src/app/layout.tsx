@@ -3,7 +3,7 @@ import './globals.css'
 import CsrfProvider from '@/components/CsrfProvider'
 
 export const metadata: Metadata = {
-  title: 'Alpha IITIAN',
+  title: 'GENz IITIAN',
   description: 'Upgrade How You Learn',
 }
 
