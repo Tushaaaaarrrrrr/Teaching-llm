@@ -72,6 +72,28 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
       .flatMap(bundle => (bundle.courses || []).map(entry => entry.course.id))
   )
 
+  function normalizeCollection<T>(value: unknown, nestedKey?: string): T[] {
+    if (Array.isArray(value)) return value as T[]
+    if (nestedKey && value && typeof value === 'object') {
+      const nested = (value as Record<string, unknown>)[nestedKey]
+      if (Array.isArray(nested)) return nested as T[]
+    }
+    return []
+  }
+
+  function getSafeDisplayName(data: Partial<User> | null | undefined) {
+    const fullName = data?.name?.trim()
+    if (fullName) return fullName
+    const composedName = [data?.firstName?.trim(), data?.lastName?.trim()].filter(Boolean).join(' ')
+    return composedName || 'Unknown User'
+  }
+
+  function parseDate(value?: string) {
+    if (!value) return null
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+
   useEffect(() => {
     if (userId) {
       loadUser(userId)
@@ -86,21 +108,33 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
       const res = await fetch(`/api/users/${id}`)
       const data = await res.json()
       if (res.ok) {
-        setUser(data)
+        const normalizedUser = {
+          ...data,
+          name: getSafeDisplayName(data),
+          enrollments: normalizeCollection(data?.enrollments),
+          instructorAssignments: normalizeCollection(data?.instructorAssignments),
+          courseBundleAssignments: normalizeCollection(data?.courseBundleAssignments),
+        }
+        setUser(normalizedUser)
         setFormData({
-            name: data.name || '',
+            name: normalizedUser.name,
             firstName: data.firstName || '',
             lastName: data.lastName || '',
             mobileNumber: data.mobileNumber || '',
             email: data.email || '',
             role: data.role || '',
             gender: data.gender || 'MALE',
-            courseIds: data.enrollments?.map((e: any) => e.courseId) || [],
-            bundleIds: data.courseBundleAssignments?.map((b: any) => b.bundleId) || [],
+            courseIds: normalizeCollection<any>(data?.enrollments).map((e: any) => e.courseId),
+            bundleIds: normalizeCollection<any>(data?.courseBundleAssignments).map((b: any) => b.bundleId),
         })
+      } else {
+        setUser(null)
+        setError(data?.error || 'Failed to load user')
       }
     } catch (e) {
       console.error(e)
+      setUser(null)
+      setError('Failed to load user')
     } finally {
       setLoading(false)
     }
@@ -110,9 +144,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     try {
       const res = await fetch('/api/courses')
       const data = await res.json()
-      setCourses(data.courses || data || [])
+      setCourses(normalizeCollection<CourseInfo>(data, 'courses'))
     } catch (e) {
       console.error(e)
+      setCourses([])
     }
   }
 
@@ -120,9 +155,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     try {
       const res = await fetch('/api/course-bundles')
       const data = await res.json()
-      setBundles(data.bundles || data || [])
+      setBundles(normalizeCollection<CourseBundleInfo>(data, 'bundles'))
     } catch (e) {
       console.error(e)
+      setBundles([])
     }
   }
 
@@ -192,6 +228,16 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
 
   if (!userId) return null
 
+  const displayName = getSafeDisplayName(user)
+  const createdAtDate = parseDate(user?.createdAt)
+  const createdAtLabel = createdAtDate
+    ? createdAtDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : 'Unknown'
+  const isRecentlyCreated = createdAtDate
+    ? (Date.now() - createdAtDate.getTime()) <= 10 * 24 * 60 * 60 * 1000
+    : false
+  const displayInitial = displayName.charAt(0).toUpperCase() || '?'
+
   const neuBox = {
     background: '#f0f2f8',
     boxShadow: '8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff',
@@ -251,10 +297,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 {user.avatar || user.gender ? (
                   <img src={user.avatar || getDefaultAvatar(formData.gender || user.gender)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <div style={{ fontSize: '32px', fontWeight: '800', color: '#6366f1' }}>{user.name.charAt(0).toUpperCase()}</div>
+                  <div style={{ fontSize: '32px', fontWeight: '800', color: '#6366f1' }}>{displayInitial}</div>
                 )}
               </div>
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', marginBottom: '2px' }}>{user.name}</h2>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', marginBottom: '2px' }}>{displayName}</h2>
               <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: '600' }}>{user.role} Account</div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                 {user.isGoogleUser && (
@@ -274,7 +320,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     Google Authenticated
                   </span>
                 )}
-                {((new Date().getTime() - new Date(user.createdAt).getTime()) <= 10 * 24 * 60 * 60 * 1000) && (
+                {isRecentlyCreated && (
                   <span style={{
                     fontSize: '10px', fontWeight: '700', color: '#065f46',
                     background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)', padding: '3px 10px', borderRadius: '20px',
@@ -324,7 +370,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
               </div>
               <div>
                 <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Account Created</label>
-                <div style={neuInset}>{new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                <div style={neuInset}>{createdAtLabel}</div>
               </div>
             </div>
 

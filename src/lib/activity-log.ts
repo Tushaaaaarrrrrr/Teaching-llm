@@ -17,6 +17,7 @@ export const MODULE = {
   EXAMS: 'Exams',
   PROFILE: 'Profile',
   FAQ: 'FAQ',
+  ENROLLMENT: 'Enrollment',
 } as const
 
 export const ACTION = {
@@ -77,6 +78,7 @@ export const ACTION = {
   POLL_CREATED: 'POLL_CREATED',
   POLL_VOTED: 'POLL_VOTED',
   POLL_DELETED: 'POLL_DELETED',
+  EXTERNAL_ENROLLMENT: 'EXTERNAL_ENROLLMENT',
 } as const
 
 interface LogActivityParams {

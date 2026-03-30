@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { checkRateLimit, isMaintenanceModeActive } from '@/lib/ratelimit'
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated', '/api/maintenance-status']
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated', '/api/maintenance-status', '/api/external-enroll']
 const COOKIE_NAME = 'teaching_llm_token'
 const JWT_SECRET = process.env.JWT_SECRET?.trim() || ''
 
@@ -15,6 +15,7 @@ const CSRF_EXEMPT_PATHS = [
   '/api/auth/google',
   '/api/auth/logout',
   '/api/sync-queue', // cron job — has its own auth via CRON_SECRET
+  '/api/external-enroll', // external purchase system — has its own auth via EXTERNAL_ENROLL_SECRET
 ]
 
 export async function middleware(request: NextRequest) {

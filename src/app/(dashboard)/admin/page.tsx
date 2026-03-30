@@ -84,6 +84,25 @@ export default function AdminPage() {
   const [editingUserIsSuperManager, setEditingUserIsSuperManager] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
+  function getDisplayName(user: Partial<User>) {
+    const fullName = user.name?.trim()
+    if (fullName) return fullName
+    const composedName = [user.firstName?.trim(), user.lastName?.trim()].filter(Boolean).join(' ')
+    return composedName || 'Unknown User'
+  }
+
+  function getInitials(name: string) {
+    const parts = name.split(' ').filter(Boolean)
+    if (parts.length === 0) return '?'
+    return parts.map(part => part[0]).join('').toUpperCase().slice(0, 2)
+  }
+
+  function parseDate(value?: string) {
+    if (!value) return null
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+
 
   useEffect(() => {
     loadUsers()
@@ -148,6 +167,8 @@ export default function AdminPage() {
   }
 
   function openEdit(user: User) {
+    const displayName = getDisplayName(user)
+    const [firstFallback = '', ...restFallback] = displayName.split(' ')
     if (user.isSuperManager) {
       setEditingUserIsSuperManager(true)
     } else {
@@ -155,9 +176,9 @@ export default function AdminPage() {
     }
     setEditId(user.id)
     setForm({
-      name: user.name,
-      firstName: user.firstName || user.name.split(' ')[0] || '',
-      lastName: user.lastName || user.name.split(' ').slice(1).join(' ') || '',
+      name: displayName,
+      firstName: user.firstName || firstFallback,
+      lastName: user.lastName || restFallback.join(' '),
       mobileNumber: user.mobileNumber || '',
       email: user.email,
       password: '',
@@ -440,7 +461,15 @@ export default function AdminPage() {
           <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {filtered.map(user => {
               const rc = roleColors[user.role] || roleColors.STUDENT
-              const initials = user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+              const displayName = getDisplayName(user)
+              const initials = getInitials(displayName)
+              const createdAtDate = parseDate(user.createdAt)
+              const isNewUser = createdAtDate
+                ? (Date.now() - createdAtDate.getTime()) <= 10 * 24 * 60 * 60 * 1000
+                : false
+              const createdAtLabel = createdAtDate
+                ? createdAtDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : 'Unknown'
               return (
                 <div key={user.id} style={{
                   display: 'flex',
@@ -470,7 +499,7 @@ export default function AdminPage() {
                       onClick={() => setSelectedUserId(user.id)}
                       style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', textDecoration: 'underline' }}
                     >
-                      {user.name}
+                      {displayName}
                       {user.gender && (
                         <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: '400' }}>({user.gender})</span>
                       )}
@@ -567,7 +596,7 @@ export default function AdminPage() {
                           GOOGLE
                         </span>
                       )}
-                      {((new Date().getTime() - new Date(user.createdAt).getTime()) <= 10 * 24 * 60 * 60 * 1000) && (
+                      {isNewUser && (
                         <span style={{
                           fontSize: '10px', fontWeight: '700', color: '#065f46',
                           background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)', padding: '3px 10px', borderRadius: '20px',
@@ -588,9 +617,7 @@ export default function AdminPage() {
                     
                     {/* Date Column */}
                     <div style={{ width: '100px', flexShrink: 0, textAlign: 'right', fontSize: '12px', color: '#9999b0', fontWeight: '500' }}>
-                      {new Date(user.createdAt).toLocaleDateString('en-US', {
-                        month: 'short', day: 'numeric', year: 'numeric'
-                      })}
+                      {createdAtLabel}
                     </div>
 
                     {/* Actions Column */}
