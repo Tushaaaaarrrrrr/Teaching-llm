@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { hashPassword } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseEffectivelyDisabled } from '@/lib/course-state'
+import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 
 const EXTERNAL_SECRET = process.env.EXTERNAL_ENROLL_SECRET?.trim()
 
@@ -10,7 +11,7 @@ const EXTERNAL_SECRET = process.env.EXTERNAL_ENROLL_SECRET?.trim()
  * POST /api/external-enroll
  *
  * Called by an external payment system after a successful purchase.
- * Creates the user (if new) and enrolls them into the purchased course.
+ * Creates the user (if new) and enrolls them into the purchased course(s).
  *
  * Auth: secret key in request body (NOT JWT-based).
  * Idempotent: safe to retry — duplicate enrollments are silently skipped.
@@ -28,11 +29,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { secret, email, name, courseId, phone, gender } = body as {
+    const { secret, email, name, courseId, courseIds, phone, gender } = body as {
       secret?: string
       email?: string
       name?: string
       courseId?: string
+      courseIds?: string[]
       phone?: string
       gender?: string
     }
@@ -67,9 +69,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!courseId || typeof courseId !== 'string') {
+    const normalizedCourseIds = Array.from(new Set([
+      ...(typeof courseId === 'string' ? [courseId] : []),
+      ...(Array.isArray(courseIds) ? courseIds.filter((id): id is string => typeof id === 'string' && id.trim().length > 0) : []),
+    ]))
+
+    if (normalizedCourseIds.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'courseId is required' },
+        { success: false, error: 'courseId or courseIds is required' },
         { status: 400 }
       )
     }
@@ -78,21 +85,25 @@ export async function POST(request: NextRequest) {
     const trimmedName = name.trim()
 
     // ─── 3. Verify Course Exists & Is Active ──────────────────────────
-    const course = await prisma.course.findUnique({
-      where: { id: courseId },
+    const courses = await prisma.course.findMany({
+      where: { id: { in: normalizedCourseIds } },
       select: { id: true, name: true, isDisabled: true, expiresAt: true },
     })
 
-    if (!course) {
+    const courseMap = new Map(courses.map(course => [course.id, course]))
+    const missingCourseIds = normalizedCourseIds.filter(id => !courseMap.has(id))
+
+    if (missingCourseIds.length > 0) {
       return NextResponse.json(
-        { success: false, error: `Course not found: ${courseId}` },
+        { success: false, error: `Course not found: ${missingCourseIds.join(', ')}` },
         { status: 400 }
       )
     }
 
-    if (isCourseEffectivelyDisabled(course)) {
+    const blockedCourses = courses.filter(course => isCourseEffectivelyDisabled(course))
+    if (blockedCourses.length > 0) {
       return NextResponse.json(
-        { success: false, error: `Course is disabled or expired: ${course.name}` },
+        { success: false, error: `Course is disabled or expired: ${blockedCourses.map(course => course.name).join(', ')}` },
         { status: 400 }
       )
     }
@@ -143,7 +154,7 @@ export async function POST(request: NextRequest) {
           where: { isDemo: true },
           select: { id: true },
         })
-        if (demoCourse && demoCourse.id !== courseId) {
+        if (demoCourse && !normalizedCourseIds.includes(demoCourse.id)) {
           // Check before create — .catch() inside a Prisma interactive transaction
           // can abort the entire transaction on unique constraint violations
           const existingDemoEnroll = await tx.enrollment.findUnique({
@@ -156,81 +167,120 @@ export async function POST(request: NextRequest) {
             await tx.enrollment.create({
               data: { userId: user.id, courseId: demoCourse.id },
             })
+            await queueGoogleGroupSyncJobs(tx, {
+              userEmail: user.email,
+              courseIds: [demoCourse.id],
+              action: 'ADD',
+            })
           }
         }
       }
 
       // 4d. Enroll in the purchased course (skip if already enrolled)
-      const existingEnrollment = await tx.enrollment.findUnique({
-        where: {
-          userId_courseId: { userId: user.id, courseId },
-        },
-        select: { id: true },
-      })
+      const enrollmentResults: Array<{
+        courseId: string
+        courseName: string
+        enrollmentId: string
+        isNewEnrollment: boolean
+      }> = []
 
-      if (existingEnrollment) {
-        return {
-          userId: user.id,
-          userName: user.name,
-          userEmail: user.email,
-          enrollmentId: existingEnrollment.id,
-          isNewUser,
-          isNewEnrollment: false,
+      for (const targetCourseId of normalizedCourseIds) {
+        const existingEnrollment = await tx.enrollment.findUnique({
+          where: {
+            userId_courseId: { userId: user.id, courseId: targetCourseId },
+          },
+          select: { id: true },
+        })
+
+        if (existingEnrollment) {
+          enrollmentResults.push({
+            courseId: targetCourseId,
+            courseName: courseMap.get(targetCourseId)?.name || targetCourseId,
+            enrollmentId: existingEnrollment.id,
+            isNewEnrollment: false,
+          })
+          continue
         }
-      }
 
-      const enrollment = await tx.enrollment.create({
-        data: { userId: user.id, courseId },
-        select: { id: true },
-      })
+        const enrollment = await tx.enrollment.create({
+          data: { userId: user.id, courseId: targetCourseId },
+          select: { id: true },
+        })
+
+        await queueGoogleGroupSyncJobs(tx, {
+          userEmail: user.email,
+          courseIds: [targetCourseId],
+          action: 'ADD',
+        })
+
+        enrollmentResults.push({
+          courseId: targetCourseId,
+          courseName: courseMap.get(targetCourseId)?.name || targetCourseId,
+          enrollmentId: enrollment.id,
+          isNewEnrollment: true,
+        })
+      }
 
       return {
         userId: user.id,
         userName: user.name,
         userEmail: user.email,
-        enrollmentId: enrollment.id,
         isNewUser,
-        isNewEnrollment: true,
+        enrollments: enrollmentResults,
       }
     })
 
     // ─── 5. Activity Log (fire-and-forget, outside transaction) ───────
-    const logDesc = result.isNewUser
-      ? `External purchase: Created user "${result.userName}" (${result.userEmail}) and enrolled in "${course.name}"`
-      : result.isNewEnrollment
-        ? `External purchase: Enrolled existing user "${result.userName}" (${result.userEmail}) in "${course.name}"`
-        : `External purchase: User "${result.userName}" (${result.userEmail}) already enrolled in "${course.name}" — skipped`
+    result.enrollments.forEach(enrollment => {
+      const logDesc = result.isNewUser
+        ? `External purchase: Created user "${result.userName}" (${result.userEmail}) and enrolled in "${enrollment.courseName}"`
+        : enrollment.isNewEnrollment
+          ? `External purchase: Enrolled existing user "${result.userName}" (${result.userEmail}) in "${enrollment.courseName}"`
+          : `External purchase: User "${result.userName}" (${result.userEmail}) already enrolled in "${enrollment.courseName}" — skipped`
 
-    logActivity({
-      userId: result.userId,
-      userName: result.userName,
-      userRole: 'STUDENT',
-      actionType: ACTION.EXTERNAL_ENROLLMENT,
-      actionDescription: logDesc,
-      moduleName: MODULE.ENROLLMENT,
-      targetId: result.enrollmentId,
-      metadata: {
-        source: 'PURCHASE',
-        courseId,
-        courseName: course.name,
-        isNewUser: result.isNewUser,
-        isNewEnrollment: result.isNewEnrollment,
-      },
+      logActivity({
+        userId: result.userId,
+        userName: result.userName,
+        userRole: 'STUDENT',
+        actionType: ACTION.EXTERNAL_ENROLLMENT,
+        actionDescription: logDesc,
+        moduleName: MODULE.ENROLLMENT,
+        targetId: enrollment.enrollmentId,
+        metadata: {
+          source: 'PURCHASE',
+          courseId: enrollment.courseId,
+          courseName: enrollment.courseName,
+          isNewUser: result.isNewUser,
+          isNewEnrollment: enrollment.isNewEnrollment,
+        },
+      })
     })
 
     // ─── 6. Response ──────────────────────────────────────────────────
+    const newEnrollmentCount = result.enrollments.filter(enrollment => enrollment.isNewEnrollment).length
+    const skippedEnrollmentCount = result.enrollments.length - newEnrollmentCount
+    const isSingleCourseRequest = result.enrollments.length === 1
+    const singleEnrollment = isSingleCourseRequest ? result.enrollments[0] : null
+
     const message = result.isNewUser
-      ? 'User created and enrolled successfully'
-      : result.isNewEnrollment
-        ? 'Existing user enrolled in new course successfully'
-        : 'User is already enrolled in this course'
+      ? isSingleCourseRequest
+        ? 'User created and enrolled successfully'
+        : `User created and processed ${result.enrollments.length} course enrollments`
+      : isSingleCourseRequest
+        ? singleEnrollment?.isNewEnrollment
+          ? 'Existing user enrolled in new course successfully'
+          : 'User is already enrolled in this course'
+        : `Processed ${result.enrollments.length} course enrollments (${newEnrollmentCount} new, ${skippedEnrollmentCount} already enrolled)`
 
     return NextResponse.json({
       success: true,
       userId: result.userId,
-      enrollmentId: result.enrollmentId,
       isNewUser: result.isNewUser,
-      isNewEnrollment: result.isNewEnrollment,
+      ...(singleEnrollment ? {
+        enrollmentId: singleEnrollment.enrollmentId,
+        isNewEnrollment: singleEnrollment.isNewEnrollment,
+      } : {}),
+      enrollments: result.enrollments,
       message,
     })
   } catch (error) {

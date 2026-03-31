@@ -69,6 +69,7 @@ model Course {
   name                  String
   description           String?
   subject               String?
+  googleGroupEmail      String?
   color                 String                 @default("#4F46E5")
   icon                  String                 @default("BookOpen")
   createdById           String
@@ -95,6 +96,7 @@ model Course {
   materials             Material[]
   supportTickets        SupportTicket[]
   topics                Topic[]
+  groupSyncJobs         GroupSyncJob[]
 
   @@map("Class")
 }
@@ -662,4 +664,23 @@ model SyncQueue {
 
   @@index([processed])
   @@index([processAt])
+}
+
+model GroupSyncJob {
+  id           String   @id @default(cuid())
+  userEmail    String
+  courseId     String   @map("classId")
+  groupEmail   String
+  action       String
+  status       String   @default("PENDING")
+  attemptCount Int      @default(0)
+  lastError    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([status, attemptCount])
+  @@index([courseId])
+  @@index([userEmail])
+  @@index([createdAt])
 }

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession, hashPassword } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseExpired } from '@/lib/course-state'
+import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 
 export async function GET(
   request: NextRequest,
@@ -138,6 +139,13 @@ export async function PUT(
     }
 
     const updatedUser = await prisma.$transaction(async (tx) => {
+      const existingEnrollmentRows = (nextCourseIds !== undefined || nextBundleIds !== undefined)
+        ? await tx.enrollment.findMany({
+            where: { userId: id },
+            select: { courseId: true },
+          })
+        : []
+
       const user = await tx.user.update({
         where: { id },
         data,
@@ -179,6 +187,10 @@ export async function PUT(
           throw new Error(`Disabled or expired courses cannot be assigned: ${unavailableCourses.map(course => course.name).join(', ')}`)
         }
 
+        const previousCourseIds = existingEnrollmentRows.map(row => row.courseId)
+        const addedCourseIds = effectiveCourseIds.filter(courseId => !previousCourseIds.includes(courseId))
+        const removedCourseIds = previousCourseIds.filter(courseId => !effectiveCourseIds.includes(courseId))
+
         await tx.enrollment.deleteMany({ where: { userId: id } })
         if (effectiveCourseIds.length > 0) {
           await tx.enrollment.createMany({
@@ -186,6 +198,21 @@ export async function PUT(
               userId: id,
               courseId,
             })),
+          })
+        }
+
+        if (addedCourseIds.length > 0) {
+          await queueGoogleGroupSyncJobs(tx, {
+            userEmail: user.email,
+            courseIds: addedCourseIds,
+            action: 'ADD',
+          })
+        }
+        if (removedCourseIds.length > 0) {
+          await queueGoogleGroupSyncJobs(tx, {
+            userEmail: user.email,
+            courseIds: removedCourseIds,
+            action: 'REMOVE',
           })
         }
       }
@@ -310,8 +337,26 @@ export async function DELETE(
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 })
     }
 
-    const targetUser = await prisma.user.findUnique({ where: { id }, select: { name: true, email: true, role: true } })
-    await prisma.user.delete({ where: { id } })
+    const targetUser = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        name: true,
+        email: true,
+        role: true,
+        enrollments: { select: { courseId: true } },
+      },
+    })
+
+    await prisma.$transaction(async (tx) => {
+      if (targetUser?.email && targetUser.enrollments.length > 0) {
+        await queueGoogleGroupSyncJobs(tx, {
+          userEmail: targetUser.email,
+          courseIds: targetUser.enrollments.map(enrollment => enrollment.courseId),
+          action: 'REMOVE',
+        })
+      }
+      await tx.user.delete({ where: { id } })
+    })
 
     logActivity({
       userId: session.userId,

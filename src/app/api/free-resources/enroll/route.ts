@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,12 +40,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Already enrolled' })
     }
 
-    await (prisma.enrollment.create as any)({
-      data: {
-        userId: session.userId,
-        courseId,
-        isFreeEnrollment: true,
-      },
+    await prisma.$transaction(async (tx) => {
+      await (tx.enrollment.create as any)({
+        data: {
+          userId: session.userId,
+          courseId,
+          isFreeEnrollment: true,
+        },
+      })
+      await queueGoogleGroupSyncJobs(tx, {
+        userEmail: session.email,
+        courseIds: [courseId],
+        action: 'ADD',
+      })
     })
 
     return NextResponse.json({ message: 'Successfully enrolled' }, { status: 201 })
@@ -89,10 +97,17 @@ export async function DELETE(request: NextRequest) {
        return NextResponse.json({ error: 'Cannot self-unenroll from paid courses' }, { status: 403 })
     }
 
-    await prisma.enrollment.delete({
-      where: {
-        id: enrollment.id,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.enrollment.delete({
+        where: {
+          id: enrollment.id,
+        },
+      })
+      await queueGoogleGroupSyncJobs(tx, {
+        userEmail: session.email,
+        courseIds: [courseId],
+        action: 'REMOVE',
+      })
     })
 
     return NextResponse.json({ message: 'Successfully unenrolled' })

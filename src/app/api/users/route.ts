@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession, hashPassword } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseExpired } from '@/lib/course-state'
+import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 
 export async function GET() {
   try {
@@ -186,6 +187,11 @@ export async function POST(request: NextRequest) {
             userId: newUser.id,
             courseId,
           })),
+        })
+        await queueGoogleGroupSyncJobs(tx, {
+          userEmail: newUser.email,
+          courseIds: effectiveCourseIds,
+          action: 'ADD',
         })
       }
 

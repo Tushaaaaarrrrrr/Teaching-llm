@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { signToken, getCookieConfig, hashPassword } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { v4 as uuidv4 } from 'uuid'
+import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 
@@ -84,11 +85,18 @@ export async function POST(request: NextRequest) {
       })
 
       if (demoCourse) {
-        await prisma.enrollment.create({
-          data: {
-            userId: user.id,
-            courseId: demoCourse.id
-          }
+        await prisma.$transaction(async (tx) => {
+          await tx.enrollment.create({
+            data: {
+              userId: user.id,
+              courseId: demoCourse.id
+            }
+          })
+          await queueGoogleGroupSyncJobs(tx, {
+            userEmail: user.email,
+            courseIds: [demoCourse.id],
+            action: 'ADD',
+          })
         })
       }
     }

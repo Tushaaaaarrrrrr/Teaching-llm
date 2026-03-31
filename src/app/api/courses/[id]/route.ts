@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, isManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
+import { queueExplicitGoogleGroupSyncJobs, validateGoogleGroupEmail } from '@/lib/google-group-sync'
 
 export async function GET(
   request: NextRequest,
@@ -129,7 +130,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled, googleGroupEmail } = await request.json()
 
     if (isDisabled !== undefined && !isManager(session.role)) {
       return NextResponse.json({ error: 'Only managers can enable or disable courses' }, { status: 403 })
@@ -152,22 +153,57 @@ export async function PUT(
     }
 
     // Demo state and Free state are immutable on edit.
+    const normalizedGoogleGroupEmail = validateGoogleGroupEmail(googleGroupEmail)
 
-    const updatedCourse = await (prisma.course.update as any)({
-      where: { id },
-      data: { 
-        name, 
-        description, 
-        subject, 
-        color, 
-        icon,
-        teacherName: teacherName || null,
-        isDemo: existingCourse.isDemo, // Never change on update
-        isFree: existingCourse.isFree, // Never change on update
-        isCommunityActive: isCommunityActive !== undefined ? !!isCommunityActive : undefined,
-        isDisabled: isDisabled !== undefined ? !!isDisabled : undefined,
-        expiresAt: expiresAt ? new Date(expiresAt) : null 
-      },
+    const updatedCourse = await prisma.$transaction(async (tx) => {
+      const updated = await (tx.course.update as any)({
+        where: { id },
+        data: {
+          name,
+          description,
+          subject,
+          color,
+          icon,
+          teacherName: teacherName || null,
+          googleGroupEmail: normalizedGoogleGroupEmail,
+          isDemo: existingCourse.isDemo,
+          isFree: existingCourse.isFree,
+          isCommunityActive: isCommunityActive !== undefined ? !!isCommunityActive : undefined,
+          isDisabled: isDisabled !== undefined ? !!isDisabled : undefined,
+          expiresAt: expiresAt ? new Date(expiresAt) : null
+        },
+      })
+
+      if (existingCourse.googleGroupEmail !== normalizedGoogleGroupEmail) {
+        const enrollments = await tx.enrollment.findMany({
+          where: { courseId: id },
+          include: {
+            user: {
+              select: { email: true },
+            },
+          },
+        })
+
+        if (existingCourse.googleGroupEmail) {
+          await queueExplicitGoogleGroupSyncJobs(tx, enrollments.map(enrollment => ({
+            userEmail: enrollment.user.email,
+            courseId: id,
+            groupEmail: existingCourse.googleGroupEmail as string,
+            action: 'REMOVE' as const,
+          })))
+        }
+
+        if (normalizedGoogleGroupEmail) {
+          await queueExplicitGoogleGroupSyncJobs(tx, enrollments.map(enrollment => ({
+            userEmail: enrollment.user.email,
+            courseId: id,
+            groupEmail: normalizedGoogleGroupEmail,
+            action: 'ADD' as const,
+          })))
+        }
+      }
+
+      return updated
     })
 
     logActivity({

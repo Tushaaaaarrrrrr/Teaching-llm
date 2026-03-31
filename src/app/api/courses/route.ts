@@ -5,6 +5,7 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { sanitizeInput } from '@/lib/validation'
 import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
+import { queueGoogleGroupSyncJobs, validateGoogleGroupEmail } from '@/lib/google-group-sync'
 
 export async function GET() {
   try {
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isDisabled, isFree } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isDisabled, isFree, googleGroupEmail } = await request.json()
 
     // 1. Rate Limiting
     const rateLimit = await checkRateLimit(session.userId, 'general')
@@ -126,6 +127,7 @@ export async function POST(request: NextRequest) {
     const sanitizedDescription = description ? sanitizeInput(description) : null
     const sanitizedSubject = sanitizeInput(subject)
     const sanitizedTeacherName = teacherName ? sanitizeInput(teacherName) : null
+    const normalizedGoogleGroupEmail = validateGoogleGroupEmail(googleGroupEmail)
     
     // Validate expiresAt if provided
     if (expiresAt) {
@@ -156,6 +158,7 @@ export async function POST(request: NextRequest) {
           color,
           icon,
           teacherName: sanitizedTeacherName,
+          googleGroupEmail: normalizedGoogleGroupEmail,
           isDemo: !!isDemo,
           isFree: !!isFree,
           isDisabled: !!isDisabled,
@@ -168,6 +171,11 @@ export async function POST(request: NextRequest) {
       if (session.role === 'ADMIN') {
         await tx.enrollment.create({
           data: { userId: session.userId, courseId: cls.id },
+        })
+        await queueGoogleGroupSyncJobs(tx, {
+          userEmail: session.email,
+          courseIds: [cls.id],
+          action: 'ADD',
         })
       }
 

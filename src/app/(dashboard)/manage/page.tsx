@@ -21,6 +21,7 @@ export default function ManagePage() {
   const { data: announcementsData, isLoading: loadingAnnouncements } = useSWR('/api/announcements', fetcher)
   const { data: contentBankData, isLoading: loadingBank } = useSWR('/api/content-bank', fetcher)
   const { data: instructorsData } = useSWR('/api/instructors', fetcher)
+  const { data: googleSyncJobsData } = useSWR(userRole === 'MANAGER' ? '/api/group-sync-jobs' : null, fetcher)
 
   const courses = coursesData?.courses || coursesData || []
   const bundles = bundlesData?.bundles || bundlesData || []
@@ -30,8 +31,21 @@ export default function ManagePage() {
   const announcements = announcementsData?.announcements || announcementsData || []
   const bankQuestions = Array.isArray(contentBankData) ? contentBankData : []
   const instructors = instructorsData || []
+  const googleSyncJobs = Array.isArray(googleSyncJobsData) ? googleSyncJobsData : []
 
   const loading = loadingCourses || loadingBundles || loadingLectures || loadingEvents || loadingMaterials || loadingAnnouncements
+
+  function getGoogleSyncErrorLabel(lastError?: string | null) {
+    if (!lastError) return ''
+    const normalized = lastError.toLowerCase()
+    if (normalized.includes('resource not found') || normalized.includes('group not found') || normalized.includes('invalid input')) {
+      return 'Google group not found or misconfigured'
+    }
+    if (normalized.includes('not authorized') || normalized.includes('insufficient permissions')) {
+      return 'Google sync permissions are misconfigured'
+    }
+    return ''
+  }
 
   async function loadData() {
     mutate('/api/courses')
@@ -67,7 +81,7 @@ export default function ManagePage() {
 
   function openCreate() {
     setEditId(null)
-    setFormData(tab === 'courses' ? { isDisabled: false } : {})
+    setFormData(tab === 'courses' ? { isDisabled: false, googleGroupEmail: '' } : {})
     setTopicsForCourse([])
     setMaterialSourceType('FILE')
     setShowModal(true)
@@ -145,18 +159,26 @@ export default function ManagePage() {
       if (tab === 'lectures') {
         const { topicId, title, description, videoUrl, pptUrl } = formData
         if (editId) {
-          await fetch(`/api/content/${editId}`, {
+          const res = await fetch(`/api/content/${editId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title, description, videoUrl, pptUrl }),
           })
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}))
+            throw new Error(data.error || 'Failed to save lecture')
+          }
         } else {
           if (!topicId) { setSaving(false); return }
-          await fetch(`/api/topics/${topicId}/content`, {
+          const res = await fetch(`/api/topics/${topicId}/content`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title, description, videoUrl, pptUrl }),
           })
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}))
+            throw new Error(data.error || 'Failed to save lecture')
+          }
         }
       } else {
         const endpoints: Record<Tab, string> = {
@@ -184,15 +206,22 @@ export default function ManagePage() {
           payload = { ...formData, sourceType: materialSourceType };
         }
 
-        await fetch(url, {
+        const res = await fetch(url, {
           method: editId ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          throw new Error(data.error || `Failed to save ${tab}`)
+        }
       }
       setShowModal(false)
       loadData()
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : 'Failed to save changes')
+    }
     setSaving(false)
   }
 
@@ -309,6 +338,19 @@ export default function ManagePage() {
             <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="Course name" /></div>
             <div className="form-group"><label className="form-label">Subject</label><input className="form-input" value={f.subject || ''} onChange={e => set('subject', e.target.value)} placeholder="e.g. Computer Science" /></div>
             <div className="form-group"><label className="form-label">Teacher Name</label><input className="form-input" value={f.teacherName || ''} onChange={e => set('teacherName', e.target.value)} placeholder="Manual teacher name" /></div>
+            <div className="form-group">
+              <label className="form-label">Google Group Email</label>
+              <input
+                className="form-input"
+                type="email"
+                value={f.googleGroupEmail || ''}
+                onChange={e => set('googleGroupEmail', e.target.value.toLowerCase())}
+                placeholder="math1@yourdomain.com"
+              />
+              <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                Optional. Must be a valid group email in your Google Workspace domain.
+              </p>
+            </div>
             <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: editId ? 0.7 : 1 }}>
               <input 
                 type="checkbox" 
@@ -699,6 +741,52 @@ export default function ManagePage() {
           </button>
         ))}
       </div>
+
+      {userRole === 'MANAGER' && (
+        <div className="card" style={{ overflow: 'hidden', maxWidth: '100%', marginBottom: '20px' }}>
+          <div style={{ padding: '16px 18px', borderBottom: '1px solid #d8dae3' }}>
+            <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a' }}>Google Sync Status</div>
+            <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
+              Latest Google Group add/remove jobs for course enrollments
+            </div>
+          </div>
+          {googleSyncJobs.length === 0 ? (
+            <div style={{ padding: '18px', fontSize: '12px', color: '#9999b0' }}>No sync jobs yet.</div>
+          ) : (
+            <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {googleSyncJobs.slice(0, 12).map((job: any) => (
+                <div key={job.id} style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(180px, 1.3fr) minmax(160px, 1fr) minmax(180px, 1.2fr) 90px 90px 90px minmax(180px, 1.2fr)',
+                  gap: '12px',
+                  alignItems: 'center',
+                  padding: '10px 12px',
+                  borderRadius: '14px',
+                  background: '#eef0f6',
+                }}>
+                  <div style={{ fontSize: '12px', color: '#1e1e3a', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.userEmail}</div>
+                  <div style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontWeight: '600', color: '#1e1e3a' }}>{job.course?.name || job.courseId}</div>
+                    <div>{job.courseId}</div>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.groupEmail}</div>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: job.action === 'ADD' ? '#10b981' : '#ef4444' }}>{job.action}</div>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: job.status === 'SUCCESS' ? '#10b981' : job.status === 'FAILED' ? '#ef4444' : '#f59e0b' }}>{job.status}</div>
+                  <div style={{ fontSize: '12px', color: '#6b6b8a' }}>{job.attemptCount}</div>
+                  <div style={{ overflow: 'hidden' }}>
+                    {getGoogleSyncErrorLabel(job.lastError) && (
+                      <div style={{ fontSize: '10px', fontWeight: '700', color: '#ef4444', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {getGoogleSyncErrorLabel(job.lastError)}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '11px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.lastError || '—'}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Items List */}
       <div className="card" style={{ overflow: 'hidden', maxWidth: '100%' }}>
