@@ -13,7 +13,7 @@ const GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_PR
 const GOOGLE_WORKSPACE_ADMIN_EMAIL = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim() || ''
 
 type SyncAction = 'ADD' | 'REMOVE'
-type SyncStatus = 'PENDING' | 'SUCCESS' | 'FAILED'
+type SyncStatus = 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED'
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
@@ -343,12 +343,23 @@ export async function processGoogleGroupSyncJobs() {
 
     for (const job of jobs) {
       try {
+        // Mark as PROCESSING and increment attempt count
+        await (prisma as any).groupSyncJob.update({
+          where: { id: job.id },
+          data: {
+            status: 'PROCESSING',
+            attemptCount: job.attemptCount + 1,
+          },
+        })
+
+        // Execute the sync operation
         if (job.action === 'ADD') {
           await addMemberToGroup(accessToken, job.userEmail, job.groupEmail)
         } else {
           await removeMemberFromGroup(accessToken, job.userEmail, job.groupEmail)
         }
 
+        // Mark as SUCCESS
         await (prisma as any).groupSyncJob.update({
           where: { id: job.id },
           data: {
@@ -369,7 +380,6 @@ export async function processGoogleGroupSyncJobs() {
         await (prisma as any).groupSyncJob.update({
           where: { id: job.id },
           data: {
-            attemptCount: nextAttemptCount,
             status: nextAttemptCount >= GROUP_SYNC_MAX_ATTEMPTS ? 'FAILED' : 'PENDING',
             lastError: error instanceof Error ? error.message : 'Unknown Google sync error',
           },
