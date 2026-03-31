@@ -29,7 +29,7 @@ export async function PUT(
     }
 
     const bundle = await prisma.courseBundle.findFirst({
-      where: { id, createdById: session.userId },
+      where: { id },
       select: { id: true },
     })
 
@@ -111,7 +111,7 @@ export async function DELETE(
     const { id } = await params
 
     const bundle = await prisma.courseBundle.findFirst({
-      where: { id, createdById: session.userId },
+      where: { id },
       select: { id: true },
     })
 

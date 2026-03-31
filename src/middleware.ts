@@ -22,6 +22,11 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const method = request.method
 
+  // Always allow static assets from /public and built asset paths.
+  if (pathname.startsWith('/_next/') || /\.(.*)$/.test(pathname)) {
+    return NextResponse.next()
+  }
+
   // ─── 1. Rate Limiting for Login ───
   if (pathname === '/api/auth/login' && method === 'POST') {
     const ip = request.ip ?? request.headers.get('x-forwarded-for') ?? '127.0.0.1'
@@ -176,7 +181,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)',
     '/api/community/:path*',
     '/api/courses/:path*',
   ],

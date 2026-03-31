@@ -272,29 +272,29 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
       zIndex: 100,
     }}>
       {/* Logo & Portal Label */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px', padding: '4px 8px', marginBottom: '36px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', padding: '4px 8px', marginBottom: '22px' }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-start',
+          justifyContent: 'center',
           flexShrink: 0,
           overflow: 'hidden',
           width: '100%',
-          maxWidth: '175px',
-          minHeight: '72px',
-          padding: '10px 14px',
-          borderRadius: '20px',
-          background: '#e8eaf0',
-          boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+          maxWidth: '182px',
+          minHeight: '82px',
+          padding: '12px 16px',
+          borderRadius: '999px',
+          background: 'linear-gradient(145deg, #f6f7fb, #dde0e8)',
+          boxShadow: '14px 14px 28px rgba(197, 199, 207, 0.85), -10px -10px 22px rgba(255, 255, 255, 0.95), inset 1px 1px 0 rgba(255, 255, 255, 0.7)',
         }}>
           <img 
             src="/logo.png" 
             alt="GENz IITIAN Logo" 
             style={{ 
               width: '100%',
-              maxWidth: '150px',
+              maxWidth: '148px',
               height: 'auto', 
-              maxHeight: '48px',
+              maxHeight: '52px',
               objectFit: 'contain',
               display: 'block',
             }} 
@@ -326,7 +326,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           return (
             <div key={item.href}>
               {showGeneralHeader && (
-                <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '4px', paddingLeft: '12px' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '10px', paddingLeft: '12px' }}>
                   General
                 </div>
               )}

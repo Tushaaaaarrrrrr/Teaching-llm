@@ -259,11 +259,6 @@ export default function ManagePage() {
   const tabs: Array<{ key: Tab; label: string; count: number }> = [
     { key: 'courses',       label: 'Courses',       count: courses.length },
     ...(userRole === 'MANAGER' ? [{ key: 'bundles' as Tab, label: 'Course Bundles', count: bundles.length }] : []),
-    { key: 'lectures',      label: 'Lectures',      count: lectures.length },
-    { key: 'events',        label: 'Calendar Events', count: events.length },
-    { key: 'materials',     label: 'Study Material', count: materials.length },
-    { key: 'announcements', label: 'Announcements', count: announcements.length },
-    { key: 'content-bank',  label: 'Content Bank',  count: bankQuestions.length },
   ]
 
   const COLORS = ['#4F46E5', '#7C3AED', '#0EA5E9', '#F59E0B', '#10B981', '#EF4444', '#EC4899']
@@ -797,7 +792,7 @@ export default function ManagePage() {
                     </div>
                     {tab === 'courses' && (
                       <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#6366f1', marginTop: '2px', fontWeight: '600', letterSpacing: '0.02em' }}>
-                        LMS-COURSE-{item.id}
+                        {item.id}
                       </div>
                     )}
                     <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -854,13 +849,12 @@ export default function ManagePage() {
                     {tab === 'courses' && (
                       <button 
                         onClick={() => {
-                          const formatted = `LMS-COURSE-${item.id}`;
-                          navigator.clipboard.writeText(formatted);
+                          navigator.clipboard.writeText(item.id);
                           setCopiedId(item.id);
                           setTimeout(() => setCopiedId(null), 2000);
                         }} 
                         className="btn btn-ghost btn-sm" 
-                        title={`Copy: LMS-COURSE-${item.id}`}
+                        title={`Copy: ${item.id}`}
                         style={copiedId === item.id ? { color: '#10b981', borderColor: '#10b981' } : {}}
                       >
                         {copiedId === item.id ? (

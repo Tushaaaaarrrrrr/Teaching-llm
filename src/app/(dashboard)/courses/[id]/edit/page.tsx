@@ -95,14 +95,9 @@ export default function CourseEditPage() {
   } | null>(null)
   const [contentForm, setContentForm] = useState<ContentForm>(emptyForm)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [materialSourceType, setMaterialSourceType] = useState<'FILE' | 'LINK'>('LINK')
   const [materialLink, setMaterialLink] = useState('')
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialItem | null>(null)
-  const [materialModalOpen, setMaterialModalOpen] = useState(false)
-  const [materials, setMaterials] = useState<MaterialItem[]>([])
-  const [loadingMaterials, setLoadingMaterials] = useState(false)
-  const [materialSearch, setMaterialSearch] = useState('')
-  const [materialUploadFile, setMaterialUploadFile] = useState<File | null>(null)
-  const [materialUploadTitle, setMaterialUploadTitle] = useState('')
   const [uploadingMaterial, setUploadingMaterial] = useState(false)
   const [recordings, setRecordings] = useState<RecordingItem[]>([])
   const [recordingsModalOpen, setRecordingsModalOpen] = useState(false)
@@ -153,19 +148,6 @@ export default function CourseEditPage() {
     const data = await res.json()
     setTopics(Array.isArray(data) ? data : [])
   }
-
-  const loadMaterials = useCallback(async () => {
-    setLoadingMaterials(true)
-    try {
-      const res = await fetch('/api/materials')
-      const data = await res.json()
-      setMaterials(Array.isArray(data) ? data : [])
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoadingMaterials(false)
-    }
-  }, [])
 
   const loadRecordings = useCallback(async () => {
     setLoadingRecordings(true)
@@ -265,14 +247,16 @@ export default function CourseEditPage() {
   const openAddContent = (topicId: string) => {
     setContentModal({ mode: 'add', topicId })
     setContentForm(emptyForm)
+    setMaterialSourceType('LINK')
     setMaterialLink('')
     setSelectedMaterial(null)
-    setMaterialUploadFile(null)
-    setMaterialUploadTitle('')
     setRecordingSearch('')
   }
 
   const openEditContent = (topicId: string, item: ContentItem) => {
+    const existingMaterialUrl = item.pptUrl || ''
+    const hasUploadedMaterial = existingMaterialUrl.startsWith('/api/files/materials/')
+
     setContentModal({ mode: 'edit', topicId, content: item })
     setContentForm({
       title: item.title,
@@ -280,31 +264,26 @@ export default function CourseEditPage() {
       videoUrl: item.videoUrl || '',
       videoSource: item.videoSource || 'GOOGLE_DRIVE',
     })
-    setMaterialLink(item.pptUrl || '')
-    setSelectedMaterial(null)
-    setMaterialUploadFile(null)
-    setMaterialUploadTitle('')
+    setMaterialSourceType(hasUploadedMaterial ? 'FILE' : 'LINK')
+    setMaterialLink(hasUploadedMaterial ? '' : existingMaterialUrl)
+    setSelectedMaterial(hasUploadedMaterial ? {
+      id: item.id,
+      title: item.title,
+      fileUrl: existingMaterialUrl,
+      fileType: existingMaterialUrl.split('.').pop()?.toUpperCase() || 'FILE',
+    } : null)
     setRecordingSearch('')
   }
 
-  const openMaterialModal = async () => {
-    setMaterialModalOpen(true)
-    setMaterialUploadFile(null)
-    setMaterialUploadTitle('')
-    setMaterialSearch('')
-    await loadMaterials()
-  }
-
-  const handleMaterialUpload = async () => {
-    if (!materialUploadFile) {
-      alert('Choose a file first')
+  const handleMaterialFileChange = async (file: File | null) => {
+    if (!file) {
       return
     }
 
     setUploadingMaterial(true)
     try {
       const formData = new FormData()
-      formData.append('file', materialUploadFile)
+      formData.append('file', file)
       formData.append('type', 'materials')
 
       const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData })
@@ -313,7 +292,7 @@ export default function CourseEditPage() {
         throw new Error(uploadData.error || 'Upload failed')
       }
 
-      const title = materialUploadTitle.trim() || materialUploadFile.name.replace(/\.[^.]+$/, '')
+      const title = file.name.replace(/\.[^.]+$/, '')
       const createRes = await fetch('/api/materials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -321,8 +300,8 @@ export default function CourseEditPage() {
           title,
           description: '',
           fileUrl: uploadData.url,
-          fileType: materialUploadFile.name.split('.').pop()?.toUpperCase() || 'FILE',
-          fileSize: `${(materialUploadFile.size / 1024 / 1024).toFixed(2)} MB`,
+          fileType: file.name.split('.').pop()?.toUpperCase() || 'FILE',
+          fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
           isGlobal: false,
           courseId: params.id,
         }),
@@ -334,8 +313,6 @@ export default function CourseEditPage() {
 
       setSelectedMaterial(createdMaterial)
       setMaterialLink('')
-      setMaterialModalOpen(false)
-      await loadMaterials()
     } catch (e) {
       console.error(e)
       alert(e instanceof Error ? e.message : 'Failed to upload material')
@@ -360,16 +337,14 @@ export default function CourseEditPage() {
     setSaving(true)
     try {
       const trimmedMaterialLink = materialLink.trim()
-      if (trimmedMaterialLink && selectedMaterial) {
-        alert('Choose either one external material link or one uploaded material')
-        return
-      }
 
       const payload = {
         ...contentForm,
         title: contentForm.title.trim(),
         videoUrl: contentForm.videoUrl.trim(),
-        pptUrl: trimmedMaterialLink || selectedMaterial?.fileUrl || '',
+        pptUrl: materialSourceType === 'LINK'
+          ? trimmedMaterialLink
+          : selectedMaterial?.fileUrl || '',
       }
 
       let res
@@ -621,105 +596,91 @@ export default function CourseEditPage() {
                 </div>
               )}
 
-              <div>
+              <div className="form-group">
                 <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
-                  Material Link
+                  Material Source Type
                 </label>
-                <input
-                  value={materialLink}
-                  onChange={e => {
-                    setMaterialLink(e.target.value)
-                    if (e.target.value) setSelectedMaterial(null)
-                  }}
-                  placeholder="https://... (external material link)"
-                  className="form-input"
-                  style={{ width: '100%' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
-                  Uploaded Material
-                </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <button type="button" onClick={openMaterialModal} className="btn btn-ghost" style={{ alignSelf: 'flex-start' }}>
-                    Choose Uploaded Material
-                  </button>
-                  {selectedMaterial && (
-                    <div style={{
-                      padding: '10px 14px', borderRadius: '10px', background: '#e0e7ff',
-                      color: '#3636e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
-                    }}>
-                      <span style={{ fontSize: '12px', fontWeight: '600' }}>{selectedMaterial.title}</span>
-                      <button type="button" onClick={() => setSelectedMaterial(null)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
-                        Remove
-                      </button>
-                    </div>
-                  )}
-                  <span style={{ fontSize: '11px', color: '#9999b0' }}>Optional. If you add material, choose only one source: external link or uploaded material.</span>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'FILE' ? '#6366f1' : '#e5e7eb'}`, background: materialSourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
+                    <input
+                      type="radio"
+                      name="lectureMaterialSource"
+                      checked={materialSourceType === 'FILE'}
+                      onChange={() => {
+                        setMaterialSourceType('FILE')
+                        setMaterialLink('')
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'FILE' ? '600' : '500', color: '#1e1e3a' }}>📄 Upload File</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'LINK' ? '#6366f1' : '#e5e7eb'}`, background: materialSourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
+                    <input
+                      type="radio"
+                      name="lectureMaterialSource"
+                      checked={materialSourceType === 'LINK'}
+                      onChange={() => {
+                        setMaterialSourceType('LINK')
+                        setSelectedMaterial(null)
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'LINK' ? '600' : '500', color: '#1e1e3a' }}>🔗 External Link</span>
+                  </label>
                 </div>
               </div>
 
-              {materialModalOpen && (
-                <div style={{
-                  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1100,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
-                }}
-                onClick={() => setMaterialModalOpen(false)}
-                >
-                  <div
-                    style={{ background: '#e8eaf0', borderRadius: '16px', width: '100%', maxWidth: '680px', maxHeight: '80vh', overflow: 'auto', padding: '20px' }}
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Select Lecture Material</h3>
-                      <button type="button" onClick={() => setMaterialModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>
+              {materialSourceType === 'FILE' ? (
+                <div className="form-group">
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                    Uploaded Material
+                  </label>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ flex: 1, position: 'relative' }}>
+                      <input
+                        type="file"
+                        onChange={e => void handleMaterialFileChange(e.target.files?.[0] ?? null)}
+                        style={{ display: 'none' }}
+                        id="lecture-material-upload"
+                      />
+                      <label
+                        htmlFor="lecture-material-upload"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '10px',
+                          padding: '12px 20px', borderRadius: '14px',
+                          background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                          cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#6b6b8a'
+                        }}
+                      >
+                        {uploadingMaterial ? 'Uploading...' : selectedMaterial ? selectedMaterial.title : 'Choose file...'}
+                      </label>
                     </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '18px' }}>
-                      <div>
-                        <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>Upload New File</label>
-                        <input type="text" value={materialUploadTitle} onChange={e => setMaterialUploadTitle(e.target.value)} placeholder="Material title" className="form-input" style={{ width: '100%', marginBottom: '8px' }} />
-                        <input type="file" onChange={e => setMaterialUploadFile(e.target.files?.[0] ?? null)} />
-                        <button type="button" onClick={handleMaterialUpload} disabled={uploadingMaterial || !materialUploadFile} className="btn btn-primary" style={{ marginTop: '10px' }}>
-                          {uploadingMaterial ? 'Uploading...' : 'Upload Material'}
-                        </button>
+                    {selectedMaterial && (
+                      <div style={{
+                        padding: '12px 16px', borderRadius: '14px',
+                        background: '#e0e7ff', color: '#6366f1',
+                        fontSize: '11px', fontWeight: '800'
+                      }}>
+                        {selectedMaterial.fileType}
                       </div>
-
-                      <div>
-                        <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>Use Previous Upload</label>
-                        <input value={materialSearch} onChange={e => setMaterialSearch(e.target.value)} placeholder="Search uploaded materials..." className="form-input" style={{ width: '100%', marginBottom: '8px' }} />
-                        <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {loadingMaterials ? (
-                            <div style={{ fontSize: '12px', color: '#9999b0' }}>Loading materials...</div>
-                          ) : materials
-                            .filter(material =>
-                              material.title.toLowerCase().includes(materialSearch.toLowerCase()) ||
-                              (material.description || '').toLowerCase().includes(materialSearch.toLowerCase())
-                            )
-                            .map(material => (
-                              <button
-                                key={material.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedMaterial(material)
-                                  setMaterialLink('')
-                                  setMaterialModalOpen(false)
-                                }}
-                                style={{
-                                  textAlign: 'left', padding: '10px 12px', borderRadius: '10px', border: 'none',
-                                  background: '#f0f2f8', boxShadow: '3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff',
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a' }}>{material.title}</div>
-                                <div style={{ fontSize: '11px', color: '#9999b0' }}>{material.fileType} {material.fileSize ? `• ${material.fileSize}` : ''}</div>
-                              </button>
-                            ))}
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
+                  <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '8px', display: 'block' }}>
+                    Optional. Upload a file if this lecture should include downloadable material.
+                  </span>
+                </div>
+              ) : (
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                    Material Link
+                  </label>
+                  <input
+                    value={materialLink}
+                    onChange={e => setMaterialLink(e.target.value)}
+                    placeholder="https://... (external material link)"
+                    className="form-input"
+                    style={{ width: '100%' }}
+                  />
                 </div>
               )}
 

@@ -15,7 +15,6 @@ export async function GET() {
     }
 
     const bundles = await prisma.courseBundle.findMany({
-      where: { createdById: session.userId },
       include: {
         courses: {
           include: {
@@ -29,6 +28,13 @@ export async function GET() {
           select: {
             courses: true,
             userAssignments: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
           },
         },
       },
