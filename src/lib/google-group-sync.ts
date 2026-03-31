@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db'
 const GOOGLE_TOKEN_AUDIENCE = 'https://oauth2.googleapis.com/token'
 const GOOGLE_GROUP_SCOPE = 'https://www.googleapis.com/auth/admin.directory.group.member'
 const GROUP_SYNC_MAX_ATTEMPTS = 3
+const CRON_SECRET = process.env.CRON_SECRET?.trim() || ''
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') || ''
 
 const GOOGLE_WORKSPACE_DOMAIN = process.env.GOOGLE_WORKSPACE_DOMAIN?.trim().toLowerCase() || ''
 const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim() || ''
@@ -15,6 +17,84 @@ type SyncStatus = 'PENDING' | 'SUCCESS' | 'FAILED'
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
+}
+
+/**
+ * Acquire lock to prevent concurrent processing
+ * Returns true if lock was acquired, false if already processing
+ */
+async function acquireSyncLock(): Promise<boolean> {
+  try {
+    const result = await (prisma as any).groupSyncLock.update({
+      where: { id: 'singleton' },
+      data: {
+        isProcessing: true,
+        lockedAt: new Date(),
+      },
+    })
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
+/**
+ * Release lock after processing
+ */
+async function releaseSyncLock(): Promise<void> {
+  try {
+    await (prisma as any).groupSyncLock.update({
+      where: { id: 'singleton' },
+      data: {
+        isProcessing: false,
+        lockedAt: null,
+      },
+    })
+  } catch (error) {
+    console.error('[Google Group Sync] Failed to release lock:', error)
+  }
+}
+
+/**
+ * Check if processing is already in progress
+ */
+async function isProcessing(): Promise<boolean> {
+  try {
+    const lock = await (prisma as any).groupSyncLock.findUnique({
+      where: { id: 'singleton' },
+    })
+    return lock?.isProcessing ?? false
+  } catch (error) {
+    return false
+  }
+}
+
+/**
+ * Trigger async processing of Google Group sync jobs
+ * Fire-and-forget call to avoid blocking enrollment
+ */
+export async function triggerGoogleGroupSyncProcessing(): Promise<void> {
+  if (!CRON_SECRET || !APP_URL) {
+    console.warn('[Google Group Sync] Missing CRON_SECRET or NEXT_PUBLIC_APP_URL for async trigger')
+    return
+  }
+
+  try {
+    // Fire-and-forget: don't await this call
+    fetch(`${APP_URL}/api/group-sync-jobs/process`, {
+      method: 'POST',
+      headers: {
+        'x-cron-secret': CRON_SECRET,
+        'Content-Type': 'application/json',
+      },
+    }).catch(error => {
+      // Silently catch errors - this is fire-and-forget
+      console.error('[Google Group Sync] Async trigger failed:', error instanceof Error ? error.message : String(error))
+    })
+  } catch (error) {
+    // Silently fail - don't block enrollment
+    console.error('[Google Group Sync] Trigger setup failed:', error)
+  }
 }
 
 export function validateGoogleGroupEmail(rawEmail?: string | null) {
@@ -92,6 +172,11 @@ export async function queueGoogleGroupSyncJobs(
   if (jobs.length === 0) return 0
 
   await db.groupSyncJob.createMany({ data: jobs })
+
+  // Trigger async processing (fire-and-forget, outside transaction)
+  // Schedule in next tick to avoid blocking the transaction
+  process.nextTick(() => triggerGoogleGroupSyncProcessing())
+
   return jobs.length
 }
 
@@ -149,6 +234,10 @@ export async function queueExplicitGoogleGroupSyncJobs(
   if (filteredJobs.length === 0) return 0
 
   await db.groupSyncJob.createMany({ data: filteredJobs })
+
+  // Trigger async processing (fire-and-forget, outside transaction)
+  process.nextTick(() => triggerGoogleGroupSyncProcessing())
+
   return filteredJobs.length
 }
 
@@ -223,59 +312,75 @@ async function removeMemberFromGroup(accessToken: string, userEmail: string, gro
 }
 
 export async function processGoogleGroupSyncJobs() {
-  const jobs = await (prisma as any).groupSyncJob.findMany({
-    where: {
-      status: 'PENDING',
-      attemptCount: { lt: GROUP_SYNC_MAX_ATTEMPTS },
-    },
-    orderBy: { createdAt: 'asc' },
-    take: 50,
-  })
-
-  if (jobs.length === 0) {
-    return { processed: 0, succeeded: 0, failed: 0 }
+  // Check if already processing to prevent concurrent execution
+  if (await isProcessing()) {
+    return { processed: 0, succeeded: 0, failed: 0, skipped: true }
   }
 
-  const accessToken = await getGoogleAccessToken()
-  let succeeded = 0
-  let failed = 0
+  // Acquire lock
+  const lockAcquired = await acquireSyncLock()
+  if (!lockAcquired) {
+    return { processed: 0, succeeded: 0, failed: 0, skipped: true }
+  }
 
-  for (const job of jobs) {
-    try {
-      if (job.action === 'ADD') {
-        await addMemberToGroup(accessToken, job.userEmail, job.groupEmail)
-      } else {
-        await removeMemberFromGroup(accessToken, job.userEmail, job.groupEmail)
-      }
+  try {
+    const jobs = await (prisma as any).groupSyncJob.findMany({
+      where: {
+        status: 'PENDING',
+        attemptCount: { lt: GROUP_SYNC_MAX_ATTEMPTS },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 50, // Process max 50 jobs per run
+    })
 
-      await (prisma as any).groupSyncJob.update({
-        where: { id: job.id },
-        data: {
-          status: 'SUCCESS',
-          lastError: null,
-        },
-      })
-      succeeded++
-    } catch (error) {
-      console.error('[Google Group Sync] Job failed', {
-        jobId: job.id,
-        action: job.action,
-        userEmail: job.userEmail,
-        groupEmail: job.groupEmail,
-        error: error instanceof Error ? error.message : 'Unknown Google sync error',
-      })
-      const nextAttemptCount = job.attemptCount + 1
-      await (prisma as any).groupSyncJob.update({
-        where: { id: job.id },
-        data: {
-          attemptCount: nextAttemptCount,
-          status: nextAttemptCount >= GROUP_SYNC_MAX_ATTEMPTS ? 'FAILED' : 'PENDING',
-          lastError: error instanceof Error ? error.message : 'Unknown Google sync error',
-        },
-      })
-      failed++
+    if (jobs.length === 0) {
+      return { processed: 0, succeeded: 0, failed: 0 }
     }
-  }
 
-  return { processed: jobs.length, succeeded, failed }
+    const accessToken = await getGoogleAccessToken()
+    let succeeded = 0
+    let failed = 0
+
+    for (const job of jobs) {
+      try {
+        if (job.action === 'ADD') {
+          await addMemberToGroup(accessToken, job.userEmail, job.groupEmail)
+        } else {
+          await removeMemberFromGroup(accessToken, job.userEmail, job.groupEmail)
+        }
+
+        await (prisma as any).groupSyncJob.update({
+          where: { id: job.id },
+          data: {
+            status: 'SUCCESS',
+            lastError: null,
+          },
+        })
+        succeeded++
+      } catch (error) {
+        console.error('[Google Group Sync] Job failed', {
+          jobId: job.id,
+          action: job.action,
+          userEmail: job.userEmail,
+          groupEmail: job.groupEmail,
+          error: error instanceof Error ? error.message : 'Unknown Google sync error',
+        })
+        const nextAttemptCount = job.attemptCount + 1
+        await (prisma as any).groupSyncJob.update({
+          where: { id: job.id },
+          data: {
+            attemptCount: nextAttemptCount,
+            status: nextAttemptCount >= GROUP_SYNC_MAX_ATTEMPTS ? 'FAILED' : 'PENDING',
+            lastError: error instanceof Error ? error.message : 'Unknown Google sync error',
+          },
+        })
+        failed++
+      }
+    }
+
+    return { processed: jobs.length, succeeded, failed }
+  } finally {
+    // Always release lock, even on error
+    await releaseSyncLock()
+  }
 }

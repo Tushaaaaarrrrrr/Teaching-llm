@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error('[Cron] Google group sync processor error:', error)
+    console.error('[Sync] Google group sync processor error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

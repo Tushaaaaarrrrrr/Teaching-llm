@@ -684,3 +684,10 @@ model GroupSyncJob {
   @@index([userEmail])
   @@index([createdAt])
 }
+
+model GroupSyncLock {
+  id            String   @id @default("singleton")
+  isProcessing  Boolean  @default(false)
+  lockedAt      DateTime?
+  updatedAt     DateTime @updatedAt
+}
