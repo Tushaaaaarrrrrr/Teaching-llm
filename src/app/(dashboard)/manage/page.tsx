@@ -805,7 +805,7 @@ export default function ManagePage() {
                   background: '#e8eaf0',
                   boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                   transition: 'box-shadow 0.2s',
-                  minWidth: 'fit-content',
+                  width: '100%',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c2c4cc, -6px -6px 12px #ffffff')}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}

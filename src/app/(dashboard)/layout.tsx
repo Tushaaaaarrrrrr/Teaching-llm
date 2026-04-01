@@ -39,6 +39,8 @@ export default async function DashboardLayout({
         display: 'flex',
         flexDirection: 'column',
         minHeight: '100vh',
+        maxWidth: 'calc(100vw - 215px)',
+        overflow: 'hidden',
       }}>
         <Header userName={session.name} userRole={session.role} />
         <main style={{ flex: 1, overflow: 'auto' }}>
