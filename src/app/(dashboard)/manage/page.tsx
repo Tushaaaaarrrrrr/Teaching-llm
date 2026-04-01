@@ -736,7 +736,7 @@ export default function ManagePage() {
 
 
       {/* Items List */}
-      <div className="card" style={{ overflow: 'hidden', maxWidth: '100%' }}>
+      <div className="card" style={{ overflowX: 'auto', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading…</div>
         ) : getItems().length === 0 ? (
@@ -826,8 +826,8 @@ export default function ManagePage() {
                       {item.name || item.title}
                     </div>
                     {tab === 'courses' && (
-                      <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#6366f1', marginTop: '2px', fontWeight: '600', letterSpacing: '0.02em' }}>
-                        {item.id}
+                      <div style={{ fontSize: '10px', fontFamily: 'monospace', color: '#6366f1', marginTop: '1px', fontWeight: '600', opacity: 0.8 }}>
+                        ID: {item.id}
                       </div>
                     )}
                     <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -910,7 +910,12 @@ export default function ManagePage() {
                         }}
                         title={item.isExpired && !item.isDisabled ? 'This course is currently disabled by expiry. Change the expiry date to re-enable it.' : undefined}
                       >
-                        {item.isDisabled ? 'Enable' : 'Disable'}
+                        <span className="hidden-mobile" style={{ marginRight: '4px' }}>{item.isDisabled ? 'Enable' : 'Disable'}</span>
+                        {item.isDisabled ? (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        ) : (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                        )}
                       </button>
                     )}
                     {tab === 'courses' && (
@@ -935,7 +940,7 @@ export default function ManagePage() {
                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
-                      Edit
+                      <span className="hidden-mobile">Edit</span>
                     </button>
                     <button 
                       onClick={() => handleDelete(item.id)} 

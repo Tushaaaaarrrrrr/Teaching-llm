@@ -126,6 +126,11 @@ img {
 .text-primary-color { color: var(--primary); }
 .rounded { border-radius: var(--radius); }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hidden-mobile { display: inline; }
+
+@media (max-width: 768px) {
+  .hidden-mobile { display: none; }
+}
 
 /* Cards */
 .card {
@@ -266,7 +271,7 @@ img {
   padding: 24px;
   max-width: 1400px;
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 .page-header {

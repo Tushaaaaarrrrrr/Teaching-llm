@@ -55,6 +55,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
   const pathname = usePathname()
   // const [notifications, setNotifications] = useState<Notification[]>([]) - Removed in favor of SWR
   const [showNotif, setShowNotif] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [avatar, setAvatar] = useState<string | null>(null)
   const notifRef = useRef<HTMLDivElement>(null)
@@ -139,6 +140,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   // Load user profile
   useEffect(() => {
+    setMounted(true)
     fetch('/api/profile')
       .then(r => r.json())
       .then(data => {
@@ -217,7 +219,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
               flexWrap: 'wrap',
               fontFamily: "'Outfit', 'Nunito', sans-serif"
             }}>
-              {getGreeting().heading},
+              {mounted ? getGreeting().heading : 'Welcome'},
               <span style={{ 
                 fontSize: '40px', 
                 fontWeight: '700', 
@@ -238,7 +240,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
               maxWidth: '600px',
               lineHeight: '1.5'
             }}>
-              {getGreeting().subtext}
+              {mounted ? getGreeting().subtext : 'Loading your dashboard...'}
             </p>
           </>
         ) : (
