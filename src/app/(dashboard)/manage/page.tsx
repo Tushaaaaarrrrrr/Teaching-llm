@@ -4,13 +4,12 @@ import { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
-type Tab = 'courses' | 'bundles' | 'lectures' | 'events' | 'materials' | 'announcements' | 'content-bank' | 'google-sync'
+type Tab = 'courses' | 'bundles' | 'lectures' | 'events' | 'materials' | 'announcements' | 'content-bank'
 
 export default function ManagePage() {
   const { confirm, confirmDialog } = useConfirmDialog()
   const [tab, setTab] = useState<Tab>('courses')
-  const [googleSyncFilters, setGoogleSyncFilters] = useState({ status: '', action: '', page: 1 })
-  const [googleSyncRefreshKey, setGoogleSyncRefreshKey] = useState(0)
+
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const { data: authData } = useSWR('/api/auth/me', fetcher)
   const userRole = authData?.user?.role || ''
@@ -24,14 +23,6 @@ export default function ManagePage() {
   const { data: contentBankData, isLoading: loadingBank } = useSWR('/api/content-bank', fetcher)
   const { data: instructorsData } = useSWR('/api/instructors', fetcher)
 
-  // Google Sync Jobs with filters and auto-refresh
-  const googleSyncUrl = userRole === 'MANAGER' && tab === 'google-sync'
-    ? `/api/group-sync-jobs?status=${googleSyncFilters.status}&action=${googleSyncFilters.action}&page=${googleSyncFilters.page}&limit=50&_refresh=${googleSyncRefreshKey}`
-    : null
-  const { data: googleSyncJobsData, isLoading: loadingGoogleSync } = useSWR(googleSyncUrl, fetcher, {
-    refreshInterval: tab === 'google-sync' ? 10000 : 0, // Auto-refresh every 10s when on this tab
-  })
-
   const courses = coursesData?.courses || coursesData || []
   const bundles = bundlesData?.bundles || bundlesData || []
   const lectures = lecturesData?.content || []
@@ -40,22 +31,10 @@ export default function ManagePage() {
   const announcements = announcementsData?.announcements || announcementsData || []
   const bankQuestions = Array.isArray(contentBankData) ? contentBankData : []
   const instructors = instructorsData || []
-  const googleSyncJobs = googleSyncJobsData?.jobs || []
-  const googleSyncPagination = googleSyncJobsData?.pagination || { page: 1, limit: 50, total: 0, totalPages: 0 }
 
-  const loading = loadingCourses || loadingBundles || loadingLectures || loadingEvents || loadingMaterials || loadingAnnouncements || (tab === 'google-sync' && loadingGoogleSync)
+  const loading = loadingCourses || loadingBundles || loadingLectures || loadingEvents || loadingMaterials || loadingAnnouncements
 
-  function getGoogleSyncErrorLabel(lastError?: string | null) {
-    if (!lastError) return ''
-    const normalized = lastError.toLowerCase()
-    if (normalized.includes('resource not found') || normalized.includes('group not found') || normalized.includes('invalid input')) {
-      return 'Google group not found or misconfigured'
-    }
-    if (normalized.includes('not authorized') || normalized.includes('insufficient permissions')) {
-      return 'Google sync permissions are misconfigured'
-    }
-    return ''
-  }
+
 
   async function loadData() {
     mutate('/api/courses')
@@ -199,7 +178,7 @@ export default function ManagePage() {
           materials:     '/api/materials',
           announcements: '/api/announcements',
           'content-bank': '/api/content-bank',
-          'google-sync':  '',            // read-only, no create/edit
+
         }
         const base = endpoints[tab]
         const url  = editId ? `${base}/${editId}` : base
@@ -290,7 +269,6 @@ export default function ManagePage() {
         materials:     '',
         announcements: '/api/announcements',
         'content-bank': '/api/content-bank',
-        'google-sync':  '',            // read-only, no delete
       }
       await fetch(`${endpoints[tab]}/${id}`, { method: 'DELETE' })
     }
@@ -300,7 +278,7 @@ export default function ManagePage() {
   const tabs: Array<{ key: Tab; label: string; count: number }> = [
     { key: 'courses',       label: 'Courses',       count: courses.length },
     ...(userRole === 'MANAGER' ? [{ key: 'bundles' as Tab, label: 'Course Bundles', count: bundles.length }] : []),
-    ...(userRole === 'MANAGER' ? [{ key: 'google-sync' as Tab, label: 'Google Sync Status', count: googleSyncPagination.total }] : []),
+
   ]
 
   const COLORS = ['#4F46E5', '#7C3AED', '#0EA5E9', '#F59E0B', '#10B981', '#EF4444', '#EC4899']
@@ -714,14 +692,12 @@ export default function ManagePage() {
             </>
           )}
         </div>
-        {tab !== 'google-sync' && (
-          <button onClick={openCreate} className="btn btn-primary">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            {tab === 'events' ? 'Add Event' : 'Create New'}
-          </button>
-        )}
+        <button onClick={openCreate} className="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          {tab === 'events' ? 'Add Event' : 'Create New'}
+        </button>
       </div>
 
       {/* Tabs */}
@@ -757,220 +733,12 @@ export default function ManagePage() {
         ))}
       </div>
 
-      {userRole === 'MANAGER' && (
-        <div className="card" style={{ overflow: 'hidden', maxWidth: '100%', marginBottom: '20px' }}>
-          <div style={{ padding: '16px 18px', borderBottom: '1px solid #d8dae3' }}>
-            <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a' }}>Google Sync Status</div>
-            <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
-              Latest Google Group add/remove jobs for course enrollments
-            </div>
-          </div>
-          {googleSyncJobs.length === 0 ? (
-            <div style={{ padding: '18px', fontSize: '12px', color: '#9999b0' }}>No sync jobs yet.</div>
-          ) : (
-            <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {googleSyncJobs.slice(0, 12).map((job: any) => (
-                <div key={job.id} style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(180px, 1.3fr) minmax(160px, 1fr) minmax(180px, 1.2fr) 90px 90px 90px minmax(180px, 1.2fr)',
-                  gap: '12px',
-                  alignItems: 'center',
-                  padding: '10px 12px',
-                  borderRadius: '14px',
-                  background: '#eef0f6',
-                }}>
-                  <div style={{ fontSize: '12px', color: '#1e1e3a', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.userEmail}</div>
-                  <div style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    <div style={{ fontWeight: '600', color: '#1e1e3a' }}>{job.course?.name || job.courseId}</div>
-                    <div>{job.courseId}</div>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.groupEmail}</div>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: job.action === 'ADD' ? '#10b981' : '#ef4444' }}>{job.action}</div>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: job.status === 'SUCCESS' ? '#10b981' : job.status === 'FAILED' ? '#ef4444' : '#f59e0b' }}>{job.status}</div>
-                  <div style={{ fontSize: '12px', color: '#6b6b8a' }}>{job.attemptCount}</div>
-                  <div style={{ overflow: 'hidden' }}>
-                    {getGoogleSyncErrorLabel(job.lastError) && (
-                      <div style={{ fontSize: '10px', fontWeight: '700', color: '#ef4444', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {getGoogleSyncErrorLabel(job.lastError)}
-                      </div>
-                    )}
-                    <div style={{ fontSize: '11px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.lastError || '—'}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+
 
       {/* Items List */}
       <div className="card" style={{ overflow: 'hidden', maxWidth: '100%' }}>
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading…</div>
-        ) : tab === 'google-sync' ? (
-          // Google Sync Status Panel
-          <div style={{ padding: '0' }}>
-            {/* Header */}
-            <div style={{ padding: '16px 18px', borderBottom: '1px solid #d8dae3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a' }}>Google Sync Job Monitor</div>
-                <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
-                  Real-time visibility into Google Group sync activity ({googleSyncPagination.total} total jobs)
-                </div>
-              </div>
-              <button
-                onClick={() => setGoogleSyncRefreshKey(prev => prev + 1)}
-                className="btn btn-sm btn-ghost"
-                style={{ border: '1px solid #c5c7cf' }}
-                disabled={loadingGoogleSync}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px', animation: loadingGoogleSync ? 'spin 1s linear infinite' : 'none' }}>
-                  <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
-                </svg>
-                Refresh
-              </button>
-            </div>
-
-            {/* Filters */}
-            <div style={{ padding: '12px 18px', borderBottom: '1px solid #d8dae3', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <div>
-                <label style={{ fontSize: '11px', fontWeight: '600', color: '#6b6b8a', marginRight: '6px' }}>Status:</label>
-                <select
-                  value={googleSyncFilters.status}
-                  onChange={(e) => setGoogleSyncFilters({ ...googleSyncFilters, status: e.target.value, page: 1 })}
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: '6px',
-                    border: '1px solid #c5c7cf',
-                    fontSize: '12px',
-                    background: 'white',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <option value="">All</option>
-                  <option value="PENDING">Pending</option>
-                  <option value="PROCESSING">Processing</option>
-                  <option value="SUCCESS">Success</option>
-                  <option value="FAILED">Failed</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '11px', fontWeight: '600', color: '#6b6b8a', marginRight: '6px' }}>Action:</label>
-                <select
-                  value={googleSyncFilters.action}
-                  onChange={(e) => setGoogleSyncFilters({ ...googleSyncFilters, action: e.target.value, page: 1 })}
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: '6px',
-                    border: '1px solid #c5c7cf',
-                    fontSize: '12px',
-                    background: 'white',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <option value="">All</option>
-                  <option value="ADD">Add Member</option>
-                  <option value="REMOVE">Remove Member</option>
-                </select>
-              </div>
-              {(googleSyncFilters.status || googleSyncFilters.action) && (
-                <button
-                  onClick={() => setGoogleSyncFilters({ status: '', action: '', page: 1 })}
-                  style={{ fontSize: '11px', color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
-                >
-                  Clear Filters
-                </button>
-              )}
-            </div>
-
-            {/* Jobs Table */}
-            {googleSyncJobs.length === 0 ? (
-              <div style={{ padding: '40px 18px', textAlign: 'center', color: '#9999b0' }}>
-                No sync jobs {googleSyncFilters.status || googleSyncFilters.action ? 'matching filters' : 'yet'}.
-              </div>
-            ) : (
-              <div style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {/* Column Headers */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(150px, 1.2fr) minmax(100px, 0.8fr) minmax(140px, 1.1fr) 70px 90px 60px 120px 90px',
-                  gap: '8px',
-                  padding: '8px 12px',
-                  background: '#f3f0ff',
-                  borderRadius: '8px',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  color: '#6b6b8a',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.02em',
-                }}>
-                  <div>User Email</div>
-                  <div>Course ID</div>
-                  <div>Group Email</div>
-                  <div>Action</div>
-                  <div>Status</div>
-                  <div>Attempts</div>
-                  <div>Updated</div>
-                  <div>Error</div>
-                </div>
-
-                {/* Jobs */}
-                {googleSyncJobs.map((job: any) => {
-                  const createdDate = new Date(job.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                  const statusColor = job.status === 'SUCCESS' ? '#10b981' : job.status === 'FAILED' ? '#ef4444' : job.status === 'PROCESSING' ? '#f59e0b' : '#9999b0'
-                  const actionColor = job.action === 'ADD' ? '#10b981' : '#ef4444'
-
-                  return (
-                    <div
-                      key={job.id}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'minmax(150px, 1.2fr) minmax(100px, 0.8fr) minmax(140px, 1.1fr) 70px 90px 60px 120px 90px',
-                        gap: '8px',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        background: job.status === 'FAILED' ? '#fee2e2' : '#f8f7ff',
-                        border: job.status === 'FAILED' ? '1px solid #fecaca' : '1px solid #ede9fe',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <div style={{ fontSize: '11px', color: '#1e1e3a', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.userEmail}>{job.userEmail}</div>
-                      <div style={{ fontSize: '11px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }} title={job.courseId}>{job.courseId}</div>
-                      <div style={{ fontSize: '11px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.groupEmail}>{job.groupEmail}</div>
-                      <div style={{ fontSize: '10px', fontWeight: '700', color: actionColor, textAlign: 'center' }}>{job.action}</div>
-                      <div style={{ fontSize: '10px', fontWeight: '700', color: statusColor, textAlign: 'center' }}>{job.status}</div>
-                      <div style={{ fontSize: '11px', color: '#6b6b8a', textAlign: 'center' }}>{job.attemptCount}/3</div>
-                      <div style={{ fontSize: '10px', color: '#9999b0' }}>{createdDate}</div>
-                      <div style={{ fontSize: '9px', color: job.lastError ? '#ef4444' : '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.lastError || ''}>{job.lastError ? getGoogleSyncErrorLabel(job.lastError) || job.lastError.slice(0, 20) : '—'}</div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* Pagination */}
-            {googleSyncPagination.totalPages > 1 && (
-              <div style={{ padding: '12px 18px', borderTop: '1px solid #d8dae3', display: 'flex', justifyContent: 'center', gap: '6px', alignItems: 'center' }}>
-                <button
-                  onClick={() => setGoogleSyncFilters({ ...googleSyncFilters, page: Math.max(1, googleSyncFilters.page - 1) })}
-                  disabled={googleSyncFilters.page === 1}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #c5c7cf', background: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: googleSyncFilters.page === 1 ? '#ccc' : '#6366f1' }}
-                >
-                  ← Prev
-                </button>
-                <span style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '600' }}>
-                  Page {googleSyncFilters.page} of {googleSyncPagination.totalPages}
-                </span>
-                <button
-                  onClick={() => setGoogleSyncFilters({ ...googleSyncFilters, page: Math.min(googleSyncPagination.totalPages, googleSyncFilters.page + 1) })}
-                  disabled={googleSyncFilters.page === googleSyncPagination.totalPages}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #c5c7cf', background: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: googleSyncFilters.page === googleSyncPagination.totalPages ? '#ccc' : '#6366f1' }}
-                >
-                  Next →
-                </button>
-              </div>
-            )}
-          </div>
         ) : getItems().length === 0 ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>
             No {tab} yet. Click &quot;Create New&quot; to add one.
@@ -1216,12 +984,7 @@ export default function ManagePage() {
         </div>
       )}
 
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+
     </div>
   )
 }

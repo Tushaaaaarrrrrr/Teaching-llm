@@ -69,33 +69,6 @@ async function isProcessing(): Promise<boolean> {
   }
 }
 
-/**
- * Trigger async processing of Google Group sync jobs
- * Fire-and-forget call to avoid blocking enrollment
- */
-export async function triggerGoogleGroupSyncProcessing(): Promise<void> {
-  if (!CRON_SECRET || !APP_URL) {
-    console.warn('[Google Group Sync] Missing CRON_SECRET or NEXT_PUBLIC_APP_URL for async trigger')
-    return
-  }
-
-  try {
-    // Fire-and-forget: don't await this call
-    fetch(`${APP_URL}/api/group-sync-jobs/process`, {
-      method: 'POST',
-      headers: {
-        'x-cron-secret': CRON_SECRET,
-        'Content-Type': 'application/json',
-      },
-    }).catch(error => {
-      // Silently catch errors - this is fire-and-forget
-      console.error('[Google Group Sync] Async trigger failed:', error instanceof Error ? error.message : String(error))
-    })
-  } catch (error) {
-    // Silently fail - don't block enrollment
-    console.error('[Google Group Sync] Trigger setup failed:', error)
-  }
-}
 
 export function validateGoogleGroupEmail(rawEmail?: string | null) {
   if (!rawEmail || !rawEmail.trim()) return null
@@ -173,9 +146,10 @@ export async function queueGoogleGroupSyncJobs(
 
   await db.groupSyncJob.createMany({ data: jobs })
 
-  // Trigger async processing (fire-and-forget, outside transaction)
-  // Schedule in next tick to avoid blocking the transaction
-  process.nextTick(() => triggerGoogleGroupSyncProcessing())
+  // Trigger background processing without blocking enrollment
+  setImmediate(() => {
+    processGoogleGroupSyncJobs().catch(console.error);
+  });
 
   return jobs.length
 }
@@ -235,8 +209,10 @@ export async function queueExplicitGoogleGroupSyncJobs(
 
   await db.groupSyncJob.createMany({ data: filteredJobs })
 
-  // Trigger async processing (fire-and-forget, outside transaction)
-  process.nextTick(() => triggerGoogleGroupSyncProcessing())
+  // Trigger background processing without blocking enrollment
+  setImmediate(() => {
+    processGoogleGroupSyncJobs().catch(console.error);
+  });
 
   return filteredJobs.length
 }

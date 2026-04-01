@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { processGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 
 export async function POST(req: Request) {
+  console.log("PROCESS API HIT");
   try {
     const cronSecret = process.env.CRON_SECRET
     if (!cronSecret) {
