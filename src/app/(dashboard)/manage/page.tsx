@@ -799,15 +799,16 @@ export default function ManagePage() {
                 <div key={item.id} style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '16px',
-                  padding: '12px 20px',
+                  gap: '12px',
+                  padding: '8px 16px',
                   borderRadius: '50px',
                   background: '#e8eaf0',
-                  boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+                  boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                   transition: 'box-shadow 0.2s',
+                  minWidth: 'fit-content',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
-                onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c2c4cc, -6px -6px 12px #ffffff')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
                 >
                   {/* Icon badge */}
                   <div style={{
@@ -822,15 +823,15 @@ export default function ManagePage() {
 
                   {/* Main info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.name || item.title}
                     </div>
                     {tab === 'courses' && (
-                      <div style={{ fontSize: '10px', fontFamily: 'monospace', color: '#6366f1', marginTop: '1px', fontWeight: '600', opacity: 0.8 }}>
+                      <div style={{ fontSize: '9px', fontFamily: 'monospace', color: '#6366f1', marginTop: '0px', fontWeight: '700', opacity: 0.7 }}>
                         ID: {item.id}
                       </div>
                     )}
-                    <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {subtitle}
                     </div>
                   </div>
@@ -839,11 +840,11 @@ export default function ManagePage() {
                   <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {tab === 'courses' && (
                       <>
-                        <span style={{ fontSize: '12px', color: '#9999b0' }}>{item._count?.lectures || 0} lectures</span>
-                        {item.isDemo && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#3636e8', color: 'white', fontWeight: '900', letterSpacing: '0.05em' }}>SYSTEM DEMO</span>}
-                        {item.isFree && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#10b981', color: 'white', fontWeight: '900', letterSpacing: '0.05em' }}>FREE</span>}
-                        {item.isExpired && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#fff7ed', color: '#ea580c', fontWeight: '900', letterSpacing: '0.05em' }}>EXPIRED</span>}
-                        {item.isEffectivelyDisabled && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#fee2e2', color: '#ef4444', fontWeight: '900', letterSpacing: '0.05em' }}>DISABLED</span>}
+                        <span style={{ fontSize: '11px', color: '#9999b0', marginRight: '4px' }}>{item._count?.lectures || 0}L</span>
+                        {item.isDemo && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#3636e8', color: 'white', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>DEMO</span>}
+                        {item.isFree && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#10b981', color: 'white', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>FREE</span>}
+                        {item.isExpired && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#fff7ed', color: '#ea580c', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>EXP</span>}
+                        {item.isEffectivelyDisabled && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#fee2e2', color: '#ef4444', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>DIS</span>}
                       </>
                     )}
                     {tab === 'bundles' && (
@@ -879,8 +880,7 @@ export default function ManagePage() {
                     )}
                   </div>
 
-                  {/* Actions */}
-                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                   <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
                     {tab === 'courses' && (
                       <button 
                         onClick={() => {
@@ -889,15 +889,14 @@ export default function ManagePage() {
                           setTimeout(() => setCopiedId(null), 2000);
                         }} 
                         className="btn btn-ghost btn-sm" 
-                        title={`Copy: ${item.id}`}
-                        style={copiedId === item.id ? { color: '#10b981', borderColor: '#10b981' } : {}}
+                        title={`Copy ID: ${item.id}`}
+                        style={{ ... (copiedId === item.id ? { color: '#10b981', borderColor: '#10b981' } : {}), padding: '6px' }}
                       >
                         {copiedId === item.id ? (
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
                         ) : (
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                         )}
-                        {copiedId === item.id ? 'Copied!' : 'Copy ID'}
                       </button>
                     )}
                     {tab === 'courses' && (
@@ -907,15 +906,12 @@ export default function ManagePage() {
                         style={{
                           color: item.isDisabled ? '#10b981' : '#ef4444',
                           border: `1px solid ${item.isDisabled ? '#d1fae5' : '#fee2e2'}`,
+                          padding: '6px 10px',
+                          fontSize: '11px',
                         }}
-                        title={item.isExpired && !item.isDisabled ? 'This course is currently disabled by expiry. Change the expiry date to re-enable it.' : undefined}
+                        title={item.isExpired && !item.isDisabled ? 'Disabled by expiry' : (item.isDisabled ? 'Enable Course' : 'Disable Course')}
                       >
-                        <span className="hidden-mobile" style={{ marginRight: '4px' }}>{item.isDisabled ? 'Enable' : 'Disable'}</span>
-                        {item.isDisabled ? (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                        ) : (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                        )}
+                        {item.isDisabled ? 'Enable' : 'Disable'}
                       </button>
                     )}
                     {tab === 'courses' && (
@@ -926,21 +922,20 @@ export default function ManagePage() {
                         style={{
                           color: '#0ea5e9',
                           border: '1px solid #cffafe',
+                          padding: '6px',
                         }}
-                        title="Duplicate this course"
+                        title="Duplicate"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><path d="M3 4h2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4h2"/><path d="M9 9h6v6H9z"/>
                         </svg>
-                        Duplicate
                       </button>
                     )}
-                    <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm">
+                    <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm" style={{ padding: '6px' }} title="Edit">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
-                      <span className="hidden-mobile">Edit</span>
                     </button>
                     <button 
                       onClick={() => handleDelete(item.id)} 
