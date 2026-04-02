@@ -88,8 +88,13 @@ export function getEventStatus(
   const start = typeof startTime === 'string' ? new Date(startTime) : startTime;
   const end = typeof endTime === 'string' ? new Date(endTime) : endTime;
 
-  if (now < start) return 'upcoming';
-  if (now >= start && now <= end) return 'live';
+  // Active definition: starts 5 minutes BEFORE scheduled start, 
+  // ends 6 minutes BEFORE scheduled end.
+  const activeStart = new Date(start.getTime() - 5 * 60 * 1000);
+  const activeEnd = new Date(end.getTime() - 6 * 60 * 1000);
+
+  if (now < activeStart) return 'upcoming';
+  if (now >= activeStart && now <= activeEnd) return 'live';
   return 'completed';
 }
 

@@ -19,6 +19,26 @@ export default function GoogleSyncPage() {
 
   const jobs = syncData?.jobs || []
   const pagination = syncData?.pagination || { page: 1, limit: 50, total: 0, totalPages: 0 }
+  const [isResetting, setIsResetting] = useState(false)
+
+  async function handleResetLock() {
+    if (!confirm('Are you sure you want to reset the sync engine? Only do this if jobs have been stuck for more than 5 minutes.')) return
+    
+    setIsResetting(true)
+    try {
+      const res = await fetch('/api/google-sync/reset-lock', { method: 'POST' })
+      const data = await res.json()
+      
+      if (!res.ok) throw new Error(data.error || 'Failed to reset lock')
+      
+      setRefreshKey(prev => prev + 1)
+      alert('Sync engine reset successfully. Jobs are now being processed.')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setIsResetting(false)
+    }
+  }
 
   function getErrorLabel(lastError?: string | null) {
     if (!lastError) return ''
@@ -49,11 +69,27 @@ export default function GoogleSyncPage() {
       {/* Summary Card */}
       {userRole === 'MANAGER' && (
         <div className="card" style={{ overflow: 'hidden', maxWidth: '100%', marginBottom: '20px' }}>
-          <div style={{ padding: '16px 18px', borderBottom: '1px solid #d8dae3' }}>
-            <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a' }}>Google Sync Status</div>
-            <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
-              Latest Google Group add/remove jobs for course enrollments
+          <div style={{ padding: '16px 18px', borderBottom: '1px solid #d8dae3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a' }}>Google Sync Status</div>
+              <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
+                Latest Google Group add/remove jobs for course enrollments
+              </div>
             </div>
+            <button
+              onClick={handleResetLock}
+              disabled={isResetting}
+              className="btn btn-sm"
+              style={{ 
+                background: '#fee2e2', 
+                color: '#ef4444', 
+                border: '1px solid #fecaca',
+                fontSize: '11px',
+                fontWeight: '700'
+              }}
+            >
+              {isResetting ? 'Resetting...' : 'Reset Sync Engine'}
+            </button>
           </div>
           {jobs.length === 0 && !isLoading ? (
             <div style={{ padding: '18px', fontSize: '12px', color: '#9999b0' }}>No sync jobs yet.</div>

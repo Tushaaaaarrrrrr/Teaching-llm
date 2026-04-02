@@ -784,6 +784,7 @@ export default function ManagePage() {
               const subtitleParts: string[] = []
               if (showCourseName) subtitleParts.push(itemCourseName)
               if (isContent && item.topic?.title) subtitleParts.push(item.topic.title)
+              if (tab === 'courses' && item.subject) subtitleParts.push(item.subject)
               if (itemDetail) subtitleParts.push(itemDetail)
               const subtitle = subtitleParts.join(' › ')
 

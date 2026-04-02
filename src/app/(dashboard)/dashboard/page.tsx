@@ -12,6 +12,28 @@ export default function DashboardPage() {
     revalidateOnFocus: false
   })
 
+  // Move declarations up to avoid Temporal Dead Zone (TDZ)
+  const stats = dashboardData?.stats || null
+  const examCountdown = dashboardData?.examCountdown || null
+  const role = dashboardData?.user?.role || ''
+  const isManager = role === 'MANAGER'
+  const isStudentView = role === 'STUDENT' || role === 'ADMIN'
+
+  const liveSessions = dashboardData?.liveSessions || []
+  const liveNow = liveSessions.filter((s: any) => 
+    getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'live'
+  )
+  const liveNowCount = liveNow.length
+  const upNextSessions = liveSessions.filter((s: any) => 
+    getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'upcoming'
+  ).slice(0, 2)
+  const upNextCount = liveSessions.filter((s: any) =>
+    getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'upcoming'
+  ).length
+
+  const lectures = (dashboardData?.lectures || []).slice(0, 3)
+  const announcements = (dashboardData?.announcements || []).slice(0, 3)
+
   const [activeCard, setActiveCard] = useState(0)
   const [sliding, setSliding] = useState(false)
   const [nowTick, setNowTick] = useState(Date.now())
@@ -43,21 +65,30 @@ export default function DashboardPage() {
     return cleanup
   }, [])
 
-  const handleNextLive = () => {
-    if (!dashboardData?.liveSessions?.length) return
+  // Auto-roll carousel every 10s if multiple sessions are active
+  useEffect(() => {
+    if (liveNow.length <= 1) {
+      if (activeCard !== 0) setActiveCard(0)
+      return
+    }
+
+    const rollInterval = setInterval(() => {
+      handleNextLive(liveNow.length)
+    }, 10000)
+
+    return () => clearInterval(rollInterval)
+  }, [liveNow.length])
+
+  const handleNextLive = (count?: number | React.MouseEvent) => {
+    const total = typeof count === 'number' ? count : liveNow.length
+    if (total <= 1) return
     setSliding(true)
     setTimeout(() => {
-      setActiveCard(prev => (prev + 1) % dashboardData.liveSessions.length)
+      setActiveCard(prev => (prev + 1) % total)
       setSliding(false)
     }, 180)
   }
 
-  // Map data from SWR response
-  const stats = dashboardData?.stats || null
-  const examCountdown = dashboardData?.examCountdown || null
-  const role = dashboardData?.user?.role || ''
-  const isManager = role === 'MANAGER'
-  const isStudentView = role === 'STUDENT' || role === 'ADMIN'
 
   const [isEditingTimer, setIsEditingTimer] = useState(false)
   const [timerTitle, setTimerTitle] = useState('')
@@ -89,23 +120,6 @@ export default function DashboardPage() {
     return '#fef3c7' // Soft yellow
   }
 
-  const liveSessions = dashboardData?.liveSessions || []
-  void nowTick
-  const liveNow = liveSessions.filter((s: any) => 
-    getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'live'
-  ).slice(0, 3)
-  const liveNowCount = liveSessions.filter((s: any) =>
-    getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'live'
-  ).length
-  const upNextSessions = liveSessions.filter((s: any) => 
-    getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'upcoming'
-  ).slice(0, 2)
-  const upNextCount = liveSessions.filter((s: any) =>
-    getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'upcoming'
-  ).length
-
-  const lectures = (dashboardData?.lectures || []).slice(0, 3)
-  const announcements = (dashboardData?.announcements || []).slice(0, 3)
 
   const statCards = [
     { label: 'Total Courses', value: stats?.totalCourses ?? 0, color: '#6366f1', bg: '#e0e7ff', icon: (
@@ -181,8 +195,8 @@ export default function DashboardPage() {
     )
   }
 
-  const frontSession = liveSessions[activeCard]
-  const hasLive = liveSessions.length > 0
+  const frontSession = liveNow[activeCard] || liveNow[0]
+  const hasLive = liveNow.length > 0
 
   return (
     <div className="page-container fade-in">
@@ -581,35 +595,9 @@ export default function DashboardPage() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px' }}>
-                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        <div style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.3' }}>
+                        <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.3' }}>
                           {frontSession.title}
                         </div>
-                      </div>
-                      <div style={{
-                        minWidth: '190px',
-                        maxWidth: '260px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '10px',
-                        alignItems: 'flex-end',
-                        textAlign: 'right',
-                        flexShrink: 0,
-                        paddingTop: '2px',
-                      }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '16px', color: '#1e1e3a', fontWeight: '800', lineHeight: 1.25 }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                          </svg>
-                          <span>{frontSession.course?.name || 'General Course'}</span>
-                        </div>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6b6b8a', fontWeight: '500', lineHeight: 1.3 }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                          </svg>
-                          <span>{frontSession.instructor || frontSession.course?.teacherName || 'Standard Faculty'}</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -632,32 +620,50 @@ export default function DashboardPage() {
                     </div>
                   ) : <div />}
 
-                  <a
-                    href={frontSession.meetLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                      padding: '13px 20px',
-                      borderRadius: '12px',
-                      background: '#ef4444',
-                      color: '#ffffff', fontSize: '13.5px', fontWeight: '700',
-                      textDecoration: 'none', letterSpacing: '0.01em',
-                      animation: 'joinGlow 2.5s ease-in-out infinite',
-                      transition: 'background 0.18s',
-                    }}
-                  >
-                    <div style={{
-                      width: '28px', height: '28px', borderRadius: '7px',
-                      background: 'rgba(255,255,255,0.2)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                    }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5">
-                        <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                      </svg>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <a
+                      href={frontSession.meetLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                        padding: '13px 20px',
+                        borderRadius: '12px',
+                        background: '#ef4444',
+                        color: '#ffffff', fontSize: '13.5px', fontWeight: '700',
+                        textDecoration: 'none', letterSpacing: '0.01em',
+                        animation: 'joinGlow 2.5s ease-in-out infinite',
+                        transition: 'background 0.18s',
+                        width: '50%',
+                      }}
+                    >
+                      <div style={{
+                        width: '28px', height: '28px', borderRadius: '7px',
+                        background: 'rgba(255,255,255,0.2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5">
+                          <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                      </div>
+                      Join Live Course
+                    </a>
+
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '18px', color: '#1e1e3a', fontWeight: '800', lineHeight: 1.2 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <span>{frontSession.course?.name || 'General Course'}</span>
+                      </div>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '14px', color: '#6b6b8a', fontWeight: '600', lineHeight: 1.2 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span>{frontSession.instructor || frontSession.course?.teacherName || 'Standard Faculty'}</span>
+                      </div>
                     </div>
-                    Join Live Course
-                  </a>
+                  </div>
                 </>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '10px' }}>
