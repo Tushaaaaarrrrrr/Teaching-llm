@@ -14,10 +14,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Force-reset the lock
-    await (prisma as any).groupSyncLock.update({
+    // Force-reset the lock (auto-creates if missing)
+    await (prisma as any).groupSyncLock.upsert({
       where: { id: 'singleton' },
-      data: {
+      update: {
+        isProcessing: false,
+        lockedAt: null,
+      },
+      create: {
+        id: 'singleton',
         isProcessing: false,
         lockedAt: null,
       },

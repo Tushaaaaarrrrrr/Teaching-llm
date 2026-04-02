@@ -58,9 +58,14 @@ async function acquireSyncLock(): Promise<boolean> {
  */
 async function releaseSyncLock(): Promise<void> {
   try {
-    await (prisma as any).groupSyncLock.update({
+    await (prisma as any).groupSyncLock.upsert({
       where: { id: 'singleton' },
-      data: {
+      update: {
+        isProcessing: false,
+        lockedAt: null,
+      },
+      create: {
+        id: 'singleton',
         isProcessing: false,
         lockedAt: null,
       },

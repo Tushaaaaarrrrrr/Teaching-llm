@@ -12,7 +12,8 @@
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate dev",
     "db:migrate:deploy": "npx prisma migrate deploy",
-    "db:seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts",
+    "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
+    "db:cleanup": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/scripts/cleanup-logs.ts",
     "db:studio": "npx prisma studio",
     "prepare": "husky install || true"
   },

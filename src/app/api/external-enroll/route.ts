@@ -4,7 +4,7 @@ import { hashPassword } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseEffectivelyDisabled } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
-
+import { appendEnrollmentToSheet } from "@/lib/google-sheets"
 const EXTERNAL_SECRET = process.env.EXTERNAL_ENROLL_SECRET?.trim()
 
 /**
@@ -256,7 +256,26 @@ export async function POST(request: NextRequest) {
       })
     })
 
-    // ─── 6. Response ──────────────────────────────────────────────────
+    // ─── 6. Google Sheets Integration (fire-and-forget, delayed) ──────
+    setTimeout(() => {
+      try {
+        if (Array.isArray(result.enrollments)) {
+          result.enrollments.forEach(enrollment => {
+            appendEnrollmentToSheet({
+              name: result.userName,
+              email: result.userEmail,
+              phone: phone,
+              course: enrollment.courseName,
+              gender: gender
+            });
+          });
+        }
+      } catch (err) {
+        console.error("Delayed sheets error:", err);
+      }
+    }, 120000); // 2 minutes
+
+    // ─── 7. Response ──────────────────────────────────────────────────
     const newEnrollmentCount = result.enrollments.filter(enrollment => enrollment.isNewEnrollment).length
     const skippedEnrollmentCount = result.enrollments.length - newEnrollmentCount
     const isSingleCourseRequest = result.enrollments.length === 1
