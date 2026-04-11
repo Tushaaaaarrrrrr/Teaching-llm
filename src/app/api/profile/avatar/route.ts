@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { writeFile } from 'fs/promises'
-import path from 'path'
+import { createClient } from '@supabase/supabase-js'
+
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error('Supabase env vars not set')
+  return createClient(url, key)
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,14 +36,31 @@ export async function POST(request: NextRequest) {
 
     const ext = file.name.split('.').pop() || 'png'
     const filename = `${session.userId}-${Date.now()}.${ext}`
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'avatars')
-    const filePath = path.join(uploadDir, filename)
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
 
-    const avatarUrl = `/uploads/avatars/${filename}`
+    const supabase = getSupabaseAdmin()
+    const storagePath = `avatars/${filename}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('lms-uploads')
+      .upload(storagePath, buffer, {
+        contentType: file.type,
+        upsert: false,
+      })
+
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError)
+      return NextResponse.json({ error: 'Failed to upload avatar to storage' }, { status: 500 })
+    }
+
+    // Get the permanent public URL
+    const { data: urlData } = supabase.storage
+      .from('lms-uploads')
+      .getPublicUrl(storagePath)
+
+    const avatarUrl = urlData.publicUrl
 
     const user = await prisma.user.update({
       where: { id: session.userId },

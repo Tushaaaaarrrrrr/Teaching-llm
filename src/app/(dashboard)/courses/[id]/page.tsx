@@ -510,66 +510,69 @@ export default function CourseDetailPage() {
                                             )}
                                           </div>
                   
-                                          {/* Actions */}
-                                          <div style={{ display: 'flex', gap: '8px', flexShrink: 0, marginLeft: 'auto' }}>
-                                            {item.pptUrl && (
-                                              <a
-                                                href={item.pptUrl}
-                                                download={item.pptUrl.startsWith('/api/files/materials/') ? true : undefined}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="btn btn-ghost btn-sm"
-                                              >
-                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                                                </svg>
-                                                View Material
-                                              </a>
+                                          {/* Action Buttons Group */}
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginLeft: 'auto' }}>
+                                            {/* Progress actions for students */}
+                                            {role === 'STUDENT' && (
+                                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginRight: '6px', paddingRight: '12px', borderRight: '1px solid #d8dae3' }}>
+                                                <button
+                                                  onClick={() => updateProgress(item.id, progressMap[item.id] === 'COMPLETED' ? 'NOT_STARTED' : 'COMPLETED')}
+                                                  style={{
+                                                    background: progressMap[item.id] === 'COMPLETED' ? '#22c55e20' : 'transparent',
+                                                    color: progressMap[item.id] === 'COMPLETED' ? '#16a34a' : '#94a3b8',
+                                                    border: `1px solid ${progressMap[item.id] === 'COMPLETED' ? '#22c55e' : '#cbd5e1'}`,
+                                                    padding: '6px 12px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
+                                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                                                    transition: 'all 0.2s'
+                                                  }}
+                                                >
+                                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                                  Completed
+                                                </button>
+                                                <button
+                                                  onClick={() => updateProgress(item.id, progressMap[item.id] === 'REWATCH' ? 'NOT_STARTED' : 'REWATCH')}
+                                                  style={{
+                                                    background: progressMap[item.id] === 'REWATCH' ? '#eab30820' : 'transparent',
+                                                    color: progressMap[item.id] === 'REWATCH' ? '#ca8a04' : '#94a3b8',
+                                                    border: `1px solid ${progressMap[item.id] === 'REWATCH' ? '#eab308' : '#cbd5e1'}`,
+                                                    padding: '6px 12px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
+                                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                                                    transition: 'all 0.2s'
+                                                  }}
+                                                >
+                                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                                                  Rewatch
+                                                </button>
+                                              </div>
                                             )}
-                                            {item.videoUrl && (
-                                              <Link
-                                                href={`/courses/${params.id}/lectures/${item.id}`}
-                                                className="btn btn-primary btn-sm"
-                                              >
-                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                                Watch
-                                              </Link>
-                                            )}
-                                          </div>
 
-                                          {/* Progress actions for students */}
-                                          {role === 'STUDENT' && (
-                                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginLeft: '6px', paddingLeft: '12px', borderLeft: '1px solid #d8dae3' }}>
-                                              <button
-                                                onClick={() => updateProgress(item.id, progressMap[item.id] === 'COMPLETED' ? 'NOT_STARTED' : 'COMPLETED')}
-                                                style={{
-                                                  background: progressMap[item.id] === 'COMPLETED' ? '#22c55e20' : 'transparent',
-                                                  color: progressMap[item.id] === 'COMPLETED' ? '#16a34a' : '#94a3b8',
-                                                  border: `1px solid ${progressMap[item.id] === 'COMPLETED' ? '#22c55e' : '#cbd5e1'}`,
-                                                  padding: '6px 12px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
-                                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
-                                                  transition: 'all 0.2s'
-                                                }}
-                                              >
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                                Completed
-                                              </button>
-                                              <button
-                                                onClick={() => updateProgress(item.id, progressMap[item.id] === 'REWATCH' ? 'NOT_STARTED' : 'REWATCH')}
-                                                style={{
-                                                  background: progressMap[item.id] === 'REWATCH' ? '#eab30820' : 'transparent',
-                                                  color: progressMap[item.id] === 'REWATCH' ? '#ca8a04' : '#94a3b8',
-                                                  border: `1px solid ${progressMap[item.id] === 'REWATCH' ? '#eab308' : '#cbd5e1'}`,
-                                                  padding: '6px 12px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
-                                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
-                                                  transition: 'all 0.2s'
-                                                }}
-                                              >
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
-                                                Rewatch
-                                              </button>
+                                            {/* Actions */}
+                                            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                                              {item.pptUrl && (
+                                                <a
+                                                  href={item.pptUrl}
+                                                  download={item.pptUrl.startsWith('/api/files/materials/') ? true : undefined}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="btn btn-ghost btn-sm"
+                                                >
+                                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                                                  </svg>
+                                                  View Material
+                                                </a>
+                                              )}
+                                              {item.videoUrl && (
+                                                <Link
+                                                  href={`/courses/${params.id}/lectures/${item.id}`}
+                                                  className="btn btn-primary btn-sm"
+                                                >
+                                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                                  Watch
+                                                </Link>
+                                              )}
                                             </div>
-                                          )}
+                                          </div>
                                         </div>
                                       )}
                                     </Draggable>

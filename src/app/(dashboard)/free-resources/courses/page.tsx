@@ -197,7 +197,7 @@ export default function FreeCoursesPage() {
                     <button 
                       disabled={loadingId === course.id}
                       className="btn" 
-                      style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', borderRadius: '50px', fontWeight: '700' }}
+                      style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', borderRadius: '50px', fontWeight: '700', padding: '12px 20px', fontSize: '14.5px', minHeight: '44px', height: 'auto' }}
                       onClick={() => { window.location.href = `/courses/${course.id}` }}
                     >
                       Open Course
@@ -207,7 +207,7 @@ export default function FreeCoursesPage() {
                       className="btn btn-ghost" 
                       title="Unenroll"
                       onClick={() => handleEnroll(course.id, true)}
-                      style={{ padding: '0 16px', color: '#ef4444', borderColor: '#fee2e2', borderRadius: '50px' }}
+                      style={{ padding: '0 16px', color: '#ef4444', borderColor: '#fee2e2', borderRadius: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '44px', height: 'auto' }}
                     >
                       {loadingId === course.id ? '...' : (
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -218,7 +218,7 @@ export default function FreeCoursesPage() {
                   <button 
                     disabled={loadingId === course.id}
                     className="btn btn-primary" 
-                    style={{ flex: 1, borderRadius: '50px', fontWeight: '700', background: '#3636e8', border: 'none' }}
+                    style={{ flex: 1, borderRadius: '50px', fontWeight: '700', background: '#3636e8', border: 'none', padding: '12px 20px', fontSize: '14.5px', minHeight: '44px', height: 'auto' }}
                     onClick={() => handleEnroll(course.id, false)}
                   >
                     {loadingId === course.id ? 'Enrolling...' : 'Enroll for Free'}
