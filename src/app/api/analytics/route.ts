@@ -154,11 +154,39 @@ export async function GET(request: NextRequest) {
       ? evaluatedExams.reduce((acc, s) => acc + (s.percentage as number), 0) / evaluatedExams.length 
       : 0
 
+    // 3. Lecture Progress Data
+    const progressWhere: any = { userId }
+    if (courseIdParam) {
+      progressWhere.content = { topic: { courseId: courseIdParam } }
+    }
+
+    const progressRecords = await prisma.lectureProgress.findMany({
+      where: progressWhere,
+      select: { status: true }
+    })
+
+    const contentCountWhere: any = {}
+    if (courseIdParam) {
+      contentCountWhere.topic = { courseId: courseIdParam }
+    }
+    const totalContent = await prisma.content.count({ where: contentCountWhere })
+
+    const completedCount = progressRecords.filter(r => r.status === 'COMPLETED').length
+    const rewatchCount = progressRecords.filter(r => r.status === 'REWATCH').length
+    const neverSeenCount = Math.max(0, totalContent - completedCount - rewatchCount)
+
     return NextResponse.json({
       type: 'STUDENT_DETAIL',
       courseId: courseIdParam || null,
       attendance: logs,
       exams: examStats,
+      progress: {
+        completed: completedCount,
+        rewatch: rewatchCount,
+        neverSeen: neverSeenCount,
+        total: totalContent,
+        percentage: totalContent > 0 ? Math.round((completedCount / totalContent) * 100) : 0
+      },
       summary: {
         attendanceCount: logs.length,
         averageExamScore: avgScore.toFixed(1),

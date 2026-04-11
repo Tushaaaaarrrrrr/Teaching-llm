@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts'
 
 interface Log {
   id: string
@@ -27,6 +28,7 @@ export default function ReportsPage() {
   const [studentSearch, setStudentSearch] = useState('')
   const [selectedStudentId, setSelectedStudentId] = useState('')
   const [selectedCourseId, setSelectedCourseId] = useState('')
+  const [subView, setSubView] = useState<'ATTENDANCE' | 'PROGRESS'>('ATTENDANCE')
 
   const { data: coursesData } = useSWR('/api/courses', fetcher)
   const courses = coursesData?.courses || coursesData || []
@@ -281,109 +283,207 @@ export default function ReportsPage() {
         </div>
       ) : data?.type === 'STUDENT_DETAIL' ? (
         <>
+          {/* Tab Switcher for Student Detail */}
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '1px solid #d8dae3', paddingBottom: '12px' }}>
+            <button 
+              onClick={() => setSubView('ATTENDANCE')}
+              style={{
+                padding: '8px 16px', borderRadius: '8px', border: 'none',
+                background: subView === 'ATTENDANCE' ? '#3636e8' : 'transparent',
+                color: subView === 'ATTENDANCE' ? '#fff' : '#6b6b8a',
+                fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >Exams & Attendance</button>
+            <button 
+              onClick={() => setSubView('PROGRESS')}
+              style={{
+                padding: '8px 16px', borderRadius: '8px', border: 'none',
+                background: subView === 'PROGRESS' ? '#3636e8' : 'transparent',
+                color: subView === 'PROGRESS' ? '#fff' : '#6b6b8a',
+                fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >Learning Progress</button>
+          </div>
+
           {selectedCourseId && (
             <div style={{ padding: '12px 20px', borderRadius: '12px', background: '#e0e7ff', color: '#6366f1', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Showing analytics filtered by: {courses.find((c: any) => c.id === selectedCourseId)?.name || 'Selected Course'}
+              Showing results filtered by: {courses.find((c: any) => c.id === selectedCourseId)?.name || 'Selected Course'}
             </div>
           )}
-          {/* Summary Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
-            <div style={neuCard}>
-               <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Total Presence</div>
-               <div style={{ fontSize: '28px', fontWeight: 900, color: '#10b981' }}>{data.summary?.attendanceCount || 0} <span style={{ fontSize: '14px', fontWeight: 600, color: '#9999b0' }}>Days</span></div>
-            </div>
-            <div style={neuCard}>
-               <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Avg. Exam Score</div>
-               <div style={{ fontSize: '28px', fontWeight: 900, color: '#3636e8' }}>{data.summary?.averageExamScore || 0}%</div>
-            </div>
-            <div style={neuCard}>
-               <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Assessments Done</div>
-               <div style={{ fontSize: '28px', fontWeight: 900, color: '#1e1e3a' }}>{data.summary?.examsTaken || 0}</div>
-            </div>
-          </div>
-
-          {/* Attendance Heatmap */}
-          <div style={{ ...neuCard, marginBottom: '40px' }}>
-             <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>Attendance Heatmap (Last 30 Days)</h2>
-             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {last30Days.map(date => {
-                   const hasLog = data.attendance?.some((l: any) => l.timestamp.split('T')[0] === date)
-                   return (
-                     <div 
-                       key={date} 
-                       title={date}
-                       style={{ 
-                         width: '24px', height: '24px', borderRadius: '6px', 
-                         background: hasLog ? '#10b981' : '#fff',
-                         boxShadow: ' inset 1px 1px 2px rgba(0,0,0,0.05)',
-                         border: '1px solid rgba(0,0,0,0.02)'
-                       }} 
-                     />
-                   )
-                })}
-             </div>
-             <div style={{ marginTop: '16px', display: 'flex', gap: '16px', fontSize: '12px', color: '#6b6b8a', fontWeight: 600 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                   <div style={{ width: '12px', height: '12px', background: '#10b981', borderRadius: '3px' }} /> Present
+          {subView === 'ATTENDANCE' ? (
+            <>
+              {/* Summary Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
+                <div style={neuCard}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Total Presence</div>
+                  <div style={{ fontSize: '28px', fontWeight: 900, color: '#10b981' }}>{data.summary?.attendanceCount || 0} <span style={{ fontSize: '14px', fontWeight: 600, color: '#9999b0' }}>Days</span></div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                   <div style={{ width: '12px', height: '12px', background: '#fff', border: '1px solid #c5c7cf', borderRadius: '3px' }} /> Absent
+                <div style={neuCard}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Avg. Exam Score</div>
+                  <div style={{ fontSize: '28px', fontWeight: 900, color: '#3636e8' }}>{data.summary?.averageExamScore || 0}%</div>
                 </div>
-             </div>
-          </div>
+                <div style={neuCard}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Assessments Done</div>
+                  <div style={{ fontSize: '28px', fontWeight: 900, color: '#1e1e3a' }}>{data.summary?.examsTaken || 0}</div>
+                </div>
+              </div>
 
-          {/* Exam Performance */}
-          <div style={neuCard}>
-             <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>Exam History</h2>
-             {data.exams.length === 0 ? (
-               <p style={{ textAlign: 'center', color: '#9999b0', padding: '24px' }}>No exam data available{selectedCourseId ? ' for this course' : ''}.</p>
-             ) : (
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {data.exams.map((ex: any, i: number) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#fff', borderRadius: '16px', boxShadow: '2px 2px 5px #c5c7cf' }}>
-                       <div>
-                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#1e1e3a' }}>{ex.title}</div>
-                          <div style={{ fontSize: '12px', color: '#6b6b8a' }}>{new Date(ex.date).toLocaleDateString()}</div>
-                       </div>
-                       <div style={{ textAlign: 'right' }}>
-                           {!ex.isEvaluated ? (
-                             <div style={{ 
-                               fontSize: '11px', fontWeight: '800', color: '#6366f1', 
-                               background: '#e0e7ff', padding: '4px 12px', borderRadius: '20px',
-                               textTransform: 'uppercase', letterSpacing: '0.04em'
-                             }}>
-                               Pending Evaluation
-                             </div>
-                           ) : !ex.isPublished && !isAdminOrManager ? (
-                             <div style={{ 
-                               fontSize: '11px', fontWeight: '800', color: '#f59e0b', 
-                               background: '#fef3c7', padding: '4px 12px', borderRadius: '20px',
-                               textTransform: 'uppercase', letterSpacing: '0.04em'
-                             }}>
-                               Result Not Published
-                             </div>
-                           ) : (
-                             <>
-                               <div style={{ fontSize: '18px', fontWeight: 900, color: (ex.percentage || 0) >= 50 ? '#10b981' : '#ef4444' }}>
-                                  {ex.percentage !== null ? `${ex.percentage.toFixed(0)}%` : 'N/A'}
-                               </div>
-                               <div style={{ fontSize: '11px', fontWeight: 700, color: '#9999b0' }}>
-                                  {ex.score !== null ? `${ex.score} / ${ex.total}` : '-- / --'} Marks
-                               </div>
-                               {!ex.isPublished && isAdminOrManager && (
-                                 <div style={{ fontSize: '10px', fontWeight: 700, color: '#f59e0b', marginTop: '4px' }}>
-                                    (Admin Only: Not Published)
-                                 </div>
-                               )}
-                             </>
-                           )}
-                        </div>
+              {/* Attendance Heatmap */}
+              <div style={{ ...neuCard, marginBottom: '40px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>Attendance Heatmap (Last 30 Days)</h2>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {last30Days.map(date => {
+                      const hasLog = data.attendance?.some((l: any) => l.timestamp.split('T')[0] === date)
+                      return (
+                        <div 
+                          key={date} 
+                          title={date}
+                          style={{ 
+                            width: '24px', height: '24px', borderRadius: '6px', 
+                            background: hasLog ? '#10b981' : '#fff',
+                            boxShadow: ' inset 1px 1px 2px rgba(0,0,0,0.05)',
+                            border: '1px solid rgba(0,0,0,0.02)'
+                          }} 
+                        />
+                      )
+                    })}
+                </div>
+                <div style={{ marginTop: '16px', display: 'flex', gap: '16px', fontSize: '12px', color: '#6b6b8a', fontWeight: 600 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ width: '12px', height: '12px', background: '#10b981', borderRadius: '3px' }} /> Present
                     </div>
-                  ))}
-               </div>
-             )}
-          </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ width: '12px', height: '12px', background: '#fff', border: '1px solid #c5c7cf', borderRadius: '3px' }} /> Absent
+                    </div>
+                </div>
+              </div>
+
+              {/* Exam Performance */}
+              <div style={neuCard}>
+                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>Exam History</h2>
+                {data.exams.length === 0 ? (
+                  <p style={{ textAlign: 'center', color: '#9999b0', padding: '24px' }}>No exam data available{selectedCourseId ? ' for this course' : ''}.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {data.exams.map((ex: any, i: number) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#fff', borderRadius: '16px', boxShadow: '2px 2px 5px #c5c7cf' }}>
+                          <div>
+                              <div style={{ fontSize: '15px', fontWeight: 800, color: '#1e1e3a' }}>{ex.title}</div>
+                              <div style={{ fontSize: '12px', color: '#6b6b8a' }}>{new Date(ex.date).toLocaleDateString()}</div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                              {!ex.isEvaluated ? (
+                                <div style={{ 
+                                  fontSize: '11px', fontWeight: '800', color: '#6366f1', 
+                                  background: '#e0e7ff', padding: '4px 12px', borderRadius: '20px',
+                                  textTransform: 'uppercase', letterSpacing: '0.04em'
+                                }}>
+                                  Pending Evaluation
+                                </div>
+                              ) : !ex.isPublished && !isAdminOrManager ? (
+                                <div style={{ 
+                                  fontSize: '11px', fontWeight: '800', color: '#f59e0b', 
+                                  background: '#fef3c7', padding: '4px 12px', borderRadius: '20px',
+                                  textTransform: 'uppercase', letterSpacing: '0.04em'
+                                }}>
+                                  Result Not Published
+                                </div>
+                              ) : (
+                                <>
+                                  <div style={{ fontSize: '18px', fontWeight: 900, color: (ex.percentage || 0) >= 50 ? '#10b981' : '#ef4444' }}>
+                                      {ex.percentage !== null ? `${ex.percentage.toFixed(0)}%` : 'N/A'}
+                                  </div>
+                                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#9999b0' }}>
+                                      {ex.score !== null ? `${ex.score} / ${ex.total}` : '-- / --'} Marks
+                                  </div>
+                                  {!ex.isPublished && isAdminOrManager && (
+                                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#f59e0b', marginTop: '4px' }}>
+                                        (Admin Only: Not Published)
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Learning Progress View */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
+                <div style={{ ...neuCard, borderLeft: '4px solid #10b981' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Completed</div>
+                  <div style={{ fontSize: '28px', fontWeight: 900, color: '#10b981' }}>{data.progress?.completed || 0}</div>
+                  <div style={{ fontSize: '11px', color: '#6b6b8a', marginTop: '4px' }}>Lectures finished</div>
+                </div>
+                <div style={{ ...neuCard, borderLeft: '4px solid #f59e0b' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Needs Rewatch</div>
+                  <div style={{ fontSize: '28px', fontWeight: 900, color: '#f59e0b' }}>{data.progress?.rewatch || 0}</div>
+                  <div style={{ fontSize: '11px', color: '#6b6b8a', marginTop: '4px' }}>Marked for review</div>
+                </div>
+                <div style={{ ...neuCard, borderLeft: '4px solid #9999b0' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Yet to Start</div>
+                  <div style={{ fontSize: '28px', fontWeight: 900, color: '#1e1e3a' }}>{data.progress?.neverSeen || 0}</div>
+                  <div style={{ fontSize: '11px', color: '#6b6b8a', marginTop: '4px' }}>Not yet accessed</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '32px' }}>
+                <div style={neuCard}>
+                   <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '24px' }}>Progress Distribution</h3>
+                   <div style={{ height: '300px', width: '100%' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Completed', value: data.progress?.completed || 0 },
+                              { name: 'Rewatch', value: data.progress?.rewatch || 0 },
+                              { name: 'Yet to Start', value: data.progress?.neverSeen || 0 },
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={5}
+                            dataKey="value"
+                          >
+                            <Cell fill="#10b981" />
+                            <Cell fill="#f59e0b" />
+                            <Cell fill="#c5c7cf" />
+                          </Pie>
+                          <Tooltip 
+                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                          />
+                          <Legend verticalAlign="bottom" height={36}/>
+                        </PieChart>
+                      </ResponsiveContainer>
+                   </div>
+                </div>
+
+                <div style={{ ...neuCard, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+                    <div style={{ 
+                      width: '120px', height: '120px', borderRadius: '50%', 
+                      background: '#e8eaf0', boxShadow: 'inset 6px 6px 12px #c5c7cf, inset -6px -6px 12px #ffffff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      marginBottom: '24px', position: 'relative'
+                    }}>
+                       <div style={{ fontSize: '24px', fontWeight: 900, color: '#3636e8' }}>{data.progress?.percentage || 0}%</div>
+                       <div style={{ position: 'absolute', bottom: '-10px', fontSize: '10px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Completion</div>
+                    </div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '8px' }}>Keep it up!</h3>
+                    <p style={{ fontSize: '14px', color: '#6b6b8a', maxWidth: '300px' }}>
+                      {data.progress?.percentage === 100 
+                        ? "Amazing! You've successfully finished all lectures in this scope." 
+                        : `You have completed ${data.progress?.completed} out of ${data.progress?.total} lectures. Stay consistent!`}
+                    </p>
+                </div>
+              </div>
+            </>
+          )}
         </>
       ) : (
         <div style={{ ...neuCard, textAlign: 'center', padding: '40px', color: '#9999b0' }}>

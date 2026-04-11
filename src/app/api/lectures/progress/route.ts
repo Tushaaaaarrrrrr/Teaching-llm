@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { verifyAuth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
+import { getSession } from '@/lib/auth'
 
 export async function GET(request: Request) {
   try {
-    const session = await verifyAuth(request)
+    const session = await getSession()
     if (!session || !session.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await verifyAuth(request)
+    const session = await getSession()
     if (!session || !session.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -49,25 +49,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing contentId or status' }, { status: 400 })
     }
 
-    // Upsert the progress
-    const progress = await prisma.lectureProgress.upsert({
-      where: {
-        userId_contentId: {
-          userId: session.id,
-          contentId: contentId,
-        }
-      },
-      update: {
-        status: status,
-      },
-      create: {
+    // Push to the queue instead of direct upsert
+    const queueItem = await prisma.lectureProgressQueue.create({
+      data: {
         userId: session.id,
         contentId: contentId,
         status: status,
       }
     })
 
-    return NextResponse.json(progress)
+    return NextResponse.json({ success: true, queueId: queueItem.id })
   } catch (error) {
     console.error('Error updating lecture progress:', error)
     return NextResponse.json({ error: 'Failed to update progress' }, { status: 500 })

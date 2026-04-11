@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { processSyncQueue, cleanupOldSyncQueue } from '@/lib/sync-queue'
+import { processProgressQueue, cleanupOldProgressQueue } from '@/lib/progress-processor'
 
 // This endpoint should be called by a cron job every 10 seconds
 // Configure in vercel.json or use an external cron service
@@ -20,15 +21,20 @@ export async function POST(req: Request) {
 
     // Process pending sync jobs
     const result = await processSyncQueue()
+    
+    // Process lecture progress queue
+    const progressResult = await processProgressQueue()
 
     // Cleanup old jobs every 10th run (approximately hourly)
     if (Math.random() < 0.1) {
       await cleanupOldSyncQueue()
+      await cleanupOldProgressQueue()
     }
 
     return NextResponse.json({
       success: true,
       processed: result.processed,
+      progressProcessed: progressResult.processed,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
