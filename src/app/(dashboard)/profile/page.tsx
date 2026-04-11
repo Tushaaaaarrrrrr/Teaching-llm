@@ -1,8 +1,42 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { getDefaultAvatar } from '@/lib/avatar'
+import Cropper from 'react-easy-crop'
+
+// Helper to extract cropped image blob
+async function getCroppedImg(imageSrc: string, pixelCrop: any, fileType: string): Promise<Blob> {
+  const image = new Image()
+  image.src = imageSrc
+  await new Promise(resolve => { image.onload = resolve })
+
+  const canvas = document.createElement('canvas')
+  canvas.width = pixelCrop.width
+  canvas.height = pixelCrop.height
+  const ctx = canvas.getContext('2d')
+
+  if (!ctx) throw new Error('No 2d context')
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height
+  )
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) { reject(new Error('Canvas is empty')); return }
+      resolve(blob)
+    }, fileType, 0.9)
+  })
+}
 
 interface UserProfile {
   id: string
@@ -48,6 +82,14 @@ export default function ProfilePage() {
 
   const [showSecurityNumber, setShowSecurityNumber] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+
+  // Cropper State
+  const [imageSrc, setImageSrc] = useState<string | null>(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
+  const [selectedFileType, setSelectedFileType] = useState('image/png')
+  const [selectedFileName, setSelectedFileName] = useState('avatar.png')
 
   useEffect(() => { loadProfile() }, [])
 
@@ -104,18 +146,47 @@ export default function ProfilePage() {
     if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
       alert('Please upload a JPEG, PNG, GIF, or WebP image'); return
     }
-    if (file.size > 5 * 1024 * 1024) { alert('File too large. Maximum 5MB'); return }
+    if (file.size > 10 * 1024 * 1024) { alert('File too large. Maximum 10MB'); return }
+    
+    setSelectedFileType(file.type)
+    setSelectedFileName(file.name)
+
+    const reader = new FileReader()
+    reader.addEventListener('load', () => {
+      setImageSrc(reader.result?.toString() || null)
+    })
+    reader.readAsDataURL(file)
+
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels)
+  }, [])
+
+  async function uploadCroppedImage() {
+    if (!imageSrc || !croppedAreaPixels) return
+
     setUploadingAvatar(true)
     try {
+      const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels, selectedFileType)
+      const file = new File([croppedBlob], selectedFileName, { type: selectedFileType })
+      
       const formData = new FormData()
       formData.append('avatar', file)
+      
       const res = await fetch('/api/profile/avatar', { method: 'POST', body: formData })
       const data = await res.json()
-      if (res.ok) setUser(prev => prev ? { ...prev, avatar: data.avatar } : prev)
-      else alert(data.error || 'Failed to upload avatar')
-    } catch { alert('Upload failed') }
+      if (res.ok) {
+        setUser(prev => prev ? { ...prev, avatar: data.avatar } : prev)
+        setImageSrc(null)
+      } else {
+        alert(data.error || 'Failed to upload avatar')
+      }
+    } catch {
+      alert('Upload failed')
+    }
     setUploadingAvatar(false)
-    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   function handleDiscard() {
@@ -422,6 +493,71 @@ export default function ProfilePage() {
         </div>
 
       </div>
+
+      {/* ── Image Crop Modal ── */}
+      {imageSrc && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal" style={{ width: '90%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
+            <div className="modal-header" style={{ padding: '20px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Adjust Profile Picture</h3>
+              <button 
+                onClick={() => setImageSrc(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b8a' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div style={{ position: 'relative', width: '100%', height: '350px', background: '#333' }}>
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            </div>
+            
+            <div style={{ padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b6b8a' }}>Zoom</span>
+                <input
+                  type="range"
+                  value={zoom}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  aria-labelledby="Zoom"
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  style={{ flex: 1 }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button 
+                  onClick={() => setImageSrc(null)} 
+                  className="btn btn-ghost"
+                  disabled={uploadingAvatar}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={uploadCroppedImage} 
+                  className="btn btn-primary"
+                  disabled={uploadingAvatar}
+                >
+                  {uploadingAvatar ? 'Uploading...' : 'Save Picture'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
