@@ -511,7 +511,7 @@ export default function CourseDetailPage() {
                                           </div>
                   
                                           {/* Actions */}
-                                          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                                          <div style={{ display: 'flex', gap: '8px', flexShrink: 0, marginLeft: 'auto' }}>
                                             {item.pptUrl && (
                                               <a
                                                 href={item.pptUrl}
