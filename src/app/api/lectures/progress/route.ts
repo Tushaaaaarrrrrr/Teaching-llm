@@ -5,14 +5,14 @@ import { getSession } from '@/lib/auth'
 export async function GET(request: Request) {
   try {
     const session = await getSession()
-    if (!session || !session.id) {
+    if (!session || !session.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get('courseId')
 
-    let whereClause: any = { userId: session.id }
+    let whereClause: any = { userId: session.userId }
 
     if (courseId) {
       whereClause.content = {
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await getSession()
-    if (!session || !session.id) {
+    if (!session || !session.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     // Push to the queue instead of direct upsert
     const queueItem = await prisma.lectureProgressQueue.create({
       data: {
-        userId: session.id,
+        userId: session.userId,
         contentId: contentId,
         status: status,
       }
