@@ -88,29 +88,24 @@ let pendingTrigger: NodeJS.Timeout | null = null
 /**
  * Trigger async processing of Google Group sync jobs
  * Uses a 10-second buffer to collect multiple jobs before firing the worker
+ * Calls processGoogleGroupSyncJobs directly in memory (no HTTP, no env vars needed)
  */
-export async function triggerGoogleGroupSyncProcessing(): Promise<void> {
-  if (!CRON_SECRET || !APP_URL) {
-    console.warn('[Google Group Sync] Missing CRON_SECRET or NEXT_PUBLIC_APP_URL for async trigger')
-    return
-  }
-
+export function triggerGoogleGroupSyncProcessing(): void {
   // If a trigger is already scheduled, don't create another one
   if (pendingTrigger) return
 
   // Schedule the trigger with a 10-second buffer
-  pendingTrigger = setTimeout(() => {
+  pendingTrigger = setTimeout(async () => {
     pendingTrigger = null // Clear the reference so new triggers can be scheduled
     
-    fetch(`${APP_URL}/api/group-sync-jobs/process`, {
-      method: 'POST',
-      headers: {
-        'x-cron-secret': CRON_SECRET,
-        'Content-Type': 'application/json',
-      },
-    }).catch(error => {
-      console.error('[Google Group Sync] Async trigger failed:', error instanceof Error ? error.message : String(error))
-    })
+    try {
+      const result = await processGoogleGroupSyncJobs()
+      if (result.processed > 0) {
+        console.log(`[Google Group Sync] Processed ${result.processed} jobs: ${result.succeeded} succeeded, ${result.failed} failed`)
+      }
+    } catch (error) {
+      console.error('[Google Group Sync] Direct processing failed:', error instanceof Error ? error.message : String(error))
+    }
   }, 10000)
 }
 
