@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
+import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard'
 
 interface Log {
   id: string
@@ -21,7 +22,7 @@ const fetcher = (url: string) => fetch(url).then(r => r.json())
 export default function ReportsPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState<'OVERVIEW' | 'STUDENT_AUDIT'>('OVERVIEW')
+  const [view, setView] = useState<'OVERVIEW' | 'STUDENT_AUDIT' | 'ANALYTICS_DASHBOARD'>('ANALYTICS_DASHBOARD')
   const [role, setRole] = useState('')
   const [students, setStudents] = useState<any[]>([])
   const [studentSearch, setStudentSearch] = useState('')
@@ -161,6 +162,16 @@ export default function ReportsPage() {
         {isAdminOrManager && (
           <div style={{ display: 'flex', gap: '12px' }}>
              <button 
+               onClick={() => setView('ANALYTICS_DASHBOARD')}
+               style={{
+                 padding: '10px 20px', borderRadius: '50px', border: 'none',
+                 background: view === 'ANALYTICS_DASHBOARD' ? '#3636e8' : '#e8eaf0',
+                 color: view === 'ANALYTICS_DASHBOARD' ? '#fff' : '#6b6b8a',
+                 boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                 fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
+               }}
+             >Analytics</button>
+             <button 
                onClick={() => setView('OVERVIEW')}
                style={{
                  padding: '10px 20px', borderRadius: '50px', border: 'none',
@@ -209,7 +220,10 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {loading ? (
+      {/* ─── Analytics Dashboard View (Manager Only) ─── */}
+      {isAdminOrManager && view === 'ANALYTICS_DASHBOARD' ? (
+        <AnalyticsDashboard />
+      ) : loading ? (
         <div style={{ padding: '80px', textAlign: 'center', color: '#9999b0' }}>Analyzing data...</div>
       ) : data?.type === 'MANAGER_OVERVIEW' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>

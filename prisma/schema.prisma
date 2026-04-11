@@ -691,3 +691,43 @@ model GroupSyncLock {
   lockedAt      DateTime?
   updatedAt     DateTime @updatedAt
 }
+
+// ─── Analytics (Precomputed, Read-Only by Frontend) ──────────────────────
+
+model AnalyticsSnapshot {
+  id                  String   @id @default(cuid())
+  date                DateTime @unique           // The day this snapshot covers (date only, no time)
+  totalUsers          Int      @default(0)       // Total STUDENT users at time of snapshot
+  newUsers            Int      @default(0)       // Users where User.createdAt falls on this day
+  returningUsers      Int      @default(0)       // Active users whose createdAt is before this day
+  activeUsers         Int      @default(0)       // Unique users in ActivityLog on this day
+  totalEnrollments    Int      @default(0)       // Enrollments created on this day
+  avgCoursesPerStudent Float   @default(0)       // Total enrollments / total students
+  hourlyActivity      String?                    // JSON: {"0":5,"1":2,...,"23":10}
+  topCourses          String?                    // JSON: [{"courseId":"x","name":"Y","count":50},...]
+  courseDistribution   String?                   // JSON: [{"courseId":"x","name":"Y","count":50},...]
+  createdAt           DateTime @default(now())
+
+  @@index([date])
+}
+
+model AnalyticsCourseDaily {
+  id               String   @id @default(cuid())
+  date             DateTime                      // The day
+  courseId          String                        // Course ID (not a FK — read-only snapshot)
+  courseName       String                        // Denormalized for fast reads
+  enrollmentCount  Int      @default(0)          // Enrollments on this day for this course
+  totalEnrollments Int      @default(0)          // Cumulative enrollments for this course
+  growthDelta      Int      @default(0)          // Today's enrollments minus yesterday's
+  createdAt        DateTime @default(now())
+
+  @@unique([date, courseId])
+  @@index([date])
+  @@index([courseId])
+}
+
+model AnalyticsConfig {
+  id                 String   @id @default("singleton")
+  lastUpdatedAt      DateTime @default(now())    // When the cron last ran successfully
+  cronIntervalHours  Int      @default(24)       // Used by frontend to compute next update time
+}
