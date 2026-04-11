@@ -71,10 +71,10 @@ export default function SettingsPage() {
   const [isManagerUser, setIsManagerUser] = useState(false)
 
   // Help Card Config
-  const [helpCardConfig, setHelpCardConfig] = useState({ title: '', description: '', redirectUrl: '', isEnabled: true })
+  const [helpCardConfig, setHelpCardConfig] = useState({ title: '', buttonText: '', redirectUrl: '', isEnabled: true })
   const [savingHelpCard, setSavingHelpCard] = useState(false)
 
-  // Fetch initial settings on mount (only succeeds for managers)
+  // Fetch initial settings on mount (strictly for managers)
   useEffect(() => {
     fetch('/api/updates/settings')
       .then(res => res.ok ? res.json() : null)
@@ -92,7 +92,7 @@ export default function SettingsPage() {
         if (data) {
           setHelpCardConfig({
             title: data.title || '',
-            description: data.description || '',
+            buttonText: data.buttonText || '',
             redirectUrl: data.redirectUrl || '',
             isEnabled: data.isEnabled ?? true,
           })
@@ -367,24 +367,23 @@ export default function SettingsPage() {
 
         </div>
 
-        {/* ── Support Card Settings (Manager only) ── */}
+        {/* ── Help Card Settings (Manager only) ── */}
         {isManagerUser && (
           <div className="card" style={{ padding: '28px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 17v4"/>
+                <path d="M12 8v8"/><path d="M8 12h8"/>
               </svg>
-              Support Card Settings
+              Course List Add Settings (Manager Only)
             </h3>
-            <p style={{ fontSize: '12px', color: '#9999b0', marginBottom: '18px' }}>Configure the "Need Help?" card displayed in the courses list.</p>
+            <p style={{ fontSize: '12px', color: '#9999b0', marginBottom: '18px' }}>Configure the simple fake course card at the end of the list.</p>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
               <div style={insetRow}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>Enable Support Card</div>
-                  <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Show the card at the end of the course list</div>
+                  <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>Enable Card</div>
+                  <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Show this block in the courses section</div>
                 </div>
                 <Toggle
                   checked={helpCardConfig.isEnabled}
@@ -400,18 +399,18 @@ export default function SettingsPage() {
                     className="form-input"
                     value={helpCardConfig.title}
                     onChange={e => setHelpCardConfig(p => ({ ...p, title: e.target.value }))}
-                    placeholder="e.g. Need Help?"
+                    placeholder="e.g. Join the Community"
                     style={{ background: '#f8f9fc', border: '1px solid #e2e8f0', boxShadow: 'none' }}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>Description</label>
+                  <label className="form-label" style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>CTA Button Text</label>
                   <input
                     type="text"
                     className="form-input"
-                    value={helpCardConfig.description}
-                    onChange={e => setHelpCardConfig(p => ({ ...p, description: e.target.value }))}
-                    placeholder="e.g. Need more courses or assistance?"
+                    value={helpCardConfig.buttonText}
+                    onChange={e => setHelpCardConfig(p => ({ ...p, buttonText: e.target.value }))}
+                    placeholder="e.g. Enroll Now"
                     style={{ background: '#f8f9fc', border: '1px solid #e2e8f0', boxShadow: 'none' }}
                   />
                 </div>
@@ -422,7 +421,7 @@ export default function SettingsPage() {
                     className="form-input"
                     value={helpCardConfig.redirectUrl}
                     onChange={e => setHelpCardConfig(p => ({ ...p, redirectUrl: e.target.value }))}
-                    placeholder="e.g. mailto:support@domain.com or https://wa.me/number"
+                    placeholder="https://..."
                     style={{ background: '#f8f9fc', border: '1px solid #e2e8f0', boxShadow: 'none' }}
                   />
                 </div>
@@ -430,7 +429,7 @@ export default function SettingsPage() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
                 <button onClick={handleSaveHelpCard} disabled={savingHelpCard} className="btn btn-primary" style={{ background: '#3636e8', color: 'white' }}>
-                  {savingHelpCard ? 'Saving...' : 'Save Config'}
+                  {savingHelpCard ? 'Saving...' : 'Save Settings'}
                 </button>
               </div>
             </div>

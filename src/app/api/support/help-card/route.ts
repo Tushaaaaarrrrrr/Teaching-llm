@@ -18,7 +18,8 @@ export async function GET() {
       return NextResponse.json({
         id: 'singleton',
         title: 'Need Help?',
-        description: 'Need more courses or assistance?',
+        description: '',
+        buttonText: 'Enroll in More',
         redirectUrl: 'mailto:support@example.com',
         isEnabled: true,
       })
@@ -34,25 +35,25 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const session = await getSession()
-    if (!session || (session.role !== 'MANAGER' && session.role !== 'ADMIN')) {
+    if (!session || session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const body = await request.json()
-    const { title, description, redirectUrl, isEnabled } = body
+    const { title, buttonText, redirectUrl, isEnabled } = body
 
     const config = await (prisma as any).helpCardConfig.upsert({
       where: { id: 'singleton' },
       update: {
         title: title || 'Need Help?',
-        description: description || 'Need more courses or assistance?',
+        buttonText: buttonText || 'Enroll in More',
         redirectUrl: redirectUrl || 'mailto:support@example.com',
         isEnabled: isEnabled !== undefined ? isEnabled : true,
       },
       create: {
         id: 'singleton',
         title: title || 'Need Help?',
-        description: description || 'Need more courses or assistance?',
+        buttonText: buttonText || 'Enroll in More',
         redirectUrl: redirectUrl || 'mailto:support@example.com',
         isEnabled: isEnabled !== undefined ? isEnabled : true,
       },

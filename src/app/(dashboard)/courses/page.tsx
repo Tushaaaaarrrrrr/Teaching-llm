@@ -263,67 +263,71 @@ export default function CoursesPage() {
                 flexDirection: 'column',
                 width: '100%',
                 height: '100%',
-                border: '2px dashed #94a3b8'
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.transform = 'translateY(-4px)'
                 e.currentTarget.style.boxShadow = '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
-                e.currentTarget.style.borderColor = '#3636e8'
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.boxShadow = '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
-                e.currentTarget.style.borderColor = '#94a3b8'
               }}
             >
+              {/* Simple Gradient Banner */}
               <div style={{
                 height: '100px',
-                background: `linear-gradient(135deg, #cbd5e1ee, #e2e8f099)`,
+                background: `linear-gradient(135deg, #6366f1ee, #6366f199)`,
                 position: 'relative',
                 overflow: 'hidden',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-                <div style={{ position: 'absolute', width: '130px', height: '130px', borderRadius: '50%', background: 'rgba(54,54,232,0.05)', top: '-50px', right: '-30px' }} />
-                <div style={{ position: 'absolute', width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(54,54,232,0.03)', bottom: '-20px', left: '24px' }} />
+                <div style={{ position: 'absolute', width: '130px', height: '130px', borderRadius: '50%', background: 'rgba(255,255,255,0.12)', top: '-50px', right: '-30px' }} />
+                <div style={{ position: 'absolute', width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', bottom: '-20px', left: '24px' }} />
                 <div style={{
                   width: '58px',
                   height: '58px',
                   borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.7)',
+                  background: 'rgba(255,255,255,0.25)',
                   backdropFilter: 'blur(4px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#3636e8',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                   zIndex: 1,
                 }}>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </div>
               </div>
 
-              <div style={{ padding: '18px 20px 16px', display: 'flex', flexDirection: 'column', flex: 1, alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: '160px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', marginBottom: '8px' }}>
+              {/* Card Body */}
+              <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+                <h3 style={{ 
+                  fontSize: '18px', 
+                  fontWeight: '800', 
+                  color: '#1e1e3a', 
+                  marginBottom: '20px', 
+                  lineHeight: '1.3',
+                }}>
                   {helpCard.title}
                 </h3>
-                <p style={{ fontSize: '14px', color: '#6b6b8a', lineHeight: '1.5', marginBottom: '16px' }}>
-                  {helpCard.description}
-                </p>
-                
-                <span style={{
-                  display: 'inline-block',
-                  padding: '8px 20px',
-                  borderRadius: '50px',
-                  background: '#3636e8',
+
+                <button style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '16px',
+                  background: '#6366f1',
                   color: 'white',
-                  fontSize: '13px',
+                  border: 'none',
+                  fontSize: '14px',
                   fontWeight: '700',
-                  marginTop: 'auto',
+                  boxShadow: '4px 4px 8px rgba(99, 102, 241, 0.3)',
+                  cursor: 'pointer'
                 }}>
-                  Get Help
-                </span>
+                  {helpCard.buttonText || 'Enroll in More'}
+                </button>
               </div>
             </div>
           </a>

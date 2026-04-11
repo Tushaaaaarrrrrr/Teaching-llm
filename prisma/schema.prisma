@@ -634,7 +634,8 @@ model UpdateSystemSettings {
 model HelpCardConfig {
   id          String  @id @default("singleton")
   title       String  @default("Need Help?")
-  description String  @default("Need more courses or assistance?")
+  description String  @default("")
+  buttonText  String  @default("Enroll in More")
   redirectUrl String  @default("mailto:support@example.com")
   isEnabled   Boolean @default(true)
 }
@@ -754,5 +755,16 @@ model LectureProgress {
   @@unique([userId, contentId])
   @@index([userId])
   @@index([contentId])
+}
+model LectureProgressQueue {
+  id        String   @id @default(cuid())
+  userId    String
+  contentId String
+  status    String
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([processed])
+  @@index([userId])
 }
 
