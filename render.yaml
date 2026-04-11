@@ -4,3 +4,15 @@ services:
     runtime: node
     buildCommand: rm -rf .next && npm ci && npm run db:migrate:deploy && npm run build
     startCommand: npm start
+
+# ─── Automated Analytics Cron ───────────────────────────────────────
+# This will run automatically on Render every morning at 3 AM IST
+# Ensure CRON_SECRET is set in your Render dashboard environment
+# ───────────────────────────────────────────────────────────────────
+jobs:
+  - type: cron
+    name: analytics-compute-daily
+    runtime: node
+    schedule: "30 21 * * *"
+    command: "npm run analytics:compute"
+
