@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface QuestionForm {
   text: string
@@ -14,6 +15,7 @@ interface QuestionForm {
 }
 
 export default function ContentBankPage() {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const [questions, setQuestions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -152,7 +154,13 @@ export default function ContentBankPage() {
   }
 
   async function handleDelete(questionId: string) {
-    if (!window.confirm('Delete this content bank question?')) return
+    const allowed = await confirm({
+      title: 'Delete Question?',
+      message: 'This question will be permanently removed from the content bank.',
+      confirmLabel: 'Delete Question',
+      tone: 'danger',
+    })
+    if (!allowed) return
 
     setDeletingId(questionId)
     try {
@@ -206,6 +214,7 @@ export default function ContentBankPage() {
 
   return (
     <div style={{ padding: '24px 32px 48px' }}>
+      {confirmDialog}
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button 

@@ -62,6 +62,7 @@ model User {
   createdUpdates          SystemUpdate[]         @relation("UpdateCreator")
   ticketReplies           TicketReply[]          @relation("ReplyAuthor")
   updateViews             UpdateView[]
+  lectureProgress         LectureProgress[]
 }
 
 model Course {
@@ -279,6 +280,7 @@ model Content {
   comments    Comment[]
   sharedTopics TopicSharedContent[]
   topic       Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  lectureProgress LectureProgress[]
 }
 
 model TopicSharedContent {
@@ -629,6 +631,14 @@ model UpdateSystemSettings {
   maintenanceMode Boolean @default(false)
 }
 
+model HelpCardConfig {
+  id          String  @id @default("singleton")
+  title       String  @default("Need Help?")
+  description String  @default("Need more courses or assistance?")
+  redirectUrl String  @default("mailto:support@example.com")
+  isEnabled   Boolean @default(true)
+}
+
 model ExamCountdown {
   id             String    @id @default(cuid())
   title          String    @default("Upcoming Exam")
@@ -731,3 +741,18 @@ model AnalyticsConfig {
   lastUpdatedAt      DateTime @default(now())    // When the cron last ran successfully
   cronIntervalHours  Int      @default(24)       // Used by frontend to compute next update time
 }
+
+model LectureProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  contentId String
+  status    String   @default("NOT_STARTED")
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentId])
+  @@index([userId])
+  @@index([contentId])
+}
+

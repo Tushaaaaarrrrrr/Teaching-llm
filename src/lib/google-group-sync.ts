@@ -19,36 +19,21 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
 }
 
-const STALE_LOCK_LIMIT = 5 * 60 * 1000 // 5 minutes in milliseconds
-
 /**
  * Acquire lock to prevent concurrent processing
- * Returns true if lock was acquired, false if already processing or lock is fresh
+ * Returns true if lock was acquired, false if already processing
  */
 async function acquireSyncLock(): Promise<boolean> {
   try {
-    const now = new Date()
-    const staleThreshold = new Date(now.getTime() - STALE_LOCK_LIMIT)
-
-    // Atomic update: only take the lock if it's free OR if it's been stuck for > 5 mins
-    const lock = await (prisma as any).groupSyncLock.updateMany({
-      where: {
-        id: 'singleton',
-        OR: [
-          { isProcessing: false },
-          { lockedAt: { lt: staleThreshold } }
-        ]
-      },
+    const result = await (prisma as any).groupSyncLock.update({
+      where: { id: 'singleton' },
       data: {
         isProcessing: true,
-        lockedAt: now,
-      }
+        lockedAt: new Date(),
+      },
     })
-
-    // updateMany returns { count: number }
-    return lock.count > 0
+    return true
   } catch (error) {
-    console.error('[Google Group Sync] Failed to acquire lock:', error)
     return false
   }
 }
@@ -58,14 +43,9 @@ async function acquireSyncLock(): Promise<boolean> {
  */
 async function releaseSyncLock(): Promise<void> {
   try {
-    await (prisma as any).groupSyncLock.upsert({
+    await (prisma as any).groupSyncLock.update({
       where: { id: 'singleton' },
-      update: {
-        isProcessing: false,
-        lockedAt: null,
-      },
-      create: {
-        id: 'singleton',
+      data: {
         isProcessing: false,
         lockedAt: null,
       },
@@ -76,24 +56,46 @@ async function releaseSyncLock(): Promise<void> {
 }
 
 /**
- * Check if processing is already in progress (and not stale)
+ * Check if processing is already in progress
  */
 async function isProcessing(): Promise<boolean> {
   try {
-    const staleThreshold = new Date(Date.now() - STALE_LOCK_LIMIT)
     const lock = await (prisma as any).groupSyncLock.findUnique({
       where: { id: 'singleton' },
     })
-
-    if (!lock) return false
-    
-    // It's effectively processing only if the flag is true AND it hasn't timed out
-    return lock.isProcessing && lock.lockedAt && lock.lockedAt > staleThreshold
+    return lock?.isProcessing ?? false
   } catch (error) {
     return false
   }
 }
 
+/**
+ * Trigger async processing of Google Group sync jobs
+ * Fire-and-forget call to avoid blocking enrollment
+ */
+export async function triggerGoogleGroupSyncProcessing(): Promise<void> {
+  if (!CRON_SECRET || !APP_URL) {
+    console.warn('[Google Group Sync] Missing CRON_SECRET or NEXT_PUBLIC_APP_URL for async trigger')
+    return
+  }
+
+  try {
+    // Fire-and-forget: don't await this call
+    fetch(`${APP_URL}/api/group-sync-jobs/process`, {
+      method: 'POST',
+      headers: {
+        'x-cron-secret': CRON_SECRET,
+        'Content-Type': 'application/json',
+      },
+    }).catch(error => {
+      // Silently catch errors - this is fire-and-forget
+      console.error('[Google Group Sync] Async trigger failed:', error instanceof Error ? error.message : String(error))
+    })
+  } catch (error) {
+    // Silently fail - don't block enrollment
+    console.error('[Google Group Sync] Trigger setup failed:', error)
+  }
+}
 
 export function validateGoogleGroupEmail(rawEmail?: string | null) {
   if (!rawEmail || !rawEmail.trim()) return null
@@ -157,7 +159,7 @@ export async function queueGoogleGroupSyncJobs(
     pendingJobs.map((job: { courseId: string; groupEmail: string }) => `${job.courseId}:${job.groupEmail}`)
   )
 
-  const jobsToCreate = courses
+  const jobs = courses
     .map((course: { id: string; googleGroupEmail: string | null }) => ({
       userEmail: normalizedUserEmail,
       courseId: course.id,
@@ -167,14 +169,15 @@ export async function queueGoogleGroupSyncJobs(
     }))
     .filter(job => job.groupEmail && !pendingKeys.has(`${job.courseId}:${job.groupEmail}`))
 
-  if (jobsToCreate.length === 0) return 0
+  if (jobs.length === 0) return 0
 
-  await db.groupSyncJob.createMany({ data: jobsToCreate })
-  
-  // Trigger background processing with a short delay to batch multiple enrollments
-  triggerGoogleGroupSyncDebounced()
+  await db.groupSyncJob.createMany({ data: jobs })
 
-  return jobsToCreate.length
+  // Trigger async processing (fire-and-forget, outside transaction)
+  // Schedule in next tick to avoid blocking the transaction
+  process.nextTick(() => triggerGoogleGroupSyncProcessing())
+
+  return jobs.length
 }
 
 export async function queueExplicitGoogleGroupSyncJobs(
@@ -219,7 +222,7 @@ export async function queueExplicitGoogleGroupSyncJobs(
   })
 
   const pendingKeys = new Set(
-    pendingJobs.map((job: any) =>
+    pendingJobs.map((job: { userEmail: string; courseId: string; groupEmail: string; action: SyncAction }) =>
       `${job.userEmail}:${job.courseId}:${job.groupEmail}:${job.action}`
     )
   )
@@ -231,33 +234,11 @@ export async function queueExplicitGoogleGroupSyncJobs(
   if (filteredJobs.length === 0) return 0
 
   await db.groupSyncJob.createMany({ data: filteredJobs })
-  
-  // Trigger background processing with a short delay to batch multiple enrollments
-  triggerGoogleGroupSyncDebounced()
+
+  // Trigger async processing (fire-and-forget, outside transaction)
+  process.nextTick(() => triggerGoogleGroupSyncProcessing())
 
   return filteredJobs.length
-}
-
-let syncDebounceTimer: NodeJS.Timeout | null = null
-const TRIGGER_DEBOUNCE_MS = 15000 // 15 seconds
-
-/**
- * Throttled trigger to prevent database connection spikes 
- * during concurrent enrollments.
- */
-export function triggerGoogleGroupSyncDebounced() {
-  // If a sync is already scheduled, do nothing (batch it)
-  if (syncDebounceTimer) return
-
-  syncDebounceTimer = setTimeout(async () => {
-    try {
-      await processGoogleGroupSyncJobs()
-    } catch (error) {
-      console.error('[Google Group Sync] Debounced processing failed:', error)
-    } finally {
-      syncDebounceTimer = null
-    }
-  }, TRIGGER_DEBOUNCE_MS)
 }
 
 async function getGoogleAccessToken() {
@@ -345,22 +326,16 @@ export async function processGoogleGroupSyncJobs() {
   try {
     const jobs = await (prisma as any).groupSyncJob.findMany({
       where: {
-        status: { in: ['PENDING', 'PROCESSING'] },
+        status: 'PENDING',
         attemptCount: { lt: GROUP_SYNC_MAX_ATTEMPTS },
       },
       orderBy: { createdAt: 'asc' },
-      take: 10, // Process max 10 jobs per run for server health
+      take: 50, // Process max 50 jobs per run
     })
 
     if (jobs.length === 0) {
       return { processed: 0, succeeded: 0, failed: 0 }
     }
-
-    // Bulk mark as PROCESSING to save database round-trips
-    await (prisma as any).groupSyncJob.updateMany({
-      where: { id: { in: jobs.map((j: { id: string }) => j.id) } },
-      data: { status: 'PROCESSING' }
-    })
 
     const accessToken = await getGoogleAccessToken()
     let succeeded = 0
@@ -368,8 +343,14 @@ export async function processGoogleGroupSyncJobs() {
 
     for (const job of jobs) {
       try {
-        // Pacing: 500ms breather between Google API calls to keep CPU low
-        await new Promise(resolve => setTimeout(resolve, 500))
+        // Mark as PROCESSING and increment attempt count
+        await (prisma as any).groupSyncJob.update({
+          where: { id: job.id },
+          data: {
+            status: 'PROCESSING',
+            attemptCount: job.attemptCount + 1,
+          },
+        })
 
         // Execute the sync operation
         if (job.action === 'ADD') {
@@ -378,12 +359,11 @@ export async function processGoogleGroupSyncJobs() {
           await removeMemberFromGroup(accessToken, job.userEmail, job.groupEmail)
         }
 
-        // Mark as SUCCESS and increment attempt count
+        // Mark as SUCCESS
         await (prisma as any).groupSyncJob.update({
           where: { id: job.id },
           data: {
             status: 'SUCCESS',
-            attemptCount: job.attemptCount + 1,
             lastError: null,
           },
         })
@@ -401,7 +381,6 @@ export async function processGoogleGroupSyncJobs() {
           where: { id: job.id },
           data: {
             status: nextAttemptCount >= GROUP_SYNC_MAX_ATTEMPTS ? 'FAILED' : 'PENDING',
-            attemptCount: nextAttemptCount,
             lastError: error instanceof Error ? error.message : 'Unknown Google sync error',
           },
         })

@@ -8,7 +8,7 @@
  * No existing table is modified.
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../lib/db'
 
 /**
  * Get start and end of a given day in UTC

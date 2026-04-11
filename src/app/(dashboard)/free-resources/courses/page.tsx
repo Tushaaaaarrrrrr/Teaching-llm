@@ -51,9 +51,6 @@ export default function FreeCoursesPage() {
   if (!courses || courses.length === 0) {
     return (
       <div className="page-container fade-in">
-        <div className="page-header">
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>Free Courses</h1>
-        </div>
         <div className="card" style={{ padding: '60px 20px', textAlign: 'center', color: '#6b6b8a' }}>
           No free courses available at the moment.
         </div>
@@ -63,10 +60,7 @@ export default function FreeCoursesPage() {
 
   return (
     <div className="page-container fade-in">
-      <div className="page-header">
-        <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>Free Courses</h1>
-        <p style={{ margin: '8px 0 0', color: '#6b6b8a', fontSize: '14px' }}>Explore and self-enroll in free educational content.</p>
-      </div>
+
 
       <div className="grid-3" style={{ marginTop: '24px' }}>
         {courses.map(course => (

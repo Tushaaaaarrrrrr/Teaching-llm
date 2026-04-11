@@ -244,13 +244,18 @@ function CalendarPageContent() {
       }
       const url = editId ? `/api/events/${editId}` : '/api/events'
       const method = editId ? 'PUT' : 'POST'
+      let applyToFuture = false
+      if (editId && isSeriesEvent) {
+        applyToFuture = await confirm({
+          title: 'Update Recurring Event?',
+          message: 'Do you want to apply these changes to this event and all future events in the series?',
+          confirmLabel: 'This & Future Events',
+          cancelLabel: 'Only This Event',
+          tone: 'default',
+        })
+      }
       const requestBody = editId && isSeriesEvent
-        ? {
-            ...payload,
-            applyToFuture: window.confirm(
-              'Apply these changes to this event and all future events in the series?\n\nPress OK for this and future events.\nPress Cancel for only this event.'
-            ),
-          }
+        ? { ...payload, applyToFuture }
         : payload
       const res = await fetch(url, {
         method,

@@ -160,7 +160,7 @@ export function canCreateAnnouncements(role: string) {
 }
 
 export function canManageContent(role: string) {
-  return role === 'MANAGER' || role === 'ADMIN'
+  return role === 'MANAGER'
 }
 
 export function canManageEvents(role: string) {

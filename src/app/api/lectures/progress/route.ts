@@ -1,0 +1,75 @@
+import { NextResponse } from 'next/server'
+import prisma from '@/lib/prisma'
+import { verifyAuth } from '@/lib/auth'
+
+export async function GET(request: Request) {
+  try {
+    const session = await verifyAuth(request)
+    if (!session || !session.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const courseId = searchParams.get('courseId')
+
+    let whereClause: any = { userId: session.id }
+
+    if (courseId) {
+      whereClause.content = {
+        topic: { courseId: courseId }
+      }
+    }
+
+    const progress = await prisma.lectureProgress.findMany({
+      where: whereClause,
+      select: {
+        contentId: true,
+        status: true,
+      }
+    })
+
+    return NextResponse.json(progress)
+  } catch (error) {
+    console.error('Error fetching lecture progress:', error)
+    return NextResponse.json({ error: 'Failed to fetch progress' }, { status: 500 })
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await verifyAuth(request)
+    if (!session || !session.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { contentId, status } = body
+
+    if (!contentId || !status) {
+      return NextResponse.json({ error: 'Missing contentId or status' }, { status: 400 })
+    }
+
+    // Upsert the progress
+    const progress = await prisma.lectureProgress.upsert({
+      where: {
+        userId_contentId: {
+          userId: session.id,
+          contentId: contentId,
+        }
+      },
+      update: {
+        status: status,
+      },
+      create: {
+        userId: session.id,
+        contentId: contentId,
+        status: status,
+      }
+    })
+
+    return NextResponse.json(progress)
+  } catch (error) {
+    console.error('Error updating lecture progress:', error)
+    return NextResponse.json({ error: 'Failed to update progress' }, { status: 500 })
+  }
+}

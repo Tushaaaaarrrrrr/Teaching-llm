@@ -119,7 +119,7 @@ export default function CourseEditPage() {
       const role = meData.user?.role
       const accessibleCourseIds = meData.user?.accessibleCourseIds || []
 
-      if (role !== 'ADMIN' && role !== 'MANAGER') {
+      if (role !== 'MANAGER') {
         router.replace(`/courses/${params.id}`)
         return
       }

@@ -31,6 +31,7 @@ export default function CoursesPage() {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
   })
+  const { data: helpCard } = useSWR('/api/support/help-card', fetcher)
   const courses = Array.isArray(data) ? data : (data as any)?.courses || []
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -247,9 +248,89 @@ export default function CoursesPage() {
             </div>
           </Link>
         ))}
+
+        {helpCard && helpCard.isEnabled && (
+          <a href={helpCard.redirectUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'flex' }}>
+            <div
+              style={{
+                background: '#e8eaf0',
+                borderRadius: '28px',
+                boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transition: 'all 0.25s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                height: '100%',
+                border: '2px dashed #94a3b8'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
+                e.currentTarget.style.borderColor = '#3636e8'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
+                e.currentTarget.style.borderColor = '#94a3b8'
+              }}
+            >
+              <div style={{
+                height: '100px',
+                background: `linear-gradient(135deg, #cbd5e1ee, #e2e8f099)`,
+                position: 'relative',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <div style={{ position: 'absolute', width: '130px', height: '130px', borderRadius: '50%', background: 'rgba(54,54,232,0.05)', top: '-50px', right: '-30px' }} />
+                <div style={{ position: 'absolute', width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(54,54,232,0.03)', bottom: '-20px', left: '24px' }} />
+                <div style={{
+                  width: '58px',
+                  height: '58px',
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.7)',
+                  backdropFilter: 'blur(4px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#3636e8',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                  zIndex: 1,
+                }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+              </div>
+
+              <div style={{ padding: '18px 20px 16px', display: 'flex', flexDirection: 'column', flex: 1, alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: '160px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', marginBottom: '8px' }}>
+                  {helpCard.title}
+                </h3>
+                <p style={{ fontSize: '14px', color: '#6b6b8a', lineHeight: '1.5', marginBottom: '16px' }}>
+                  {helpCard.description}
+                </p>
+                
+                <span style={{
+                  display: 'inline-block',
+                  padding: '8px 20px',
+                  borderRadius: '50px',
+                  background: '#3636e8',
+                  color: 'white',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  marginTop: 'auto',
+                }}>
+                  Get Help
+                </span>
+              </div>
+            </div>
+          </a>
+        )}
       </div>
 
-      {filtered.length === 0 && (
+      {filtered.length === 0 && (!helpCard || !helpCard.isEnabled) && (
         <div className="empty-state">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>

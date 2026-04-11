@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 
 interface ContentItem {
   id: string
@@ -62,17 +63,28 @@ export default function CourseDetailPage() {
   const [userId, setUserId] = useState<string>('')
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
   const [activeExam, setActiveExam] = useState<Exam | null>(null)
+  const [progressMap, setProgressMap] = useState<Record<string, string>>({})
 
   const fetchData = useCallback(async () => {
     try {
-      const [courseRes, topicsRes, sessionRes] = await Promise.all([
+      const [courseRes, topicsRes, sessionRes, progressRes] = await Promise.all([
         fetch(`/api/courses/${params.id}`),
         fetch(`/api/courses/${params.id}/topics`),
         fetch('/api/auth/me'),
+        fetch(`/api/lectures/progress?courseId=${params.id}`),
       ])
       const courseData = await courseRes.json()
       const topicsData = await topicsRes.json()
       const sessionData = await sessionRes.json()
+      const progressData = progressRes.ok ? await progressRes.json() : []
+
+      if (Array.isArray(progressData)) {
+        const pMap = progressData.reduce((acc: any, curr: any) => {
+          acc[curr.contentId] = curr.status
+          return acc
+        }, {})
+        setProgressMap(pMap)
+      }
 
       setCourse(courseData.course || courseData)
       setTopics(Array.isArray(topicsData) ? topicsData : [])
@@ -108,6 +120,19 @@ export default function CourseDetailPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  const updateProgress = async (contentId: string, status: string) => {
+    setProgressMap(prev => ({ ...prev, [contentId]: status })) // Optimistic UI update
+    try {
+      await fetch('/api/lectures/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId, status })
+      })
+    } catch (e) {
+      console.error("Failed to update progress", e)
+    }
+  }
+
   const toggleTopic = (id: string) => {
     setExpandedTopics(prev => {
       const next = new Set(prev)
@@ -116,6 +141,63 @@ export default function CourseDetailPage() {
       return next
     })
   }
+
+  const onDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+    const { source, destination, type } = result;
+
+    if (source.droppableId === destination.droppableId && source.index === destination.index) {
+      return;
+    }
+
+    if (type === 'topic') {
+      const newTopics = Array.from(topics);
+      const [movedTopic] = newTopics.splice(source.index, 1);
+      newTopics.splice(destination.index, 0, movedTopic);
+
+      const updatedTopics = newTopics.map((t, idx) => ({ ...t, order: idx }));
+      setTopics(updatedTopics);
+
+      try {
+        await fetch('/api/topics/reorder', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            courseId: params.id,
+            items: updatedTopics.map(t => ({ id: t.id, order: t.order }))
+          })
+        });
+      } catch (e) {
+        console.error("Failed to save topic order", e);
+      }
+    } else if (type.startsWith('content-')) {
+      const topicId = source.droppableId.replace('topic-', '');
+      const topicIndex = topics.findIndex((t: Topic) => t.id === topicId);
+      if (topicIndex === -1) return;
+
+      const newContent = Array.from(topics[topicIndex].content);
+      const [movedContent] = newContent.splice(source.index, 1);
+      newContent.splice(destination.index, 0, movedContent);
+
+      const updatedContent = newContent.map((c, idx) => ({ ...c, order: idx }));
+      
+      const newTopics = [...topics];
+      newTopics[topicIndex] = { ...newTopics[topicIndex], content: updatedContent };
+      setTopics(newTopics);
+
+      try {
+        await fetch('/api/content/reorder', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: updatedContent.map(c => ({ id: c.id, order: c.order, topicId }))
+          })
+        });
+      } catch (e) {
+        console.error("Failed to save content order", e);
+      }
+    }
+  };
 
 
   if (loading) {
@@ -138,8 +220,8 @@ export default function CourseDetailPage() {
     )
   }
 
-  const isAdminOrManager = role === 'ADMIN' || role === 'MANAGER'
-  const canManage = isAdminOrManager
+  const isManager = role === 'MANAGER'
+  const canManage = isManager
 
   return (
     <div className="page-container fade-in">
@@ -203,7 +285,7 @@ export default function CourseDetailPage() {
               </div>
             </div>
 
-              {isAdminOrManager && (
+              {isManager && (
                 <button
                   onClick={() => router.push(`/courses/${params.id}/edit`)}
                   style={{
@@ -285,129 +367,228 @@ export default function CourseDetailPage() {
           </svg>
           <p style={{ fontSize: '15px', fontWeight: '500', marginBottom: '4px' }}>No content yet</p>
           <p style={{ fontSize: '13px', color: '#9999b0' }}>
-            {isAdminOrManager ? 'Go to Manage Course to add topics and lectures.' : 'Content will appear here once the teacher adds it.'}
+            {isManager ? 'Go to Manage Course to add topics and lectures.' : 'Content will appear here once the teacher adds it.'}
           </p>
-          {isAdminOrManager && (
+          {isManager && (
             <button onClick={() => router.push(`/courses/${params.id}/edit`)} className="btn btn-primary" style={{ marginTop: '16px' }}>
               Add Content
             </button>
           )}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {topics.map((topic, topicIdx) => (
-            <div key={topic.id} className="card" style={{ overflow: 'hidden' }}>
-              {/* Topic Header */}
-              <button
-                onClick={() => toggleTopic(topic.id)}
-                style={{
-                  width: '100%', padding: '16px 20px', background: 'none', border: 'none',
-                  display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
-                  textAlign: 'left',
-                }}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="course-topics" type="topic" isDropDisabled={role !== 'MANAGER'}>
+            {(provided) => (
+              <div 
+                {...provided.droppableProps} 
+                ref={provided.innerRef} 
+                style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
               >
-                <div style={{
-                  width: '36px', height: '36px', borderRadius: '10px',
-                  background: course.color + '18', color: course.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '13px', fontWeight: '700', flexShrink: 0,
-                }}>
-                  {String(topicIdx + 1).padStart(2, '0')}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '15px', fontWeight: '600', color: '#1e1e3a' }}>{topic.title}</div>
-                  <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
-                    {topic.content.length} lecture{topic.content.length !== 1 ? 's' : ''}
-                  </div>
-                </div>
-                <svg
-                  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"
-                  style={{ transition: 'transform 0.2s', transform: expandedTopics.has(topic.id) ? 'rotate(180deg)' : 'none' }}
-                >
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </button>
-
-              {/* Topic Content */}
-              {expandedTopics.has(topic.id) && (
-                <div style={{ borderTop: '1px solid #d8dae3', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {topic.content.length === 0 ? (
-                    <div style={{ padding: '20px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
-                      No lectures in this topic yet
-                    </div>
-                  ) : (
-                    topic.content.map((item) => (
-                      <div key={item.id} style={{
-                        display: 'flex', alignItems: 'center', gap: '14px',
-                        padding: '12px 20px',
-                        borderRadius: '50px',
-                        background: '#e8eaf0',
-                        boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
-                        transition: 'box-shadow 0.2s',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.boxShadow = '7px 7px 14px #c2c4cc, -7px -7px 14px #ffffff')}
-                      onMouseLeave={e => (e.currentTarget.style.boxShadow = '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff')}
+                {topics.map((topic, topicIdx) => (
+                  <Draggable 
+                    key={topic.id} 
+                    draggableId={topic.id} 
+                    index={topicIdx} 
+                    isDragDisabled={role !== 'MANAGER'}
+                  >
+                    {(provided, snapshot) => (
+                      <div 
+                        ref={provided.innerRef} 
+                        {...provided.draggableProps} 
+                        className="card" 
+                        style={{ 
+                          overflow: 'hidden', 
+                          ...(snapshot.isDragging ? { boxShadow: '0 12px 24px rgba(0,0,0,0.15)', zIndex: 100 } : {}),
+                          ...provided.draggableProps.style 
+                        }}
                       >
-                        {/* Lecture number */}
-                        <div style={{
-                          width: '32px', height: '32px', borderRadius: '8px',
-                          background: item.videoUrl ? course.color + '12' : '#f0f0f5',
-                          color: item.videoUrl ? course.color : '#9999b0',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                        }}>
-                          {item.videoUrl ? (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                          ) : (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        {/* Topic Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', width: '100%', paddingLeft: role === 'MANAGER' ? '4px' : '0' }}>
+                          {role === 'MANAGER' && (
+                            <div {...provided.dragHandleProps} style={{ padding: '16px 10px', cursor: 'grab', color: '#cbd5e1' }}>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+                            </div>
                           )}
-                        </div>
-
-                        {/* Title + description */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px' }}>
-                            {item.title}
-                          </div>
-                          {item.description && (
-                            <p style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {item.description}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Actions */}
-                        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                          {item.pptUrl && (
-                            <a
-                              href={item.pptUrl}
-                              download={item.pptUrl.startsWith('/api/files/materials/') ? true : undefined}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn btn-ghost btn-sm"
+                          <button
+                            onClick={() => toggleTopic(topic.id)}
+                            style={{
+                              flex: 1, padding: role === 'MANAGER' ? '16px 20px 16px 6px' : '16px 20px', background: 'none', border: 'none',
+                              display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
+                              textAlign: 'left',
+                            }}
+                          >
+                            <div style={{
+                              width: '36px', height: '36px', borderRadius: '10px',
+                              background: course.color + '18', color: course.color,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '13px', fontWeight: '700', flexShrink: 0,
+                            }}>
+                              {String(topicIdx + 1).padStart(2, '0')}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: '15px', fontWeight: '600', color: '#1e1e3a' }}>{topic.title}</div>
+                              <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
+                                {topic.content.length} lecture{topic.content.length !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                            <svg
+                              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"
+                              style={{ transition: 'transform 0.2s', transform: expandedTopics.has(topic.id) ? 'rotate(180deg)' : 'none' }}
                             >
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                              </svg>
-                              View Material
-                            </a>
-                          )}
-                          {item.videoUrl && (
-                            <Link
-                              href={`/courses/${params.id}/lectures/${item.id}`}
-                              className="btn btn-primary btn-sm"
-                            >
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                              Watch
-                            </Link>
-                          )}
+                              <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                          </button>
                         </div>
+          
+                        {/* Topic Content */}
+                        {expandedTopics.has(topic.id) && (
+                          <Droppable droppableId={`topic-${topic.id}`} type={`content-${topic.id}`} isDropDisabled={role !== 'MANAGER'}>
+                            {(provided) => (
+                              <div 
+                                ref={provided.innerRef} 
+                                {...provided.droppableProps} 
+                                style={{ borderTop: '1px solid #d8dae3', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '60px' }}
+                              >
+                                {topic.content.length === 0 ? (
+                                  <div style={{ padding: '20px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
+                                    No lectures in this topic yet
+                                  </div>
+                                ) : (
+                                  topic.content.map((item, index) => (
+                                    <Draggable 
+                                      key={item.id} 
+                                      draggableId={item.id} 
+                                      index={index} 
+                                      isDragDisabled={role !== 'MANAGER'}
+                                    >
+                                      {(provided, snapshot) => (
+                                        <div 
+                                          ref={provided.innerRef} 
+                                          {...provided.draggableProps} 
+                                          style={{
+                                            display: 'flex', alignItems: 'center', gap: '14px',
+                                            padding: '12px 20px',
+                                            paddingLeft: role === 'MANAGER' ? '8px' : '20px',
+                                            borderRadius: '50px',
+                                            background: '#e8eaf0',
+                                            ...(snapshot.isDragging 
+                                              ? { boxShadow: '0 8px 20px rgba(0,0,0,0.15)', zIndex: 100 }
+                                              : { boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff' }),
+                                            transition: 'box-shadow 0.2s',
+                                            ...provided.draggableProps.style
+                                          }}
+                                        >
+                                          {role === 'MANAGER' && (
+                                            <div {...provided.dragHandleProps} style={{ padding: '8px', cursor: 'grab', color: '#94a3b8' }}>
+                                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+                                            </div>
+                                          )}
+                                          
+                                          {/* Lecture number */}
+                                          <div style={{
+                                            width: '32px', height: '32px', borderRadius: '8px',
+                                            background: item.videoUrl ? course.color + '12' : '#f0f0f5',
+                                            color: item.videoUrl ? course.color : '#9999b0',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                          }}>
+                                            {item.videoUrl ? (
+                                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                            ) : (
+                                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                            )}
+                                          </div>
+                  
+                                          {/* Title + description */}
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px' }}>
+                                              {item.title}
+                                            </div>
+                                            {item.description && (
+                                              <p style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {item.description}
+                                              </p>
+                                            )}
+                                          </div>
+                  
+                                          {/* Actions */}
+                                          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                                            {item.pptUrl && (
+                                              <a
+                                                href={item.pptUrl}
+                                                download={item.pptUrl.startsWith('/api/files/materials/') ? true : undefined}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn btn-ghost btn-sm"
+                                              >
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                                                </svg>
+                                                View Material
+                                              </a>
+                                            )}
+                                            {item.videoUrl && (
+                                              <Link
+                                                href={`/courses/${params.id}/lectures/${item.id}`}
+                                                className="btn btn-primary btn-sm"
+                                              >
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                                Watch
+                                              </Link>
+                                            )}
+                                          </div>
+
+                                          {/* Progress actions for students */}
+                                          {role === 'STUDENT' && (
+                                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginLeft: '6px', paddingLeft: '12px', borderLeft: '1px solid #d8dae3' }}>
+                                              <button
+                                                onClick={() => updateProgress(item.id, progressMap[item.id] === 'COMPLETED' ? 'NOT_STARTED' : 'COMPLETED')}
+                                                style={{
+                                                  background: progressMap[item.id] === 'COMPLETED' ? '#22c55e20' : 'transparent',
+                                                  color: progressMap[item.id] === 'COMPLETED' ? '#16a34a' : '#94a3b8',
+                                                  border: `1px solid ${progressMap[item.id] === 'COMPLETED' ? '#22c55e' : '#cbd5e1'}`,
+                                                  padding: '6px 12px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
+                                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                                                  transition: 'all 0.2s'
+                                                }}
+                                              >
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                                Completed
+                                              </button>
+                                              <button
+                                                onClick={() => updateProgress(item.id, progressMap[item.id] === 'REWATCH' ? 'NOT_STARTED' : 'REWATCH')}
+                                                style={{
+                                                  background: progressMap[item.id] === 'REWATCH' ? '#eab30820' : 'transparent',
+                                                  color: progressMap[item.id] === 'REWATCH' ? '#ca8a04' : '#94a3b8',
+                                                  border: `1px solid ${progressMap[item.id] === 'REWATCH' ? '#eab308' : '#cbd5e1'}`,
+                                                  padding: '6px 12px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
+                                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                                                  transition: 'all 0.2s'
+                                                }}
+                                              >
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                                                Rewatch
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </Draggable>
+                                  ))
+                                )}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        )}
                       </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       )}
     </div>
   )

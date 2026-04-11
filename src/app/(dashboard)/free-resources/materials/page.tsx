@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import useSWR, { mutate } from 'swr'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 export default function FreeMaterialsPage() {
+  const { confirm, confirmDialog } = useConfirmDialog()
   const { data: authData } = useSWR('/api/auth/me', fetcher)
   const { data: materials, isLoading } = useSWR<any[]>('/api/free-resources/materials', fetcher)
 
@@ -68,7 +70,13 @@ export default function FreeMaterialsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this free material?')) return
+    const allowed = await confirm({
+      title: 'Delete Material?',
+      message: 'This free material will be permanently removed.',
+      confirmLabel: 'Delete Material',
+      tone: 'danger',
+    })
+    if (!allowed) return
     await fetch(`/api/materials/${id}`, { method: 'DELETE' })
     mutate('/api/free-resources/materials')
   }
@@ -91,11 +99,9 @@ export default function FreeMaterialsPage() {
 
   return (
     <div className="page-container fade-in">
+      {confirmDialog}
       <div className="page-header">
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>Free Materials</h1>
-          <p style={{ margin: '8px 0 0', color: '#6b6b8a', fontSize: '14px' }}>Download study materials without enrollment.</p>
-        </div>
+        <div />
         {canManage && (
           <button onClick={() => { setFormData({}); setSourceType('FILE'); setShowModal(true) }} className="btn btn-primary">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

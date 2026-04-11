@@ -69,6 +69,11 @@ export default function SettingsPage() {
   // Global Maintenance Mode (Manager only)
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [isManagerUser, setIsManagerUser] = useState(false)
+
+  // Help Card Config
+  const [helpCardConfig, setHelpCardConfig] = useState({ title: '', description: '', redirectUrl: '', isEnabled: true })
+  const [savingHelpCard, setSavingHelpCard] = useState(false)
+
   // Fetch initial settings on mount (only succeeds for managers)
   useEffect(() => {
     fetch('/api/updates/settings')
@@ -80,6 +85,20 @@ export default function SettingsPage() {
         }
       })
       .catch(err => console.error('Failed to fetch settings:', err))
+
+    fetch('/api/support/help-card')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          setHelpCardConfig({
+            title: data.title || '',
+            description: data.description || '',
+            redirectUrl: data.redirectUrl || '',
+            isEnabled: data.isEnabled ?? true,
+          })
+        }
+      })
+      .catch(err => console.error('Failed to fetch help card config:', err))
   }, [])
 
   async function handleToggleMaintenance(val: boolean) {
@@ -94,6 +113,22 @@ export default function SettingsPage() {
       console.error('Failed to update maintenance mode:', err)
       setMaintenanceMode(!val) // revert on error
     }
+  }
+
+  async function handleSaveHelpCard() {
+    setSavingHelpCard(true)
+    try {
+      const res = await fetch('/api/support/help-card', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(helpCardConfig),
+      })
+      if (res.ok) alert('Support card settings saved successfully')
+      else alert('Failed to save settings')
+    } catch {
+      alert('Something went wrong')
+    }
+    setSavingHelpCard(false)
   }
   async function handlePasswordChange() {
     if (!pwForm.currentPassword || !pwForm.newPassword || !pwForm.confirmPassword) {
@@ -331,6 +366,76 @@ export default function SettingsPage() {
           </div>
 
         </div>
+
+        {/* ── Support Card Settings (Manager only) ── */}
+        {isManagerUser && (
+          <div className="card" style={{ padding: '28px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 17v4"/>
+              </svg>
+              Support Card Settings
+            </h3>
+            <p style={{ fontSize: '12px', color: '#9999b0', marginBottom: '18px' }}>Configure the "Need Help?" card displayed in the courses list.</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+              <div style={insetRow}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>Enable Support Card</div>
+                  <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Show the card at the end of the course list</div>
+                </div>
+                <Toggle
+                  checked={helpCardConfig.isEnabled}
+                  onChange={(v) => setHelpCardConfig(p => ({ ...p, isEnabled: v }))}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>Card Title</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={helpCardConfig.title}
+                    onChange={e => setHelpCardConfig(p => ({ ...p, title: e.target.value }))}
+                    placeholder="e.g. Need Help?"
+                    style={{ background: '#f8f9fc', border: '1px solid #e2e8f0', boxShadow: 'none' }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>Description</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={helpCardConfig.description}
+                    onChange={e => setHelpCardConfig(p => ({ ...p, description: e.target.value }))}
+                    placeholder="e.g. Need more courses or assistance?"
+                    style={{ background: '#f8f9fc', border: '1px solid #e2e8f0', boxShadow: 'none' }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>Redirect URL</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={helpCardConfig.redirectUrl}
+                    onChange={e => setHelpCardConfig(p => ({ ...p, redirectUrl: e.target.value }))}
+                    placeholder="e.g. mailto:support@domain.com or https://wa.me/number"
+                    style={{ background: '#f8f9fc', border: '1px solid #e2e8f0', boxShadow: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                <button onClick={handleSaveHelpCard} disabled={savingHelpCard} className="btn btn-primary" style={{ background: '#3636e8', color: 'white' }}>
+                  {savingHelpCard ? 'Saving...' : 'Save Config'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

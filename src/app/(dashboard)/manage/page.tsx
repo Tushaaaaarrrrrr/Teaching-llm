@@ -276,9 +276,13 @@ export default function ManagePage() {
   }
 
   const tabs: Array<{ key: Tab; label: string; count: number }> = [
-    { key: 'courses',       label: 'Courses',       count: courses.length },
+    ...(userRole === 'MANAGER' ? [{ key: 'courses' as Tab, label: 'Courses', count: courses.length }] : []),
     ...(userRole === 'MANAGER' ? [{ key: 'bundles' as Tab, label: 'Course Bundles', count: bundles.length }] : []),
-
+    ...(userRole === 'MANAGER' ? [{ key: 'lectures' as Tab, label: 'Lectures', count: lectures.length }] : []),
+    { key: 'events',        label: 'Events',        count: events.length },
+    ...(userRole === 'MANAGER' ? [{ key: 'materials' as Tab, label: 'Materials', count: materials.length }] : []),
+    { key: 'announcements', label: 'Announcements', count: announcements.length },
+    { key: 'content-bank',  label: 'Content Bank',  count: bankQuestions.length },
   ]
 
   const COLORS = ['#4F46E5', '#7C3AED', '#0EA5E9', '#F59E0B', '#10B981', '#EF4444', '#EC4899']
@@ -692,12 +696,14 @@ export default function ManagePage() {
             </>
           )}
         </div>
-        <button onClick={openCreate} className="btn btn-primary">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          {tab === 'events' ? 'Add Event' : 'Create New'}
-        </button>
+        {((tab === 'events' || tab === 'announcements' || tab === 'content-bank') || userRole === 'MANAGER') && (
+          <button onClick={openCreate} className="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            {tab === 'events' ? 'Add Event' : 'Create New'}
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -881,76 +887,78 @@ export default function ManagePage() {
                     )}
                   </div>
 
-                   <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                    {tab === 'courses' && (
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText(item.id);
-                          setCopiedId(item.id);
-                          setTimeout(() => setCopiedId(null), 2000);
-                        }} 
-                        className="btn btn-ghost btn-sm" 
-                        title={`Copy ID: ${item.id}`}
-                        style={{ ... (copiedId === item.id ? { color: '#10b981', borderColor: '#10b981' } : {}), padding: '6px' }}
-                      >
-                        {copiedId === item.id ? (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                        ) : (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                        )}
-                      </button>
-                    )}
-                    {tab === 'courses' && (
-                      <button
-                        onClick={() => toggleCourseDisabled(item)}
-                        className="btn btn-ghost btn-sm"
-                        style={{
-                          color: item.isDisabled ? '#10b981' : '#ef4444',
-                          border: `1px solid ${item.isDisabled ? '#d1fae5' : '#fee2e2'}`,
-                          padding: '6px 10px',
-                          fontSize: '11px',
-                        }}
-                        title={item.isExpired && !item.isDisabled ? 'Disabled by expiry' : (item.isDisabled ? 'Enable Course' : 'Disable Course')}
-                      >
-                        {item.isDisabled ? 'Enable' : 'Disable'}
-                      </button>
-                    )}
-                    {tab === 'courses' && (
-                      <button
-                        onClick={() => handleDuplicate(item)}
-                        disabled={saving}
-                        className="btn btn-ghost btn-sm"
-                        style={{
-                          color: '#0ea5e9',
-                          border: '1px solid #cffafe',
-                          padding: '6px',
-                        }}
-                        title="Duplicate"
-                      >
+                   {(userRole === 'MANAGER' || (tab !== 'courses' && tab !== 'lectures' && tab !== 'materials')) && (
+                     <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                      {tab === 'courses' && (
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(item.id);
+                            setCopiedId(item.id);
+                            setTimeout(() => setCopiedId(null), 2000);
+                          }} 
+                          className="btn btn-ghost btn-sm" 
+                          title={`Copy ID: ${item.id}`}
+                          style={{ ... (copiedId === item.id ? { color: '#10b981', borderColor: '#10b981' } : {}), padding: '6px' }}
+                        >
+                          {copiedId === item.id ? (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                          ) : (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                          )}
+                        </button>
+                      )}
+                      {tab === 'courses' && (
+                        <button
+                          onClick={() => toggleCourseDisabled(item)}
+                          className="btn btn-ghost btn-sm"
+                          style={{
+                            color: item.isDisabled ? '#10b981' : '#ef4444',
+                            border: `1px solid ${item.isDisabled ? '#d1fae5' : '#fee2e2'}`,
+                            padding: '6px 10px',
+                            fontSize: '11px',
+                          }}
+                          title={item.isExpired && !item.isDisabled ? 'Disabled by expiry' : (item.isDisabled ? 'Enable Course' : 'Disable Course')}
+                        >
+                          {item.isDisabled ? 'Enable' : 'Disable'}
+                        </button>
+                      )}
+                      {tab === 'courses' && (
+                        <button
+                          onClick={() => handleDuplicate(item)}
+                          disabled={saving}
+                          className="btn btn-ghost btn-sm"
+                          style={{
+                            color: '#0ea5e9',
+                            border: '1px solid #cffafe',
+                            padding: '6px',
+                          }}
+                          title="Duplicate"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><path d="M3 4h2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4h2"/><path d="M9 9h6v6H9z"/>
+                          </svg>
+                        </button>
+                      )}
+                      <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm" style={{ padding: '6px' }} title="Edit">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><path d="M3 4h2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4h2"/><path d="M9 9h6v6H9z"/>
+                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                       </button>
-                    )}
-                    <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm" style={{ padding: '6px' }} title="Edit">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(item.id)} 
-                      disabled={item.isDemo}
-                      title={item.isDemo ? "Cannot delete system demo course" : "Delete course"}
-                      className="btn btn-sm" 
-                      style={{ color: item.isDemo ? '#d1d5db' : '#ef4444', border: `1px solid ${item.isDemo ? '#e5e7eb' : '#fee2e2'}`, cursor: item.isDemo ? 'not-allowed' : 'pointer' }}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                      </svg>
-                    </button>
-                  </div>
+                      <button 
+                        onClick={() => handleDelete(item.id)} 
+                        disabled={item.isDemo}
+                        title={item.isDemo ? "Cannot delete system demo course" : "Delete course"}
+                        className="btn btn-sm" 
+                        style={{ color: item.isDemo ? '#d1d5db' : '#ef4444', border: `1px solid ${item.isDemo ? '#e5e7eb' : '#fee2e2'}`, cursor: item.isDemo ? 'not-allowed' : 'pointer' }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                   )}
                 </div>
               )
             })}
