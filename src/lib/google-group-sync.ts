@@ -63,15 +63,31 @@ async function isProcessing(): Promise<boolean> {
     const lock = await (prisma as any).groupSyncLock.findUnique({
       where: { id: 'singleton' },
     })
-    return lock?.isProcessing ?? false
+    
+    if (!lock || !lock.isProcessing) {
+      return false
+    }
+
+    // Check for stale lock (older than 5 minutes)
+    if (lock.lockedAt) {
+      const lockAgeMinutes = (new Date().getTime() - new Date(lock.lockedAt).getTime()) / (1000 * 60)
+      if (lockAgeMinutes > 5) {
+        console.warn('[Google Group Sync] Stale lock detected (older than 5 min), auto-resetting')
+        return false 
+      }
+    }
+
+    return true
   } catch (error) {
     return false
   }
 }
 
+let pendingTrigger: NodeJS.Timeout | null = null
+
 /**
  * Trigger async processing of Google Group sync jobs
- * Fire-and-forget call to avoid blocking enrollment
+ * Uses a 10-second buffer to collect multiple jobs before firing the worker
  */
 export async function triggerGoogleGroupSyncProcessing(): Promise<void> {
   if (!CRON_SECRET || !APP_URL) {
@@ -79,8 +95,13 @@ export async function triggerGoogleGroupSyncProcessing(): Promise<void> {
     return
   }
 
-  try {
-    // Fire-and-forget: don't await this call
+  // If a trigger is already scheduled, don't create another one
+  if (pendingTrigger) return
+
+  // Schedule the trigger with a 10-second buffer
+  pendingTrigger = setTimeout(() => {
+    pendingTrigger = null // Clear the reference so new triggers can be scheduled
+    
     fetch(`${APP_URL}/api/group-sync-jobs/process`, {
       method: 'POST',
       headers: {
@@ -88,13 +109,9 @@ export async function triggerGoogleGroupSyncProcessing(): Promise<void> {
         'Content-Type': 'application/json',
       },
     }).catch(error => {
-      // Silently catch errors - this is fire-and-forget
       console.error('[Google Group Sync] Async trigger failed:', error instanceof Error ? error.message : String(error))
     })
-  } catch (error) {
-    // Silently fail - don't block enrollment
-    console.error('[Google Group Sync] Trigger setup failed:', error)
-  }
+  }, 10000)
 }
 
 export function validateGoogleGroupEmail(rawEmail?: string | null) {
@@ -330,7 +347,7 @@ export async function processGoogleGroupSyncJobs() {
         attemptCount: { lt: GROUP_SYNC_MAX_ATTEMPTS },
       },
       orderBy: { createdAt: 'asc' },
-      take: 50, // Process max 50 jobs per run
+      take: 10, // Process max 10 jobs per run
     })
 
     if (jobs.length === 0) {
@@ -386,6 +403,22 @@ export async function processGoogleGroupSyncJobs() {
         })
         failed++
       }
+    }
+
+    // Automatic Cleanup: Delete SUCCESS jobs older than 30 days to keep DB lean
+    try {
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      
+      await (prisma as any).groupSyncJob.deleteMany({
+        where: {
+          status: 'SUCCESS',
+          createdAt: { lt: thirtyDaysAgo },
+        },
+      })
+    } catch (cleanupError) {
+      console.error('[Google Group Sync] Cleanup failed:', cleanupError)
+      // Don't throw - cleanup failure shouldn't stop the sync result response
     }
 
     return { processed: jobs.length, succeeded, failed }

@@ -21,6 +21,7 @@ A comprehensive Learning Management System (LMS) built with **Next.js 14**, **Re
 13. [Community & Notifications](#13-community--notifications)
 14. [Security Analysis & Risks](#14-security-analysis--risks)
 15. [Recommended Improvements](#15-recommended-improvements)
+16. [Google Group Sync System](#16-google-group-sync-system)
 
 ---
 
@@ -1303,6 +1304,26 @@ Every class has an automatic group chat accessible from the **Community** page:
 | **Ticket auto-assignment** | Route tickets to admins based on class ownership or workload |
 | **Stale ticket cleanup** | Auto-close tickets that have been resolved but not closed after N days |
 | **Chat bot first response** | Add an AI chat bot for initial support triage before connecting to staff |
+
+## 16. Google Group Sync System
+
+The platform features a robust, self-healing background synchronization system for managing Google Group memberships. When a student is enrolled or unenrolled from a class, the system automatically handles adding or removing them from the corresponding Google Group.
+
+### Key Features
+
+*   **Queue-Based Processing**: Enrollment actions are logged as `PENDING` jobs in the database. This prevents slow Google API calls from blocking the website's checkout or enrollment flow.
+*   **Throttled Trigger (10-Second Buffer)**: To save server resources and prevent Google API rate limits, the system waits 10 seconds after an enrollment before starting the worker. If multiple students join during this window, they are processed in a single batch.
+*   **Safe Batching**: The worker processes a maximum of **10 jobs per run**. This ensures low CPU usage and high reliability on standard server environments (like Digital Ocean).
+*   **Self-Healing Lock**: The system uses an atomic database lock to prevent concurrent processing. If the server crashes or restarts mid-sync, the lock **automatically resets after 5 minutes**, allowing the system to resume processing the queue without manual intervention.
+*   **Automatic Cleanup**: To keep the database lean, the system automatically purges `SUCCESS` sync jobs that are older than **30 days**.
+*   **Worker Retries**: Each job is allowed up to **3 attempts**. If an error occurs (e.g., temporary Google API downtime), the system will retry the job before marking it as `FAILED`.
+
+### Monitoring & Management
+
+Managers can monitor the sync status at `/google-sync`.
+*   **Job Monitor**: Real-time visibility into all pending, processing, successful, and failed sync actions.
+*   **Reset Sync Engine**: A manual override button to clear the sync lock (only needed in extreme emergencies where the 5-minute auto-reset isn't fast enough).
+*   **Refresh**: Manually refresh the status table to see the latest job updates.
 
 ---
 
