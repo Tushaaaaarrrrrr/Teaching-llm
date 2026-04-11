@@ -37,6 +37,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/chat-transcripts': { title: 'Chat Transcripts', subtitle: 'View community chat transcripts' },
   '/activity-logs': { title: 'Activity Log',     subtitle: 'Monitor all platform activity and user actions' },
   '/reports':    { title: 'Analytics & Performance', subtitle: 'Comprehensive platform-wide metrics and student audits' },
+  '/data-analysis': { title: 'Data Analysis',      subtitle: 'Production-level insights and student behavior metrics' },
   '/exams':      { title: 'Exams',             subtitle: 'Manage and participate in assessments' },
   '/study/content-bank': { title: 'Content Bank', subtitle: 'Global repository of exam questions and resources' },
   '/feedback':   { title: 'Course Feedback',    subtitle: 'Average ratings and student reviews.' },
