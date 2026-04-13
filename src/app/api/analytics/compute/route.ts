@@ -11,17 +11,26 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
  */
 export async function POST(req: Request) {
   try {
-    // ─── 1. Validate CRON_SECRET ─────────────────────────────────────
+    // ─── 1. Authenticate Request ─────────────────────────────────────
     const cronSecret = process.env.CRON_SECRET
-    if (!cronSecret) {
-      console.error('[Analytics Cron] CRON_SECRET environment variable is not set. Rejecting request.')
-      return NextResponse.json({ error: 'Server misconfigured' }, { status: 503 })
+    const authToken = req.headers.get('x-cron-secret')
+    
+    let isAuthorized = false
+
+    if (cronSecret && authToken === cronSecret) {
+      isAuthorized = true
+    } else {
+      // Fallback: Check if request is manually triggered by a Manager
+      const { getSession } = await import('@/lib/auth')
+      const session = await getSession()
+      if (session && ['MANAGER', 'ADMIN'].includes(session.role)) {
+        isAuthorized = true
+      }
     }
 
-    const authToken = req.headers.get('x-cron-secret')
-    if (authToken !== cronSecret) {
+    if (!isAuthorized) {
       // Log unauthorized attempt
-      console.error('[Analytics Cron] Unauthorized attempt with invalid secret')
+      console.error('[Analytics Cron] Unauthorized attempt')
       logActivity({
         userId: 'SYSTEM',
         userName: 'SYSTEM',

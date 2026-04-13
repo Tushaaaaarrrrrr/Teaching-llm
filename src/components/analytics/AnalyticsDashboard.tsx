@@ -32,6 +32,8 @@ export default function AnalyticsDashboard() {
   )
 
   // ─── Timer Logic ───────────────────────────────────────────────────
+  const isUpdatingRef = useRef(false)
+
   const computeCountdown = useCallback(() => {
     if (!data?.timer?.lastUpdatedAt) return 'No data yet'
     const last = new Date(data.timer.lastUpdatedAt).getTime()
@@ -40,7 +42,9 @@ export default function AnalyticsDashboard() {
     const diff = nextUpdate - Date.now()
 
     if (diff <= 0) {
-      mutate()
+      if (!isUpdatingRef.current) {
+        mutate()
+      }
       return 'Updating...'
     }
 
@@ -55,6 +59,19 @@ export default function AnalyticsDashboard() {
     setCountdown(computeCountdown())
     return () => clearInterval(timer)
   }, [computeCountdown])
+
+  // ─── Auto-Trigger Compute if Stale ─────────────────────────────────
+  useEffect(() => {
+    if (countdown === 'Updating...' && !isUpdatingRef.current) {
+      isUpdatingRef.current = true
+      fetch('/api/analytics/compute', { method: 'POST' })
+        .then(() => mutate())
+        .finally(() => {
+          // Re-enable trigger after 30s just in case
+          setTimeout(() => { isUpdatingRef.current = false }, 30000)
+        })
+    }
+  }, [countdown, mutate])
 
   // ─── Shared Styles ─────────────────────────────────────────────────
   const neuCard: React.CSSProperties = {
