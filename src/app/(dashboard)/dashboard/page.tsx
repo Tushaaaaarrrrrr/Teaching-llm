@@ -875,7 +875,7 @@ export default function DashboardPage() {
                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                            <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: '600' }}>
-                             {new Date(exam.startDate || exam.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                             {new Date(exam.startDate || exam.createdAt).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}
                            </span>
                          </div>
                         <Link href={`/exams`} style={{ fontSize: '11px', fontWeight: '700', color: '#3636e8', textDecoration: 'none' }}>
@@ -919,7 +919,7 @@ export default function DashboardPage() {
                     {a.content}
                   </div>
                   <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
-                    {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {new Date(a.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })}
                   </div>
                 </div>
               )

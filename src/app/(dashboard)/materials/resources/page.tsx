@@ -284,7 +284,7 @@ export default function StudyResourcesPage() {
           filteredData.map((mat: MaterialItem) => {
             const ft    = getFileType(mat.fileUrl, mat.fileType)
             const style = FILE_STYLES[ft] || { color: '#6b6b8a' }
-            const dateStr = new Date(mat.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            const dateStr = new Date(mat.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })
 
             return (
               <div key={mat.id} style={{

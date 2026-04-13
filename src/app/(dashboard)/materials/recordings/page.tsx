@@ -339,7 +339,7 @@ export default function RecordingsPage() {
                       Recording only
                     </span>
                   )}
-                  <span>&bull; {new Date(lec.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  <span>&bull; {new Date(lec.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })}</span>
                 </div>
               </div>
 

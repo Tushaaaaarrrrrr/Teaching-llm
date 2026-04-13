@@ -63,6 +63,7 @@ model User {
   ticketReplies           TicketReply[]          @relation("ReplyAuthor")
   updateViews             UpdateView[]
   lectureProgress         LectureProgress[]
+  communityReadStates     CommunityReadState[]
 }
 
 model Course {
@@ -82,6 +83,7 @@ model Course {
   isDemo                Boolean                @default(false)
   isFree                Boolean                @default(false)
   isGlobal              Boolean                @default(false)
+  lastMessageAt         DateTime?
   teacherName           String?
   announcements         Announcement[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
@@ -98,7 +100,9 @@ model Course {
   supportTickets        SupportTicket[]
   topics                Topic[]
   groupSyncJobs         GroupSyncJob[]
+  communityReadStates   CommunityReadState[]
 
+  @@index([lastMessageAt])
   @@map("Class")
 }
 
@@ -768,3 +772,16 @@ model LectureProgressQueue {
   @@index([userId])
 }
 
+model CommunityReadState {
+  id         String   @id @default(cuid())
+  userId     String
+  courseId    String   @map("classId")
+  lastReadAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+}

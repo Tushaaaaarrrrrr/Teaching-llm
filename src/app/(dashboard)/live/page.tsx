@@ -65,7 +65,7 @@ export default function LivePage() {
       .catch(console.error)
   }, [])
 
-  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const today = new Date().toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })
   const sessionsWithLocalStatus = sessions.map(session => ({
     ...session,
     status: getEventStatus(session.startTime, session.endTime, session.manualStatus || session.status),

@@ -426,7 +426,7 @@ export default function ProfilePage() {
               <div style={insetRow}>
                 <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Member Since</span>
                 <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>
-                  {new Date(user.createdAt).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  {new Date(user.createdAt).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
               </div>
 

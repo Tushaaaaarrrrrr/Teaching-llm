@@ -221,7 +221,7 @@ function ManagerFeedbackView() {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'flex-start' }}>
               <div>
                 <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a', marginBottom: '2px' }}>{f.student.name}</h4>
-                <p style={{ fontSize: '12px', color: '#94a3b8' }}>{f.student.email} • {new Date(f.createdAt).toLocaleDateString()}</p>
+                <p style={{ fontSize: '12px', color: '#94a3b8' }}>{f.student.email} • {new Date(f.createdAt).toLocaleDateString('en-GB')}</p>
               </div>
               <div style={{ 
                 background: '#f8fafc', padding: '6px 14px', borderRadius: '50px', 

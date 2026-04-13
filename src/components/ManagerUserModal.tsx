@@ -231,7 +231,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
   const displayName = getSafeDisplayName(user)
   const createdAtDate = parseDate(user?.createdAt)
   const createdAtLabel = createdAtDate
-    ? createdAtDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    ? createdAtDate.toLocaleDateString('en-GB', { month: 'long', day: 'numeric', year: 'numeric' })
     : 'Unknown'
   const isRecentlyCreated = createdAtDate
     ? (Date.now() - createdAtDate.getTime()) <= 10 * 24 * 60 * 60 * 1000

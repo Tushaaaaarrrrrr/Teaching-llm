@@ -117,6 +117,12 @@ export async function POST(
       },
     })
 
+    // Update course's last message timestamp for sorting & unread detection
+    await prisma.course.update({
+      where: { id: params.courseId },
+      data: { lastMessageAt: message.createdAt },
+    })
+
     logActivity({
       userId: session.userId,
       userName: session.name,

@@ -73,7 +73,7 @@ function relativeTime(dateStr: string): string {
   if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`
   if (days  === 1) return 'Yesterday'
   if (days  < 7)  return `${days} days ago`
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(dateStr).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })
 }
 
 function TypeIcon({ type }: { type: string }) {
@@ -496,7 +496,7 @@ export default function AnnouncementsPage() {
                         </div>
                         <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: 600 }}>{a.createdBy.name}</span>
                         <span style={{ fontSize: '12px', color: '#c0c2ca', marginLeft: '4px' }}>
-                          {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {new Date(a.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </span>
                         
                         {/* Delete button (Manager only) */}

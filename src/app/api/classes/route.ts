@@ -36,21 +36,38 @@ export async function GET() {
         icon: true,
         isDisabled: true,
         isCommunityActive: true,
+        lastMessageAt: true,
         _count: {
           select: {
             lectures: true
           }
         }
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { lastMessageAt: { sort: 'desc', nulls: 'last' } },
+        { createdAt: 'desc' }
+      ],
     })
 
+    const readStates = await prisma.communityReadState.findMany({
+      where: { userId: session.userId },
+      select: { courseId: true, lastReadAt: true },
+    })
+    const readMap = new Map(readStates.map(r => [r.courseId, r.lastReadAt.getTime()]))
+
     return NextResponse.json(
-      courses.map(course => ({
-        ...course,
-        isExpired: isCourseExpired(course),
-        isEffectivelyDisabled: isCourseEffectivelyDisabled(course),
-      }))
+      courses.map((course: any) => {
+        const lastMsgTime = course.lastMessageAt ? course.lastMessageAt.getTime() : 0;
+        const lastReadTime = readMap.get(course.id) || 0;
+        const hasUnread = lastMsgTime > lastReadTime;
+
+        return {
+          ...course,
+          isExpired: isCourseExpired(course),
+          isEffectivelyDisabled: isCourseEffectivelyDisabled(course),
+          hasUnread,
+        }
+      })
     )
   } catch (error) {
     console.error('Error fetching classes:', error)

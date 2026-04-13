@@ -142,7 +142,7 @@ export default function FreeMaterialsPage() {
                   <span style={{ fontSize: '11px', color: '#9999b0' }}>{mat.fileSize}</span>
                 )}
                 <span style={{ fontSize: '11px', color: '#9999b0', marginLeft: 'auto' }}>
-                  {new Date(mat.uploadedAt).toLocaleDateString()}
+                  {new Date(mat.uploadedAt).toLocaleDateString('en-GB')}
                 </span>
               </div>
 

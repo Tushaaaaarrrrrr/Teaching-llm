@@ -86,27 +86,37 @@ async function isProcessing(): Promise<boolean> {
 let pendingTrigger: NodeJS.Timeout | null = null
 
 /**
- * Trigger async processing of Google Group sync jobs
- * Uses a 10-second buffer to collect multiple jobs before firing the worker
- * Calls processGoogleGroupSyncJobs directly in memory (no HTTP, no env vars needed)
+ * Trigger async processing of Google Group sync jobs.
+ * Uses a 10-second buffer on the FIRST call to batch multiple incoming jobs.
+ * After each successful batch, automatically re-triggers with a 2-second delay
+ * if there are still PENDING jobs remaining (chain processing until queue empty).
  */
-export function triggerGoogleGroupSyncProcessing(): void {
+export function triggerGoogleGroupSyncProcessing(isChained = false): void {
   // If a trigger is already scheduled, don't create another one
   if (pendingTrigger) return
 
-  // Schedule the trigger with a 10-second buffer
+  // Use a short 2s delay when chaining (queue already filled), 10s for initial batching
+  const delay = isChained ? 2000 : 10000
+
   pendingTrigger = setTimeout(async () => {
-    pendingTrigger = null // Clear the reference so new triggers can be scheduled
-    
+    pendingTrigger = null // Clear so new triggers can be scheduled
+
     try {
       const result = await processGoogleGroupSyncJobs()
       if (result.processed > 0) {
-        console.log(`[Google Group Sync] Processed ${result.processed} jobs: ${result.succeeded} succeeded, ${result.failed} failed`)
+        console.log(`[Google Group Sync] Batch done — ${result.processed} jobs: ${result.succeeded} succeeded, ${result.failed} failed${
+          result.hasMore ? ' — more pending, continuing...' : ' — queue clear'
+        }`)
+      }
+
+      // If there are still jobs in the queue, chain the next run automatically
+      if (result.hasMore) {
+        triggerGoogleGroupSyncProcessing(true)
       }
     } catch (error) {
       console.error('[Google Group Sync] Direct processing failed:', error instanceof Error ? error.message : String(error))
     }
-  }, 10000)
+  }, delay)
 }
 
 export function validateGoogleGroupEmail(rawEmail?: string | null) {
@@ -342,7 +352,7 @@ export async function processGoogleGroupSyncJobs() {
         attemptCount: { lt: GROUP_SYNC_MAX_ATTEMPTS },
       },
       orderBy: { createdAt: 'asc' },
-      take: 10, // Process max 10 jobs per run
+      take: 20, // Process max 20 jobs per run
     })
 
     if (jobs.length === 0) {
@@ -416,7 +426,15 @@ export async function processGoogleGroupSyncJobs() {
       // Don't throw - cleanup failure shouldn't stop the sync result response
     }
 
-    return { processed: jobs.length, succeeded, failed }
+    // Check if more PENDING jobs remain after this batch
+    const remainingCount = await (prisma as any).groupSyncJob.count({
+      where: {
+        status: 'PENDING',
+        attemptCount: { lt: GROUP_SYNC_MAX_ATTEMPTS },
+      },
+    })
+
+    return { processed: jobs.length, succeeded, failed, hasMore: remainingCount > 0 }
   } finally {
     // Always release lock, even on error
     await releaseSyncLock()

@@ -12,6 +12,7 @@ function LoginContent() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isAwake, setIsAwake] = useState(false)
+  const [showSecretLogin, setShowSecretLogin] = useState(false)
 
    const signInBtnRef = useRef<HTMLDivElement>(null)
 
@@ -96,7 +97,9 @@ function LoginContent() {
       <div style={{ flex: '0 0 42%', background: '#F3F4F6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px', position: 'relative' }}>
         {/* Logo & Tagline Centered Layout */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '40px', width: '100%', maxWidth: '440px' }}>
-          <div style={{ 
+          <div 
+            onClick={() => setShowSecretLogin(true)}
+            style={{ 
             display: 'flex', 
             flexDirection: 'column',
             alignItems: 'center', 
@@ -110,6 +113,7 @@ function LoginContent() {
             borderRadius: '28px',
             background: '#F3F4F6',
             boxShadow: '10px 10px 22px #d1d5db, -10px -10px 22px #ffffff',
+            cursor: 'default',
           }}>
             <img 
               src="/logo.png" 
@@ -207,47 +211,74 @@ function LoginContent() {
           <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#1e1e3a', marginBottom: '6px' }}>Welcome back!</h2>
           <p style={{ color: '#9999b0', fontSize: '14px', marginBottom: '28px' }}>Sign in to continue your learning journey</p>
 
-          {/* Error display */}
-          {displayError && (
-            <div style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626', padding: '12px 16px', borderRadius: '12px', fontSize: '13px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              {displayError}
-            </div>
-          )}
-
-          {/* Email / Password form */}
-          <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>
-            <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label className="form-label" htmlFor="email">Email</label>
-              <input id="email" type="email" className="form-input" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
-            </div>
-            <div className="form-group" style={{ marginBottom: '24px' }}>
-              <label className="form-label" htmlFor="password">Password</label>
-              <input id="password" type="password" className="form-input" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
-            </div>
-            <div ref={signInBtnRef}>
-              <CreepyButton
-                type="submit"
-                loading={loading}
-                disabled={loading}
-                isAwake={isAwake}
-              >
-                Sign In
-              </CreepyButton>
-            </div>
-          </form>
-
-          {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', margin: '0 0 20px' }}>
-            <div style={{ flex: 1, height: '1px', background: '#d1d5db' }} />
-            <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: '600' }}>OR</span>
-            <div style={{ flex: 1, height: '1px', background: '#d1d5db' }} />
-          </div>
-
-          {/* Google Login */}
+          {/* Google Login is now the primary method */}
           <GoogleLoginButton />
         </div>
       </div>
+
+      {/* Secret Login Modal */}
+      {showSecretLogin && (
+        <div 
+          style={{ 
+            position: 'fixed', 
+            inset: 0, 
+            background: 'rgba(0, 0, 0, 0.6)', 
+            backdropFilter: 'blur(4px)',
+            zIndex: 1000, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            padding: '24px' 
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowSecretLogin(false)
+            }
+          }}
+        >
+          <div style={{ width: '100%', maxWidth: '400px', background: '#F3F4F6', borderRadius: '28px', padding: '44px', boxShadow: '12px 12px 24px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>Secret Login</h2>
+              <button 
+                onClick={() => setShowSecretLogin(false)}
+                style={{ background: 'none', border: 'none', fontSize: '24px', color: '#9999b0', cursor: 'pointer', padding: '0 8px' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Error display */}
+            {displayError && (
+              <div style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626', padding: '12px 16px', borderRadius: '12px', fontSize: '13px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {displayError}
+              </div>
+            )}
+
+            {/* Email / Password form */}
+            <form onSubmit={handleSubmit}>
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label className="form-label" htmlFor="email">Email</label>
+                <input id="email" type="email" className="form-input" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
+              </div>
+              <div className="form-group" style={{ marginBottom: '24px' }}>
+                <label className="form-label" htmlFor="password">Password</label>
+                <input id="password" type="password" className="form-input" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+              </div>
+              <div ref={signInBtnRef}>
+                <CreepyButton
+                  type="submit"
+                  loading={loading}
+                  disabled={loading}
+                  isAwake={isAwake}
+                >
+                  Sign In
+                </CreepyButton>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

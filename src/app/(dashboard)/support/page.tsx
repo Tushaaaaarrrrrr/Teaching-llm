@@ -578,7 +578,7 @@ export default function SupportPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px' }}>{new Date(t.updatedAt).toLocaleDateString()}</span>
+                    <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px' }}>{new Date(t.updatedAt).toLocaleDateString('en-GB')}</span>
                     {userRole === 'MANAGER' && (
                       <button onClick={e => { e.stopPropagation(); deleteTicket(t.id) }}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '2px', display: 'flex' }} title="Delete ticket">

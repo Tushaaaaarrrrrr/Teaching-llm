@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface ClassItem {
@@ -11,6 +11,7 @@ interface ClassItem {
   icon?: string
   isCommunityActive?: boolean
   isDisabled?: boolean
+  hasUnread?: boolean
   _count?: { lectures: number }
 }
 
@@ -39,6 +40,22 @@ interface TranscriptMsg {
     name: string
     role: string
     securityNumber?: string
+  }
+}
+
+function formatMessageDate(dateString: string) {
+  const date = new Date(dateString)
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  if (date.toDateString() === today.toDateString()) {
+    return 'Today'
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday'
+  } else {
+    // Return dd/mm/yyyy format as requested across the system
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 }
 
@@ -81,6 +98,35 @@ export default function CommunityPage() {
       return match || list[0] || null
     })
   }
+
+  // Poll for unread status every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const data = await fetch('/api/classes').then(r => r.json())
+        const fresh = data.classes || data || []
+        
+        // Only update unread flags and background meta, keep existing list order to prevent shifting UI
+        setClasses(prev => prev.map(c => {
+          const update = fresh.find((f: ClassItem) => f.id === c.id)
+          return update ? { ...c, hasUnread: update.hasUnread } : c
+        }))
+      } catch (err) {
+        console.error('Failed to poll classes', err)
+      }
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Mark community as read when selected
+  useEffect(() => {
+    if (selectedClass) {
+      fetch(`/api/community/${selectedClass.id}/read`, { method: 'POST' }).catch(console.error);
+      
+      // Optimistically clear the unread dot LOCALLY
+      setClasses(prev => prev.map(c => c.id === selectedClass.id ? { ...c, hasUnread: false } : c))
+    }
+  }, [selectedClass])
 
   // SSE connection for real-time messages
   useEffect(() => {
@@ -297,8 +343,17 @@ export default function CommunityPage() {
               boxShadow: selectedClass?.id === cls.id
                 ? `5px 5px 12px ${cls.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
                 : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+              position: 'relative'
             }}
           >
+            {cls.hasUnread && selectedClass?.id !== cls.id && (
+              <div style={{
+                position: 'absolute', top: '8px', right: '8px',
+                width: '8px', height: '8px', borderRadius: '50%',
+                background: '#ef4444',
+                boxShadow: '0 0 6px rgba(239,68,68,0.6)'
+              }} />
+            )}
             <div style={{
               width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0,
               background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : cls.color + '22',
@@ -437,43 +492,73 @@ export default function CommunityPage() {
               {messages.map((msg, idx) => {
                 const isMe = msg.sender.id === userId
                 const isAdmin = msg.sender.role !== 'STUDENT'
-                const showAvatar = idx === 0 || messages[idx - 1]?.sender.id !== msg.sender.id
+                
+                const currentDate = new Date(msg.createdAt).toDateString()
+                const prevDate = idx > 0 ? new Date(messages[idx - 1].createdAt).toDateString() : null
+                const showDateHeader = currentDate !== prevDate
+                
+                const showAvatar = idx === 0 || messages[idx - 1]?.sender.id !== msg.sender.id || showDateHeader
 
                 if (msg.isDeleted) {
                   return (
-                    <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
-                      {!isMe && (
-                        <>
-                          {showAvatar ? (
-                            <div style={{
-                              width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                              background: '#e8eaf0',
-                              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: '11px', fontWeight: '800', color: '#9999b0',
-                            }}>
-                              {msg.sender.name.charAt(0).toUpperCase()}
-                            </div>
-                          ) : <div style={{ width: '32px', flexShrink: 0 }} />}
-                        </>
+                    <React.Fragment key={msg.id}>
+                      {showDateHeader && (
+                        <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0 12px' }}>
+                          <span style={{
+                            padding: '4px 14px', borderRadius: '50px',
+                            background: 'rgba(0,0,0,0.04)', color: '#6b6b8a',
+                            fontSize: '11px', fontWeight: '700', textTransform: 'uppercase',
+                          }}>
+                            {formatMessageDate(msg.createdAt)}
+                          </span>
+                        </div>
                       )}
-                      <div style={{
-                        padding: '8px 14px', borderRadius: '14px',
-                        background: 'transparent',
-                        border: '1.5px dashed #c5c7cf',
-                        color: '#9999b0', fontSize: '13px', fontStyle: 'italic',
-                      }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}>
-                          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                        </svg>
-                        Message deleted
+                      <div style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
+                        {!isMe && (
+                          <>
+                            {showAvatar ? (
+                              <div style={{
+                                width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                                background: '#e8eaf0',
+                                boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '11px', fontWeight: '800', color: '#9999b0',
+                              }}>
+                                {msg.sender.name.charAt(0).toUpperCase()}
+                              </div>
+                            ) : <div style={{ width: '32px', flexShrink: 0 }} />}
+                          </>
+                        )}
+                        <div style={{
+                          padding: '8px 14px', borderRadius: '14px',
+                          background: 'transparent',
+                          border: '1.5px dashed #c5c7cf',
+                          color: '#9999b0', fontSize: '13px', fontStyle: 'italic',
+                        }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}>
+                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                          </svg>
+                          Message deleted
+                        </div>
                       </div>
-                    </div>
+                    </React.Fragment>
                   )
                 }
 
                 return (
-                  <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
+                  <React.Fragment key={msg.id}>
+                    {showDateHeader && (
+                      <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0 12px' }}>
+                        <span style={{
+                          padding: '4px 14px', borderRadius: '50px',
+                          background: 'rgba(0,0,0,0.04)', color: '#6b6b8a',
+                          fontSize: '11px', fontWeight: '700', textTransform: 'uppercase',
+                        }}>
+                          {formatMessageDate(msg.createdAt)}
+                        </span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
                     {/* Avatar */}
                     {!isMe && (
                       <div style={{
@@ -548,7 +633,8 @@ export default function CommunityPage() {
                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
-                  </div>
+                    </div>
+                  </React.Fragment>
                 )
               })}
               <div ref={messagesEndRef} />

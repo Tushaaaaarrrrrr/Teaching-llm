@@ -252,7 +252,7 @@ export default function ReportsPage() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                            <div style={{ fontSize: '11px', fontWeight: 800, color: s.status === 'Evaluated' ? '#10b981' : '#6366f1' }}>{s.status}</div>
-                           <div style={{ fontSize: '10px', color: '#9999b0' }}>{new Date(s.date).toLocaleDateString()}</div>
+                           <div style={{ fontSize: '10px', color: '#9999b0' }}>{new Date(s.date).toLocaleDateString('en-GB')}</div>
                         </div>
                       </div>
                     ))}
@@ -370,7 +370,7 @@ export default function ReportsPage() {
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#fff', borderRadius: '16px', boxShadow: '2px 2px 5px #c5c7cf' }}>
                           <div>
                               <div style={{ fontSize: '15px', fontWeight: 800, color: '#1e1e3a' }}>{ex.title}</div>
-                              <div style={{ fontSize: '12px', color: '#6b6b8a' }}>{new Date(ex.date).toLocaleDateString()}</div>
+                              <div style={{ fontSize: '12px', color: '#6b6b8a' }}>{new Date(ex.date).toLocaleDateString('en-GB')}</div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
                               {!ex.isEvaluated ? (

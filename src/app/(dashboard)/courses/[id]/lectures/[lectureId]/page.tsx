@@ -183,7 +183,7 @@ export default function LecturePage() {
                 </span>
               )}
               <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-                {new Date(comment.createdAt).toLocaleDateString()}
+                {new Date(comment.createdAt).toLocaleDateString('en-GB')}
               </span>
             </div>
             <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.5', margin: '4px 0' }}>{comment.content}</p>

@@ -331,7 +331,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
                         {n.content.length > 60 ? n.content.slice(0, 57) + '…' : n.content}
                       </div>
                       <div style={{ fontSize: '11px', color: '#b0b2ba', marginTop: '3px' }}>
-                        {new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {new Date(n.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                   </div>

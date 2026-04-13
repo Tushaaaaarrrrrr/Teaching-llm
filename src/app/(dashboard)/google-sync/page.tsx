@@ -241,7 +241,7 @@ export default function GoogleSyncPage() {
 
                 {/* Jobs */}
                 {jobs.map((job: any) => {
-                  const createdDate = new Date(job.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                  const createdDate = new Date(job.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
                   const statusColor = job.status === 'SUCCESS' ? '#10b981' : job.status === 'FAILED' ? '#ef4444' : job.status === 'PROCESSING' ? '#f59e0b' : '#9999b0'
                   const actionColor = job.action === 'ADD' ? '#10b981' : '#ef4444'
 

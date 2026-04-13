@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession } from '@/lib/auth'
+import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 
 export async function GET() {
   try {
@@ -13,9 +13,19 @@ export async function GET() {
     })
     if (!user) return NextResponse.json({})
 
+    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+
+    const cw: any = { isGlobal: false, lastMessageAt: { not: null } }
+    if (session.role !== 'MANAGER') {
+      cw.isDisabled = false
+      cw.isCommunityActive = true
+    }
+    if (accessibleCourseIds !== null) cw.id = { in: accessibleCourseIds }
+
     // Find latest entries
-    const [lastPost, lastTicket, lastChat, lastAnn] = await Promise.all([
-      prisma.communityMessage.findFirst({ orderBy: { createdAt: 'desc' }, select: { createdAt: true } }).catch(() => null),
+    const [courses, readStates, lastTicket, lastChat, lastAnn] = await Promise.all([
+      prisma.course.findMany({ where: cw, select: { id: true, lastMessageAt: true } }),
+      prisma.communityReadState.findMany({ where: { userId: session.userId }, select: { courseId: true, lastReadAt: true } }),
       prisma.supportTicket.findFirst({
         orderBy: { updatedAt: 'desc' },
         select: { updatedAt: true },
@@ -29,8 +39,15 @@ export async function GET() {
       prisma.announcement.findFirst({ orderBy: { createdAt: 'desc' }, select: { createdAt: true } }).catch(() => null),
     ])
 
+    const readMap = new Map(readStates.map((r: any) => [r.courseId, r.lastReadAt.getTime()]))
+    const hasCommunityUnread = courses.some((c: any) => {
+      const lastMsg = c.lastMessageAt ? c.lastMessageAt.getTime() : 0;
+      const lastRead = readMap.get(c.id) || 0;
+      return lastMsg > lastRead;
+    })
+
     const unread = {
-      community: !!(lastPost && (!user.lastSeenCommunityAt || lastPost.createdAt > user.lastSeenCommunityAt)),
+      community: hasCommunityUnread,
       support: !!(
         (lastTicket && (!user.lastSeenSupportAt || lastTicket.updatedAt > user.lastSeenSupportAt)) ||
         (lastChat && (!user.lastSeenSupportAt || lastChat.updatedAt > user.lastSeenSupportAt))

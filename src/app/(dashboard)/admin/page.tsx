@@ -445,8 +445,8 @@ export default function AdminPage() {
                 const courses = (u.enrollments || []).map(e => e.course.name).join('; ')
                 rows.push([
                   getDisplayName(u), u.email, u.role, courses,
-                  new Date(u.createdAt).toLocaleDateString(),
-                  new Date(u.createdAt).toLocaleDateString(),
+                  new Date(u.createdAt).toLocaleDateString('en-GB'),
+                  new Date(u.createdAt).toLocaleDateString('en-GB'),
                 ])
               })
               const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n')
@@ -525,7 +525,7 @@ export default function AdminPage() {
                 ? (Date.now() - createdAtDate.getTime()) <= 10 * 24 * 60 * 60 * 1000
                 : false
               const createdAtLabel = createdAtDate
-                ? createdAtDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                ? createdAtDate.toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })
                 : 'Unknown'
               return (
                 <div key={user.id} style={{

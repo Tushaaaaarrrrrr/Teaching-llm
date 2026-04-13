@@ -904,7 +904,7 @@ export default function CourseEditPage() {
                           </div>
                           {item.createdAt && (
                             <div style={{ fontSize: '10px', color: '#9999b0' }}>
-                              Added: {new Date(item.createdAt).toLocaleDateString()}
+                              Added: {new Date(item.createdAt).toLocaleDateString('en-GB')}
                             </div>
                           )}
                         </div>
