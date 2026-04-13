@@ -237,8 +237,8 @@ function LoginContent() {
           }}
         >
           <div style={{ width: '100%', maxWidth: '400px', background: '#F3F4F6', borderRadius: '28px', padding: '44px', boxShadow: '12px 12px 24px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>Secret Login</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>Manager Login</h2>
               <button 
                 onClick={() => setShowSecretLogin(false)}
                 style={{ background: 'none', border: 'none', fontSize: '24px', color: '#9999b0', cursor: 'pointer', padding: '0 8px' }}
@@ -246,6 +246,7 @@ function LoginContent() {
                 &times;
               </button>
             </div>
+            <p style={{ color: '#9999b0', fontSize: '13px', marginBottom: '24px' }}>If you are a student, please close this and use Google to continue.</p>
 
             {/* Error display */}
             {displayError && (
