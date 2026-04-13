@@ -44,15 +44,8 @@ export default async function DashboardLayout({
         overflow: 'hidden',
       }}>
         <Header userName={session.name} userRole={session.role} />
-        <main style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1 }}>
-            {children}
-          </div>
-          <footer style={{ padding: '24px 32px', display: 'flex', justifyContent: 'center', gap: '24px', background: '#e8eaf0', borderTop: '2px solid #dcdfe8', marginTop: 'auto' }}>
-            <Link href="/company/privacy-policy" style={{ fontSize: '13px', color: '#6b6b8a', textDecoration: 'none', fontWeight: 600 }}>Privacy Policy</Link>
-            <Link href="/company/return-policy" style={{ fontSize: '13px', color: '#6b6b8a', textDecoration: 'none', fontWeight: 600 }}>Return / Refund Policies</Link>
-            <Link href="/company/copyright-policy" style={{ fontSize: '13px', color: '#6b6b8a', textDecoration: 'none', fontWeight: 600 }}>Copyright Policies</Link>
-          </footer>
+        <main style={{ flex: 1, overflow: 'auto' }}>
+          {children}
         </main>
         <SupportFloatingButton />
       </div>

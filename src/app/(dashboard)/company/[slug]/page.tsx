@@ -1,14 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import useSWR from 'swr'
 import RichTextEditor from '@/components/ui/RichTextEditor'
 
 export default function CompanyPage() {
   const params = useParams()
+  const router = useRouter()
   const slug = params.slug as string
   
+  const isAboutUs = slug === 'about-us'
   const titleText = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
   const { data: userData } = useSWR('/api/auth/me', (url: string) => fetch(url).then(r => r.json()))
@@ -77,9 +80,29 @@ export default function CompanyPage() {
   return (
     <div style={{ padding: '24px 32px 48px', maxWidth: '1000px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px' }}>
-          {titleText}
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button 
+            onClick={() => router.back()}
+            style={{ 
+              ...neuButtonSecondary, 
+              padding: '10px', 
+              width: '40px', 
+              height: '40px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              borderRadius: '50%' 
+            }}
+            title="Go Back"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+          </button>
+          <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px' }}>
+            {titleText}
+          </h1>
+        </div>
 
         {isManager && !isEditing && (
           <button 
@@ -127,8 +150,57 @@ export default function CompanyPage() {
             style={{ color: '#4a4a68', lineHeight: '1.8', fontSize: '16px' }}
             dangerouslySetInnerHTML={{ __html: content || `<p style="color: #9999b0; font-style: italic; text-align: center; padding: 40px;">No content available for ${titleText}. ${isManager ? 'Click Edit to add something.' : ''}</p>` }}
           />
-        )}
       </div>
+
+      {!isEditing && isAboutUs && (
+        <div style={{ 
+          marginTop: '40px', 
+          display: 'flex', 
+          flexDirection: 'column',
+          gap: '16px',
+        }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '8px' }}>Manage Policies</h3>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            {[
+              { href: '/company/privacy-policy', label: 'Privacy Policy' },
+              { href: '/company/return-policy', label: 'Return / Refund Policy' },
+              { href: '/company/copyright-policy', label: 'Copyright Policy' },
+            ].map(link => (
+              <Link 
+                key={link.href}
+                href={link.href} 
+                style={{ 
+                  padding: '16px 24px', 
+                  background: '#e8eaf0', 
+                  borderRadius: '16px',
+                  color: '#3636e8',
+                  textDecoration: 'none',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff'
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                </svg>
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Global styles for the rich text editor viewing mode */}
       <style dangerouslySetInnerHTML={{__html: `
