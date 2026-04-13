@@ -150,6 +150,7 @@ export default function CompanyPage() {
             style={{ color: '#4a4a68', lineHeight: '1.8', fontSize: '16px' }}
             dangerouslySetInnerHTML={{ __html: content || `<p style="color: #9999b0; font-style: italic; text-align: center; padding: 40px;">No content available for ${titleText}. ${isManager ? 'Click Edit to add something.' : ''}</p>` }}
           />
+        )}
       </div>
 
       {!isEditing && isAboutUs && (
