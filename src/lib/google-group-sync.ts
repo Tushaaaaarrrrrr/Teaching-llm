@@ -346,71 +346,97 @@ export async function processGoogleGroupSyncJobs() {
   }
 
   try {
+    // 1. Initial count to determine "Engine Mode"
+    const remainingCount = await (prisma as any).groupSyncJob.count({
+      where: {
+        status: 'PENDING',
+        attemptCount: { lt: GROUP_SYNC_MAX_ATTEMPTS },
+      },
+    })
+
+    if (remainingCount === 0) {
+      return { processed: 0, succeeded: 0, failed: 0 }
+    }
+
+    // 2. Select Dynamic Batch Size and Concurrency
+    // Triple Engine (> 200), Double Engine (> 50), Normal otherwise
+    let batchSize = 20
+    let concurrency = 3
+    let engineMode = 'Single Engine'
+
+    if (remainingCount > 200) {
+      batchSize = 100
+      concurrency = 15
+      engineMode = 'Triple Engine (EXTREME)'
+    } else if (remainingCount > 50) {
+      batchSize = 50
+      concurrency = 8
+      engineMode = 'Double Engine (TURBO)'
+    }
+
+    console.log(`[Google Group Sync] Starting ${engineMode}: ${remainingCount} users pending, pulling next ${batchSize}`)
+
     const jobs = await (prisma as any).groupSyncJob.findMany({
       where: {
         status: 'PENDING',
         attemptCount: { lt: GROUP_SYNC_MAX_ATTEMPTS },
       },
       orderBy: { createdAt: 'asc' },
-      take: 20, // Process max 20 jobs per run
+      take: batchSize,
     })
-
-    if (jobs.length === 0) {
-      return { processed: 0, succeeded: 0, failed: 0 }
-    }
 
     const accessToken = await getGoogleAccessToken()
     let succeeded = 0
     let failed = 0
 
-    for (const job of jobs) {
-      try {
-        // Mark as PROCESSING and increment attempt count
-        await (prisma as any).groupSyncJob.update({
-          where: { id: job.id },
-          data: {
-            status: 'PROCESSING',
-            attemptCount: job.attemptCount + 1,
-          },
-        })
+    // 3. Parallel Processing with Concurrency Control
+    // We process in chunks to avoid overwhelming the Google API or the DB
+    for (let i = 0; i < jobs.length; i += concurrency) {
+      const chunk = jobs.slice(i, i + concurrency)
+      
+      await Promise.allSettled(chunk.map(async (job: any) => {
+        try {
+          // Mark as PROCESSING and increment attempt count
+          await (prisma as any).groupSyncJob.update({
+            where: { id: job.id },
+            data: {
+              status: 'PROCESSING',
+              attemptCount: job.attemptCount + 1,
+            },
+          })
 
-        // Execute the sync operation
-        if (job.action === 'ADD') {
-          await addMemberToGroup(accessToken, job.userEmail, job.groupEmail)
-        } else {
-          await removeMemberFromGroup(accessToken, job.userEmail, job.groupEmail)
+          // Execute the sync operation
+          if (job.action === 'ADD') {
+            await addMemberToGroup(accessToken, job.userEmail, job.groupEmail)
+          } else {
+            await removeMemberFromGroup(accessToken, job.userEmail, job.groupEmail)
+          }
+
+          // Mark as SUCCESS
+          await (prisma as any).groupSyncJob.update({
+            where: { id: job.id },
+            data: {
+              status: 'SUCCESS',
+              lastError: null,
+            },
+          })
+          succeeded++
+        } catch (error) {
+          console.error(`[Google Group Sync] Job ${job.id} failed:`, error instanceof Error ? error.message : 'Unknown error')
+          const nextAttemptCount = job.attemptCount + 1
+          await (prisma as any).groupSyncJob.update({
+            where: { id: job.id },
+            data: {
+              status: nextAttemptCount >= GROUP_SYNC_MAX_ATTEMPTS ? 'FAILED' : 'PENDING',
+              lastError: error instanceof Error ? error.message : 'Unknown Google sync error',
+            },
+          })
+          failed++
         }
-
-        // Mark as SUCCESS
-        await (prisma as any).groupSyncJob.update({
-          where: { id: job.id },
-          data: {
-            status: 'SUCCESS',
-            lastError: null,
-          },
-        })
-        succeeded++
-      } catch (error) {
-        console.error('[Google Group Sync] Job failed', {
-          jobId: job.id,
-          action: job.action,
-          userEmail: job.userEmail,
-          groupEmail: job.groupEmail,
-          error: error instanceof Error ? error.message : 'Unknown Google sync error',
-        })
-        const nextAttemptCount = job.attemptCount + 1
-        await (prisma as any).groupSyncJob.update({
-          where: { id: job.id },
-          data: {
-            status: nextAttemptCount >= GROUP_SYNC_MAX_ATTEMPTS ? 'FAILED' : 'PENDING',
-            lastError: error instanceof Error ? error.message : 'Unknown Google sync error',
-          },
-        })
-        failed++
-      }
+      }))
     }
 
-    // Automatic Cleanup: Delete SUCCESS jobs older than 30 days to keep DB lean
+    // 4. Automatic Cleanup
     try {
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -423,20 +449,19 @@ export async function processGoogleGroupSyncJobs() {
       })
     } catch (cleanupError) {
       console.error('[Google Group Sync] Cleanup failed:', cleanupError)
-      // Don't throw - cleanup failure shouldn't stop the sync result response
     }
 
-    // Check if more PENDING jobs remain after this batch
-    const remainingCount = await (prisma as any).groupSyncJob.count({
+    // 5. Final check for more jobs
+    const finalCount = await (prisma as any).groupSyncJob.count({
       where: {
         status: 'PENDING',
         attemptCount: { lt: GROUP_SYNC_MAX_ATTEMPTS },
       },
     })
 
-    return { processed: jobs.length, succeeded, failed, hasMore: remainingCount > 0 }
+    return { processed: jobs.length, succeeded, failed, hasMore: finalCount > 0 }
   } finally {
-    // Always release lock, even on error
+    // Always release lock
     await releaseSyncLock()
   }
 }
