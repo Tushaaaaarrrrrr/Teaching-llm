@@ -208,8 +208,7 @@ function LoginContent() {
       {/* Right Panel - Login Form */}
       <div style={{ flex: 1, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' }}>
         <div style={{ width: '100%', maxWidth: '400px', background: '#F3F4F6', borderRadius: '28px', padding: '44px', boxShadow: '12px 12px 24px #d1d5db, -12px -12px 24px #ffffff' }}>
-          <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#1e1e3a', marginBottom: '6px' }}>Welcome Back</h2>
-          <p style={{ color: '#9999b0', fontSize: '14px', marginBottom: '28px' }}>Sign in to continue your learning journey.</p>
+          <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#1e1e3a', marginBottom: '32px', textAlign: 'center' }}>Welcome Back</h2>
 
           {/* Google Login is now the primary method */}
           <GoogleLoginButton />

@@ -174,10 +174,10 @@ export default function UpdateOverlay() {
     >
       <div
         style={{
-          maxWidth: '840px', width: '92%', borderRadius: '24px', overflow: 'hidden',
+          maxWidth: '460px', width: '92%', borderRadius: '24px', overflow: 'hidden',
           background: '#ffffff', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
           animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-          maxHeight: '85vh', display: 'flex', flexDirection: 'row',
+          maxHeight: '90vh', minHeight: '460px', display: 'flex', flexDirection: 'column',
           position: 'relative',
         }}
         onClick={e => e.stopPropagation()}
@@ -187,28 +187,46 @@ export default function UpdateOverlay() {
           <VisualEffect type={currentUpdate.animation} key={`effect-${currentUpdate.id}`} />
         )}
 
-        {/* LEFT SIDE - Content */}
+        {/* Image Top Half (if present) */}
+        {hasImage && (
+          <div style={{
+            width: '100%', height: '240px',
+            background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden', flexShrink: 0
+          }}>
+            <img
+              src={currentUpdate.imageUrl!}
+              alt=""
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover',
+              }}
+            />
+          </div>
+        )}
+
+        {/* Content Half */}
         <div style={{
-          flex: 1, display: 'flex', flexDirection: 'column', padding: '32px', background: '#ffffff',
-          position: 'relative', overflowY: 'auto', maxHeight: 'calc(85vh)',
+          flex: 1, display: 'flex', flexDirection: 'column', padding: '40px', background: '#ffffff',
+          position: 'relative', overflowY: 'auto', alignItems: 'center', justifyContent: 'center',
+          textAlign: 'center'
         }}>
           {/* Close Button */}
           <button onClick={dismiss} style={{
-            position: 'absolute', top: '20px', right: '20px',
+            position: 'absolute', top: '16px', right: '16px',
             background: '#f1f5f9', border: 'none', color: '#1e293b',
-            width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer',
+            width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 20, transition: 'all 0.2s',
           }} className="close-btn-update">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
 
           {/* Title */}
           <h2 style={{
-            fontSize: '28px', fontWeight: '800', color: '#1e293b', margin: '0 0 12px 0',
-            lineHeight: '1.2', paddingRight: '40px',
+            fontSize: '26px', fontWeight: '800', color: '#1e293b', margin: '0 0 16px 0',
+            lineHeight: '1.3',
           }}>
             {currentUpdate.title}
           </h2>
@@ -218,54 +236,36 @@ export default function UpdateOverlay() {
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
             style={{ 
               fontSize: '15px', color: '#64748b', lineHeight: '1.7', wordBreak: 'break-word',
-              marginBottom: '24px', flex: 1,
+              marginBottom: '32px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%'
             }}
           />
 
           {/* Footer Buttons */}
           <div style={{
-            display: 'flex', gap: '12px', flexShrink: 0, marginTop: 'auto',
+            display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', flexShrink: 0, marginTop: 'auto',
           }}>
             {currentUpdate.ctaText && currentUpdate.ctaLink && (
               <button onClick={() => {
                 fetch(`/api/updates/${currentUpdate.id}/dismiss`, { method: 'POST' }).catch(console.error)
                 window.location.href = currentUpdate.ctaLink!
               }} style={{
-                background: '#3636e8', color: '#fff', border: 'none', padding: '12px 24px',
-                borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(54,54,232,0.25)', flex: 1,
+                background: '#3636e8', color: '#fff', border: 'none', padding: '14px',
+                borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(54,54,232,0.25)', width: '100%', transition: 'transform 0.1s'
               }}>
                 {currentUpdate.ctaText}
               </button>
             )}
             <button onClick={dismiss} style={{
               background: '#f1f5f9', color: '#475569',
-              border: 'none', padding: '12px 24px',
-              borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer',
-              flex: currentUpdate.ctaText ? 0 : 1,
+              border: 'none', padding: '14px',
+              borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
+              width: '100%', transition: 'background 0.2s'
             }}>
               Close
             </button>
           </div>
         </div>
-
-        {/* RIGHT SIDE - Image (Square) */}
-        {hasImage && (
-          <div style={{
-            flexShrink: 0, width: '320px', height: '480px',
-            background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '24px', overflow: 'hidden',
-          }}>
-            <img
-              src={currentUpdate.imageUrl}
-              alt=""
-              style={{
-                width: '100%', height: '100%', objectFit: 'contain',
-                borderRadius: '12px',
-              }}
-            />
-          </div>
-        )}
       </div>
 
       <style>{`
