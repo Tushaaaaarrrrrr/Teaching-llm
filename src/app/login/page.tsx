@@ -174,7 +174,7 @@ function LoginContent() {
         
         {/* Contact link */}
         <a
-          href="mailto:care.alpha.iitian@gmail.com"
+          href="mailto:admin@genziitian.org"
           style={{ 
             position: 'absolute', 
             bottom: '24px', 
@@ -207,8 +207,8 @@ function LoginContent() {
 
       {/* Right Panel - Login Form */}
       <div style={{ flex: 1, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' }}>
-        <div style={{ width: '100%', maxWidth: '400px', background: '#F3F4F6', borderRadius: '28px', padding: '44px', boxShadow: '12px 12px 24px #d1d5db, -12px -12px 24px #ffffff' }}>
-          <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#1e1e3a', marginBottom: '32px', textAlign: 'center' }}>Welcome Back</h2>
+        <div style={{ width: '100%', maxWidth: '480px', background: '#F3F4F6', borderRadius: '32px', padding: '52px', boxShadow: '14px 14px 28px #d1d5db, -14px -14px 28px #ffffff' }}>
+          <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1e1e3a', marginBottom: '36px', textAlign: 'center' }}>Welcome Back</h2>
 
           {/* Google Login is now the primary method */}
           <GoogleLoginButton />
@@ -362,7 +362,7 @@ function GoogleLoginButton() {
         </div>
       )}
 
-      <p style={{ textAlign: 'center', fontSize: '13px', color: '#9999b0', marginBottom: '16px', fontWeight: '500' }}>
+      <p style={{ textAlign: 'center', fontSize: '15px', color: '#9999b0', marginBottom: '20px', fontWeight: '500', whiteSpace: 'nowrap' }}>
         Log in or create a new account with Google
       </p>
 
@@ -397,7 +397,7 @@ function GoogleLoginButton() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '12px',
-            fontSize: '15px',
+            fontSize: '16px',
             fontWeight: '700',
             color: '#1e1e3a',
             fontFamily: 'inherit',

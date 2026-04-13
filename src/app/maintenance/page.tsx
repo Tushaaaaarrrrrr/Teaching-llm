@@ -102,7 +102,7 @@ export default function MaintenancePage() {
           {/* Bulletproof Contact Button */}
           <div className="flex justify-center pb-4">
             <a 
-              href="mailto:care.alpha.iitian@gmail.com"
+              href="mailto:admin@genziitian.org"
               style={{
                 backgroundColor: '#000000',
                 color: '#ffffff',

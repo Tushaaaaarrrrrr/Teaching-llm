@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { google } from 'googleapis'
 
 const TEST_GROUP_EMAIL = 're-attempt-26f1@genziitian.org'
-const TEST_MEMBER_EMAIL = 'care.alpha.iitian@gmail.com'
+const TEST_MEMBER_EMAIL = 'admin@genziitian.org'
 
 export async function GET() {
   try {
