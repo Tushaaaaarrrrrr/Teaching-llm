@@ -73,11 +73,16 @@ export default function CommunityPage() {
   const [transcriptOpen, setTranscriptOpen] = useState(false)
   const [transcriptMessages, setTranscriptMessages] = useState<TranscriptMsg[]>([])
   const [loadingTranscript, setLoadingTranscript] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const loadMessages = useCallback(async (classId: string) => {
-    const data = await fetch(`/api/community/${classId}/messages`).then(r => r.json())
-    setMessages(data)
+    const res = await fetch(`/api/community/${classId}/messages`)
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      throw new Error(data?.error || 'Failed to load messages')
+    }
+    setMessages(Array.isArray(data) ? data : [])
   }, [])
 
   useEffect(() => {
@@ -89,22 +94,44 @@ export default function CommunityPage() {
   }, [])
 
   async function loadClasses(preferredId?: string) {
-    const data = await fetch('/api/classes').then(r => r.json())
-    const list = data.classes || data || []
-    setClasses(list)
-    setSelectedClass(current => {
-      const nextId = preferredId || current?.id
-      const match = nextId ? list.find((item: ClassItem) => item.id === nextId) : null
-      return match || list[0] || null
-    })
+    try {
+      setLoadError(null)
+      const res = await fetch('/api/classes')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to load communities')
+      }
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.classes)
+          ? data.classes
+          : []
+      setClasses(list)
+      setSelectedClass(current => {
+        const nextId = preferredId || current?.id
+        const match = nextId ? list.find((item: ClassItem) => item.id === nextId) : null
+        return match || list[0] || null
+      })
+    } catch (error) {
+      console.error(error)
+      setClasses([])
+      setSelectedClass(null)
+      setLoadError(error instanceof Error ? error.message : 'Failed to load communities')
+    }
   }
 
   // Poll for unread status every 30 seconds
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const data = await fetch('/api/classes').then(r => r.json())
-        const fresh = data.classes || data || []
+        const res = await fetch('/api/classes')
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) return
+        const fresh = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.classes)
+            ? data.classes
+            : []
         
         // Only update unread flags and background meta, keep existing list order to prevent shifting UI
         setClasses(prev => prev.map(c => {
@@ -321,8 +348,26 @@ export default function CommunityPage() {
   const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
 
   return (
-    <div className="page-container fade-in" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
+    <div className="page-container fade-in" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
       {confirmDialog}
+      {loadError ? (
+        <div
+          className="card"
+          style={{
+            position: 'absolute',
+            top: '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 5,
+            padding: '12px 16px',
+            border: '1px solid #fecaca',
+            color: '#b91c1c',
+            background: '#fff5f5',
+          }}
+        >
+          Failed to load community data. {loadError}
+        </div>
+      ) : null}
 
       {/* Left: Class list */}
       <div style={{ width: '230px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>

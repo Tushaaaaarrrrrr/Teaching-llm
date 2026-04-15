@@ -4,7 +4,14 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data?.error || `Request failed for ${url}`)
+  }
+  return data
+}
 
 interface CourseItem {
   id: string
@@ -27,7 +34,7 @@ const COURSE_ICONS: Record<string, React.ReactNode> = {
 }
 
 export default function CoursesPage() {
-  const { data, isLoading } = useSWR<CourseItem[]>('/api/courses', fetcher, {
+  const { data, error, isLoading } = useSWR<CourseItem[]>('/api/courses', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
   })
@@ -62,6 +69,20 @@ export default function CoursesPage() {
 
   return (
     <div className="page-container fade-in">
+      {error ? (
+        <div
+          className="card"
+          style={{
+            marginBottom: '16px',
+            padding: '14px 18px',
+            border: '1px solid #fecaca',
+            color: '#b91c1c',
+            background: '#fff5f5',
+          }}
+        >
+          Failed to load courses. {error.message}
+        </div>
+      ) : null}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <p style={{ fontSize: '13px', color: '#9999b0', margin: 0 }}>{courses.length} courses available</p>
         <div style={{ position: 'relative' }}>

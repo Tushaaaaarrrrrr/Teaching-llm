@@ -10,29 +10,47 @@ export default function ManagePage() {
   const { confirm, confirmDialog } = useConfirmDialog()
   const [tab, setTab] = useState<Tab>('courses')
 
-  const fetcher = (url: string) => fetch(url).then(r => r.json())
-  const { data: authData } = useSWR('/api/auth/me', fetcher)
+  const fetcher = async (url: string) => {
+    const res = await fetch(url)
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      throw new Error(data?.error || `Request failed for ${url}`)
+    }
+    return data
+  }
+
+  const { data: authData, error: authError } = useSWR('/api/auth/me', fetcher)
   const userRole = authData?.user?.role || ''
 
-  const { data: coursesData, isLoading: loadingCourses } = useSWR('/api/courses', fetcher)
-  const { data: bundlesData, isLoading: loadingBundles } = useSWR(userRole === 'MANAGER' ? '/api/course-bundles' : null, fetcher)
-  const { data: lecturesData, isLoading: loadingLectures } = useSWR('/api/content?hasVideo=true', fetcher)
-  const { data: eventsData, isLoading: loadingEvents } = useSWR('/api/events', fetcher)
-  const { data: materialsData, isLoading: loadingMaterials } = useSWR('/api/materials', fetcher)
-  const { data: announcementsData, isLoading: loadingAnnouncements } = useSWR('/api/announcements', fetcher)
-  const { data: contentBankData, isLoading: loadingBank } = useSWR('/api/content-bank', fetcher)
-  const { data: instructorsData } = useSWR('/api/instructors', fetcher)
+  const { data: coursesData, error: coursesError, isLoading: loadingCourses } = useSWR('/api/courses', fetcher)
+  const { data: bundlesData, error: bundlesError, isLoading: loadingBundles } = useSWR(userRole === 'MANAGER' ? '/api/course-bundles' : null, fetcher)
+  const { data: lecturesData, error: lecturesError, isLoading: loadingLectures } = useSWR('/api/content?hasVideo=true', fetcher)
+  const { data: eventsData, error: eventsError, isLoading: loadingEvents } = useSWR('/api/events', fetcher)
+  const { data: materialsData, error: materialsError, isLoading: loadingMaterials } = useSWR('/api/materials', fetcher)
+  const { data: announcementsData, error: announcementsError, isLoading: loadingAnnouncements } = useSWR('/api/announcements', fetcher)
+  const { data: contentBankData, error: bankError, isLoading: loadingBank } = useSWR('/api/content-bank', fetcher)
+  const { data: instructorsData, error: instructorsError } = useSWR('/api/instructors', fetcher)
 
-  const courses = coursesData?.courses || coursesData || []
-  const bundles = bundlesData?.bundles || bundlesData || []
-  const lectures = lecturesData?.content || []
-  const events = eventsData || []
-  const materials = Array.isArray(materialsData) ? materialsData : materialsData?.materials || []
-  const announcements = announcementsData?.announcements || announcementsData || []
+  const courses = Array.isArray(coursesData) ? coursesData : Array.isArray(coursesData?.courses) ? coursesData.courses : []
+  const bundles = Array.isArray(bundlesData) ? bundlesData : Array.isArray(bundlesData?.bundles) ? bundlesData.bundles : []
+  const lectures = Array.isArray(lecturesData?.content) ? lecturesData.content : []
+  const events = Array.isArray(eventsData) ? eventsData : []
+  const materials = Array.isArray(materialsData) ? materialsData : Array.isArray(materialsData?.materials) ? materialsData.materials : []
+  const announcements = Array.isArray(announcementsData) ? announcementsData : Array.isArray(announcementsData?.announcements) ? announcementsData.announcements : []
   const bankQuestions = Array.isArray(contentBankData) ? contentBankData : []
-  const instructors = instructorsData || []
+  const instructors = Array.isArray(instructorsData) ? instructorsData : []
 
   const loading = loadingCourses || loadingBundles || loadingLectures || loadingEvents || loadingMaterials || loadingAnnouncements
+  const loadError =
+    authError ||
+    coursesError ||
+    bundlesError ||
+    lecturesError ||
+    eventsError ||
+    materialsError ||
+    announcementsError ||
+    bankError ||
+    instructorsError
 
 
 
@@ -635,6 +653,20 @@ export default function ManagePage() {
   return (
     <div className="page-container fade-in">
       {confirmDialog}
+      {loadError ? (
+        <div
+          className="card"
+          style={{
+            marginBottom: '16px',
+            padding: '14px 18px',
+            border: '1px solid #fecaca',
+            color: '#b91c1c',
+            background: '#fff5f5',
+          }}
+        >
+          Failed to load manage data. {loadError.message}
+        </div>
+      ) : null}
       <div className="page-header">
         <div style={{ display: 'flex', gap: '8px' }}>
           {tab === 'events' && (
