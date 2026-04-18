@@ -592,21 +592,60 @@ export default function DashboardPage() {
                       transform: sliding ? 'translateX(-16px)' : 'translateX(0)',
                       transition: 'opacity 0.18s ease, transform 0.18s ease',
                       animation: sliding ? 'none' : 'slideInRight 0.32s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '20px',
+                      marginTop: '8px'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px' }}>
-                        <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.3' }}>
-                          {frontSession.title}
-                        </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '22px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', marginBottom: '2px' }}>
+                        {frontSession.title}
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '600' }}>
+                        {frontSession.instructor}{frontSession.course?.name ? ` · ${frontSession.course.name}` : ''}
+                      </div>
                     </div>
+
+                    <a
+                      href={frontSession.meetLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        background: '#ef4444',
+                        color: '#ffffff', fontSize: '14px', fontWeight: '800',
+                        textDecoration: 'none', letterSpacing: '0.01em',
+                        animation: 'joinGlow 2.5s ease-in-out infinite',
+                        transition: 'transform 0.2s, background 0.18s',
+                        boxShadow: '0 8px 20px rgba(239,68,68,0.3)',
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <div style={{
+                        width: '24px', height: '24px', borderRadius: '6px',
+                        background: 'rgba(255,255,255,0.2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5">
+                          <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                      </div>
+                      Join Live
+                    </a>
                   </div>
 
-                  {liveSessions.length > 1 ? (
-                    <div style={{ display: 'flex', gap: '5px' }}>
+                  {liveSessions.length > 1 && (
+                    <div style={{ display: 'flex', gap: '5px', marginTop: '12px' }}>
                       {liveSessions.map((_, i) => (
                         <div
                           key={i}
-                          onClick={handleNextLive}
+                          onClick={() => setActiveCard(i)}
                           style={{
                             width: i === activeCard ? '18px' : '6px',
                             height: '6px',
@@ -618,39 +657,7 @@ export default function DashboardPage() {
                         />
                       ))}
                     </div>
-                  ) : <div />}
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px' }}>
-                    <a
-                      href={frontSession.meetLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', gap: '10px',
-                        padding: '13px 20px',
-                        borderRadius: '12px',
-                        background: '#ef4444',
-                        color: '#ffffff', fontSize: '14px', fontWeight: '800',
-                        textDecoration: 'none', letterSpacing: '0.01em',
-                        animation: 'joinGlow 2.5s ease-in-out infinite',
-                        transition: 'transform 0.2s, background 0.18s',
-                        width: '100%',
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                      <div style={{
-                        width: '28px', height: '28px', borderRadius: '7px',
-                        background: 'rgba(255,255,255,0.2)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5">
-                          <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                        </svg>
-                      </div>
-                      Join Live Course
-                    </a>
-                  </div>
+                  )}
                 </>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '10px' }}>
