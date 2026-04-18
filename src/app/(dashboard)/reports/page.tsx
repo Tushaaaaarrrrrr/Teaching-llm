@@ -329,24 +329,75 @@ export default function ReportsPage() {
                 </div>
               </div>
 
+              {/* Exam History & Top Performers side-by-side */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px', marginBottom: '40px' }}>
+                {/* Left Card: Exam History */}
+                <div style={neuCard}>
+                   <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1e1e3a', marginBottom: '24px' }}>Exam History</h3>
+                   {data.exams.length === 0 ? (
+                     <p style={{ textAlign: 'center', color: '#9999b0', padding: '24px' }}>No exam data available{selectedCourseId ? ' for this course' : ''}.</p>
+                   ) : (
+                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                       {data.exams.map((ex: any, i: number) => (
+                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#fff', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                           <div>
+                              <div style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a' }}>{ex.title}</div>
+                              <div style={{ fontSize: '11px', color: '#9999b0' }}>{new Date(ex.date).toLocaleDateString('en-GB')}</div>
+                           </div>
+                           <div style={{ textAlign: 'right' }}>
+                              {!ex.isEvaluated ? (
+                                <span style={{ fontSize: '10px', fontWeight: 800, color: '#6366f1', background: '#e0e7ff', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>Pending</span>
+                              ) : (
+                                <div style={{ fontSize: '15px', fontWeight: 900, color: (ex.percentage || 0) >= 50 ? '#10b981' : '#ef4444' }}>
+                                  {ex.percentage !== null ? `${ex.percentage.toFixed(0)}%` : 'N/A'}
+                                </div>
+                              )}
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   )}
+                </div>
+
+                {/* Right Card: Top Performers */}
+                <div style={neuCard}>
+                   <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1e1e3a', marginBottom: '24px' }}>Top Performers</h3>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {(data.topPerformers || []).map((p: any, i: number) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: '#fff', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                           <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#3636e810', color: '#3636e8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '11px' }}>{i+1}</div>
+                           <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e1e3a' }}>{p.name}</div>
+                              <div style={{ fontSize: '10px', color: '#9999b0' }}>{p.email}</div>
+                           </div>
+                           <div style={{ fontSize: '15px', fontWeight: 900, color: '#3636e8' }}>{p.average}%</div>
+                        </div>
+                      ))}
+                      {(!data.topPerformers || data.topPerformers.length === 0) && (
+                        <p style={{ textAlign: 'center', color: '#9999b0', padding: '12px' }}>No rankings available yet.</p>
+                      )}
+                   </div>
+                </div>
+              </div>
+
               {/* Attendance Heatmap */}
               <div style={{ ...neuCard, marginBottom: '40px' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>Attendance Heatmap (Last 30 Days)</h2>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {last30Days.map(date => {
-                      const hasLog = data.attendance?.some((l: any) => l.timestamp.split('T')[0] === date)
-                      return (
-                        <div 
-                          key={date} 
-                          title={date}
-                          style={{ 
-                            width: '24px', height: '24px', borderRadius: '6px', 
-                            background: hasLog ? '#10b981' : '#fff',
-                            boxShadow: ' inset 1px 1px 2px rgba(0,0,0,0.05)',
-                            border: '1px solid rgba(0,0,0,0.02)'
-                          }} 
-                        />
-                      )
+                       const hasLog = data.attendance?.some((l: any) => l.timestamp.split('T')[0] === date)
+                       return (
+                         <div 
+                           key={date} 
+                           title={date}
+                           style={{ 
+                             width: '24px', height: '24px', borderRadius: '6px', 
+                             background: hasLog ? '#10b981' : '#fff',
+                             boxShadow: ' inset 1px 1px 2px rgba(0,0,0,0.05)',
+                             border: '1px solid rgba(0,0,0,0.02)'
+                           }} 
+                         />
+                       )
                     })}
                 </div>
                 <div style={{ marginTop: '16px', display: 'flex', gap: '16px', fontSize: '12px', color: '#6b6b8a', fontWeight: 600 }}>
@@ -357,58 +408,6 @@ export default function ReportsPage() {
                       <div style={{ width: '12px', height: '12px', background: '#fff', border: '1px solid #c5c7cf', borderRadius: '3px' }} /> Absent
                     </div>
                 </div>
-              </div>
-
-              {/* Exam Performance */}
-              <div style={neuCard}>
-                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>Exam History</h2>
-                {data.exams.length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#9999b0', padding: '24px' }}>No exam data available{selectedCourseId ? ' for this course' : ''}.</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {data.exams.map((ex: any, i: number) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#fff', borderRadius: '16px', boxShadow: '2px 2px 5px #c5c7cf' }}>
-                          <div>
-                              <div style={{ fontSize: '15px', fontWeight: 800, color: '#1e1e3a' }}>{ex.title}</div>
-                              <div style={{ fontSize: '12px', color: '#6b6b8a' }}>{new Date(ex.date).toLocaleDateString('en-GB')}</div>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                              {!ex.isEvaluated ? (
-                                <div style={{ 
-                                  fontSize: '11px', fontWeight: '800', color: '#6366f1', 
-                                  background: '#e0e7ff', padding: '4px 12px', borderRadius: '20px',
-                                  textTransform: 'uppercase', letterSpacing: '0.04em'
-                                }}>
-                                  Pending Evaluation
-                                </div>
-                              ) : !ex.isPublished && !isAdminOrManager ? (
-                                <div style={{ 
-                                  fontSize: '11px', fontWeight: '800', color: '#f59e0b', 
-                                  background: '#fef3c7', padding: '4px 12px', borderRadius: '20px',
-                                  textTransform: 'uppercase', letterSpacing: '0.04em'
-                                }}>
-                                  Result Not Published
-                                </div>
-                              ) : (
-                                <>
-                                  <div style={{ fontSize: '18px', fontWeight: 900, color: (ex.percentage || 0) >= 50 ? '#10b981' : '#ef4444' }}>
-                                      {ex.percentage !== null ? `${ex.percentage.toFixed(0)}%` : 'N/A'}
-                                  </div>
-                                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#9999b0' }}>
-                                      {ex.score !== null ? `${ex.score} / ${ex.total}` : '-- / --'} Marks
-                                  </div>
-                                  {!ex.isPublished && isAdminOrManager && (
-                                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#f59e0b', marginTop: '4px' }}>
-                                        (Admin Only: Not Published)
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
               </div>
             </>
           ) : (

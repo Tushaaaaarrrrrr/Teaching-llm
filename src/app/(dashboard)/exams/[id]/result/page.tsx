@@ -85,6 +85,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
 
   const isGeneralTest = exam?.examType === 'GENERAL_TEST'
 
+
   return (
     <div style={{ padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
@@ -96,11 +97,17 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
         <div style={{ fontSize: '14px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Your Score</div>
         {attempt.isEvaluated ? (
           <div>
-            <div style={{ fontSize: '48px', fontWeight: 900, color: '#3636e8' }}>
-              {attempt.totalMarks} <span style={{ fontSize: '20px', color: '#9999b0' }}>/ {exam.questions.reduce((acc: number, q: any) => acc + q.marks, 0)}</span>
+            <div style={{ fontSize: '48px', fontWeight: 900, color: '#3636e8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+              <span>{attempt.totalMarks}</span>
+              <span style={{ fontSize: '20px', color: '#9999b0' }}>/ {exam.questions.reduce((acc: number, q: any) => acc + q.marks, 0)}</span>
             </div>
-            <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 700, color: scorePercentage! >= 50 ? '#10b981' : '#ef4444' }}>
-              {scorePercentage?.toFixed(0)}% - {scorePercentage! >= 50 ? 'Passed' : 'Needs Improvement'}
+            <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 700, color: scorePercentage! >= 50 ? '#10b981' : '#ef4444', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div>{scorePercentage?.toFixed(0)}% - {scorePercentage! >= 50 ? 'Passed' : 'Needs Improvement'}</div>
+              {attempt.bonusMarks > 0 && (
+                <div style={{ fontSize: '11px', color: '#3636e8', background: '#3636e810', padding: '4px 12px', borderRadius: '50px', alignSelf: 'center', marginTop: '8px' }}>
+                  Includes {attempt.bonusMarks} Bonus Points
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -309,9 +316,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
               </button>
             </div>
           </div>
-        </div>
       )}
-      </div>
 
       <div style={{ marginTop: '40px', textAlign: 'center' }}>
         <button 

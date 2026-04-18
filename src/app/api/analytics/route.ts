@@ -175,11 +175,65 @@ export async function GET(request: NextRequest) {
     const rewatchCount = progressRecords.filter(r => r.status === 'REWATCH').length
     const neverSeenCount = Math.max(0, totalContent - completedCount - rewatchCount)
 
+    // 4. Course-specific Top Performers (Peers in shared courses)
+    const studentEnrollments = await prisma.enrollment.findMany({
+      where: { userId },
+      select: { courseId: true }
+    })
+    const myCourseIds = studentEnrollments.map(e => e.courseId)
+
+    let peerTopPerformers: any[] = []
+    if (myCourseIds.length > 0) {
+      // Find all peer attempts in these courses
+      const peerAttempts = await (prisma.examAttempt as any).findMany({
+        where: {
+          submittedAt: { not: null },
+          isEvaluated: true,
+          exam: { courseId: { in: myCourseIds } }
+        },
+        include: { exam: { include: { questions: true } } }
+      })
+
+      const peerUserIds = Array.from(new Set(peerAttempts.map((a: any) => a.userId)))
+      const peers = await prisma.user.findMany({
+        where: { id: { in: peerUserIds }, isTerminated: false },
+        select: { id: true, name: true, email: true }
+      })
+      const peerMap = new Map(peers.map(p => [p.id, p]))
+
+      const peerStats: Record<string, { totalPercentage: number, count: number, name: string, email: string }> = {}
+      peerAttempts.forEach((a: any) => {
+        const user = peerMap.get(a.userId)
+        if (!user) return
+
+        const totalPossible = a.exam.questions.reduce((acc: number, q: any) => acc + q.marks, 0)
+        if (totalPossible === 0) return
+        const percentage = ((a.totalMarks || 0) / totalPossible) * 100
+
+        if (!peerStats[a.userId]) {
+          peerStats[a.userId] = { totalPercentage: 0, count: 0, name: user.name, email: user.email }
+        }
+        peerStats[a.userId].totalPercentage += percentage
+        peerStats[a.userId].count += 1
+      })
+
+      peerTopPerformers = Object.entries(peerStats)
+        .map(([id, s]) => ({
+          id,
+          name: s.name,
+          email: s.email,
+          average: (s.totalPercentage / s.count).toFixed(1)
+        }))
+        .sort((a, b) => parseFloat(b.average) - parseFloat(a.average))
+        .slice(0, 5)
+    }
+
     return NextResponse.json({
       type: 'STUDENT_DETAIL',
       courseId: courseIdParam || null,
       attendance: logs,
       exams: examStats,
+      topPerformers: peerTopPerformers,
       progress: {
         completed: completedCount,
         rewatch: rewatchCount,

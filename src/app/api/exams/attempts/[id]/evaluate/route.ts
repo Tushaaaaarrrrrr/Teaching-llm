@@ -14,7 +14,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { evaluations, feedback, isPublished } = await request.json()
+    const { evaluations, feedback, isPublished, bonusMarks } = await request.json()
     // evaluations: Array of { responseId: string, marks: number, feedback?: string }
 
     if (evaluations && !Array.isArray(evaluations)) {
@@ -42,12 +42,15 @@ export async function PUT(
 
     if (!attempt) return NextResponse.json({ error: 'Attempt not found' }, { status: 404 })
 
-    const totalMarks = attempt.responses.reduce((acc: number, r: any) => acc + (r.marks || 0), 0)
+    const responsesSum = attempt.responses.reduce((acc: number, r: any) => acc + (r.marks || 0), 0)
+    const bonus = typeof bonusMarks === 'number' ? bonusMarks : (attempt.bonusMarks || 0)
+    const totalMarks = responsesSum + bonus
 
     const updatedAttempt = await (prisma.examAttempt as any).update({
       where: { id },
       data: {
         totalMarks,
+        bonusMarks: bonus,
         isEvaluated: true,
         isPublished: isPublished !== undefined ? !!isPublished : attempt.isPublished,
         feedback: feedback !== undefined ? feedback : attempt.feedback

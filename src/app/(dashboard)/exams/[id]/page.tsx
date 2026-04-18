@@ -16,6 +16,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
   const [evaluatingAttempt, setEvaluatingAttempt] = useState<any>(null)
   const [evaluations, setEvaluations] = useState<Record<string, { marks: number, feedback: string }>>({})
   const [examFeedback, setExamFeedback] = useState('')
+  const [bonusMarks, setBonusMarks] = useState(0)
   const [publishImmediately, setPublishImmediately] = useState(false)
   const [now, setNow] = useState(() => new Date())
   const [showExamEditor, setShowExamEditor] = useState(false)
@@ -285,7 +286,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
         body: JSON.stringify({ 
           evaluations: evalList, 
           feedback: examFeedback,
-          isPublished: publishImmediately
+          isPublished: publishImmediately,
+          bonusMarks
         })
       })
 
@@ -507,6 +509,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                    })
                                    setEvaluations(initialEvals)
                                    setExamFeedback(a.feedback || '')
+                                   setBonusMarks(a.bonusMarks || 0)
                                    setPublishImmediately(a.isPublished)
                                  }}
                                  style={{ background: 'none', border: 'none', color: '#3636e8', fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}
@@ -541,8 +544,13 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#6b6b8a' }}>{q.type} - Max {q.marks} Marks</span>
                                  {q.type !== 'SUBJECTIVE' && (
-                                   <span style={{ fontSize: '12px', fontWeight: 800, color: resp?.answer === q.correctAnswer ? '#10b981' : '#ef4444' }}>
-                                      {resp?.answer === q.correctAnswer ? 'Auto: Correct' : 'Auto: Incorrect'}
+                                   <span style={{ 
+                                     fontSize: '11px', fontWeight: 900, 
+                                     color: resp?.answer === q.correctAnswer ? '#10b981' : '#ef4444',
+                                     background: resp?.answer === q.correctAnswer ? '#10b98110' : '#ef444410',
+                                     padding: '4px 10px', borderRadius: '50px' 
+                                   }}>
+                                      {resp?.answer === q.correctAnswer ? 'AUTO: CORRECT' : 'AUTO: INCORRECT'}
                                    </span>
                                  )}
                               </div>
@@ -556,10 +564,16 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                  <div>
                                     <label style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a' }}>Marks</label>
                                     <input 
-                                      type="number" 
-                                      value={evalData.marks}
-                                      onChange={(e) => setEvaluations({...evaluations, [resp.id]: {...evalData, marks: parseInt(e.target.value)}})}
-                                      style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #c5c7cf' }} 
+                                       type="number" 
+                                       disabled={q.type === 'MCQ' || q.type === 'TRUE_FALSE'}
+                                       value={evalData.marks}
+                                       onChange={(e) => setEvaluations({...evaluations, [resp.id]: {...evalData, marks: parseFloat(e.target.value) || 0}})}
+                                       style={{ 
+                                         width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #c5c7cf',
+                                         background: (q.type === 'MCQ' || q.type === 'TRUE_FALSE') ? '#f3f4f6' : '#fff',
+                                         fontWeight: 700, color: '#1e1e3a',
+                                         cursor: (q.type === 'MCQ' || q.type === 'TRUE_FALSE') ? 'not-allowed' : 'text'
+                                       }} 
                                     />
                                  </div>
                                  <div>
@@ -577,33 +591,57 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                         )
                      })}
 
-                      <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                         <div style={{ flex: 1, marginRight: '20px' }}>
-                            <label style={{ fontSize: '13px', fontWeight: 800, color: '#1e1e3a' }}>Overall Feedback</label>
-                            <textarea 
-                               value={examFeedback}
-                               onChange={(e) => setExamFeedback(e.target.value)}
-                               rows={2} 
-                               style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #c5c7cf', marginTop: '6px' }}
-                            />
+                      <div style={{ background: '#fff', padding: '24px', borderRadius: '20px', boxShadow: '4px 4px 10px #c5c7cf', marginTop: '20px' }}>
+                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '24px' }}>
+                            <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                               <div style={{ fontSize: '10px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '4px' }}>Marks Summary</div>
+                               <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a' }}>
+                                  {(Object.values(evaluations).reduce((acc, curr) => acc + curr.marks, 0) + bonusMarks).toFixed(1)}
+                                  <span style={{ fontSize: '14px', color: '#9999b0', fontWeight: 700 }}> / {exam.questions.reduce((acc, q) => acc + q.marks, 0)}</span>
+                               </div>
+                            </div>
+                            <div>
+                               <label style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Bonus Points</label>
+                               <input 
+                                  type="number" 
+                                  value={bonusMarks}
+                                  onChange={(e) => setBonusMarks(parseFloat(e.target.value) || 0)}
+                                  placeholder="0"
+                                  style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '2px solid #3636e820', fontWeight: 800, background: '#3636e805' }}
+                                />
+                            </div>
                          </div>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <input 
-                               type="checkbox" 
-                               id="publish-cb"
-                               checked={publishImmediately}
-                               onChange={(e) => setPublishImmediately(e.target.checked)}
-                            />
-                            <label htmlFor="publish-cb" style={{ fontSize: '13px', fontWeight: 700, color: '#1e1e3a', cursor: 'pointer' }}>Publish Result</label>
-                         </div>
-                      </div>
 
-                     <button 
-                        onClick={handleEvaluateSubmit}
-                        style={{ width: '100%', padding: '16px', borderRadius: '50px', background: '#3636e8', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '4px 4px 10px rgba(54,54,232,0.35)' }}
-                     >
-                        Submit Evaluation
-                     </button>
+                         <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+                            <div style={{ flex: 1 }}>
+                               <label style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a', textTransform: 'uppercase' }}>Instructor Overall Remarks</label>
+                               <textarea 
+                                  value={examFeedback}
+                                  onChange={(e) => setExamFeedback(e.target.value)}
+                                  rows={2} 
+                                  placeholder="Final summary for student..."
+                                  style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #c5c7cf', marginTop: '6px', fontSize: '14px' }}
+                               />
+                            </div>
+                            <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                               <input 
+                                  type="checkbox" 
+                                  id="publish-cb"
+                                  checked={publishImmediately}
+                                  onChange={(e) => setPublishImmediately(e.target.checked)}
+                                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                               />
+                               <label htmlFor="publish-cb" style={{ fontSize: '13px', fontWeight: 700, color: '#1e1e3a', cursor: 'pointer' }}>Publish Result</label>
+                            </div>
+                         </div>
+
+                         <button 
+                            onClick={handleEvaluateSubmit}
+                            style={{ width: '100%', padding: '18px', borderRadius: '50px', background: '#3636e8', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 8px 16px rgba(54,54,232,0.3)', marginTop: '24px', fontSize: '15px' }}
+                         >
+                            Apply Evaluation & Save
+                         </button>
+                      </div>
                   </div>
                </div>
             </div>

@@ -396,6 +396,7 @@ model ExamAttempt {
   startedAt   DateTime       @default(now())
   submittedAt DateTime?
   totalMarks  Float?
+  bonusMarks  Float?         @default(0)
   isEvaluated Boolean        @default(false)
   feedback    String?
   createdAt   DateTime       @default(now())
