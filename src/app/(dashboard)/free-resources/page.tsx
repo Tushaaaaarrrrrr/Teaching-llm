@@ -46,49 +46,93 @@ export default function FreeResourcesPage() {
 
   return (
     <div className="page-container fade-in">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '32px', maxWidth: '1000px' }}>
         {cards.map(card => (
           <Link key={card.href} href={card.href} style={{ textDecoration: 'none' }}>
             <div className="card" style={{
-              padding: '28px',
+              padding: '48px 32px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '20px',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: '24px',
               cursor: 'pointer',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              minHeight: '180px',
+              transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+              minHeight: '320px',
+              borderRadius: '40px',
+              position: 'relative',
+              overflow: 'hidden'
             }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
+              onMouseEnter={e => { 
+                e.currentTarget.style.transform = 'translateY(-10px) scale(1.02)' 
+                e.currentTarget.style.boxShadow = '20px 20px 40px #c5c7cf, -20px -20px 40px #ffffff'
+              }}
+              onMouseLeave={e => { 
+                e.currentTarget.style.transform = 'translateY(0) scale(1)' 
+                e.currentTarget.style.boxShadow = '10px 10px 20px #c5c7cf, -10px -10px 20px #ffffff'
+              }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{
-                  width: '56px', height: '56px', borderRadius: '16px',
-                  background: card.gradient,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', flexShrink: 0,
-                  boxShadow: `0 8px 20px ${card.color}30`,
-                }}>
-                  {card.icon}
-                </div>
-                <div>
-                  <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>{card.title}</h2>
-                  <div style={{ fontSize: '13px', color: '#6b6b8a', marginTop: '4px' }}>{card.description}</div>
-                </div>
+              {/* Icon Section */}
+              <div style={{
+                width: '100px', height: '100px', borderRadius: '32px',
+                background: card.gradient,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', flexShrink: 0,
+                boxShadow: `0 12px 30px ${card.color}40`,
+                marginBottom: '8px'
+              }}>
+                {card.icon}
               </div>
 
-              <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              {/* Text Content */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px' }}>
+                  {card.title}
+                </h2>
+                <p style={{ 
+                  fontSize: '15.5px', 
+                  color: '#6b6b8a', 
+                  margin: 0, 
+                  lineHeight: '1.6',
+                  maxWidth: '280px' 
+                }}>
+                  {card.description}
+                </p>
+              </div>
+
+              {/* Status Badge */}
+              <div style={{ 
+                marginTop: 'auto', 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
                 <div style={{
-                  padding: '6px 14px', borderRadius: '20px',
-                  background: `${card.color}15`,
+                  padding: '8px 20px', borderRadius: '50px',
+                  background: `${card.color}12`,
                   color: card.color,
-                  fontSize: '13px', fontWeight: '700',
+                  fontSize: '14px', fontWeight: '800',
+                  border: `1px solid ${card.color}20`,
+                  letterSpacing: '0.02em',
+                  textTransform: 'uppercase'
                 }}>
                   {card.count} {card.countLabel}
                 </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={card.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
+                
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  color: card.color, 
+                  fontSize: '13px', 
+                  fontWeight: '700' 
+                }}>
+                  Explore Now
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </div>
               </div>
             </div>
           </Link>
