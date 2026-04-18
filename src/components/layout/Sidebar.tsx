@@ -393,7 +393,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   fontWeight: isActive ? '700' : '500',
                   transition: 'all 0.2s ease',
                   marginBottom: '4px',
-                  position: 'relative'
+                  position: 'relative',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 <span style={{
