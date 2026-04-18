@@ -219,9 +219,7 @@ export async function GET(request: NextRequest) {
 
       peerTopPerformers = Object.entries(peerStats)
         .map(([id, s]) => ({
-          id,
-          name: s.name,
-          email: s.email,
+          email: session.role === 'STUDENT' ? undefined : s.email,
           average: (s.totalPercentage / s.count).toFixed(1)
         }))
         .sort((a, b) => parseFloat(b.average) - parseFloat(a.average))

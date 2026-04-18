@@ -368,7 +368,6 @@ export default function ReportsPage() {
                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#3636e810', color: '#3636e8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '11px' }}>{i+1}</div>
                            <div style={{ flex: 1 }}>
                               <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e1e3a' }}>{p.name}</div>
-                              <div style={{ fontSize: '10px', color: '#9999b0' }}>{p.email}</div>
                            </div>
                            <div style={{ fontSize: '15px', fontWeight: 900, color: '#3636e8' }}>{p.average}%</div>
                         </div>
