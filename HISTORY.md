@@ -186,3 +186,17 @@ Files affected:
 - `src/app/(dashboard)/calendar/page.tsx`
 Outcome:
 - Enhanced calendar privacy by restricting direct access to event details for students while providing a clear, aggregated daily schedule view that redacts sensitive meeting links.
+
+9. Date and time: 2026-04-18 22:45:00 IST
+Summary: Created database migration file for EnrollmentType and Feedback changes.
+What changed:
+- Wrote a manual SQL migration file to add the EnrollmentType enum/column and remove the Feedback examRating column.
+- This fixes the 500 Application Error ('Digest: 3694888697' or Prisma P2011/P2022) during SSR where the runtime code expects `enrollments.type` but the Supabase database schema was never synced from the `0105418` commit.
+What was added:
+- `prisma/migrations/20260418225000_update_schema/migration.sql`
+What was removed:
+- None
+Files affected:
+- `prisma/migrations/20260418225000_update_schema/migration.sql`
+Outcome:
+- Deployment mechanisms (Render) will now execute this delta to synchronize the database with the current Prisma client schema.
