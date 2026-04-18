@@ -24,7 +24,17 @@ export async function GET(request: NextRequest) {
     let where: Record<string, unknown> = {}
 
     if (session.role === 'STUDENT') {
-      where = { studentId: session.userId }
+      const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
+      where = {
+        studentId: session.userId,
+        OR: [
+          { status: { notIn: ['CLOSED', 'RESOLVED'] } },
+          { 
+            status: { in: ['CLOSED', 'RESOLVED'] }, 
+            updatedAt: { gte: fifteenDaysAgo } 
+          }
+        ]
+      }
     } else if (session.role === 'ADMIN') {
       const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
       where = {
@@ -60,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const ticket = await prisma.supportTicket.create({
       data: {
-        title,
+        title: title || (description ? description.slice(0, 50) : 'Support Request'),
         description,
         type: type || 'GENERAL',
         courseId: type === 'SUBJECT' ? courseId : null,

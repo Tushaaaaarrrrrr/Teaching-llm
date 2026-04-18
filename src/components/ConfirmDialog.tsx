@@ -49,7 +49,7 @@ export default function ConfirmDialog({
       <div
         style={{
           width: '100%',
-          maxWidth: '440px',
+          maxWidth: '500px',
           borderRadius: '24px',
           background: '#f0f2f8',
           boxShadow: '12px 12px 24px #cfd6e1, -12px -12px 24px #ffffff',

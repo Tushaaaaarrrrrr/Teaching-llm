@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import ManagerUserModal from '@/components/ManagerUserModal'
 
 interface ClassItem {
   id: string
@@ -74,6 +75,7 @@ export default function CommunityPage() {
   const [transcriptMessages, setTranscriptMessages] = useState<TranscriptMsg[]>([])
   const [loadingTranscript, setLoadingTranscript] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [selectedUserDetailsId, setSelectedUserDetailsId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const loadMessages = useCallback(async (classId: string) => {
@@ -623,7 +625,18 @@ export default function CommunityPage() {
                     <div style={{ maxWidth: '65%', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                       {showAvatar && !isMe && (
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', paddingLeft: '2px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: '700', color: isAdmin ? '#3636e8' : '#6b6b8a' }}>
+                          <span 
+                            onClick={() => {
+                              if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
+                            }}
+                            style={{ 
+                              fontSize: '12px', fontWeight: '700', 
+                              color: isAdmin ? '#3636e8' : '#6b6b8a',
+                              cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                              textDecoration: userRole === 'MANAGER' ? 'underline' : 'none',
+                              textUnderlineOffset: '2px'
+                            }}
+                          >
                             {msg.sender.name}
                           </span>
                           {isAdmin && (
@@ -775,7 +788,19 @@ export default function CommunityPage() {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '6px', flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#1e1e3a' }}>{msg.sender.name}</span>
+                          <span 
+                            onClick={() => {
+                              if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
+                            }}
+                            style={{ 
+                              fontSize: '12px', fontWeight: '700', color: '#1e1e3a',
+                              cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                              textDecoration: userRole === 'MANAGER' ? 'underline' : 'none',
+                              textUnderlineOffset: '2px'
+                            }}
+                          >
+                            {msg.sender.name}
+                          </span>
                           <span style={{ fontSize: '10px', background: '#3636e8', color: '#fff', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
                             {msg.sender.role}
                           </span>
@@ -805,6 +830,17 @@ export default function CommunityPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {selectedUserDetailsId && (
+        <ManagerUserModal 
+          userId={selectedUserDetailsId} 
+          onClose={() => setSelectedUserDetailsId(null)} 
+          onUpdate={() => {
+            loadMessages(selectedClass?.id || '')
+            if (transcriptOpen) openTranscript()
+          }}
+        />
       )}
     </div>
   )

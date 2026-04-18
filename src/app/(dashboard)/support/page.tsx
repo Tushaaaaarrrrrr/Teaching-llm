@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import ManagerUserModal from '@/components/ManagerUserModal'
 
 interface Ticket {
   id: string
@@ -133,6 +134,12 @@ export default function SupportPage() {
   const [historyChats, setHistoryChats] = useState<ChatSession[]>([])
   const [selectedHistory, setSelectedHistory] = useState<ChatSession | null>(null)
   const [historyMsgs, setHistoryMsgs] = useState<ChatMsg[]>([])
+  const [showChatStart, setShowChatStart] = useState(false)
+  const [chatInitText, setChatInitText] = useState('')
+  const [allUsers, setAllUsers] = useState<AdminUser[]>([])
+  const [showManagerChatStart, setShowManagerChatStart] = useState(false)
+  const [userSearch, setUserSearch] = useState('')
+  const [selectedUserDetailsId, setSelectedUserDetailsId] = useState<string | null>(null)
 
   const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
   const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
@@ -160,6 +167,7 @@ export default function SupportPage() {
       if (role === 'MANAGER') {
         fetch('/api/users').then(r => r.json()).then((users: AdminUser[]) => {
           setAdmins(users.filter(u => u.role === 'ADMIN'))
+          setAllUsers(users.filter(u => u.role === 'STUDENT'))
         })
       }
     })
@@ -191,7 +199,7 @@ export default function SupportPage() {
 
   // ── ticket actions ──────────────────────────────────────────────────────
   async function submitTicket() {
-    if (!form.title.trim() || !form.description.trim()) return
+    if ((userRole !== 'STUDENT' && !form.title.trim()) || !form.description.trim()) return
     await fetch('/api/support/tickets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
     setShowCreate(false)
     setForm({ title: '', description: '', type: 'GENERAL', classId: '', priority: 'MEDIUM' })
@@ -233,11 +241,19 @@ export default function SupportPage() {
   }
 
   // ── chat actions ────────────────────────────────────────────────────────
-  async function startChat() {
-    const chat = await fetch('/api/support/live-chats', { method: 'POST' }).then(r => r.json())
+  async function startChat(initialMessage?: string, studentId?: string) {
+    const chat = await fetch('/api/support/live-chats', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initialMessage, studentId })
+    }).then(r => r.json())
     setAllChats(prev => [chat, ...prev])
     setActiveChatId(chat.id)
     setView('chat')
+    setShowChatStart(false)
+    setShowManagerChatStart(false)
+    setChatInitText('')
+    setUserSearch('')
   }
 
   async function joinChat(chatId: string) {
@@ -338,22 +354,26 @@ export default function SupportPage() {
               </select>
             </div>
           )}
-          <div className="form-group">
-            <label className="form-label">Title *</label>
-            <input className="form-input" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Brief description of the issue" />
-          </div>
+          {userRole !== 'STUDENT' && (
+            <div className="form-group">
+              <label className="form-label">Title *</label>
+              <input className="form-input" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Brief description of the issue" />
+            </div>
+          )}
           <div className="form-group">
             <label className="form-label">Description *</label>
             <textarea className="form-input" rows={4} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Explain your issue in detail..." style={{ resize: 'vertical' }} />
           </div>
-          <div className="form-group">
-            <label className="form-label">Priority</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {['LOW', 'MEDIUM', 'HIGH'].map(p => (
-                <button key={p} onClick={() => setForm(f => ({ ...f, priority: p }))} style={{ flex: 1, padding: '8px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', background: form.priority === p ? PRIORITY_COLORS[p] : '#e8eaf0', color: form.priority === p ? '#fff' : '#6b6b8a', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff' }}>{p}</button>
-              ))}
+          {userRole !== 'STUDENT' && (
+            <div className="form-group">
+              <label className="form-label">Priority</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {['LOW', 'MEDIUM', 'HIGH'].map(p => (
+                  <button key={p} onClick={() => setForm(f => ({ ...f, priority: p }))} style={{ flex: 1, padding: '8px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', background: form.priority === p ? PRIORITY_COLORS[p] : '#e8eaf0', color: form.priority === p ? '#fff' : '#6b6b8a', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff' }}>{p}</button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
         <div className="modal-footer">
           <button onClick={() => setShowCreate(false)} className="btn btn-ghost">Cancel</button>
@@ -362,6 +382,94 @@ export default function SupportPage() {
       </div>
     </div>
   )
+
+  const StartChatModal = () => (
+    <div className="modal-overlay" onClick={() => setShowChatStart(false)}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Start Live Support Chat</h3>
+          <button onClick={() => setShowChatStart(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <p style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.5' }}>
+            To help us assist you better, please describe your issue in detail before starting the chat.
+          </p>
+          <div className="form-group">
+            <label className="form-label">Issue Description *</label>
+            <textarea 
+              className="form-input" 
+              rows={4} 
+              value={chatInitText} 
+              onChange={e => setChatInitText(e.target.value)} 
+              placeholder="Explain your issue in detail..." 
+              style={{ resize: 'vertical' }} 
+            />
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button onClick={() => setShowChatStart(false)} className="btn btn-ghost">Cancel</button>
+          <button 
+            onClick={() => startChat(chatInitText)} 
+            className="btn btn-primary" 
+            disabled={!chatInitText.trim()}
+            style={{ opacity: !chatInitText.trim() ? 0.6 : 1 }}
+          >
+            Start Chat
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  const ManagerStartChatModal = () => {
+    const filtered = allUsers.filter(u => 
+      u.name.toLowerCase().includes(userSearch.toLowerCase()) || 
+      u.email.toLowerCase().includes(userSearch.toLowerCase())
+    ).slice(0, 10)
+
+    return (
+      <div className="modal-overlay" onClick={() => setShowManagerChatStart(false)}>
+        <div className="modal" style={{ width: '420px' }} onClick={e => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Initiate Chat with Student</h3>
+            <button onClick={() => setShowManagerChatStart(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+          </div>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ position: 'relative' }}>
+              <input 
+                className="form-input" 
+                value={userSearch} 
+                onChange={e => setUserSearch(e.target.value)} 
+                placeholder="Search by name or email..." 
+                style={{ paddingLeft: '36px' }} 
+              />
+              <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9999b0' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            </div>
+            
+            <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {filtered.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#9999b0', fontSize: '13px', padding: '20px' }}>No students found.</p>
+              ) : filtered.map(u => (
+                <div key={u.id} style={{ padding: '10px 14px', borderRadius: '12px', background: '#f8f8fc', border: '1px solid #eeeef5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</div>
+                    <div style={{ fontSize: '11px', color: '#9999b0' }}>{u.email}</div>
+                  </div>
+                  <button onClick={() => startChat(undefined, u.id)} className="btn btn-primary btn-sm" style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '50px' }}>
+                    Start Chat
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // ── FAQ form modal ──────────────────────────────────────────────────────
   const FaqFormModal = () => (
@@ -472,7 +580,7 @@ export default function SupportPage() {
               Our support team is online and ready to help. Each session is private and expires after 24 hours.
             </p>
             <button
-              onClick={() => userRole === 'STUDENT' ? startChat() : setView('chat')}
+              onClick={() => userRole === 'STUDENT' ? setShowChatStart(true) : setView('chat')}
               style={{ background: 'linear-gradient(135deg, #3636e8, #5b5bf0)', color: '#fff', borderRadius: '50px', padding: '13px 28px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '14.5px', fontWeight: '700', boxShadow: '0 4px 16px rgba(54,54,232,0.35)', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
@@ -536,6 +644,15 @@ export default function SupportPage() {
 
         {showCreate && <CreateTicketModal />}
         {showFaqForm && <FaqFormModal />}
+        {showChatStart && <StartChatModal />}
+        {showManagerChatStart && <ManagerStartChatModal />}
+        {selectedUserDetailsId && (
+          <ManagerUserModal 
+            userId={selectedUserDetailsId} 
+            onClose={() => setSelectedUserDetailsId(null)} 
+            onUpdate={loadTickets}
+          />
+        )}
       </div>
     )
   }
@@ -588,7 +705,19 @@ export default function SupportPage() {
                   </div>
                 </div>
                 <div style={{ fontSize: '12.5px', color: '#9999b0', marginTop: '6px' }}>
-                  {t.replies.length} repl{t.replies.length !== 1 ? 'ies' : 'y'} · by {t.user.name}
+                  {t.replies.length} repl{t.replies.length !== 1 ? 'ies' : 'y'} · by <span 
+                    onClick={(e) => {
+                      if (userRole === 'MANAGER') {
+                        e.stopPropagation()
+                        setSelectedUserDetailsId(t.user.id)
+                      }
+                    }}
+                    style={{ 
+                      cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                      textDecoration: userRole === 'MANAGER' ? 'underline' : 'none',
+                      color: userRole === 'MANAGER' ? '#3636e8' : 'inherit'
+                    }}
+                  >{t.user.name}</span>
                 </div>
               </div>
             ))}
@@ -651,7 +780,18 @@ export default function SupportPage() {
               </div>
 
               <div style={{ padding: '14px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.05)', background: '#f0f1f5' }}>
-                <div style={{ fontSize: '12px', color: '#9999b0', marginBottom: '4px', fontWeight: '600' }}>Original request — {selected.user.name}</div>
+                <div style={{ fontSize: '12px', color: '#9999b0', marginBottom: '4px', fontWeight: '600' }}>
+                  Original request — <span 
+                    onClick={() => {
+                      if (userRole === 'MANAGER') setSelectedUserDetailsId(selected.user.id)
+                    }}
+                    style={{ 
+                      cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                      textDecoration: userRole === 'MANAGER' ? 'underline' : 'none',
+                      color: userRole === 'MANAGER' ? '#3636e8' : 'inherit'
+                    }}
+                  >{selected.user.name}</span>
+                </div>
                 <div style={{ fontSize: '13.5px', color: '#1e1e3a', lineHeight: '1.6' }}>{selected.description}</div>
               </div>
 
@@ -662,7 +802,18 @@ export default function SupportPage() {
                   return (
                     <div key={r.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
                       <div style={{ maxWidth: '78%', padding: '10px 14px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0', boxShadow: isMe ? '3px 3px 8px rgba(54,54,232,0.3)' : '3px 3px 8px #c5c7cf, -3px -3px 8px #ffffff', color: isMe ? '#fff' : '#1e1e3a' }}>
-                        <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '4px', opacity: isMe ? 0.8 : 1, color: isMe ? '#c5c8ff' : isAdmin ? '#3636e8' : '#9999b0' }}>{r.sender.name}{isAdmin && ' · Staff'}</div>
+                        <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '4px', opacity: isMe ? 0.8 : 1, color: isMe ? '#c5c8ff' : isAdmin ? '#3636e8' : '#9999b0' }}>
+                          <span 
+                            onClick={() => {
+                              if (userRole === 'MANAGER') setSelectedUserDetailsId(r.sender.id)
+                            }}
+                            style={{ 
+                              cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                              textDecoration: userRole === 'MANAGER' ? 'underline' : 'none'
+                            }}
+                          >{r.sender.name}</span>
+                          {isAdmin && ' · Staff'}
+                        </div>
                         <div style={{ fontSize: '13.5px', lineHeight: '1.5' }}>{r.content}</div>
                         <div style={{ fontSize: '10.5px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                       </div>
@@ -683,6 +834,15 @@ export default function SupportPage() {
         </div>
 
         {showCreate && <CreateTicketModal />}
+        {showChatStart && <StartChatModal />}
+        {showManagerChatStart && <ManagerStartChatModal />}
+        {selectedUserDetailsId && (
+          <ManagerUserModal 
+            userId={selectedUserDetailsId} 
+            onClose={() => setSelectedUserDetailsId(null)} 
+            onUpdate={loadTickets}
+          />
+        )}
       </div>
     )
   }
@@ -714,7 +874,19 @@ export default function SupportPage() {
                 style={{ padding: '14px 16px', borderRadius: '18px', cursor: 'pointer', ...neu, outline: selectedHistory?.id === c.id ? '2px solid #3636e8' : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: '700', fontSize: '14px', color: '#1e1e3a', marginBottom: '3px' }}>{c.student.name}</div>
+                    <div 
+                      onClick={(e) => {
+                        if (userRole === 'MANAGER') {
+                          e.stopPropagation()
+                          setSelectedUserDetailsId(c.student.id)
+                        }
+                      }}
+                      style={{ 
+                        fontSize: '13.5px', fontWeight: '800', color: '#1e1e3a', marginBottom: '2px',
+                        cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                        textDecoration: userRole === 'MANAGER' ? 'underline' : 'none'
+                      }}
+                    >{c.student.name}</div>
                     <div style={{ fontSize: '12px', color: '#9999b0' }}>
                       {c.agent ? `Agent: ${c.agent.name}` : 'No agent joined'}
                       {c._count && ` · ${c._count.messages} messages`}
@@ -779,8 +951,10 @@ export default function SupportPage() {
       {confirmDialog}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <BackButton onClick={() => { setView('home'); setActiveChatId(null) }} />
-        {userRole === 'STUDENT' && (
-          <button onClick={startChat} className="btn btn-primary btn-sm" style={{ borderRadius: '50px' }}>+ New Chat</button>
+        {userRole === 'STUDENT' ? (
+          <button onClick={() => setShowChatStart(true)} className="btn btn-primary btn-sm" style={{ borderRadius: '50px' }}>+ New Chat</button>
+        ) : (
+          <button onClick={() => setShowManagerChatStart(true)} className="btn btn-primary btn-sm" style={{ borderRadius: '50px' }}>+ New Chat</button>
         )}
       </div>
 
@@ -895,6 +1069,8 @@ export default function SupportPage() {
           })()}
         </div>
       </div>
+      {showChatStart && <StartChatModal />}
+      {showManagerChatStart && <ManagerStartChatModal />}
     </div>
   )
 }

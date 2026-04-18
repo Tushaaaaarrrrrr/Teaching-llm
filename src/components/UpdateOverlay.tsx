@@ -174,7 +174,7 @@ export default function UpdateOverlay() {
     >
       <div
         style={{
-          maxWidth: '460px', width: '92%', borderRadius: '24px', overflow: 'hidden',
+          maxWidth: '650px', width: '92%', borderRadius: '24px', overflow: 'hidden',
           background: '#ffffff', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
           animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
           maxHeight: '90vh', minHeight: '460px', display: 'flex', flexDirection: 'column',
@@ -190,7 +190,7 @@ export default function UpdateOverlay() {
         {/* Image Top Half (if present) */}
         {hasImage && (
           <div style={{
-            width: '100%', height: '240px',
+            width: '100%', height: '320px',
             background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden', flexShrink: 0
           }}>

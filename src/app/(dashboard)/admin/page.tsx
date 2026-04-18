@@ -578,7 +578,15 @@ export default function AdminPage() {
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+                    <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                      <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{user.email}</span>
+                      {user.securityNumber && (
+                        <>
+                          <span style={{ color: '#d1d5db' }}>•</span>
+                          <span style={{ color: '#6366f1', fontWeight: '600', letterSpacing: '0.05em', flexShrink: 0 }}>{user.securityNumber}</span>
+                        </>
+                      )}
+                    </div>
                     {/* Course badges for ADMIN/STUDENT users */}
                     {(user.role === 'ADMIN' || user.role === 'STUDENT') && user.enrollments && user.enrollments.length > 0 && (
                       <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>

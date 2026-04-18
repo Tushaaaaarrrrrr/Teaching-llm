@@ -432,7 +432,7 @@ img {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   width: 100%;
-  max-width: 520px;
+  max-width: 900px;
   max-height: 90vh;
   overflow-y: auto;
 }

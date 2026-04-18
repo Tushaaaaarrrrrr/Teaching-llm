@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
@@ -23,11 +23,17 @@ export async function GET() {
 
     await autoExpireChats()
 
-    let where: Record<string, unknown> = {}
     if (session.role === 'STUDENT') {
       where = { studentId: session.userId }
+    } else {
+      // Admins and Managers see chats that have at least one message OR chats they initiated
+      where = {
+        OR: [
+          { messages: { some: {} } },
+          { agentId: session.userId }
+        ]
+      }
     }
-    // Admins and Managers see all non-closed chats
 
     const chats = await prisma.chatSession.findMany({
       where: { ...where, status: { not: 'CLOSED' } },
@@ -49,18 +55,38 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (session.role !== 'STUDENT') {
-      return NextResponse.json({ error: 'Only students can start a chat' }, { status: 403 })
+    if (session.role !== 'STUDENT' && session.role !== 'MANAGER' && session.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    // Always create a new session (each chat is separate)
+    const { initialMessage, studentId } = await request.json().catch(() => ({}))
+    const isManagerInitiated = session.role !== 'STUDENT'
+    const targetStudentId = isManagerInitiated ? studentId : session.userId
+
+    if (isManagerInitiated && !targetStudentId) {
+      return NextResponse.json({ error: 'Student ID is required' }, { status: 400 })
+    }
+
     const expiresAt = new Date(Date.now() + CHAT_TTL_MS)
     const chat = await prisma.chatSession.create({
-      data: { studentId: session.userId, status: 'WAITING', expiresAt },
+      data: { 
+        studentId: targetStudentId, 
+        status: isManagerInitiated ? 'ACTIVE' : 'WAITING', 
+        agentId: isManagerInitiated ? session.userId : null,
+        expiresAt,
+        ...(initialMessage ? {
+          messages: {
+            create: {
+              content: initialMessage,
+              senderId: session.userId
+            }
+          }
+        } : {})
+      },
       include: {
         student: { select: { id: true, name: true } },
         agent: { select: { id: true, name: true, role: true } },

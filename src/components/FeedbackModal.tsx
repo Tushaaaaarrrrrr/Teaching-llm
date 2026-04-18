@@ -89,10 +89,10 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
         style={{
           background: '#ffffff',
           width: '100%',
-          maxWidth: '500px',
-          borderRadius: '24px',
-          padding: '32px',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+          maxWidth: '800px',
+          borderRadius: '32px',
+          padding: '40px',
+          boxShadow: '0 30px 60px rgba(0,0,0,0.12)',
           position: 'relative',
           maxHeight: '90vh',
           overflowY: 'auto',
@@ -105,76 +105,94 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
             position: 'absolute',
             top: '24px',
             right: '24px',
-            background: 'none',
+            background: '#f8fafc',
             border: 'none',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
             cursor: 'pointer',
-            color: '#94a3b8',
+            color: '#64748b',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
           }}
+          onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+          onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
 
-        <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e1e3a', marginBottom: '4px' }}>
+        <h2 style={{ fontSize: '26px', fontWeight: '800', color: '#1e1e3a', marginBottom: '8px' }}>
           Feedback for {courseName}
         </h2>
-        <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px' }}>
+        <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '32px' }}>
           {courseSubject}
         </p>
 
-        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {CATEGORIES.map(cat => (
-            <div key={cat.id}>
-              <p style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '10px' }}>{cat.label}</p>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {[1, 2, 3, 4, 5].map(star => (
-                  <button
-                    key={star}
-                    onClick={() => handleRate(cat.id, star)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: 0,
-                      color: ratings[cat.id] >= star ? '#fbbf24' : '#e2e8f0',
-                      transition: 'transform 0.1s ease',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
-                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                  >
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill={ratings[cat.id] >= star ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
-                  </button>
-                ))}
+        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px 48px', marginBottom: '32px' }}>
+            {CATEGORIES.map(cat => (
+              <div key={cat.id}>
+                <p style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '12px' }}>{cat.label}</p>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      key={star}
+                      onClick={() => handleRate(cat.id, star)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0,
+                        color: ratings[cat.id] >= star ? '#fbbf24' : '#e2e8f0',
+                        transition: 'transform 0.1s ease',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <svg width="34" height="34" viewBox="0 0 24 24" fill={ratings[cat.id] >= star ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
 
           <div>
-            <p style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '10px' }}>Additional Comments</p>
+            <p style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '12px' }}>Additional Comments</p>
             <textarea
               placeholder="Tell us more about your experience..."
               value={comment}
               onChange={e => setComment(e.target.value.slice(0, 500))}
               style={{
                 width: '100%',
-                height: '110px',
-                padding: '16px',
-                borderRadius: '16px',
+                height: '120px',
+                padding: '20px',
+                borderRadius: '20px',
                 border: '2px solid #f1f5f9',
-                fontSize: '14px',
+                fontSize: '15px',
                 fontFamily: 'inherit',
                 resize: 'none',
                 outline: 'none',
-                transition: 'border-color 0.2s ease',
+                transition: 'all 0.2s ease',
+                background: '#f8fafc',
               }}
-              onFocus={e => e.currentTarget.style.borderColor = '#3636e8'}
-              onBlur={e => e.currentTarget.style.borderColor = '#f1f5f9'}
+              onFocus={e => {
+                e.currentTarget.style.borderColor = '#3636e8'
+                e.currentTarget.style.background = '#fff'
+              }}
+              onBlur={e => {
+                e.currentTarget.style.borderColor = '#f1f5f9'
+                e.currentTarget.style.background = '#f8fafc'
+              }}
             />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
-              <span style={{ fontSize: '12px', color: '#94a3b8' }}>{comment.length}/500</span>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+              <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>{comment.length}/500</span>
             </div>
           </div>
         </div>
