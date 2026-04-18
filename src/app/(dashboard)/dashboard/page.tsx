@@ -614,17 +614,18 @@ export default function DashboardPage() {
                       rel="noopener noreferrer"
                       style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
-                        padding: '12px 24px',
-                        borderRadius: '12px',
+                        padding: '14px 32px',
+                        borderRadius: '14px',
                         background: '#ef4444',
-                        color: '#ffffff', fontSize: '14px', fontWeight: '800',
+                        color: '#ffffff', fontSize: '15px', fontWeight: '800',
                         textDecoration: 'none', letterSpacing: '0.01em',
-                        animation: 'joinGlow 2.5s ease-in-out infinite',
+                        animation: 'joinPulse 2s ease-in-out infinite, joinGlow 2.5s ease-in-out infinite',
                         transition: 'transform 0.2s, background 0.18s',
                         boxShadow: '0 8px 20px rgba(239,68,68,0.3)',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        marginLeft: '10px'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                       onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
                       <div style={{
