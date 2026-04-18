@@ -16,6 +16,7 @@ interface Exam {
   durationMinutes: number
   isPublished: boolean
   createdAt: string
+  examType: string
   course: { name: string; color: string }
   _count: { questions: number }
 }
@@ -77,13 +78,24 @@ export default function ExamsPage() {
         style={{ ...neuCard, display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <span style={{ 
-            padding: '4px 12px', borderRadius: '50px', 
-            background: `${exam.course.color}18`, color: exam.course.color,
-            fontSize: '11px', fontWeight: 800, textTransform: 'uppercase'
-          }}>
-            {exam.course.name}
-          </span>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ 
+              padding: '4px 12px', borderRadius: '50px', 
+              background: `${exam.course.color}18`, color: exam.course.color,
+              fontSize: '11px', fontWeight: 800, textTransform: 'uppercase'
+            }}>
+              {exam.course.name}
+            </span>
+            <span style={{ 
+              padding: '4px 12px', borderRadius: '50px', 
+              background: exam.examType === 'FINAL_TEST' ? '#ef444410' : '#3636e810', 
+              color: exam.examType === 'FINAL_TEST' ? '#ef4444' : '#3636e8',
+              fontSize: '11px', fontWeight: 800, textTransform: 'uppercase',
+              border: `1px solid ${exam.examType === 'FINAL_TEST' ? '#ef444420' : '#3636e820'}`
+            }}>
+              {exam.examType === 'FINAL_TEST' ? 'Final Test' : 'Practice Test'}
+            </span>
+          </div>
           {isUpcoming ? (
             <span style={{ 
               padding: '4px 10px', borderRadius: '50px', background: '#3636e812', 

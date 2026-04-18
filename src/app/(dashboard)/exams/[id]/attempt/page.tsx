@@ -36,6 +36,8 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   const [visitedIndices, setVisitedIndices] = useState<Set<number>>(new Set([0]))
   const [submitting, setSubmitting] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   // Timer State
   const [isPaused, setIsPaused] = useState(false)
@@ -145,16 +147,37 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
     return () => cancelAnimationFrame(animationFrameId)
   }, [loading, exam, params.id, router, isPaused])
 
-  const saveAnswer = async (questionId: string, answer: string) => {
+  const saveAnswer = async (questionId: string, answer: string, immediate: boolean = false) => {
+    // Update local state immediately for snappy UI
     setAnswers(prev => ({ ...prev, [questionId]: answer }))
-    try {
-      await fetch(`/api/exams/${params.id}/attempt`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questionId, answer })
-      })
-    } catch (err) {
-      console.error('Failed to save answer:', err)
+    
+    // Clear any pending save
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    const performSave = async () => {
+      setIsSaving(true)
+      try {
+        const res = await fetch(`/api/exams/${params.id}/attempt`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questionId, answer })
+        })
+        if (!res.ok) throw new Error('Failed to save')
+      } catch (err) {
+        console.error('Failed to save answer:', err)
+      } finally {
+        // Show "Saved" for a brief moment then clear
+        setTimeout(() => setIsSaving(false), 1000)
+      }
+    }
+
+    if (immediate) {
+      performSave()
+    } else {
+      setIsSaving(true) // Indicate that changes are pending
+      saveTimeoutRef.current = setTimeout(performSave, 1000) // 1s debounce for typing
     }
   }
 
@@ -389,6 +412,15 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                         }}>
                           {currentQuestion?.type.replace('_', ' ')}
                         </span>
+                        {isSaving && (
+                          <span style={{ 
+                              fontSize: '10px', fontWeight: 800, color: '#10b981', 
+                              display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px'
+                          }}>
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', animation: 'pulse 1.5s infinite' }} />
+                            Autosaving...
+                          </span>
+                        )}
                     </div>
                     <span style={{ fontSize: '13px', fontWeight: 700, color: '#6b6b8a' }}>{currentQuestion?.marks} Marks</span>
                 </div>
@@ -414,7 +446,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                         return opts.filter(opt => typeof opt === 'string' && opt.trim()).map((opt: string) => (
                             <button
                                 key={opt}
-                                onClick={() => saveAnswer(currentQuestion.id, opt)}
+                                onClick={() => saveAnswer(currentQuestion.id, opt, true)}
                                 style={{
                                     padding: '20px 24px', borderRadius: '20px', border: 'none',
                                     textAlign: 'left', fontSize: '16px', fontWeight: 600,

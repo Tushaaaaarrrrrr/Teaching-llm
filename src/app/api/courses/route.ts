@@ -40,6 +40,16 @@ export async function GET() {
                 pptUrl: true,
               },
             },
+            sharedContentLinks: {
+              include: {
+                content: {
+                  select: {
+                    videoUrl: true,
+                    pptUrl: true,
+                  },
+                },
+              },
+            },
           },
         },
         _count: {
@@ -57,16 +67,19 @@ export async function GET() {
       let materialsCount = 0
 
       course.topics.forEach(topic => {
+        // Count direct content
         topic.content.forEach(content => {
           if (content.videoUrl) lecturesCount++
           if (content.pptUrl) materialsCount++
         })
+        // Count shared content from other courses/topics
+        topic.sharedContentLinks?.forEach(link => {
+          if (link.content?.videoUrl) lecturesCount++
+          if (link.content?.pptUrl) materialsCount++
+        })
       })
 
-      // Remove topics from the response to keep payload small, 
-      // or keep it if needed. The frontend CoursesPage doesn't seem to use it yet.
-      // But we need to match the expected _count structure for compatibility.
-      
+      // Remove topics to keep response size manageable
       const { topics, ...rest } = course
       return {
         ...rest,

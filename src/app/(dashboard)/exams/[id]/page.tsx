@@ -703,7 +703,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
   return (
     <div style={{ padding: '64px 32px', display: 'flex', justifyContent: 'center' }}>
        {confirmDialog}
-       <div style={{ ...neuCard, maxWidth: '500px', width: '100%', textAlign: 'center' }}>
+       <div style={{ ...neuCard, maxWidth: '900px', width: '100%', textAlign: 'center' }}>
           <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#1e1e3a', marginBottom: '8px' }}>{exam.title}</h1>
           <p style={{ color: '#6b6b8a', marginBottom: '24px' }}>{exam.course?.name}</p>
 

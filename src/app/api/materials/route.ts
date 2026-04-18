@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, canManageContent } from '@/lib/auth'
+import { getSession, getFullSession, canManageContent, isAdminOrManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession()
+    const session = await getFullSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -14,12 +14,24 @@ export async function GET(request: NextRequest) {
     const courseId = searchParams.get('courseId')
 
     const where: any = { isFree: false }
-    if (courseId) where.courseId = courseId
+    
+    // If not manager/admin, restrict to global materials or enrolled courses
+    if (!isAdminOrManager(session.role)) {
+      const allowedIds = session.accessibleCourseIds || []
+      where.OR = [
+        { isGlobal: true },
+        { courseId: { in: allowedIds } }
+      ]
+    }
+
+    if (courseId) {
+      where.courseId = courseId
+    }
 
     const materials = await (prisma.material.findMany as any)({
       where,
       include: {
-        course: { select: { name: true } },
+        course: { select: { id: true, name: true, color: true } },
         uploadedBy: { select: { name: true } },
       },
       orderBy: { uploadedAt: 'desc' },

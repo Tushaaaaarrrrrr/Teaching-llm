@@ -147,132 +147,109 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>
-          {exam?.examType === 'FINAL_TEST' && !attempt.isPublished
-            ? 'Results Status'
-            : (reviewMode ? `Reviewing Question ${currentIdx + 1}` : 'Question Breakdown')}
-        </h2>
-        {reviewMode && (
+      {reviewMode && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>
+            {exam?.examType === 'FINAL_TEST' && !attempt.isPublished
+              ? 'Results Status'
+              : `Question ${currentIdx + 1} of ${exam.questions.length}`}
+          </h2>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button 
               disabled={currentIdx === 0}
               onClick={() => setCurrentIdx(prev => prev - 1)}
-              style={{ padding: '8px 16px', borderRadius: '8px', background: '#fff', border: '1px solid #c5c7cf', opacity: currentIdx === 0 ? 0.5 : 1, cursor: 'pointer' }}
+              style={{ 
+                padding: '10px 20px', borderRadius: '50px', 
+                background: '#fff', border: 'none', color: '#1e1e3a',
+                fontWeight: 800, opacity: currentIdx === 0 ? 0.5 : 1, 
+                cursor: currentIdx === 0 ? 'default' : 'pointer',
+                boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff'
+              }}
             >
-              Previous
+              ← Previous
             </button>
             <button 
               disabled={currentIdx === exam.questions.length - 1}
               onClick={() => setCurrentIdx(prev => prev + 1)}
-              style={{ padding: '8px 16px', borderRadius: '8px', background: '#3636e8', border: 'none', color: '#fff', opacity: currentIdx === exam.questions.length - 1 ? 0.5 : 1, cursor: 'pointer' }}
+              style={{ 
+                padding: '10px 20px', borderRadius: '50px', 
+                background: '#3636e8', border: 'none', color: '#fff',
+                fontWeight: 800, opacity: currentIdx === exam.questions.length - 1 ? 0.5 : 1, 
+                cursor: currentIdx === exam.questions.length - 1 ? 'default' : 'pointer',
+                boxShadow: '0 4px 12px rgba(54,54,232,0.3)'
+              }}
             >
-              Next
+              Next →
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {exam?.examType === 'FINAL_TEST' && !attempt.isPublished ? (
-          <div style={{ ...neuCard, textAlign: 'center', padding: '48px 32px' }}>
-            <div style={{ fontSize: '40px', marginBottom: '16px' }}>⏳</div>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '12px' }}>Detailed Results Pending</h3>
-            <p style={{ color: '#6b6b8a', fontSize: '14px', lineHeight: '1.6', maxWidth: '500px', margin: '0 auto' }}>
-              Your instructor is currently reviewing the assessment. Detailed question feedback and the option to review your answers in "Review Mode" will be available once the final results are officially published.
-            </p>
-          </div>
-        ) : reviewMode ? (
+        {reviewMode && (
           (() => {
             const q = exam.questions[currentIdx]
             const resp = attempt.responses?.find((r: any) => r.questionId === q.id)
             const isCorrect = q.correctAnswer && resp?.answer === q.correctAnswer
             
             return (
-              <div key={q.id} style={neuCard}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <span style={{ fontWeight: 800, color: '#6b6b8a' }}>{q.type} - {q.marks} Marks</span>
-                  {q.type !== 'SUBJECTIVE' && q.correctAnswer !== null && q.correctAnswer !== undefined && (
+              <div key={q.id} style={{ ...neuCard, padding: '48px', position: 'relative' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ 
+                        fontSize: '11px', fontWeight: 900, letterSpacing: '0.05em',
+                        background: '#3636e815', color: '#3636e8', padding: '6px 12px', borderRadius: '50px' 
+                      }}>
+                        {q.type.replace('_', ' ')}
+                      </span>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a' }}>{q.marks} Marks</span>
+                   </div>
+                   {q.type !== 'SUBJECTIVE' && q.correctAnswer !== null && q.correctAnswer !== undefined && (
                     <span style={{ 
                       fontSize: '11px', fontWeight: 800, 
                       color: isCorrect ? '#10b981' : '#ef4444',
                       background: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                      padding: '4px 10px', borderRadius: '50px'
+                      padding: '4px 12px', borderRadius: '50px', border: `1px solid ${isCorrect ? '#10b98130' : '#ef444430'}`
                     }}>
-                      {isCorrect ? 'Correct' : 'Incorrect'}
+                      {isCorrect ? '✓ Correct' : '✗ Incorrect'}
                     </span>
-                  )}
+                   )}
                 </div>
-                <p style={{ fontSize: '18px', fontWeight: 700, color: '#1e1e3a', marginBottom: '20px' }}>{q.text}</p>
+
+                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a', lineHeight: '1.4', marginBottom: '32px' }}>
+                  {q.text}
+                </h2>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                   <div style={{ padding: '16px', background: isCorrect ? '#10b98105' : '#ef444405', borderRadius: '16px', border: `1px solid ${isCorrect ? '#10b98130' : '#ef444430'}` }}>
-                      <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Your Selected Answer</div>
-                      <div style={{ fontSize: '15px', fontWeight: 700, color: isCorrect ? '#10b981' : '#ef4444' }}>{resp?.answer || 'No answer provided'}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                   <div style={{ 
+                     padding: '24px', borderRadius: '20px', 
+                     background: isCorrect ? '#10b98105' : '#ef444405', 
+                     border: `1px solid ${isCorrect ? '#10b98120' : '#ef444420'}` 
+                   }}>
+                      <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '12px' }}>Your Answer</div>
+                      <div style={{ fontSize: '17px', fontWeight: 700, color: isCorrect ? '#10b981' : '#ef4444', lineHeight: '1.5' }}>
+                        {resp?.answer || 'No answer provided'}
+                      </div>
                    </div>
 
                    {q.correctAnswer && !isCorrect && (
-                     <div style={{ padding: '16px', background: '#3636e805', borderRadius: '16px', border: '1px solid #3636e830' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#3636e8', textTransform: 'uppercase', marginBottom: '8px' }}>Correct Answer</div>
-                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#3636e8' }}>{q.correctAnswer}</div>
+                     <div style={{ padding: '24px', background: '#3636e805', borderRadius: '20px', border: '1px solid #3636e820' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#3636e8', textTransform: 'uppercase', marginBottom: '12px' }}>Correct Answer</div>
+                        <div style={{ fontSize: '17px', fontWeight: 800, color: '#3636e8', lineHeight: '1.5' }}>{q.correctAnswer}</div>
                      </div>
                    )}
 
                    {q.explanation && (
-                     <div style={{ padding: '16px', background: '#fff', borderRadius: '16px', border: '1px solid #c5c7cf' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a', textTransform: 'uppercase', marginBottom: '8px' }}>Explanation</div>
-                        <div style={{ fontSize: '14px', color: '#1e1e3a', lineHeight: '1.6' }}>{q.explanation}</div>
+                     <div style={{ padding: '24px', background: '#fff', borderRadius: '20px', border: '1px solid #c5c7cf' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a', textTransform: 'uppercase', marginBottom: '12px' }}>Explanation</div>
+                        <div style={{ fontSize: '15px', color: '#1e1e3a', lineHeight: '1.6' }}>{q.explanation}</div>
                      </div>
                    )}
                 </div>
               </div>
             )
           })()
-        ) : (
-          exam.questions.map((q: any, idx: number) => {
-            const resp = attempt.responses?.find((r: any) => r.questionId === q.id)
-            const isCorrect = q.correctAnswer && resp?.answer === q.correctAnswer
-            
-            return (
-              <div key={q.id} style={{ ...neuCard, opacity: 0.9 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <span style={{ fontWeight: 800, color: '#6b6b8a' }}>Question {idx + 1}</span>
-                  {q.type !== 'SUBJECTIVE' && q.correctAnswer !== null && q.correctAnswer !== undefined && (
-                  <span style={{ 
-                    fontSize: '11px', fontWeight: 800, 
-                    color: isCorrect ? '#10b981' : '#ef4444',
-                    background: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                    padding: '4px 10px', borderRadius: '50px'
-                  }}>
-                    {isCorrect ? 'Correct' : 'Incorrect'}
-                  </span>
-                )}
-              </div>
-              <p style={{ fontSize: '16px', fontWeight: 700, color: '#1e1e3a', marginBottom: '16px' }}>{q.text}</p>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div style={{ padding: '12px', background: '#f0f2f7', borderRadius: '12px' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '4px' }}>Your Answer</div>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#1e1e3a' }}>{resp?.answer || 'No answer'}</div>
-                </div>
-                {q.correctAnswer && (
-                  <div style={{ padding: '12px', background: 'rgba(54,54,232,0.05)', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#3636e8', textTransform: 'uppercase', marginBottom: '4px' }}>Correct Answer</div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#3636e8' }}>{q.correctAnswer}</div>
-                  </div>
-                )}
-              </div>
-
-              {q.explanation && (
-                <div style={{ marginTop: '16px', fontSize: '13px', color: '#6b6b8a', padding: '12px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                  <span style={{ fontWeight: 700, color: '#1e1e3a' }}>Explanation: </span>
-                  {q.explanation}
-                </div>
-              )}
-            </div>
-          )
-        })
-      )}
+        )}
       </div>
 
       <div style={{ marginTop: '40px', textAlign: 'center' }}>

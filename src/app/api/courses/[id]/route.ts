@@ -68,6 +68,16 @@ export async function GET(
                 pptUrl: true,
               },
             },
+            sharedContentLinks: {
+              include: {
+                content: {
+                  select: {
+                    videoUrl: true,
+                    pptUrl: true,
+                  },
+                },
+              },
+            },
           },
         },
         createdBy: { select: { name: true } },
@@ -90,9 +100,15 @@ export async function GET(
     let materialsCount = 0
 
     cData.topics.forEach((topic: any) => {
+      // Count direct content
       topic.content.forEach((content: any) => {
         if (content.videoUrl) lecturesCount++
         if (content.pptUrl) materialsCount++
+      })
+      // Count shared content
+      topic.sharedContentLinks?.forEach((link: any) => {
+        if (link.content?.videoUrl) lecturesCount++
+        if (link.content?.pptUrl) materialsCount++
       })
     })
 
