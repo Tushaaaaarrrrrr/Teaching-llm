@@ -59,9 +59,10 @@ export default function StudyResourcesPage() {
     dedupingInterval: 30000,
   })
 
-  const { data: courses } = useSWR<CourseItem[]>(isManager ? '/api/courses' : null, fetcher)
-
+  const { data: courses } = useSWR<CourseItem[]>('/api/courses', fetcher)
+  
   const [search, setSearch] = useState('')
+  const [selectedCourse, setSelectedCourse] = useState('ALL')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -205,10 +206,12 @@ export default function StudyResourcesPage() {
     }
   }
 
-  const filteredData = (materials || []).filter((m: MaterialItem) =>
-    m.title.toLowerCase().includes(search.toLowerCase()) ||
-    m.course?.name?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredData = (materials || []).filter((m: MaterialItem) => {
+    const matchesSearch = m.title.toLowerCase().includes(search.toLowerCase()) ||
+                         m.course?.name?.toLowerCase().includes(search.toLowerCase())
+    const matchesCourse = selectedCourse === 'ALL' || m.courseId === selectedCourse || (selectedCourse === 'GLOBAL' && m.isGlobal)
+    return matchesSearch && matchesCourse
+  })
 
   if (isLoading) {
     return (
@@ -249,14 +252,39 @@ export default function StudyResourcesPage() {
             </button>
           )}
           
-          <div style={{ position: 'relative', minWidth: '260px' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+            <select
+              value={selectedCourse}
+              onChange={e => setSelectedCourse(e.target.value)}
+              style={{
+                width: '100%', padding: '11px 18px',
+                border: 'none', borderRadius: '50px',
+                background: '#e8eaf0',
+                boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                color: '#1e1e3a', fontSize: '13px', outline: 'none',
+                appearance: 'none', cursor: 'pointer'
+              }}
+            >
+              <option value="ALL">All Courses</option>
+              <option value="GLOBAL">Global Only</option>
+              {courses?.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.5"
+              style={{ position: 'absolute', right: '18px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+          
+          <div style={{ position: 'relative', flex: 2, minWidth: '260px' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2"
               style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input
               type="text"
-              placeholder="Search materials…"
+              placeholder="Search resource name…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{
@@ -284,7 +312,10 @@ export default function StudyResourcesPage() {
           filteredData.map((mat: MaterialItem) => {
             const ft    = getFileType(mat.fileUrl, mat.fileType)
             const style = FILE_STYLES[ft] || { color: '#6b6b8a' }
-            const dateStr = new Date(mat.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })
+            const dateObj = mat.createdAt ? new Date(mat.createdAt) : null
+            const dateStr = (dateObj && !isNaN(dateObj.getTime())) 
+              ? dateObj.toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' }) 
+              : null
 
             return (
               <div key={mat.id} style={{
