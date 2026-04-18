@@ -114,8 +114,19 @@ export async function GET() {
       })
     ])
 
-    const upcomingSessionsCount = syncedSessions.filter((session: any) => session.status === 'upcoming').length
-    const activeSessionsCount = syncedSessions.filter((session: any) => session.status === 'live').length
+    // For students with RECORDED enrollment, hide "Active Now" sessions for those courses
+    // They can still see upcoming/completed sessions so they know the schedule
+    const filteredSessions = syncedSessions.map((s: any) => {
+      // If the session is marked as recordedOnly (set by backend in daily-session-sync),
+      // and it is currently live, hide it from the dashboard
+      if (s.isRecordedOnly && s.status === 'live') {
+        return null // Remove active sessions for recorded-only courses
+      }
+      return s
+    }).filter(Boolean)
+
+    const upcomingSessionsCount = filteredSessions.filter((session: any) => session.status === 'upcoming').length
+    const activeSessionsCount = filteredSessions.filter((session: any) => session.status === 'live').length
 
     // Calculate daysLeft from deadlineDate for examCountdown
     const examCountdownWithDays = examCountdown && examCountdown.deadlineDate
@@ -134,7 +145,7 @@ export async function GET() {
         totalMaterials,
         activeSessions: activeSessionsCount,
       },
-      liveSessions: syncedSessions,
+      liveSessions: filteredSessions,
       recentViewedLecture,
       announcements,
       upcomingExams,

@@ -18,7 +18,6 @@ interface FeedbackItem {
   teacherRating: number
   conceptRating: number
   materialRating: number
-  examRating: number
   recommendScore: number
   comment: string
   createdAt: string
@@ -236,7 +235,6 @@ function ManagerFeedbackView() {
                 { label: 'Teacher', val: f.teacherRating },
                 { label: 'Concept', val: f.conceptRating },
                 { label: 'Materials', val: f.materialRating },
-                { label: 'Exam', val: f.examRating },
                 { label: 'Recommend', val: f.recommendScore },
               ].map(r => (
                 <div key={r.label}>

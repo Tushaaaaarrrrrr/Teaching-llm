@@ -26,13 +26,8 @@ export async function GET() {
     if (session.role === 'STUDENT') {
       where = { studentId: session.userId }
     } else {
-      // Admins and Managers see chats that have at least one message OR chats they initiated
-      where = {
-        OR: [
-          { messages: { some: {} } },
-          { agentId: session.userId }
-        ]
-      }
+      // Admins and Managers only see chats that have at least one message
+      where = { messages: { some: {} } }
     }
 
     const chats = await prisma.chatSession.findMany({
@@ -59,24 +54,18 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (session.role !== 'STUDENT' && session.role !== 'MANAGER' && session.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    if (session.role !== 'STUDENT') {
+      return NextResponse.json({ error: 'Only students can start a chat' }, { status: 403 })
     }
 
-    const { initialMessage, studentId } = await request.json().catch(() => ({}))
-    const isManagerInitiated = session.role !== 'STUDENT'
-    const targetStudentId = isManagerInitiated ? studentId : session.userId
+    const { initialMessage } = await request.json().catch(() => ({}))
 
-    if (isManagerInitiated && !targetStudentId) {
-      return NextResponse.json({ error: 'Student ID is required' }, { status: 400 })
-    }
-
+    // Always create a new session (each chat is separate)
     const expiresAt = new Date(Date.now() + CHAT_TTL_MS)
     const chat = await prisma.chatSession.create({
       data: { 
-        studentId: targetStudentId, 
-        status: isManagerInitiated ? 'ACTIVE' : 'WAITING', 
-        agentId: isManagerInitiated ? session.userId : null,
+        studentId: session.userId, 
+        status: 'WAITING', 
         expiresAt,
         ...(initialMessage ? {
           messages: {

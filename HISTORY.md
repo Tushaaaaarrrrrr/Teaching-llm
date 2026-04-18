@@ -125,3 +125,64 @@ Files affected:
 - None (database sync only)
 Outcome:
 - Resolved the `PrismaClientKnownRequestError` on `GET /api/courses`. The manager portal (and all dashboard views for students/admins) can now load courses properly.
+
+6. Date and time: 2026-04-18 21:18:03 IST
+Summary: Consolidated Live and Recorded course streams into single courses using per-enrollment access types.
+What changed:
+- Introduced a unified course management model where "Live" vs "Recorded" access is handled at the enrollment level rather than through course duplication.
+- Implemented backend enforcement to strip meeting links from students with "RECORDED" access while allowing "LIVE" access for global events.
+- Updated the student dashboard to hide "Active Now" cards for recorded-only subjects to prevent unauthorized access and confusion.
+- Enhanced the manager user management UI to allow granular control over each student's access type per course.
+What was added:
+- Prisma enum `EnrollmentType` (`LIVE`, `RECORDED`) and `type` field to the `Enrollment` model.
+- `enrollmentTypes` mapping in `FullSession` (auth system) for efficient permission checking.
+- Live/Recorded toggle badges in `ManagerUserModal` for administrators.
+- Visibility and security logic in `src/lib/daily-session-sync.ts` and `src/app/api/dashboard/route.ts`.
+What was removed:
+- None
+Files affected:
+- `prisma/schema.prisma`
+- `src/lib/auth.ts`
+- `src/lib/daily-session-sync.ts`
+- `src/app/api/dashboard/route.ts`
+- `src/app/api/users/[id]/route.ts`
+- `src/components/ManagerUserModal.tsx`
+Outcome:
+- Eliminated redundant content management (updating lectures/exams twice) by allowing multiple student access types to coexist in one course.
+- Secured live sessions via backend link stripping while maintaining schedule transparency for all students.
+
+7. Date and time: 2026-04-18 21:28:42 IST
+Summary: Removed "Exam Session" from the feedback system to simplify course evaluation categories.
+What changed:
+- Removed the "Exam Session" rating category from the student feedback modal UI.
+- Updated the manager's feedback overview to remove the Exam rating column/indicator.
+- Modified the backend API to stop requiring or processing the `examRating` field.
+What was added:
+- None
+What was removed:
+- `examRating` field from the `Feedback` model in `prisma/schema.prisma`.
+- UI elements for "Exam Session" rating in `FeedbackModal.tsx` and `feedback/page.tsx`.
+Files affected:
+- `prisma/schema.prisma`
+- `src/components/FeedbackModal.tsx`
+- `src/app/api/feedback/route.ts`
+- `src/app/(dashboard)/feedback/page.tsx`
+Outcome:
+- Streamlined the course feedback process by focusing on Teacher, Concept, Material, and Recommendation scores.
+- The database column remains present due to shadow database migration conflicts, but the application code is fully decoupled from it.
+
+8. Date and time: 2026-04-18 21:46:00 IST
+Summary: Implemented role-based access control for calendar events and a daily schedule modal.
+What changed:
+- Disabled direct event pill clicks for non-manager users on the calendar grid.
+- Made calendar day cells clickable for all users, opening a newly implemented "Schedule for the Day" modal.
+- Configured the daily schedule modal to list all events for the selected day, displaying essential details (Title, Time, Type, Subject, Instructor, Description).
+- Restricted the visibility of Google Meet links inside the daily schedule modal so they are only visible to Managers.
+What was added:
+- `selectedDailyDay` state for managing the newly introduced daily schedule modal.
+What was removed:
+- None
+Files affected:
+- `src/app/(dashboard)/calendar/page.tsx`
+Outcome:
+- Enhanced calendar privacy by restricting direct access to event details for students while providing a clear, aggregated daily schedule view that redacts sensitive meeting links.

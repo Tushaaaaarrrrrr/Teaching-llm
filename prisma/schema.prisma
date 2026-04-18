@@ -106,14 +106,20 @@ model Course {
   @@map("Class")
 }
 
+enum EnrollmentType {
+  LIVE
+  RECORDED
+}
+
 model Enrollment {
-  id               String   @id @default(cuid())
+  id               String         @id @default(cuid())
   userId           String
-  courseId         String   @map("classId")
-  isFreeEnrollment Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId         String         @map("classId")
+  isFreeEnrollment Boolean        @default(false)
+  type             EnrollmentType @default(LIVE)
+  createdAt        DateTime       @default(now())
+  course           Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
   @@index([userId])
@@ -659,7 +665,6 @@ model Feedback {
   teacherRating  Int
   conceptRating  Int
   materialRating Int
-  examRating     Int
   recommendScore Int
   comment        String?
   createdAt      DateTime @default(now())

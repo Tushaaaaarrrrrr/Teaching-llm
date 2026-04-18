@@ -100,6 +100,151 @@ function BackButton({ onClick }: { onClick: () => void }) {
   )
 }
 
+// ── Refactored Modals Moved Outside to prevent focus loss during typing ────
+
+function CreateTicketModal({ 
+  onClose, form, setForm, classes, userRole, submitTicket 
+}: { 
+  onClose: () => void, form: any, setForm: (f: any) => void, classes: ClassItem[], userRole: string, submitTicket: () => void 
+}) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Raise a Support Ticket</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="form-group">
+            <label className="form-label">Issue Type</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {['GENERAL', 'SUBJECT'].map(t => (
+                <button key={t} onClick={() => setForm((f: any) => ({ ...f, type: t }))} style={{ flex: 1, padding: '10px', borderRadius: '14px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', background: form.type === t ? '#3636e8' : '#e8eaf0', color: form.type === t ? '#fff' : '#6b6b8a', boxShadow: form.type === t ? '4px 4px 10px rgba(54,54,232,0.3)' : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }}>
+                  {t === 'GENERAL' ? '📋 General Support' : '📚 Subject Related'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {form.type === 'SUBJECT' && (
+            <div className="form-group">
+              <label className="form-label">Select Subject</label>
+              <select className="form-input" value={form.classId} onChange={e => setForm((f: any) => ({ ...f, classId: e.target.value }))}>
+                <option value="">Choose a subject...</option>
+                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
+          {userRole !== 'STUDENT' && (
+            <div className="form-group">
+              <label className="form-label">Title *</label>
+              <input className="form-input" value={form.title} onChange={e => setForm((f: any) => ({ ...f, title: e.target.value }))} placeholder="Brief description of the issue" />
+            </div>
+          )}
+          <div className="form-group">
+            <label className="form-label">Description *</label>
+            <textarea className="form-input" rows={4} value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="Explain your issue in detail..." style={{ resize: 'vertical' }} />
+          </div>
+          {userRole !== 'STUDENT' && (
+            <div className="form-group">
+              <label className="form-label">Priority</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {['LOW', 'MEDIUM', 'HIGH'].map(p => (
+                  <button key={p} onClick={() => setForm((f: any) => ({ ...f, priority: p }))} style={{ flex: 1, padding: '8px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', background: form.priority === p ? PRIORITY_COLORS[p] : '#e8eaf0', color: form.priority === p ? '#fff' : '#6b6b8a', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff' }}>{p}</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="modal-footer">
+          <button onClick={onClose} className="btn btn-ghost">Cancel</button>
+          <button onClick={submitTicket} className="btn btn-primary">Submit Ticket</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StartChatModal({ 
+  onClose, value, onChange, onSubmit 
+}: { 
+  onClose: () => void, value: string, onChange: (val: string) => void, onSubmit: (val: string) => void 
+}) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Start Live Support Chat</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <p style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.5' }}>
+            To help us assist you better, please describe your issue in detail before starting the chat.
+          </p>
+          <div className="form-group">
+            <label className="form-label">Issue Description *</label>
+            <textarea 
+              className="form-input" 
+              rows={4} 
+              value={value} 
+              onChange={e => onChange(e.target.value)} 
+              placeholder="Explain your issue in detail..." 
+              style={{ resize: 'vertical' }} 
+            />
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button onClick={onClose} className="btn btn-ghost">Cancel</button>
+          <button 
+            onClick={() => onSubmit(value)} 
+            className="btn btn-primary" 
+            disabled={!value.trim()}
+            style={{ opacity: !value.trim() ? 0.6 : 1 }}
+          >
+            Start Chat
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FaqFormModal({ 
+  onClose, faqForm, setFaqForm, editingFaq, saveFaq 
+}: { 
+  onClose: () => void, faqForm: any, setFaqForm: (f: any) => void, editingFaq: Faq | null, saveFaq: () => void 
+}) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 style={{ fontSize: '16px', fontWeight: '800' }}>{editingFaq ? 'Edit FAQ' : 'Add FAQ Item'}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="form-group">
+            <label className="form-label">Question *</label>
+            <input className="form-input" value={faqForm.question} onChange={e => setFaqForm((f: any) => ({ ...f, question: e.target.value }))} placeholder="Enter the frequently asked question..." />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Answer *</label>
+            <textarea className="form-input" rows={4} value={faqForm.answer} onChange={e => setFaqForm((f: any) => ({ ...f, answer: e.target.value }))} placeholder="Provide a clear answer..." style={{ resize: 'vertical' }} />
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button onClick={onClose} className="btn btn-ghost">Cancel</button>
+          <button onClick={saveFaq} className="btn btn-primary">{editingFaq ? 'Save Changes' : 'Add FAQ'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function SupportPage() {
   const { confirm, confirmDialog } = useConfirmDialog()
   const [view, setView] = useState<'home' | 'allTickets' | 'chat' | 'chatHistory'>('home')
@@ -136,10 +281,8 @@ export default function SupportPage() {
   const [historyMsgs, setHistoryMsgs] = useState<ChatMsg[]>([])
   const [showChatStart, setShowChatStart] = useState(false)
   const [chatInitText, setChatInitText] = useState('')
-  const [allUsers, setAllUsers] = useState<AdminUser[]>([])
-  const [showManagerChatStart, setShowManagerChatStart] = useState(false)
-  const [userSearch, setUserSearch] = useState('')
   const [selectedUserDetailsId, setSelectedUserDetailsId] = useState<string | null>(null)
+  const [showManagerChatStart, setShowManagerChatStart] = useState(false)
 
   const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
   const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
@@ -167,7 +310,6 @@ export default function SupportPage() {
       if (role === 'MANAGER') {
         fetch('/api/users').then(r => r.json()).then((users: AdminUser[]) => {
           setAdmins(users.filter(u => u.role === 'ADMIN'))
-          setAllUsers(users.filter(u => u.role === 'STUDENT'))
         })
       }
     })
@@ -241,19 +383,17 @@ export default function SupportPage() {
   }
 
   // ── chat actions ────────────────────────────────────────────────────────
-  async function startChat(initialMessage?: string, studentId?: string) {
+  async function startChat(initialMessage?: string) {
     const chat = await fetch('/api/support/live-chats', { 
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initialMessage, studentId })
+      body: JSON.stringify({ initialMessage })
     }).then(r => r.json())
     setAllChats(prev => [chat, ...prev])
     setActiveChatId(chat.id)
     setView('chat')
     setShowChatStart(false)
-    setShowManagerChatStart(false)
     setChatInitText('')
-    setUserSearch('')
   }
 
   async function joinChat(chatId: string) {
@@ -324,180 +464,6 @@ export default function SupportPage() {
     if (selectedHistory?.id === id) { setSelectedHistory(null); setHistoryMsgs([]) }
   }
 
-  // ── Create ticket modal ─────────────────────────────────────────────────
-  const CreateTicketModal = () => (
-    <div className="modal-overlay" onClick={() => setShowCreate(false)}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Raise a Support Ticket</h3>
-          <button onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
-        </div>
-        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div className="form-group">
-            <label className="form-label">Issue Type</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {['GENERAL', 'SUBJECT'].map(t => (
-                <button key={t} onClick={() => setForm(f => ({ ...f, type: t }))} style={{ flex: 1, padding: '10px', borderRadius: '14px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', background: form.type === t ? '#3636e8' : '#e8eaf0', color: form.type === t ? '#fff' : '#6b6b8a', boxShadow: form.type === t ? '4px 4px 10px rgba(54,54,232,0.3)' : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }}>
-                  {t === 'GENERAL' ? '📋 General Support' : '📚 Subject Related'}
-                </button>
-              ))}
-            </div>
-          </div>
-          {form.type === 'SUBJECT' && (
-            <div className="form-group">
-              <label className="form-label">Select Subject</label>
-              <select className="form-input" value={form.classId} onChange={e => setForm(f => ({ ...f, classId: e.target.value }))}>
-                <option value="">Choose a subject...</option>
-                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-          )}
-          {userRole !== 'STUDENT' && (
-            <div className="form-group">
-              <label className="form-label">Title *</label>
-              <input className="form-input" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Brief description of the issue" />
-            </div>
-          )}
-          <div className="form-group">
-            <label className="form-label">Description *</label>
-            <textarea className="form-input" rows={4} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Explain your issue in detail..." style={{ resize: 'vertical' }} />
-          </div>
-          {userRole !== 'STUDENT' && (
-            <div className="form-group">
-              <label className="form-label">Priority</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {['LOW', 'MEDIUM', 'HIGH'].map(p => (
-                  <button key={p} onClick={() => setForm(f => ({ ...f, priority: p }))} style={{ flex: 1, padding: '8px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', background: form.priority === p ? PRIORITY_COLORS[p] : '#e8eaf0', color: form.priority === p ? '#fff' : '#6b6b8a', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff' }}>{p}</button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="modal-footer">
-          <button onClick={() => setShowCreate(false)} className="btn btn-ghost">Cancel</button>
-          <button onClick={submitTicket} className="btn btn-primary">Submit Ticket</button>
-        </div>
-      </div>
-    </div>
-  )
-
-  const StartChatModal = () => (
-    <div className="modal-overlay" onClick={() => setShowChatStart(false)}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Start Live Support Chat</h3>
-          <button onClick={() => setShowChatStart(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
-        </div>
-        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <p style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.5' }}>
-            To help us assist you better, please describe your issue in detail before starting the chat.
-          </p>
-          <div className="form-group">
-            <label className="form-label">Issue Description *</label>
-            <textarea 
-              className="form-input" 
-              rows={4} 
-              value={chatInitText} 
-              onChange={e => setChatInitText(e.target.value)} 
-              placeholder="Explain your issue in detail..." 
-              style={{ resize: 'vertical' }} 
-            />
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button onClick={() => setShowChatStart(false)} className="btn btn-ghost">Cancel</button>
-          <button 
-            onClick={() => startChat(chatInitText)} 
-            className="btn btn-primary" 
-            disabled={!chatInitText.trim()}
-            style={{ opacity: !chatInitText.trim() ? 0.6 : 1 }}
-          >
-            Start Chat
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-
-  const ManagerStartChatModal = () => {
-    const filtered = allUsers.filter(u => 
-      u.name.toLowerCase().includes(userSearch.toLowerCase()) || 
-      u.email.toLowerCase().includes(userSearch.toLowerCase())
-    ).slice(0, 10)
-
-    return (
-      <div className="modal-overlay" onClick={() => setShowManagerChatStart(false)}>
-        <div className="modal" style={{ width: '420px' }} onClick={e => e.stopPropagation()}>
-          <div className="modal-header">
-            <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Initiate Chat with Student</h3>
-            <button onClick={() => setShowManagerChatStart(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-            </button>
-          </div>
-          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ position: 'relative' }}>
-              <input 
-                className="form-input" 
-                value={userSearch} 
-                onChange={e => setUserSearch(e.target.value)} 
-                placeholder="Search by name or email..." 
-                style={{ paddingLeft: '36px' }} 
-              />
-              <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9999b0' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-            </div>
-            
-            <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {filtered.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#9999b0', fontSize: '13px', padding: '20px' }}>No students found.</p>
-              ) : filtered.map(u => (
-                <div key={u.id} style={{ padding: '10px 14px', borderRadius: '12px', background: '#f8f8fc', border: '1px solid #eeeef5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</div>
-                    <div style={{ fontSize: '11px', color: '#9999b0' }}>{u.email}</div>
-                  </div>
-                  <button onClick={() => startChat(undefined, u.id)} className="btn btn-primary btn-sm" style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '50px' }}>
-                    Start Chat
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ── FAQ form modal ──────────────────────────────────────────────────────
-  const FaqFormModal = () => (
-    <div className="modal-overlay" onClick={() => { setShowFaqForm(false); setEditingFaq(null) }}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3 style={{ fontSize: '16px', fontWeight: '800' }}>{editingFaq ? 'Edit FAQ' : 'Add FAQ Item'}</h3>
-          <button onClick={() => { setShowFaqForm(false); setEditingFaq(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
-        </div>
-        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div className="form-group">
-            <label className="form-label">Question *</label>
-            <input className="form-input" value={faqForm.question} onChange={e => setFaqForm(f => ({ ...f, question: e.target.value }))} placeholder="Enter the frequently asked question..." />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Answer *</label>
-            <textarea className="form-input" rows={4} value={faqForm.answer} onChange={e => setFaqForm(f => ({ ...f, answer: e.target.value }))} placeholder="Provide a clear answer..." style={{ resize: 'vertical' }} />
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button onClick={() => { setShowFaqForm(false); setEditingFaq(null) }} className="btn btn-ghost">Cancel</button>
-          <button onClick={saveFaq} className="btn btn-primary">{editingFaq ? 'Save Changes' : 'Add FAQ'}</button>
-        </div>
-      </div>
-    </div>
-  )
 
   // ══════════════════════════════════════════════════════════════════════════
   // HOME VIEW
@@ -642,10 +608,33 @@ export default function SupportPage() {
           )}
         </div>
 
-        {showCreate && <CreateTicketModal />}
-        {showFaqForm && <FaqFormModal />}
-        {showChatStart && <StartChatModal />}
-        {showManagerChatStart && <ManagerStartChatModal />}
+        {showCreate && (
+          <CreateTicketModal 
+            onClose={() => setShowCreate(false)} 
+            form={form} 
+            setForm={setForm} 
+            classes={classes} 
+            userRole={userRole} 
+            submitTicket={submitTicket} 
+          />
+        )}
+        {showFaqForm && (
+          <FaqFormModal 
+            onClose={() => { setShowFaqForm(false); setEditingFaq(null) }} 
+            faqForm={faqForm} 
+            setFaqForm={setFaqForm} 
+            editingFaq={editingFaq} 
+            saveFaq={saveFaq} 
+          />
+        )}
+        {showChatStart && (
+          <StartChatModal 
+            onClose={() => setShowChatStart(false)} 
+            value={chatInitText} 
+            onChange={setChatInitText} 
+            onSubmit={startChat} 
+          />
+        )}
         {selectedUserDetailsId && (
           <ManagerUserModal 
             userId={selectedUserDetailsId} 
@@ -835,7 +824,6 @@ export default function SupportPage() {
 
         {showCreate && <CreateTicketModal />}
         {showChatStart && <StartChatModal />}
-        {showManagerChatStart && <ManagerStartChatModal />}
         {selectedUserDetailsId && (
           <ManagerUserModal 
             userId={selectedUserDetailsId} 
@@ -951,10 +939,8 @@ export default function SupportPage() {
       {confirmDialog}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <BackButton onClick={() => { setView('home'); setActiveChatId(null) }} />
-        {userRole === 'STUDENT' ? (
+        {userRole === 'STUDENT' && (
           <button onClick={() => setShowChatStart(true)} className="btn btn-primary btn-sm" style={{ borderRadius: '50px' }}>+ New Chat</button>
-        ) : (
-          <button onClick={() => setShowManagerChatStart(true)} className="btn btn-primary btn-sm" style={{ borderRadius: '50px' }}>+ New Chat</button>
         )}
       </div>
 
@@ -1069,8 +1055,14 @@ export default function SupportPage() {
           })()}
         </div>
       </div>
-      {showChatStart && <StartChatModal />}
-      {showManagerChatStart && <ManagerStartChatModal />}
+      {showChatStart && (
+        <StartChatModal 
+          onClose={() => setShowChatStart(false)} 
+          value={chatInitText} 
+          onChange={setChatInitText} 
+          onSubmit={startChat} 
+        />
+      )}
     </div>
   )
 }

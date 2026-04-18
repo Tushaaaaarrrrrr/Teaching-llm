@@ -35,7 +35,7 @@ interface User {
   gender?: string
   avatar?: string | null
   isGoogleUser?: boolean
-  enrollments?: { courseId: string; course: CourseInfo }[]
+  enrollments?: { courseId: string; type?: string; course: CourseInfo }[]
   instructorAssignments?: { courseId: string; course: CourseInfo }[]
   courseBundleAssignments?: { bundleId: string; bundle: CourseBundleInfo }[]
 }
@@ -65,6 +65,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     gender: 'MALE',
     courseIds: [] as string[],
     bundleIds: [] as string[],
+    enrollmentTypes: {} as Record<string, string>, // courseId → 'LIVE' | 'RECORDED'
   })
   const bundledCourseIds = new Set(
     bundles
@@ -126,6 +127,9 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             gender: data.gender || 'MALE',
             courseIds: normalizeCollection<any>(data?.enrollments).map((e: any) => e.courseId),
             bundleIds: normalizeCollection<any>(data?.courseBundleAssignments).map((b: any) => b.bundleId),
+            enrollmentTypes: Object.fromEntries(
+              normalizeCollection<any>(data?.enrollments).map((e: any) => [e.courseId, e.type || 'LIVE'])
+            ),
         })
       } else {
         setUser(null)
@@ -179,7 +183,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             role: formData.role,
             gender: formData.gender,
             courseIds: formData.courseIds,
-            bundleIds: formData.bundleIds
+            bundleIds: formData.bundleIds,
+            enrollmentTypes: formData.enrollmentTypes,
         }),
       })
       if (res.ok) {
@@ -493,7 +498,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     <div style={{ flex: 1.5 }}>
                       <label style={{ fontSize: '11px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Course Enrollments</label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                        {courses.filter(c => formData.courseIds.includes(c.id)).map(c => (
+                        {courses.filter(c => formData.courseIds.includes(c.id)).map(c => {
+                          const enrollType = formData.enrollmentTypes[c.id] || 'LIVE'
+                          const isLive = enrollType === 'LIVE'
+                          return (
                           <div key={c.id} style={{
                             padding: '10px 18px', borderRadius: '16px', background: '#f0f2f8',
                             boxShadow: '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
@@ -503,20 +511,49 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                              <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a' }}>{c.name}</span>
                              {c.isExpired && <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>Expired</span>}
                              {c.isEffectivelyDisabled && !c.isExpired && <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700', background: '#fee2e2', padding: '2px 8px', borderRadius: '20px' }}>Disabled</span>}
+                             {/* Live/Recorded Toggle */}
+                             <button
+                               onClick={() => {
+                                 const newType = isLive ? 'RECORDED' : 'LIVE'
+                                 setFormData({...formData, enrollmentTypes: {...formData.enrollmentTypes, [c.id]: newType}})
+                               }}
+                               style={{
+                                 padding: '3px 10px', borderRadius: '20px', border: 'none',
+                                 background: isLive
+                                   ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)'
+                                   : 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                 color: isLive ? '#166534' : '#92400e',
+                                 fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em',
+                                 cursor: 'pointer', transition: 'all 0.2s',
+                                 boxShadow: '2px 2px 4px #d1d9e6, -2px -2px 4px #ffffff',
+                               }}
+                               title={isLive ? 'Click to switch to Recorded' : 'Click to switch to Live'}
+                             >
+                               {isLive ? '🟢 LIVE' : '🟡 RECORDED'}
+                             </button>
                              <button 
-                                onClick={() => setFormData({...formData, courseIds: formData.courseIds.filter(id => id !== c.id)})}
+                                onClick={() => {
+                                  const newTypes = {...formData.enrollmentTypes}
+                                  delete newTypes[c.id]
+                                  setFormData({...formData, courseIds: formData.courseIds.filter(id => id !== c.id), enrollmentTypes: newTypes})
+                                }}
                                 style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#ef4444', display: 'flex' }}
                              >
                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                              </button>
                           </div>
-                        ))}
+                          )
+                        })}
                         
                         <div style={{ position: 'relative' }}>
                            <select 
                               onChange={(e) => {
                                if (e.target.value && !formData.courseIds.includes(e.target.value)) {
-                                  setFormData({...formData, courseIds: [...formData.courseIds, e.target.value]})
+                                  setFormData({
+                                     ...formData,
+                                     courseIds: [...formData.courseIds, e.target.value],
+                                     enrollmentTypes: {...formData.enrollmentTypes, [e.target.value]: 'LIVE'}
+                                   })
                                 }
                               }}
                               style={{

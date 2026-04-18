@@ -418,7 +418,13 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                     }} />
                   )}
                 </span>
-                {item.label}
+                {item.label === 'Analytics & Performance' ? (
+                  <div style={{ lineHeight: '1.2', whiteSpace: 'normal' }}>
+                    {item.label}
+                  </div>
+                ) : (
+                  item.label
+                )}
               </Link>
             </div>
           )

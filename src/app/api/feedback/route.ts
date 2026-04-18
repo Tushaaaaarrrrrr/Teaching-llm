@@ -63,12 +63,11 @@ export async function POST(request: NextRequest) {
       teacherRating,
       conceptRating,
       materialRating,
-      examRating,
       recommendScore,
       comment,
     } = await request.json()
 
-    if (!courseId || !teacherRating || !conceptRating || !materialRating || !examRating || !recommendScore) {
+    if (!courseId || !teacherRating || !conceptRating || !materialRating || !recommendScore) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -97,7 +96,6 @@ export async function POST(request: NextRequest) {
         teacherRating,
         conceptRating,
         materialRating,
-        examRating,
         recommendScore,
         comment,
       },

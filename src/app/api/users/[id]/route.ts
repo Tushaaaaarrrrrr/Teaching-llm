@@ -40,6 +40,7 @@ export async function GET(
         enrollments: {
           select: {
             courseId: true,
+            type: true,
             course: { select: { id: true, name: true, color: true, subject: true } },
           },
         },
@@ -94,7 +95,8 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, firstName, lastName, mobileNumber, email, role, password, isTerminated, gender, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds } = await request.json()
+    const { name, firstName, lastName, mobileNumber, email, role, password, isTerminated, gender, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes } = await request.json()
+    // enrollmentTypes is an optional map: { courseId: 'LIVE' | 'RECORDED' }
     const nextCourseIds = classIds !== undefined ? classIds : courseIds
     const nextAssignedCourseIds = assignedClassIds !== undefined ? assignedClassIds : assignedCourseIds
     const nextBundleIds = Array.isArray(bundleIds) ? Array.from(new Set(bundleIds.filter(Boolean))) : undefined
@@ -142,7 +144,7 @@ export async function PUT(
       const existingEnrollmentRows = (nextCourseIds !== undefined || nextBundleIds !== undefined)
         ? await tx.enrollment.findMany({
             where: { userId: id },
-            select: { courseId: true },
+            select: { courseId: true, type: true },
           })
         : []
 
@@ -193,10 +195,17 @@ export async function PUT(
 
         await tx.enrollment.deleteMany({ where: { userId: id } })
         if (effectiveCourseIds.length > 0) {
+          // Preserve existing enrollment types, apply new ones from enrollmentTypes map
+          const existingTypeMap = Object.fromEntries(
+            existingEnrollmentRows.map((row: any) => [row.courseId, row.type || 'LIVE'])
+          )
+          const typeMap = enrollmentTypes && typeof enrollmentTypes === 'object' ? enrollmentTypes : {}
+
           await tx.enrollment.createMany({
             data: effectiveCourseIds.map((courseId: string) => ({
               userId: id,
               courseId,
+              type: typeMap[courseId] || existingTypeMap[courseId] || 'LIVE',
             })),
           })
         }
@@ -270,6 +279,7 @@ export async function PUT(
           enrollments: {
             select: {
               courseId: true,
+              type: true,
               course: { select: { id: true, name: true, color: true, subject: true } },
             },
           },

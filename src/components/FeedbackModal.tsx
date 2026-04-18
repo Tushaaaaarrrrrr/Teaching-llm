@@ -15,7 +15,6 @@ const CATEGORIES = [
   { id: 'teacherRating', label: 'Teacher Quality' },
   { id: 'conceptRating', label: 'Concept Quality' },
   { id: 'materialRating', label: 'Study Materials Quality' },
-  { id: 'examRating', label: 'Exam Session' },
   { id: 'recommendScore', label: 'Recommendation Score' },
 ]
 
@@ -25,7 +24,6 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
     teacherRating: 0,
     conceptRating: 0,
     materialRating: 0,
-    examRating: 0,
     recommendScore: 0,
   })
   const [comment, setComment] = useState('')
