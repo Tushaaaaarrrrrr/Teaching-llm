@@ -105,7 +105,19 @@ export default function LecturePage() {
   useEffect(() => {
     fetchData()
     fetchComments()
-  }, [fetchData, fetchComments])
+
+    // Mark as in-progress when viewed
+    if (params.lectureId) {
+      fetch('/api/lectures/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          contentId: params.lectureId, 
+          status: 'IN_PROGRESS' 
+        })
+      }).catch(err => console.error('Failed to update progress:', err))
+    }
+  }, [fetchData, fetchComments, params.lectureId])
 
   const getEmbedUrl = (url: string | undefined, source: string) => {
     if (!url) return ''

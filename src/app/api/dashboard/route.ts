@@ -49,7 +49,7 @@ export async function GET() {
 
     const [
       syncedSessions,
-      lectures,
+      recentViewedLecture,
       announcements,
       examCountdown,
       upcomingExams,
@@ -58,11 +58,28 @@ export async function GET() {
       activeAgentsCount
     ] = await Promise.all([
       getTodaySessionSnapshots(session),
-      prisma.lecture.findMany({
-        where: courseFilter,
-        include: { course: true },
-        orderBy: { uploadedAt: 'desc' },
-        take: 3
+      prisma.lectureProgress.findFirst({
+        where: {
+          userId: session.userId,
+          updatedAt: { gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) }
+        },
+        include: {
+          content: {
+            select: {
+              id: true,
+              title: true,
+              topic: {
+                select: {
+                  courseId: true,
+                  course: {
+                    select: { name: true, color: true }
+                  }
+                }
+              }
+            }
+          }
+        },
+        orderBy: { updatedAt: 'desc' }
       }),
       prisma.announcement.findMany({
         orderBy: { createdAt: 'desc' },
@@ -114,7 +131,7 @@ export async function GET() {
         activeSessions: activeSessionsCount,
       },
       liveSessions: syncedSessions,
-      lectures,
+      recentViewedLecture,
       announcements,
       upcomingExams,
       examCountdown: examCountdownWithDays,

@@ -31,7 +31,7 @@ export default function DashboardPage() {
     getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'upcoming'
   ).length
 
-  const lectures = (dashboardData?.lectures || []).slice(0, 3)
+  const recentViewedLecture = dashboardData?.recentViewedLecture || null
   const announcements = (dashboardData?.announcements || []).slice(0, 3)
 
   const [activeCard, setActiveCard] = useState(0)
@@ -620,22 +620,24 @@ export default function DashboardPage() {
                     </div>
                   ) : <div />}
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px' }}>
                     <a
                       href={frontSession.meetLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                        display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', gap: '10px',
                         padding: '13px 20px',
                         borderRadius: '12px',
                         background: '#ef4444',
-                        color: '#ffffff', fontSize: '13.5px', fontWeight: '700',
+                        color: '#ffffff', fontSize: '14px', fontWeight: '800',
                         textDecoration: 'none', letterSpacing: '0.01em',
                         animation: 'joinGlow 2.5s ease-in-out infinite',
-                        transition: 'background 0.18s',
-                        width: '50%',
+                        transition: 'transform 0.2s, background 0.18s',
+                        width: '100%',
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
                       <div style={{
                         width: '28px', height: '28px', borderRadius: '7px',
@@ -648,21 +650,6 @@ export default function DashboardPage() {
                       </div>
                       Join Live Course
                     </a>
-
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '18px', color: '#1e1e3a', fontWeight: '800', lineHeight: 1.2 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2">
-                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                        </svg>
-                        <span>{frontSession.course?.name || 'General Course'}</span>
-                      </div>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '14px', color: '#6b6b8a', fontWeight: '600', lineHeight: 1.2 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-                          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        <span>{frontSession.instructor || frontSession.course?.teacherName || 'Standard Faculty'}</span>
-                      </div>
-                    </div>
                   </div>
                 </>
               ) : (
@@ -747,69 +734,82 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* ── Row 2: Recent Lectures ── */}
+          {/* ── Row 2: Recent Lecture Viewed ── */}
           <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Recent Lectures</h3>
-              <Link href="/materials/recordings" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
-                View All →
-              </Link>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Recent Lecture Viewed</h3>
+              {recentViewedLecture && (
+                <Link href="/materials/recordings" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
+                  View All →
+                </Link>
+              )}
             </div>
-            {lectures.length === 0 ? (
+            {!recentViewedLecture ? (
               <div style={{ padding: '32px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
-                No lectures uploaded yet
+                No recent lectures
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-                {lectures.map((lec) => {
-                  const accent = lec.course?.color || '#6366f1'
+              <div style={{ display: 'flex' }}>
+                {(() => {
+                  const lec = recentViewedLecture.content
+                  const accent = lec.topic?.course?.color || '#6366f1'
                   return (
                     <div
                       key={lec.id}
                       style={{
-                        padding: '18px',
-                        borderRadius: '18px',
+                        padding: '24px',
+                        borderRadius: '24px',
                         background: '#e8eaf0',
-                        boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
+                        boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '12px',
+                        alignItems: 'center',
+                        gap: '24px',
+                        width: '100%',
                         transition: 'all 0.2s',
                       }}
                     >
                       <div style={{
-                        width: '46px', height: '46px', borderRadius: '13px',
-                        background: accent + '20',
+                        width: '56px', height: '56px', borderRadius: '16px',
+                        background: accent + '15',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0
                       }}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5">
                           <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
                         </svg>
                       </div>
-                      <div style={{ flex: 1 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                          {lec.topic?.course?.name || 'Course Lecture'}
+                        </div>
                         <div style={{
-                          fontSize: '13px', fontWeight: '700', color: '#1e1e3a',
-                          lineHeight: '1.35', marginBottom: '5px',
-                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                          fontSize: '18px', fontWeight: '800', color: '#1e1e3a',
+                          lineHeight: '1.2', marginBottom: '4px',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                         }}>
                           {lec.title}
                         </div>
-                        <div style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: '500' }}>
-                          {lec.course?.name}
-                          {lec.duration ? ` · ${lec.duration}` : ''}
+                        <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '500' }}>
+                          Last viewed on {formatISTDate(recentViewedLecture.updatedAt)}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '11px', color: '#b0b2c0' }}>
-                          {formatISTDate(lec.uploadedAt)}
-                        </span>
-                        <Link href="/materials/recordings" style={{ fontSize: '11.5px', fontWeight: '600', color: accent, textDecoration: 'none' }}>
-                          Watch →
-                        </Link>
-                      </div>
+                      <Link 
+                        href={`/courses/${lec.topic?.courseId}/lectures/${lec.id}`} 
+                        className="btn btn-primary"
+                        style={{ 
+                          background: accent, 
+                          boxShadow: `0 8px 16px ${accent}20`,
+                          padding: '12px 28px',
+                          fontSize: '14px',
+                          fontWeight: '800',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Continue Watching
+                      </Link>
                     </div>
                   )
-                })}
+                })()}
               </div>
             )}
           </div>
