@@ -430,7 +430,7 @@ img {
 .modal {
   background: var(--surface);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.10);
   width: 100%;
   max-width: 900px;
   max-height: 90vh;
