@@ -316,6 +316,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
               </button>
             </div>
           </div>
+        </div>
       )}
 
       <div style={{ marginTop: '40px', textAlign: 'center' }}>
