@@ -87,11 +87,12 @@ export default function ExamsPage() {
               {exam.course.name}
             </span>
             <span style={{ 
-              padding: '4px 12px', borderRadius: '50px', 
-              background: exam.examType === 'FINAL_TEST' ? '#ef444410' : '#3636e810', 
-              color: exam.examType === 'FINAL_TEST' ? '#ef4444' : '#3636e8',
+              padding: '4px 14px', borderRadius: '50px', 
+              background: exam.examType === 'FINAL_TEST' ? '#ef444410' : '#8b5cf612', 
+              color: exam.examType === 'FINAL_TEST' ? '#ef4444' : '#8b5cf6',
               fontSize: '11px', fontWeight: 800, textTransform: 'uppercase',
-              border: `1px solid ${exam.examType === 'FINAL_TEST' ? '#ef444420' : '#3636e820'}`
+              border: `1px solid ${exam.examType === 'FINAL_TEST' ? '#ef444420' : '#8b5cf625'}`,
+              letterSpacing: '0.02em'
             }}>
               {exam.examType === 'FINAL_TEST' ? 'Final Test' : 'Practice Test'}
             </span>

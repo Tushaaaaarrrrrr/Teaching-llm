@@ -342,11 +342,13 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>{exam.title} Management</h1>
                 <span style={{ 
-                  fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '6px',
-                  background: isFinalTest(exam.examType) ? '#ef444420' : '#10b98120',
-                  color: isFinalTest(exam.examType) ? '#ef4444' : '#10b981'
+                  fontSize: '10px', fontWeight: 800, padding: '4px 12px', borderRadius: '50px',
+                  background: isFinalTest(exam.examType) ? '#ef444415' : '#8b5cf612',
+                  color: isFinalTest(exam.examType) ? '#ef4444' : '#8b5cf6',
+                  border: `1px solid ${isFinalTest(exam.examType) ? '#ef444425' : '#8b5cf625'}`,
+                  textTransform: 'uppercase', letterSpacing: '0.02em'
                 }}>
-                  {isFinalTest(exam.examType) ? 'FINAL TEST' : 'GENERAL TEST'}
+                  {isFinalTest(exam.examType) ? 'Final Test' : 'Practice Test'}
                 </span>
               </div>
               <p style={{ color: '#6b6b8a' }}>{exam.course?.name}</p>
