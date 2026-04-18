@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getFullSession } from '@/lib/auth'
 import { getTodaySessionSnapshots } from '@/lib/daily-session-sync'
+import { processProgressQueue } from '@/lib/progress-processor'
 
 // Compute status dynamically
 // Status calculation now handled by getEventStatus in @/lib/date-utils
@@ -12,6 +13,9 @@ export async function GET() {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // Process any pending progress updates before fetching dashboard data
+    await processProgressQueue().catch(err => console.error('Dashboard sync error:', err))
 
     const { accessibleCourseIds } = session
     const courseFilter = accessibleCourseIds !== null

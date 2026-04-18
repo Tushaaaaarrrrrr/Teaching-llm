@@ -26,6 +26,7 @@ export async function processProgressQueue() {
           },
           update: {
             status: update.status,
+            updatedAt: new Date(),
           },
           create: {
             userId: update.userId,
