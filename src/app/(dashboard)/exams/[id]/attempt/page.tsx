@@ -501,7 +501,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                                         )
                                       )}
                                   </div>
-                                  {opt}
+                                  <div style={{ flex: 1 }}><RichTextDisplay text={opt} /></div>
                               </button>
                             )
                         })

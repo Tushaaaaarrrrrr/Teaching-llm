@@ -280,11 +280,11 @@ export default function ContentBankPage() {
                       return q.correctAnswer
                     })()}
                  </div>
-                 {q.explanation && (
-                   <div style={{ marginTop: '8px', color: '#6b6b8a', fontStyle: 'italic' }}>
-                      <span style={{ fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', fontSize: '10px', fontStyle: 'normal' }}>Explanation:</span> {q.explanation}
-                   </div>
-                 )}
+                  {q.explanation && (
+                    <div style={{ marginTop: '8px', color: '#6b6b8a', fontStyle: 'italic' }}>
+                       <span style={{ fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', fontSize: '10px', fontStyle: 'normal', display: 'block', marginBottom: '4px' }}>Explanation:</span> <RichTextDisplay text={q.explanation} />
+                    </div>
+                  )}
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
                 <button
