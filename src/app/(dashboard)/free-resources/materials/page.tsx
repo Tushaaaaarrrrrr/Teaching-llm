@@ -12,7 +12,7 @@ export default function FreeMaterialsPage() {
   const { data: materials, isLoading } = useSWR<any[]>('/api/free-resources/materials', fetcher)
 
   const userRole = authData?.user?.role || ''
-  const canManage = userRole === 'MANAGER' || userRole === 'ADMIN'
+  const canManage = userRole === 'MANAGER'
 
   const [showModal, setShowModal] = useState(false)
   const [formData, setFormData] = useState<Record<string, string>>({})

@@ -537,7 +537,8 @@ export default function SupportPage() {
           </div>
 
           {/* Live Chat Card */}
-          <div style={{ ...card, padding: '32px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+          {(userRole === 'STUDENT' || userRole === 'MANAGER' || userRole === 'ADMIN') && (
+            <div style={{ ...card, padding: '32px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
             <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#ebebff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '18px' }}>
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
             </div>
@@ -546,11 +547,11 @@ export default function SupportPage() {
               Our support team is online and ready to help. Each session is private and expires after 24 hours.
             </p>
             <button
-              onClick={() => userRole === 'STUDENT' ? setShowChatStart(true) : setView('chat')}
+              onClick={() => (userRole === 'STUDENT' || userRole === 'ADMIN') ? setShowChatStart(true) : setView('chat')}
               style={{ background: 'linear-gradient(135deg, #3636e8, #5b5bf0)', color: '#fff', borderRadius: '50px', padding: '13px 28px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '14.5px', fontWeight: '700', boxShadow: '0 4px 16px rgba(54,54,232,0.35)', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
-              {userRole === 'STUDENT' ? 'Start Live Chat Support' : 'Manage Live Chats'}
+              {(userRole === 'STUDENT' || userRole === 'ADMIN') ? 'Start Live Chat Support' : 'Manage Live Chats'}
             </button>
             <p style={{ fontSize: '12px', color: '#9999b0', marginBottom: userRole === 'MANAGER' ? '12px' : '0' }}>Average response time: &lt; 2 minutes</p>
             {userRole === 'MANAGER' && (
@@ -559,7 +560,8 @@ export default function SupportPage() {
                 View Chat History
               </button>
             )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Recent Support Tickets */}
@@ -576,8 +578,8 @@ export default function SupportPage() {
             <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9999b0' }}>
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="1.5" style={{ marginBottom: '10px' }}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
               <p style={{ fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px' }}>No tickets yet</p>
-              <p style={{ fontSize: '13px' }}>{userRole === 'STUDENT' ? 'Create a ticket to get help from our support team.' : 'No tickets have been raised yet.'}</p>
-              {userRole === 'STUDENT' && (
+              <p style={{ fontSize: '13px' }}>{(userRole === 'STUDENT' || userRole === 'ADMIN') ? 'Create a ticket to get help from our support team.' : 'No tickets have been raised yet.'}</p>
+              {(userRole === 'STUDENT' || userRole === 'ADMIN') && (
                 <button onClick={() => setShowCreate(true)} className="btn btn-primary" style={{ marginTop: '16px', borderRadius: '50px' }}>+ Raise a Ticket</button>
               )}
             </div>
@@ -601,7 +603,7 @@ export default function SupportPage() {
                 </div>
               ))}
               <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {userRole === 'STUDENT' && <button onClick={() => setShowCreate(true)} className="btn btn-primary" style={{ borderRadius: '50px' }}>+ Raise a Ticket</button>}
+                {(userRole === 'STUDENT' || userRole === 'ADMIN') && <button onClick={() => setShowCreate(true)} className="btn btn-primary" style={{ borderRadius: '50px' }}>+ Raise a Ticket</button>}
                 {tickets.length > 5 && <button onClick={() => setView('allTickets')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', fontSize: '13px', fontWeight: '700', fontFamily: 'inherit' }}>+{tickets.length - 5} more →</button>}
               </div>
             </>
@@ -657,7 +659,7 @@ export default function SupportPage() {
           <BackButton onClick={() => { setView('home'); setSelected(null) }} />
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <span style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600' }}>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</span>
-            {userRole === 'STUDENT' && <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-sm">+ New Ticket</button>}
+            {(userRole === 'STUDENT' || userRole === 'ADMIN') && <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-sm">+ New Ticket</button>}
           </div>
         </div>
 
@@ -668,7 +670,7 @@ export default function SupportPage() {
               <div className="empty-state">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                 <p style={{ fontWeight: '700', fontSize: '15px', marginBottom: '4px' }}>No tickets</p>
-                <p style={{ fontSize: '13px', color: '#9999b0' }}>{userRole === 'STUDENT' ? 'Create a ticket to get help.' : userRole === 'ADMIN' ? 'No tickets assigned to you yet.' : 'No tickets have been raised.'}</p>
+                <p style={{ fontSize: '13px', color: '#9999b0' }}>{(userRole === 'STUDENT' || userRole === 'ADMIN') ? 'Create a ticket to get help. If assigned tickets, they will appear here.' : 'No tickets have been raised.'}</p>
               </div>
             ) : tickets.map(t => (
               <div key={t.id} onClick={() => setSelected(selected?.id === t.id ? null : t)}

@@ -23,10 +23,10 @@ export async function GET() {
 
     await autoExpireChats()
 
-    if (session.role === 'STUDENT') {
+    if (session.role === 'STUDENT' || session.role === 'ADMIN') {
       where = { studentId: session.userId }
     } else {
-      // Admins and Managers only see chats that have at least one message
+      // Managers only see chats that have at least one message
       where = { messages: { some: {} } }
     }
 
@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (session.role !== 'STUDENT') {
-      return NextResponse.json({ error: 'Only students can start a chat' }, { status: 403 })
+    if (session.role !== 'STUDENT' && session.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Only students and admins can start a chat' }, { status: 403 })
     }
 
     const { initialMessage } = await request.json().catch(() => ({}))

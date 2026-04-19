@@ -36,11 +36,10 @@ export async function GET(request: NextRequest) {
         ]
       }
     } else if (session.role === 'ADMIN') {
-      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
       where = {
         OR: [
           { assignedToId: session.userId },
-          { courseId: { in: accessibleCourseIds || [] } },
+          { studentId: session.userId },
         ],
       }
     }

@@ -91,8 +91,11 @@ export async function getFullSession(): Promise<FullSession | null> {
 
   // Fetch isTerminated, enrollments AND current tokenVersion in ONE query
   const now = new Date()
-  const [user, settings] = await Promise.all([
-    (prisma.user.findUnique as any)({
+  let user: any = null;
+  let settings: any = null;
+
+  try {
+    user = await (prisma.user.findUnique as any)({
       where: { id: jwtPayload.userId },
       select: {
         isTerminated: true,
@@ -110,11 +113,23 @@ export async function getFullSession(): Promise<FullSession | null> {
           select: { courseId: true, type: true },
         } : false,
       },
-    }),
-    prisma.updateSystemSettings.findUnique({
+    })
+  } catch (error: any) {
+    console.error('\n[AUTH CRITICAL ERROR] User database lookup failed in getFullSession!')
+    console.error('This typically indicates the current production DB schema is missing tables or columns defined in code (e.g., Enrollment.type from previous migrations).')
+    console.error('Raw Error:', error?.message || error)
+    return null
+  }
+
+  try {
+    settings = await prisma.updateSystemSettings.findUnique({
       where: { id: 'singleton' }
     })
-  ])
+  } catch (error: any) {
+    console.error('\n[AUTH WARNING] UpdateSystemSettings lookup failed in getFullSession, defaulting to false.')
+    console.error('Raw Error:', error?.message || error)
+    settings = null
+  }
 
   // Security Check: Token Version Invalidation
   // If user has a tokenVersion in JWT, it MUST match the DB.

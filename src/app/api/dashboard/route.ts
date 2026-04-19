@@ -162,8 +162,9 @@ export async function GET() {
         hasSeenWelcome: userDb?.hasSeenWelcome || false,
       }
     })
-  } catch (error) {
-    console.error('Dashboard API Error:', error)
+  } catch (error: any) {
+    console.error('\n[DASHBOARD API ERROR] Failed to fetch dashboard data. A database schema mismatch is likely.')
+    console.error('Raw Error:', error?.message || error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
