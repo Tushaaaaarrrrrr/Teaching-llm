@@ -63,8 +63,11 @@ export default function CreateExamPage() {
   }, [])
 
   const fetchBankQuestions = async (subjectOverride?: string) => {
-    const subject = subjectOverride || bankSubjectFilter || courses.find(c => c.id === courseId)?.subject
-    if (!subject) return
+    const subject = subjectOverride !== undefined ? subjectOverride : bankSubjectFilter
+    if (!subject) {
+      setBankQuestions([])
+      return
+    }
 
     try {
       const res = await fetch(`/api/content-bank?subject=${encodeURIComponent(subject)}`)
@@ -72,6 +75,7 @@ export default function CreateExamPage() {
       setBankQuestions(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Failed to fetch bank questions', error)
+      setBankQuestions([])
     }
   }
 
@@ -312,7 +316,7 @@ export default function CreateExamPage() {
                 <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a' }}>Step 2: Questions</h2>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button type="button" onClick={() => setStep(1)} style={secondaryButton}>Back</button>
-                  <button type="button" onClick={() => { setShowBank(true); setBankSubjectFilter(courses.find(c => c.id === courseId)?.subject || ''); fetchBankQuestions() }} style={{ ...secondaryButton, background: '#3636e815' }}>Browse Content Bank</button>
+                  <button type="button" onClick={() => { setShowBank(true); fetchBankQuestions(bankSubjectFilter) }} style={{ ...secondaryButton, background: '#3636e815' }}>Browse Content Bank</button>
                   <button type="button" onClick={handleAddQuestion} style={secondaryButton}>+ Add Question</button>
                 </div>
               </div>
@@ -325,7 +329,11 @@ export default function CreateExamPage() {
                        <div>
                          <h3 style={{ fontSize: '22px', fontWeight: 900, color: '#3636e8' }}>Browse Content Bank</h3>
                          <p style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: 500, marginTop: '4px' }}>
-                           Showing questions for: <span style={{ color: '#1e1e3a', fontWeight: 800 }}>{bankSubjectFilter || courses.find(c => c.id === courseId)?.subject}</span>
+                           {bankSubjectFilter ? (
+                             <>Showing questions for: <span style={{ color: '#1e1e3a', fontWeight: 800 }}>{bankSubjectFilter}</span></>
+                           ) : (
+                             <>Please select a subject to view questions.</>
+                           )}
                          </p>
                        </div>
                        <button onClick={() => setShowBank(false)} style={{ background: '#ef444410', border: 'none', color: '#ef4444', padding: '8px 16px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>Close Bank</button>
@@ -349,6 +357,7 @@ export default function CreateExamPage() {
                         onChange={e => { setBankSubjectFilter(e.target.value); fetchBankQuestions(e.target.value) }}
                         style={{ ...neuInput, width: '220px', cursor: 'pointer' }}
                       >
+                        <option value="">Select Subject...</option>
                         {userSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
@@ -391,10 +400,15 @@ export default function CreateExamPage() {
                             </button>
                          </div>
                        ))}
-                       {bankQuestions.length === 0 && (
+                       {bankQuestions.length === 0 && bankSubjectFilter && (
                          <div style={{ textAlign: 'center', padding: '40px', color: '#9999b0', background: 'rgba(0,0,0,0.02)', borderRadius: '16px' }}>
-                           <p style={{ fontSize: '14px', fontWeight: 600 }}>No questions found in "{courses.find(c => c.id === courseId)?.subject}" bank.</p>
+                           <p style={{ fontSize: '14px', fontWeight: 600 }}>No questions found in "{bankSubjectFilter}" bank.</p>
                            <p style={{ fontSize: '12px', marginTop: '4px' }}>Please go to the Content Bank page to add some questions first.</p>
+                         </div>
+                       )}
+                       {bankQuestions.length === 0 && !bankSubjectFilter && (
+                         <div style={{ textAlign: 'center', padding: '40px', color: '#9999b0', background: 'rgba(0,0,0,0.02)', borderRadius: '16px' }}>
+                           <p style={{ fontSize: '14px', fontWeight: 600 }}>Select a subject from the dropdown above to browse related content.</p>
                          </div>
                        )}
                     </div>
