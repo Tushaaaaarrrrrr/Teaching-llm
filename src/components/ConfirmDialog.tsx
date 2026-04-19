@@ -47,12 +47,10 @@ export default function ConfirmDialog({
       onClick={onCancel}
     >
       <div
+        className="modal"
         style={{
           width: '100%',
           maxWidth: '500px',
-          borderRadius: '24px',
-          background: '#f0f2f8',
-          boxShadow: '12px 12px 24px #cfd6e1, -12px -12px 24px #ffffff',
           padding: '24px',
         }}
         onClick={e => e.stopPropagation()}
@@ -79,15 +77,16 @@ export default function ConfirmDialog({
             style={{
               border: 'none',
               borderRadius: '999px',
-              padding: '10px 18px',
+              padding: '10px 22px',
               fontFamily: 'inherit',
               fontSize: '13px',
               fontWeight: '700',
               cursor: loading ? 'not-allowed' : 'pointer',
               color: '#fff',
               background: confirmBg,
-              boxShadow: confirmShadow,
+              boxShadow: '0 4px 12px ' + (tone === 'danger' ? 'rgba(239,68,68,0.3)' : 'rgba(54,54,232,0.3)'),
               opacity: loading ? 0.7 : 1,
+              transition: 'all 0.2s ease'
             }}
           >
             {loading ? 'Working...' : confirmLabel}
