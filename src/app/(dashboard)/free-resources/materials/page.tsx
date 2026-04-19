@@ -172,7 +172,7 @@ export default function FreeMaterialsPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={() => setShowModal(false)}
         >
-          <div className="card" style={{ width: '500px', maxWidth: '95vw', padding: '28px' }} onClick={e => e.stopPropagation()}>
+          <div className="modal" style={{ width: '500px', maxWidth: '95vw', padding: '28px' }} onClick={e => e.stopPropagation()}>
             <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '20px', color: '#1e1e3a' }}>Add Free Material</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group">
