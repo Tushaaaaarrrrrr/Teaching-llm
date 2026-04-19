@@ -532,8 +532,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
          {/* Evaluation Overlay */}
          {evaluatingAttempt && (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-               <div style={{ ...neuCard, maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto', background: '#e8eaf0' }}>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }} onClick={() => setEvaluatingAttempt(null)}>
+               <div className="modal" style={{ maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
                      <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a' }}>Evaluate Submission</h2>
                      <button onClick={() => setEvaluatingAttempt(null)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
@@ -686,8 +686,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
          )}
 
          {showExamEditor && (
-           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
-             <div style={{ ...neuCard, maxWidth: '700px', width: '100%' }}>
+           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }} onClick={() => setShowExamEditor(false)}>
+             <div className="modal" style={{ maxWidth: '700px', width: '100%' }} onClick={e => e.stopPropagation()}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>Edit Exam</h2>
                  <button onClick={() => setShowExamEditor(false)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
@@ -709,8 +709,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
          )}
 
          {showQuestionEditor && (
-           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
-             <div style={{ ...neuCard, maxWidth: '760px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }} onClick={() => { setShowQuestionEditor(false); setEditingQuestionIndex(null) }}>
+             <div className="modal" style={{ maxWidth: '760px', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>{editingQuestionIndex === null ? 'Add Question' : 'Edit Question'}</h2>
                  <button onClick={() => { setShowQuestionEditor(false); setEditingQuestionIndex(null) }} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
@@ -846,8 +846,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
         )}
 
       {showCodeModal !== null && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 6000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', padding: '32px', borderRadius: '24px', width: '100%', maxWidth: '700px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 6000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }} onClick={() => setShowCodeModal(null)}>
+          <div className="modal" style={{ padding: '32px', width: '100%', maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
             <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', marginBottom: '16px', textTransform: 'capitalize' }}>Add Code ({showCodeModal.language})</h3>
             <textarea
               value={codeSnippet}
