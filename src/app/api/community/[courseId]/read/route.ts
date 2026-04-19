@@ -12,6 +12,11 @@ export async function POST(
 
     const { courseId } = params;
 
+    // DM chats are tracked via ChatSession.updatedAt — no communityReadState needed
+    if (courseId.startsWith('dm_')) {
+      return NextResponse.json({ success: true })
+    }
+
     await prisma.communityReadState.upsert({
       where: {
         userId_courseId: {

@@ -13,37 +13,46 @@ export async function POST(
     const session = await getSession()
     
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (session.role !== 'MANAGER' && session.role !== 'ADMIN') {
+    if (session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // ── Direct Message clear ─────────────────────────────────────────────────
+    if (courseId.startsWith('dm_')) {
+      const id = courseId.slice(3)
+      const result = await prisma.chatMessage.updateMany({
+        where: { chatId: id, isDeleted: false },
+        data: { isDeleted: true, deletedAt: new Date() },
+      })
+      logActivity({
+        userId: session.userId,
+        userName: session.name,
+        userRole: session.role,
+        actionType: ACTION.MESSAGE_DELETED,
+        actionDescription: `${session.name} cleared all messages in a direct chat`,
+        moduleName: MODULE.COMMUNITY,
+        targetId: courseId,
+      })
+      sseEmitter.emit(`chat:${courseId}:clear`)
+      return NextResponse.json({ success: true, count: result.count })
     }
 
     const course = await prisma.course.findUnique({
       where: { id: courseId },
       select: { name: true }
     })
+    if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
 
-    if (!course) {
-      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
-    }
-
-    // Bulk update all messages to isDeleted: true
     const result = await prisma.communityMessage.updateMany({
-      where: { 
-        courseId,
-        isDeleted: false,
-        isSystemDeleted: false
-      },
-      data: {
-        isDeleted: true,
-        deletedAt: new Date()
-      }
+      where: { courseId, isDeleted: false, isSystemDeleted: false },
+      data: { isDeleted: true, deletedAt: new Date() }
     })
 
     logActivity({
       userId: session.userId,
       userName: session.name,
       userRole: session.role,
-      actionType: ACTION.MESSAGE_DELETED, // Reusing existing action type or could add a specific BULK_CLEAR
+      actionType: ACTION.MESSAGE_DELETED,
       actionDescription: `${session.name} cleared all messages in ${course.name} community`,
       moduleName: MODULE.COMMUNITY,
       targetId: courseId,
@@ -51,7 +60,6 @@ export async function POST(
     })
 
     sseEmitter.emit(`chat:${courseId}:clear`)
-
     return NextResponse.json({ success: true, count: result.count })
   } catch (error) {
     console.error('[COMMUNITY_CLEAR]', error)

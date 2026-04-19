@@ -55,8 +55,7 @@ export async function GET() {
     })
     const readMap = new Map(readStates.map(r => [r.courseId, r.lastReadAt.getTime()]))
 
-    return NextResponse.json(
-      courses.map((course: any) => {
+    const formattedCourses = courses.map((course: any) => {
         const lastMsgTime = course.lastMessageAt ? course.lastMessageAt.getTime() : 0;
         const lastReadTime = readMap.get(course.id) || 0;
         const hasUnread = lastMsgTime > lastReadTime;
@@ -69,6 +68,46 @@ export async function GET() {
         }
       })
     )
+    
+    // Fetch Direct Chats
+    let chatWhere: any = { status: { not: 'CLOSED' } }
+    if (session.role === 'STUDENT' || session.role === 'ADMIN') {
+      chatWhere.studentId = session.userId
+    }
+    
+    const chats = await prisma.chatSession.findMany({
+      where: chatWhere,
+      include: {
+        student: { select: { name: true } },
+        agent: { select: { name: true } },
+      },
+      orderBy: { updatedAt: 'desc' }
+    })
+
+    const directChats = chats.map(chat => {
+      const lastMsgTime = chat.updatedAt.getTime();
+      const lastReadTime = readMap.get(`dm_${chat.id}`) || 0;
+      return {
+        id: `dm_${chat.id}`,
+        name: session.role === 'STUDENT' ? `Chat with ${chat.agent?.name || 'Manager'}` : `Chat with ${chat.student.name}`,
+        subject: 'Direct Message',
+        color: '#3636e8',
+        isDisabled: false,
+        isCommunityActive: true,
+        lastMessageAt: chat.updatedAt,
+        hasUnread: lastMsgTime > lastReadTime,
+        isDirectChat: true,
+        _count: { lectures: 0 }
+      }
+    })
+
+    const combined = [...formattedCourses, ...directChats].sort((a, b) => {
+      const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
+      const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+      return timeB - timeA
+    })
+
+    return NextResponse.json(combined)
   } catch (error) {
     console.error('Error fetching classes:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

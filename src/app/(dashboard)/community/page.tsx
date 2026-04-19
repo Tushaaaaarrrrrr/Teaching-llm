@@ -13,6 +13,7 @@ interface ClassItem {
   isCommunityActive?: boolean
   isDisabled?: boolean
   hasUnread?: boolean
+  isDirectChat?: boolean
   _count?: { lectures: number }
 }
 
@@ -77,6 +78,13 @@ export default function CommunityPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedUserDetailsId, setSelectedUserDetailsId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  // DM state
+  const [showNewDMModal, setShowNewDMModal] = useState(false)
+  const [dmSearch, setDmSearch] = useState('')
+  const [dmResults, setDmResults] = useState<{ id: string; name: string; email: string; role: string }[]>([])
+  const [dmSearching, setDmSearching] = useState(false)
+  const [dmStarting, setDmStarting] = useState(false)
+  const [userName, setUserName] = useState('')
 
   const loadMessages = useCallback(async (classId: string) => {
     const res = await fetch(`/api/community/${classId}/messages`)
@@ -91,6 +99,7 @@ export default function CommunityPage() {
     fetch('/api/auth/me').then(r => r.json()).then(d => {
       setUserRole(d.user?.role || 'STUDENT')
       setUserId(d.user?.id || '')
+      setUserName(d.user?.name || '')
     })
     loadClasses()
   }, [])
@@ -135,11 +144,20 @@ export default function CommunityPage() {
             ? data.classes
             : []
         
-        // Only update unread flags and background meta, keep existing list order to prevent shifting UI
-        setClasses(prev => prev.map(c => {
-          const update = fresh.find((f: ClassItem) => f.id === c.id)
-          return update ? { ...c, hasUnread: update.hasUnread } : c
-        }))
+        // Update unread flags, keep existing list order to prevent shifting UI, but remove deleted/disabled classes and append new ones
+        setClasses(prev => {
+          const updated = prev
+            .filter(c => fresh.some((f: ClassItem) => f.id === c.id))
+            .map(c => {
+              const update = fresh.find((f: ClassItem) => f.id === c.id)
+              return update ? { ...c, hasUnread: update.hasUnread } : c
+            })
+
+          const existingIds = new Set(prev.map(c => c.id))
+          const newClasses = fresh.filter((f: ClassItem) => !existingIds.has(f.id))
+          
+          return [...updated, ...newClasses]
+        })
       } catch (err) {
         console.error('Failed to poll classes', err)
       }
@@ -332,12 +350,18 @@ export default function CommunityPage() {
     setTranscriptOpen(true)
     setLoadingTranscript(true)
     try {
-      const res = await fetch(`/api/community/transcripts?courseId=${selectedClass.id}`)
-      const data = await res.json()
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load transcript')
+      // DM transcripts come from messages endpoint directly
+      if (selectedClass.isDirectChat) {
+        const res = await fetch(`/api/community/${selectedClass.id}/messages`)
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Failed to load transcript')
+        setTranscriptMessages(Array.isArray(data) ? data.map((m: any) => ({ ...m, isDeleted: m.isDeleted || false })) : [])
+      } else {
+        const res = await fetch(`/api/community/transcripts?courseId=${selectedClass.id}`)
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Failed to load transcript')
+        setTranscriptMessages(data.messages || [])
       }
-      setTranscriptMessages(data.messages || [])
     } catch (error) {
       console.error(error)
       alert(error instanceof Error ? error.message : 'Failed to load transcript')
@@ -346,8 +370,43 @@ export default function CommunityPage() {
     }
   }
 
+  async function searchDMUsers(q: string) {
+    if (q.length < 2) { setDmResults([]); return }
+    setDmSearching(true)
+    try {
+      const res = await fetch(`/api/community/direct/search?q=${encodeURIComponent(q)}`)
+      const data = await res.json()
+      setDmResults(Array.isArray(data) ? data : [])
+    } catch { setDmResults([]) }
+    setDmSearching(false)
+  }
+
+  async function startDM(studentId: string) {
+    if (dmStarting) return
+    setDmStarting(true)
+    try {
+      const res = await fetch('/api/community/direct/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to start chat')
+      setShowNewDMModal(false)
+      setDmSearch('')
+      setDmResults([])
+      await loadClasses(data.chatId)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to start chat')
+    }
+    setDmStarting(false)
+  }
+
+  const isDM = (cls: ClassItem | null) => cls?.isDirectChat === true
+
   const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
   const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
+
 
   return (
     <div className="page-container fade-in" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
@@ -373,10 +432,11 @@ export default function CommunityPage() {
 
       {/* Left: Class list */}
       <div style={{ width: '230px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
+        {/* Groups header */}
         <div style={{ fontSize: '12px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px', padding: '0 4px' }}>
           Communities
         </div>
-        {classes.map(cls => (
+        {classes.filter(cls => !cls.isDirectChat).map(cls => (
           <button
             key={cls.id}
             onClick={() => setSelectedClass(cls)}
@@ -394,12 +454,7 @@ export default function CommunityPage() {
             }}
           >
             {cls.hasUnread && selectedClass?.id !== cls.id && (
-              <div style={{
-                position: 'absolute', top: '8px', right: '8px',
-                width: '8px', height: '8px', borderRadius: '50%',
-                background: '#ef4444',
-                boxShadow: '0 0 6px rgba(239,68,68,0.6)'
-              }} />
+              <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
             )}
             <div style={{
               width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0,
@@ -428,9 +483,59 @@ export default function CommunityPage() {
           </button>
         ))}
 
-        {classes.length === 0 && (
-          <div style={{ color: '#9999b0', fontSize: '13px', textAlign: 'center', padding: '20px 10px' }}>
-            No classes available
+        {/* Direct Messages section */}
+        <div style={{ fontSize: '12px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '12px 0 4px', padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>Direct Messages</span>
+          {userRole === 'MANAGER' && (
+            <button
+              onClick={() => setShowNewDMModal(true)}
+              title="New Direct Chat"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', display: 'flex', alignItems: 'center', padding: '2px' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          )}
+        </div>
+        {classes.filter(cls => cls.isDirectChat).map(cls => (
+          <button
+            key={cls.id}
+            onClick={() => setSelectedClass(cls)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '12px',
+              padding: '10px 14px', borderRadius: '18px', border: 'none',
+              cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+              transition: 'all 0.2s',
+              background: selectedClass?.id === cls.id ? '#3636e8' : '#e8eaf0',
+              color: selectedClass?.id === cls.id ? '#fff' : '#1e1e3a',
+              boxShadow: selectedClass?.id === cls.id
+                ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px rgba(255,255,255,0.6)'
+                : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+              position: 'relative'
+            }}
+          >
+            {cls.hasUnread && selectedClass?.id !== cls.id && (
+              <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
+            )}
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+              background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : '#3636e822',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '12px', fontWeight: '800',
+              color: selectedClass?.id === cls.id ? '#fff' : '#3636e8',
+            }}>
+              {cls.name.replace('Chat with ', '').charAt(0).toUpperCase()}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {cls.name.replace('Chat with ', '')}
+              </div>
+              <div style={{ fontSize: '10px', opacity: 0.6 }}>Direct Message</div>
+            </div>
+          </button>
+        ))}
+        {classes.filter(cls => cls.isDirectChat).length === 0 && (
+          <div style={{ color: '#9999b0', fontSize: '12px', textAlign: 'center', padding: '8px 10px' }}>
+            {userRole === 'MANAGER' ? 'No active DMs — click + to start one' : 'No direct messages yet'}
           </div>
         )}
       </div>
@@ -447,64 +552,55 @@ export default function CommunityPage() {
             {/* Header */}
             <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{
-                width: '40px', height: '40px', borderRadius: '12px',
+                width: '40px', height: '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px',
                 background: selectedClass.color + '22',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '14px', fontWeight: '800', color: selectedClass.color,
               }}>
-                {selectedClass.name.substring(0, 2).toUpperCase()}
+                {isDM(selectedClass)
+                  ? selectedClass.name.replace('Chat with ', '').charAt(0).toUpperCase()
+                  : selectedClass.name.substring(0, 2).toUpperCase()}
               </div>
               <div>
-                <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a' }}>{selectedClass.name}</div>
-                {selectedClass.subject && (
+                <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a' }}>
+                  {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
+                </div>
+                {isDM(selectedClass) ? (
+                  <div style={{ fontSize: '12px', color: '#9999b0' }}>Direct Message</div>
+                ) : selectedClass.subject && (
                   <div style={{ fontSize: '12px', color: '#9999b0' }}>{selectedClass.subject} · Community Chat</div>
                 )}
               </div>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center' }}>
-                {selectedClass.isCommunityActive === false && (
-                  <span style={{
-                    padding: '4px 14px', borderRadius: '50px',
-                    background: '#fef2f2', color: '#ef4444',
-                    fontSize: '12px', fontWeight: '700',
-                  }}>
+                {!isDM(selectedClass) && selectedClass.isCommunityActive === false && (
+                  <span style={{ padding: '4px 14px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '12px', fontWeight: '700' }}>
                     Community Off
                   </span>
                 )}
-                <span style={{
-                  padding: '4px 14px', borderRadius: '50px',
-                  background: selectedClass.color + '18', color: selectedClass.color,
-                  fontSize: '12px', fontWeight: '700',
-                }}>
+                <span style={{ padding: '4px 14px', borderRadius: '50px', background: selectedClass.color + '18', color: selectedClass.color, fontSize: '12px', fontWeight: '700' }}>
                   {messages.length} message{messages.length !== 1 ? 's' : ''}
                 </span>
                 {userRole === 'MANAGER' && (
                   <>
-                    <button
-                      onClick={openTranscript}
-                      style={{
-                        padding: '6px 12px', borderRadius: '50px', border: 'none',
-                        cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                        ...neu, boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', color: '#3636e8',
-                      }}
-                    >
+                    <button onClick={openTranscript} style={{ padding: '6px 12px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', ...neu, boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', color: '#3636e8' }}>
                       Transcript
                     </button>
-                    <button
-                      onClick={toggleCommunityStatus}
-                      disabled={managingCommunity}
-                      style={{
-                        padding: '6px 12px', borderRadius: '50px', border: 'none',
-                        cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                        background: selectedClass.isCommunityActive === false ? '#22c55e' : '#f59e0b',
-                        color: '#fff',
-                        boxShadow: selectedClass.isCommunityActive === false
-                          ? '4px 4px 10px rgba(34,197,94,0.25)'
-                          : '4px 4px 10px rgba(245,158,11,0.25)',
-                        opacity: managingCommunity ? 0.6 : 1,
-                      }}
-                    >
-                      {selectedClass.isCommunityActive === false ? 'Enable' : 'Disable'}
-                    </button>
+                    {!isDM(selectedClass) && (
+                      <button
+                        onClick={toggleCommunityStatus}
+                        disabled={managingCommunity}
+                        style={{
+                          padding: '6px 12px', borderRadius: '50px', border: 'none',
+                          cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                          background: selectedClass.isCommunityActive === false ? '#22c55e' : '#f59e0b',
+                          color: '#fff',
+                          boxShadow: selectedClass.isCommunityActive === false ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
+                          opacity: managingCommunity ? 0.6 : 1,
+                        }}
+                      >
+                        {selectedClass.isCommunityActive === false ? 'Enable' : 'Disable'}
+                      </button>
+                    )}
                     <button
                       onClick={clearCommunityMessages}
                       disabled={managingCommunity || messages.length === 0}
@@ -699,48 +795,54 @@ export default function CommunityPage() {
             </div>
 
             {/* Input */}
-            <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <div style={{ flex: 1, position: 'relative' }}>
-                <input
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  placeholder={
-                    selectedClass.isCommunityActive === false && userRole !== 'MANAGER'
-                      ? 'This community is disabled'
-                      : `Message ${selectedClass.name} community...`
-                  }
-                  disabled={selectedClass.isCommunityActive === false && userRole !== 'MANAGER'}
-                  style={{
-                    width: '100%', padding: '11px 16px', borderRadius: '50px',
-                    border: 'none', outline: 'none',
-                    fontFamily: 'inherit', fontSize: '14px',
-                    ...neuInset, color: '#1e1e3a',
-                    opacity: selectedClass.isCommunityActive === false && userRole !== 'MANAGER' ? 0.6 : 1,
-                  }}
-                />
+            {isDM(selectedClass) && userRole !== 'MANAGER' ? (
+              <div style={{ padding: '14px 20px', borderTop: '1.5px solid rgba(0,0,0,0.06)', textAlign: 'center', color: '#9999b0', fontSize: '13px', fontStyle: 'italic' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                This is a read-only channel. Only your manager can send messages here.
               </div>
-              <button
-                onClick={sendMessage}
-                disabled={!input.trim() || (selectedClass.isCommunityActive === false && userRole !== 'MANAGER')}
-                style={{
-                  width: '44px', height: '44px', borderRadius: '50%', border: 'none',
-                  cursor: input.trim() && !(selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? 'pointer' : 'default',
-                  background: input.trim() && !(selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? selectedClass.color : '#e8eaf0',
-                  color: input.trim() && !(selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? '#fff' : '#9999b0',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  boxShadow: input.trim()
-                    ? `4px 4px 10px ${selectedClass.color}55`
-                    : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="22" y1="2" x2="11" y2="13"/>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
-              </button>
-            </div>
+            ) : (
+              <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <input
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                    placeholder={
+                      !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER'
+                        ? 'This community is disabled'
+                        : isDM(selectedClass)
+                          ? `Message ${selectedClass.name.replace('Chat with ', '')}...`
+                          : `Message ${selectedClass.name} community...`
+                    }
+                    disabled={!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER'}
+                    style={{
+                      width: '100%', padding: '11px 16px', borderRadius: '50px',
+                      border: 'none', outline: 'none',
+                      fontFamily: 'inherit', fontSize: '14px',
+                      ...neuInset, color: '#1e1e3a',
+                      opacity: (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? 0.6 : 1,
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER')}
+                  style={{
+                    width: '44px', height: '44px', borderRadius: '50%', border: 'none',
+                    cursor: input.trim() ? 'pointer' : 'default',
+                    background: input.trim() ? selectedClass.color : '#e8eaf0',
+                    color: input.trim() ? '#fff' : '#9999b0',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    boxShadow: input.trim() ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -841,6 +943,68 @@ export default function CommunityPage() {
             if (transcriptOpen) openTranscript()
           }}
         />
+      )}
+
+      {/* New Direct Chat Modal */}
+      {showNewDMModal && (
+        <div className="modal-overlay" onClick={() => { setShowNewDMModal(false); setDmSearch(''); setDmResults([]) }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div className="modal-header">
+              <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Start Direct Chat</h3>
+              <button onClick={() => { setShowNewDMModal(false); setDmSearch(''); setDmResults([]) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b8a' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <p style={{ fontSize: '13px', color: '#6b6b8a', margin: 0 }}>
+                Search for a student or admin to start a private direct chat. They will see your messages in the Community tab.
+              </p>
+              <input
+                className="form-input"
+                placeholder="Search by name or email..."
+                value={dmSearch}
+                autoFocus
+                onChange={e => {
+                  setDmSearch(e.target.value)
+                  searchDMUsers(e.target.value)
+                }}
+              />
+              {dmSearching && <div style={{ fontSize: '13px', color: '#9999b0' }}>Searching...</div>}
+              {dmResults.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
+                  {dmResults.map(u => (
+                    <button
+                      key={u.id}
+                      onClick={() => startDM(u.id)}
+                      disabled={dmStarting}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        padding: '10px 14px', borderRadius: '14px', border: 'none',
+                        cursor: dmStarting ? 'default' : 'pointer', textAlign: 'left',
+                        background: '#e8eaf0', fontFamily: 'inherit',
+                        boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                        transition: 'all 0.15s', opacity: dmStarting ? 0.6 : 1,
+                      }}
+                      onMouseEnter={e => { if (!dmStarting) (e.currentTarget as HTMLButtonElement).style.background = '#3636e8'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#e8eaf0'; (e.currentTarget as HTMLButtonElement).style.color = '#1e1e3a' }}
+                    >
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#3636e818', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', color: '#3636e8', flexShrink: 0 }}>
+                        {u.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: 'inherit' }}>{u.name}</div>
+                        <div style={{ fontSize: '11px', opacity: 0.6 }}>{u.email} · {u.role.charAt(0) + u.role.slice(1).toLowerCase()}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {dmSearch.length >= 2 && !dmSearching && dmResults.length === 0 && (
+                <div style={{ fontSize: '13px', color: '#9999b0', textAlign: 'center', padding: '12px' }}>No users found matching "{dmSearch}"</div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -104,6 +104,8 @@ export default function CourseEditPage() {
   const [loadingRecordings, setLoadingRecordings] = useState(false)
   const [recordingSearch, setRecordingSearch] = useState('')
   const [recordingSort, setRecordingSort] = useState<'newest' | 'oldest'>('newest')
+  const [orderDirty, setOrderDirty] = useState(false)
+  const [savingOrder, setSavingOrder] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -213,33 +215,66 @@ export default function CourseEditPage() {
     }
   }
 
-  const moveTopic = async (id: string, direction: 'up' | 'down') => {
+  const moveTopic = (id: string, direction: 'up' | 'down') => {
     const idx = topics.findIndex(t => t.id === id)
     if (idx < 0) return
     if (direction === 'up' && idx === 0) return
     if (direction === 'down' && idx === topics.length - 1) return
 
+    const newTopics = [...topics]
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1
-    const current = topics[idx]
-    const swap = topics[swapIdx]
+    ;[newTopics[idx], newTopics[swapIdx]] = [newTopics[swapIdx], newTopics[idx]]
+    setTopics(newTopics.map((t, i) => ({ ...t, order: i })))
+    setOrderDirty(true)
+  }
 
-    setSaving(true)
+  const moveLecture = (topicId: string, contentId: string, direction: 'up' | 'down') => {
+    const topicIdx = topics.findIndex(t => t.id === topicId)
+    if (topicIdx < 0) return
+    const content = [...topics[topicIdx].content]
+    const idx = content.findIndex(c => c.id === contentId)
+    if (idx < 0) return
+    if (direction === 'up' && idx === 0) return
+    if (direction === 'down' && idx === content.length - 1) return
+
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+    ;[content[idx], content[swapIdx]] = [content[swapIdx], content[idx]]
+    const newTopics = [...topics]
+    newTopics[topicIdx] = { ...newTopics[topicIdx], content: content.map((c, i) => ({ ...c, order: i })) }
+    setTopics(newTopics)
+    setOrderDirty(true)
+  }
+
+  const saveOrder = async () => {
+    setSavingOrder(true)
     try {
-      await Promise.all([
-        fetch(`/api/topics/${current.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ order: swap.order }),
-        }),
-        fetch(`/api/topics/${swap.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ order: current.order }),
-        }),
-      ])
-      await refreshTopics()
+      // Save topic order
+      await fetch('/api/topics/reorder', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId: params.id,
+          items: topics.map(t => ({ id: t.id, order: t.order }))
+        })
+      })
+      // Save lecture order for each topic
+      for (const topic of topics) {
+        if (topic.content.length > 0) {
+          await fetch('/api/content/reorder', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items: topic.content.map(c => ({ id: c.id, order: c.order, topicId: topic.id }))
+            })
+          })
+        }
+      }
+      setOrderDirty(false)
+    } catch (e) {
+      console.error('Failed to save order', e)
+      alert('Failed to save order. Please try again.')
     } finally {
-      setSaving(false)
+      setSavingOrder(false)
     }
   }
 
@@ -737,15 +772,43 @@ export default function CourseEditPage() {
                 {topics.length} topic{topics.length !== 1 ? 's' : ''} &middot; {topics.reduce((a, t) => a + t.content.length, 0)} lectures
               </p>
             </div>
-            <div style={{
-              background: 'rgba(255,255,255,0.12)', borderRadius: '12px', padding: '10px 16px',
-              border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.85)', fontSize: '12px',
-              display: 'flex', alignItems: 'center', gap: '6px',
-            }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-              Admin / Manager View
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              {orderDirty && (
+                <button
+                  onClick={saveOrder}
+                  disabled={savingOrder}
+                  style={{
+                    background: '#22c55e',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '20px',
+                    padding: '10px 20px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: savingOrder ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 14px rgba(34,197,94,0.4)',
+                    animation: 'pulse 2s infinite',
+                    opacity: savingOrder ? 0.7 : 1,
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  {savingOrder ? 'Saving...' : 'Save Order'}
+                </button>
+              )}
+              <div style={{
+                background: 'rgba(255,255,255,0.12)', borderRadius: '12px', padding: '10px 16px',
+                border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.85)', fontSize: '12px',
+                display: 'flex', alignItems: 'center', gap: '6px',
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                Admin / Manager View
+              </div>
             </div>
           </div>
         </div>
@@ -869,6 +932,34 @@ export default function CourseEditPage() {
                       padding: '12px 20px',
                       borderBottom: itemIdx < topic.content.length - 1 ? '1px solid #ebebf0' : 'none',
                     }}>
+                      {/* Lecture move buttons */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
+                        <button
+                          onClick={() => moveLecture(topic.id, item.id, 'up')}
+                          disabled={itemIdx === 0}
+                          style={{
+                            width: '20px', height: '20px', borderRadius: '4px', background: '#e8eaf0',
+                            border: 'none', cursor: itemIdx === 0 ? 'not-allowed' : 'pointer',
+                            opacity: itemIdx === 0 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                          }}
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>
+                        </button>
+                        <button
+                          onClick={() => moveLecture(topic.id, item.id, 'down')}
+                          disabled={itemIdx === topic.content.length - 1}
+                          style={{
+                            width: '20px', height: '20px', borderRadius: '4px', background: '#e8eaf0',
+                            border: 'none', cursor: itemIdx === topic.content.length - 1 ? 'not-allowed' : 'pointer',
+                            opacity: itemIdx === topic.content.length - 1 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                          }}
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                        </button>
+                      </div>
+
                       <div style={{
                         width: '30px', height: '30px', borderRadius: '8px',
                         background: item.videoUrl ? '#3636e818' : '#f0f0f5',
@@ -886,11 +977,6 @@ export default function CourseEditPage() {
                           <p style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
                             {item.description}
                           </p>
-                        )}
-                        {item.isImported && (
-                          <div style={{ fontSize: '11px', color: '#7c3aed', fontWeight: '600', marginTop: '2px' }}>
-                            Shared lecture
-                          </div>
                         )}
                         <div style={{ display: 'flex', gap: '10px', marginTop: '3px' }}>
                           {item.videoUrl && <span style={{ fontSize: '11px', color: '#3636e8' }}>📹 Video linked</span>}
