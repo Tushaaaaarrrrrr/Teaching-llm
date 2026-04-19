@@ -269,6 +269,19 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     return () => es.close()
   }, [mutateUnread])
 
+  const visibleItems = NAV_ITEMS.filter(
+    item => !item.roles || item.roles.includes(currentUserRole)
+  )
+
+  const initials = currentUserName
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+
+  const roleLabel = currentUserRole.charAt(0) + currentUserRole.slice(1).toLowerCase()
+
   // Scroll indicator
   useEffect(() => {
     const el = navRef.current
@@ -288,19 +301,6 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     router.push('/login')
     router.refresh()
   }
-
-  const visibleItems = NAV_ITEMS.filter(
-    item => !item.roles || item.roles.includes(currentUserRole)
-  )
-
-  const initials = currentUserName
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-
-  const roleLabel = currentUserRole.charAt(0) + currentUserRole.slice(1).toLowerCase()
 
   return (
     <nav style={{
