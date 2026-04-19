@@ -14,6 +14,7 @@ interface ClassItem {
   isDisabled?: boolean
   hasUnread?: boolean
   isDirectChat?: boolean
+  isDmDisabled?: boolean
   _count?: { lectures: number }
 }
 
@@ -483,60 +484,67 @@ export default function CommunityPage() {
           </button>
         ))}
 
-        {/* Direct Messages section */}
-        <div style={{ fontSize: '12px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '12px 0 4px', padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span>Direct Messages</span>
-          {userRole === 'MANAGER' && (
-            <button
-              onClick={() => setShowNewDMModal(true)}
-              title="New Direct Chat"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', display: 'flex', alignItems: 'center', padding: '2px' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
-          )}
-        </div>
-        {classes.filter(cls => cls.isDirectChat).map(cls => (
-          <button
-            key={cls.id}
-            onClick={() => setSelectedClass(cls)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '12px',
-              padding: '10px 14px', borderRadius: '18px', border: 'none',
-              cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
-              transition: 'all 0.2s',
-              background: selectedClass?.id === cls.id ? '#3636e8' : '#e8eaf0',
-              color: selectedClass?.id === cls.id ? '#fff' : '#1e1e3a',
-              boxShadow: selectedClass?.id === cls.id
-                ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px rgba(255,255,255,0.6)'
-                : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-              position: 'relative'
-            }}
-          >
-            {cls.hasUnread && selectedClass?.id !== cls.id && (
-              <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
-            )}
-            <div style={{
-              width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-              background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : '#3636e822',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '12px', fontWeight: '800',
-              color: selectedClass?.id === cls.id ? '#fff' : '#3636e8',
-            }}>
-              {cls.name.replace('Chat with ', '').charAt(0).toUpperCase()}
+        {/* Direct Messages section — hidden for students with zero DMs */}
+        {(userRole === 'MANAGER' || classes.some(cls => cls.isDirectChat)) && (
+          <>
+            <div style={{ fontSize: '12px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '12px 0 4px', padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Direct Messages</span>
+              {userRole === 'MANAGER' && (
+                <button
+                  onClick={() => setShowNewDMModal(true)}
+                  title="New Direct Chat"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', display: 'flex', alignItems: 'center', padding: '2px' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+              )}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {cls.name.replace('Chat with ', '')}
+            {classes.filter(cls => cls.isDirectChat).map(cls => (
+              <button
+                key={cls.id}
+                onClick={() => setSelectedClass(cls)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '10px 14px', borderRadius: '18px', border: 'none',
+                  cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                  transition: 'all 0.2s',
+                  background: selectedClass?.id === cls.id ? '#3636e8' : '#e8eaf0',
+                  color: selectedClass?.id === cls.id ? '#fff' : '#1e1e3a',
+                  boxShadow: selectedClass?.id === cls.id
+                    ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px rgba(255,255,255,0.6)'
+                    : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                  opacity: cls.isDmDisabled ? 0.55 : 1,
+                  position: 'relative'
+                }}
+              >
+                {cls.hasUnread && selectedClass?.id !== cls.id && (
+                  <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
+                )}
+                <div style={{
+                  width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+                  background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : '#3636e822',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '12px', fontWeight: '800',
+                  color: selectedClass?.id === cls.id ? '#fff' : '#3636e8',
+                }}>
+                  {cls.name.replace('Chat with ', '').charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {cls.name.replace('Chat with ', '')}
+                  </div>
+                  <div style={{ fontSize: '10px', opacity: 0.6 }}>
+                    {cls.isDmDisabled ? 'Hidden from student' : 'Direct Message'}
+                  </div>
+                </div>
+              </button>
+            ))}
+            {classes.filter(cls => cls.isDirectChat).length === 0 && (
+              <div style={{ color: '#9999b0', fontSize: '12px', textAlign: 'center', padding: '8px 10px' }}>
+                {userRole === 'MANAGER' ? 'No active DMs — click + to start one' : 'No direct messages yet'}
               </div>
-              <div style={{ fontSize: '10px', opacity: 0.6 }}>Direct Message</div>
-            </div>
-          </button>
-        ))}
-        {classes.filter(cls => cls.isDirectChat).length === 0 && (
-          <div style={{ color: '#9999b0', fontSize: '12px', textAlign: 'center', padding: '8px 10px' }}>
-            {userRole === 'MANAGER' ? 'No active DMs — click + to start one' : 'No direct messages yet'}
-          </div>
+            )}
+          </>
         )}
       </div>
 
@@ -577,6 +585,11 @@ export default function CommunityPage() {
                     Community Off
                   </span>
                 )}
+                {isDM(selectedClass) && selectedClass.isDmDisabled && (
+                  <span style={{ padding: '4px 14px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '12px', fontWeight: '700' }}>
+                    Hidden from Student
+                  </span>
+                )}
                 <span style={{ padding: '4px 14px', borderRadius: '50px', background: selectedClass.color + '18', color: selectedClass.color, fontSize: '12px', fontWeight: '700' }}>
                   {messages.length} message{messages.length !== 1 ? 's' : ''}
                 </span>
@@ -599,6 +612,50 @@ export default function CommunityPage() {
                         }}
                       >
                         {selectedClass.isCommunityActive === false ? 'Enable' : 'Disable'}
+                      </button>
+                    )}
+                    {isDM(selectedClass) && (
+                      <button
+                        onClick={async () => {
+                          if (managingCommunity) return
+                          const action = selectedClass.isDmDisabled ? 'enable' : 'disable'
+                          const allowed = await confirm({
+                            title: action === 'disable' ? 'Hide Chat from Student?' : 'Show Chat to Student?',
+                            message: action === 'disable'
+                              ? 'This will hide the chat from the student. All messages are preserved and you can re-enable it anytime.'
+                              : 'This will make the chat visible to the student again.',
+                            confirmLabel: action === 'disable' ? 'Hide Chat' : 'Show Chat',
+                            tone: action === 'disable' ? 'danger' : 'default',
+                          })
+                          if (!allowed) return
+                          setManagingCommunity(true)
+                          try {
+                            const chatId = selectedClass.id.replace('dm_', '')
+                            const res = await fetch('/api/community/direct/toggle', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ chatId, action }),
+                            })
+                            if (!res.ok) throw new Error('Failed to toggle chat')
+                            await loadClasses(selectedClass.id)
+                          } catch (error) {
+                            console.error(error)
+                            alert(error instanceof Error ? error.message : 'Failed to toggle chat')
+                          } finally {
+                            setManagingCommunity(false)
+                          }
+                        }}
+                        disabled={managingCommunity}
+                        style={{
+                          padding: '6px 12px', borderRadius: '50px', border: 'none',
+                          cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                          background: selectedClass.isDmDisabled ? '#22c55e' : '#f59e0b',
+                          color: '#fff',
+                          boxShadow: selectedClass.isDmDisabled ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
+                          opacity: managingCommunity ? 0.6 : 1,
+                        }}
+                      >
+                        {selectedClass.isDmDisabled ? 'Show to Student' : 'Hide from Student'}
                       </button>
                     )}
                     <button

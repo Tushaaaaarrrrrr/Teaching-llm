@@ -136,8 +136,21 @@ export async function PUT(
       }
     }
 
+    let tempPassword = ''
     if (password) {
-      data.passwordHash = await hashPassword(password)
+      if (password === 'RESET') {
+        // Generate random 8-char alphanumeric password
+        const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+        for (let i = 0; i < 8; i++) {
+          tempPassword += chars.charAt(Math.floor(Math.random() * chars.length))
+        }
+        data.passwordHash = await hashPassword(tempPassword)
+        // Increment token version to log out of current sessions
+        data.tokenVersion = { increment: 1 }
+      } else {
+        data.passwordHash = await hashPassword(password)
+        data.tokenVersion = { increment: 1 }
+      }
     }
 
     const updatedUser = await prisma.$transaction(async (tx) => {
@@ -320,7 +333,7 @@ export async function PUT(
       metadata: { changedFields: Object.keys(data) },
     })
 
-    return NextResponse.json(updatedUser)
+    return NextResponse.json({ ...updatedUser, tempPassword })
   } catch (error) {
     console.error('Error updating user:', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: error instanceof Error ? 400 : 500 })

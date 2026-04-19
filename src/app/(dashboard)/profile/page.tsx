@@ -359,8 +359,9 @@ export default function ProfilePage() {
                 {profileMsg.text}
               </div>
             )}
- 
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1 }}>
+              {/* Name — editable */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div className="form-group">
                   <label className="form-label">First Name</label>
@@ -371,16 +372,78 @@ export default function ProfilePage() {
                   <input className="form-input" value={editLastName} onChange={e => setEditLastName(e.target.value)} placeholder="Last Name" />
                 </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Mobile Number</label>
-                <input className="form-input" value={editMobile} onChange={e => setEditMobile(e.target.value)} placeholder="Mobile Number" />
-                <span style={{ fontSize: '11px', color: '#9999b0' }}>Managers can update their own mobile number here.</span>
+
+              {/* Gender + Age — side by side */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {/* Gender */}
+                <div style={{ ...insetRow, flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+                  <span style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '500' }}>Gender</span>
+                  {user.role === 'MANAGER' ? (
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      {['MALE', 'FEMALE', 'OTHER'].map(g => (
+                        <label key={g} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '12px' }}>
+                          <input type="radio" name="gender" value={g} checked={editGender === g} onChange={e => setEditGender(e.target.value)} style={{ cursor: 'pointer' }} />
+                          {g.charAt(0) + g.slice(1).toLowerCase()}
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: '14px', color: '#1e1e3a', fontWeight: '600' }}>
+                      {user.gender ? (user.gender.charAt(0) + user.gender.slice(1).toLowerCase()) : '—'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Age */}
+                <div style={{ ...insetRow, flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+                  <span style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '500' }}>Age</span>
+                  {user.role === 'MANAGER' ? (
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={editAge}
+                      onChange={e => setEditAge(e.target.value)}
+                      placeholder="Age"
+                      style={{ background: 'transparent', padding: '0', border: 'none', borderBottom: '2px solid rgba(0,0,0,0.1)', borderRadius: 0, width: '60px', fontSize: '14px', fontWeight: '600' }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: '14px', color: '#1e1e3a', fontWeight: '600' }}>{user.age ?? '—'}</span>
+                  )}
+                </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Email Address</label>
-                <input className="form-input" value={user.email} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
-                <span style={{ fontSize: '11px', color: '#9999b0' }}>Email cannot be changed. Contact admin for updates.</span>
+
+              {/* State — read-only for students */}
+              <div style={insetRow}>
+                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>State / Territory</span>
+                {user.role === 'MANAGER' ? (
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editState}
+                    onChange={e => setEditState(e.target.value)}
+                    placeholder="State"
+                    style={{ background: 'transparent', padding: '4px 0', border: 'none', borderBottom: '2px solid rgba(0,0,0,0.1)', borderRadius: 0, width: '140px', fontSize: '14px', fontWeight: '600', textAlign: 'right' }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>{user.state || '—'}</span>
+                )}
               </div>
+
+              {/* Notice for non-managers */}
+              {user.role !== 'MANAGER' && (
+                <div style={{
+                  padding: '12px 16px', borderRadius: '12px',
+                  background: '#f0f0ff', border: '1px solid #d4d4ff',
+                  display: 'flex', gap: '10px', alignItems: 'flex-start', marginTop: '4px'
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ flexShrink: 0, marginTop: '1px' }}>
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <p style={{ fontSize: '12px', color: '#4b4bcc', lineHeight: 1.5, margin: 0 }}>
+                    To edit any personal information, please <strong>raise a ticket in Support</strong> with your reason and our team will update it for you.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -395,7 +458,20 @@ export default function ProfilePage() {
               Account Details
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-              {/* Security Number with eye toggle */}
+
+              {/* Email */}
+              <div style={insetRow}>
+                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Email Address</span>
+                <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
+              </div>
+
+              {/* Mobile */}
+              <div style={insetRow}>
+                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Mobile Number</span>
+                <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>{user.mobileNumber || '—'}</span>
+              </div>
+
+              {/* Security Number */}
               <div style={insetRow}>
                 <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Security Number</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -440,96 +516,12 @@ export default function ProfilePage() {
                 </span>
               </div>
 
-              {/* Gender */}
-              <div style={{ ...insetRow, justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500', display: 'block', marginBottom: '8px' }}>Gender</span>
-                  {user?.genderChangedAt ? (
-                    <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>
-                      {user.gender || 'Not specified'}
-                    </span>
-                  ) : (
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
-                        <input
-                          type="radio"
-                          name="gender"
-                          value="MALE"
-                          checked={editGender === 'MALE'}
-                          onChange={(e) => setEditGender(e.target.value)}
-                          style={{ cursor: 'pointer' }}
-                        />
-                        Male
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
-                        <input
-                          type="radio"
-                          name="gender"
-                          value="FEMALE"
-                          checked={editGender === 'FEMALE'}
-                          onChange={(e) => setEditGender(e.target.value)}
-                          style={{ cursor: 'pointer' }}
-                        />
-                        Female
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
-                        <input
-                          type="radio"
-                          name="gender"
-                          value="OTHER"
-                          checked={editGender === 'OTHER'}
-                          onChange={(e) => setEditGender(e.target.value)}
-                          style={{ cursor: 'pointer' }}
-                        />
-                        Other
-                      </label>
-                    </div>
-                  )}
-                  {!user?.genderChangedAt && (
-                    <span style={{ fontSize: '11px', color: '#9999b0', display: 'block', marginTop: '4px' }}>
-                      You can change your gender one time only
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Age */}
-              <div style={{ ...insetRow, justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500', display: 'block', marginBottom: '8px' }}>Age</span>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={editAge}
-                    onChange={(e) => setEditAge(e.target.value)}
-                    placeholder="Enter your age"
-                    style={{ background: 'transparent', padding: '6px 0', border: 'none', borderBottom: '2px solid rgba(0,0,0,0.1)', borderRadius: 0, width: '100px', fontSize: '14px', fontWeight: '600' }}
-                  />
-                </div>
-              </div>
-
-              {/* State */}
-              <div style={{ ...insetRow, justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1, width: '100%' }}>
-                  <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500', display: 'block', marginBottom: '8px' }}>State / Territory</span>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={editState}
-                    onChange={(e) => setEditState(e.target.value)}
-                    placeholder="e.g. Maharashtra"
-                    style={{ background: 'transparent', padding: '6px 0', border: 'none', borderBottom: '2px solid rgba(0,0,0,0.1)', borderRadius: 0, width: '100%', fontSize: '14px', fontWeight: '600' }}
-                  />
-                </div>
-              </div>
-
+            </div>
           </div>
 
-        </div>
+        </div> {/* close grid container */}
 
-        {/* ── Bottom Action Bar ── */}
-              </div> {/* close grid container */}
-
+        {/* ── Bottom Action Bar — only show save for name fields (or manager editable fields) ── */}
         <div style={{
           display: 'flex', justifyContent: 'flex-end', gap: '12px',
           padding: '20px 24px', borderRadius: '20px', background: '#e8eaf0',

@@ -51,11 +51,11 @@ function buildEventDateTime(date: string, startTimeValue: string, endTimeValue: 
 }
 
 const TYPE_COLORS: Record<string, { bg: string; color: string; label: string }> = {
-  class: { bg: '#e0e7ff', color: '#6366f1', label: 'Class' },
-  exam: { bg: '#fee2e2', color: '#ef4444', label: 'Exam' },
-  assignment: { bg: '#fef3c7', color: '#f59e0b', label: 'Assignment' },
-  event: { bg: '#d1fae5', color: '#10b981', label: 'Event' },
-  holiday: { bg: '#d0d2d9', color: '#6b6b8a', label: 'Holiday' },
+  class: { bg: '#3b82f6', color: '#ffffff', label: 'Class' }, // Vibrant Blue like Google Calendar
+  exam: { bg: '#ef4444', color: '#ffffff', label: 'Exam' },
+  assignment: { bg: '#FFC107', color: '#000000', label: 'Assignment' }, // Punchy Yellow
+  event: { bg: '#10b981', color: '#ffffff', label: 'Event' },
+  holiday: { bg: '#6b7280', color: '#ffffff', label: 'Holiday' },
 }
 
 const EVENT_TYPES = [
@@ -292,28 +292,60 @@ function CalendarPageContent() {
   if (!mounted || !currentDate) return null
 
   return (
-    <div className="page-container fade-in">
+    <div className="page-container fade-in" style={{ padding: '32px' }}>
       {confirmDialog}
-      <div className="page-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button onClick={goToday} className="btn btn-ghost btn-sm">Today</button>
-          <button onClick={prevMonth} className="btn btn-icon btn-ghost" style={{ padding: '6px' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <div className="page-header" style={{ marginBottom: '32px' }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '4px',
+          background: '#e8eaf0',
+          padding: '6px',
+          borderRadius: '50px',
+          boxShadow: 'inset 4px 4px 8px #d1d5db, inset -4px -4px 8px #ffffff'
+        }}>
+          <button onClick={goToday} className="btn btn-sm" style={{ 
+            background: 'transparent', 
+            boxShadow: 'none',
+            color: '#1e1e3a',
+            fontWeight: '700'
+          }}>Today</button>
+          <div style={{ width: '1px', height: '20px', background: '#d1d5db', margin: '0 4px' }} />
+          <button onClick={prevMonth} style={{ 
+            width: '32px', height: '32px', borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#6b6b8a', transition: 'all 0.2s'
+          }} className="hover:bg-white/50">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="15 18 9 12 15 6"/>
             </svg>
           </button>
-          <span style={{ fontSize: '15px', fontWeight: '600', minWidth: '160px', textAlign: 'center' }}>
-            {monthName}
-          </span>
-          <button onClick={nextMonth} className="btn btn-icon btn-ghost" style={{ padding: '6px' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <button onClick={nextMonth} style={{ 
+            width: '32px', height: '32px', borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#6b6b8a', transition: 'all 0.2s'
+          }} className="hover:bg-white/50">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="9 18 15 12 9 6"/>
             </svg>
           </button>
         </div>
+
+        <h2 style={{ 
+          fontSize: '26px', 
+          fontWeight: '800', 
+          color: '#1e1e3a',
+          margin: 0,
+          background: 'linear-gradient(135deg, #1e1e3a, #3b82f6)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>
+          {monthName}
+        </h2>
+
         {isManager && (
-          <button onClick={() => openCreate()} className="btn btn-primary">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <button onClick={() => openCreate()} className="btn btn-primary" style={{ padding: '10px 24px', fontWeight: '700' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             Add Event
@@ -322,23 +354,29 @@ function CalendarPageContent() {
       </div>
 
       {/* Calendar Grid */}
-      <div className="card" style={{ overflow: 'hidden' }}>
+      <div className="card" style={{ 
+        overflow: 'hidden', 
+        borderRadius: '28px',
+        border: '1px solid rgba(255,255,255,0.6)',
+        boxShadow: '20px 20px 60px #d1d9e6, -20px -20px 60px #ffffff'
+      }}>
         {/* Day headers */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(7, 1fr)',
-          borderBottom: '1px solid #c5c7cf',
-          background: '#dddfe6',
+          borderBottom: '1px solid rgba(0,0,0,0.05)',
+          background: 'rgba(232, 234, 240, 0.5)',
+          backdropFilter: 'blur(10px)'
         }}>
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
             <div key={d} style={{
-              padding: '12px 8px',
+              padding: '16px 8px',
               textAlign: 'center',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#6b6b8a',
+              fontSize: '11px',
+              fontWeight: '800',
+              color: '#9999b0',
               textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              letterSpacing: '0.1em',
             }}>
               {d}
             </div>
@@ -353,24 +391,37 @@ function CalendarPageContent() {
           {days.map((day, i) => {
             const dayEvents = day ? getEventsForDay(day) : []
             const dayKey = day ? `day-${year}-${month}-${day}` : `empty-${i}`
+            const today = day ? isToday(day) : false
             return (
               <div key={dayKey} style={{
-                minHeight: '100px',
-                padding: '6px 8px',
-                borderBottom: '1px solid #d8dae3',
-                borderRight: (i + 1) % 7 !== 0 ? '1px solid #d8dae3' : 'none',
-                background: day && isToday(day) ? '#f0f0ff' : 'transparent',
-                transition: 'background 0.15s',
+                minHeight: '120px',
+                padding: '36px 8px 8px', // Extra top padding for the date number
+                borderBottom: '1px solid rgba(0,0,0,0.03)',
+                borderRight: (i + 1) % 7 !== 0 ? '1px solid rgba(0,0,0,0.03)' : 'none',
+                background: today ? 'rgba(59, 130, 246, 0.03)' : 'transparent',
+                transition: 'all 0.2s ease',
                 cursor: day ? 'pointer' : 'default',
                 position: 'relative',
               }}
               onClick={() => {
                 if (day) setSelectedDailyDay(day)
               }}
-              onMouseEnter={e => { if (day) e.currentTarget.style.background = day && isToday(day) ? '#e8e8ff' : '#f8fafc' }}
-              onMouseLeave={e => { if (day) e.currentTarget.style.background = day && isToday(day) ? '#f0f0ff' : 'transparent' }}
+              onMouseEnter={e => { 
+                if (day) {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.7)';
+                  e.currentTarget.style.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.02)';
+                  e.currentTarget.style.zIndex = '5';
+                }
+              }}
+              onMouseLeave={e => { 
+                if (day) {
+                  e.currentTarget.style.background = today ? 'rgba(59, 130, 246, 0.03)' : 'transparent';
+                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.zIndex = '1';
+                }
+              }}
               onDoubleClick={(e) => {
-                e.stopPropagation() // prevent click from triggering immediately if double clicked
+                e.stopPropagation()
                 if (day && isManager) {
                   const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                   openCreate(dateStr)
@@ -380,48 +431,50 @@ function CalendarPageContent() {
                 {day && (
                   <>
                     <div style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
+                      position: 'absolute',
+                      top: '10px',
+                      right: '12px',
+                      fontSize: '13px',
+                      fontWeight: today ? '800' : '600',
+                      color: today ? '#3b82f6' : '#9999b0',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '13px',
-                      fontWeight: isToday(day) ? '700' : '400',
-                      color: isToday(day) ? 'white' : '#1e1e3a',
-                      background: isToday(day) ? '#6366f1' : 'transparent',
-                      marginBottom: '4px',
+                      gap: '4px'
                     }}>
                       {day}
+                      {today && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#3b82f6' }} />}
                     </div>
-                    {dayEvents.slice(0, 3).map(ev => {
-                      const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
-                      return (
-                        <div key={ev.id} onClick={(e) => { 
-                          e.stopPropagation(); 
-                          if (isManager) setSelectedEvent(ev);
-                        }} style={{
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          background: tc.bg,
-                          color: tc.color,
-                          fontSize: '10px',
-                          fontWeight: '600',
-                          marginBottom: '2px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          cursor: isManager ? 'pointer' : 'default',
-                        }} title={`${ev.title}${ev.time ? ` ${ev.time}${ev.endTime ? ` - ${ev.endTime}` : ''}` : ''}`}>
-                          {ev.title}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      {dayEvents.slice(0, 4).map(ev => {
+                        const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
+                        return (
+                          <div key={ev.id} onClick={(e) => { 
+                            e.stopPropagation(); 
+                            if (isManager) setSelectedEvent(ev);
+                          }} style={{
+                            padding: '4px 8px',
+                            borderRadius: '8px',
+                            background: tc.bg,
+                            color: tc.color,
+                            fontSize: '10px',
+                            fontWeight: '700',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            cursor: isManager ? 'pointer' : 'default',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)'
+                          }} title={`${ev.title}${ev.time ? ` ${ev.time}` : ''}`}>
+                            {ev.title}
+                          </div>
+                        )
+                      })}
+                      {dayEvents.length > 4 && (
+                        <div style={{ fontSize: '9px', fontWeight: '800', color: '#9999b0', paddingLeft: '4px', marginTop: '2px' }}>
+                          + {dayEvents.length - 4} MORE
                         </div>
-                      )
-                    })}
-                    {dayEvents.length > 3 && (
-                      <div style={{ fontSize: '10px', color: '#9999b0', paddingLeft: '4px' }}>
-                        +{dayEvents.length - 3} more
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -431,77 +484,96 @@ function CalendarPageContent() {
       </div>
 
       {/* Events This Month List */}
-      <div style={{ marginTop: '20px' }}>
-        <h3 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>Events This Month</h3>
+      <div style={{ marginTop: '40px' }}>
+        <h3 style={{ 
+          fontSize: '15px', 
+          fontWeight: '800', 
+          marginBottom: '16px',
+          color: '#6b6b8a',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em'
+        }}>Events This Month</h3>
         {events.length === 0 ? (
-          <div className="card" style={{ padding: '30px', textAlign: 'center', color: '#9999b0' }}>
+          <div className="card" style={{ padding: '30px', textAlign: 'center', color: '#9999b0', background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(10px)' }}>
             No events this month
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {events.sort((a, b) => a.date.localeCompare(b.date)).map(ev => {
               const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
               return (
                 <div key={ev.id} style={{
                   display: 'flex',
                   alignItems: 'center',
-                  padding: '14px 24px',
-                  gap: '14px',
-                  borderRadius: '50px',
-                  background: '#e8eaf0',
-                  boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
-                  transition: 'box-shadow 0.2s',
+                  padding: '16px 24px',
+                  gap: '16px',
+                  borderRadius: '24px',
+                  background: 'white',
+                  boxShadow: '8px 8px 24px rgba(0,0,0,0.04), -8px -8px 24px rgba(255,255,255,0.8)',
+                  transition: 'all 0.3s ease',
+                  border: '1px solid rgba(255,255,255,0.5)'
                 }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
-                onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = '12px 12px 32px rgba(0,0,0,0.06)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '8px 8px 24px rgba(0,0,0,0.04), -8px -8px 24px rgba(255,255,255,0.8)'
+                }}
                 >
                   <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '10px',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
                     background: tc.bg,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
                   }}>
-                    <span style={{ fontSize: '14px', fontWeight: '700', color: tc.color, lineHeight: 1 }}>
+                    <span style={{ fontSize: '15px', fontWeight: '800', color: tc.color, lineHeight: 1 }}>
                       {new Date(ev.date + 'T00:00:00').getDate()}
                     </span>
-                    <span style={{ fontSize: '9px', color: tc.color, fontWeight: '600', textTransform: 'uppercase' }}>
+                    <span style={{ fontSize: '9px', color: tc.color, fontWeight: '700', textTransform: 'uppercase', opacity: 0.9 }}>
                       {new Date(ev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })}
                     </span>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '2px' }}>
                       {ev.title}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#9999b0' }}>
+                    <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: '500' }}>
                       {ev.time && `${ev.time}${ev.endTime ? ` - ${ev.endTime}` : ''} · `}
                       {ev.course?.name ? ev.course.name : ev.description || 'Global (All Users)'}
                     </div>
                   </div>
                   <span style={{
-                    fontSize: '10px', padding: '3px 10px', borderRadius: '10px', fontWeight: '600',
-                    background: ev.courseId ? (ev.course?.color || '#6366f1') + '18' : '#d0d2d9',
-                    color: ev.courseId ? (ev.course?.color || '#6366f1') : '#6b6b8a',
+                    fontSize: '10px', padding: '4px 12px', borderRadius: '50px', fontWeight: '700',
+                    background: '#f3f4f6',
+                    color: '#6b6b8a',
                   }}>
                     {ev.course?.name || 'Global'}
                   </span>
-                  <span className={`badge badge-${ev.type === 'exam' ? 'danger' : ev.type === 'assignment' ? 'warning' : 'primary'}`}>
+                  <span style={{
+                    fontSize: '10px', padding: '4px 12px', borderRadius: '50px', fontWeight: '700',
+                    background: tc.bg + '20',
+                    color: tc.bg === '#FFC107' ? '#b48a04' : tc.bg, // Adjust contrast for yellow
+                  }}>
                     {tc.label}
                   </span>
                   {isManager && (
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                      <button onClick={() => openEdit(ev)} className="btn btn-ghost btn-sm" title="Edit">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <button onClick={() => openEdit(ev)} className="btn btn-ghost btn-sm" style={{ padding: '8px', boxShadow: 'none' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                           <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                       </button>
-                      <button onClick={() => handleDelete(ev.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }} title="Delete">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <button onClick={() => handleDelete(ev.id)} className="btn btn-sm" style={{ padding: '8px', color: '#ef4444', background: '#fee2e220', boxShadow: 'none' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <polyline points="3 6 5 6 21 6"/>
                           <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                         </svg>
@@ -518,11 +590,11 @@ function CalendarPageContent() {
       {/* Event Detail Popover */}
       {selectedEvent && (
         <div className="modal-overlay" onClick={() => setSelectedEvent(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: '16px', fontWeight: '600' }}>Event Details</h3>
-              <button onClick={() => setSelectedEvent(null)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', borderRadius: '28px' }}>
+            <div className="modal-header" style={{ border: 'none', padding: '24px 24px 0' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a' }}>Event Details</h3>
+              <button onClick={() => setSelectedEvent(null)} style={{ color: '#9999b0', transition: 'all 0.2s' }} className="hover:rotate-90">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
               </button>

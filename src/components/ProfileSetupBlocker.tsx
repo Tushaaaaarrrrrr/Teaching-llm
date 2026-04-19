@@ -32,6 +32,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
   
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -43,7 +44,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
     if (error) setError('')
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     
@@ -65,6 +66,12 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
       return setError('Please choose your state from the dropdown.')
     }
 
+    // All valid — show confirmation modal
+    setShowConfirmModal(true)
+  }
+
+  const doSubmit = async () => {
+    setShowConfirmModal(false)
     setLoading(true)
     try {
       const res = await fetch('/api/profile/setup', {
@@ -108,10 +115,10 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
       }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#1e1e3a', marginBottom: '8px' }}>
-            Complete Your Profile
+            Welcome back to GenZ IITian!
           </h1>
-          <p style={{ fontSize: '14px', color: '#6b6b8a', lineHeight: 1.5 }}>
-            Welcome to the platform! We need a few essential details to set up your account before you can continue.
+          <p style={{ fontSize: '14px', color: '#6b6b8a', lineHeight: 1.6 }}>
+            Please update your details so we can serve you better.
           </p>
         </div>
 
@@ -253,10 +260,96 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
               opacity: loading ? 0.7 : 1
             }}
           >
-            {loading ? 'Saving Profile...' : 'Complete Setup & Continue'}
+            {loading ? 'Saving...' : 'Submit'}
           </button>
         </form>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }}>
+          <div className="fade-in" style={{
+            background: '#fff',
+            borderRadius: '20px',
+            padding: '36px 32px',
+            maxWidth: '420px',
+            width: '100%',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.18)',
+            textAlign: 'center'
+          }}>
+            {/* Warning icon */}
+            <div style={{
+              width: '60px', height: '60px', borderRadius: '50%',
+              background: '#fff8e1', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 20px'
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+
+            <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', marginBottom: '12px' }}>
+              Please check all details carefully
+            </h2>
+            <p style={{ fontSize: '14px', color: '#6b6b8a', lineHeight: 1.65, marginBottom: '28px' }}>
+              These details <strong style={{ color: '#ef4444' }}>cannot be changed</strong> once submitted. Make sure everything is correct before continuing.
+            </p>
+
+            {/* Summary of entered details */}
+            <div style={{ background: '#f8f9fa', borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'left' }}>
+              {[
+                { label: 'Name', value: `${formData.firstName} ${formData.lastName}` },
+                { label: 'Mobile', value: formData.mobileNumber },
+                { label: 'Age', value: formData.age },
+                { label: 'Gender', value: formData.gender.charAt(0) + formData.gender.slice(1).toLowerCase() },
+                { label: 'State', value: formData.state },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #eee', fontSize: '13.5px' }}>
+                  <span style={{ color: '#6b6b8a', fontWeight: 600 }}>{label}</span>
+                  <span style={{ color: '#1e1e3a', fontWeight: 700 }}>{value}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                style={{
+                  flex: 1, padding: '13px', borderRadius: '12px',
+                  border: '2px solid #e0e3ea', background: '#fff',
+                  color: '#6b6b8a', fontSize: '14px', fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'inherit'
+                }}
+              >
+                Go Back
+              </button>
+              <button
+                onClick={doSubmit}
+                className="btn btn-primary"
+                style={{
+                  flex: 1, padding: '13px', borderRadius: '12px',
+                  fontSize: '14px', fontWeight: 800,
+                  boxShadow: '0 6px 16px rgba(99,102,241,0.3)'
+                }}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

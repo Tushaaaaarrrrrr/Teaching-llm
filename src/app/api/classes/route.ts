@@ -68,9 +68,14 @@ export async function GET() {
         }
       })
     // Fetch ONLY Direct Chats (type=DIRECT) — NEVER show SUPPORT chats here
-    let chatWhere: any = { type: 'DIRECT', status: { not: 'CLOSED' } }
+    let chatWhere: any = { type: 'DIRECT' }
     if (session.role === 'STUDENT' || session.role === 'ADMIN') {
+      // Students only see ACTIVE DMs (not DISABLED or CLOSED)
       chatWhere.studentId = session.userId
+      chatWhere.status = 'ACTIVE'
+    } else {
+      // Managers see everything except CLOSED
+      chatWhere.status = { not: 'CLOSED' }
     }
     
     const chats = await prisma.chatSession.findMany({
@@ -92,6 +97,7 @@ export async function GET() {
         color: '#3636e8',
         isDisabled: false,
         isCommunityActive: true,
+        isDmDisabled: chat.status === 'DISABLED',
         lastMessageAt: chat.updatedAt,
         hasUnread: lastMsgTime > lastReadTime,
         isDirectChat: true,

@@ -241,7 +241,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
 
   if (!userId) return null
 
-  const displayName = getSafeDisplayName(user)
+  const displayName = getSafeDisplayName({ name: formData.name, firstName: formData.firstName, lastName: formData.lastName }) || getSafeDisplayName(user)
   const createdAtDate = parseDate(user?.createdAt)
   const createdAtLabel = createdAtDate
     ? createdAtDate.toLocaleDateString('en-GB', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -319,7 +319,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   </div>
                   <div style={{ textAlign: 'left' }}>
                     <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e1e3a', marginBottom: '4px' }}>{displayName}</h2>
-                    <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600' }}>{user.role} Account</div>
+                    <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600' }}>{formData.role || user.role} Account</div>
                     <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                       {user.isGoogleUser && (
                         <span style={{
@@ -403,50 +403,39 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   </div>
                 </div>
 
-                <div style={{ marginBottom: '24px' }}>
+              </div>
+
+              {/* Right Column: Security + Course Assignments */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+                {/* Gender Preference */}
+                <div>
                   <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Gender Preference</label>
-                  <div style={{ display: 'flex', gap: '16px' }}>
-                    <label style={{
-                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                      padding: '12px', borderRadius: '16px',
-                      background: formData.gender === 'MALE' ? '#e0e7ff' : '#f0f2f8',
-                      boxShadow: formData.gender === 'MALE'
-                        ? 'inset 3px 3px 6px rgba(99,102,241,0.18), inset -3px -3px 6px #ffffff'
-                        : '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
-                      cursor: 'pointer', color: '#1e1e3a', fontSize: '14px', fontWeight: '700', transition: 'all 0.2s'
-                    }}>
-                      <input type="radio" checked={formData.gender === 'MALE'} onChange={() => setFormData({ ...formData, gender: 'MALE' })} />
-                      Male
-                    </label>
-                    <label style={{
-                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                      padding: '12px', borderRadius: '16px',
-                      background: formData.gender === 'FEMALE' ? '#fce7f3' : '#f0f2f8',
-                      boxShadow: formData.gender === 'FEMALE'
-                        ? 'inset 3px 3px 6px rgba(236,72,153,0.14), inset -3px -3px 6px #ffffff'
-                        : '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
-                      cursor: 'pointer', color: '#1e1e3a', fontSize: '14px', fontWeight: '700', transition: 'all 0.2s'
-                    }}>
-                      <input type="radio" checked={formData.gender === 'FEMALE'} onChange={() => setFormData({ ...formData, gender: 'FEMALE' })} />
-                      Female
-                    </label>
-                    <label style={{
-                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                      padding: '12px', borderRadius: '16px',
-                      background: formData.gender === 'OTHER' ? '#f3e8ff' : '#f0f2f8',
-                      boxShadow: formData.gender === 'OTHER'
-                        ? 'inset 3px 3px 6px rgba(168,85,247,0.14), inset -3px -3px 6px #ffffff'
-                        : '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
-                      cursor: 'pointer', color: '#1e1e3a', fontSize: '14px', fontWeight: '700', transition: 'all 0.2s'
-                    }}>
-                      <input type="radio" checked={formData.gender === 'OTHER'} onChange={() => setFormData({ ...formData, gender: 'OTHER' })} />
-                      Other
-                    </label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    {(['MALE', 'FEMALE', 'OTHER'] as const).map(g => (
+                      <label key={g} style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                        padding: '10px', borderRadius: '16px',
+                        background: formData.gender === g
+                          ? g === 'MALE' ? '#e0e7ff' : g === 'FEMALE' ? '#fce7f3' : '#f3e8ff'
+                          : '#f0f2f8',
+                        boxShadow: formData.gender === g
+                          ? g === 'MALE' ? 'inset 3px 3px 6px rgba(99,102,241,0.18), inset -3px -3px 6px #ffffff'
+                          : g === 'FEMALE' ? 'inset 3px 3px 6px rgba(236,72,153,0.14), inset -3px -3px 6px #ffffff'
+                          : 'inset 3px 3px 6px rgba(168,85,247,0.14), inset -3px -3px 6px #ffffff'
+                          : '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
+                        cursor: 'pointer', color: '#1e1e3a', fontSize: '13px', fontWeight: '700', transition: 'all 0.2s'
+                      }}>
+                        <input type="radio" checked={formData.gender === g} onChange={() => setFormData({ ...formData, gender: g })} />
+                        {g.charAt(0) + g.slice(1).toLowerCase()}
+                      </label>
+                    ))}
                   </div>
                 </div>
 
-                <div style={{ 
-                  marginBottom: '20px', padding: '20px', borderRadius: '20px', 
+                {/* Security ID + Reset Password */}
+                <div style={{
+                  padding: '20px', borderRadius: '20px',
                   background: 'linear-gradient(135deg, #f0f2f8, #f8fafc)',
                   boxShadow: 'inset 4px 4px 10px #d1d9e6, inset -4px -4px 10px #ffffff',
                   border: '1px solid rgba(255,255,255,0.6)'
@@ -455,33 +444,26 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Security Identification</div>
                     <span style={{ fontSize: '9px', fontWeight: '800', color: '#6366f1', background: '#e0e7ff', padding: '3px 10px', borderRadius: '50px' }}>SECURE ACCESS</span>
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', letterSpacing: '0.1em', fontFamily: 'monospace', marginBottom: '16px' }}>
                     {user.securityNumber || 'NOT ASSIGNED'}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderRadius: '14px', background: '#f0f2f8', boxShadow: 'inset 3px 3px 6px #d1d9e6, inset -3px -3px 6px #ffffff' }}>
+                    <div style={{ color: '#9999b0', fontSize: '14px', letterSpacing: '0.3em' }}>••••••••••••</div>
+                    <button
+                      onClick={handleResetPassword}
+                      style={{
+                        padding: '8px 18px', borderRadius: '12px', border: 'none', background: '#fff',
+                        boxShadow: '4px 4px 8px #d1d9e6, -2px -2px 4px #ffffff',
+                        fontSize: '12px', fontWeight: '700', color: '#3636e8', cursor: 'pointer', transition: 'transform 0.1s'
+                      }}
+                      onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+                      onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      Reset Password
+                    </button>
                   </div>
                 </div>
 
-                <div style={{ 
-                  padding: '12px 20px', borderRadius: '18px', ...neuInset,
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                }}>
-                  <div style={{ color: '#9999b0', fontSize: '14px', letterSpacing: '0.3em' }}>••••••••••••</div>
-                  <button 
-                    onClick={handleResetPassword}
-                    style={{
-                      padding: '10px 22px', borderRadius: '14px', border: 'none', background: '#fff',
-                      boxShadow: '4px 4px 8px #d1d9e6, -2px -2px 4px #ffffff',
-                      fontSize: '13px', fontWeight: '700', color: '#3636e8', cursor: 'pointer', transition: 'transform 0.1s'
-                    }}
-                    onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
-                    onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-                  >
-                    Reset Password
-                  </button>
-                </div>
-              </div>
-
-              {/* Right Column: Course Assignments */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {formData.role !== 'MANAGER' ? (
                   <>
                     <div style={{ flex: 1 }}>

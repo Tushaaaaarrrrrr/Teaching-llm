@@ -115,9 +115,20 @@ export default function AnalyticsDashboard() {
   const courseGrowth = data?.courseGrowth || []
   const demographics = data?.demographics || null
 
-  const genderData = demographics ? Object.entries(demographics.gender || {}).map(([k, v]) => ({ name: k, value: v })) : []
-  const ageData = demographics ? Object.entries(demographics.age || {}).map(([k, v]) => ({ name: k, value: v })) : []
-  const stateData = demographics ? Object.entries(demographics.state || {}).map(([k, v]) => ({ name: k, value: v as number })).sort((a, b) => b.value - a.value).slice(0, 5) : []
+  const genderData = demographics ? Object.entries(demographics.gender || {}).map(([k, v]) => ({ name: k, value: v as number })).filter(d => d.value > 0) : []
+  const ageData = demographics ? Object.entries(demographics.age || {}).map(([k, v]) => ({ name: k, value: v as number })).filter(d => d.value > 0) : []
+  const stateData = demographics ? Object.entries(demographics.state || {}).map(([k, v]) => ({ name: k, value: v as number })).filter(d => d.name !== 'Unknown' && d.value > 0).sort((a, b) => b.value - a.value) : []
+  const totalStudents = genderData.reduce((acc, d) => acc + d.value, 0) || 1
+  const totalStateStudents = stateData.reduce((acc, d) => acc + d.value, 0) || 1
+  const totalAgeStudents = ageData.reduce((acc, d) => acc + d.value, 0) || 1
+
+  const GENDER_CONFIG: Record<string, { color: string; icon: string }> = {
+    MALE:        { color: '#3b82f6', icon: '♂' },
+    FEMALE:      { color: '#ec4899', icon: '♀' },
+    OTHER:       { color: '#a855f7', icon: '⚧' },
+    UNSPECIFIED: { color: '#9999b0', icon: '?' },
+  }
+  const AGE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#9999b0']
 
   // Format daily trend for recharts
   const trendData = dailyTrend.map((d: any) => ({
@@ -375,66 +386,107 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* ─── Audience Demographics ─────────────────────────────────── */}
-      {demographics && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
-          
-          {/* Gender Demographics */}
-          <div style={neuCard}>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>
-              ⚧ Gender
-            </h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <ResponsiveContainer width="50%" height={200}>
-                <PieChart>
-                  <Pie data={genderData.filter(d => (d.value as number) > 0)} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value" strokeWidth={0}>
-                    {genderData.map((e, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {genderData.filter(d => (d.value as number) > 0).map((g: any, i: number) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                    <span style={{ flex: 1, fontWeight: 600 }}>{g.name}</span>
-                    <span style={{ fontWeight: 800 }}>{g.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+      <div>
+        {/* Section heading */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', margin: 0 }}>👥 Audience Demographics</h2>
+            <p style={{ fontSize: '12px', color: '#9999b0', marginTop: '4px', fontWeight: 600 }}>Based on profile data from all active students</p>
           </div>
-
-          {/* Age Brackets */}
-          <div style={neuCard}>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>🎂 Age</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={ageData.filter(d => (d.value as number) > 0)} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#dddfe6" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6b6b8a' }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#9999b0' }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="value" fill="#ec4899" radius={[4, 4, 0, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Top States */}
-          <div style={neuCard}>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>📍 Top States</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {stateData.filter(d => d.value > 0).map((s: any, i: number) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e1e3a' }}>{s.name}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 800 }}>{s.value}</span>
-                </div>
-              ))}
-              {stateData.filter(d => d.value > 0).length === 0 && (
-                <div style={{ fontSize: '13px', color: '#9999b0', textAlign: 'center', marginTop: '20px' }}>No location data</div>
-              )}
-            </div>
-          </div>
+          {!demographics && (
+            <span style={{
+              fontSize: '11px', padding: '6px 14px', borderRadius: '50px', fontWeight: 700,
+              background: '#fef3c7', color: '#d97706'
+            }}>⚠ Run analytics compute to populate</span>
+          )}
         </div>
-      )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.4fr', gap: '24px' }}>
+
+          {/* ── Gender Card ── */}
+          <div style={neuCard}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>⚧ Gender Split</h3>
+            {!demographics || genderData.length === 0 ? (
+              <div style={{ padding: '40px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No data yet</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {(['MALE', 'FEMALE', 'OTHER', 'UNSPECIFIED'] as const).map(key => {
+                  const entry = genderData.find(g => g.name === key)
+                  const count = entry?.value ?? 0
+                  const pct = Math.round((count / totalStudents) * 100)
+                  const cfg = GENDER_CONFIG[key]
+                  return (
+                    <div key={key}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e1e3a' }}>{cfg.icon} {key.charAt(0) + key.slice(1).toLowerCase()}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: cfg.color }}>{count} <span style={{ fontSize: '11px', color: '#9999b0', fontWeight: 600 }}>({pct}%)</span></span>
+                      </div>
+                      <div style={{ height: '8px', borderRadius: '4px', background: '#e0e3ea', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: cfg.color, borderRadius: '4px', transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ── Age Card ── */}
+          <div style={neuCard}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>🎂 Age Brackets</h3>
+            {!demographics || ageData.length === 0 ? (
+              <div style={{ padding: '40px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No data yet</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {ageData.map((a, i) => {
+                  const pct = Math.round((a.value / totalAgeStudents) * 100)
+                  return (
+                    <div key={a.name}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e1e3a' }}>{a.name}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: AGE_COLORS[i % AGE_COLORS.length] }}>{a.value} <span style={{ fontSize: '11px', color: '#9999b0', fontWeight: 600 }}>({pct}%)</span></span>
+                      </div>
+                      <div style={{ height: '8px', borderRadius: '4px', background: '#e0e3ea', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: AGE_COLORS[i % AGE_COLORS.length], borderRadius: '4px', transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ── State Distribution Card ── */}
+          <div style={{ ...neuCard, maxHeight: '380px', display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: '#1e1e3a', flexShrink: 0 }}>📍 State Distribution</h3>
+            {!demographics || stateData.length === 0 ? (
+              <div style={{ padding: '40px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No location data yet</div>
+            ) : (
+              <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '4px' }}>
+                {stateData.map((s, i) => {
+                  const pct = Math.round((s.value / totalStateStudents) * 100)
+                  const barColor = PIE_COLORS[i % PIE_COLORS.length]
+                  return (
+                    <div key={s.name}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: barColor, flexShrink: 0 }} />
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e1e3a' }}>{s.name}</span>
+                        </div>
+                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e1e3a' }}>{s.value} <span style={{ color: '#9999b0', fontWeight: 600 }}>({pct}%)</span></span>
+                      </div>
+                      <div style={{ height: '6px', borderRadius: '3px', background: '#e0e3ea', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: '3px', transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
 
       {/* ─── New vs Returning & Course Growth ────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '24px' }}>

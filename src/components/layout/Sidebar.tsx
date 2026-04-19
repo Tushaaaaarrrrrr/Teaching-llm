@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useSWR from 'swr'
 
 interface NavItem {
@@ -240,6 +240,8 @@ const NAV_ITEMS: NavItem[] = [
 export default function Sidebar({ userRole, userName, userEmail }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const navRef = useRef<HTMLDivElement>(null)
+  const [canScrollMore, setCanScrollMore] = useState(false)
 
   const { data: userData } = useSWR('/api/auth/me', (url) => fetch(url).then(r => r.json()), {
     revalidateOnFocus: true
@@ -266,6 +268,20 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     })
     return () => es.close()
   }, [mutateUnread])
+
+  // Scroll indicator
+  useEffect(() => {
+    const el = navRef.current
+    if (!el) return
+    const check = () => setCanScrollMore(el.scrollHeight > el.clientHeight + el.scrollTop + 4)
+    check()
+    el.addEventListener('scroll', check)
+    window.addEventListener('resize', check)
+    return () => {
+      el.removeEventListener('scroll', check)
+      window.removeEventListener('resize', check)
+    }
+  }, [visibleItems])
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -336,7 +352,10 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
       </div>
 
       {/* Navigation items */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', paddingRight: '4px' }}>
+      <div
+        ref={navRef}
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', paddingRight: '4px', position: 'relative' }}
+      >
         {visibleItems.map((item, idx) => {
           const isActive = pathname === item.href ||
             (item.href !== '/dashboard' && pathname.startsWith(item.href))
@@ -430,6 +449,37 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           )
         })}
       </div>
+
+      {/* Scroll More Indicator — sticky inside the scroll container, never overlaps items */}
+      <style>{`
+        @keyframes sidebarBounce {
+          0%, 100% { transform: translateY(0); opacity: 0.45; }
+          50% { transform: translateY(4px); opacity: 1; }
+        }
+      `}</style>
+      {canScrollMore && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '4px 0 2px',
+          pointerEvents: 'none',
+          flexShrink: 0,
+        }}>
+          <svg
+            width="18" height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#b0b0c8"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ animation: 'sidebarBounce 1.6s ease-in-out infinite' }}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+      )}
 
       {/* Sign Out */}
       <button
