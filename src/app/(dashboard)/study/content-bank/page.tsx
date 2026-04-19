@@ -353,17 +353,44 @@ export default function ContentBankPage() {
                  <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                       <label style={{ fontSize: '13px', fontWeight: 800, color: '#6b6b8a' }}>Question Text</label>
-                      <button
-                        onClick={() => {
-                          const lang = window.prompt("Enter programming language (optional, e.g., python, javascript):", "");
-                          if (lang !== null) {
-                            setForm({ ...form, text: form.text + `\n\`\`\`${lang}\n\n\`\`\`\n` });
-                          }
-                        }}
-                        style={{ padding: '4px 10px', borderRadius: '6px', background: '#3636e810', border: 'none', color: '#3636e8', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
-                      >
-                        {`</> Insert Code Block`}
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Format as:</span>
+                        <select
+                          onChange={(e) => {
+                            const lang = e.target.value;
+                            if (!lang) return;
+                            
+                            let currentText = form.text.trim();
+                            let newText = '';
+                            
+                            // Check if already wrapped in some code block
+                            const codeBlockRegex = /^```(?:\w+)?\n([\s\S]*?)```$/;
+                            const match = currentText.match(codeBlockRegex);
+                            
+                            if (match) {
+                              newText = `\`\`\`${lang}\n${match[1].trim()}\n\`\`\``;
+                            } else if (currentText) {
+                              newText = `\`\`\`${lang}\n${currentText}\n\`\`\``;
+                            } else {
+                              newText = `\`\`\`${lang}\n\n\`\`\``;
+                            }
+                            
+                            setForm({ ...form, text: newText });
+                            e.target.value = '';
+                          }}
+                          style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cfd6e1', background: '#fff', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: '#3636e8' }}
+                        >
+                          <option value="">Select Language...</option>
+                          <option value="python">Python</option>
+                          <option value="java">Java</option>
+                          <option value="cpp">C++</option>
+                          <option value="javascript">JavaScript</option>
+                          <option value="csharp">C#</option>
+                          <option value="html">HTML</option>
+                          <option value="css">CSS</option>
+                          <option value="sql">SQL</option>
+                        </select>
+                      </div>
                     </div>
                     <textarea value={form.text} onChange={e => setForm({...form, text: e.target.value})} placeholder="Type your question..." style={{ ...neuInput, height: '80px', resize: 'vertical' }} />
                  </div>

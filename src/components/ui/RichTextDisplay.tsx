@@ -1,14 +1,25 @@
 import React from 'react';
+import { MathDisplay } from './MathDisplay';
 
+/**
+ * RichTextDisplay — The top-level text rendering component.
+ * 
+ * It handles TWO completely independent concerns:
+ *   1. CODE BLOCKS:  ```language\n code \n```  → rendered as styled <pre><code>
+ *   2. MATH & TEXT:  Everything else → delegated to MathDisplay
+ * 
+ * These two systems never interfere with each other.
+ */
 export function RichTextDisplay({ text }: { text: string | undefined | null }) {
   if (!text) return null;
 
-  // Split text by code blocks (e.g. ```language\n code \n```)
+  // ── Step 1: Split by code blocks ──────────────────────────────────────────
   const parts = text.split(/(```[\s\S]*?```)/g);
 
   return (
     <div style={{ wordBreak: 'break-word' }}>
       {parts.map((part, index) => {
+        // ── CODE BLOCK RENDERING (unchanged, independent) ─────────────────
         if (part.startsWith('```') && part.endsWith('```')) {
           const match = part.match(/^```(\w+)?\n([\s\S]*?)```$/) || part.match(/^```(\w+)?([\s\S]*?)```$/);
           
@@ -40,10 +51,11 @@ export function RichTextDisplay({ text }: { text: string | undefined | null }) {
           return <pre key={index}><code>{part.replace(/```/g, '')}</code></pre>;
         }
         
-        // Normal text wrapper with whiteSpace pre-wrap so linebreaks and math are preserved
+        // ── MATH & PLAIN TEXT RENDERING (separate concern) ────────────────
+        // Delegate entirely to MathDisplay — no code logic here.
         return (
           <span key={index} style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
-            {part}
+            <MathDisplay text={part} />
           </span>
         );
       })}

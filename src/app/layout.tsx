@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import 'katex/dist/katex.min.css'
 import CsrfProvider from '@/components/CsrfProvider'
 import MobileBlocker from '@/components/layout/MobileBlocker'
 
