@@ -39,13 +39,17 @@ export default function FeedbackPage() {
 }
 
 function StudentFeedbackView({ userId }: { userId: string }) {
-  const { data: courses, isLoading } = useSWR<CourseItem[]>('/api/courses', fetcher)
-  const { data: submittedFeedbacks, mutate: mutateFeedbacks } = useSWR<any[]>('/api/feedback?studentId=' + userId, fetcher)
-  
+  const { data: coursesRaw, isLoading } = useSWR('/api/courses', fetcher)
+  const { data: submittedFeedbacksRaw, mutate: mutateFeedbacks } = useSWR('/api/feedback?studentId=' + userId, fetcher)
+
+  // Safety: always ensure arrays — API may return an error object on 401
+  const courses: CourseItem[] = Array.isArray(coursesRaw) ? coursesRaw : []
+  const submittedFeedbacks: any[] = Array.isArray(submittedFeedbacksRaw) ? submittedFeedbacksRaw : []
+
   const [selectedCourse, setSelectedCourse] = useState<CourseItem | null>(null)
 
   const isAlreadySubmitted = (courseId: string) => {
-    return submittedFeedbacks?.some(f => f.courseId === courseId) || false
+    return submittedFeedbacks.some(f => f.courseId === courseId)
   }
 
   if (isLoading) return <div className="page-container animate-pulse" />
@@ -69,7 +73,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {courses?.map(course => {
+        {courses.map(course => {
           const submitted = isAlreadySubmitted(course.id)
           return (
             <div 
@@ -122,7 +126,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
           )
         })}
 
-        {courses?.length === 0 && (
+        {courses.length === 0 && !isLoading && (
           <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
             <p>You are not enrolled in any courses yet.</p>
           </div>
@@ -146,13 +150,17 @@ function StudentFeedbackView({ userId }: { userId: string }) {
 }
 
 function ManagerFeedbackView() {
-  const { data: feedbacks, isLoading } = useSWR<FeedbackItem[]>('/api/feedback', fetcher)
-  const { data: courses } = useSWR<CourseItem[]>('/api/courses', fetcher)
-  
+  const { data: feedbacksRaw, isLoading } = useSWR('/api/feedback', fetcher)
+  const { data: coursesRaw } = useSWR('/api/courses', fetcher)
+
+  // Safety: always ensure arrays — API may return an error object on 401
+  const feedbacks: FeedbackItem[] = Array.isArray(feedbacksRaw) ? feedbacksRaw : []
+  const courses: CourseItem[] = Array.isArray(coursesRaw) ? coursesRaw : []
+
   const [filterCourse, setFilterCourse] = useState('')
   const [searchStudent, setSearchStudent] = useState('')
 
-  const filtered = feedbacks?.filter(f => {
+  const filtered = feedbacks.filter(f => {
     const matchCourse = !filterCourse || f.course.id === filterCourse
     const matchStudent = !searchStudent || 
       f.student.name.toLowerCase().includes(searchStudent.toLowerCase()) ||
@@ -183,7 +191,7 @@ function ManagerFeedbackView() {
               }}
             >
               <option value="">All Courses</option>
-              {courses?.map(c => (
+              {courses.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
@@ -206,7 +214,7 @@ function ManagerFeedbackView() {
       </div>
 
       <div style={{ display: 'grid', gap: '16px' }}>
-        {filtered?.map(f => (
+        {filtered.map(f => (
           <div 
             key={f.id}
             style={{
@@ -260,7 +268,7 @@ function ManagerFeedbackView() {
           </div>
         ))}
 
-        {filtered?.length === 0 && (
+        {filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '100px', color: '#94a3b8' }}>
             <p style={{ fontSize: '16px', fontWeight: '500' }}>No feedback entries found.</p>
           </div>
