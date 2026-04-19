@@ -773,6 +773,13 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                            onChange={(e) => {
                              const lang = e.target.value;
                              if (lang) {
+                               // Limit to 2 code blocks
+                               const existingBlocks = (questionForm.text.match(/```/g) || []).length;
+                               if (existingBlocks >= 4) {
+                                 alert("Maximum 2 code blocks per question allowed.");
+                                 e.target.value = '';
+                                 return;
+                               }
                                setShowCodeModal({ language: lang });
                                setCodeSnippet('');
                                e.target.value = '';

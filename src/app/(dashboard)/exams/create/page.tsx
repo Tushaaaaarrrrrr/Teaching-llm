@@ -517,6 +517,13 @@ export default function CreateExamPage() {
                                onChange={(e) => {
                                  const lang = e.target.value;
                                  if (lang) {
+                                   // Limit to 2 code blocks
+                                   const existingBlocks = (q.text.match(/```/g) || []).length;
+                                   if (existingBlocks >= 4) {
+                                     alert("Maximum 2 code blocks per question allowed.");
+                                     e.target.value = '';
+                                     return;
+                                   }
                                    setShowCodeModal({ index: idx, language: lang });
                                    setCodeSnippet('');
                                    e.target.value = '';
