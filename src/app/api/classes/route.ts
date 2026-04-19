@@ -67,8 +67,8 @@ export async function GET() {
           hasUnread,
         }
       })
-    // Fetch Direct Chats
-    let chatWhere: any = { status: { not: 'CLOSED' } }
+    // Fetch ONLY Direct Chats (type=DIRECT) — NEVER show SUPPORT chats here
+    let chatWhere: any = { type: 'DIRECT', status: { not: 'CLOSED' } }
     if (session.role === 'STUDENT' || session.role === 'ADMIN') {
       chatWhere.studentId = session.userId
     }

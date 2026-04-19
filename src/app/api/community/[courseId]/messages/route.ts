@@ -135,10 +135,7 @@ export async function POST(
       const chat = await getDMSession(id, session.userId, session.role)
       if (!chat) return NextResponse.json({ error: 'Chat not found or forbidden' }, { status: 404 })
 
-      // Students can only read — they cannot send messages in DMs
-      if (session.role !== 'MANAGER') {
-        return NextResponse.json({ error: 'Only managers can send messages in direct chats' }, { status: 403 })
-      }
+      // Both sides can send messages in a DIRECT chat
 
       const msg = await prisma.chatMessage.create({
         data: { chatId: id, senderId: session.userId, content: sanitizedContent },

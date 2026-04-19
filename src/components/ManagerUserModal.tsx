@@ -33,6 +33,8 @@ interface User {
   securityNumber?: string | null
   createdAt: string
   gender?: string
+  age?: number | null
+  state?: string | null
   avatar?: string | null
   isGoogleUser?: boolean
   enrollments?: { courseId: string; type?: string; course: CourseInfo }[]
@@ -66,6 +68,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     courseIds: [] as string[],
     bundleIds: [] as string[],
     enrollmentTypes: {} as Record<string, string>, // courseId → 'LIVE' | 'RECORDED'
+    age: '',
+    state: ''
   })
   const bundledCourseIds = new Set(
     bundles
@@ -125,6 +129,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             email: data.email || '',
             role: data.role || '',
             gender: data.gender || 'MALE',
+            age: data.age?.toString() || '',
+            state: data.state || '',
             courseIds: normalizeCollection<any>(data?.enrollments).map((e: any) => e.courseId),
             bundleIds: normalizeCollection<any>(data?.courseBundleAssignments).map((b: any) => b.bundleId),
             enrollmentTypes: Object.fromEntries(
@@ -182,6 +188,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             email: formData.email,
             role: formData.role,
             gender: formData.gender,
+            age: formData.age ? parseInt(formData.age, 10) : null,
+            state: formData.state,
             courseIds: formData.courseIds,
             bundleIds: formData.bundleIds,
             enrollmentTypes: formData.enrollmentTypes,
@@ -365,9 +373,19 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   </div>
                 </div>
 
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Mobile Number</label>
-                  <input style={neuInset} value={formData.mobileNumber} onChange={e => setFormData({...formData, mobileNumber: e.target.value})} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '20px', marginBottom: '20px' }}>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Mobile Number</label>
+                    <input style={neuInset} value={formData.mobileNumber} onChange={e => setFormData({...formData, mobileNumber: e.target.value})} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Age</label>
+                    <input style={neuInset} type="number" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>State</label>
+                    <input style={neuInset} value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
+                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
@@ -411,6 +429,18 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     }}>
                       <input type="radio" checked={formData.gender === 'FEMALE'} onChange={() => setFormData({ ...formData, gender: 'FEMALE' })} />
                       Female
+                    </label>
+                    <label style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                      padding: '12px', borderRadius: '16px',
+                      background: formData.gender === 'OTHER' ? '#f3e8ff' : '#f0f2f8',
+                      boxShadow: formData.gender === 'OTHER'
+                        ? 'inset 3px 3px 6px rgba(168,85,247,0.14), inset -3px -3px 6px #ffffff'
+                        : '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
+                      cursor: 'pointer', color: '#1e1e3a', fontSize: '14px', fontWeight: '700', transition: 'all 0.2s'
+                    }}>
+                      <input type="radio" checked={formData.gender === 'OTHER'} onChange={() => setFormData({ ...formData, gender: 'OTHER' })} />
+                      Other
                     </label>
                   </div>
                 </div>

@@ -5,6 +5,7 @@ import Sidebar from '@/components/layout/Sidebar'
 import Header from '@/components/layout/Header'
 import UpdateOverlay from '@/components/UpdateOverlay'
 import SupportFloatingButton from '@/components/ui/SupportFloatingButton'
+import ProfileSetupBlocker from '@/components/ProfileSetupBlocker'
 
 export default async function DashboardLayout({
   children,
@@ -25,6 +26,10 @@ export default async function DashboardLayout({
   // Maintenance mode guard
   if (session.isMaintenanceMode) {
     redirect('/maintenance')
+  }
+
+  if (!session.isProfileComplete) {
+    return <ProfileSetupBlocker user={session} />
   }
 
   return (

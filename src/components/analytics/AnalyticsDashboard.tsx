@@ -113,6 +113,11 @@ export default function AnalyticsDashboard() {
   const topCourses = data?.topCourses || []
   const courseDistribution = data?.courseDistribution || []
   const courseGrowth = data?.courseGrowth || []
+  const demographics = data?.demographics || null
+
+  const genderData = demographics ? Object.entries(demographics.gender || {}).map(([k, v]) => ({ name: k, value: v })) : []
+  const ageData = demographics ? Object.entries(demographics.age || {}).map(([k, v]) => ({ name: k, value: v })) : []
+  const stateData = demographics ? Object.entries(demographics.state || {}).map(([k, v]) => ({ name: k, value: v as number })).sort((a, b) => b.value - a.value).slice(0, 5) : []
 
   // Format daily trend for recharts
   const trendData = dailyTrend.map((d: any) => ({
@@ -368,6 +373,68 @@ export default function AnalyticsDashboard() {
           </div>
         </div>
       </div>
+
+      {/* ─── Audience Demographics ─────────────────────────────────── */}
+      {demographics && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
+          
+          {/* Gender Demographics */}
+          <div style={neuCard}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>
+              ⚧ Gender
+            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <ResponsiveContainer width="50%" height={200}>
+                <PieChart>
+                  <Pie data={genderData.filter(d => (d.value as number) > 0)} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value" strokeWidth={0}>
+                    {genderData.map((e, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {genderData.filter(d => (d.value as number) > 0).map((g: any, i: number) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    <span style={{ flex: 1, fontWeight: 600 }}>{g.name}</span>
+                    <span style={{ fontWeight: 800 }}>{g.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Age Brackets */}
+          <div style={neuCard}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>🎂 Age</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={ageData.filter(d => (d.value as number) > 0)} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#dddfe6" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6b6b8a' }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#9999b0' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="value" fill="#ec4899" radius={[4, 4, 0, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Top States */}
+          <div style={neuCard}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>📍 Top States</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {stateData.filter(d => d.value > 0).map((s: any, i: number) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e1e3a' }}>{s.name}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 800 }}>{s.value}</span>
+                </div>
+              ))}
+              {stateData.filter(d => d.value > 0).length === 0 && (
+                <div style={{ fontSize: '13px', color: '#9999b0', textAlign: 'center', marginTop: '20px' }}>No location data</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── New vs Returning & Course Growth ────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '24px' }}>

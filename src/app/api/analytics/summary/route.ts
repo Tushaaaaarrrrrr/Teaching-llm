@@ -119,12 +119,14 @@ export async function GET(request: NextRequest) {
     // Use the latest snapshot for current totals
     const latest = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null
 
-    // Parse latest topCourses and courseDistribution
+    // Parse latest topCourses, courseDistribution, demographics
     let topCourses = []
     let courseDistribution = []
+    let demographics = null
     if (latest) {
       try { topCourses = JSON.parse(latest.topCourses || '[]') } catch {}
       try { courseDistribution = JSON.parse(latest.courseDistribution || '[]') } catch {}
+      try { demographics = JSON.parse(latest.demographics || 'null') } catch {}
     }
 
     // ─── Build daily trend data ──────────────────────────────────────
@@ -169,6 +171,7 @@ export async function GET(request: NextRequest) {
       topCourses,
       courseDistribution,
       courseGrowth,
+      demographics,
     })
   } catch (error) {
     console.error('[Analytics Summary] Error:', error)

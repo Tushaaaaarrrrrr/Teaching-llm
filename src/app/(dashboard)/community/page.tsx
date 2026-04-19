@@ -794,11 +794,11 @@ export default function CommunityPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            {isDM(selectedClass) && userRole !== 'MANAGER' ? (
+            {/* Input — DMs are two-way: both sides can reply */}
+            {(!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? (
               <div style={{ padding: '14px 20px', borderTop: '1.5px solid rgba(0,0,0,0.06)', textAlign: 'center', color: '#9999b0', fontSize: '13px', fontStyle: 'italic' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                This is a read-only channel. Only your manager can send messages here.
+                This community is currently disabled.
               </div>
             ) : (
               <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center' }}>

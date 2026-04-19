@@ -25,11 +25,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot start a direct chat with another manager' }, { status: 400 })
     }
 
-    // Check if active chat already exists between this manager and student
+    // Check if active DIRECT chat already exists between this manager and student
     const existing = await prisma.chatSession.findFirst({
       where: {
         studentId,
         agentId: session.userId,
+        type: 'DIRECT',
         status: { not: 'CLOSED' },
       },
     })
@@ -37,13 +38,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ chatId: `dm_${existing.id}`, existing: true })
     }
 
-    const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year
+    // DIRECT chats have no expiration — they are persistent
     const chat = await prisma.chatSession.create({
       data: {
         studentId,
         agentId: session.userId,
         status: 'ACTIVE',
-        expiresAt,
+        type: 'DIRECT',
       },
     })
 

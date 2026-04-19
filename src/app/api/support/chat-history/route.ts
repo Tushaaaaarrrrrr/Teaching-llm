@@ -9,8 +9,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // ONLY show closed SUPPORT chats — never DIRECT (community DMs)
     const sessions = await prisma.chatSession.findMany({
-      where: { status: 'CLOSED' },
+      where: { type: 'SUPPORT', status: 'CLOSED' },
       include: {
         student: { select: { id: true, name: true } },
         agent: { select: { id: true, name: true, role: true } },

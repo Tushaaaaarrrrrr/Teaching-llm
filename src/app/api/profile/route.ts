@@ -23,6 +23,9 @@ export async function GET() {
         avatar: true,
         gender: true,
         genderChangedAt: true,
+        age: true,
+        state: true,
+        isProfileComplete: true,
         securityNumber: true,
         createdAt: true,
       },
@@ -49,6 +52,9 @@ export async function GET() {
           avatar: true,
           gender: true,
           genderChangedAt: true,
+          age: true,
+          state: true,
+          isProfileComplete: true,
           securityNumber: true,
           createdAt: true,
         },
@@ -69,13 +75,15 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { name, firstName, lastName, mobileNumber, gender } = await request.json()
+    const { name, firstName, lastName, mobileNumber, gender, age, state } = await request.json()
 
     const data: any = {}
     if (name) data.name = name
     if (firstName) data.firstName = firstName
     if (lastName) data.lastName = lastName
     if (mobileNumber !== undefined) data.mobileNumber = mobileNumber
+    if (age !== undefined) data.age = age ? parseInt(age, 10) : null
+    if (state !== undefined) data.state = state
 
     // Handle gender update - only allow if not previously changed
     if (gender) {
@@ -92,12 +100,12 @@ export async function PUT(request: NextRequest) {
       }
       
       // Allow gender update and set the timestamp
-      if (['MALE', 'FEMALE'].includes(gender.toUpperCase())) {
+      if (['MALE', 'FEMALE', 'OTHER'].includes(gender.toUpperCase())) {
         data.gender = gender.toUpperCase()
         data.genderChangedAt = new Date()
       } else {
         return NextResponse.json(
-          { error: 'Invalid gender value. Must be MALE or FEMALE' }, 
+          { error: 'Invalid gender value. Must be MALE, FEMALE, or OTHER' }, 
           { status: 400 }
         )
       }
@@ -125,6 +133,9 @@ export async function PUT(request: NextRequest) {
         avatar: true,
         gender: true,
         genderChangedAt: true,
+        age: true,
+        state: true,
+        isProfileComplete: true,
         createdAt: true,
       },
     })

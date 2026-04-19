@@ -200,3 +200,65 @@ Files affected:
 - `prisma/migrations/20260418225000_update_schema/migration.sql`
 Outcome:
 - Deployment mechanisms (Render) will now execute this delta to synchronize the database with the current Prisma client schema.
+
+10. Date and time: 2026-04-19 08:30:00 IST
+Summary: Implemented mandatory profile completion blocker and audience demographics analytics.
+What changed:
+- Added a full-screen, unskippable profile setup form that blocks all dashboard access until the user provides: First Name, Last Name, 10-digit Mobile Number, Gender (Male/Female/Other), Age, and State.
+- Extended the analytics engine to aggregate student demographics (Gender, Age brackets, State) and display them in the Manager Analytics Dashboard.
+- Updated the profile settings page to include Age, State, and the new "Other" gender option.
+- Added Age, State, and Other gender fields to the Manager User Modal.
+What was added:
+- `src/components/ProfileSetupBlocker.tsx` — full-screen profile completion form
+- `src/app/api/profile/setup/route.ts` — strict validation endpoint for initial profile submission
+- `isProfileComplete`, `age`, `state` fields on User model
+- `demographics` field on AnalyticsSnapshot model
+- Demographics section (Gender pie, Age bar chart, Top States) in AnalyticsDashboard
+What was removed:
+- Default gender value (forces conscious selection)
+Files affected:
+- `prisma/schema.prisma`
+- `src/lib/auth.ts`
+- `src/app/api/profile/route.ts`
+- `src/app/api/profile/setup/route.ts` (NEW)
+- `src/app/api/analytics/summary/route.ts`
+- `src/lib/lms-analytics.ts`
+- `src/components/ProfileSetupBlocker.tsx` (NEW)
+- `src/components/analytics/AnalyticsDashboard.tsx`
+- `src/components/ManagerUserModal.tsx`
+- `src/app/(dashboard)/layout.tsx`
+- `src/app/(dashboard)/profile/page.tsx`
+Outcome:
+- All users with `isProfileComplete: false` are blocked on login until they submit their details.
+- Managers can view Age, State, and Gender for any user in the User Modal.
+- Analytics dashboard now shows audience demographic breakdowns.
+
+11. Date and time: 2026-04-19 08:45:00 IST
+Summary: Separated Community Direct Messages from Support Live Chats with strict type discrimination.
+What changed:
+- Added `type` column to `ChatSession` model (`"SUPPORT"` default, `"DIRECT"` for community DMs).
+- Community DMs: `type: DIRECT`, no expiration, persistent, two-way messaging (both manager and student can send).
+- Support chats: `type: SUPPORT`, keep existing 24h TTL, auto-expire logic only applies to SUPPORT.
+- All support endpoints now strictly filter `type: SUPPORT` — DMs are invisible in support dashboard.
+- All community endpoints now strictly filter `type: DIRECT` — support chats are invisible in community.
+- Removed the read-only lock on DM input for students — they can now reply after manager starts the chat.
+What was added:
+- `type` field on ChatSession model (SQL migration applied)
+What was removed:
+- `expiresAt` from DM creation (DMs persist forever)
+- Manager-only send restriction in DM messages (both sides can reply)
+- Read-only lock on student DM input in community UI
+Files affected:
+- `prisma/schema.prisma`
+- `src/app/api/community/direct/start/route.ts`
+- `src/app/api/classes/route.ts`
+- `src/app/api/community/[courseId]/messages/route.ts`
+- `src/app/api/support/live-chats/route.ts`
+- `src/app/api/support/chat-history/route.ts`
+- `src/app/api/dashboard/route.ts`
+- `src/app/api/unread/route.ts`
+- `src/app/(dashboard)/community/page.tsx`
+Outcome:
+- Community DMs and Support Live Chats operate as completely independent systems with zero cross-contamination.
+- Managers can start persistent DMs from Community; students can reply.
+- Support dashboard only shows user-initiated support sessions.

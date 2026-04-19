@@ -104,7 +104,7 @@ export async function GET() {
         where: { status: 'OPEN' }
       }),
       prisma.chatSession.count({
-        where: { status: { in: ['WAITING', 'ACTIVE'] } }
+        where: { type: 'SUPPORT', status: { in: ['WAITING', 'ACTIVE'] } }
       }),
       prisma.user.count({
         where: {

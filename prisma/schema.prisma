@@ -23,8 +23,11 @@ model User {
   updatedAt               DateTime               @updatedAt
   canCreateStudents       Boolean                @default(false)
   canTerminate            Boolean                @default(false)
-  gender                  String?                @default("MALE")
+  gender                  String?                
   genderChangedAt         DateTime?
+  age                     Int?
+  state                   String?
+  isProfileComplete       Boolean                @default(false)
   blockedUntil            DateTime?
   hasSeenWelcome          Boolean                @default(false)
   isSuperManager          Boolean                @default(false)
@@ -471,6 +474,7 @@ model ChatSession {
   studentId String
   agentId   String?
   status    String        @default("WAITING")
+  type      String        @default("SUPPORT")
   expiresAt DateTime?
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
@@ -726,7 +730,8 @@ model AnalyticsSnapshot {
   avgCoursesPerStudent Float   @default(0)       // Total enrollments / total students
   hourlyActivity      String?                    // JSON: {"0":5,"1":2,...,"23":10}
   topCourses          String?                    // JSON: [{"courseId":"x","name":"Y","count":50},...]
-  courseDistribution   String?                   // JSON: [{"courseId":"x","name":"Y","count":50},...]
+  courseDistribution  String?                    // JSON: [{"courseId":"x","name":"Y","count":50},...]
+  demographics        String?                    // JSON: Demographic breakdown of audiences
   createdAt           DateTime @default(now())
 
   @@index([date])

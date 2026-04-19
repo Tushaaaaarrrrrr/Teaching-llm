@@ -7,8 +7,10 @@ const CHAT_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 
 async function autoExpireChats() {
   const now = new Date()
+  // Only auto-expire SUPPORT chats — DIRECT chats have no expiration
   await prisma.chatSession.updateMany({
     where: {
+      type: 'SUPPORT',
       status: { not: 'CLOSED' },
       expiresAt: { lte: now },
     },
@@ -23,11 +25,13 @@ export async function GET() {
 
     await autoExpireChats()
 
+    // ONLY show SUPPORT chats — never DIRECT (community DMs)
+    let where: any = { type: 'SUPPORT' }
     if (session.role === 'STUDENT' || session.role === 'ADMIN') {
-      where = { studentId: session.userId }
+      where.studentId = session.userId
     } else {
-      // Managers only see chats that have at least one message
-      where = { messages: { some: {} } }
+      // Managers only see support chats that have at least one message
+      where.messages = { some: {} }
     }
 
     const chats = await prisma.chatSession.findMany({
@@ -60,12 +64,13 @@ export async function POST(request: NextRequest) {
 
     const { initialMessage } = await request.json().catch(() => ({}))
 
-    // Always create a new session (each chat is separate)
+    // Always create a new SUPPORT session (each support chat is separate)
     const expiresAt = new Date(Date.now() + CHAT_TTL_MS)
     const chat = await prisma.chatSession.create({
       data: { 
         studentId: session.userId, 
         status: 'WAITING', 
+        type: 'SUPPORT',
         expiresAt,
         ...(initialMessage ? {
           messages: {

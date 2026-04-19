@@ -144,6 +144,36 @@ export async function computeDailyAnalytics(targetDate: Date): Promise<{
     yesterdayStats.map((s: any) => [s.courseId, s.enrollmentCount])
   )
 
+  // ─── 9.5 Audience Demographics ─────────────────────────────────────
+  const allUsers = await (prisma.user as any).findMany({
+    where: { role: 'STUDENT', isTerminated: false },
+    select: { gender: true, state: true, age: true }
+  })
+  
+  const demographics: any = {
+    gender: { MALE: 0, FEMALE: 0, OTHER: 0, UNSPECIFIED: 0 },
+    state: {},
+    age: { 'Under 18': 0, '18-24': 0, '25-34': 0, '35+': 0, 'Unknown': 0 }
+  }
+
+  for (const u of allUsers) {
+    const g = u.gender || 'UNSPECIFIED'
+    if (demographics.gender[g] !== undefined) demographics.gender[g]++
+    else demographics.gender['UNSPECIFIED']++
+
+    const s = u.state || 'Unknown'
+    demographics.state[s] = (demographics.state[s] || 0) + 1
+
+    if (u.age) {
+      if (u.age < 18) demographics.age['Under 18']++
+      else if (u.age <= 24) demographics.age['18-24']++
+      else if (u.age <= 34) demographics.age['25-34']++
+      else demographics.age['35+']++
+    } else {
+      demographics.age['Unknown']++
+    }
+  }
+
   // ─── 10. Upsert AnalyticsSnapshot ──────────────────────────────────
   await (prisma.analyticsSnapshot as any).upsert({
     where: { date: dateOnly },
@@ -158,6 +188,7 @@ export async function computeDailyAnalytics(targetDate: Date): Promise<{
       hourlyActivity: JSON.stringify(hourlyMap),
       topCourses: JSON.stringify(topCourses),
       courseDistribution: JSON.stringify(courseDistribution),
+      demographics: JSON.stringify(demographics),
     },
     update: {
       totalUsers,
@@ -169,6 +200,7 @@ export async function computeDailyAnalytics(targetDate: Date): Promise<{
       hourlyActivity: JSON.stringify(hourlyMap),
       topCourses: JSON.stringify(topCourses),
       courseDistribution: JSON.stringify(courseDistribution),
+      demographics: JSON.stringify(demographics),
     },
   })
 

@@ -27,6 +27,7 @@ export interface JWTPayload {
  */
 export interface FullSession extends JWTPayload {
   isTerminated: boolean
+  isProfileComplete: boolean
   accessibleCourseIds: string[] | null // null = all courses (MANAGER)
   enrollmentTypes: Record<string, string> // courseId → 'LIVE' | 'RECORDED'
   isMaintenanceMode?: boolean
@@ -100,6 +101,7 @@ export async function getFullSession(): Promise<FullSession | null> {
       select: {
         isTerminated: true,
         tokenVersion: true,
+        isProfileComplete: true,
         enrollments: jwtPayload.role !== 'MANAGER' ? {
           where: {
             course: {
@@ -145,6 +147,7 @@ export async function getFullSession(): Promise<FullSession | null> {
   return {
     ...jwtPayload,
     isTerminated: user.isTerminated,
+    isProfileComplete: user.isProfileComplete,
     accessibleCourseIds: jwtPayload.role === 'MANAGER' 
       ? null 
       : enrollments.map(e => e.courseId),

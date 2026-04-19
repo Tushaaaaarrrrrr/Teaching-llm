@@ -34,7 +34,10 @@ export async function GET() {
       prisma.chatSession.findFirst({
         orderBy: { updatedAt: 'desc' },
         select: { updatedAt: true },
-        where: user.role === 'STUDENT' ? { studentId: session.userId } : {}
+        where: {
+          type: 'SUPPORT',
+          ...(user.role === 'STUDENT' ? { studentId: session.userId } : {})
+        }
       }).catch(() => null),
       prisma.announcement.findFirst({ orderBy: { createdAt: 'desc' }, select: { createdAt: true } }).catch(() => null),
     ])

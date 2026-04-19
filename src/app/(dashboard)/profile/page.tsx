@@ -49,6 +49,8 @@ interface UserProfile {
   avatar: string | null
   gender?: string | null
   genderChangedAt?: string | null
+  age?: number | null
+  state?: string | null
   securityNumber: string | null
   createdAt: string
 }
@@ -77,6 +79,8 @@ export default function ProfilePage() {
   const [editLastName, setEditLastName] = useState('')
   const [editMobile, setEditMobile] = useState('')
   const [editGender, setEditGender] = useState('')
+  const [editAge, setEditAge] = useState('')
+  const [editState, setEditState] = useState('')
   const [saving, setSaving] = useState(false)
   const [profileMsg, setProfileMsg] = useState({ type: '', text: '' })
 
@@ -103,6 +107,8 @@ export default function ProfilePage() {
         setEditLastName(data.user.lastName || data.user.name.split(' ').slice(1).join(' ') || '')
         setEditMobile(data.user.mobileNumber || '')
         setEditGender(data.user.gender || 'MALE')
+        setEditAge(data.user.age?.toString() || '')
+        setEditState(data.user.state || '')
       }
     } catch (e) { console.error(e) }
     setLoading(false)
@@ -116,7 +122,9 @@ export default function ProfilePage() {
       const payload: any = { 
         firstName: editFirstName.trim(),
         lastName: editLastName.trim(),
-        mobileNumber: editMobile.trim()
+        mobileNumber: editMobile.trim(),
+        age: editAge ? parseInt(editAge, 10) : null,
+        state: editState.trim(),
       }
       
       // Include gender if it hasn't been changed yet
@@ -195,6 +203,8 @@ export default function ProfilePage() {
       setEditLastName(user.lastName || user.name.split(' ').slice(1).join(' ') || '')
       setEditMobile(user.mobileNumber || '')
       setEditGender(user.gender || 'MALE')
+      setEditAge(user.age?.toString() || '')
+      setEditState(user.state || '')
     }
     setProfileMsg({ type: '', text: '' })
   }
@@ -462,6 +472,17 @@ export default function ProfilePage() {
                         />
                         Female
                       </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                        <input
+                          type="radio"
+                          name="gender"
+                          value="OTHER"
+                          checked={editGender === 'OTHER'}
+                          onChange={(e) => setEditGender(e.target.value)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                        Other
+                      </label>
                     </div>
                   )}
                   {!user?.genderChangedAt && (
@@ -469,6 +490,36 @@ export default function ProfilePage() {
                       You can change your gender one time only
                     </span>
                   )}
+                </div>
+              </div>
+
+              {/* Age */}
+              <div style={{ ...insetRow, justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500', display: 'block', marginBottom: '8px' }}>Age</span>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={editAge}
+                    onChange={(e) => setEditAge(e.target.value)}
+                    placeholder="Enter your age"
+                    style={{ background: 'transparent', padding: '6px 0', border: 'none', borderBottom: '2px solid rgba(0,0,0,0.1)', borderRadius: 0, width: '100px', fontSize: '14px', fontWeight: '600' }}
+                  />
+                </div>
+              </div>
+
+              {/* State */}
+              <div style={{ ...insetRow, justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1, width: '100%' }}>
+                  <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500', display: 'block', marginBottom: '8px' }}>State / Territory</span>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editState}
+                    onChange={(e) => setEditState(e.target.value)}
+                    placeholder="e.g. Maharashtra"
+                    style={{ background: 'transparent', padding: '6px 0', border: 'none', borderBottom: '2px solid rgba(0,0,0,0.1)', borderRadius: 0, width: '100%', fontSize: '14px', fontWeight: '600' }}
+                  />
                 </div>
               </div>
 
