@@ -42,6 +42,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
     imageUrl: '',
     questionBankId: ''
   })
+  const [showCodeModal, setShowCodeModal] = useState<{ language: string } | null>(null)
+  const [codeSnippet, setCodeSnippet] = useState('')
 
   useEffect(() => {
     loadData()
@@ -727,47 +729,69 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                  <div>
                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                      <label style={{ fontSize: '13px', fontWeight: 800, color: '#6b6b8a', display: 'none' }}>Question Text</label>
-                     <div />
-                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Format as:</span>
-                        <select
-                          onChange={(e) => {
-                            const lang = e.target.value;
-                            if (!lang) return;
-                            
-                            let currentText = questionForm.text.trim();
-                            let newText = '';
-                            
-                            // Check if already wrapped in some code block
-                            const codeBlockRegex = /^```(?:\w+)?\n([\s\S]*?)```$/;
-                            const match = currentText.match(codeBlockRegex);
-                            
-                            if (match) {
-                              newText = `\`\`\`${lang}\n${match[1].trim()}\n\`\`\``;
-                            } else if (currentText) {
-                              newText = `\`\`\`${lang}\n${currentText}\n\`\`\``;
-                            } else {
-                              newText = `\`\`\`${lang}\n\n\`\`\``;
-                            }
-                            
-                            setQuestionForm({ ...questionForm, text: newText });
-                            e.target.value = '';
-                          }}
-                          style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cfd6e1', background: '#fff', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: '#3636e8' }}
-                        >
-                          <option value="">Select Language...</option>
-                          <option value="python">Python</option>
-                          <option value="java">Java</option>
-                          <option value="cpp">C++</option>
-                          <option value="javascript">JavaScript</option>
-                          <option value="csharp">C#</option>
-                          <option value="html">HTML</option>
-                          <option value="css">CSS</option>
-                          <option value="sql">SQL</option>
-                        </select>
-                     </div>
                    </div>
-                   <textarea value={questionForm.text} onChange={(e) => setQuestionForm({ ...questionForm, text: e.target.value })} placeholder="Question text" rows={4} style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', resize: 'vertical' }} />
+                   <textarea 
+                     value={questionForm.text.split('```')[0].trim()} 
+                     onChange={(e) => {
+                       const newText = e.target.value;
+                       const currentParts = questionForm.text.split('```');
+                       if (currentParts.length >= 3) {
+                         const codePart = '```' + currentParts.slice(1).join('```');
+                         setQuestionForm({ ...questionForm, text: newText + (newText ? '\n\n' : '') + codePart });
+                       } else {
+                         setQuestionForm({ ...questionForm, text: newText });
+                       }
+                     }} 
+                     placeholder="Question text" 
+                     rows={4} 
+                     style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', resize: 'vertical' }} 
+                   />
+                   {questionForm.text.includes('```') && (
+                     <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.6)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                         <span style={{ fontSize: '12px', fontWeight: 800, color: '#6b6b8a' }}>Code Preview</span>
+                         <button 
+                           type="button" 
+                           onClick={() => {
+                             const textOnly = questionForm.text.split('```')[0].trim();
+                             setQuestionForm({ ...questionForm, text: textOnly });
+                           }}
+                           style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
+                         >
+                           REMOVE CODE
+                         </button>
+                       </div>
+                       <RichTextDisplay text={'```' + questionForm.text.split('```').slice(1).join('```')} />
+                     </div>
+                   )}
+
+                    {/* Attachment Row */}
+                    <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.4)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)' }}>
+                       <div style={{ opacity: questionForm.imageUrl ? 0.5 : 1, pointerEvents: questionForm.imageUrl ? 'none' : 'auto' }}>
+                         <p style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '8px' }}>Code Block</p>
+                         <select
+                           onChange={(e) => {
+                             const lang = e.target.value;
+                             if (lang) {
+                               setShowCodeModal({ language: lang });
+                               setCodeSnippet('');
+                               e.target.value = '';
+                             }
+                           }}
+                           style={{ padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: '#3636e8' }}
+                         >
+                           <option value="">+ Add Code</option>
+                           <option value="python">Python</option>
+                           <option value="java">Java</option>
+                           <option value="cpp">C++</option>
+                           <option value="javascript">JavaScript</option>
+                           <option value="csharp">C#</option>
+                           <option value="html">HTML</option>
+                           <option value="css">CSS</option>
+                           <option value="sql">SQL</option>
+                         </select>
+                       </div>
+                    </div>
                  </div>
                  {(questionForm.type === 'MCQ' || questionForm.type === 'TRUE_FALSE') && (
                    <div style={{ display: 'grid', gap: '12px' }}>
@@ -810,10 +834,41 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                    {savingQuestions ? 'Saving...' : 'Save Question'}
                  </button>
                </div>
-             </div>
-           </div>
-         )}
-      </div>
+            </div>
+          </div>
+        )}
+
+      {showCodeModal !== null && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 6000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div style={{ background: '#fff', padding: '32px', borderRadius: '24px', width: '100%', maxWidth: '700px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', marginBottom: '16px', textTransform: 'capitalize' }}>Add Code ({showCodeModal.language})</h3>
+            <textarea
+              value={codeSnippet}
+              onChange={e => setCodeSnippet(e.target.value)}
+              placeholder="Paste or write your code here..."
+              style={{ width: '100%', height: '300px', padding: '16px', borderRadius: '12px', border: '1px solid #cfd6e1', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical', background: '#f8f9fc' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+              <button onClick={() => setShowCodeModal(null)} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', background: '#f1f1f8', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
+              <button 
+                onClick={() => {
+                  if (codeSnippet.trim()) {
+                    const qText = questionForm.text.split('```')[0].trim();
+                    const newText = qText + (qText ? '\n\n' : '') + `\`\`\`${showCodeModal.language}\n${codeSnippet}\n\`\`\``;
+                    setQuestionForm({ ...questionForm, text: newText });
+                  }
+                  setShowCodeModal(null);
+                }} 
+                style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer' }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
     )
   }
 

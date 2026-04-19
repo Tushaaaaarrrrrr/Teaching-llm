@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest) {
       userId: session.userId,
       userName: session.name,
       userRole: session.role,
-      actionType: action === 'disable' ? ACTION.CHAT_ENDED : ACTION.CHAT_STARTED,
+      actionType: ACTION.CHAT_STARTED,
       actionDescription: `${session.name} ${action}d direct chat with ${chat.student.name}`,
       moduleName: MODULE.COMMUNITY,
       targetId: chatId,

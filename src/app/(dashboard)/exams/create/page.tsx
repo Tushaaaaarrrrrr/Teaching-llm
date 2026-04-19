@@ -25,6 +25,8 @@ export default function CreateExamPage() {
   const [bankSearch, setBankSearch] = useState('')
   const [bankSubjectFilter, setBankSubjectFilter] = useState('')
   const [userSubjects, setUserSubjects] = useState<string[]>([])
+  const [showCodeModal, setShowCodeModal] = useState<{ index: number, language: string } | null>(null)
+  const [codeSnippet, setCodeSnippet] = useState('')
   
   // Form state
   const [title, setTitle] = useState('')
@@ -429,55 +431,41 @@ export default function CreateExamPage() {
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <label style={{ fontSize: '14px', fontWeight: 800, color: '#6b6b8a' }}>Question Text</label>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Format as:</span>
-                            <select
-                              onChange={(e) => {
-                                const lang = e.target.value;
-                                if (!lang) return;
-                                
-                                let currentText = q.text.trim();
-                                let newText = '';
-                                
-                                // Check if already wrapped in some code block
-                                const codeBlockRegex = /^```(?:\w+)?\n([\s\S]*?)```$/;
-                                const match = currentText.match(codeBlockRegex);
-                                
-                                if (match) {
-                                  // Update language of existing block
-                                  newText = `\`\`\`${lang}\n${match[1].trim()}\n\`\`\``;
-                                } else if (currentText) {
-                                  // Wrap existing plain text
-                                  newText = `\`\`\`${lang}\n${currentText}\n\`\`\``;
-                                } else {
-                                  // Insert empty template
-                                  newText = `\`\`\`${lang}\n\n\`\`\``;
-                                }
-                                
-                                handleQuestionChange(idx, 'text', newText);
-                                e.target.value = ''; // Reset select
-                              }}
-                              style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cfd6e1', background: '#fff', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: '#3636e8' }}
-                            >
-                              <option value="">Select Language...</option>
-                              <option value="python">Python</option>
-                              <option value="java">Java</option>
-                              <option value="cpp">C++</option>
-                              <option value="javascript">JavaScript</option>
-                              <option value="csharp">C#</option>
-                              <option value="html">HTML</option>
-                              <option value="css">CSS</option>
-                              <option value="sql">SQL</option>
-                            </select>
-                          </div>
                         </div>
                         <textarea 
-                          value={q.text} 
-                          onChange={e => handleQuestionChange(idx, 'text', e.target.value)} 
+                          value={q.text.split('```')[0].trim()} 
+                          onChange={e => {
+                            const newText = e.target.value;
+                            const currentParts = q.text.split('```');
+                            if (currentParts.length >= 3) {
+                              const codePart = '```' + currentParts.slice(1).join('```');
+                              handleQuestionChange(idx, 'text', newText + (newText ? '\n\n' : '') + codePart);
+                            } else {
+                              handleQuestionChange(idx, 'text', newText);
+                            }
+                          }}
                           placeholder="Type your question here..." 
                           style={{ ...neuInput, height: '100px', resize: 'vertical' }} 
                           required 
                         />
+                        {q.text.includes('```') && (
+                          <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.6)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 800, color: '#6b6b8a' }}>Code Preview</span>
+                              <button 
+                                type="button" 
+                                onClick={() => {
+                                  const textOnly = q.text.split('```')[0].trim();
+                                  handleQuestionChange(idx, 'text', textOnly);
+                                }}
+                                style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
+                              >
+                                REMOVE CODE
+                              </button>
+                            </div>
+                            <RichTextDisplay text={'```' + q.text.split('```').slice(1).join('```')} />
+                          </div>
+                        )}
                       </div>
                       <div>
                         <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Type</label>
@@ -490,21 +478,66 @@ export default function CreateExamPage() {
                       </div>
                     </div>
 
-                    {/* Image Upload Row */}
+                    {/* Attachment Row */}
                     <div style={{ background: 'rgba(255,255,255,0.4)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.6)' }}>
-                       <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '10px' }}>Question Image (Optional)</label>
-                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                         <label style={{ ...secondaryButton, padding: '8px 20px', fontSize: '13px', cursor: 'pointer', display: 'inline-block' }}>
-                           Choose File
-                           <input 
-                              type="file" 
-                              accept="image/*" 
-                              hidden
-                              onChange={(e) => e.target.files?.[0] && handleImageUpload(idx, e.target.files[0])}
-                           />
-                         </label>
-                         <span style={{ fontSize: '13px', color: '#9999b0' }}>{q.imageUrl ? 'Image uploaded successfuly' : 'No file chosen'}</span>
+                       <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '10px' }}>Attachment (Optional)</label>
+                       
+                       {(q.imageUrl && q.text.includes('```')) && (
+                         <div style={{ padding: '8px 12px', background: '#FEF2F2', color: '#EF4444', borderRadius: '8px', fontSize: '12px', fontWeight: 700, marginBottom: '12px' }}>
+                           Please choose one: Question Image or Code
+                         </div>
+                       )}
+
+                       <div style={{ display: 'flex', gap: '32px' }}>
+                         {/* Image Section */}
+                         <div style={{ opacity: q.text.includes('```') ? 0.5 : 1, pointerEvents: q.text.includes('```') ? 'none' : 'auto' }}>
+                           <p style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '8px' }}>Image Upload</p>
+                           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                             <label style={{ ...secondaryButton, padding: '8px 20px', fontSize: '13px', cursor: 'pointer', display: 'inline-block' }}>
+                               Choose File
+                               <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  hidden
+                                  onChange={(e) => e.target.files?.[0] && handleImageUpload(idx, e.target.files[0])}
+                               />
+                             </label>
+                             <span style={{ fontSize: '13px', color: '#9999b0' }}>{q.imageUrl ? 'Image uploaded successfuly' : 'No file chosen'}</span>
+                           </div>
+                         </div>
+
+                         {/* Divider */}
+                         <div style={{ width: '1px', background: 'rgba(0,0,0,0.1)' }} />
+
+                         {/* Code Section */}
+                         <div style={{ opacity: q.imageUrl ? 0.5 : 1, pointerEvents: q.imageUrl ? 'none' : 'auto' }}>
+                           <p style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '8px' }}>Code Block</p>
+                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                             <select
+                               onChange={(e) => {
+                                 const lang = e.target.value;
+                                 if (lang) {
+                                   setShowCodeModal({ index: idx, language: lang });
+                                   setCodeSnippet('');
+                                   e.target.value = '';
+                                 }
+                               }}
+                               style={{ padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: '#3636e8' }}
+                             >
+                               <option value="">+ Add Code</option>
+                               <option value="python">Python</option>
+                               <option value="java">Java</option>
+                               <option value="cpp">C++</option>
+                               <option value="javascript">JavaScript</option>
+                               <option value="csharp">C#</option>
+                               <option value="html">HTML</option>
+                               <option value="css">CSS</option>
+                               <option value="sql">SQL</option>
+                             </select>
+                           </div>
+                         </div>
                        </div>
+                       
                        {q.imageUrl && (
                          <div style={{ marginTop: '16px', position: 'relative', width: '200px' }}>
                             <img src={q.imageUrl} alt="Preview" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '14px', boxShadow: '4px 4px 12px rgba(0,0,0,0.1)' }} />
@@ -625,6 +658,37 @@ export default function CreateExamPage() {
           </>
         )}
       </form>
+
+      {showCodeModal !== null && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div style={{ background: '#fff', padding: '32px', borderRadius: '24px', width: '100%', maxWidth: '700px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', marginBottom: '16px', textTransform: 'capitalize' }}>Add Code ({showCodeModal.language})</h3>
+            <textarea
+              value={codeSnippet}
+              onChange={e => setCodeSnippet(e.target.value)}
+              placeholder="Paste or write your code here..."
+              style={{ width: '100%', height: '300px', padding: '16px', borderRadius: '12px', border: '1px solid #cfd6e1', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical', background: '#f8f9fc' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+              <button onClick={() => setShowCodeModal(null)} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', background: '#f1f1f8', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
+              <button 
+                onClick={() => {
+                  if (codeSnippet.trim()) {
+                    const idx = showCodeModal.index;
+                    const qText = questions[idx].text.split('```')[0].trim();
+                    const newText = qText + (qText ? '\n\n' : '') + `\`\`\`${showCodeModal.language}\n${codeSnippet}\n\`\`\``;
+                    handleQuestionChange(idx, 'text', newText);
+                  }
+                  setShowCodeModal(null);
+                }} 
+                style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer' }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
