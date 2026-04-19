@@ -26,12 +26,31 @@ ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "encryptedTempPassword" TEXT;
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastDailyDigestAt" TIMESTAMP(3);
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastViolationAt" TIMESTAMP(3);
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "violationCount" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "genderChangedAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "age" INTEGER;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "state" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "isProfileComplete" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastSeenCommunityAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastSeenNotificationsAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastSeenSupportAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "tokenVersion" INTEGER NOT NULL DEFAULT 0;
 
 -- ─── ENROLLMENT TABLE ───────────────────────────────────────────────────────
 ALTER TABLE "Enrollment" ADD COLUMN IF NOT EXISTS "isFreeEnrollment" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "Enrollment" ADD COLUMN IF NOT EXISTS "type" "EnrollmentType" NOT NULL DEFAULT 'LIVE';
 CREATE INDEX IF NOT EXISTS "Enrollment_userId_idx" ON "Enrollment"("userId");
 CREATE INDEX IF NOT EXISTS "Enrollment_classId_idx" ON "Enrollment"("classId");
+
+-- ─── COURSE (CLASS) TABLE: Add missing control columns ─────────────────────
+ALTER TABLE "Class" ADD COLUMN IF NOT EXISTS "googleGroupEmail" TEXT;
+ALTER TABLE "Class" ADD COLUMN IF NOT EXISTS "isCommunityActive" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "Class" ADD COLUMN IF NOT EXISTS "isDisabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Class" ADD COLUMN IF NOT EXISTS "isDemo" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Class" ADD COLUMN IF NOT EXISTS "isFree" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Class" ADD COLUMN IF NOT EXISTS "isGlobal" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Class" ADD COLUMN IF NOT EXISTS "lastMessageAt" TIMESTAMP(3);
+ALTER TABLE "Class" ADD COLUMN IF NOT EXISTS "teacherName" TEXT;
+CREATE INDEX IF NOT EXISTS "Class_lastMessageAt_idx" ON "Class"("lastMessageAt");
 
 -- ─── COURSE BUNDLES ─────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS "CourseBundle" (
@@ -216,6 +235,20 @@ ALTER TABLE "ChatMessage" ADD COLUMN IF NOT EXISTS "isSystemDeleted" BOOLEAN NOT
 ALTER TABLE "ActivityLog" ADD COLUMN IF NOT EXISTS "isFailure" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "ActivityLog" ADD COLUMN IF NOT EXISTS "priority" INTEGER NOT NULL DEFAULT 0;
 
+-- ─── NOTIFICATION: Add missing columns ──────────────────────────────────────
+ALTER TABLE "Notification" ADD COLUMN IF NOT EXISTS "announcementId" TEXT;
+
+-- ─── FAQ TABLE ──────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS "Faq" (
+    "id" TEXT NOT NULL,
+    "question" TEXT NOT NULL,
+    "answer" TEXT NOT NULL,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Faq_pkey" PRIMARY KEY ("id")
+);
+
 -- ─── COMMENT TABLE ──────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS "Comment" (
     "id" TEXT NOT NULL,
@@ -356,6 +389,119 @@ CREATE TABLE IF NOT EXISTS "SyncQueue" (
 );
 CREATE INDEX IF NOT EXISTS "SyncQueue_processed_idx" ON "SyncQueue"("processed");
 CREATE INDEX IF NOT EXISTS "SyncQueue_processAt_idx" ON "SyncQueue"("processAt");
+
+-- ─── GROUP SYNC TABLES ──────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS "GroupSyncJob" (
+    "id" TEXT NOT NULL,
+    "userEmail" TEXT NOT NULL,
+    "classId" TEXT NOT NULL,
+    "groupEmail" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "attemptCount" INTEGER NOT NULL DEFAULT 0,
+    "lastError" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "GroupSyncJob_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "GroupSyncJob_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "GroupSyncJob_status_attemptCount_idx" ON "GroupSyncJob"("status", "attemptCount");
+CREATE INDEX IF NOT EXISTS "GroupSyncJob_classId_idx" ON "GroupSyncJob"("classId");
+CREATE INDEX IF NOT EXISTS "GroupSyncJob_userEmail_idx" ON "GroupSyncJob"("userEmail");
+CREATE INDEX IF NOT EXISTS "GroupSyncJob_createdAt_idx" ON "GroupSyncJob"("createdAt");
+
+CREATE TABLE IF NOT EXISTS "GroupSyncLock" (
+    "id" TEXT NOT NULL DEFAULT 'singleton',
+    "isProcessing" BOOLEAN NOT NULL DEFAULT false,
+    "lockedAt" TIMESTAMP(3),
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "GroupSyncLock_pkey" PRIMARY KEY ("id")
+);
+INSERT INTO "GroupSyncLock" ("id") VALUES ('singleton') ON CONFLICT ("id") DO NOTHING;
+
+-- ─── ANALYTICS TABLES ───────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS "AnalyticsSnapshot" (
+    "id" TEXT NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL,
+    "totalUsers" INTEGER NOT NULL DEFAULT 0,
+    "newUsers" INTEGER NOT NULL DEFAULT 0,
+    "returningUsers" INTEGER NOT NULL DEFAULT 0,
+    "activeUsers" INTEGER NOT NULL DEFAULT 0,
+    "totalEnrollments" INTEGER NOT NULL DEFAULT 0,
+    "avgCoursesPerStudent" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "hourlyActivity" TEXT,
+    "topCourses" TEXT,
+    "courseDistribution" TEXT,
+    "demographics" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AnalyticsSnapshot_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "AnalyticsSnapshot_date_key" ON "AnalyticsSnapshot"("date");
+CREATE INDEX IF NOT EXISTS "AnalyticsSnapshot_date_idx" ON "AnalyticsSnapshot"("date");
+
+CREATE TABLE IF NOT EXISTS "AnalyticsCourseDaily" (
+    "id" TEXT NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL,
+    "courseId" TEXT NOT NULL,
+    "courseName" TEXT NOT NULL,
+    "enrollmentCount" INTEGER NOT NULL DEFAULT 0,
+    "totalEnrollments" INTEGER NOT NULL DEFAULT 0,
+    "growthDelta" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AnalyticsCourseDaily_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "AnalyticsCourseDaily_date_courseId_key" ON "AnalyticsCourseDaily"("date", "courseId");
+CREATE INDEX IF NOT EXISTS "AnalyticsCourseDaily_date_idx" ON "AnalyticsCourseDaily"("date");
+CREATE INDEX IF NOT EXISTS "AnalyticsCourseDaily_courseId_idx" ON "AnalyticsCourseDaily"("courseId");
+
+CREATE TABLE IF NOT EXISTS "AnalyticsConfig" (
+    "id" TEXT NOT NULL DEFAULT 'singleton',
+    "lastUpdatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "cronIntervalHours" INTEGER NOT NULL DEFAULT 24,
+    CONSTRAINT "AnalyticsConfig_pkey" PRIMARY KEY ("id")
+);
+INSERT INTO "AnalyticsConfig" ("id") VALUES ('singleton') ON CONFLICT ("id") DO NOTHING;
+
+-- ─── LECTURE PROGRESS TABLES ────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS "LectureProgress" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "contentId" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'NOT_STARTED',
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "LectureProgress_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "LectureProgress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "LectureProgress_contentId_fkey" FOREIGN KEY ("contentId") REFERENCES "Content"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "LectureProgress_userId_contentId_key" ON "LectureProgress"("userId", "contentId");
+CREATE INDEX IF NOT EXISTS "LectureProgress_userId_idx" ON "LectureProgress"("userId");
+CREATE INDEX IF NOT EXISTS "LectureProgress_contentId_idx" ON "LectureProgress"("contentId");
+
+CREATE TABLE IF NOT EXISTS "LectureProgressQueue" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "contentId" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "processed" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "LectureProgressQueue_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "LectureProgressQueue_processed_idx" ON "LectureProgressQueue"("processed");
+CREATE INDEX IF NOT EXISTS "LectureProgressQueue_userId_idx" ON "LectureProgressQueue"("userId");
+
+-- ─── COMMUNITY READ STATE ───────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS "CommunityReadState" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "classId" TEXT NOT NULL,
+    "lastReadAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "CommunityReadState_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "CommunityReadState_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "CommunityReadState_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "CommunityReadState_userId_classId_key" ON "CommunityReadState"("userId", "classId");
+CREATE INDEX IF NOT EXISTS "CommunityReadState_userId_idx" ON "CommunityReadState"("userId");
+CREATE INDEX IF NOT EXISTS "CommunityReadState_classId_idx" ON "CommunityReadState"("classId");
 
 -- ─── LOGIN LOG: Add index ───────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS "LoginLog" (
