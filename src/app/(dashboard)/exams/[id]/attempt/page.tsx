@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { hasStrictTimer } from '@/lib/exam-policy'
 import ExamConfirmationModal from '@/components/exams/ExamConfirmationModal'
+import { RichTextDisplay } from '@/components/ui/RichTextDisplay'
 
 interface Question {
   id: string
@@ -426,13 +427,13 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                 </div>
 
                 {/* Question Text */}
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a', lineHeight: '1.4', marginBottom: '32px' }}>
-                    {currentQuestion?.text}
-                </h2>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a', lineHeight: '1.4', marginBottom: '32px' }}>
+                    <RichTextDisplay text={currentQuestion?.text} />
+                </div>
 
                 {/* Options Area */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '40px' }}>
-                    {currentQuestion?.type === 'MCQ' || currentQuestion?.type === 'TRUE_FALSE' ? (
+                    {(currentQuestion?.type === 'MCQ' || currentQuestion?.type === 'MSQ' || currentQuestion?.type === 'TRUE_FALSE') ? (
                     (() => {
                         let opts: string[] = []
                         try {
@@ -443,33 +444,84 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                         
                         if (currentQuestion.type === 'TRUE_FALSE') opts = ['True', 'False']
                         
-                        return opts.filter(opt => typeof opt === 'string' && opt.trim()).map((opt: string) => (
-                            <button
-                                key={opt}
-                                onClick={() => saveAnswer(currentQuestion.id, opt, true)}
-                                style={{
-                                    padding: '20px 24px', borderRadius: '20px', border: 'none',
-                                    textAlign: 'left', fontSize: '16px', fontWeight: 600,
-                                    background: answers[currentQuestion.id] === opt ? '#3636e8' : '#fff',
-                                    color: answers[currentQuestion.id] === opt ? '#fff' : '#1e1e3a',
-                                    boxShadow: answers[currentQuestion.id] === opt 
-                                        ? 'inset 4px 4px 10px rgba(0,0,0,0.2)' 
-                                        : '4px 4px 10px #cfd6e1, -4px -4px 10px #ffffff',
-                                    cursor: 'pointer', transition: 'all 0.2s',
-                                    display: 'flex', alignItems: 'center', gap: '16px'
-                                }}
-                            >
-                                <div style={{ 
-                                    width: '24px', height: '24px', borderRadius: '50%', 
-                                    border: `2px solid ${answers[currentQuestion.id] === opt ? '#fff' : '#cfd6e1'}`,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                }}>
-                                    {answers[currentQuestion.id] === opt && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fff' }} />}
-                                </div>
-                                {opt}
-                            </button>
-                        ))
+                        const isMSQ = currentQuestion.type === 'MSQ'
+                        let currentSelection: string[] = []
+                        if (isMSQ) {
+                          try {
+                            currentSelection = JSON.parse(answers[currentQuestion.id] || '[]')
+                            if (!Array.isArray(currentSelection)) currentSelection = []
+                          } catch {
+                            currentSelection = []
+                          }
+                        }
+
+                        return opts.filter(opt => typeof opt === 'string' && opt.trim()).map((opt: string) => {
+                            const isSelected = isMSQ 
+                              ? currentSelection.includes(opt)
+                              : answers[currentQuestion.id] === opt
+
+                            return (
+                              <button
+                                  key={opt}
+                                  onClick={() => {
+                                    if (isMSQ) {
+                                      let newSelection = [...currentSelection]
+                                      if (newSelection.includes(opt)) {
+                                        newSelection = newSelection.filter(s => s !== opt)
+                                      } else {
+                                        newSelection.push(opt)
+                                      }
+                                      saveAnswer(currentQuestion.id, JSON.stringify(newSelection), true)
+                                    } else {
+                                      saveAnswer(currentQuestion.id, opt, true)
+                                    }
+                                  }}
+                                  style={{
+                                      padding: '20px 24px', borderRadius: '20px', border: 'none',
+                                      textAlign: 'left', fontSize: '16px', fontWeight: 600,
+                                      background: isSelected ? '#3636e8' : '#fff',
+                                      color: isSelected ? '#fff' : '#1e1e3a',
+                                      boxShadow: isSelected 
+                                          ? 'inset 4px 4px 10px rgba(0,0,0,0.2)' 
+                                          : '4px 4px 10px #cfd6e1, -4px -4px 10px #ffffff',
+                                      cursor: 'pointer', transition: 'all 0.2s',
+                                      display: 'flex', alignItems: 'center', gap: '16px'
+                                  }}
+                              >
+                                  <div style={{ 
+                                      width: '24px', height: '24px', borderRadius: isMSQ ? '6px' : '50%', 
+                                      border: `2px solid ${isSelected ? '#fff' : '#cfd6e1'}`,
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                  }}>
+                                      {isSelected && (
+                                        isMSQ ? (
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                        ) : (
+                                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fff' }} />
+                                        )
+                                      )}
+                                  </div>
+                                  {opt}
+                              </button>
+                            )
+                        })
                     })()
+                    ) : currentQuestion?.type === 'NAT' ? (
+                      <div style={{ padding: '4px' }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '12px' }}>Your Numerical Answer:</label>
+                        <input 
+                          type="number"
+                          step="any"
+                          value={answers[currentQuestion.id] || ''}
+                          onChange={e => saveAnswer(currentQuestion.id, e.target.value)}
+                          placeholder="Enter number (decimals allowed)..."
+                          style={{
+                              width: '100%', padding: '24px', borderRadius: '20px', border: 'none',
+                              background: '#f0f2f8', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px #ffffff',
+                              fontSize: '18px', fontWeight: 700, outline: 'none', color: '#1e1e3a',
+                          }}
+                        />
+                      </div>
                     ) : (
                     <textarea
                         value={answers[currentQuestion.id] || ''}

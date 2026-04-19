@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import { RichTextDisplay } from '@/components/ui/RichTextDisplay'
 
 interface QuestionForm {
   text: string
@@ -99,7 +100,7 @@ export default function ContentBankPage() {
     try {
       const payload = {
         ...form,
-        options: (form.type === 'MCQ' || form.type === 'TRUE_FALSE') ? JSON.stringify(form.options) : null
+        options: (form.type === 'MCQ' || form.type === 'MSQ' || form.type === 'TRUE_FALSE') ? JSON.stringify(form.options) : null
       }
 
       const res = await fetch(editingQuestionId ? `/api/content-bank/${editingQuestionId}` : '/api/content-bank', {
@@ -254,7 +255,7 @@ export default function ContentBankPage() {
                 <img src={q.imageUrl} alt="Question" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '12px', marginBottom: '16px', boxShadow: '2px 2px 5px rgba(0,0,0,0.1)' }} />
               )}
               
-              <p style={{ fontWeight: 700, color: '#1e1e3a', marginBottom: '16px', lineHeight: '1.4' }}>{q.text}</p>
+              <div style={{ fontWeight: 700, color: '#1e1e3a', marginBottom: '16px', lineHeight: '1.4' }}><RichTextDisplay text={q.text} /></div>
               
               <div style={{ fontSize: '12px', color: '#6b6b8a', background: 'rgba(255,255,255,0.4)', padding: '12px', borderRadius: '12px' }}>
                  <div style={{ fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', fontSize: '10px', marginBottom: '4px' }}>Type: {q.type}</div>
@@ -269,7 +270,15 @@ export default function ContentBankPage() {
                    </div>
                  )}
                  <div style={{ marginTop: '8px', color: '#10b981', fontWeight: 700 }}>
-                    <span style={{ fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', fontSize: '10px' }}>Correct Answer:</span> {q.correctAnswer}
+                    <span style={{ fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', fontSize: '10px' }}>Correct Answer:</span> {(() => {
+                      if (q.type === 'MSQ') {
+                        try {
+                          const arr = JSON.parse(q.correctAnswer || '[]')
+                          return Array.isArray(arr) ? arr.join(', ') : q.correctAnswer
+                        } catch { return q.correctAnswer }
+                      }
+                      return q.correctAnswer
+                    })()}
                  </div>
                  {q.explanation && (
                    <div style={{ marginTop: '8px', color: '#6b6b8a', fontStyle: 'italic' }}>
@@ -333,16 +342,30 @@ export default function ContentBankPage() {
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#6b6b8a', marginBottom: '6px' }}>Type</label>
                         <select value={form.type} onChange={e => setForm({...form, type: e.target.value, options: e.target.value === 'TRUE_FALSE' ? ['True', 'False'] : ['', ''], correctAnswer: ''})} style={neuInput}>
                            <option value="MCQ">Multiple Choice</option>
+                           <option value="MSQ">Multiple Select (MSQ)</option>
                            <option value="TRUE_FALSE">True / False</option>
-                           <option value="SUBJECTIVE">Subjective</option>
+                           <option value="NAT">Numerical (NAT)</option>
                         </select>
                     </div>
                  </div>
 
                  {/* Question text */}
                  <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#6b6b8a', marginBottom: '6px' }}>Question Text</label>
-                    <textarea value={form.text} onChange={e => setForm({...form, text: e.target.value})} placeholder="Type your question..." style={{ ...neuInput, height: '80px', resize: 'none' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '13px', fontWeight: 800, color: '#6b6b8a' }}>Question Text</label>
+                      <button
+                        onClick={() => {
+                          const lang = window.prompt("Enter programming language (optional, e.g., python, javascript):", "");
+                          if (lang !== null) {
+                            setForm({ ...form, text: form.text + `\n\`\`\`${lang}\n\n\`\`\`\n` });
+                          }
+                        }}
+                        style={{ padding: '4px 10px', borderRadius: '6px', background: '#3636e810', border: 'none', color: '#3636e8', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
+                      >
+                        {`</> Insert Code Block`}
+                      </button>
+                    </div>
+                    <textarea value={form.text} onChange={e => setForm({...form, text: e.target.value})} placeholder="Type your question..." style={{ ...neuInput, height: '80px', resize: 'vertical' }} />
                  </div>
 
                  {/* Image Upload */}
@@ -369,7 +392,7 @@ export default function ContentBankPage() {
                  </div>
 
                  {/* Options Logic */}
-                 {(form.type === 'MCQ' || form.type === 'TRUE_FALSE') && (
+                 {(form.type === 'MCQ' || form.type === 'MSQ' || form.type === 'TRUE_FALSE') && (
                    <div>
                       <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#6b6b8a', marginBottom: '12px' }}>Options</label>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -384,9 +407,23 @@ export default function ContentBankPage() {
                            form.options.map((opt, oIdx) => (
                              <div key={oIdx} style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
                                <input 
-                                 type="radio" 
-                                 checked={form.correctAnswer === opt && opt !== ''} 
-                                 onChange={() => setForm({...form, correctAnswer: opt})} 
+                                 type={form.type === 'MSQ' ? "checkbox" : "radio"} 
+                                 checked={form.type === 'MSQ' ? (() => { try { return JSON.parse(form.correctAnswer || '[]').includes(opt); } catch { return false; } })() : (form.correctAnswer === opt && opt !== '')}
+                                 onChange={() => {
+                                   if (form.type === 'MSQ') {
+                                     let arr: string[] = [];
+                                     try { arr = JSON.parse(form.correctAnswer || '[]'); } catch { arr = []; }
+                                     if (!Array.isArray(arr)) arr = [];
+                                     if (arr.includes(opt)) {
+                                         arr = arr.filter(o => o !== opt);
+                                     } else if (opt !== '') {
+                                         arr.push(opt);
+                                     }
+                                     setForm({...form, correctAnswer: JSON.stringify(arr)});
+                                   } else {
+                                     setForm({...form, correctAnswer: opt});
+                                   }
+                                 }} 
                                  style={{ width: '22px', height: '22px', accentColor: '#3636e8', cursor: 'pointer' }} 
                                />
                                <input 
@@ -410,7 +447,8 @@ export default function ContentBankPage() {
                            ))
                          )}
                       </div>
-                      {form.type === 'MCQ' && form.options.length < 6 && (
+                      {/* Add Option Button */}
+                      {(form.type === 'MCQ' || form.type === 'MSQ') && form.options.length < 6 && (
                         <button onClick={() => setForm({...form, options: [...form.options, '']})} style={{ marginTop: '20px', background: 'none', border: '2px dashed #3636e8', color: '#3636e8', padding: '10px 24px', borderRadius: '14px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>+ Add Option</button>
                       )}
                    </div>
@@ -428,10 +466,17 @@ export default function ContentBankPage() {
                     </div>
                  </div>
 
-                 {form.type === 'SUBJECTIVE' && (
-                    <div style={{ background: 'rgba(54,54,232,0.05)', padding: '16px', borderRadius: '18px', border: '1px solid rgba(54,54,232,0.1)' }}>
-                        <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#3636e8', marginBottom: '6px' }}>Reference Answer / Keywords</label>
-                        <textarea value={form.correctAnswer} onChange={e => setForm({...form, correctAnswer: e.target.value})} placeholder="What should a perfect answer contain?" style={{ ...neuInput, height: '70px', resize: 'none', background: '#fff' }} />
+                 {form.type === 'NAT' && (
+                    <div style={{ background: 'rgba(16,185,129,0.05)', padding: '16px', borderRadius: '18px', border: '1px solid rgba(16,185,129,0.1)' }}>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#10b981', marginBottom: '6px' }}>Correct Numerical Answer</label>
+                        <input 
+                          type="number"
+                          step="any"
+                          value={form.correctAnswer} 
+                          onChange={e => setForm({...form, correctAnswer: e.target.value})} 
+                          placeholder="e.g. 42.5" 
+                          style={{ ...neuInput, background: '#fff' }} 
+                        />
                     </div>
                  )}
 

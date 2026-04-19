@@ -6,6 +6,7 @@ import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { allowsMultipleAttempts, EXAM_RESULT_REFRESH_INTERVAL_MS, isFinalTest } from '@/lib/exam-policy'
 import ExamTimingStatus from '@/components/exams/ExamTimingStatus'
 import { getExamTimingState } from '@/lib/date-utils'
+import { RichTextDisplay } from '@/components/ui/RichTextDisplay'
 
 export default function ExamDetailPage({ params }: { params: { id: string } }) {
   const { confirm, confirmDialog } = useConfirmDialog()
@@ -167,7 +168,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
           questions: nextQuestions.map((q, index) => ({
             text: q.text,
             type: q.type,
-            options: q.type === 'MCQ' || q.type === 'TRUE_FALSE'
+            options: (q.type === 'MCQ' || q.type === 'MSQ' || q.type === 'TRUE_FALSE')
               ? (Array.isArray(q.options) ? q.options : (() => {
                   try {
                     return JSON.parse(q.options || '[]')
@@ -414,7 +415,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                {exam.questions.map((q: any, i: number) => (
                  <div key={q.id} style={{ ...neuCard, padding: '20px 24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#3636e8' }}>Q{i+1} - {q.type}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#3636e8' }}>Q{i+1} - {q.type.replace('_', ' ')}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a' }}>{q.marks} Marks</span>
                         {canEditExam && !hasAttempts && (
@@ -435,7 +436,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                         )}
                       </div>
                     </div>
-                    <p style={{ fontWeight: 600, color: '#1e1e3a' }}>{q.text}</p>
+                    <div style={{ fontWeight: 600, color: '#1e1e3a', marginBottom: '8px' }}><RichTextDisplay text={q.text} /></div>
                     {q.options && (
                       <p style={{ fontSize: '12px', color: '#6b6b8a', marginTop: '10px' }}>
                         Options: {(() => {
@@ -548,18 +549,51 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                  {q.type !== 'SUBJECTIVE' && (
                                    <span style={{ 
                                      fontSize: '11px', fontWeight: 900, 
-                                     color: resp?.answer === q.correctAnswer ? '#10b981' : '#ef4444',
-                                     background: resp?.answer === q.correctAnswer ? '#10b98110' : '#ef444410',
+                                     color: (() => {
+                                       if (q.type === 'MCQ' || q.type === 'TRUE_FALSE') return resp?.answer === q.correctAnswer
+                                       if (q.type === 'MSQ') {
+                                         try {
+                                           const correct = JSON.parse(q.correctAnswer || '[]').sort()
+                                           const student = JSON.parse(resp?.answer || '[]').sort()
+                                           return JSON.stringify(correct) === JSON.stringify(student)
+                                         } catch { return false }
+                                       }
+                                       if (q.type === 'NAT') return parseFloat(resp?.answer || '0') === parseFloat(q.correctAnswer || '0')
+                                       return resp?.answer === q.correctAnswer
+                                     })() ? '#10b981' : '#ef4444',
+                                     background: (() => {
+                                       if (q.type === 'MCQ' || q.type === 'TRUE_FALSE') return resp?.answer === q.correctAnswer
+                                       if (q.type === 'MSQ') {
+                                         try {
+                                           const correct = JSON.parse(q.correctAnswer || '[]').sort()
+                                           const student = JSON.parse(resp?.answer || '[]').sort()
+                                           return JSON.stringify(correct) === JSON.stringify(student)
+                                         } catch { return false }
+                                       }
+                                       if (q.type === 'NAT') return parseFloat(resp?.answer || '0') === parseFloat(q.correctAnswer || '0')
+                                       return resp?.answer === q.correctAnswer
+                                     })() ? '#10b98110' : '#ef444410',
                                      padding: '4px 10px', borderRadius: '50px' 
                                    }}>
-                                      {resp?.answer === q.correctAnswer ? 'AUTO: CORRECT' : 'AUTO: INCORRECT'}
+                                      {(() => {
+                                         if (q.type === 'MCQ' || q.type === 'TRUE_FALSE') return resp?.answer === q.correctAnswer
+                                         if (q.type === 'MSQ') {
+                                           try {
+                                             const correct = JSON.parse(q.correctAnswer || '[]').sort()
+                                             const student = JSON.parse(resp?.answer || '[]').sort()
+                                             return JSON.stringify(correct) === JSON.stringify(student)
+                                           } catch { return false }
+                                         }
+                                         if (q.type === 'NAT') return parseFloat(resp?.answer || '0') === parseFloat(q.correctAnswer || '0')
+                                         return resp?.answer === q.correctAnswer
+                                      })() ? 'AUTO: CORRECT' : 'AUTO: INCORRECT'}
                                    </span>
                                  )}
                               </div>
-                              <p style={{ fontWeight: 700, color: '#1e1e3a', marginBottom: '12px' }}>{q.text}</p>
+                              <div style={{ fontWeight: 700, color: '#1e1e3a', marginBottom: '12px' }}><RichTextDisplay text={q.text} /></div>
                               <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', marginBottom: '16px', borderLeft: '4px solid #3636e8' }}>
                                  <div style={{ fontSize: '10px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Answer</div>
-                                 <div style={{ fontSize: '14px', color: '#1e1e3a' }}>{resp?.answer || 'No answer'}</div>
+                                 <div style={{ fontSize: '14px', color: '#1e1e3a' }}><RichTextDisplay text={resp?.answer || 'No answer'} /></div>
                               </div>
 
                               <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '16px' }}>
@@ -690,7 +724,24 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                    <option value="TRUE_FALSE">True / False</option>
                    <option value="SUBJECTIVE">Subjective</option>
                  </select>
-                 <textarea value={questionForm.text} onChange={(e) => setQuestionForm({ ...questionForm, text: e.target.value })} placeholder="Question text" rows={3} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', resize: 'vertical' }} />
+                 <div>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                     <label style={{ fontSize: '13px', fontWeight: 800, color: '#6b6b8a', display: 'none' }}>Question Text</label>
+                     <div />
+                     <button
+                       onClick={() => {
+                         const lang = window.prompt("Enter programming language (optional, e.g., python, javascript):", "");
+                         if (lang !== null) {
+                           setQuestionForm({ ...questionForm, text: questionForm.text + `\n\`\`\`${lang}\n\n\`\`\`\n` });
+                         }
+                       }}
+                       style={{ padding: '6px 12px', borderRadius: '8px', background: '#3636e810', border: 'none', color: '#3636e8', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
+                     >
+                       {`</> Insert Code Block`}
+                     </button>
+                   </div>
+                   <textarea value={questionForm.text} onChange={(e) => setQuestionForm({ ...questionForm, text: e.target.value })} placeholder="Question text" rows={4} style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', resize: 'vertical' }} />
+                 </div>
                  {(questionForm.type === 'MCQ' || questionForm.type === 'TRUE_FALSE') && (
                    <div style={{ display: 'grid', gap: '12px' }}>
                      {(questionForm.type === 'TRUE_FALSE' ? ['True', 'False'] : questionForm.options).map((option, index) => (

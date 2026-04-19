@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { isFinalTest } from '@/lib/exam-policy'
+import { RichTextDisplay } from '@/components/ui/RichTextDisplay'
 
 interface Question {
   text: string
@@ -22,6 +23,8 @@ export default function CreateExamPage() {
   const [bankQuestions, setBankQuestions] = useState<any[]>([])
   const [showBank, setShowBank] = useState(false)
   const [bankSearch, setBankSearch] = useState('')
+  const [bankSubjectFilter, setBankSubjectFilter] = useState('')
+  const [userSubjects, setUserSubjects] = useState<string[]>([])
   
   // Form state
   const [title, setTitle] = useState('')
@@ -42,10 +45,12 @@ export default function CreateExamPage() {
       .then(res => res.json())
       .then(data => {
         const role = data.user?.role || ''
-        const userSubjects = Array.from(new Set([
+        const subjects = Array.from(new Set([
           ...(data.user?.enrollments?.map((e: any) => e.course?.subject) || []),
           ...(data.user?.instructorAssignments?.map((a: any) => a.course?.subject) || [])
         ])).filter(Boolean) as string[]
+        setUserSubjects(subjects)
+        const userSubjects = subjects
         
         fetch('/api/courses').then(res => res.json()).then(coursesData => {
           let list = Array.isArray(coursesData) ? coursesData : []
@@ -57,13 +62,12 @@ export default function CreateExamPage() {
       })
   }, [])
 
-  const fetchBankQuestions = async () => {
-    if (!courseId) return
-    const selectedCourse = courses.find(c => c.id === courseId)
-    if (!selectedCourse) return
+  const fetchBankQuestions = async (subjectOverride?: string) => {
+    const subject = subjectOverride || bankSubjectFilter || courses.find(c => c.id === courseId)?.subject
+    if (!subject) return
 
     try {
-      const res = await fetch(`/api/content-bank?subject=${encodeURIComponent(selectedCourse.subject)}`)
+      const res = await fetch(`/api/content-bank?subject=${encodeURIComponent(subject)}`)
       const data = await res.json()
       setBankQuestions(Array.isArray(data) ? data : [])
     } catch (error) {
@@ -74,7 +78,7 @@ export default function CreateExamPage() {
   // Removed subject logic as it's unified now
 
   const handleAddQuestion = () => {
-    setQuestions([...questions, { text: '', type: 'MCQ', options: ['', ''], correctAnswer: '', explanation: '', marks: 1 }])
+    setQuestions([{ text: '', type: 'MCQ', options: ['', ''], correctAnswer: '', explanation: '', marks: 1 }, ...questions])
   }
 
   const handleRemoveQuestion = (index: number) => {
@@ -207,20 +211,22 @@ export default function CreateExamPage() {
                   {courses.map(c => <option key={c.id} value={c.id}>{c.subject} - {c.name}</option>)}
                 </select>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Exam Title</label>
-                <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Midterm Physics" style={neuInput} required />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Exam Title</label>
+                  <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Midterm Physics" style={neuInput} required />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Exam Type</label>
+                  <select value={examType} onChange={e => setExamType(e.target.value)} style={neuInput}>
+                    <option value="FINAL_TEST">Final Test (Strict Rules)</option>
+                    <option value="GENERAL_TEST">General Test (Practice)</option>
+                  </select>
+                </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Description</label>
                 <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Brief overview of the exam..." rows={3} style={{ ...neuInput, resize: 'vertical' }} />
-              </div>
-              <div>
-                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Exam Type</label>
-                 <select value={examType} onChange={e => setExamType(e.target.value)} style={neuInput}>
-                   <option value="FINAL_TEST">Final Test (Strict Rules)</option>
-                   <option value="GENERAL_TEST">General Test (Practice)</option>
-                 </select>
               </div>
 
               {isFinalTest(examType) && (
@@ -306,7 +312,7 @@ export default function CreateExamPage() {
                 <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a' }}>Step 2: Questions</h2>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button type="button" onClick={() => setStep(1)} style={secondaryButton}>Back</button>
-                  <button type="button" onClick={() => { setShowBank(true); fetchBankQuestions() }} style={{ ...secondaryButton, background: '#3636e815' }}>Browse Content Bank</button>
+                  <button type="button" onClick={() => { setShowBank(true); setBankSubjectFilter(courses.find(c => c.id === courseId)?.subject || ''); fetchBankQuestions() }} style={{ ...secondaryButton, background: '#3636e815' }}>Browse Content Bank</button>
                   <button type="button" onClick={handleAddQuestion} style={secondaryButton}>+ Add Question</button>
                 </div>
               </div>
@@ -314,28 +320,37 @@ export default function CreateExamPage() {
               {/* Content Bank Picker Modal - Upgraded UI */}
               {showBank && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(232, 234, 240, 0.8)', backdropFilter: 'blur(10px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-                  <div style={{ ...neuCard, maxWidth: '900px', width: '100%', maxHeight: '85vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.8)' }}>
+                  <div style={{ ...neuCard, maxWidth: '1100px', width: '100%', maxHeight: '85vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.8)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
                        <div>
                          <h3 style={{ fontSize: '22px', fontWeight: 900, color: '#3636e8' }}>Browse Content Bank</h3>
                          <p style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: 500, marginTop: '4px' }}>
-                           Subject: <span style={{ color: '#1e1e3a', fontWeight: 800 }}>{courses.find(c => c.id === courseId)?.subject}</span>
+                           Showing questions for: <span style={{ color: '#1e1e3a', fontWeight: 800 }}>{bankSubjectFilter || courses.find(c => c.id === courseId)?.subject}</span>
                          </p>
                        </div>
                        <button onClick={() => setShowBank(false)} style={{ background: '#ef444410', border: 'none', color: '#ef4444', padding: '8px 16px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>Close Bank</button>
                     </div>
 
-                    <div style={{ position: 'relative', marginBottom: '24px' }}>
-                      <input 
-                        type="text" 
-                        placeholder="Search questions by text or keyword..." 
-                        value={bankSearch}
-                        onChange={e => setBankSearch(e.target.value)}
-                        style={{ ...neuInput, paddingLeft: '44px' }}
-                      />
-                      <svg style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9999b0' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                      </svg>
+                    <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                      <div style={{ position: 'relative', flex: 1 }}>
+                        <input 
+                          type="text" 
+                          placeholder="Search questions by text or keyword..." 
+                          value={bankSearch}
+                          onChange={e => setBankSearch(e.target.value)}
+                          style={{ ...neuInput, paddingLeft: '44px' }}
+                        />
+                        <svg style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9999b0' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                        </svg>
+                      </div>
+                      <select
+                        value={bankSubjectFilter}
+                        onChange={e => { setBankSubjectFilter(e.target.value); fetchBankQuestions(e.target.value) }}
+                        style={{ ...neuInput, width: '220px', cursor: 'pointer' }}
+                      >
+                        {userSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -346,7 +361,7 @@ export default function CreateExamPage() {
                                  <span style={{ fontSize: '10px', fontWeight: 900, color: '#3636e8', background: '#3636e810', padding: '2px 8px', borderRadius: '6px' }}>{q.type}</span>
                                  <span style={{ fontSize: '10px', fontWeight: 900, color: '#6b6b8a', background: '#00000005', padding: '2px 8px', borderRadius: '6px' }}>{q.marks || 1} Marks</span>
                                </div>
-                               <div style={{ fontSize: '15px', fontWeight: 700, color: '#1e1e3a', lineHeight: '1.4' }}>{q.text}</div>
+                               <div style={{ fontSize: '15px', fontWeight: 700, color: '#1e1e3a', lineHeight: '1.4' }}><RichTextDisplay text={q.text} /></div>
                             </div>
                             <button 
                               type="button"
@@ -398,12 +413,26 @@ export default function CreateExamPage() {
                     {/* Header Row: Text and Type */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: '24px' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Question Text</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <label style={{ fontSize: '14px', fontWeight: 800, color: '#6b6b8a' }}>Question Text</label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const lang = window.prompt("Enter programming language (optional, e.g., python, javascript):", "");
+                              if (lang !== null) {
+                                handleQuestionChange(idx, 'text', q.text + `\n\`\`\`${lang}\n\n\`\`\`\n`);
+                              }
+                            }}
+                            style={{ padding: '4px 10px', borderRadius: '6px', background: '#3636e810', border: 'none', color: '#3636e8', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
+                          >
+                            {`</> Insert Code Block`}
+                          </button>
+                        </div>
                         <textarea 
                           value={q.text} 
                           onChange={e => handleQuestionChange(idx, 'text', e.target.value)} 
                           placeholder="Type your question here..." 
-                          style={{ ...neuInput, height: '100px', resize: 'none' }} 
+                          style={{ ...neuInput, height: '100px', resize: 'vertical' }} 
                           required 
                         />
                       </div>
@@ -411,8 +440,9 @@ export default function CreateExamPage() {
                         <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Type</label>
                         <select value={q.type} onChange={e => handleQuestionChange(idx, 'type', e.target.value)} style={neuInput}>
                           <option value="MCQ">Multiple Choice</option>
+                          <option value="MSQ">Multiple Select (MSQ)</option>
                           <option value="TRUE_FALSE">True / False</option>
-                          <option value="SUBJECTIVE">Subjective</option>
+                          <option value="NAT">Numerical (NAT)</option>
                         </select>
                       </div>
                     </div>
@@ -441,7 +471,7 @@ export default function CreateExamPage() {
                     </div>
 
                     {/* Options Logic */}
-                    {(q.type === 'MCQ' || q.type === 'TRUE_FALSE') && (
+                    {(q.type === 'MCQ' || q.type === 'MSQ' || q.type === 'TRUE_FALSE') && (
                       <div>
                         <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '16px' }}>Options & Correct Answer</label>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -461,9 +491,23 @@ export default function CreateExamPage() {
                             q.options.map((opt, oIdx) => (
                               <div key={oIdx} style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
                                 <input 
-                                  type="radio" 
-                                  checked={q.correctAnswer === opt && opt !== ''} 
-                                  onChange={() => handleQuestionChange(idx, 'correctAnswer', opt)} 
+                                  type={q.type === 'MSQ' ? "checkbox" : "radio"} 
+                                  checked={q.type === 'MSQ' ? (() => { try { return JSON.parse(q.correctAnswer || '[]').includes(opt); } catch { return false; } })() : (q.correctAnswer === opt && opt !== '')}
+                                  onChange={() => {
+                                    if (q.type === 'MSQ') {
+                                      let arr: string[] = [];
+                                      try { arr = JSON.parse(q.correctAnswer || '[]'); } catch { arr = []; }
+                                      if (!Array.isArray(arr)) arr = [];
+                                      if (arr.includes(opt)) {
+                                          arr = arr.filter(o => o !== opt);
+                                      } else if (opt !== '') {
+                                          arr.push(opt);
+                                      }
+                                      handleQuestionChange(idx, 'correctAnswer', JSON.stringify(arr));
+                                    } else {
+                                      handleQuestionChange(idx, 'correctAnswer', opt);
+                                    }
+                                  }} 
                                   style={{ width: '22px', height: '22px', accentColor: '#3636e8', cursor: 'pointer' }} 
                                 />
                                 <input 
@@ -484,7 +528,7 @@ export default function CreateExamPage() {
                             ))
                           )}
                         </div>
-                        {q.type === 'MCQ' && q.options.length < 6 && (
+                        {(q.type === 'MCQ' || q.type === 'MSQ') && q.options.length < 6 && (
                           <button type="button" onClick={() => handleQuestionChange(idx, 'options', [...q.options, ''])} style={{ marginTop: '20px', background: 'none', border: '2px dashed #3636e8', color: '#3636e8', padding: '10px 24px', borderRadius: '14px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>+ Add Option</button>
                         )}
                       </div>
@@ -514,14 +558,16 @@ export default function CreateExamPage() {
                       </div>
                     </div>
 
-                    {q.type === 'SUBJECTIVE' && (
-                      <div style={{ background: 'rgba(54,54,232,0.05)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(54,54,232,0.1)' }}>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#3636e8', marginBottom: '8px' }}>Reference Answer / Keywords</label>
-                        <textarea 
+                    {q.type === 'NAT' && (
+                      <div style={{ background: 'rgba(16,185,129,0.05)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(16,185,129,0.1)' }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#10b981', marginBottom: '8px' }}>Correct Numerical Answer</label>
+                        <input 
+                          type="number"
+                          step="any"
                           value={q.correctAnswer} 
                           onChange={e => handleQuestionChange(idx, 'correctAnswer', e.target.value)} 
-                          placeholder="What should a perfect answer contain?" 
-                          style={{ ...neuInput, height: '80px', resize: 'none', background: '#fff' }} 
+                          placeholder="e.g. 42.5" 
+                          style={{ ...neuInput, background: '#fff' }} 
                         />
                       </div>
                     )}

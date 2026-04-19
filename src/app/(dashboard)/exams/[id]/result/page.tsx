@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { EXAM_RESULT_REFRESH_INTERVAL_MS } from '@/lib/exam-policy'
+import { RichTextDisplay } from '@/components/ui/RichTextDisplay'
 
 export default function ExamResultPage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -221,7 +222,31 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
             {(() => {
               const q = exam.questions[currentIdx]
               const resp = attempt.responses?.find((r: any) => r.questionId === q.id)
-              const isCorrect = q.correctAnswer && resp?.answer === q.correctAnswer
+              
+              let isCorrect = false
+              let studentDisplayAnswer = resp?.answer || 'No answer provided'
+              let correctDisplayAnswer = q.correctAnswer || 'Not available'
+
+              if (q.type === 'MCQ' || q.type === 'TRUE_FALSE') {
+                isCorrect = q.correctAnswer && resp?.answer === q.correctAnswer
+              } else if (q.type === 'MSQ') {
+                try {
+                  const correctArr = JSON.parse(q.correctAnswer || '[]').sort()
+                  const studentArr = JSON.parse(resp?.answer || '[]').sort()
+                  isCorrect = JSON.stringify(correctArr) === JSON.stringify(studentArr)
+                  
+                  studentDisplayAnswer = studentArr.length > 0 ? studentArr.join(', ') : 'No options selected'
+                  correctDisplayAnswer = correctArr.join(', ')
+                } catch {
+                  isCorrect = false
+                }
+              } else if (q.type === 'NAT') {
+                if (resp && resp.answer && q.correctAnswer) {
+                  isCorrect = parseFloat(resp.answer) === parseFloat(q.correctAnswer)
+                }
+              } else {
+                isCorrect = resp && resp.answer === q.correctAnswer
+              }
               
               return (
                 <div key={q.id}>
@@ -247,10 +272,10 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                       </span>
                     )}
                   </div>
-
-                  <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#1e1e3a', lineHeight: '1.4', marginBottom: '32px' }}>
-                    {q.text}
-                  </h3>
+ 
+                  <div style={{ fontSize: '22px', fontWeight: 800, color: '#1e1e3a', lineHeight: '1.4', marginBottom: '32px' }}>
+                    <RichTextDisplay text={q.text} />
+                  </div>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <div style={{ 
@@ -261,21 +286,23 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                     }}>
                       <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '12px' }}>Your Submission</div>
                       <div style={{ fontSize: '17px', fontWeight: 700, color: isCorrect ? '#10b981' : '#ef4444', lineHeight: '1.5' }}>
-                        {resp?.answer || 'No answer provided'}
+                        <RichTextDisplay text={studentDisplayAnswer} />
                       </div>
                     </div>
-
+ 
                     {q.correctAnswer && !isCorrect && (
                       <div style={{ padding: '24px', background: '#3636e808', borderRadius: '24px', border: '1px solid #3636e820' }}>
                         <div style={{ fontSize: '11px', fontWeight: 800, color: '#3636e8', textTransform: 'uppercase', marginBottom: '12px' }}>Correct Solution</div>
-                        <div style={{ fontSize: '17px', fontWeight: 800, color: '#3636e8', lineHeight: '1.5' }}>{q.correctAnswer}</div>
+                        <div style={{ fontSize: '17px', fontWeight: 800, color: '#3636e8', lineHeight: '1.5' }}>
+                          <RichTextDisplay text={correctDisplayAnswer} />
+                        </div>
                       </div>
                     )}
 
                     {q.explanation && (
                       <div style={{ padding: '24px', background: '#fff', borderRadius: '24px', border: '1px solid #cfd6e1', boxShadow: '4px 4px 12px rgba(0,0,0,0.03)' }}>
                         <div style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a', textTransform: 'uppercase', marginBottom: '12px' }}>Evaluation Notes & Explanation</div>
-                        <div style={{ fontSize: '15px', color: '#1e1e3a', lineHeight: '1.6' }}>{q.explanation}</div>
+                        <div style={{ fontSize: '15px', color: '#1e1e3a', lineHeight: '1.6' }}><RichTextDisplay text={q.explanation} /></div>
                       </div>
                     )}
                   </div>

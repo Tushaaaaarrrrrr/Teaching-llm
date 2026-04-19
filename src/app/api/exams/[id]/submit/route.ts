@@ -47,22 +47,33 @@ export async function POST(
 
     for (const q of attempt.exam.questions) {
       const resp = responses.find(r => r.questionId === q.id)
+      let isCorrect = false
+
       if (q.type === 'MCQ' || q.type === 'TRUE_FALSE') {
-        if (resp && resp.answer === q.correctAnswer) {
-          totalMarks += q.marks
-          // Update the response marks
-          await prisma.examResponse.update({
-            where: { id: resp.id },
-            data: { marks: q.marks }
-          })
-        } else if (resp) {
-          await prisma.examResponse.update({
-            where: { id: resp.id },
-            data: { marks: 0 }
-          })
+        isCorrect = resp && resp.answer === q.correctAnswer
+      } else if (q.type === 'MSQ') {
+        try {
+          const correctArr = JSON.parse(q.correctAnswer || '[]').sort()
+          const studentArr = JSON.parse(resp?.answer || '[]').sort()
+          isCorrect = JSON.stringify(correctArr) === JSON.stringify(studentArr)
+        } catch {
+          isCorrect = false
+        }
+      } else if (q.type === 'NAT') {
+        if (resp && resp.answer && q.correctAnswer) {
+          isCorrect = parseFloat(resp.answer) === parseFloat(q.correctAnswer)
         }
       } else {
         fullyAutoGraded = false
+        continue // Skip mark update for non-auto-gradable
+      }
+
+      if (resp) {
+        await prisma.examResponse.update({
+          where: { id: resp.id },
+          data: { marks: isCorrect ? q.marks : 0 }
+        })
+        if (isCorrect) totalMarks += q.marks
       }
     }
 
