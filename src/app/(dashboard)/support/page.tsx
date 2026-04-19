@@ -824,8 +824,8 @@ export default function SupportPage() {
           )}
         </div>
 
-        {showCreate && <CreateTicketModal />}
-        {showChatStart && <StartChatModal />}
+        {showCreate && <CreateTicketModal onClose={() => setShowCreate(false)} form={form} setForm={setForm} classes={classes} userRole={userRole} submitTicket={submitTicket} />}
+        {showChatStart && <StartChatModal onClose={() => setShowChatStart(false)} value={chatInitText} onChange={setChatInitText} onSubmit={startChat} />}
         {selectedUserDetailsId && (
           <ManagerUserModal 
             userId={selectedUserDetailsId} 

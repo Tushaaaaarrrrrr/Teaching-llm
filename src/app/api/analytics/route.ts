@@ -194,7 +194,7 @@ export async function GET(request: NextRequest) {
         include: { exam: { include: { questions: true } } }
       })
 
-      const peerUserIds = Array.from(new Set(peerAttempts.map((a: any) => a.userId)))
+      const peerUserIds = Array.from(new Set(peerAttempts.map((a: any) => a.userId))) as string[]
       const peers = await prisma.user.findMany({
         where: { id: { in: peerUserIds }, isTerminated: false },
         select: { id: true, name: true, email: true }
