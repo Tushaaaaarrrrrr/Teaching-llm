@@ -284,3 +284,48 @@ Files affected:
 - src/components/layout/Sidebar.tsx
 Outcome:
 - Significant visual upgrade to modal components and better user experience across dashboard views.
+
+13. Date and time: 2026-04-19 21:07:00 IST
+Summary: Diagnosed root cause of image upload failures.
+What changed:
+- Investigated upload logic for Avatars and Announcements.
+- Verified that required Supabase environment variables are checked during the upload process.
+What was added:
+- Root cause analysis: Uploads fail with a 500 error if `NEXT_PUBLIC_SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` are not set in the hosting environment.
+What was removed:
+- N/A
+Files affected:
+- `src/app/api/upload/route.ts`
+- `src/app/api/profile/avatar/route.ts`
+Outcome:
+- Confirmed that even with the `lms-uploads` bucket created, the production site reports missing keys. A manual configuration update on Render's Environment dashboard is required to resolve this.
+
+14. Date and time: 2026-04-19 21:06:00 IST
+Summary: Enhanced Exam Code Modal interaction.
+What changed:
+- Added background click-to-close functionality to the "Add Code" modal in the Exam management view.
+- Wrapped modal content in a `.modal` class for consistent styling.
+What was added:
+- `onClick` event on the modal backdrop to reset `showCodeModal`.
+What was removed:
+- N/A
+Files affected:
+- `src/app/(dashboard)/exams/[id]/page.tsx`
+Outcome:
+- Improved UX by allowing users to dismiss the modal by clicking outside the input area.
+
+15. Date and time: 2026-04-19 21:10:00 IST
+Summary: Improved upload error reporting for better debugging.
+What changed:
+- Refactored `getSupabaseAdmin()` in upload routes to provide descriptive error messages.
+- Replaced the generic "Supabase env vars not set" error with specific messages identifying which variable is missing (`NEXT_PUBLIC_SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY`).
+What was added:
+- Explicit checks and descriptive error strings for each required environment variable.
+What was removed:
+- Generic error catch-all.
+Files affected:
+- `src/app/api/upload/route.ts`
+- `src/app/api/profile/avatar/route.ts`
+Outcome:
+- The system now explicitly tells the developer/user which specific key is missing from their dashboard, eliminating guesswork during configuration.
+
