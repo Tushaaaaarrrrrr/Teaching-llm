@@ -110,7 +110,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
   async function loadUser(id: string) {
     setLoading(true)
     try {
-      const res = await fetch(`/api/users/${id}`)
+      const res = await fetch(`/api/users/${id}?t=${Date.now()}`)
       const data = await res.json()
       if (res.ok) {
         const normalizedUser = {

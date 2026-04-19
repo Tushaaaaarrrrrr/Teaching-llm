@@ -34,6 +34,8 @@ export async function GET(
         securityNumber: true,
         createdAt: true,
         gender: true,
+        age: true,
+        state: true,
         avatar: true,
         isGoogleUser: true,
         isTerminated: true,
@@ -95,7 +97,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, firstName, lastName, mobileNumber, email, role, password, isTerminated, gender, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes } = await request.json()
+    const { name, firstName, lastName, mobileNumber, email, role, password, isTerminated, gender, age, state, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes } = await request.json()
     // enrollmentTypes is an optional map: { courseId: 'LIVE' | 'RECORDED' }
     const nextCourseIds = classIds !== undefined ? classIds : courseIds
     const nextAssignedCourseIds = assignedClassIds !== undefined ? assignedClassIds : assignedCourseIds
@@ -123,6 +125,8 @@ export async function PUT(
     if (email !== undefined) data.email = email
     if (role !== undefined) data.role = role
     if (typeof isTerminated === 'boolean') data.isTerminated = isTerminated
+    if (age !== undefined) data.age = age
+    if (state !== undefined) data.state = state
     
     // Manager can update gender anytime
     if (gender !== undefined) {
@@ -173,6 +177,8 @@ export async function PUT(
           email: true,
           role: true,
           gender: true,
+          age: true,
+          state: true,
           isTerminated: true,
           createdAt: true,
         },
@@ -287,6 +293,8 @@ export async function PUT(
           email: true,
           role: true,
           gender: true,
+          age: true,
+          state: true,
           isTerminated: true,
           createdAt: true,
           enrollments: {
