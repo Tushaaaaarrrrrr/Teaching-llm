@@ -31,10 +31,10 @@ export async function POST(
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { content } = await request.json()
+    const { content, imageUrl } = await request.json()
 
     const message = await prisma.chatMessage.create({
-      data: { chatId: params.id, senderId: session.userId, content },
+      data: { chatId: params.id, senderId: session.userId, content: content || '', imageUrl: imageUrl || null },
       include: { sender: { select: { id: true, name: true, role: true } } },
     })
 

@@ -23,6 +23,9 @@ export async function PUT(request: NextRequest) {
     if (!chat || chat.type !== 'DIRECT') {
       return NextResponse.json({ error: 'Direct chat not found' }, { status: 404 })
     }
+    if (chat.agentId !== session.userId) {
+      return NextResponse.json({ error: 'You can only manage your own direct chats' }, { status: 403 })
+    }
 
     const newStatus = action === 'disable' ? 'DISABLED' : 'ACTIVE'
     await prisma.chatSession.update({

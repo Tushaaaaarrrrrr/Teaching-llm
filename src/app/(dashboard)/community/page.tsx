@@ -21,6 +21,7 @@ interface ClassItem {
 interface CommMsg {
   id: string
   content: string
+  imageUrl?: string | null
   createdAt: string
   isDeleted?: boolean
   deletedAt?: string | null
@@ -86,6 +87,12 @@ export default function CommunityPage() {
   const [dmSearching, setDmSearching] = useState(false)
   const [dmStarting, setDmStarting] = useState(false)
   const [userName, setUserName] = useState('')
+  // Image upload state
+  const [pendingImage, setPendingImage] = useState<File | null>(null)
+  const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   const loadMessages = useCallback(async (classId: string) => {
     const res = await fetch(`/api/community/${classId}/messages`)
@@ -216,21 +223,67 @@ export default function CommunityPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image too large. Maximum 5MB.')
+      return
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      alert('Only JPG, PNG, and WEBP images are allowed.')
+      return
+    }
+    setPendingImage(file)
+    setPendingImagePreview(URL.createObjectURL(file))
+  }
+
+  function clearPendingImage() {
+    setPendingImage(null)
+    if (pendingImagePreview) URL.revokeObjectURL(pendingImagePreview)
+    setPendingImagePreview(null)
+    if (imageInputRef.current) imageInputRef.current.value = ''
+  }
+
   async function sendMessage() {
-    if (!input.trim() || !selectedClass) return
+    if ((!input.trim() && !pendingImage) || !selectedClass) return
+    
+    let imageUrl: string | null = null
+
+    // Upload image first if present
+    if (pendingImage) {
+      setUploadingImage(true)
+      try {
+        const formData = new FormData()
+        formData.append('file', pendingImage)
+        const uploadRes = await fetch('/api/upload/chat-image', { method: 'POST', body: formData })
+        const uploadData = await uploadRes.json()
+        if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed')
+        imageUrl = uploadData.url
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Image upload failed')
+        setUploadingImage(false)
+        return
+      }
+      setUploadingImage(false)
+    }
+
     const optimistic: CommMsg = {
       id: 'temp-' + Date.now(),
       content: input,
+      imageUrl,
       createdAt: new Date().toISOString(),
       sender: { id: userId, name: 'You', role: userRole },
     }
     setMessages(prev => [...prev, optimistic])
+    const msgContent = input
     setInput('')
+    clearPendingImage()
 
     await fetch(`/api/community/${selectedClass.id}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: optimistic.content }),
+      body: JSON.stringify({ content: msgContent || '', imageUrl }),
     })
     loadMessages(selectedClass.id)
   }
@@ -806,7 +859,7 @@ export default function CommunityPage() {
                       )}
                       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
                         <div style={{
-                          padding: '10px 16px',
+                          padding: msg.imageUrl ? '6px' : '10px 16px',
                           borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                           background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0',
                           color: isMe ? '#fff' : '#1e1e3a',
@@ -814,8 +867,27 @@ export default function CommunityPage() {
                           boxShadow: isMe
                             ? '4px 4px 10px rgba(54,54,232,0.25)'
                             : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                          overflow: 'hidden',
                         }}>
-                          {msg.content}
+                          {msg.imageUrl && (
+                            <img
+                              src={msg.imageUrl}
+                              alt="Shared image"
+                              onClick={() => setLightboxUrl(msg.imageUrl!)}
+                              style={{
+                                maxWidth: '280px', maxHeight: '200px',
+                                borderRadius: msg.content ? '12px 12px 4px 4px' : '12px',
+                                cursor: 'pointer', display: 'block',
+                                objectFit: 'cover',
+                                marginBottom: msg.content ? '6px' : '0',
+                              }}
+                            />
+                          )}
+                          {msg.content && (
+                            <div style={{ padding: msg.imageUrl ? '2px 10px 4px' : '0' }}>
+                              {msg.content}
+                            </div>
+                          )}
                         </div>
                         {(userRole === 'MANAGER' || isMe) && !msg.id.startsWith('temp-') && (
                           <button
@@ -858,7 +930,56 @@ export default function CommunityPage() {
                 This community is currently disabled.
               </div>
             ) : (
-              <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)' }}>
+              {/* Image preview */}
+              {pendingImagePreview && (
+                <div style={{ marginBottom: '8px', position: 'relative', display: 'inline-block' }}>
+                  <img src={pendingImagePreview} alt="Preview" style={{ maxHeight: '120px', borderRadius: '12px', border: '2px solid #3636e833' }} />
+                  <button
+                    onClick={clearPendingImage}
+                    style={{
+                      position: 'absolute', top: '-6px', right: '-6px',
+                      width: '22px', height: '22px', borderRadius: '50%',
+                      background: '#ef4444', color: '#fff', border: 'none',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '12px', fontWeight: '800',
+                    }}
+                  >✕</button>
+                </div>
+              )}
+              {uploadingImage && (
+                <div style={{ marginBottom: '8px', fontSize: '13px', color: '#3636e8', fontWeight: '600' }}>
+                  Uploading image...
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  ref={imageInputRef}
+                  onChange={handleImageSelect}
+                  style={{ display: 'none' }}
+                />
+                <button
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  title="Attach image"
+                  style={{
+                    width: '40px', height: '40px', borderRadius: '50%', border: 'none',
+                    cursor: 'pointer', flexShrink: 0,
+                    background: pendingImage ? '#3636e818' : '#e8eaf0',
+                    boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: pendingImage ? '#3636e8' : '#9999b0',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </button>
                 <div style={{ flex: 1, position: 'relative' }}>
                   <input
                     value={input}
@@ -871,7 +992,7 @@ export default function CommunityPage() {
                           ? `Message ${selectedClass.name.replace('Chat with ', '')}...`
                           : `Message ${selectedClass.name} community...`
                     }
-                    disabled={!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER'}
+                    disabled={(!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || uploadingImage}
                     style={{
                       width: '100%', padding: '11px 16px', borderRadius: '50px',
                       border: 'none', outline: 'none',
@@ -883,14 +1004,14 @@ export default function CommunityPage() {
                 </div>
                 <button
                   onClick={sendMessage}
-                  disabled={!input.trim() || (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER')}
+                  disabled={(!input.trim() && !pendingImage) || uploadingImage || (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER')}
                   style={{
                     width: '44px', height: '44px', borderRadius: '50%', border: 'none',
-                    cursor: input.trim() ? 'pointer' : 'default',
-                    background: input.trim() ? selectedClass.color : '#e8eaf0',
-                    color: input.trim() ? '#fff' : '#9999b0',
+                    cursor: (input.trim() || pendingImage) ? 'pointer' : 'default',
+                    background: (input.trim() || pendingImage) ? selectedClass.color : '#e8eaf0',
+                    color: (input.trim() || pendingImage) ? '#fff' : '#9999b0',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                    boxShadow: input.trim() ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    boxShadow: (input.trim() || pendingImage) ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                     transition: 'all 0.2s',
                   }}
                 >
@@ -899,6 +1020,7 @@ export default function CommunityPage() {
                   </svg>
                 </button>
               </div>
+            </div>
             )}
           </>
         )}
@@ -1061,6 +1183,56 @@ export default function CommunityPage() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Lightbox for full-size image viewing */}
+      {lightboxUrl && (
+        <div
+          onClick={() => setLightboxUrl(null)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.85)', zIndex: 9999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', padding: '40px',
+          }}
+        >
+          <img
+            src={lightboxUrl}
+            alt="Full size"
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: '90vw', maxHeight: '90vh',
+              borderRadius: '16px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+              cursor: 'default',
+            }}
+          />
+          <button
+            onClick={(e) => { e.stopPropagation(); window.open(lightboxUrl!, '_blank') }}
+            title="Download image"
+            style={{
+              position: 'absolute', top: '20px', right: '72px',
+              width: '40px', height: '40px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)', border: 'none',
+              color: '#fff', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
+          <button
+            onClick={() => setLightboxUrl(null)}
+            style={{
+              position: 'absolute', top: '20px', right: '20px',
+              width: '40px', height: '40px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)', border: 'none',
+              color: '#fff', fontSize: '20px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >✕</button>
         </div>
       )}
     </div>

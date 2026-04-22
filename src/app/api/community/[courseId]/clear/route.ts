@@ -20,6 +20,10 @@ export async function POST(
     // ── Direct Message clear ─────────────────────────────────────────────────
     if (courseId.startsWith('dm_')) {
       const id = courseId.slice(3)
+      const chat = await prisma.chatSession.findUnique({ where: { id } })
+      if (!chat || chat.agentId !== session.userId) {
+        return NextResponse.json({ error: 'You can only clear your own direct chats' }, { status: 403 })
+      }
       const result = await prisma.chatMessage.updateMany({
         where: { chatId: id, isDeleted: false },
         data: { isDeleted: true, deletedAt: new Date() },

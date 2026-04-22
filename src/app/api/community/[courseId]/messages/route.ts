@@ -19,8 +19,8 @@ async function getDMSession(chatId: string, userId: string, role: string) {
     },
   })
   if (!chat) return null
-  // Only the student OR the agent (manager) can access this DM
-  if (chat.studentId !== userId && chat.agentId !== userId && role !== 'MANAGER') return null
+  // Only the student OR the specific agent (manager) who owns this DM can access it
+  if (chat.studentId !== userId && chat.agentId !== userId) return null
   return chat
 }
 
@@ -53,6 +53,7 @@ export async function GET(
       const messages = rawMessages.map(m => ({
         id: m.id,
         content: m.isDeleted ? '' : m.content,
+        imageUrl: m.isDeleted ? null : m.imageUrl,
         createdAt: m.createdAt,
         isDeleted: m.isDeleted,
         sender: {
@@ -123,11 +124,14 @@ export async function POST(
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { content } = await request.json()
-    if (!content || !validateLength(content, 2000)) {
+    const { content, imageUrl } = await request.json()
+    if ((!content || !content.trim()) && !imageUrl) {
+      return NextResponse.json({ error: 'Message must have content or an image' }, { status: 400 })
+    }
+    if (content && !validateLength(content, 2000)) {
       return NextResponse.json({ error: 'Message content must be between 1 and 2,000 characters' }, { status: 400 })
     }
-    const sanitizedContent = sanitizeInput(content)
+    const sanitizedContent = content ? sanitizeInput(content) : ''
 
     // ── Direct Message path ──────────────────────────────────────────────────
     if (isDM(params.courseId)) {
@@ -138,7 +142,7 @@ export async function POST(
       // Both sides can send messages in a DIRECT chat
 
       const msg = await prisma.chatMessage.create({
-        data: { chatId: id, senderId: session.userId, content: sanitizedContent },
+        data: { chatId: id, senderId: session.userId, content: sanitizedContent, imageUrl: imageUrl || null },
         include: {
           sender: { select: { id: true, name: true, role: true } },
         },
@@ -161,7 +165,7 @@ export async function POST(
       })
 
       // Emit SSE to both DM channel participants
-      const event = { id: msg.id, content: msg.content, createdAt: msg.createdAt, isDeleted: false, sender: { id: msg.sender.id, name: msg.sender.name, role: msg.sender.role } }
+      const event = { id: msg.id, content: msg.content, imageUrl: msg.imageUrl, createdAt: msg.createdAt, isDeleted: false, sender: { id: msg.sender.id, name: msg.sender.name, role: msg.sender.role } }
       sseEmitter.emit(`chat:dm_${id}:message`, event)
 
       return NextResponse.json(event, { status: 201 })
@@ -183,7 +187,7 @@ export async function POST(
     }
 
     const message = await prisma.communityMessage.create({
-      data: { courseId: params.courseId, senderId: session.userId, content: sanitizedContent },
+      data: { courseId: params.courseId, senderId: session.userId, content: sanitizedContent, imageUrl: imageUrl || null },
       include: {
         sender: { select: { id: true, name: true, role: true, securityNumber: true } },
       },

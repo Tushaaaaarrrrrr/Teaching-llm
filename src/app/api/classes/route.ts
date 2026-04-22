@@ -74,7 +74,8 @@ export async function GET() {
       chatWhere.studentId = session.userId
       chatWhere.status = 'ACTIVE'
     } else {
-      // Managers see everything except CLOSED
+      // Managers only see their own DMs, not other managers' chats
+      chatWhere.agentId = session.userId
       chatWhere.status = { not: 'CLOSED' }
     }
     

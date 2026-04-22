@@ -22,12 +22,14 @@ interface Ticket {
 interface Reply {
   id: string
   content: string
+  imageUrl?: string | null
   createdAt: string
   sender: { id: string; name: string; role: string }
 }
 interface ChatMsg {
   id: string
   content: string
+  imageUrl?: string | null
   createdAt: string
   sender: { id: string; name: string; role: string }
 }
@@ -283,6 +285,15 @@ export default function SupportPage() {
   const [chatInitText, setChatInitText] = useState('')
   const [selectedUserDetailsId, setSelectedUserDetailsId] = useState<string | null>(null)
   const [showManagerChatStart, setShowManagerChatStart] = useState(false)
+  // Image upload state
+  const [pendingChatImage, setPendingChatImage] = useState<File | null>(null)
+  const [pendingChatImagePreview, setPendingChatImagePreview] = useState<string | null>(null)
+  const [pendingReplyImage, setPendingReplyImage] = useState<File | null>(null)
+  const [pendingReplyImagePreview, setPendingReplyImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const chatImageRef = useRef<HTMLInputElement>(null)
+  const replyImageRef = useRef<HTMLInputElement>(null)
 
   const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
   const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
@@ -349,12 +360,21 @@ export default function SupportPage() {
   }
 
   async function sendReply() {
-    if (!replyText.trim() || !selected) return
-    await fetch(`/api/support/tickets/${selected.id}/replies`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: replyText }) })
-    setReplyText('')
-    const fresh = await fetch('/api/support/tickets').then(r => r.json())
-    setTickets(Array.isArray(fresh) ? fresh : [])
-    setSelected((Array.isArray(fresh) ? fresh : []).find((t: Ticket) => t.id === selected.id) || null)
+    if ((!replyText.trim() && !pendingReplyImage) || !selected) return
+    setUploadingImage(true)
+    try {
+      let imageUrl: string | null = null
+      if (pendingReplyImage) imageUrl = await uploadImage(pendingReplyImage)
+      await fetch(`/api/support/tickets/${selected.id}/replies`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: replyText, imageUrl }) })
+      setReplyText('')
+      clearReplyImage()
+      const fresh = await fetch('/api/support/tickets').then(r => r.json())
+      setTickets(Array.isArray(fresh) ? fresh : [])
+      setSelected((Array.isArray(fresh) ? fresh : []).find((t: Ticket) => t.id === selected.id) || null)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to send reply')
+    }
+    setUploadingImage(false)
   }
 
   async function updateStatus(ticketId: string, status: string) {
@@ -408,10 +428,60 @@ export default function SupportPage() {
     if (activeChatId === chatId) setActiveChatId(null)
   }
 
+  function handleChatImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { alert('Image too large. Max 5MB.'); return }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { alert('Only JPG, PNG, WEBP allowed.'); return }
+    setPendingChatImage(file)
+    setPendingChatImagePreview(URL.createObjectURL(file))
+  }
+
+  function clearChatImage() {
+    setPendingChatImage(null)
+    if (pendingChatImagePreview) URL.revokeObjectURL(pendingChatImagePreview)
+    setPendingChatImagePreview(null)
+    if (chatImageRef.current) chatImageRef.current.value = ''
+  }
+
+  function handleReplyImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { alert('Image too large. Max 5MB.'); return }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { alert('Only JPG, PNG, WEBP allowed.'); return }
+    setPendingReplyImage(file)
+    setPendingReplyImagePreview(URL.createObjectURL(file))
+  }
+
+  function clearReplyImage() {
+    setPendingReplyImage(null)
+    if (pendingReplyImagePreview) URL.revokeObjectURL(pendingReplyImagePreview)
+    setPendingReplyImagePreview(null)
+    if (replyImageRef.current) replyImageRef.current.value = ''
+  }
+
+  async function uploadImage(file: File): Promise<string> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch('/api/upload/chat-image', { method: 'POST', body: formData })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Upload failed')
+    return data.url
+  }
+
   async function sendChatMsg() {
-    if (!chatInput.trim() || !activeChatId) return
-    await fetch(`/api/support/live-chats/${activeChatId}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: chatInput }) })
-    setChatInput('')
+    if ((!chatInput.trim() && !pendingChatImage) || !activeChatId) return
+    setUploadingImage(true)
+    try {
+      let imageUrl: string | null = null
+      if (pendingChatImage) imageUrl = await uploadImage(pendingChatImage)
+      await fetch(`/api/support/live-chats/${activeChatId}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: chatInput, imageUrl }) })
+      setChatInput('')
+      clearChatImage()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to send message')
+    }
+    setUploadingImage(false)
   }
 
   // ── FAQ actions ──────────────────────────────────────────────────────────
@@ -805,7 +875,15 @@ export default function SupportPage() {
                           >{r.sender.name}</span>
                           {isAdmin && ' · Staff'}
                         </div>
-                        <div style={{ fontSize: '13.5px', lineHeight: '1.5' }}>{r.content}</div>
+                        {r.imageUrl && (
+                          <img
+                            src={r.imageUrl}
+                            alt="Attached image"
+                            onClick={() => setLightboxUrl(r.imageUrl!)}
+                            style={{ maxWidth: '240px', maxHeight: '160px', borderRadius: '10px', cursor: 'pointer', display: 'block', objectFit: 'cover', marginBottom: r.content ? '6px' : '0' }}
+                          />
+                        )}
+                        {r.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5' }}>{r.content}</div>}
                         <div style={{ fontSize: '10.5px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                       </div>
                     </div>
@@ -815,9 +893,22 @@ export default function SupportPage() {
               </div>
 
               {selected.status !== 'CLOSED' && (
-                <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '8px' }}>
-                  <input value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendReply()} placeholder="Type your reply..." style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: '#1e1e3a' }} />
-                  <button onClick={sendReply} className="btn btn-primary btn-sm" style={{ borderRadius: '50px', padding: '10px 18px' }}>Send</button>
+                <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)' }}>
+                  {pendingReplyImagePreview && (
+                    <div style={{ marginBottom: '8px', position: 'relative', display: 'inline-block' }}>
+                      <img src={pendingReplyImagePreview} alt="Preview" style={{ maxHeight: '100px', borderRadius: '10px', border: '2px solid #3636e833' }} />
+                      <button onClick={clearReplyImage} style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800' }}>✕</button>
+                    </div>
+                  )}
+                  {uploadingImage && <div style={{ marginBottom: '6px', fontSize: '12px', color: '#3636e8', fontWeight: '600' }}>Uploading...</div>}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" ref={replyImageRef} onChange={handleReplyImageSelect} style={{ display: 'none' }} />
+                    <button onClick={() => replyImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingReplyImage ? '#3636e818' : '#e8eaf0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingReplyImage ? '#3636e8' : '#9999b0', flexShrink: 0 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    </button>
+                    <input value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendReply()} placeholder="Type your reply..." disabled={uploadingImage} style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: '#1e1e3a' }} />
+                    <button onClick={sendReply} disabled={(!replyText.trim() && !pendingReplyImage) || uploadingImage} className="btn btn-primary btn-sm" style={{ borderRadius: '50px', padding: '10px 18px', opacity: (!replyText.trim() && !pendingReplyImage) || uploadingImage ? 0.6 : 1 }}>Send</button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1035,10 +1126,18 @@ export default function SupportPage() {
                     return (
                       <div key={m.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '8px', alignItems: 'flex-end' }}>
                         {!isMe && <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: isAdmin ? '#3636e8' : '#e8eaf0', boxShadow: '2px 2px 5px #c5c7cf', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: isAdmin ? '#fff' : '#6b6b8a', flexShrink: 0 }}>{m.sender.name.charAt(0)}</div>}
-                        <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0', boxShadow: isMe ? '3px 3px 8px rgba(54,54,232,0.3)' : '3px 3px 8px #c5c7cf, -3px -3px 8px #ffffff', color: isMe ? '#fff' : '#1e1e3a' }}>
-                          {!isMe && <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isAdmin ? '#3636e8' : '#9999b0' }}>{m.sender.name}</div>}
-                          <div style={{ fontSize: '13.5px', lineHeight: '1.5' }}>{m.content}</div>
-                          <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div style={{ maxWidth: '70%', padding: m.imageUrl ? '6px' : '10px 14px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0', boxShadow: isMe ? '3px 3px 8px rgba(54,54,232,0.3)' : '3px 3px 8px #c5c7cf, -3px -3px 8px #ffffff', color: isMe ? '#fff' : '#1e1e3a', overflow: 'hidden' }}>
+                          {!isMe && <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isAdmin ? '#3636e8' : '#9999b0', padding: m.imageUrl ? '4px 8px 0' : '0' }}>{m.sender.name}</div>}
+                          {m.imageUrl && (
+                            <img
+                              src={m.imageUrl}
+                              alt="Shared image"
+                              onClick={() => setLightboxUrl(m.imageUrl!)}
+                              style={{ maxWidth: '260px', maxHeight: '180px', borderRadius: '10px', cursor: 'pointer', display: 'block', objectFit: 'cover', marginBottom: m.content ? '6px' : '0', margin: '4px auto' }}
+                            />
+                          )}
+                          {m.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', padding: m.imageUrl ? '0 8px 4px' : '0' }}>{m.content}</div>}
+                          <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right', padding: m.imageUrl ? '0 8px 2px' : '0' }}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                         </div>
                       </div>
                     )
@@ -1046,11 +1145,24 @@ export default function SupportPage() {
                   <div ref={chatEndRef} />
                 </div>
 
-                <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', gap: '8px' }}>
-                  <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMsg()} placeholder="Type a message..." style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: '#1e1e3a' }} />
-                  <button onClick={sendChatMsg} className="btn btn-primary" style={{ borderRadius: '50%', padding: '10px 13px' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-                  </button>
+                <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)' }}>
+                  {pendingChatImagePreview && (
+                    <div style={{ marginBottom: '8px', position: 'relative', display: 'inline-block' }}>
+                      <img src={pendingChatImagePreview} alt="Preview" style={{ maxHeight: '100px', borderRadius: '10px', border: '2px solid #3636e833' }} />
+                      <button onClick={clearChatImage} style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800' }}>✕</button>
+                    </div>
+                  )}
+                  {uploadingImage && <div style={{ marginBottom: '6px', fontSize: '12px', color: '#3636e8', fontWeight: '600' }}>Uploading...</div>}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" ref={chatImageRef} onChange={handleChatImageSelect} style={{ display: 'none' }} />
+                    <button onClick={() => chatImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingChatImage ? '#3636e818' : '#e8eaf0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingChatImage ? '#3636e8' : '#9999b0', flexShrink: 0 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    </button>
+                    <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMsg()} placeholder="Type a message..." disabled={uploadingImage} style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: '#1e1e3a' }} />
+                    <button onClick={sendChatMsg} disabled={(!chatInput.trim() && !pendingChatImage) || uploadingImage} className="btn btn-primary" style={{ borderRadius: '50%', padding: '10px 13px', opacity: (!chatInput.trim() && !pendingChatImage) || uploadingImage ? 0.6 : 1 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                    </button>
+                  </div>
                 </div>
               </>
             )
@@ -1064,6 +1176,51 @@ export default function SupportPage() {
           onChange={setChatInitText} 
           onSubmit={startChat} 
         />
+      )}
+
+      {/* Lightbox for full-size image viewing */}
+      {lightboxUrl && (
+        <div
+          onClick={() => setLightboxUrl(null)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.85)', zIndex: 9999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', padding: '40px',
+          }}
+        >
+          <img
+            src={lightboxUrl}
+            alt="Full size"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', cursor: 'default' }}
+          />
+          <button
+            onClick={(e) => { e.stopPropagation(); window.open(lightboxUrl!, '_blank') }}
+            title="Download image"
+            style={{
+              position: 'absolute', top: '20px', right: '72px',
+              width: '40px', height: '40px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)', border: 'none',
+              color: '#fff', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
+          <button
+            onClick={() => setLightboxUrl(null)}
+            style={{
+              position: 'absolute', top: '20px', right: '20px',
+              width: '40px', height: '40px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)', border: 'none',
+              color: '#fff', fontSize: '20px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >✕</button>
+        </div>
       )}
     </div>
   )

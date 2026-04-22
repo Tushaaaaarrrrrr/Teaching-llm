@@ -465,6 +465,7 @@ model TicketReply {
   ticketId  String
   senderId  String
   content   String
+  imageUrl  String?
   createdAt DateTime      @default(now())
   sender    User          @relation("ReplyAuthor", fields: [senderId], references: [id])
   ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
@@ -498,6 +499,7 @@ model ChatMessage {
   chatId          String
   senderId        String
   content         String
+  imageUrl        String?
   createdAt       DateTime    @default(now())
   deletedAt       DateTime?
   isDeleted       Boolean     @default(false)
@@ -511,6 +513,7 @@ model CommunityMessage {
   courseId        String    @map("classId")
   senderId        String
   content         String
+  imageUrl        String?
   isDeleted       Boolean   @default(false)
   deletedAt       DateTime?
   createdAt       DateTime  @default(now())
