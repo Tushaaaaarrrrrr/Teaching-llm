@@ -29,10 +29,21 @@ export async function PUT(request: NextRequest) {
 
     const updates = []
     for (const item of items) {
+      if (item.isImported) {
+        // Safe update: update order in TopicSharedContent
+        updates.push(
+          prisma.topicSharedContent.update({
+            where: { topicId_contentId: { topicId: item.topicId, contentId: item.id } },
+            data: { order: item.order },
+          })
+        )
+        continue
+      }
+
       const currentTopicId = existingMap.get(item.id)
       if (!currentTopicId) continue
 
-      // If client requests changing parent topic, strictly reject
+      // If client requests changing parent topic for standard content, strictly reject
       if (item.topicId && item.topicId !== currentTopicId) {
         return NextResponse.json({ 
           error: 'Moving lectures between topics is strictly prohibited.' 

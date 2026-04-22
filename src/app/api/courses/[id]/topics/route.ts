@@ -53,7 +53,7 @@ export async function GET(
           include: {
             content: true,
           },
-          orderBy: { createdAt: 'asc' },
+          orderBy: { order: 'asc' },
         },
       },
     })
@@ -61,13 +61,14 @@ export async function GET(
     const mergedTopics = topics.map(topic => {
       const importedContent = topic.sharedContentLinks.map(link => ({
         ...link.content,
+        order: link.order,
         isImported: true,
         importedIntoTopicId: topic.id,
       }))
 
       return {
         ...topic,
-        content: [...topic.content.map(item => ({ ...item, isImported: false })), ...importedContent],
+        content: [...topic.content.map(item => ({ ...item, isImported: false })), ...importedContent].sort((a, b) => a.order - b.order),
       }
     })
 

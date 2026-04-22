@@ -249,7 +249,7 @@ export default function CourseEditPage() {
     setSavingOrder(true)
     try {
       // Save topic order
-      await fetch('/api/topics/reorder', {
+      const topicRes = await fetch('/api/topics/reorder', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -257,22 +257,36 @@ export default function CourseEditPage() {
           items: topics.map(t => ({ id: t.id, order: t.order }))
         })
       })
+      if (!topicRes.ok) {
+        const errorData = await topicRes.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to save topic order')
+      }
+
       // Save lecture order for each topic
       for (const topic of topics) {
         if (topic.content.length > 0) {
-          await fetch('/api/content/reorder', {
+          const contentRes = await fetch('/api/content/reorder', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              items: topic.content.map(c => ({ id: c.id, order: c.order, topicId: topic.id }))
+              items: topic.content.map(c => ({ 
+                id: c.id, 
+                order: c.order, 
+                topicId: topic.id,
+                isImported: Boolean(c.isImported)
+              }))
             })
           })
+          if (!contentRes.ok) {
+            const errorData = await contentRes.json().catch(() => ({}))
+            throw new Error(errorData.error || `Failed to save lecture order for topic ${topic.title}`)
+          }
         }
       }
       setOrderDirty(false)
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to save order', e)
-      alert('Failed to save order. Please try again.')
+      alert(e.message || 'Failed to save order. Please try again.')
     } finally {
       setSavingOrder(false)
     }

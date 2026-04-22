@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header'
 import UpdateOverlay from '@/components/UpdateOverlay'
 import SupportFloatingButton from '@/components/ui/SupportFloatingButton'
 import ProfileSetupBlocker from '@/components/ProfileSetupBlocker'
+import UserJourneyTracker from '@/components/UserJourneyTracker'
 
 export default async function DashboardLayout({
   children,
@@ -55,6 +56,7 @@ export default async function DashboardLayout({
         <SupportFloatingButton />
       </div>
       <UpdateOverlay />
+      <UserJourneyTracker />
     </div>
   )
 }

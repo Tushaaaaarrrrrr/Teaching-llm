@@ -33,7 +33,14 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')))
 
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = {
+      NOT: {
+        actionDescription: {
+          contains: 'direct',
+          mode: 'insensitive',
+        }
+      }
+    }
 
     if (userId) {
       where.userId = userId
@@ -41,6 +48,8 @@ export async function GET(request: NextRequest) {
 
     if (role) {
       where.userRole = role
+    } else {
+      where.userRole = { not: 'MANAGER' }
     }
 
     if (moduleName) {
@@ -140,6 +149,29 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error fetching activity logs:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getSession()
+    if (!session || !isManager(session.role)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { logId } = await request.json()
+    if (!logId) {
+      return NextResponse.json({ error: 'Log ID is required' }, { status: 400 })
+    }
+
+    await prisma.activityLog.delete({
+      where: { id: logId }
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting activity log:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

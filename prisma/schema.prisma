@@ -300,6 +300,7 @@ model TopicSharedContent {
   id        String   @id @default(cuid())
   topicId    String
   contentId  String
+  order      Int      @default(0)
   createdAt DateTime @default(now())
   topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
   content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)

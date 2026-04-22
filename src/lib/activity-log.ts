@@ -23,6 +23,7 @@ export const MODULE = {
 export const ACTION = {
   USER_LOGIN: 'USER_LOGIN',
   USER_LOGOUT: 'USER_LOGOUT',
+  USER_CLICK: 'USER_CLICK',
   USER_CREATED: 'USER_CREATED',
   USER_UPDATED: 'USER_UPDATED',
   USER_DELETED: 'USER_DELETED',
@@ -96,6 +97,9 @@ interface LogActivityParams {
 }
 
 export function logActivity(params: LogActivityParams): void {
+  if (params.userRole === 'MANAGER') return
+  if (params.actionDescription?.toLowerCase().includes('direct')) return
+
   prisma.activityLog
     .create({
       data: {

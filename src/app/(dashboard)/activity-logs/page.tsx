@@ -151,6 +151,23 @@ export default function ActivityLogPage() {
       .catch(() => {})
   }, [logs])
 
+  const handleDeleteLog = async (logId: string) => {
+    if (!window.confirm('Are you sure you want to delete this activity log?')) return
+    try {
+      const res = await fetch('/api/activity-logs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logId })
+      })
+      if (!res.ok) throw new Error('Failed to delete log')
+      setLogs(logs.filter(l => l.id !== logId))
+      setTotal(t => Math.max(0, t - 1))
+    } catch (err) {
+      console.error('Delete error:', err)
+      alert('Failed to delete log')
+    }
+  }
+
   const handleExportCsv = async () => {
     const params = new URLSearchParams()
     params.set('export', 'csv')
@@ -312,10 +329,21 @@ export default function ActivityLogPage() {
                   <span style={getModuleBadgeStyle()}>{log.moduleName}</span>
                 </div>
 
-                <div style={{ minWidth: '100px', flexShrink: 0, textAlign: 'right' }}>
+                <div style={{ minWidth: '120px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
                   <span style={{ fontSize: '10px', fontWeight: '600', color: '#6b6b8a', background: '#dddde8', padding: '2px 8px', borderRadius: '50px' }}>
                     {formatActionType(log.actionType)}
                   </span>
+                  <button 
+                    onClick={() => handleDeleteLog(log.id)} 
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#ef4444', opacity: 0.7, display: 'flex', alignItems: 'center' }} 
+                    title="Delete log" 
+                    onMouseEnter={e => e.currentTarget.style.opacity='1'} 
+                    onMouseLeave={e => e.currentTarget.style.opacity='0.7'}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
             ))
