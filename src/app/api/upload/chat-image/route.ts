@@ -72,7 +72,9 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Supabase chat image upload error:', uploadError)
-      return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 })
+      console.error('Bucket: lms-uploads, Path:', storagePath)
+      console.error('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+      return NextResponse.json({ error: `Failed to upload image: ${uploadError.message}` }, { status: 500 })
     }
 
     const { data: urlData } = supabase.storage
