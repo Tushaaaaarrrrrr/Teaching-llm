@@ -93,3 +93,39 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const user = await prisma.user.update({
+      where: { id: session.userId },
+      data: { avatar: null },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatar: true,
+      },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.AVATAR_UPLOADED,
+      actionDescription: `${session.name} removed their avatar`,
+      moduleName: MODULE.PROFILE,
+    })
+
+    return NextResponse.json({ user, avatar: null })
+  } catch (error) {
+    console.error('Error removing avatar:', error)
+    const msg = error instanceof Error ? error.message : 'Internal server error'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+}

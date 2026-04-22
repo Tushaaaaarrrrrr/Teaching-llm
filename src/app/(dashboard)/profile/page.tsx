@@ -197,6 +197,22 @@ export default function ProfilePage() {
     setUploadingAvatar(false)
   }
 
+  async function handleRemoveAvatar() {
+    setUploadingAvatar(true)
+    try {
+      const res = await fetch('/api/profile/avatar', { method: 'DELETE' })
+      if (res.ok) {
+        setUser(prev => prev ? { ...prev, avatar: null } : prev)
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to remove avatar')
+      }
+    } catch {
+      alert('Remove failed')
+    }
+    setUploadingAvatar(false)
+  }
+
   function handleDiscard() {
     if (user) {
       setEditFirstName(user.firstName || user.name.split(' ')[0] || '')
@@ -328,13 +344,23 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <button onClick={() => fileInputRef.current?.click()} className="btn btn-ghost" style={{ flexShrink: 0 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
-            Change Photo
-          </button>
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0, alignItems: 'center' }}>
+            {user.avatar && (
+              <button onClick={handleRemoveAvatar} disabled={uploadingAvatar} className="btn btn-ghost" style={{ color: '#ef4444' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
+                </svg>
+                Remove
+              </button>
+            )}
+            <button onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar} className="btn btn-ghost">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              Change Photo
+            </button>
+          </div>
         </div>
 
         {/* ── Personal Information + Account Details (side by side) ── */}
