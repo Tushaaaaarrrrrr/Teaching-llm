@@ -1199,7 +1199,7 @@ export default function SupportPage() {
             style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', cursor: 'default' }}
           />
           <button
-            onClick={(e) => { e.stopPropagation(); window.open(lightboxUrl!, '_blank') }}
+            onClick={async (e) => { e.stopPropagation(); try { const res = await fetch(lightboxUrl!); const blob = await res.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `chat-image-${Date.now()}.${blob.type.split('/')[1] || 'jpg'}`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); } catch { window.open(lightboxUrl!, '_blank') } }}
             title="Download image"
             style={{
               position: 'absolute', top: '20px', right: '72px',

@@ -1219,7 +1219,7 @@ export default function CommunityPage() {
             }}
           />
           <button
-            onClick={(e) => { e.stopPropagation(); window.open(lightboxUrl!, '_blank') }}
+            onClick={async (e) => { e.stopPropagation(); try { const res = await fetch(lightboxUrl!); const blob = await res.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `chat-image-${Date.now()}.${blob.type.split('/')[1] || 'jpg'}`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); } catch { window.open(lightboxUrl!, '_blank') } }}
             title="Download image"
             style={{
               position: 'absolute', top: '20px', right: '72px',
