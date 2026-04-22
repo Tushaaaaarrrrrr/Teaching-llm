@@ -1013,15 +1013,18 @@ export default function CommunityPage() {
                   onClick={sendMessage}
                   disabled={(!input.trim() && !pendingImage) || uploadingImage || (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER')}
                   style={{
-                    width: '44px', height: '44px', borderRadius: '50%', border: 'none',
+                    height: '44px', borderRadius: pendingImage ? '50px' : '50%', border: 'none',
+                    width: pendingImage ? 'auto' : '44px',
+                    padding: pendingImage ? '0 20px' : '0',
                     cursor: (input.trim() || pendingImage) ? 'pointer' : 'default',
                     background: (input.trim() || pendingImage) ? selectedClass.color : '#e8eaf0',
                     color: (input.trim() || pendingImage) ? '#fff' : '#9999b0',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, gap: '6px',
                     boxShadow: (input.trim() || pendingImage) ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                    transition: 'all 0.2s',
+                    transition: 'all 0.2s', fontWeight: '700', fontSize: '13px', fontFamily: 'inherit',
                   }}
                 >
+                  {pendingImage && <span>Send</span>}
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                   </svg>

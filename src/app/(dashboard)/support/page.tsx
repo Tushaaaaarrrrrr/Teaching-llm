@@ -1161,7 +1161,8 @@ export default function SupportPage() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
                     <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMsg()} placeholder="Type a message..." disabled={uploadingImage} style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: '#1e1e3a' }} />
-                    <button onClick={sendChatMsg} disabled={(!chatInput.trim() && !pendingChatImage) || uploadingImage} className="btn btn-primary" style={{ borderRadius: '50%', padding: '10px 13px', opacity: (!chatInput.trim() && !pendingChatImage) || uploadingImage ? 0.6 : 1 }}>
+                    <button onClick={sendChatMsg} disabled={(!chatInput.trim() && !pendingChatImage) || uploadingImage} className="btn btn-primary" style={{ borderRadius: pendingChatImage ? '50px' : '50%', padding: pendingChatImage ? '10px 20px' : '10px 13px', opacity: (!chatInput.trim() && !pendingChatImage) || uploadingImage ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {pendingChatImage && <span style={{ fontWeight: '700', fontSize: '13px' }}>Send</span>}
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
                     </button>
                   </div>
