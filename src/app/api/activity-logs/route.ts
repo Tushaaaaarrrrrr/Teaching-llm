@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getSession()
-    if (!session || !isManager(session.role)) {
+    if (!session || !isManagerOrSuperAdmin(session.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
