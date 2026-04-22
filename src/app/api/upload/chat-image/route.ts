@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
+import { prisma } from '@/lib/db'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+
+const MAX_IMAGES_PER_DAY = 30
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -17,6 +20,19 @@ export async function POST(request: NextRequest) {
     // Any authenticated user can upload chat images
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limit: max 30 images per day per user
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const [commCount, chatCount, replyCount] = await Promise.all([
+      prisma.communityMessage.count({ where: { senderId: session.userId, imageUrl: { not: null }, createdAt: { gte: todayStart } } }),
+      prisma.chatMessage.count({ where: { senderId: session.userId, imageUrl: { not: null }, createdAt: { gte: todayStart } } }),
+      prisma.ticketReply.count({ where: { senderId: session.userId, imageUrl: { not: null }, createdAt: { gte: todayStart } } }),
+    ])
+    const todayTotal = commCount + chatCount + replyCount
+    if (todayTotal >= MAX_IMAGES_PER_DAY) {
+      return NextResponse.json({ error: `Daily limit reached. You can upload max ${MAX_IMAGES_PER_DAY} images per day.` }, { status: 429 })
     }
 
     const formData = await request.formData()
