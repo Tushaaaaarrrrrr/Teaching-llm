@@ -933,16 +933,23 @@ export default function CommunityPage() {
             <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)' }}>
               {/* Image preview */}
               {pendingImagePreview && (
-                <div style={{ marginBottom: '8px', position: 'relative', display: 'inline-block' }}>
-                  <img src={pendingImagePreview} alt="Preview" style={{ maxHeight: '120px', borderRadius: '12px', border: '2px solid #3636e833' }} />
+                <div style={{ 
+                  marginBottom: '10px', position: 'relative', display: 'inline-flex', 
+                  alignItems: 'flex-end', gap: '8px', padding: '10px 14px', 
+                  borderRadius: '16px', background: '#f0f0ff', 
+                  border: '2px solid #3636e830',
+                  boxShadow: '0 4px 12px rgba(54,54,232,0.1)',
+                }}>
+                  <img src={pendingImagePreview} alt="Preview" style={{ maxHeight: '100px', maxWidth: '200px', borderRadius: '10px', objectFit: 'cover' }} />
+                  <div style={{ fontSize: '11px', color: '#3636e8', fontWeight: '600' }}>📎 Ready to send</div>
                   <button
                     onClick={clearPendingImage}
                     style={{
-                      position: 'absolute', top: '-6px', right: '-6px',
-                      width: '22px', height: '22px', borderRadius: '50%',
-                      background: '#ef4444', color: '#fff', border: 'none',
+                      position: 'absolute', top: '-8px', right: '-8px',
+                      width: '24px', height: '24px', borderRadius: '50%',
+                      background: '#ef4444', color: '#fff', border: '2px solid #fff',
                       cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '12px', fontWeight: '800',
+                      fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)',
                     }}
                   >✕</button>
                 </div>
