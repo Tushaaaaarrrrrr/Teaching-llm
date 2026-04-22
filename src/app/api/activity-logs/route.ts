@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../lib/db'
-import { getSession, isManager } from '../../../lib/auth'
+import { getSession, isManagerOrSuperAdmin } from '../../../lib/auth'
 
 function escapeCsvField(field: string): string {
   const str = String(field)
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!isManager(session.role)) {
+    if (!isManagerOrSuperAdmin(session.role)) {
       return NextResponse.json({ error: 'Forbidden: Manager access required' }, { status: 403 })
     }
 
@@ -33,13 +33,13 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')))
 
-    const where: Record<string, unknown> = {
-      NOT: {
-        actionDescription: {
-          contains: 'direct',
-          mode: 'insensitive',
-        }
-      }
+    const where: any = {}
+
+    if (session.role === 'MANAGER') {
+      where.NOT = [
+        { actionDescription: { contains: 'direct', mode: 'insensitive' } },
+        { actionType: 'USER_CLICK' }
+      ]
     }
 
     if (userId) {
@@ -48,6 +48,8 @@ export async function GET(request: NextRequest) {
 
     if (role) {
       where.userRole = role
+    } else if (session.role === 'MANAGER') {
+      where.userRole = { notIn: ['MANAGER', 'SUPER_ADMIN'] }
     } else {
       where.userRole = { not: 'MANAGER' }
     }

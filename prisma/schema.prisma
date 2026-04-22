@@ -40,6 +40,7 @@ model User {
   isGoogleUser            Boolean                @default(false)
   encryptedTempPassword   String?
   lastDailyDigestAt       DateTime?
+  enableDetailedLogs      Boolean                @default(false)
   activityLogs            ActivityLog[]
   announcements           Announcement[]         @relation("AnnouncementCreator")
   chatMessages            ChatMessage[]          @relation("ChatMsgSender")

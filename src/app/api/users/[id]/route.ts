@@ -15,7 +15,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'MANAGER' && session.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -39,6 +39,7 @@ export async function GET(
         avatar: true,
         isGoogleUser: true,
         isTerminated: true,
+        enableDetailedLogs: true,
         enrollments: {
           select: {
             courseId: true,
@@ -75,6 +76,10 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    if (session.role !== 'SUPER_ADMIN') {
+      delete (user as any).enableDetailedLogs
+    }
+
     return NextResponse.json(user)
   } catch (error) {
     console.error('Error fetching user:', error)
@@ -92,12 +97,25 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'MANAGER' && session.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const { id } = await params
-    const { name, firstName, lastName, mobileNumber, email, role, password, isTerminated, gender, age, state, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes } = await request.json()
+    const body = await request.json()
+
+    if (session.role === 'SUPER_ADMIN') {
+      if (typeof body.enableDetailedLogs === 'boolean') {
+        const updated = await prisma.user.update({
+          where: { id },
+          data: { enableDetailedLogs: body.enableDetailedLogs }
+        })
+        return NextResponse.json(updated)
+      }
+      return NextResponse.json({ error: 'Forbidden: SUPER_ADMIN can only toggle detailed logs' }, { status: 403 })
+    }
+
+    const { name, firstName, lastName, mobileNumber, email, role, password, isTerminated, gender, age, state, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes, enableDetailedLogs } = body
     // enrollmentTypes is an optional map: { courseId: 'LIVE' | 'RECORDED' }
     const nextCourseIds = classIds !== undefined ? classIds : courseIds
     const nextAssignedCourseIds = assignedClassIds !== undefined ? assignedClassIds : assignedCourseIds
@@ -125,6 +143,7 @@ export async function PUT(
     if (email !== undefined) data.email = email
     if (role !== undefined) data.role = role
     if (typeof isTerminated === 'boolean') data.isTerminated = isTerminated
+    if (typeof enableDetailedLogs === 'boolean') data.enableDetailedLogs = enableDetailedLogs
     if (age !== undefined) data.age = age
     if (state !== undefined) data.state = state
     

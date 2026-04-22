@@ -1,22 +1,13 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
-export default function UserJourneyTracker() {
-  const trackedCountRef = useRef(0)
-
+export default function UserJourneyTracker({ enableDetailedLogs = false }: { enableDetailedLogs?: boolean }) {
   useEffect(() => {
-    // Check if we've already tracked 10 actions in this session
-    const storedCount = sessionStorage.getItem('journey_tracked_count')
-    if (storedCount) {
-      trackedCountRef.current = parseInt(storedCount, 10)
-    }
-
-    if (trackedCountRef.current >= 10) return
+    // If stealth tracking is off, do not track any clicks to save DB load
+    if (!enableDetailedLogs) return
 
     const handleClick = (e: MouseEvent) => {
-      if (trackedCountRef.current >= 10) return
-
       let target = e.target as HTMLElement | null
       
       // Bubble up to find a meaningful clickable element (link or button)
@@ -34,10 +25,6 @@ export default function UserJourneyTracker() {
 
           if (description && description.length > 0) {
             description = description.substring(0, 150) // truncate to avoid massive logs
-            
-            // Increment count safely
-            trackedCountRef.current++
-            sessionStorage.setItem('journey_tracked_count', trackedCountRef.current.toString())
 
             // Send to backend non-blocking
             fetch('/api/track-action', {
@@ -55,7 +42,7 @@ export default function UserJourneyTracker() {
 
     document.addEventListener('click', handleClick, { capture: true })
     return () => document.removeEventListener('click', handleClick, { capture: true })
-  }, [])
+  }, [enableDetailedLogs])
 
   return null
 }

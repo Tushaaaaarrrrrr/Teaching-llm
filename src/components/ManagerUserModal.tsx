@@ -40,6 +40,7 @@ interface User {
   enrollments?: { courseId: string; type?: string; course: CourseInfo }[]
   instructorAssignments?: { courseId: string; course: CourseInfo }[]
   courseBundleAssignments?: { bundleId: string; bundle: CourseBundleInfo }[]
+  enableDetailedLogs?: boolean
 }
 
 interface ManagerUserModalProps {
@@ -69,7 +70,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     bundleIds: [] as string[],
     enrollmentTypes: {} as Record<string, string>, // courseId → 'LIVE' | 'RECORDED'
     age: '',
-    state: ''
+    state: '',
+    enableDetailedLogs: false
   })
   const bundledCourseIds = new Set(
     bundles
@@ -136,6 +138,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             enrollmentTypes: Object.fromEntries(
               normalizeCollection<any>(data?.enrollments).map((e: any) => [e.courseId, e.type || 'LIVE'])
             ),
+            enableDetailedLogs: data.enableDetailedLogs || false
         })
       } else {
         setUser(null)
@@ -193,6 +196,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             courseIds: formData.courseIds,
             bundleIds: formData.bundleIds,
             enrollmentTypes: formData.enrollmentTypes,
+            ...('enableDetailedLogs' in (user || {}) ? { enableDetailedLogs: formData.enableDetailedLogs } : {})
         }),
       })
       if (res.ok) {
@@ -463,6 +467,43 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     </button>
                   </div>
                 </div>
+
+                {user && 'enableDetailedLogs' in user && (
+                  <div style={{
+                    padding: '20px', borderRadius: '20px', marginTop: '24px',
+                    background: 'linear-gradient(135deg, #f0f2f8, #f8fafc)',
+                    boxShadow: 'inset 4px 4px 10px #d1d9e6, inset -4px -4px 10px #ffffff',
+                    border: '1px solid rgba(255,255,255,0.6)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Stealth Tracking</div>
+                      <span style={{ fontSize: '9px', fontWeight: '800', color: '#6366f1', background: '#e0e7ff', padding: '3px 10px', borderRadius: '50px' }}>SUPER ADMIN</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                        <div style={{ position: 'relative' }}>
+                          <input type="checkbox" className="sr-only" checked={formData.enableDetailedLogs} onChange={e => setFormData({ ...formData, enableDetailedLogs: e.target.checked })} style={{ opacity: 0, width: 0, height: 0 }} />
+                          <div style={{
+                            display: 'block', width: '48px', height: '28px', borderRadius: '9999px',
+                            background: formData.enableDetailedLogs ? '#6366f1' : '#cbd5e1', transition: 'background 0.3s'
+                          }}></div>
+                          <div style={{
+                            position: 'absolute', top: '2px', left: '2px', width: '24px', height: '24px',
+                            backgroundColor: '#ffffff', borderRadius: '50%', transition: 'transform 0.3s',
+                            transform: formData.enableDetailedLogs ? 'translateX(20px)' : 'translateX(0)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                          }}></div>
+                        </div>
+                      </label>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a' }}>
+                        {formData.enableDetailedLogs ? 'Detailed Tracking Enabled' : 'Normal Tracking'}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#6b6b8a', marginTop: '8px', lineHeight: 1.4 }}>
+                      When enabled, this user's every click is silently logged and visible only to Super Admins.
+                    </div>
+                  </div>
+                )}
 
                 {formData.role !== 'MANAGER' ? (
                   <>

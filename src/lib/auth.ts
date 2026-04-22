@@ -14,7 +14,7 @@ const COOKIE_NAME = 'teaching_llm_token'
 export interface JWTPayload {
   userId: string
   email: string
-  role: 'MANAGER' | 'ADMIN' | 'STUDENT' | 'INSTRUCTOR'
+  role: 'MANAGER' | 'SUPER_ADMIN' | 'ADMIN' | 'STUDENT' | 'INSTRUCTOR'
   name: string
   canTerminate?: boolean
   canCreateStudents?: boolean
@@ -28,6 +28,7 @@ export interface JWTPayload {
 export interface FullSession extends JWTPayload {
   isTerminated: boolean
   isProfileComplete: boolean
+  enableDetailedLogs: boolean
   accessibleCourseIds: string[] | null // null = all courses (MANAGER)
   enrollmentTypes: Record<string, string> // courseId → 'LIVE' | 'RECORDED'
   isMaintenanceMode?: boolean
@@ -102,7 +103,8 @@ export async function getFullSession(): Promise<FullSession | null> {
         isTerminated: true,
         tokenVersion: true,
         isProfileComplete: true,
-        enrollments: jwtPayload.role !== 'MANAGER' ? {
+        enableDetailedLogs: true,
+        enrollments: (jwtPayload.role !== 'MANAGER' && jwtPayload.role !== 'SUPER_ADMIN') ? {
           where: {
             course: {
               isDisabled: false,
@@ -148,13 +150,14 @@ export async function getFullSession(): Promise<FullSession | null> {
     ...jwtPayload,
     isTerminated: user.isTerminated,
     isProfileComplete: user.isProfileComplete,
-    accessibleCourseIds: jwtPayload.role === 'MANAGER' 
+    enableDetailedLogs: user.enableDetailedLogs || false,
+    accessibleCourseIds: (jwtPayload.role === 'MANAGER' || jwtPayload.role === 'SUPER_ADMIN') 
       ? null 
       : enrollments.map(e => e.courseId),
-    enrollmentTypes: jwtPayload.role === 'MANAGER'
+    enrollmentTypes: (jwtPayload.role === 'MANAGER' || jwtPayload.role === 'SUPER_ADMIN')
       ? {}
       : Object.fromEntries(enrollments.map(e => [e.courseId, e.type])),
-    isMaintenanceMode: settings?.maintenanceMode && jwtPayload.role !== 'MANAGER'
+    isMaintenanceMode: settings?.maintenanceMode && (jwtPayload.role !== 'MANAGER' && jwtPayload.role !== 'SUPER_ADMIN')
   }
 }
 
@@ -173,6 +176,14 @@ export function getCookieConfig() {
 
 export function isManager(role: string) {
   return role === 'MANAGER'
+}
+
+export function isSuperAdmin(role: string) {
+  return role === 'SUPER_ADMIN'
+}
+
+export function isManagerOrSuperAdmin(role: string) {
+  return role === 'MANAGER' || role === 'SUPER_ADMIN'
 }
 
 export function isAdminOrManager(role: string) {
@@ -200,7 +211,7 @@ export async function getAccessibleCourseIds(
   userId: string,
   role: string
 ): Promise<string[] | null> {
-  if (role === 'MANAGER') return null
+  if (role === 'MANAGER' || role === 'SUPER_ADMIN') return null
 
   const now = new Date()
 

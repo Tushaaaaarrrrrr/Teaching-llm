@@ -96,7 +96,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/activity-logs',
     label: 'Activity Log',
-    roles: ['MANAGER'],
+    roles: ['MANAGER', 'SUPER_ADMIN'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
@@ -205,7 +205,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/admin',
     label: 'User Admin',
-    roles: ['MANAGER'],
+    roles: ['MANAGER', 'SUPER_ADMIN'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>

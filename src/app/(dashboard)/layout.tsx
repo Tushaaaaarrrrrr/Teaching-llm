@@ -56,7 +56,7 @@ export default async function DashboardLayout({
         <SupportFloatingButton />
       </div>
       <UpdateOverlay />
-      <UserJourneyTracker />
+      <UserJourneyTracker enableDetailedLogs={session.enableDetailedLogs} />
     </div>
   )
 }

@@ -98,6 +98,7 @@ export default function ActivityLogPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [userIdFilter, setUserIdFilter] = useState('')
 
   // Debounce search
   useEffect(() => {
@@ -121,6 +122,7 @@ export default function ActivityLogPage() {
       if (actionFilter) params.set('actionType', actionFilter)
       if (dateFrom) params.set('dateFrom', dateFrom)
       if (dateTo) params.set('dateTo', dateTo)
+      if (userIdFilter) params.set('userId', userIdFilter)
 
       const res = await fetch(`/api/activity-logs?${params.toString()}`)
       if (!res.ok) throw new Error('Failed to fetch')
@@ -133,7 +135,7 @@ export default function ActivityLogPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearch, roleFilter, moduleFilter, actionFilter, dateFrom, dateTo])
+  }, [page, debouncedSearch, roleFilter, moduleFilter, actionFilter, dateFrom, dateTo, userIdFilter])
 
   useEffect(() => {
     fetchLogs()
@@ -141,7 +143,7 @@ export default function ActivityLogPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, roleFilter, moduleFilter, actionFilter, dateFrom, dateTo])
+  }, [debouncedSearch, roleFilter, moduleFilter, actionFilter, dateFrom, dateTo, userIdFilter])
 
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10)
@@ -202,10 +204,11 @@ export default function ActivityLogPage() {
     setActionFilter('')
     setDateFrom('')
     setDateTo('')
+    setUserIdFilter('')
     setPage(1)
   }
 
-  const hasFilters = !!(search || roleFilter || moduleFilter || actionFilter || dateFrom || dateTo)
+  const hasFilters = !!(search || roleFilter || moduleFilter || actionFilter || dateFrom || dateTo || userIdFilter)
 
   return (
     <div style={{ 
@@ -243,11 +246,17 @@ export default function ActivityLogPage() {
 
         {/* Filters (Fixed) */}
         <div className="card" style={{ padding: '16px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
             </svg>
             <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a' }}>Filters</span>
+            {userIdFilter && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#e0e7ff', color: '#4f46e5', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
+                Filtered by User ID
+                <button onClick={() => setUserIdFilter('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#4f46e5' }}>&times;</button>
+              </span>
+            )}
             {hasFilters && (
               <button className="btn btn-ghost btn-sm" onClick={clearFilters} style={{ marginLeft: 'auto', fontSize: '11px', height: '24px' }}>
                 Clear All
@@ -313,8 +322,15 @@ export default function ActivityLogPage() {
                 </div>
 
                 <div style={{ minWidth: '120px', flexShrink: 0 }}>
-                  <div onClick={() => setSelectedUserId(log.userId)} style={{ fontSize: '12px', fontWeight: '700', color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>
-                    {log.userName}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div onClick={() => setSelectedUserId(log.userId)} style={{ fontSize: '12px', fontWeight: '700', color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>
+                      {log.userName}
+                    </div>
+                    <button onClick={() => setUserIdFilter(log.userId)} title="Filter logs for this user" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b8a', padding: '0 4px', display: 'flex', alignItems: 'center' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                      </svg>
+                    </button>
                   </div>
                   <span style={getRoleBadgeStyle(log.userRole)}>{log.userRole}</span>
                 </div>
