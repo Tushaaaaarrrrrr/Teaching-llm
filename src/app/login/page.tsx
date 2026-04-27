@@ -178,7 +178,6 @@ function LoginContent() {
         {/* Footer Links */}
         <div style={{ position: 'absolute', bottom: '24px', left: '32px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {[
-            { label: 'Contact Developer', icon: '✉️', onClick: () => window.location.href = 'mailto:admin@genziitian.org' },
             { label: 'Refund Policy', icon: '💸', onClick: () => setShowRefundPolicy(true) },
             { label: 'Privacy Policy', icon: '🔒', onClick: () => setShowPrivacyPolicy(true) },
             { label: 'Terms & Conditions', icon: '📜', onClick: () => setShowTermsConditions(true) },
@@ -207,13 +206,45 @@ function LoginContent() {
       </div>
 
       {/* Right Panel - Login Form */}
-      <div style={{ flex: 1, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' }}>
+      <div style={{ flex: 1, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px', position: 'relative' }}>
         <div style={{ width: '100%', maxWidth: '480px', background: '#F3F4F6', borderRadius: '32px', padding: '52px', boxShadow: '14px 14px 28px #d1d5db, -14px -14px 28px #ffffff' }}>
-          <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1e1e3a', marginBottom: '36px', textAlign: 'center' }}>Welcome Back</h2>
+          <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1e1e3a', marginBottom: '36px', textAlign: 'center' }}>Welcome Back !</h2>
 
           {/* Google Login is now the primary method */}
-          <GoogleLoginButton />
+          <GoogleLoginButton onTermsClick={() => setShowTermsConditions(true)} onPrivacyClick={() => setShowPrivacyPolicy(true)} />
         </div>
+        
+        {/* Contact Developer Link (Bottom Right) */}
+        <a
+          href="mailto:admin@genziitian.org"
+          style={{ 
+            position: 'absolute', 
+            bottom: '24px', 
+            right: '32px', 
+            fontSize: '12px', 
+            color: '#9999b0', 
+            textDecoration: 'none', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            fontWeight: '600',
+            padding: '8px 16px',
+            background: '#F3F4F6',
+            borderRadius: '50px',
+            boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
+            e.currentTarget.style.color = '#3636e8';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
+            e.currentTarget.style.color = '#9999b0';
+          }}
+        >
+          <span style={{ fontSize: '14px' }}>✉️</span><span>Contact Developer</span>
+        </a>
       </div>
 
       {/* Secret Login Modal */}
@@ -365,7 +396,7 @@ function LoginContent() {
   )
 }
 
-function GoogleLoginButton() {
+function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: () => void, onPrivacyClick?: () => void }) {
   const router = useRouter()
   const [gLoading, setGLoading] = useState(false)
   const [gError, setGError] = useState('')
@@ -444,7 +475,7 @@ function GoogleLoginButton() {
         </div>
       )}
 
-      <p style={{ textAlign: 'center', fontSize: '15px', color: '#9999b0', marginBottom: '20px', fontWeight: '500', whiteSpace: 'nowrap' }}>
+      <p style={{ textAlign: 'center', fontSize: '17px', color: '#1e1e3a', marginBottom: '36px', fontWeight: '600', whiteSpace: 'nowrap' }}>
         Log in or create a new account with Google
       </p>
 
@@ -514,9 +545,11 @@ function GoogleLoginButton() {
         </button>
       </div>
 
-      <p style={{ textAlign: 'center', fontSize: '11px', color: '#9999b0', marginTop: '24px', fontWeight: '500', lineHeight: '1.5' }}>
-        By continuing, you agree to the Terms & Conditions & privacy policy
-      </p>
+      <div style={{ marginTop: '40px' }}>
+        <p style={{ textAlign: 'center', fontSize: '11px', color: '#9999b0', fontWeight: '500', lineHeight: '1.5', whiteSpace: 'nowrap' }}>
+          By continuing, you agree to the <span onClick={onTermsClick} style={{ color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>Terms & Conditions</span> & <span onClick={onPrivacyClick} style={{ color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>privacy policy</span>
+        </p>
+      </div>
     </div>
   )
 }

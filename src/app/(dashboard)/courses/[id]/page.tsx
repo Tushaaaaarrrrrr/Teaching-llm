@@ -672,50 +672,65 @@ export default function CourseDetailPage() {
           <div style={{
             background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
-            animation: 'modalSlideUp 0.3s ease-out'
+            animation: 'modalSlideUp 0.3s ease-out', position: 'relative'
           }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '40px', textAlign: 'center' }}>
-              <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#ffffff', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            {upgrading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', marginBottom: '24px' }}>
+                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/>
+                </svg>
+                <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Processing Payment...</h2>
+                <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', textAlign: 'center' }}>
+                  Please wait while we securely process your transaction.<br/>Do not close or refresh this page.
+                </p>
+                <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
               </div>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
-              <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
-              <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
-                You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
-              </p>
-              
-              <div style={{ background: '#f8faff', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid #e0e7ff' }}>
-                <div style={{ fontSize: '36px', fontWeight: '900', color: '#6366f1', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
-                <div style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '600' }}>One-time upgrade fee</div>
-              </div>
+            ) : (
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <button 
+                  onClick={() => setUpgradeModalCourse(null)}
+                  style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: '#94a3b8', cursor: 'pointer', lineHeight: 1 }}
+                >&times;</button>
+                <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#ffffff', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
+                <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
+                  You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
+                </p>
+                
+                <div style={{ background: '#f8faff', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid #e0e7ff' }}>
+                  <div style={{ fontSize: '36px', fontWeight: '900', color: '#6366f1', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
+                  <div style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '600' }}>One-time upgrade fee</div>
+                </div>
 
-              <div style={{ display: 'flex', gap: '14px' }}>
-                <button 
-                  disabled={upgrading}
-                  onClick={() => setUpgradeModalCourse(null)} 
-                  style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'white', color: '#64748b', fontWeight: '700', cursor: upgrading ? 'not-allowed' : 'pointer' }}
-                >
-                  Cancel
-                </button>
-                <button 
-                  disabled={upgrading}
-                  onClick={() => handleUpgrade(upgradeModalCourse.id)}
-                  style={{ 
-                    flex: 1.5, padding: '16px', borderRadius: '18px', border: 'none', 
-                    background: upgrading ? '#94a3b8' : 'linear-gradient(135deg, #6366f1, #4f46e5)', 
-                    color: 'white', fontWeight: '700', cursor: upgrading ? 'not-allowed' : 'pointer',
-                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                  }}
-                >
-                  {upgrading ? 'Processing...' : '✓ Confirm Upgrade'}
-                </button>
+                <div style={{ display: 'flex', gap: '14px' }}>
+                  <button 
+                    onClick={() => setUpgradeModalCourse(null)} 
+                    style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'white', color: '#64748b', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={() => handleUpgrade(upgradeModalCourse.id)}
+                    style={{ 
+                      flex: 1.5, padding: '16px', borderRadius: '18px', border: 'none', 
+                      background: 'linear-gradient(135deg, #6366f1, #4f46e5)', 
+                      color: 'white', fontWeight: '700', cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                    }}
+                  >
+                    ✓ Confirm Upgrade
+                  </button>
+                </div>
+                
+                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '24px' }}>
+                  Course will be updated automatically after Payment
+                </div>
               </div>
-              
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '24px' }}>
-                Course will be updated automatically after Payment
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
