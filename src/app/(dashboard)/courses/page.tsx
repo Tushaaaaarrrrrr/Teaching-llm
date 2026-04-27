@@ -602,63 +602,55 @@ export default function CoursesPage() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#f0f2f8', borderRadius: '28px', width: '100%', maxWidth: '420px',
-              boxShadow: '20px 20px 40px #c5c7cf, -20px -20px 40px #ffffff',
-              padding: '32px 32px 28px', textAlign: 'center',
+              background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
+              boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              padding: '40px', textAlign: 'center',
+              animation: 'modalSlideUp 0.3s ease-out'
             }}
           >
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚡</div>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', marginBottom: '8px' }}>
-              Upgrade to PRO Batch
-            </h2>
-            <p style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.6', marginBottom: '8px' }}>
-              <strong style={{ color: '#1e1e3a' }}>{upgradeModalCourse.name}</strong>
-            </p>
-            <p style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.6', marginBottom: '24px' }}>
-              You will get access to <strong>live classes, real-time mentorship,</strong> and everything in your current plan.
-            </p>
-
-            <div style={{
-              background: 'linear-gradient(135deg, #6366f108, #8b5cf608)',
-              border: '1.5px solid #6366f130',
-              borderRadius: '16px', padding: '16px', marginBottom: '24px',
-            }}>
-              <div style={{ fontSize: '32px', fontWeight: '900', color: '#6366f1' }}>
-                ₹{upgradeModalCourse.liveUpgradePrice}
+              <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#ffffff', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               </div>
-              <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: '600' }}>One-time upgrade fee</div>
-            </div>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
+              <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
+                You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
+              </p>
 
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                onClick={() => setUpgradeModalCourse(null)}
-                disabled={upgrading}
-                style={{
-                  flex: 1, padding: '12px', borderRadius: '14px',
-                  border: '1.5px solid #d1d9e6', background: '#e8eaf0',
-                  boxShadow: '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
-                  fontSize: '13px', fontWeight: '700', color: '#6b6b8a', cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleUpgrade(upgradeModalCourse.id)}
-                disabled={upgrading}
-                style={{
-                  flex: 2, padding: '12px', borderRadius: '14px', border: 'none',
-                  background: upgrading ? '#9ca3af' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                  color: '#fff', fontSize: '13px', fontWeight: '800', cursor: upgrading ? 'not-allowed' : 'pointer',
-                  boxShadow: upgrading ? 'none' : '4px 4px 16px rgba(99,102,241,0.35)',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {upgrading ? '⏳ Processing...' : '✓ Confirm Upgrade'}
-              </button>
-            </div>
-            <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '14px' }}>
-              Your class type will be updated automatically after confirmation.
-            </p>
+              <div style={{ background: '#f8faff', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid #e0e7ff' }}>
+                <div style={{ fontSize: '36px', fontWeight: '900', color: '#6366f1', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
+                <div style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '600' }}>One-time upgrade fee</div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '14px' }}>
+                <button
+                  onClick={() => setUpgradeModalCourse(null)}
+                  disabled={upgrading}
+                  style={{
+                    flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'white',
+                    color: '#64748b', fontWeight: '700', cursor: upgrading ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleUpgrade(upgradeModalCourse.id)}
+                  disabled={upgrading}
+                  style={{
+                    flex: 1.5, padding: '16px', borderRadius: '18px', border: 'none',
+                    background: upgrading ? '#94a3b8' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                    color: 'white', fontWeight: '700', cursor: upgrading ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                  }}
+                >
+                  {upgrading ? 'Processing...' : '✓ Confirm Upgrade'}
+                </button>
+              </div>
+
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '24px' }}>
+                Course will be updated automatically after Payment
+              </div>
           </div>
         </div>
       )}

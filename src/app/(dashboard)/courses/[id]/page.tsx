@@ -619,22 +619,23 @@ export default function CourseDetailPage() {
           padding: '20px'
         }} onClick={() => !upgrading && setUpgradeModalCourse(null)}>
           <div style={{
-            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '480px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
             animation: 'modalSlideUp 0.3s ease-out'
           }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '40px', textAlign: 'center' }}>
-              <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#eef2ff', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#ffffff', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               </div>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Upgrade to PRO Batch?</h2>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
               <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
-                Get instant access to live classes, direct teacher interaction, and weekly mentorship for <strong>{upgradeModalCourse.name}</strong>.
+                You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
               </p>
               
-              <div style={{ background: '#f8fafc', borderRadius: '20px', padding: '20px', marginBottom: '32px', border: '1.5px solid #e2e8f0' }}>
-                <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Upgrade Price</div>
-                <div style={{ fontSize: '32px', fontWeight: '900', color: '#1e293b' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
+              <div style={{ background: '#f8faff', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid #e0e7ff' }}>
+                <div style={{ fontSize: '36px', fontWeight: '900', color: '#6366f1', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
+                <div style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '600' }}>One-time upgrade fee</div>
               </div>
 
               <div style={{ display: 'flex', gap: '14px' }}>
@@ -656,8 +657,12 @@ export default function CourseDetailPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                   }}
                 >
-                  {upgrading ? 'Processing...' : 'Confirm Upgrade'}
+                  {upgrading ? 'Processing...' : '✓ Confirm Upgrade'}
                 </button>
+              </div>
+              
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '24px' }}>
+                Course will be updated automatically after Payment
               </div>
             </div>
           </div>
