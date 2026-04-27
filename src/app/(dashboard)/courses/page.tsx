@@ -132,7 +132,6 @@ export default function CoursesPage() {
               style={{
                 background: '#e8eaf0',
                 borderRadius: '28px',
-                filter: isRecorded ? 'grayscale(1) opacity(0.85)' : 'none',
                 boxShadow: isLive
                   ? `8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, 0 0 0 2px ${course.color}40`
                   : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
@@ -162,7 +161,7 @@ export default function CoursesPage() {
               {/* Gradient Banner */}
               <div style={{
                 height: '100px',
-                background: `linear-gradient(135deg, ${course.color}ee, ${course.color}99)`,
+                background: isRecorded ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(135deg, ${course.color}ee, ${course.color}99)`,
                 position: 'relative',
                 overflow: 'hidden',
                 display: 'flex',
@@ -267,8 +266,8 @@ export default function CoursesPage() {
                     display: 'inline-block',
                     padding: '3px 12px',
                     borderRadius: '50px',
-                    background: course.color + '18',
-                    color: course.color,
+                    background: isRecorded ? '#e5e7eb' : course.color + '18',
+                    color: isRecorded ? '#4b5563' : course.color,
                     fontSize: '12px',
                     fontWeight: '700',
                     marginBottom: '8px',
@@ -319,9 +318,9 @@ export default function CoursesPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                         <div style={{
                           width: '20px', height: '20px', borderRadius: '50%',
-                          background: course.color + '22',
+                          background: isRecorded ? '#e5e7eb' : course.color + '22',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '9px', fontWeight: '700', color: course.color,
+                          fontSize: '9px', fontWeight: '700', color: isRecorded ? '#4b5563' : course.color,
                         }}>
                           {course.teacherName.charAt(0).toUpperCase()}
                         </div>

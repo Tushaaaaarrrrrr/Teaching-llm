@@ -201,6 +201,25 @@ export default function CourseDetailPage() {
           <div style={{ position: 'absolute', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', top: '-60px', right: '40px' }} />
           <div style={{ position: 'absolute', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', bottom: '-30px', right: '200px' }} />
 
+          {/* Info Button for Recorded users (Top Right) */}
+          {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && (
+            <button
+              onClick={() => setInfoModalCourse(course)}
+              style={{
+                position: 'absolute', top: '24px', right: '24px', zIndex: 10,
+                width: '32px', height: '32px', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+                color: '#fff', fontSize: '16px', fontWeight: '800', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s',
+              }}
+              title="Compare PRO vs General Batch"
+            >
+              i
+            </button>
+          )}
+
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative' }}>
             <div>
               <Link href="/courses" style={{
@@ -250,46 +269,34 @@ export default function CourseDetailPage() {
                     Teacher Name: {course.teacherName}
                   </span>
 
-                {/* Upgrade Button + Info Button for Recorded users */}
+                {/* Upgrade Button for Recorded users perfectly inline */}
                 {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ position: 'relative' }}>
-                      {showUpgradeHint && (
-                        <div style={{
-                          position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
-                          background: '#1e1e3a', color: '#fff', padding: '8px 12px', borderRadius: '12px',
-                          fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
-                          boxShadow: '0 4px 15px rgba(0,0,0,0.2)', marginBottom: '12px', zIndex: 10,
-                        }}>
-                          Click the "i" button to see batch differences
-                          <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', border: '6px solid transparent', borderTopColor: '#1e1e3a' }} />
-                        </div>
-                      )}
-                      <button
-                        onClick={() => setUpgradeModalCourse(course)}
-                        onMouseEnter={() => setShowUpgradeHint(true)}
-                        onMouseLeave={() => setShowUpgradeHint(false)}
-                        style={{
-                          background: '#fff', color: '#1e1e3a', padding: '6px 16px', borderRadius: '50px',
-                          fontSize: '12px', fontWeight: '800', border: 'none', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        <span style={{ fontSize: '8px', background: '#f3f4f6', padding: '1px 6px', borderRadius: '10px', color: '#6b6b8a' }}>OPTIONAL</span>
-                        ⚡ Upgrade to PRO
-                      </button>
-                    </div>
+                  <div style={{ position: 'relative' }}>
+                    {showUpgradeHint && (
+                      <div style={{
+                        position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
+                        background: '#1e1e3a', color: '#fff', padding: '8px 12px', borderRadius: '12px',
+                        fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.2)', marginBottom: '12px', zIndex: 10,
+                      }}>
+                        Click the "i" button in the top right to see batch differences
+                        <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', border: '6px solid transparent', borderTopColor: '#1e1e3a' }} />
+                      </div>
+                    )}
                     <button
-                      onClick={() => setInfoModalCourse(course)}
+                      onClick={() => setUpgradeModalCourse(course)}
+                      onMouseEnter={() => setShowUpgradeHint(true)}
+                      onMouseLeave={() => setShowUpgradeHint(false)}
                       style={{
-                        width: '28px', height: '28px', borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
-                        color: '#fff', fontSize: '14px', fontWeight: '800', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: '#fff', color: '#1e1e3a', padding: '6px 16px', borderRadius: '50px',
+                        fontSize: '12px', fontWeight: '800', border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        transition: 'all 0.2s',
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      i
+                      <span style={{ fontSize: '8px', background: '#f3f4f6', padding: '1px 6px', borderRadius: '10px', color: '#6b6b8a' }}>OPTIONAL</span>
+                      ⚡ Upgrade to PRO
                     </button>
                   </div>
                 )}
