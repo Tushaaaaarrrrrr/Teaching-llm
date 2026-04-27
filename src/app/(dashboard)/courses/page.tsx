@@ -450,37 +450,6 @@ export default function CoursesPage() {
                   </div>
                 )}
 
-                {/* Buy Course Button */}
-                <div style={{ marginTop: '14px', marginBottom: '14px' }}>
-                  <button
-                    style={{
-                      width: '100%',
-                      padding: '10px 16px',
-                      borderRadius: '50px',
-                      border: 'none',
-                      background: '#3636e8',
-                      color: '#fff',
-                      fontSize: '12px',
-                      fontWeight: '800',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(54, 54, 232, 0.3)',
-                      transition: 'all 0.25s ease',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.background = '#2828d1';
-                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(54, 54, 232, 0.4)';
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.background = '#3636e8';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(54, 54, 232, 0.3)';
-                    }}
-                  >
-                    BUY COURSE
-                  </button>
-                </div>
-
                 {/* Stats row */}
                 <div style={{
                   display: 'flex',

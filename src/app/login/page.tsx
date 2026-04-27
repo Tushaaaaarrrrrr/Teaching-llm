@@ -206,12 +206,46 @@ function LoginContent() {
       </div>
 
       {/* Right Panel - Login Form */}
-      <div style={{ flex: 1, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px', position: 'relative' }}>
+      <div style={{ flex: 1, background: '#F3F4F6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px', position: 'relative' }}>
         <div className="modal" style={{ width: '100%', maxWidth: '480px', padding: '52px' }}>
           <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1e1e3a', marginBottom: '36px', textAlign: 'center' }}>Welcome Back !</h2>
 
           {/* Google Login is now the primary method */}
           <GoogleLoginButton onTermsClick={() => setShowTermsConditions(true)} onPrivacyClick={() => setShowPrivacyPolicy(true)} />
+        </div>
+
+        {/* Explore Courses Button below the card */}
+        <div style={{ marginTop: '28px' }}>
+          <a 
+            href="https://genziitian.in/courses" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 28px',
+              borderRadius: '50px',
+              background: '#F3F4F6',
+              color: '#3636e8',
+              fontSize: '13px',
+              fontWeight: '700',
+              textDecoration: 'none',
+              boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff',
+              transition: 'all 0.2s ease',
+              letterSpacing: '0.02em',
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
+              e.currentTarget.style.color = '#2020c0';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
+              e.currentTarget.style.color = '#3636e8';
+            }}
+          >
+            <span style={{ fontSize: '15px' }}>🎓</span> Explore Courses
+          </a>
         </div>
         
         {/* Contact Developer Link (Bottom Right) */}
