@@ -195,7 +195,7 @@ export default function CourseDetailPage() {
       {/* Course Header Banner */}
       <div className="card" style={{ overflow: 'hidden', marginBottom: '20px' }}>
         <div style={{
-          background: `linear-gradient(135deg, ${course.color}, ${course.color}cc)`,
+          background: course.enrollmentType === 'RECORDED' ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(135deg, ${course.color}, ${course.color}cc)`,
           padding: '28px 24px', position: 'relative', overflow: 'hidden',
         }}>
           <div style={{ position: 'absolute', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', top: '-60px', right: '40px' }} />
