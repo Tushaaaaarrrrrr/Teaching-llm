@@ -114,8 +114,8 @@ function LoginContent() {
             minHeight: '148px',
             padding: '22px 22px 18px',
             borderRadius: '28px',
-            background: '#F3F4F6',
-            boxShadow: '10px 10px 22px #d1d5db, -10px -10px 22px #ffffff',
+            background: '#ffffff',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.06)',
             cursor: 'default',
           }}>
             <img 
@@ -207,7 +207,7 @@ function LoginContent() {
 
       {/* Right Panel - Login Form */}
       <div style={{ flex: 1, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px', position: 'relative' }}>
-        <div style={{ width: '100%', maxWidth: '480px', background: '#F3F4F6', borderRadius: '32px', padding: '52px', boxShadow: '14px 14px 28px #d1d5db, -14px -14px 28px #ffffff' }}>
+        <div className="modal" style={{ width: '100%', maxWidth: '480px', padding: '52px' }}>
           <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1e1e3a', marginBottom: '36px', textAlign: 'center' }}>Welcome Back !</h2>
 
           {/* Google Login is now the primary method */}
@@ -267,7 +267,7 @@ function LoginContent() {
             }
           }}
         >
-          <div style={{ width: '100%', maxWidth: '400px', background: '#F3F4F6', borderRadius: '28px', padding: '44px', boxShadow: '12px 12px 24px rgba(0,0,0,0.1)' }}>
+          <div className="modal" style={{ width: '100%', maxWidth: '400px', padding: '44px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>Manager Login</h2>
               <button 
@@ -382,7 +382,7 @@ function LoginContent() {
           }}
           onClick={(e) => { if (e.target === e.currentTarget) modal.close() }}
         >
-          <div style={{ width: '100%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto', background: '#F3F4F6', borderRadius: '28px', padding: '44px', boxShadow: '12px 12px 24px rgba(0,0,0,0.1)' }}>
+          <div className="modal" style={{ width: '100%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto', padding: '44px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>{modal.title}</h2>
               <button onClick={modal.close} style={{ background: 'none', border: 'none', fontSize: '24px', color: '#9999b0', cursor: 'pointer', padding: '0 8px' }}>&times;</button>
@@ -503,8 +503,8 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
             padding: '14px 24px',
             borderRadius: '50px',
             border: 'none',
-            background: '#F3F4F6',
-            boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+            background: '#ffffff',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
             cursor: gsiReady && !gLoading ? 'pointer' : 'default',
             display: 'flex',
             alignItems: 'center',
@@ -519,11 +519,13 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
           }}
           onMouseOver={(e) => {
             if (gsiReady && !gLoading) {
-              e.currentTarget.style.boxShadow = '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff'
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.12)'
+              e.currentTarget.style.transform = 'translateY(-1px)'
             }
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff'
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+            e.currentTarget.style.transform = 'none'
           }}
         >
           {gLoading ? (
