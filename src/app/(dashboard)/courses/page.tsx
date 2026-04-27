@@ -511,106 +511,62 @@ export default function CoursesPage() {
 
       {/* ── Info / Comparison Modal ── */}
       {infoModalCourse && (
-        <div
-          onClick={() => setInfoModalCourse(null)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'rgba(10,10,30,0.55)', backdropFilter: 'blur(6px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: '#f0f2f8', borderRadius: '28px', width: '100%', maxWidth: '600px',
-              boxShadow: '20px 20px 40px #c5c7cf, -20px -20px 40px #ffffff',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Modal Header */}
-            <div style={{
-              background: `linear-gradient(135deg, ${infoModalCourse.color}dd, ${infoModalCourse.color}99)`,
-              padding: '24px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            }}>
-              <div>
-                <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(255,255,255,0.75)', letterSpacing: '0.1em', marginBottom: '4px' }}>BATCH COMPARISON</p>
-                <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#fff', margin: 0 }}>{infoModalCourse.name}</h2>
-              </div>
-              <button onClick={() => setInfoModalCourse(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', color: '#fff', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          padding: '20px'
+        }} onClick={() => setInfoModalCourse(null)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '750px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
+            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+          }} onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '25px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Batch Comparison</h2>
+              <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500' }}>Choose the experience that fits your learning style</p>
             </div>
 
-            {/* Comparison Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', padding: '0' }}>
-              {/* Recording Column */}
-              <div style={{ padding: '24px 24px 28px', borderRight: '1px solid rgba(0,0,0,0.08)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <span style={{ fontSize: '18px' }}>🟡</span>
-                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>General Batch</h3>
-                </div>
-                <p style={{ fontSize: '12px', color: '#6b6b8a', marginBottom: '16px', lineHeight: '1.5' }}>
-                  A more affordable option for self-paced learners.
-                </p>
-                {[
-                  'Full course content access',
-                  'Latest recorded lectures & updates',
-                  'Study materials & notes',
-                  'Community doubt support',
-                  'Best for: College students, dual-degree & working professionals',
-                ].map((f, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '10px' }}>
-                    <span style={{ color: '#22c55e', fontSize: '14px', marginTop: '1px', flexShrink: 0 }}>✓</span>
-                    <span style={{ fontSize: '12.5px', color: '#4b4b6b', lineHeight: '1.45' }}>{f}</span>
-                  </div>
-                ))}
-                <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  <span style={{ color: '#ef4444', fontSize: '14px', marginTop: '1px', flexShrink: 0 }}>✗</span>
-                  <span style={{ fontSize: '12.5px', color: '#9999b0', lineHeight: '1.45' }}>No live class access</span>
-                </div>
-              </div>
-
-              {/* Live Column */}
-              <div style={{ padding: '24px 24px 28px', background: 'rgba(99,102,241,0.04)', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'linear-gradient(135deg, #f59e0b, #f97316)', color: '#fff', fontSize: '9px', fontWeight: '800', padding: '3px 8px', borderRadius: '20px', letterSpacing: '0.06em' }}>
-                  BESTSELLER
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <span style={{ fontSize: '18px' }}>🟢</span>
-                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#6366f1', margin: 0 }}>PRO Batch</h3>
-                </div>
-                <p style={{ fontSize: '12px', color: '#6b6b8a', marginBottom: '16px', lineHeight: '1.5' }}>
-                  Everything in Recording, plus live access.
-                </p>
-                {[
-                  'Everything in General Batch',
-                  'Access to live classes with mentors',
-                  'Real-time doubt solving in class',
-                  'Direct mentorship & interaction',
-                  'Best for: Standalone learners & those who need extra guidance',
-                ].map((f, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '10px' }}>
-                    <span style={{ color: '#6366f1', fontSize: '14px', marginTop: '1px', flexShrink: 0 }}>✓</span>
-                    <span style={{ fontSize: '12.5px', color: '#4b4b6b', lineHeight: '1.45' }}>{f}</span>
-                  </div>
-                ))}
+            {/* Comparison Table */}
+            <div style={{ padding: '30px 40px' }}>
+              <div style={{ borderRadius: '24px', overflow: 'hidden', border: '1.5px solid #e2e8f0', background: '#fff' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc' }}>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>General Batch</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO Batch</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { f: 'Course Lectures', g: '✅ Full Access', p: '✅ Full Access' },
+                      { f: 'Course Materials', g: '✅ Full Access', p: '✅ Full Access' },
+                      { f: 'Live Classes', g: '❌ No Access', p: '✅ Direct Entry' },
+                      { f: 'Direct Q&A with Teacher', g: '❌ No', p: '✅ Yes (Live)' },
+                      { f: 'Weekly Mentorship', g: '❌ No', p: '✅ Every Sunday' },
+                      { f: 'Priority Support', g: '❌ Standard', p: '✅ 24/7 Priority' },
+                    ].map((row, i) => (
+                      <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#334155', fontWeight: '600' }}>{row.f}</td>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#92400e', textAlign: 'center', background: '#fffdf5' }}>{row.g}</td>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#4338ca', fontWeight: '700', textAlign: 'center', background: '#f5f7ff' }}>{row.p}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* Footer */}
-            {infoModalCourse.liveUpgradePrice && (
-              <div style={{ padding: '16px 28px 24px', borderTop: '1px solid rgba(0,0,0,0.07)', textAlign: 'center' }}>
-                <button
-                  onClick={() => { setInfoModalCourse(null); setUpgradeModalCourse(infoModalCourse) }}
-                  style={{
-                    padding: '13px 32px', borderRadius: '16px', border: 'none',
-                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                    color: '#fff', fontSize: '14px', fontWeight: '800', cursor: 'pointer',
-                    boxShadow: '4px 4px 16px rgba(99,102,241,0.35)', letterSpacing: '0.02em',
-                  }}
-                >
-                  ⚡ Upgrade to PRO — ₹{infoModalCourse.liveUpgradePrice}
-                </button>
-              </div>
-            )}
+            <div style={{ padding: '0 40px 40px', textAlign: 'center' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ background: '#1e293b', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+                Got it, thanks!
+              </button>
+            </div>
           </div>
         </div>
       )}
