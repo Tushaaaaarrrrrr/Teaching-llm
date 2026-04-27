@@ -132,6 +132,7 @@ export default function CoursesPage() {
               style={{
                 background: '#e8eaf0',
                 borderRadius: '28px',
+                filter: isRecorded ? 'grayscale(1) opacity(0.85)' : 'none',
                 boxShadow: isLive
                   ? `8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, 0 0 0 2px ${course.color}40`
                   : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
@@ -148,12 +149,14 @@ export default function CoursesPage() {
                 e.currentTarget.style.boxShadow = isLive
                   ? `12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff, 0 0 0 2px ${course.color}60`
                   : '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
+                if (isRecorded) setShowUpgradeHint(course.id)
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.boxShadow = isLive
                   ? `8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, 0 0 0 2px ${course.color}40`
                   : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
+                setShowUpgradeHint(null)
               }}
             >
               {/* Gradient Banner */}
@@ -210,22 +213,36 @@ export default function CoursesPage() {
                   </div>
                 )}
 
-                {/* Info button for recorded users */}
+                {/* Info button for recorded users + tooltip */}
                 {isRecorded && (
-                  <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInfoModalCourse(course) }}
-                    style={{
-                      position: 'absolute', top: '10px', right: '12px',
-                      width: '28px', height: '28px', borderRadius: '50%',
-                      background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)',
-                      border: 'none', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#fff', fontSize: '14px', fontWeight: '800',
-                    }}
-                    title="Compare Live vs Recording batch"
-                  >
-                    i
-                  </button>
+                  <div style={{ position: 'absolute', top: '10px', right: '12px' }}>
+                    {showUpgradeHint === course.id && (
+                      <div style={{
+                        position: 'absolute', top: '100%', right: '0',
+                        background: '#1e1e3a', color: '#fff', padding: '8px 12px', borderRadius: '12px',
+                        fontSize: '11px', fontWeight: '600', width: '210px', textAlign: 'center',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)', marginTop: '10px', zIndex: 10,
+                        animation: 'fadeIn 0.2s ease-out',
+                        pointerEvents: 'none',
+                      }}>
+                        Click here to see the difference between PRO and General Batch
+                        <div style={{ position: 'absolute', bottom: '100%', right: '8px', border: '6px solid transparent', borderBottomColor: '#1e1e3a' }} />
+                      </div>
+                    )}
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInfoModalCourse(course) }}
+                      style={{
+                        width: '28px', height: '28px', borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)',
+                        border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontSize: '14px', fontWeight: '800',
+                      }}
+                      title="Compare PRO vs General Batch"
+                    >
+                      i
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -296,49 +313,50 @@ export default function CoursesPage() {
 
                 {/* Upgrade button for RECORDED users */}
                 {hasUpgradePrice && (
-                  <div style={{ position: 'relative' }}>
-                    {/* Hover Hint Tooltip */}
-                    {showUpgradeHint === course.id && (
-                      <div style={{
-                        position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
-                        background: '#1e1e3a', color: '#fff', padding: '8px 12px', borderRadius: '12px',
-                        fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.2)', marginBottom: '12px', zIndex: 10,
-                        animation: 'fadeIn 0.2s ease-out'
-                      }}>
-                        Click the "i" button above to see the difference between batches
-                        <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', border: '6px solid transparent', borderTopColor: '#1e1e3a' }} />
+                  <div style={{ position: 'relative', marginTop: 'auto' }}>
+                    {/* Show teacher only for LIVE users or above upgrade for RECORDED */}
+                    {course.teacherName && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                        <div style={{
+                          width: '20px', height: '20px', borderRadius: '50%',
+                          background: course.color + '22',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '9px', fontWeight: '700', color: course.color,
+                        }}>
+                          {course.teacherName.charAt(0).toUpperCase()}
+                        </div>
+                        <span style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                          {course.teacherName}
+                        </span>
                       </div>
                     )}
-                    
+
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setUpgradeModalCourse(course) }}
-                      onMouseEnter={() => setShowUpgradeHint(course.id)}
-                      onMouseLeave={() => setShowUpgradeHint(null)}
                       style={{
                         width: '100%',
-                        padding: '12px 16px',
+                        padding: '14px 16px',
                         borderRadius: '50px',
-                        border: '1.5px solid #1e1e3a',
+                        border: 'none',
                         background: '#1e1e3a',
                         color: '#fff',
                         fontSize: '13px',
                         fontWeight: '800',
                         cursor: 'pointer',
-                        marginBottom: '14px',
-                        boxShadow: '0 4px 12px rgba(30, 30, 58, 0.25), 0 0 8px rgba(99, 102, 241, 0.15)',
-                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                        marginBottom: '4px',
+                        boxShadow: '0 8px 16px rgba(30, 30, 58, 0.4)',
+                        transition: 'all 0.25s',
                         letterSpacing: '0.02em',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px',
                         position: 'relative',
                         overflow: 'hidden',
                       }}
                     >
                       <span style={{ 
-                        fontSize: '9px', background: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '20px', 
+                        position: 'absolute', left: '12px',
+                        fontSize: '8px', background: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '20px', 
                         color: '#fff', letterSpacing: '0.05em', fontWeight: '900', border: '1px solid rgba(255,255,255,0.2)' 
                       }}>
                         OPTIONAL
@@ -348,7 +366,7 @@ export default function CoursesPage() {
                       {/* Shine effect overlay */}
                       <div style={{
                         position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%',
-                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
                         transform: 'skewX(-25deg)',
                         transition: 'left 0.75s',
                       }} className="button-shine" />
