@@ -89,6 +89,7 @@ model Course {
   isGlobal              Boolean                @default(false)
   lastMessageAt         DateTime?
   teacherName           String?
+  liveUpgradePrice      Float?
   announcements         Announcement[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
   communityMessages     CommunityMessage[]

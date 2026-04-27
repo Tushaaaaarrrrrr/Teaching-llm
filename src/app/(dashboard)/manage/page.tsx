@@ -389,6 +389,21 @@ export default function ManagePage() {
             </label>
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} placeholder="Course description" rows={3} style={{ resize: 'vertical' }} /></div>
             <div className="form-group">
+              <label className="form-label">Live Upgrade Price (₹)</label>
+              <input
+                className="form-input"
+                type="number"
+                min="0"
+                step="1"
+                value={f.liveUpgradePrice ?? ''}
+                onChange={e => set('liveUpgradePrice', e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="e.g. 99 — leave empty to hide upgrade option"
+              />
+              <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                If set, Recording-batch students will see an &quot;Upgrade to Live&quot; button on their course card at this price.
+              </p>
+            </div>
+            <div className="form-group">
               <label className="form-label">Expiry Date (Course Access Deadline)</label>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <input 

@@ -329,3 +329,56 @@ Files affected:
 Outcome:
 - The system now explicitly tells the developer/user which specific key is missing from their dashboard, eliminating guesswork during configuration.
 
+16. Date and time: 2026-04-27 14:15:00 IST
+Summary: Converted enrollment type selection from toggle button to dropdown menu and integrated into user creation flow.
+What changed:
+- Replaced the color-coded Live/Recorded toggle button in `ManagerUserModal` with a styled `<select>` dropdown for clearer selection.
+- Added a type selector next to the "+ Add Course" button so managers can choose the enrollment type before adding a course.
+- Updated the Admin dashboard's "Create User" modal to allow selecting enrollment types for each course at creation time.
+- Updated the backend user creation API to accept and apply `enrollmentTypes` during user creation.
+What was added:
+- `selectedNewCourseType` state in `ManagerUserModal`.
+- `enrollmentTypes` field in Admin dashboard form state and POST payload.
+- Type dropdown in the course selection list of the Admin "Create User" modal.
+What was removed:
+- Toggle button UI for enrollment type switching.
+Files affected:
+- `src/components/ManagerUserModal.tsx`
+- `src/app/(dashboard)/admin/page.tsx`
+- `src/app/api/users/route.ts`
+Outcome:
+- Enrollment type selection is now more intuitive via dropdown menus.
+- Managers can set enrollment types during both user creation and editing.
+- Students cannot modify their enrollment type (locking requirement met).
+
+17. Date and time: 2026-04-27 14:35:00 IST
+Summary: Implemented "Upgrade to Live" feature allowing Recording-batch students to upgrade their enrollment from the course card.
+What changed:
+- Added `liveUpgradePrice` (Float?) field to the Course model for per-course upgrade pricing.
+- Updated the courses list API to return the user's `enrollmentType` for each course.
+- Course cards now render conditionally: RECORDED students see an upgrade button and info icon; LIVE students see a badge and subtle glow border.
+- For RECORDED users, the description and teacher name are hidden, replaced by an "⚡ Upgrade to Live — ₹XX" button.
+- Added an "ⓘ" info button that opens a side-by-side comparison modal (Recording vs Live batch features).
+- Added an upgrade confirmation modal with price display and confirm/cancel buttons.
+- Created a backend upgrade endpoint that changes enrollment type from RECORDED → LIVE.
+- Added "Live Upgrade Price (₹)" input to the manager course edit form.
+What was added:
+- `liveUpgradePrice` column on `Class` table (via raw SQL, Supabase cross-schema limitation).
+- `src/app/api/courses/[id]/upgrade/route.ts` — POST endpoint for enrollment upgrade.
+- Comparison modal and upgrade confirmation modal in `courses/page.tsx`.
+- Upgrade price input in the course management form.
+What was removed:
+- None
+Files affected:
+- `prisma/schema.prisma`
+- `src/app/api/courses/route.ts`
+- `src/app/api/courses/[id]/route.ts`
+- `src/app/api/courses/[id]/upgrade/route.ts` (NEW)
+- `src/app/(dashboard)/courses/page.tsx`
+- `src/app/(dashboard)/manage/page.tsx`
+Outcome:
+- Recording-batch students can now see a clear upgrade path on their course cards.
+- The comparison modal educates students on the differences between batches.
+- After upgrade confirmation, the card automatically refreshes to show the Live state.
+- Managers control upgrade pricing per course from the management panel.
+

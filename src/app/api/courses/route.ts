@@ -61,6 +61,13 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
+    // Fetch current user's enrollment types to attach to each course
+    const userEnrollments = await prisma.enrollment.findMany({
+      where: { userId: session.userId },
+      select: { courseId: true, type: true },
+    })
+    const enrollmentTypeMap = new Map(userEnrollments.map(e => [e.courseId, e.type]))
+
     const coursesWithCounts = courses.map(course => {
       const topicsCount = course.topics.length
       let lecturesCount = 0
@@ -85,6 +92,7 @@ export async function GET() {
         ...rest,
         isExpired: isCourseExpired(course),
         isEffectivelyDisabled: isCourseEffectivelyDisabled(course),
+        enrollmentType: enrollmentTypeMap.get(course.id) || 'LIVE',
         _count: {
           ...course._count,
           topics: topicsCount,

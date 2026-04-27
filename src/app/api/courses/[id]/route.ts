@@ -146,7 +146,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled, googleGroupEmail } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled, googleGroupEmail, liveUpgradePrice } = await request.json()
 
     if (isDisabled !== undefined && !isManager(session.role)) {
       return NextResponse.json({ error: 'Only managers can enable or disable courses' }, { status: 403 })
@@ -181,6 +181,7 @@ export async function PUT(
           color,
           icon,
           teacherName: teacherName || null,
+          liveUpgradePrice: liveUpgradePrice !== undefined ? (liveUpgradePrice === '' || liveUpgradePrice === null ? null : Number(liveUpgradePrice)) : undefined,
           googleGroupEmail: normalizedGoogleGroupEmail,
           isDemo: existingCourse.isDemo,
           isFree: existingCourse.isFree,

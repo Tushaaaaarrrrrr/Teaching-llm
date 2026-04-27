@@ -57,6 +57,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
   const [bundles, setBundles] = useState<CourseBundleInfo[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [selectedNewCourseType, setSelectedNewCourseType] = useState('LIVE')
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     name: '',
@@ -564,26 +565,27 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                              <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a' }}>{c.name}</span>
                              {c.isExpired && <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>Expired</span>}
                              {c.isEffectivelyDisabled && !c.isExpired && <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700', background: '#fee2e2', padding: '2px 8px', borderRadius: '20px' }}>Disabled</span>}
-                             {/* Live/Recorded Toggle */}
-                             <button
-                               onClick={() => {
-                                 const newType = isLive ? 'RECORDED' : 'LIVE'
-                                 setFormData({...formData, enrollmentTypes: {...formData.enrollmentTypes, [c.id]: newType}})
-                               }}
-                               style={{
-                                 padding: '3px 10px', borderRadius: '20px', border: 'none',
-                                 background: isLive
-                                   ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)'
-                                   : 'linear-gradient(135deg, #fef3c7, #fde68a)',
-                                 color: isLive ? '#166534' : '#92400e',
-                                 fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em',
-                                 cursor: 'pointer', transition: 'all 0.2s',
-                                 boxShadow: '2px 2px 4px #d1d9e6, -2px -2px 4px #ffffff',
-                               }}
-                               title={isLive ? 'Click to switch to Recorded' : 'Click to switch to Live'}
-                             >
-                               {isLive ? '🟢 LIVE' : '🟡 RECORDED'}
-                             </button>
+                             {/* Live/Recorded Dropdown */}
+                             <select
+                                value={enrollType}
+                                onChange={(e) => {
+                                  setFormData({...formData, enrollmentTypes: {...formData.enrollmentTypes, [c.id]: e.target.value}})
+                                }}
+                                style={{
+                                  padding: '4px 10px', borderRadius: '20px', border: '1px solid ' + (isLive ? '#bbf7d0' : '#fde68a'),
+                                  background: isLive
+                                    ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)'
+                                    : 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                  color: isLive ? '#166534' : '#92400e',
+                                  fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em',
+                                  cursor: 'pointer', transition: 'all 0.2s',
+                                  boxShadow: '2px 2px 4px #d1d9e6, -2px -2px 4px #ffffff',
+                                  outline: 'none',
+                                }}
+                              >
+                                <option value="LIVE">🟢 LIVE</option>
+                                <option value="RECORDED">🟡 RECORDED</option>
+                              </select>
                              <button 
                                 onClick={() => {
                                   const newTypes = {...formData.enrollmentTypes}
@@ -598,17 +600,30 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           )
                         })}
                         
-                        <div style={{ position: 'relative' }}>
-                           <select 
-                              onChange={(e) => {
-                               if (e.target.value && !formData.courseIds.includes(e.target.value)) {
-                                  setFormData({
-                                     ...formData,
-                                     courseIds: [...formData.courseIds, e.target.value],
-                                     enrollmentTypes: {...formData.enrollmentTypes, [e.target.value]: 'LIVE'}
-                                   })
-                                }
-                              }}
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <select
+                            value={selectedNewCourseType}
+                            onChange={(e) => setSelectedNewCourseType(e.target.value)}
+                            style={{
+                              padding: '10px 14px', borderRadius: '16px', border: '1px solid #d1d9e6', background: '#fff',
+                              fontSize: '12px', fontWeight: '700', color: '#1e1e3a', cursor: 'pointer',
+                              boxShadow: 'inset 2px 2px 4px #d1d9e6, inset -2px -2px 4px #ffffff',
+                            }}
+                          >
+                            <option value="LIVE">Live Class</option>
+                            <option value="RECORDED">Recording</option>
+                          </select>
+                          <div style={{ position: 'relative' }}>
+                             <select 
+                                onChange={(e) => {
+                                 if (e.target.value && !formData.courseIds.includes(e.target.value)) {
+                                    setFormData({
+                                       ...formData,
+                                       courseIds: [...formData.courseIds, e.target.value],
+                                       enrollmentTypes: {...formData.enrollmentTypes, [e.target.value]: selectedNewCourseType}
+                                     })
+                                  }
+                                }}
                               style={{
                                 padding: '10px 18px', borderRadius: '16px', border: '2px dashed #d1d9e6', background: 'rgba(255,255,255,0.3)',
                                 fontSize: '13px', fontWeight: '700', color: '#6366f1', cursor: 'pointer', appearance: 'none'
@@ -620,6 +635,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                 <option key={c.id} value={c.id}>{c.name}</option>
                              ))}
                            </select>
+                        </div>
                         </div>
                       </div>
                       {bundledCourseIds.size > 0 && (

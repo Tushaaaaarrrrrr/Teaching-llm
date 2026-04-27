@@ -77,6 +77,7 @@ export default function AdminPage() {
   const [form, setForm] = useState({ 
     name: '', firstName: '', lastName: '', mobileNumber: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
     courseIds: [] as string[], bundleIds: [] as string[], assignedCourseIds: [] as string[],
+    enrollmentTypes: {} as Record<string, string>,
     canTerminate: false, canCreateStudents: false 
   })
   const [saving, setSaving] = useState(false)
@@ -178,6 +179,7 @@ export default function AdminPage() {
     setForm({ 
       name: '', firstName: '', lastName: '', mobileNumber: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
       courseIds: [], bundleIds: [], assignedCourseIds: [],
+      enrollmentTypes: {},
       canTerminate: false, canCreateStudents: false 
     })
     setError('')
@@ -205,6 +207,10 @@ export default function AdminPage() {
       courseIds: user.enrollments?.map(e => e.courseId) || [],
       bundleIds: user.courseBundleAssignments?.map(b => b.bundleId) || [],
       assignedCourseIds: user.instructorAssignments?.map(a => a.courseId) || [],
+      enrollmentTypes: user.enrollments?.reduce((acc: any, e) => {
+        acc[e.courseId] = (e as any).type || 'LIVE'
+        return acc
+      }, {}) || {},
       canTerminate: (user as any).canTerminate || false,
       canCreateStudents: (user as any).canCreateStudents || false,
     })
@@ -235,6 +241,7 @@ export default function AdminPage() {
         gender: form.gender,
         courseIds: form.courseIds,
         bundleIds: form.bundleIds,
+        enrollmentTypes: form.enrollmentTypes,
         canTerminate: form.canTerminate,
         canCreateStudents: form.canCreateStudents
       }
@@ -1014,6 +1021,24 @@ export default function AdminPage() {
                           )}
                           {bundledCourseIds.has(cls.id) && (
                             <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: '600' }}>Included by selected bundle</span>
+                          )}
+                          {form.courseIds.includes(cls.id) && !bundledCourseIds.has(cls.id) && (
+                            <select
+                              value={form.enrollmentTypes[cls.id] || 'LIVE'}
+                              onChange={(e) => {
+                                const newTypes = { ...form.enrollmentTypes, [cls.id]: e.target.value }
+                                setForm(p => ({ ...p, enrollmentTypes: newTypes }))
+                              }}
+                              style={{
+                                marginLeft: 'auto', padding: '2px 8px', borderRadius: '4px',
+                                border: '1px solid #d1d5db', fontSize: '11px', background: '#fff',
+                                fontWeight: '600', color: '#374151', cursor: 'pointer'
+                              }}
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <option value="LIVE">Live</option>
+                              <option value="RECORDED">Recording</option>
+                            </select>
                           )}
                         </label>
                       ))

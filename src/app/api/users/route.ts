@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
       courseIds = [],
       assignedClassIds = [],
       bundleIds = [],
+      enrollmentTypes = {},
     } = await request.json()
     const finalClassIds = classIds.length > 0 ? classIds : courseIds
 
@@ -192,6 +193,7 @@ export async function POST(request: NextRequest) {
           data: effectiveCourseIds.map((courseId: string) => ({
             userId: newUser.id,
             courseId,
+            type: (enrollmentTypes && enrollmentTypes[courseId]) || 'LIVE'
           })),
         })
         await queueGoogleGroupSyncJobs(tx, {
