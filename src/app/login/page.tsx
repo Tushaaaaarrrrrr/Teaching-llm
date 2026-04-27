@@ -214,8 +214,8 @@ function LoginContent() {
           <GoogleLoginButton onTermsClick={() => setShowTermsConditions(true)} onPrivacyClick={() => setShowPrivacyPolicy(true)} />
         </div>
 
-        {/* Explore Courses Button below the card */}
-        <div style={{ marginTop: '28px' }}>
+        {/* Explore Courses CTA below the card */}
+        <div style={{ marginTop: '28px', textAlign: 'center' }}>
           <a 
             href="https://genziitian.in/courses" 
             target="_blank" 
@@ -223,28 +223,33 @@ function LoginContent() {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '12px 28px',
-              borderRadius: '50px',
-              background: '#F3F4F6',
-              color: '#3636e8',
-              fontSize: '13px',
-              fontWeight: '700',
+              gap: '12px',
+              padding: '18px 40px',
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, #1e1e3a, #3a3a6e)',
+              color: '#fff',
+              fontSize: '16px',
+              fontWeight: '800',
               textDecoration: 'none',
-              boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff',
-              transition: 'all 0.2s ease',
-              letterSpacing: '0.02em',
+              boxShadow: '0 8px 24px rgba(30, 30, 58, 0.35)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              letterSpacing: '0.03em',
+              position: 'relative',
+              overflow: 'hidden',
             }}
             onMouseOver={e => {
-              e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
-              e.currentTarget.style.color = '#2020c0';
+              e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+              e.currentTarget.style.boxShadow = '0 14px 32px rgba(30, 30, 58, 0.45)';
             }}
             onMouseOut={e => {
-              e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
-              e.currentTarget.style.color = '#3636e8';
+              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(30, 30, 58, 0.35)';
             }}
           >
-            <span style={{ fontSize: '15px' }}>🎓</span> Explore Courses
+            <span>Explore Courses</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
           </a>
         </div>
         
