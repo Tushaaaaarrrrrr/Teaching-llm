@@ -192,7 +192,7 @@ export default function CoursesPage() {
                     fontSize: '10px', fontWeight: '800', color: '#fff',
                     letterSpacing: '0.06em',
                   }}>
-                    🟢 LIVE ACCESS
+                    🟢 PRO Batch
                   </div>
                 )}
 
@@ -205,7 +205,7 @@ export default function CoursesPage() {
                     fontSize: '10px', fontWeight: '800', color: '#fde68a',
                     letterSpacing: '0.06em',
                   }}>
-                    🟡 RECORDING
+                    🟡 General Batch
                   </div>
                 )}
 
@@ -295,7 +295,9 @@ export default function CoursesPage() {
 
                 {/* Upgrade button for RECORDED users */}
                 {hasUpgradePrice && (
-                  <button
+                  <>
+                    <div style={{ fontSize: '10px', color: '#9999b0', fontWeight: '800', textAlign: 'center', marginBottom: '6px', letterSpacing: '0.08em' }}>OPTIONAL</div>
+                    <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setUpgradeModalCourse(course) }}
                     style={{
                       width: '100%',
@@ -486,7 +488,7 @@ export default function CoursesPage() {
               <div style={{ padding: '24px 24px 28px', borderRight: '1px solid rgba(0,0,0,0.08)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                   <span style={{ fontSize: '18px' }}>🟡</span>
-                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>Recording Batch</h3>
+                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>General Batch</h3>
                 </div>
                 <p style={{ fontSize: '12px', color: '#6b6b8a', marginBottom: '16px', lineHeight: '1.5' }}>
                   A more affordable option for self-paced learners.
@@ -516,13 +518,13 @@ export default function CoursesPage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                   <span style={{ fontSize: '18px' }}>🟢</span>
-                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#6366f1', margin: 0 }}>Live Batch</h3>
+                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#6366f1', margin: 0 }}>PRO Batch</h3>
                 </div>
                 <p style={{ fontSize: '12px', color: '#6b6b8a', marginBottom: '16px', lineHeight: '1.5' }}>
                   Everything in Recording, plus live access.
                 </p>
                 {[
-                  'Everything in Recording Batch',
+                  'Everything in General Batch',
                   'Access to live classes with mentors',
                   'Real-time doubt solving in class',
                   'Direct mentorship & interaction',
@@ -548,7 +550,7 @@ export default function CoursesPage() {
                     boxShadow: '4px 4px 16px rgba(99,102,241,0.35)', letterSpacing: '0.02em',
                   }}
                 >
-                  ⚡ Upgrade to Live — ₹{infoModalCourse.liveUpgradePrice}
+                  ⚡ Upgrade to PRO — ₹{infoModalCourse.liveUpgradePrice}
                 </button>
               </div>
             )}
@@ -576,7 +578,7 @@ export default function CoursesPage() {
           >
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚡</div>
             <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', marginBottom: '8px' }}>
-              Upgrade to Live Batch
+              Upgrade to PRO Batch
             </h2>
             <p style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.6', marginBottom: '8px' }}>
               <strong style={{ color: '#1e1e3a' }}>{upgradeModalCourse.name}</strong>
