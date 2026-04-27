@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Script from 'next/script'
 import useSWR, { mutate } from 'swr'
 
 const fetcher = async (url: string) => {
@@ -48,6 +49,7 @@ export default function CoursesPage() {
   const [upgradeModalCourse, setUpgradeModalCourse] = useState<CourseItem | null>(null)
   const [upgrading, setUpgrading] = useState(false)
   const [showUpgradeHint, setShowUpgradeHint] = useState<string | null>(null)
+  const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -64,15 +66,67 @@ export default function CoursesPage() {
   async function handleUpgrade(courseId: string) {
     setUpgrading(true)
     try {
-      const res = await fetch(`/api/courses/${courseId}/upgrade`, { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Upgrade failed')
-      setUpgradeModalCourse(null)
-      mutate('/api/courses')
+      // Step 1: Create Razorpay order
+      const orderRes = await fetch(`/api/courses/${courseId}/create-razorpay-order`, { method: 'POST' })
+      if (!orderRes.ok) {
+        const data = await orderRes.json()
+        alert(data.error || 'Failed to create order')
+        setUpgrading(false)
+        return
+      }
+      const orderData = await orderRes.json()
+
+      // Step 2: Open Razorpay checkout
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'GenZ IItian',
+        description: `PRO Upgrade — ${orderData.courseName}`,
+        order_id: orderData.razorpayOrderId,
+        prefill: {
+          name: orderData.userName,
+          email: orderData.userEmail,
+        },
+        theme: { color: '#6366f1' },
+        handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+          try {
+            const verifyRes = await fetch(`/api/courses/${courseId}/upgrade`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            })
+            const verifyData = await verifyRes.json()
+            if (verifyRes.ok) {
+              setUpgradeModalCourse(null)
+              setUpgradeSuccessOrderId(verifyData.orderId)
+              mutate('/api/courses')
+            } else {
+              alert(verifyData.error || 'Payment verification failed')
+            }
+          } catch {
+            alert('Payment verification failed. Please contact support.')
+          } finally {
+            setUpgrading(false)
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setUpgrading(false)
+          },
+        },
+      }
+
+      const rzp = new (window as unknown as { Razorpay: new (opts: typeof options) => { open: () => void } }).Razorpay(options)
+      rzp.open()
     } catch (e: any) {
       alert(e.message || 'Something went wrong')
+      setUpgrading(false)
     }
-    setUpgrading(false)
   }
 
   if (isLoading) {
@@ -654,6 +708,53 @@ export default function CoursesPage() {
           </div>
         </div>
       )}
+      {/* Upgrade Success Modal */}
+      {upgradeSuccessOrderId && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px'
+        }} onClick={() => setUpgradeSuccessOrderId(null)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', textAlign: 'center',
+            animation: 'modalSlideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Welcome to PRO!</h2>
+            <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
+              Your upgrade was successful. You now have full access to live classes, mentorship, and priority support.
+            </p>
+            <div style={{ background: '#f0fdf4', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #bbf7d0' }}>
+              <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
+            </div>
+            <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
+            <button
+              onClick={() => setUpgradeSuccessOrderId(null)}
+              style={{
+                width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+                background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
+              }}
+            >
+              Got it, let&apos;s go! 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+
+      <style>{`
+        @keyframes modalSlideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   )
 }

@@ -192,6 +192,27 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/transactions',
+    label: 'Transactions',
+    roles: ['MANAGER', 'SUPER_ADMIN'],
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
+        <line x1="2" y1="10" x2="22" y2="10"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/my-transactions',
+    label: 'Transactions',
+    roles: ['STUDENT', 'MANAGER'],
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+      </svg>
+    ),
+  },
+  {
     href: '/manage/updates',
     label: 'Updates',
     roles: ['MANAGER'],
