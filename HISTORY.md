@@ -382,3 +382,24 @@ Outcome:
 - After upgrade confirmation, the card automatically refreshes to show the Live state.
 - Managers control upgrade pricing per course from the management panel.
 
+18. Date and time: 2026-04-27 16:50:00 IST
+Summary: Polished Course Card UI and Details Header, including PRO glow effect and General batch fallbacks.
+What changed:
+- Converted "General Batch" courses to use a distinct grayscale banner/badge theme on the dashboard and detail page, rather than a full CSS filter on the entire card.
+- Updated the `InfoModal` on the dashboard to use the newly designed table-format "Batch Comparison" modal.
+- Added a subtle animated light reflection effect (`proShine` keyframes) for "PRO Batch" (Live) courses to emphasize a premium appearance.
+- Repositioned the "i" info button on the course details header to the absolute top-right corner of the banner.
+- Ensured the "Upgrade to PRO" button in the course details header sits perfectly inline with the other tags.
+- Updated the logic for `isRecorded` to also capture `FREE` and `DEMO` enrollment types, ensuring they correctly display the "General Batch" UI and prompt upgrades.
+What was added:
+- CSS `@keyframes proShine` for animated premium glow.
+What was removed:
+- Removed global `grayscale(1)` filter to restore legibility of card fonts and icons for recorded courses.
+- Removed the old dual-column Batch Comparison UI from `courses/page.tsx`.
+Files affected:
+- `src/app/(dashboard)/courses/page.tsx`
+- `src/app/(dashboard)/courses/[id]/page.tsx`
+Outcome:
+- Dashboard cards and detail headers clearly separate PRO (shiny, vibrant) and General (clean grey) aesthetic.
+- The comparison table provides identical clarity whether triggered from a card or from within the course detail view.
+- Demo and free users appropriately fall under General Batch restrictions and upgrade paths.
