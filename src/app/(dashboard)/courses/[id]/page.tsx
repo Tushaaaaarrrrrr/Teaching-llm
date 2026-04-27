@@ -28,6 +28,8 @@ interface CourseDetail {
   color: string
   expiresAt?: string
   teacherName: string
+  enrollmentType?: 'LIVE' | 'RECORDED' | null
+  liveUpgradePrice?: number | null
   instructorAssignments?: { instructor: { id: string; name: string } }[]
   _count?: { topics: number; lectures: number; materials: number; courseEvents: number }
   courseEvents?: {
@@ -63,6 +65,10 @@ export default function CourseDetailPage() {
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
   const [activeExam, setActiveExam] = useState<Exam | null>(null)
   const [progressMap, setProgressMap] = useState<Record<string, string>>({})
+  const [infoModalCourse, setInfoModalCourse] = useState<CourseDetail | null>(null)
+  const [upgradeModalCourse, setUpgradeModalCourse] = useState<CourseDetail | null>(null)
+  const [upgrading, setUpgrading] = useState(false)
+  const [showUpgradeHint, setShowUpgradeHint] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -139,6 +145,24 @@ export default function CourseDetailPage() {
       else next.add(id)
       return next
     })
+  }
+  
+  const handleUpgrade = async (courseId: string) => {
+    setUpgrading(true)
+    try {
+      const res = await fetch(`/api/courses/${courseId}/upgrade`, { method: 'POST' })
+      if (res.ok) {
+        setUpgradeModalCourse(null)
+        fetchData() // Refresh to reflect new batch status
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to upgrade')
+      }
+    } catch (e) {
+      alert('Something went wrong')
+    } finally {
+      setUpgrading(false)
+    }
   }
 
 
@@ -225,6 +249,50 @@ export default function CourseDetailPage() {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     Teacher Name: {course.teacherName}
                   </span>
+
+                {/* Upgrade Button + Info Button for Recorded users */}
+                {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ position: 'relative' }}>
+                      {showUpgradeHint && (
+                        <div style={{
+                          position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
+                          background: '#1e1e3a', color: '#fff', padding: '8px 12px', borderRadius: '12px',
+                          fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
+                          boxShadow: '0 4px 15px rgba(0,0,0,0.2)', marginBottom: '12px', zIndex: 10,
+                        }}>
+                          Click the "i" button to see batch differences
+                          <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', border: '6px solid transparent', borderTopColor: '#1e1e3a' }} />
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setUpgradeModalCourse(course)}
+                        onMouseEnter={() => setShowUpgradeHint(true)}
+                        onMouseLeave={() => setShowUpgradeHint(false)}
+                        style={{
+                          background: '#fff', color: '#1e1e3a', padding: '6px 16px', borderRadius: '50px',
+                          fontSize: '12px', fontWeight: '800', border: 'none', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <span style={{ fontSize: '8px', background: '#f3f4f6', padding: '1px 6px', borderRadius: '10px', color: '#6b6b8a' }}>OPTIONAL</span>
+                        ⚡ Upgrade to PRO
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => setInfoModalCourse(course)}
+                      style={{
+                        width: '28px', height: '28px', borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+                        color: '#fff', fontSize: '14px', fontWeight: '800', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      i
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -473,6 +541,128 @@ export default function CourseDetailPage() {
           ))}
         </div>
       )}
+      {/* Info Modal */}
+      {infoModalCourse && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          padding: '20px'
+        }} onClick={() => setInfoModalCourse(null)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '750px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
+            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+          }} onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '25px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Batch Comparison</h2>
+              <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500' }}>Choose the experience that fits your learning style</p>
+            </div>
+
+            {/* Comparison Table */}
+            <div style={{ padding: '30px 40px' }}>
+              <div style={{ borderRadius: '24px', overflow: 'hidden', border: '1.5px solid #e2e8f0', background: '#fff' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc' }}>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>General Batch</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO Batch</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { f: 'Course Lectures', g: '✅ Full Access', p: '✅ Full Access' },
+                      { f: 'Course Materials', g: '✅ Full Access', p: '✅ Full Access' },
+                      { f: 'Live Classes', g: '❌ No Access', p: '✅ Direct Entry' },
+                      { f: 'Direct Q&A with Teacher', g: '❌ No', p: '✅ Yes (Live)' },
+                      { f: 'Weekly Mentorship', g: '❌ No', p: '✅ Every Sunday' },
+                      { f: 'Priority Support', g: '❌ Standard', p: '✅ 24/7 Priority' },
+                    ].map((row, i) => (
+                      <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#334155', fontWeight: '600' }}>{row.f}</td>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#92400e', textAlign: 'center', background: '#fffdf5' }}>{row.g}</td>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#4338ca', fontWeight: '700', textAlign: 'center', background: '#f5f7ff' }}>{row.p}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={{ padding: '0 40px 40px', textAlign: 'center' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ background: '#1e293b', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+                Got it, thanks!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Confirmation Modal */}
+      {upgradeModalCourse && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px'
+        }} onClick={() => !upgrading && setUpgradeModalCourse(null)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '480px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
+            animation: 'modalSlideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+              <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#eef2ff', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              </div>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Upgrade to PRO Batch?</h2>
+              <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
+                Get instant access to live classes, direct teacher interaction, and weekly mentorship for <strong>{upgradeModalCourse.name}</strong>.
+              </p>
+              
+              <div style={{ background: '#f8fafc', borderRadius: '20px', padding: '20px', marginBottom: '32px', border: '1.5px solid #e2e8f0' }}>
+                <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Upgrade Price</div>
+                <div style={{ fontSize: '32px', fontWeight: '900', color: '#1e293b' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '14px' }}>
+                <button 
+                  disabled={upgrading}
+                  onClick={() => setUpgradeModalCourse(null)} 
+                  style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'white', color: '#64748b', fontWeight: '700', cursor: upgrading ? 'not-allowed' : 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  disabled={upgrading}
+                  onClick={() => handleUpgrade(upgradeModalCourse.id)}
+                  style={{ 
+                    flex: 1.5, padding: '16px', borderRadius: '18px', border: 'none', 
+                    background: upgrading ? '#94a3b8' : 'linear-gradient(135deg, #6366f1, #4f46e5)', 
+                    color: 'white', fontWeight: '700', cursor: upgrading ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                  }}
+                >
+                  {upgrading ? 'Processing...' : 'Confirm Upgrade'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes modalSlideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}} />
     </div>
   )
 }

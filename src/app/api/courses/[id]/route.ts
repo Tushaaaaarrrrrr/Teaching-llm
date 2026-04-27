@@ -112,8 +112,18 @@ export async function GET(
       })
     })
 
+    const enrollment = await prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId: session.userId,
+          courseId: id,
+        },
+      },
+    })
+
     const result = {
       ...cData,
+      enrollmentType: enrollment?.type || (isAdminOrManager(session.role) ? 'LIVE' : null),
       isExpired: isCourseExpired(cData),
       isEffectivelyDisabled: isCourseEffectivelyDisabled(cData),
       _count: {
