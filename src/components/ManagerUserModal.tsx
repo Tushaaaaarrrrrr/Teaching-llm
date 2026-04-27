@@ -256,35 +256,36 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
   const displayInitial = displayName.charAt(0).toUpperCase() || '?'
 
   const neuBox = {
-    background: '#f0f2f8',
-    boxShadow: '8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff',
-    borderRadius: '24px',
+    background: '#ffffff',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+    borderRadius: '16px',
+    padding: '24px',
   }
 
   const neuInset = {
-    background: '#f0f2f8',
-    boxShadow: 'inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff',
+    background: '#f8fafc',
     borderRadius: '12px',
-    border: 'none',
+    border: '1px solid #e2e8f0',
     padding: '10px 14px',
     outline: 'none',
     width: '100%',
     fontSize: '13px',
     color: '#1e1e3a',
     fontFamily: 'inherit',
+    transition: 'all 0.2s ease',
   }
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)',
+      background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(8px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
     }} onClick={onClose}>
       {confirmDialog}
       
-      <div style={{
+      <div className="modal" style={{
         width: '100%', maxWidth: '1000px', maxHeight: '95vh', overflowY: 'auto',
-        position: 'relative', padding: '32px', ...neuBox
+        position: 'relative', padding: '32px'
       }} onClick={e => e.stopPropagation()}>
         
         {loading ? (
@@ -296,7 +297,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             <button onClick={onClose} style={{
               position: 'absolute', top: '24px', right: '24px',
               width: '36px', height: '36px', borderRadius: '50%', border: 'none',
-              background: '#f0f2f8', boxShadow: '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
+              background: '#f1f5f9', 
               cursor: 'pointer', color: '#6b6b8a', display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 10
             }}>
