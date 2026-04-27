@@ -120,9 +120,17 @@ export default function CoursesPage() {
         </div>
       </div>
 
+      <style>{`
+        @keyframes proShine {
+          0% { left: -100%; }
+          20% { left: 200%; }
+          100% { left: 200%; }
+        }
+      `}</style>
+
       <div className="grid-3">
         {filtered.map((course: CourseItem) => {
-          const isRecorded = course.enrollmentType === 'RECORDED'
+          const isRecorded = ['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '')
           const isLive = course.enrollmentType === 'LIVE'
           const hasUpgradePrice = isRecorded && course.liveUpgradePrice != null && course.liveUpgradePrice > 0
 
@@ -142,6 +150,7 @@ export default function CoursesPage() {
                 flexDirection: 'column',
                 width: '100%',
                 height: '100%',
+                position: 'relative',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.transform = 'translateY(-4px)'
@@ -158,6 +167,15 @@ export default function CoursesPage() {
                 setShowUpgradeHint(null)
               }}
             >
+              {isLive && (
+                <div style={{
+                  position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%',
+                  background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.6), transparent)',
+                  transform: 'skewX(-25deg)',
+                  animation: 'proShine 3s infinite ease-in-out',
+                  zIndex: 10, pointerEvents: 'none'
+                }} />
+              )}
               {/* Gradient Banner */}
               <div style={{
                 height: '100px',
