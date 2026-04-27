@@ -57,7 +57,6 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
   const [bundles, setBundles] = useState<CourseBundleInfo[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [selectedNewCourseType, setSelectedNewCourseType] = useState('LIVE')
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     name: '',
@@ -583,8 +582,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                   outline: 'none',
                                 }}
                               >
-                                <option value="LIVE">🟢 PRO</option>
-                                <option value="RECORDED">🟡 General</option>
+                                <option value="LIVE">🟢 LIVE</option>
+                                <option value="RECORDED">🟡 RECORDED</option>
                               </select>
                              <button 
                                 onClick={() => {
@@ -601,18 +600,6 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         })}
                         
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <select
-                            value={selectedNewCourseType}
-                            onChange={(e) => setSelectedNewCourseType(e.target.value)}
-                            style={{
-                              padding: '10px 14px', borderRadius: '16px', border: '1px solid #d1d9e6', background: '#fff',
-                              fontSize: '12px', fontWeight: '700', color: '#1e1e3a', cursor: 'pointer',
-                              boxShadow: 'inset 2px 2px 4px #d1d9e6, inset -2px -2px 4px #ffffff',
-                            }}
-                          >
-                             <option value="LIVE">PRO Batch</option>
-                             <option value="RECORDED">General Batch</option>
-                          </select>
                           <div style={{ position: 'relative' }}>
                              <select 
                                 onChange={(e) => {
@@ -620,7 +607,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                     setFormData({
                                        ...formData,
                                        courseIds: [...formData.courseIds, e.target.value],
-                                       enrollmentTypes: {...formData.enrollmentTypes, [e.target.value]: selectedNewCourseType}
+                                       enrollmentTypes: {...formData.enrollmentTypes, [e.target.value]: 'LIVE'}
                                      })
                                   }
                                 }}
