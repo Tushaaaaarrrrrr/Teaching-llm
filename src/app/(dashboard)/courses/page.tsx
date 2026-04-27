@@ -317,8 +317,9 @@ export default function CoursesPage() {
                     onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)' }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
                   >
-                    ⚡ Upgrade to Live — ₹{course.liveUpgradePrice}
+                    ⚡ Upgrade to PRO — ₹{course.liveUpgradePrice}
                   </button>
+                  </>
                 )}
 
                 {/* Stats row */}
