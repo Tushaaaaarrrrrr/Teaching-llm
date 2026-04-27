@@ -1036,8 +1036,8 @@ export default function AdminPage() {
                               }}
                               onClick={e => e.stopPropagation()}
                             >
-                              <option value="LIVE">Live</option>
-                              <option value="RECORDED">Recording</option>
+                              <option value="LIVE">PRO Batch</option>
+                              <option value="RECORDED">General Batch</option>
                             </select>
                           )}
                         </label>

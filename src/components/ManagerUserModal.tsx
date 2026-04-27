@@ -583,8 +583,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                   outline: 'none',
                                 }}
                               >
-                                <option value="LIVE">🟢 LIVE</option>
-                                <option value="RECORDED">🟡 RECORDED</option>
+                                <option value="LIVE">🟢 PRO</option>
+                                <option value="RECORDED">🟡 General</option>
                               </select>
                              <button 
                                 onClick={() => {
@@ -610,8 +610,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                               boxShadow: 'inset 2px 2px 4px #d1d9e6, inset -2px -2px 4px #ffffff',
                             }}
                           >
-                            <option value="LIVE">Live Class</option>
-                            <option value="RECORDED">Recording</option>
+                             <option value="LIVE">PRO Batch</option>
+                             <option value="RECORDED">General Batch</option>
                           </select>
                           <div style={{ position: 'relative' }}>
                              <select 
