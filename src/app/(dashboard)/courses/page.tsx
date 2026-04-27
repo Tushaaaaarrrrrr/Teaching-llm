@@ -47,6 +47,7 @@ export default function CoursesPage() {
   const [infoModalCourse, setInfoModalCourse] = useState<CourseItem | null>(null)
   const [upgradeModalCourse, setUpgradeModalCourse] = useState<CourseItem | null>(null)
   const [upgrading, setUpgrading] = useState(false)
+  const [showUpgradeHint, setShowUpgradeHint] = useState<string | null>(null)
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -192,7 +193,7 @@ export default function CoursesPage() {
                     fontSize: '10px', fontWeight: '800', color: '#fff',
                     letterSpacing: '0.06em',
                   }}>
-                    🟢 PRO Batch
+                    PRO Batch
                   </div>
                 )}
 
@@ -205,7 +206,7 @@ export default function CoursesPage() {
                     fontSize: '10px', fontWeight: '800', color: '#fde68a',
                     letterSpacing: '0.06em',
                   }}>
-                    🟡 General Batch
+                    General Batch
                   </div>
                 )}
 
@@ -295,31 +296,69 @@ export default function CoursesPage() {
 
                 {/* Upgrade button for RECORDED users */}
                 {hasUpgradePrice && (
-                  <>
-                    <div style={{ fontSize: '10px', color: '#9999b0', fontWeight: '800', textAlign: 'center', marginBottom: '6px', letterSpacing: '0.08em' }}>OPTIONAL</div>
+                  <div style={{ position: 'relative' }}>
+                    {/* Hover Hint Tooltip */}
+                    {showUpgradeHint === course.id && (
+                      <div style={{
+                        position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
+                        background: '#1e1e3a', color: '#fff', padding: '8px 12px', borderRadius: '12px',
+                        fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.2)', marginBottom: '12px', zIndex: 10,
+                        animation: 'fadeIn 0.2s ease-out'
+                      }}>
+                        Click the "i" button above to see the difference between batches
+                        <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', border: '6px solid transparent', borderTopColor: '#1e1e3a' }} />
+                      </div>
+                    )}
+                    
                     <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setUpgradeModalCourse(course) }}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      borderRadius: '16px',
-                      border: 'none',
-                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                      color: '#fff',
-                      fontSize: '13px',
-                      fontWeight: '800',
-                      cursor: 'pointer',
-                      marginBottom: '14px',
-                      boxShadow: '4px 4px 12px rgba(99,102,241,0.3)',
-                      transition: 'all 0.2s',
-                      letterSpacing: '0.02em',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)' }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
-                  >
-                    ⚡ Upgrade to PRO — ₹{course.liveUpgradePrice}
-                  </button>
-                  </>
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setUpgradeModalCourse(course) }}
+                      onMouseEnter={() => setShowUpgradeHint(course.id)}
+                      onMouseLeave={() => setShowUpgradeHint(null)}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '50px',
+                        border: '1.5px solid #1e1e3a',
+                        background: '#1e1e3a',
+                        color: '#fff',
+                        fontSize: '13px',
+                        fontWeight: '800',
+                        cursor: 'pointer',
+                        marginBottom: '14px',
+                        boxShadow: '0 4px 12px rgba(30, 30, 58, 0.25), 0 0 8px rgba(99, 102, 241, 0.15)',
+                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                        letterSpacing: '0.02em',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <span style={{ 
+                        fontSize: '9px', background: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '20px', 
+                        color: '#fff', letterSpacing: '0.05em', fontWeight: '900', border: '1px solid rgba(255,255,255,0.2)' 
+                      }}>
+                        OPTIONAL
+                      </span>
+                      ⚡ Upgrade to PRO — ₹{course.liveUpgradePrice}
+                      
+                      {/* Shine effect overlay */}
+                      <div style={{
+                        position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%',
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
+                        transform: 'skewX(-25deg)',
+                        transition: 'left 0.75s',
+                      }} className="button-shine" />
+                    </button>
+                    
+                    <style dangerouslySetInnerHTML={{ __html: `
+                      button:hover .button-shine { left: 150% !important; }
+                      @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, 5px); } to { opacity: 1; transform: translate(-50%, 0); } }
+                    `}} />
+                  </div>
                 )}
 
                 {/* Stats row */}
