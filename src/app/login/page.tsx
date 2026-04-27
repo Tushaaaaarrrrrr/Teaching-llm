@@ -13,6 +13,9 @@ function LoginContent() {
   const [loading, setLoading] = useState(false)
   const [isAwake, setIsAwake] = useState(false)
   const [showSecretLogin, setShowSecretLogin] = useState(false)
+  const [showRefundPolicy, setShowRefundPolicy] = useState(false)
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
+  const [showTermsConditions, setShowTermsConditions] = useState(false)
 
    const signInBtnRef = useRef<HTMLDivElement>(null)
 
@@ -172,37 +175,35 @@ function LoginContent() {
             </div>
           </div>
         
-        {/* Contact link */}
-        <a
-          href="mailto:admin@genziitian.org"
-          style={{ 
-            position: 'absolute', 
-            bottom: '24px', 
-            left: '32px', 
-            fontSize: '12px', 
-            color: '#9999b0', 
-            textDecoration: 'none', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            fontWeight: '600',
-            padding: '8px 16px',
-            background: '#F3F4F6',
-            borderRadius: '50px',
-            boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
-            e.currentTarget.style.color = '#3636e8';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
-            e.currentTarget.style.color = '#9999b0';
-          }}
-        >
-          <span style={{ fontSize: '14px' }}>✉️</span><span>Contact Developer</span>
-        </a>
+        {/* Footer Links */}
+        <div style={{ position: 'absolute', bottom: '24px', left: '32px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          {[
+            { label: 'Contact Developer', icon: '✉️', onClick: () => window.location.href = 'mailto:admin@genziitian.org' },
+            { label: 'Refund Policy', icon: '💸', onClick: () => setShowRefundPolicy(true) },
+            { label: 'Privacy Policy', icon: '🔒', onClick: () => setShowPrivacyPolicy(true) },
+            { label: 'Terms & Conditions', icon: '📜', onClick: () => setShowTermsConditions(true) },
+          ].map((btn, i) => (
+            <button
+              key={i}
+              onClick={btn.onClick}
+              style={{
+                fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600',
+                padding: '8px 16px', background: '#F3F4F6', borderRadius: '50px', border: 'none', cursor: 'pointer',
+                boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff', transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
+                e.currentTarget.style.color = '#3636e8';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
+                e.currentTarget.style.color = '#9999b0';
+              }}
+            >
+              <span style={{ fontSize: '14px' }}>{btn.icon}</span><span>{btn.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Right Panel - Login Form */}
@@ -279,6 +280,87 @@ function LoginContent() {
           </div>
         </div>
       )}
+      {/* Policy Modals */}
+      {[
+        { 
+          show: showRefundPolicy, 
+          close: () => setShowRefundPolicy(false), 
+          title: 'Return & Refund Policy', 
+          content: (
+            <div style={{ fontSize: '14px', color: '#555', lineHeight: '1.6' }}>
+              <p style={{ marginBottom: '12px' }}>At GenZ IITian, we provide 100% digital educational services in the form of online courses. There is no physical product, shipment, or delivery involved.</p>
+              <p style={{ marginBottom: '12px' }}>Due to the nature of digital content, all purchases are final. We do not offer refunds, returns, or exchanges under any circumstances once a course has been purchased.</p>
+              <p style={{ marginBottom: '12px' }}>We strongly recommend reviewing course details before making a purchase.</p>
+              <p style={{ marginBottom: '12px' }}>In case of any technical issues, payment errors, or access-related problems, you can contact our support team. We will ensure that you receive proper access to your purchased course.</p>
+              <p>We reserve the right to update or modify this policy at any time without prior notice. Changes will be effective immediately upon posting.</p>
+            </div>
+          )
+        },
+        { 
+          show: showPrivacyPolicy, 
+          close: () => setShowPrivacyPolicy(false), 
+          title: 'Privacy Policy', 
+          content: (
+            <div style={{ fontSize: '14px', color: '#555', lineHeight: '1.6' }}>
+              <p style={{ marginBottom: '12px' }}>At GenZ IITian, we respect your privacy and are committed to protecting your data.</p>
+              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '8px' }}>Information We Collect</h4>
+              <p style={{ marginBottom: '12px' }}>We collect basic details such as your name, email, phone number, and device information to manage your registration, purchases, and account history.<br/>We also collect usage data to understand how you interact with our platform.</p>
+              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '8px' }}>How We Use Your Information</h4>
+              <ul style={{ paddingLeft: '20px', marginBottom: '12px' }}>
+                <li>Provide and improve our courses and services</li>
+                <li>Personalize your learning experience</li>
+                <li>Communicate updates, offers, and important information</li>
+                <li>Provide customer support</li>
+                <li>Ensure platform security and prevent misuse</li>
+              </ul>
+              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '8px' }}>Changes to This Policy</h4>
+              <p style={{ marginBottom: '12px' }}>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated effective date.</p>
+              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '8px' }}>Contact Us</h4>
+              <p>If you have any questions or concerns, you can contact us at:<br/>Email: help@genziitian.in</p>
+            </div>
+          )
+        },
+        { 
+          show: showTermsConditions, 
+          close: () => setShowTermsConditions(false), 
+          title: 'Terms & Conditions', 
+          content: (
+            <div style={{ fontSize: '14px', color: '#555', lineHeight: '1.6' }}>
+              <p style={{ fontSize: '12px', color: '#9999b0', marginBottom: '16px' }}>Last Updated: April 2026</p>
+              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>01 Service Description</h4>
+              <p style={{ marginBottom: '12px' }}>Gen-Z IITian provides access to premium digital educational courses designed specifically for students. Our services are delivered entirely online. Access to the courses is granted immediately upon successful completion of the payment process.</p>
+              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>02 User Account & Security</h4>
+              <p style={{ marginBottom: '12px' }}>To access our courses, users must sign in via their Google account. You are solely responsible for maintaining the confidentiality of your account information and for all activities that occur under your account. We reserve the right to terminate accounts that violate our security protocols.</p>
+              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>03 Course Access & Usage</h4>
+              <p style={{ marginBottom: '12px' }}>Access is granted exclusively to the email address used during the purchase.<br/>Course access is non-transferable and intended for personal use only.<br/>Sharing account credentials or course content with third parties is strictly prohibited.</p>
+              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>04 Payment Terms</h4>
+              <p style={{ marginBottom: '12px' }}>All prices are clearly displayed before the final checkout. By proceeding with the payment, you agree to the price and terms of the specific course. All payments are processed through secure third-party payment gateways (Razorpay, Stripe, or Cashfree).</p>
+              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>05 Prohibited Use & Copyright</h4>
+              <p style={{ marginBottom: '12px' }}>All content on this platform, including videos, documents, and code samples, is the intellectual property of Gen-Z IITian. Any form of piracy, unauthorized redistribution, or commercial use of our content will result in legal action and immediate termination of access without notice.</p>
+              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>06 Limitation of Liability</h4>
+              <p>Gen-Z IITian is an educational platform. While we strive for excellence, we do not guarantee specific academic results or career outcomes. The platform is not responsible for any misuse of the information provided or for any technical issues arising from the user's internet connection or device.</p>
+            </div>
+          )
+        }
+      ].map((modal, i) => modal.show && (
+        <div 
+          key={i}
+          style={{ 
+            position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)',
+            zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' 
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) modal.close() }}
+        >
+          <div style={{ width: '100%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto', background: '#F3F4F6', borderRadius: '28px', padding: '44px', boxShadow: '12px 12px 24px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>{modal.title}</h2>
+              <button onClick={modal.close} style={{ background: 'none', border: 'none', fontSize: '24px', color: '#9999b0', cursor: 'pointer', padding: '0 8px' }}>&times;</button>
+            </div>
+            {modal.content}
+          </div>
+        </div>
+      ))}
+
     </div>
   )
 }
@@ -431,6 +513,10 @@ function GoogleLoginButton() {
           )}
         </button>
       </div>
+
+      <p style={{ textAlign: 'center', fontSize: '11px', color: '#9999b0', marginTop: '24px', fontWeight: '500', lineHeight: '1.5' }}>
+        By continuing, you agree to the Terms & Conditions & privacy policy
+      </p>
     </div>
   )
 }
