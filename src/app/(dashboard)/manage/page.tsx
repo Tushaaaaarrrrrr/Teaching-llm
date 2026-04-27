@@ -307,7 +307,7 @@ export default function ManagePage() {
 
   function renderForm() {
     const f = formData
-    const set = (key: string, val: string) => setFormData(prev => ({ ...prev, [key]: val }))
+    const set = (key: string, val: any) => setFormData(prev => ({ ...prev, [key]: val }))
     const courseOptions = courses.map(c => ({ value: c.id, label: c.name }))
 
     // shared course + topic selector used in lectures & materials
