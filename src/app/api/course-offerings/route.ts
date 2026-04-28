@@ -46,19 +46,29 @@ export async function POST(request: NextRequest) {
 
     const data = await request.json()
     const { 
-      courseId, name, thumbnail, 
+      courseId, classId, name, thumbnail, 
       hasRecorded, recordedOriginalPrice, recordedDiscountPrice,
       hasLive, liveOriginalPrice, liveDiscountPrice 
     } = data
+    const resolvedCourseId = courseId || classId
 
-    if (!courseId || !name) {
-      return NextResponse.json({ error: 'Course and Name are required' }, { status: 400 })
+    if (!resolvedCourseId) {
+      return NextResponse.json({ error: 'Course is required' }, { status: 400 })
+    }
+
+    const course = await prisma.course.findUnique({
+      where: { id: resolvedCourseId },
+      select: { id: true, name: true },
+    })
+
+    if (!course) {
+      return NextResponse.json({ error: 'Selected course was not found' }, { status: 404 })
     }
 
     const offering = await prisma.courseOffering.create({
       data: {
-        courseId,
-        name,
+        courseId: resolvedCourseId,
+        name: name || course.name,
         thumbnail,
         hasRecorded: !!hasRecorded,
         recordedOriginalPrice: recordedOriginalPrice ? Number(recordedOriginalPrice) : null,
