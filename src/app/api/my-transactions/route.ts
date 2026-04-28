@@ -25,13 +25,6 @@ export async function GET() {
             course: { select: { id: true, name: true, subject: true } },
             courseOffering: { select: { name: true } }
           }
-        },
-        refund: {
-          select: {
-            refundAmount: true,
-            refundStatus: true,
-            refundDate: true
-          }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -54,16 +47,7 @@ export async function GET() {
             subject: u.course.subject,
             accessType: 'LIVE'
           }
-        ],
-        discountCode: null,
-        referralCode: null,
-        coinsApplied: 0,
-        paymentMethod: 'razorpay',
-        currency: 'INR',
-        gstAmount: 0,
-        invoiceNumber: null,
-        bundleName: null,
-        refund: null
+        ]
       })),
       ...orders.map(o => {
         const firstItem = o.items[0]
@@ -81,16 +65,7 @@ export async function GET() {
             name: item.course.name,
             subject: item.course.subject,
             accessType: item.accessType
-          })),
-          bundleName: o.bundleName,
-          discountCode: o.discountCode,
-          referralCode: o.referralCode,
-          coinsApplied: o.coinsApplied,
-          paymentMethod: o.paymentMethod,
-          currency: o.currency,
-          gstAmount: o.gstAmount,
-          invoiceNumber: o.invoiceNumber,
-          refund: o.refund
+          }))
         }
       })
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())

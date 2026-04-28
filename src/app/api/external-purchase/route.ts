@@ -8,9 +8,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Validate required fields
-    const { email, name, phone, courseIds, courseDetails, transaction, refund } = body
+    const { secret, email, name, phone, gender, orderId, paymentId, purchasedAt, finalPrice, courseIds, courseDetails } = body
 
-    if (!email || !courseIds || !courseIds.length || !transaction) {
+    // Verify secret
+    if (secret !== process.env.EXTERNAL_ENROLL_SECRET) {
+      return NextResponse.json({ error: 'Invalid secret' }, { status: 401 })
+    }
+
+    if (!email || !courseIds || !courseIds.length) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -26,6 +31,7 @@ export async function POST(request: NextRequest) {
           email,
           name: name || email.split('@')[0],
           mobileNumber: phone || null,
+          gender: gender || null,
           passwordHash: '', // External users don't have password
           role: 'STUDENT',
           isProfileComplete: false
@@ -47,20 +53,12 @@ export async function POST(request: NextRequest) {
     const order = await prisma.order.create({
       data: {
         userId: user.id,
-        amount: transaction.finalPrice,
-        status: transaction.paymentStatus || 'SUCCESS',
+        amount: finalPrice,
+        status: 'SUCCESS',
         isExternal: true,
-        paymentMethod: transaction.paymentMethod || 'external',
-        currency: transaction.currency || 'INR',
-        gstAmount: transaction.gstAmount || 0,
-        invoiceNumber: transaction.invoiceNumber,
-        discountCode: transaction.discountCode,
-        referralCode: transaction.referralCode,
-        coinsApplied: transaction.coinsApplied || 0,
-        bundleId: transaction.bundleId,
-        bundleName: transaction.bundleName,
-        razorpayOrderId: transaction.orderId, // Store as orderId
-        razorpayPaymentId: transaction.paymentId
+        razorpayOrderId: orderId,
+        razorpayPaymentId: paymentId,
+        createdAt: new Date(purchasedAt)
       }
     })
 
@@ -77,7 +75,7 @@ export async function POST(request: NextRequest) {
           orderId: order.id,
           courseId,
           accessType,
-          price: transaction.finalPrice / courseIds.length // Split price evenly
+          price: finalPrice / courseIds.length // Split price evenly
         }
       })
 
@@ -120,7 +118,7 @@ export async function POST(request: NextRequest) {
       userName: name || email,
       userRole: 'STUDENT',
       actionType: ACTION.EXTERNAL_ENROLLMENT,
-      actionDescription: `External purchase: ${courseIds.length} course(s) for ₹${transaction.finalPrice} (Order: ${transaction.orderId})`,
+      actionDescription: `External purchase: ${courseIds.length} course(s) for ₹${finalPrice} (Order: ${orderId})`,
       moduleName: MODULE.ENROLLMENT,
       targetId: courseIds[0]
     })
