@@ -212,6 +212,25 @@ function LoginContent() {
 
           {/* Google Login is now the primary method */}
           <GoogleLoginButton onTermsClick={() => setShowTermsConditions(true)} onPrivacyClick={() => setShowPrivacyPolicy(true)} />
+
+          {/* Email/Password divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0 4px' }}>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(0,0,0,0.08)' }} />
+            <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: '600' }}>or</span>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(0,0,0,0.08)' }} />
+          </div>
+          <button
+            onClick={() => setShowSecretLogin(true)}
+            style={{
+              width: '100%', padding: '12px', borderRadius: '14px', border: '1.5px solid rgba(0,0,0,0.08)',
+              background: 'transparent', fontSize: '13px', fontWeight: '700', color: '#6b6b8a',
+              cursor: 'pointer', transition: 'all 0.2s ease', letterSpacing: '0.01em'
+            }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = '#3636e8'; e.currentTarget.style.color = '#3636e8'; }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; e.currentTarget.style.color = '#6b6b8a'; }}
+          >
+            Sign in with Email & Password
+          </button>
         </div>
 
         {/* Explore Courses CTA below the card */}
@@ -308,7 +327,7 @@ function LoginContent() {
         >
           <div className="modal" style={{ width: '100%', maxWidth: '400px', padding: '44px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>Manager Login</h2>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>Sign In</h2>
               <button 
                 onClick={() => setShowSecretLogin(false)}
                 style={{ background: 'none', border: 'none', fontSize: '24px', color: '#9999b0', cursor: 'pointer', padding: '0 8px' }}
@@ -316,7 +335,7 @@ function LoginContent() {
                 &times;
               </button>
             </div>
-            <p style={{ color: '#9999b0', fontSize: '13px', marginBottom: '24px' }}>If you are a student, please close this and use Google to continue.</p>
+            <p style={{ color: '#9999b0', fontSize: '13px', marginBottom: '24px' }}>Enter your email and password to continue.</p>
 
             {/* Error display */}
             {displayError && (
