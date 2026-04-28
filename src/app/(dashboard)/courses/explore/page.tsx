@@ -112,13 +112,13 @@ export default function ExploreCoursesPage() {
           fontSize: '32px', fontWeight: '900', color: '#1e1e3a',
           marginBottom: '12px', letterSpacing: '-0.02em'
         }}>
-          Explore Our Courses
+          GenZ IITian Official Store
         </h1>
         <p style={{
           fontSize: '15px', color: '#9999b0', fontWeight: '500',
           maxWidth: '500px', margin: '0 auto', lineHeight: '1.6'
         }}>
-          Choose from our premium courses designed to help you master the most in-demand skills.
+          Buy Courses From <a href="https://app.genziitian.in/courses" target="_blank" rel="noopener noreferrer" style={{ color: '#6366f1', textDecoration: 'underline' }}>app.genziitian.in/courses</a>
         </p>
       </div>
 
