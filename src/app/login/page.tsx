@@ -12,7 +12,6 @@ function LoginContent() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isAwake, setIsAwake] = useState(false)
-  const [showSecretLogin, setShowSecretLogin] = useState(false)
   const [showRefundPolicy, setShowRefundPolicy] = useState(false)
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const [showTermsConditions, setShowTermsConditions] = useState(false)
@@ -101,7 +100,6 @@ function LoginContent() {
         {/* Logo & Tagline Centered Layout */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '40px', width: '100%', maxWidth: '440px' }}>
           <div 
-            onClick={() => setShowSecretLogin(true)}
             style={{ 
             display: 'flex', 
             flexDirection: 'column',
@@ -210,27 +208,44 @@ function LoginContent() {
         <div className="modal" style={{ width: '100%', maxWidth: '480px', padding: '52px' }}>
           <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1e1e3a', marginBottom: '36px', textAlign: 'center' }}>Welcome Back !</h2>
 
-          {/* Google Login is now the primary method */}
-          <GoogleLoginButton onTermsClick={() => setShowTermsConditions(true)} onPrivacyClick={() => setShowPrivacyPolicy(true)} />
+          {/* Error display */}
+          {displayError && (
+            <div style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626', padding: '12px 16px', borderRadius: '12px', fontSize: '13px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              {displayError}
+            </div>
+          )}
 
-          {/* Email/Password divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0 4px' }}>
+          {/* Email / Password form */}
+          <form onSubmit={handleSubmit}>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label className="form-label" htmlFor="email">Email</label>
+              <input id="email" type="email" className="form-input" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
+            </div>
+            <div className="form-group" style={{ marginBottom: '24px' }}>
+              <label className="form-label" htmlFor="password">Password</label>
+              <input id="password" type="password" className="form-input" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+            </div>
+            <div ref={signInBtnRef}>
+              <CreepyButton
+                type="submit"
+                loading={loading}
+                disabled={loading}
+                isAwake={isAwake}
+              >
+                Sign In
+              </CreepyButton>
+            </div>
+          </form>
+
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '24px 0' }}>
             <div style={{ flex: 1, height: '1px', background: 'rgba(0,0,0,0.08)' }} />
             <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: '600' }}>or</span>
             <div style={{ flex: 1, height: '1px', background: 'rgba(0,0,0,0.08)' }} />
           </div>
-          <button
-            onClick={() => setShowSecretLogin(true)}
-            style={{
-              width: '100%', padding: '12px', borderRadius: '14px', border: '1.5px solid rgba(0,0,0,0.08)',
-              background: 'transparent', fontSize: '13px', fontWeight: '700', color: '#6b6b8a',
-              cursor: 'pointer', transition: 'all 0.2s ease', letterSpacing: '0.01em'
-            }}
-            onMouseOver={e => { e.currentTarget.style.borderColor = '#3636e8'; e.currentTarget.style.color = '#3636e8'; }}
-            onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; e.currentTarget.style.color = '#6b6b8a'; }}
-          >
-            Sign in with Email & Password
-          </button>
+
+          <GoogleLoginButton onTermsClick={() => setShowTermsConditions(true)} onPrivacyClick={() => setShowPrivacyPolicy(true)} />
         </div>
 
         {/* Explore Courses CTA below the card */}
@@ -305,70 +320,6 @@ function LoginContent() {
         </a>
       </div>
 
-      {/* Secret Login Modal */}
-      {showSecretLogin && (
-        <div 
-          style={{ 
-            position: 'fixed', 
-            inset: 0, 
-            background: 'rgba(0, 0, 0, 0.6)', 
-            backdropFilter: 'blur(4px)',
-            zIndex: 1000, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            padding: '24px' 
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowSecretLogin(false)
-            }
-          }}
-        >
-          <div className="modal" style={{ width: '100%', maxWidth: '400px', padding: '44px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>Sign In</h2>
-              <button 
-                onClick={() => setShowSecretLogin(false)}
-                style={{ background: 'none', border: 'none', fontSize: '24px', color: '#9999b0', cursor: 'pointer', padding: '0 8px' }}
-              >
-                &times;
-              </button>
-            </div>
-            <p style={{ color: '#9999b0', fontSize: '13px', marginBottom: '24px' }}>Enter your email and password to continue.</p>
-
-            {/* Error display */}
-            {displayError && (
-              <div style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626', padding: '12px 16px', borderRadius: '12px', fontSize: '13px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                {displayError}
-              </div>
-            )}
-
-            {/* Email / Password form */}
-            <form onSubmit={handleSubmit}>
-              <div className="form-group" style={{ marginBottom: '20px' }}>
-                <label className="form-label" htmlFor="email">Email</label>
-                <input id="email" type="email" className="form-input" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
-              </div>
-              <div className="form-group" style={{ marginBottom: '24px' }}>
-                <label className="form-label" htmlFor="password">Password</label>
-                <input id="password" type="password" className="form-input" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
-              </div>
-              <div ref={signInBtnRef}>
-                <CreepyButton
-                  type="submit"
-                  loading={loading}
-                  disabled={loading}
-                  isAwake={isAwake}
-                >
-                  Sign In
-                </CreepyButton>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
       {/* Policy Modals */}
       {[
         { 
