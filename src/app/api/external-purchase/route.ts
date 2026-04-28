@@ -125,50 +125,8 @@ export async function POST(request: NextRequest) {
       targetId: courseIds[0]
     })
 
-    // Handle refund if provided
-    if (refund && refund.refundId) {
-      await prisma.refund.create({
-        data: {
-          orderId: order.id,
-          refundAmount: refund.refundAmount,
-          refundReason: refund.refundReason,
-          refundStatus: refund.refundStatus || 'initiated',
-          refundDate: new Date(refund.refundDate)
-        }
-      })
-    }
-
-    // Send email via webhook
-    try {
-      const webhookUrl = process.env.UPGRADE_EMAIL_WEBHOOK_URL
-      if (webhookUrl) {
-        const courseNames = courses.map(c => c.name).join(', ')
-        const accessType = courseDetails?.[0]?.type?.toUpperCase() || 'RECORDED'
-        const accessTierLabel = accessType === 'LIVE' ? 'Live + Recorded (Pro)' : 'Recorded (General)'
-
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: name || email,
-            email,
-            orderId: transaction.orderId,
-            courseName: courseNames,
-            accessType,
-            accessTier: accessTierLabel,
-            amount: transaction.finalPrice,
-            date: new Date(transaction.purchasedAt).toLocaleDateString('en-IN', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            }),
-            emailType: 'COURSE_PURCHASE'
-          })
-        })
-      }
-    } catch (emailErr) {
-      console.error('Failed to send purchase email:', emailErr)
-    }
+    // NOTE: Do NOT send email here - external website already sent confirmation email
+    // Email is only sent for internal LMS purchases (from Store page)
 
     return NextResponse.json({
       success: true,

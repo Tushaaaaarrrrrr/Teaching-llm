@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { secret, email, name, courseId, courseIds, courseDetails, phone, gender } = body as {
+    const { secret, email, name, courseId, courseIds, courseDetails, phone, gender, orderId, purchasedAt, finalPrice } = body as {
       secret?: string
       email?: string
       name?: string
@@ -38,6 +38,9 @@ export async function POST(request: NextRequest) {
       courseDetails?: Array<{ id: string; type?: string }>
       phone?: string
       gender?: string
+      orderId?: string
+      purchasedAt?: string
+      finalPrice?: number
     }
 
     // Build a lookup map for class type from courseDetails (e.g. { "COURSE_ID": "RECORDED" })
@@ -267,6 +270,11 @@ export async function POST(request: NextRequest) {
           courseName: enrollment.courseName,
           isNewUser: result.isNewUser,
           isNewEnrollment: enrollment.isNewEnrollment,
+          orderId: orderId || null,
+          purchasedAt: purchasedAt || null,
+          finalPrice: finalPrice || null,
+          phone: phone || null,
+          gender: gender || null,
         },
       })
     })
