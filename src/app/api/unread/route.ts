@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, getAccessibleCourseIds } from '@/lib/auth'
+import { getSession, getAccessibleCourseIds, isManagerOrSuperAdmin } from '@/lib/auth'
 
 export async function GET() {
   try {
@@ -16,7 +16,7 @@ export async function GET() {
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
 
     const cw: any = { isGlobal: false, lastMessageAt: { not: null } }
-    if (session.role !== 'MANAGER') {
+    if (!isManagerOrSuperAdmin(session.role)) {
       cw.isDisabled = false
       cw.isCommunityActive = true
     }

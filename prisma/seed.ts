@@ -9,6 +9,17 @@ async function main() {
   // ──────────────────────────────────────────────
   // 1. Clear all existing data (order matters for FK constraints)
   // ──────────────────────────────────────────────
+  const existingUsers = await prisma.user.count();
+  const existingCourses = await prisma.course.count();
+  const allowReset = process.env.ALLOW_DB_SEED_RESET === "true";
+
+  if ((existingUsers > 0 || existingCourses > 0) && !allowReset) {
+    throw new Error(
+      `Seed aborted: database already has ${existingUsers} users and ${existingCourses} courses. ` +
+      `Set ALLOW_DB_SEED_RESET=true only when you intentionally want to delete existing LMS data.`
+    );
+  }
+
   console.log("Clearing existing data...");
   await prisma.announcement.deleteMany();
   await prisma.courseEvent.deleteMany();

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
+import { getSession, isManagerOrSuperAdmin, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { sanitizeInput } from '@/lib/validation'
@@ -20,7 +20,7 @@ export async function GET() {
       isGlobal: false,
     }
 
-    if (session.role !== 'MANAGER') {
+    if (!isManagerOrSuperAdmin(session.role)) {
       where.isDisabled = false
     }
 

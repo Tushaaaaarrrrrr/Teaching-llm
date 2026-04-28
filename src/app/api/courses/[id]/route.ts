@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, isManager } from '@/lib/auth'
+import { getSession, isAdminOrManager, isManagerOrSuperAdmin } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
 import { queueExplicitGoogleGroupSyncJobs, validateGoogleGroupEmail } from '@/lib/google-group-sync'
@@ -26,11 +26,14 @@ export async function GET(
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
 
-    if (isCourseEffectivelyDisabled(courseState) && !isManager(session.role)) {
+    const hasManagerLevelAccess = isManagerOrSuperAdmin(session.role)
+    const hasPrivilegedCourseAccess = hasManagerLevelAccess || isAdminOrManager(session.role)
+
+    if (isCourseEffectivelyDisabled(courseState) && !hasManagerLevelAccess) {
       return NextResponse.json({ error: 'Course is currently disabled' }, { status: 403 })
     }
 
-    if (!isAdminOrManager(session.role)) {
+    if (!hasPrivilegedCourseAccess) {
       const enrollment = await prisma.enrollment.findUnique({
         where: {
           userId_courseId: {
@@ -103,13 +106,13 @@ export async function GET(
       },
     })
 
-    const userEnrollmentType = enrollment?.type || (isAdminOrManager(session.role) ? 'LIVE' : null)
+    const userEnrollmentType = enrollment?.type || (hasPrivilegedCourseAccess ? 'LIVE' : null)
 
     // Filter courseEvents based on enrollment type
     // Only LIVE enrollment users can see live sessions
     // Managers/Admins can see everything
     let filteredCourseEvents = courseData.courseEvents
-    if (!isAdminOrManager(session.role) && userEnrollmentType === 'RECORDED') {
+    if (!hasPrivilegedCourseAccess && userEnrollmentType === 'RECORDED') {
       filteredCourseEvents = [] // RECORDED users cannot see live events
     }
 
@@ -172,7 +175,7 @@ export async function PUT(
     const { id } = await params
     const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled, googleGroupEmail, liveUpgradePrice } = await request.json()
 
-    if (isDisabled !== undefined && !isManager(session.role)) {
+    if (isDisabled !== undefined && !isManagerOrSuperAdmin(session.role)) {
       return NextResponse.json({ error: 'Only managers can enable or disable courses' }, { status: 403 })
     }
 

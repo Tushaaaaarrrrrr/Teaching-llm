@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, getAccessibleCourseIds } from '@/lib/auth'
+import { getSession, getAccessibleCourseIds, isManagerOrSuperAdmin } from '@/lib/auth'
 import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
 
 export async function GET() {
@@ -16,7 +16,7 @@ export async function GET() {
       isGlobal: false,
     }
 
-    if (session.role !== 'MANAGER') {
+    if (!isManagerOrSuperAdmin(session.role)) {
       where.isDisabled = false
       where.isCommunityActive = true
     }
