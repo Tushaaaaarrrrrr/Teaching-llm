@@ -60,6 +60,7 @@ export async function POST(
 
     const courseId = orderItem.courseId
     const accessType = orderItem.accessType
+    const offeringId = orderItem.courseOfferingId
 
     // Verify course
     const course = await prisma.course.findUnique({
@@ -69,6 +70,22 @@ export async function POST(
 
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    }
+
+    // Get offering details to know what they're buying
+    let offeringDetails = { hasRecorded: true, hasLive: false, offeringName: '' }
+    if (offeringId) {
+      const offering = await prisma.courseOffering.findUnique({
+        where: { id: offeringId },
+        select: { hasRecorded: true, hasLive: true, name: true }
+      })
+      if (offering) {
+        offeringDetails = {
+          hasRecorded: offering.hasRecorded,
+          hasLive: offering.hasLive,
+          offeringName: offering.name
+        }
+      }
     }
 
     // Check existing enrollment
@@ -133,6 +150,7 @@ export async function POST(
     try {
       const webhookUrl = process.env.UPGRADE_EMAIL_WEBHOOK_URL
       if (webhookUrl) {
+        const accessTierLabel = accessType === 'LIVE' ? 'Live + Recorded (Pro)' : 'Recorded (General)'
         await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -141,8 +159,14 @@ export async function POST(
             email: session.email,
             orderId: order.id,
             courseName: course.name,
+            offeringName: offeringDetails.offeringName,
+            accessType: accessType,
+            accessTier: accessTierLabel,
+            hasRecorded: offeringDetails.hasRecorded,
+            hasLive: offeringDetails.hasLive,
             amount: order.amount,
             date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+            emailType: 'COURSE_PURCHASE',
           }),
         })
       }

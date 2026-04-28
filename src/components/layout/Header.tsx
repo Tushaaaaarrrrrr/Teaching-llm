@@ -21,6 +21,7 @@ interface Notification {
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/dashboard':  { title: 'Dashboard',        subtitle: 'Welcome back to your learning hub' },
+  '/courses/explore': { title: '',            subtitle: '' },
   '/courses':    { title: 'Courses',          subtitle: 'Manage your enrolled subjects and lectures' },
   '/live':       { title: 'Live Sessions',     subtitle: "Today's schedule" },
   '/calendar':   { title: 'Calendar',          subtitle: 'Your schedule and upcoming events' },

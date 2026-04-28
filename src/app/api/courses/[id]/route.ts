@@ -93,6 +93,26 @@ export async function GET(
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
 
+    // Get user's enrollment to filter content based on access type
+    const enrollment = await prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId: session.userId,
+          courseId: id,
+        },
+      },
+    })
+
+    const userEnrollmentType = enrollment?.type || (isAdminOrManager(session.role) ? 'LIVE' : null)
+
+    // Filter courseEvents based on enrollment type
+    // Only LIVE enrollment users can see live sessions
+    // Managers/Admins can see everything
+    let filteredCourseEvents = courseData.courseEvents
+    if (!isAdminOrManager(session.role) && userEnrollmentType === 'RECORDED') {
+      filteredCourseEvents = [] // RECORDED users cannot see live events
+    }
+
     // Calculate dynamic counts
     const cData = courseData as any
     const topicsCount = cData.topics.length
@@ -112,18 +132,10 @@ export async function GET(
       })
     })
 
-    const enrollment = await prisma.enrollment.findUnique({
-      where: {
-        userId_courseId: {
-          userId: session.userId,
-          courseId: id,
-        },
-      },
-    })
-
     const result = {
       ...cData,
-      enrollmentType: enrollment?.type || (isAdminOrManager(session.role) ? 'LIVE' : null),
+      courseEvents: filteredCourseEvents, // Use filtered events based on enrollment type
+      enrollmentType: userEnrollmentType,
       isExpired: isCourseExpired(cData),
       isEffectivelyDisabled: isCourseEffectivelyDisabled(cData),
       _count: {
@@ -131,6 +143,8 @@ export async function GET(
         topics: topicsCount,
         lectures: lecturesCount,
         materials: materialsCount,
+        // Show actual count of available events to the user
+        courseEvents: filteredCourseEvents.length,
       }
     }
 

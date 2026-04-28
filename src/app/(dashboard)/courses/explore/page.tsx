@@ -9,11 +9,26 @@ const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function ExploreCoursesPage() {
   const router = useRouter()
+  const { data: userData } = useSWR('/api/auth/me', fetcher, { revalidateOnFocus: false })
   const { data: offerings, error, isLoading } = useSWR('/api/course-offerings', fetcher, {
     revalidateOnFocus: false,
   })
+  const { data: courses } = useSWR('/api/courses', fetcher, { revalidateOnFocus: false })
   const [purchasing, setPurchasing] = useState<string | null>(null)
   const [successOrderId, setSuccessOrderId] = useState<string | null>(null)
+  const [verifyingPayment, setVerifyingPayment] = useState(false)
+  const [purchasedCourse, setPurchasedCourse] = useState<any>(null)
+  
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedCourse, setSelectedCourse] = useState('')
+  const [recordedOriginalPrice, setRecordedOriginalPrice] = useState('')
+  const [recordedDiscountPrice, setRecordedDiscountPrice] = useState('')
+  const [liveOriginalPrice, setLiveOriginalPrice] = useState('')
+  const [liveDiscountPrice, setLiveDiscountPrice] = useState('')
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState('')
+  const [creating, setCreating] = useState(false)
 
   const handlePurchase = async (offeringId: string, accessType: 'RECORDED' | 'LIVE') => {
     setPurchasing(`${offeringId}-${accessType}`)
@@ -28,15 +43,19 @@ export default function ExploreCoursesPage() {
 
       if (data.isFree) {
         setSuccessOrderId('FREE-ENROLLMENT')
+        setPurchasedCourse({ courseName: data.courseName, accessType })
         return
       }
+
+      // Store course info for success modal
+      const offering = activeOfferings.find((o: any) => o.id === offeringId)
 
       const options = {
         key: data.keyId,
         amount: data.amount,
         currency: data.currency,
         name: 'GenZ IItian',
-        description: `Purchase ${data.offeringName} (${accessType})`,
+        description: `Purchase ${data.courseName} (${accessType})`,
         order_id: data.razorpayOrderId,
         prefill: {
           name: data.userName || '',
@@ -44,6 +63,7 @@ export default function ExploreCoursesPage() {
         },
         theme: { color: '#6366f1' },
         handler: async (response: any) => {
+          setVerifyingPayment(true)
           try {
             const verifyRes = await fetch(`/api/course-offerings/${offeringId}/verify`, {
               method: 'POST',
@@ -58,6 +78,12 @@ export default function ExploreCoursesPage() {
             const verifyData = await verifyRes.json()
             if (verifyRes.ok) {
               setSuccessOrderId(verifyData.orderId || 'SUCCESS')
+              setPurchasedCourse({ 
+                courseName: data.courseName,
+                accessType,
+                orderId: verifyData.orderId,
+                courseTier: accessType === 'LIVE' ? 'Live + Recorded (Pro)' : 'Recorded (General)'
+              })
             } else {
               alert('Verification failed: ' + verifyData.error)
             }
@@ -65,6 +91,7 @@ export default function ExploreCoursesPage() {
             alert('Payment verification failed. Please contact support.')
           } finally {
             setPurchasing(null)
+            setVerifyingPayment(false)
           }
         },
         modal: {
@@ -107,19 +134,61 @@ export default function ExploreCoursesPage() {
   return (
     <div className="page-container fade-in">
       {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '48px', paddingTop: '16px' }}>
-        <h1 style={{
-          fontSize: '32px', fontWeight: '900', color: '#1e1e3a',
-          marginBottom: '12px', letterSpacing: '-0.02em'
-        }}>
-          GenZ IITian Official Store
-        </h1>
-        <p style={{
-          fontSize: '15px', color: '#9999b0', fontWeight: '500',
-          maxWidth: '500px', margin: '0 auto', lineHeight: '1.6'
-        }}>
-          Buy Courses From <a href="https://app.genziitian.in/courses" target="_blank" rel="noopener noreferrer" style={{ color: '#6366f1', textDecoration: 'underline' }}>app.genziitian.in/courses</a>
-        </p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '48px', paddingTop: '16px' }}>
+        <div style={{ flex: 1 }}>
+          <h1 style={{
+            fontSize: '32px', fontWeight: '900', color: '#1e1e3a',
+            marginBottom: '12px', letterSpacing: '-0.02em'
+          }}>
+            GenZ IITian Official Store
+          </h1>
+          <p style={{
+            fontSize: '15px', color: '#9999b0', fontWeight: '500',
+            lineHeight: '1.6', display: 'flex', alignItems: 'center', gap: '8px'
+          }}>
+            You can also buy courses from
+            <a href="https://app.genziitian.in/courses" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', backgroundColor: '#6366f1', padding: '4px 12px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', display: 'inline-block', transition: 'all 0.2s', fontSize: '12px' }}>
+              Visit Here
+            </a>
+          </p>
+        </div>
+
+        {userData?.user?.role === 'MANAGER' && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            style={{
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: 'white',
+              padding: '10px 18px',
+              borderRadius: '12px',
+              border: 'none',
+              fontSize: '13px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+              transition: 'all 0.2s ease',
+              flexShrink: 0,
+              whiteSpace: 'nowrap'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)'
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(99, 102, 241, 0.4)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)'
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Course
+          </button>
+        )}
       </div>
 
       {activeOfferings.length === 0 && (
@@ -201,23 +270,34 @@ export default function ExploreCoursesPage() {
 
               {/* Content */}
               <div style={{ padding: '20px 22px 10px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {/* Course Name - Big and Prominent */}
+                {offering.course?.name && (
+                  <h2 style={{
+                    fontSize: '22px', fontWeight: '900', color: '#1e1e3a',
+                    marginBottom: '4px', lineHeight: '1.2',
+                  }}>
+                    {offering.course.name}
+                  </h2>
+                )}
+                
+                {/* Subject Name - Below course name */}
+                {offering.course?.subject && (
+                  <p style={{
+                    fontSize: '13px', color: '#9999b0', fontWeight: '600', marginBottom: '12px',
+                  }}>
+                    {offering.course.subject}
+                  </p>
+                )}
+
+                {/* Offering Name - Small */}
                 <h3 style={{
-                  fontSize: '18px', fontWeight: '800', color: '#1e1e3a',
-                  marginBottom: '6px', lineHeight: '1.3',
+                  fontSize: '14px', fontWeight: '700', color: '#6366f1',
+                  marginBottom: '8px', lineHeight: '1.3',
+                  textTransform: 'uppercase', letterSpacing: '0.05em',
                 }}>
                   {offering.name}
                 </h3>
-                {offering.course?.name && (
-                  <span style={{
-                    display: 'inline-block', padding: '3px 12px', borderRadius: '50px',
-                    background: (offering.course?.color || '#6366f1') + '18',
-                    color: offering.course?.color || '#6366f1',
-                    fontSize: '11px', fontWeight: '700', marginBottom: '12px',
-                    alignSelf: 'flex-start',
-                  }}>
-                    {offering.course.name}
-                  </span>
-                )}
+
                 {offering.description && (
                   <p style={{
                     fontSize: '13px', color: '#6b6b8a', lineHeight: '1.5',
@@ -342,6 +422,320 @@ export default function ExploreCoursesPage() {
         })}
       </div>
 
+      {/* Create Offering Modal */}
+      {showCreateModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px', overflow: 'auto'
+        }} onClick={() => setShowCreateModal(false)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '600px',
+            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px',
+            animation: 'modalSlideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#1e1e3a', marginBottom: '24px' }}>
+              Add Course to Store
+            </h2>
+
+            {/* Course Selection */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '8px' }}>
+                Select Course *
+              </label>
+              <select
+                value={selectedCourse}
+                onChange={(e) => setSelectedCourse(e.target.value)}
+                style={{
+                  width: '100%', padding: '12px 14px', borderRadius: '12px', border: '2px solid #e0e7ff',
+                  fontSize: '14px', fontWeight: '600', color: '#1e1e3a', 
+                  background: '#f8f9fc', cursor: 'pointer'
+                }}
+              >
+                <option value="">Choose a course...</option>
+                {courses?.map((course: any) => (
+                  <option key={course.id} value={course.id}>{course.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Display Selected Course Info */}
+            {selectedCourse && courses && (
+              (() => {
+                const selected = courses.find((c: any) => c.id === selectedCourse)
+                return selected ? (
+                  <div style={{
+                    background: `linear-gradient(135deg, ${selected.color || '#6366f1'}15, ${selected.color || '#6366f1'}08)`,
+                    border: `2px solid ${selected.color || '#6366f1'}40`,
+                    padding: '20px',
+                    borderRadius: '16px',
+                    marginBottom: '24px'
+                  }}>
+                    <h3 style={{
+                      fontSize: '28px', fontWeight: '900', color: '#1e1e3a', marginBottom: '4px',
+                      lineHeight: '1.2'
+                    }}>
+                      {selected.name}
+                    </h3>
+                    {selected.subject && (
+                      <p style={{
+                        fontSize: '14px', color: '#9999b0', fontWeight: '600', marginBottom: '0'
+                      }}>
+                        {selected.subject}
+                      </p>
+                    )}
+                  </div>
+                ) : null
+              })()
+            )}
+
+            {/* Recording Batch Pricing */}
+            <div style={{ background: '#f8f9fc', padding: '20px', borderRadius: '18px', marginBottom: '24px', border: '2px solid #e0e7ff' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#1e1e3a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                📹 Recording Batch - General
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
+                    Real Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={recordedOriginalPrice}
+                    onChange={(e) => setRecordedOriginalPrice(e.target.value)}
+                    placeholder="0"
+                    style={{
+                      width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                      fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
+                    Discount Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={recordedDiscountPrice}
+                    onChange={(e) => setRecordedDiscountPrice(e.target.value)}
+                    placeholder="0"
+                    style={{
+                      width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                      fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Batch Pricing */}
+            <div style={{ background: '#f0f3ff', padding: '20px', borderRadius: '18px', marginBottom: '24px', border: '2px solid #c7d2fe' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#4f46e5', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🔴 Live Batch - Pro
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
+                    Real Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={liveOriginalPrice}
+                    onChange={(e) => setLiveOriginalPrice(e.target.value)}
+                    placeholder="0"
+                    style={{
+                      width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                      fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
+                    Discount Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={liveDiscountPrice}
+                    onChange={(e) => setLiveDiscountPrice(e.target.value)}
+                    placeholder="0"
+                    style={{
+                      width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                      fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '8px' }}>
+                Tags / Badges
+              </label>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                {tags.map((tag, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      background: '#6366f1', color: '#fff', padding: '6px 12px', borderRadius: '20px',
+                      fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px'
+                    }}
+                  >
+                    {tag}
+                    <button
+                      onClick={() => setTags(tags.filter((_, i) => i !== idx))}
+                      style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '16px' }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && tagInput.trim()) {
+                      setTags([...tags, tagInput.trim()])
+                      setTagInput('')
+                    }
+                  }}
+                  placeholder="e.g., Bestseller, 50% OFF (press Enter)"
+                  style={{
+                    flex: 1, padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                    fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#f8f9fc'
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (tagInput.trim()) {
+                      setTags([...tags, tagInput.trim()])
+                      setTagInput('')
+                    }
+                  }}
+                  style={{
+                    padding: '10px 16px', borderRadius: '10px', border: 'none',
+                    background: '#6366f1', color: '#fff', fontWeight: '700',
+                    cursor: 'pointer', fontSize: '12px'
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                style={{
+                  flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff',
+                  background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!selectedCourse) {
+                    alert('Please select a course')
+                    return
+                  }
+                  if (!recordedOriginalPrice && !liveOriginalPrice) {
+                    alert('Please enter at least one price (recording or live)')
+                    return
+                  }
+                  setCreating(true)
+                  try {
+                    const res = await fetch('/api/course-offerings', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        courseId: selectedCourse,
+                        recordedOriginalPrice: recordedOriginalPrice ? parseInt(recordedOriginalPrice) : 0,
+                        recordedDiscountPrice: recordedDiscountPrice ? parseInt(recordedDiscountPrice) : 0,
+                        liveOriginalPrice: liveOriginalPrice ? parseInt(liveOriginalPrice) : 0,
+                        liveDiscountPrice: liveDiscountPrice ? parseInt(liveDiscountPrice) : 0,
+                        tags: tags,
+                        hasRecorded: !!(recordedOriginalPrice || recordedDiscountPrice),
+                        hasLive: !!(liveOriginalPrice || liveDiscountPrice),
+                      }),
+                    })
+                    if (res.ok) {
+                      alert('Course added to store successfully!')
+                      setShowCreateModal(false)
+                      setSelectedCourse('')
+                      setRecordedOriginalPrice('')
+                      setRecordedDiscountPrice('')
+                      setLiveOriginalPrice('')
+                      setLiveDiscountPrice('')
+                      setTags([])
+                      window.location.reload()
+                    } else {
+                      const data = await res.json()
+                      alert('Error: ' + (data.error || 'Failed to create offering'))
+                    }
+                  } catch (err: any) {
+                    alert('Error: ' + err.message)
+                  } finally {
+                    setCreating(false)
+                  }
+                }}
+                disabled={!selectedCourse || creating}
+                style={{
+                  flex: 1, padding: '14px', borderRadius: '12px', border: 'none',
+                  background: !selectedCourse || creating ? '#d0d5e0' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#fff', fontWeight: '700', fontSize: '14px',
+                  cursor: !selectedCourse || creating ? 'not-allowed' : 'pointer',
+                  opacity: creating ? 0.8 : 1
+                }}
+              >
+                {creating ? 'Creating...' : 'Add to Store'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Verification Loading Modal */}
+      {verifyingPayment && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1002,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', textAlign: 'center'
+          }}>
+            <div style={{
+              width: '64px', height: '64px', borderRadius: '50%',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 24px',
+              animation: 'spin 1s linear infinite'
+            }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+            </div>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>
+              Verifying Payment...
+            </h2>
+            <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '0' }}>
+              Please wait while we confirm your payment and activate your course access.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Success Modal */}
       {successOrderId && (
         <div style={{
@@ -351,29 +745,67 @@ export default function ExploreCoursesPage() {
           padding: '20px'
         }} onClick={() => { setSuccessOrderId(null); router.push('/courses') }}>
           <div style={{
-            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '480px',
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px', textAlign: 'center',
             animation: 'modalSlideUp 0.3s ease-out'
           }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
-            <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Purchase Successful!</h2>
-            <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
-              Your course access has been activated. You can now start learning right away!
-            </p>
-            {successOrderId !== 'FREE-ENROLLMENT' && successOrderId !== 'SUCCESS' && (
-              <div style={{ background: '#f0fdf4', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #bbf7d0' }}>
-                <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
-                <div style={{ fontSize: '16px', fontWeight: '800', color: '#15803d', fontFamily: 'monospace' }}>{successOrderId}</div>
+            <div style={{ fontSize: '64px', marginBottom: '24px' }}>🎉</div>
+            <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#1e293b', marginBottom: '16px' }}>
+              Purchase Successful!
+            </h2>
+
+            {/* Course Details */}
+            {purchasedCourse && (
+              <div style={{
+                background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
+                borderRadius: '20px', padding: '20px', marginBottom: '24px',
+                border: '2px solid #bbf7d0'
+              }}>
+                <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  Course Purchased
+                </div>
+                <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#15803d', marginBottom: '6px' }}>
+                  {purchasedCourse.courseName}
+                </h3>
+                <div style={{ fontSize: '13px', color: '#4ade80', fontWeight: '700', marginBottom: '0' }}>
+                  {purchasedCourse.courseTier}
+                </div>
               </div>
             )}
+
+            {/* Order ID */}
+            {successOrderId && successOrderId !== 'FREE-ENROLLMENT' && successOrderId !== 'SUCCESS' && (
+              <div style={{ background: '#f3f4f6', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #d1d5db' }}>
+                <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Order ID (sent to your email)
+                </div>
+                <div style={{ fontSize: '15px', fontWeight: '800', color: '#374151', fontFamily: 'monospace', letterSpacing: '1px' }}>
+                  {successOrderId}
+                </div>
+              </div>
+            )}
+
+            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
+              A confirmation email with your order details has been sent to your registered email address. You can now access your course!
+            </p>
+
             <button
               onClick={() => { setSuccessOrderId(null); router.push('/courses') }}
               style={{
                 width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
-                background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                 color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 8px 16px rgba(99, 102, 241, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)'
               }}
             >
               Go to My Courses 🚀
@@ -387,6 +819,10 @@ export default function ExploreCoursesPage() {
         @keyframes modalSlideUp {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

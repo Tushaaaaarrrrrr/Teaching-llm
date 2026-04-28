@@ -29,14 +29,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { secret, email, name, courseId, courseIds, phone, gender } = body as {
+    const { secret, email, name, courseId, courseIds, courseDetails, phone, gender } = body as {
       secret?: string
       email?: string
       name?: string
       courseId?: string
       courseIds?: string[]
+      courseDetails?: Array<{ id: string; type?: string }>
       phone?: string
       gender?: string
+    }
+
+    // Build a lookup map for class type from courseDetails (e.g. { "COURSE_ID": "RECORDED" })
+    const classTypeMap = new Map<string, 'LIVE' | 'RECORDED'>()
+    if (Array.isArray(courseDetails)) {
+      for (const detail of courseDetails) {
+        if (detail.id && typeof detail.type === 'string') {
+          const upperType = detail.type.toUpperCase() as 'LIVE' | 'RECORDED'
+          if (upperType === 'LIVE' || upperType === 'RECORDED') {
+            classTypeMap.set(detail.id, upperType)
+          }
+        }
+      }
     }
 
     if (!EXTERNAL_SECRET) {
@@ -202,8 +216,9 @@ export async function POST(request: NextRequest) {
           continue
         }
 
+        const enrollmentType = classTypeMap.get(targetCourseId) || 'LIVE'
         const enrollment = await tx.enrollment.create({
-          data: { userId: user.id, courseId: targetCourseId },
+          data: { userId: user.id, courseId: targetCourseId, type: enrollmentType },
           select: { id: true },
         })
 

@@ -387,8 +387,10 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
         style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', paddingRight: '4px', position: 'relative' }}
       >
         {visibleItems.map((item, idx) => {
+          // Check if pathname matches or starts with item href (with proper path boundary)
           const isActive = pathname === item.href ||
-            (item.href !== '/dashboard' && pathname.startsWith(item.href))
+            (item.href !== '/dashboard' && item.href !== '/courses/explore' && pathname.startsWith(item.href) && 
+             (pathname[item.href.length] === '/' || pathname[item.href.length] === undefined) && !pathname.startsWith('/courses/explore'))
 
           // Add Section Headers
           const showGeneralHeader = idx === 0

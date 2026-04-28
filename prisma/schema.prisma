@@ -857,10 +857,20 @@ model Order {
   amount            Float
   status            String      @default("PENDING")
   isExternal        Boolean     @default(false)
+  paymentMethod     String?     // upi, card, netbanking, razorpay
+  currency          String      @default("INR")
+  gstAmount         Float       @default(0)
+  invoiceNumber     String?
+  discountCode      String?
+  referralCode      String?
+  coinsApplied      Float       @default(0)
+  bundleId          String?
+  bundleName        String?
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items             OrderItem[]
+  refund            Refund?
 
   @@index([userId])
   @@index([status])
@@ -881,6 +891,24 @@ model OrderItem {
   @@index([orderId])
   @@index([courseId])
   @@index([courseOfferingId])
+}
+
+model Refund {
+  id              String    @id @default(cuid())
+  orderId         String    @unique
+  refundAmount    Float
+  refundReason    String?   // user_requested, course_not_suitable, payment_error
+  refundStatus    String    @default("initiated") // initiated, processing, completed, failed
+  refundDate      DateTime  @default(now())
+  completedAt     DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([refundStatus])
+  @@index([createdAt])
 }
 
 model WebhookLog {
