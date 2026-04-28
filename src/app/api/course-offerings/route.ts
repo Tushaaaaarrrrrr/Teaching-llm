@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { logCourseDataDiagnostics } from '@/lib/course-data-diagnostics'
 
 export async function GET(request: NextRequest) {
   try {
@@ -62,6 +63,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (!course) {
+      await logCourseDataDiagnostics({
+        reason: 'course_offering_selected_course_missing',
+        requestedCourseId: resolvedCourseId,
+        sessionRole: session.role,
+        userId: session.userId,
+      })
       return NextResponse.json({ error: 'Selected course was not found' }, { status: 404 })
     }
 

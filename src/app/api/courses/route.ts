@@ -6,6 +6,7 @@ import { checkRateLimit } from '@/lib/ratelimit'
 import { sanitizeInput } from '@/lib/validation'
 import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs, validateGoogleGroupEmail } from '@/lib/google-group-sync'
+import { logCourseDataDiagnostics } from '@/lib/course-data-diagnostics'
 
 export async function GET() {
   try {
@@ -101,6 +102,15 @@ export async function GET() {
         }
       }
     })
+
+    if (coursesWithCounts.length <= 1) {
+      await logCourseDataDiagnostics({
+        reason: 'api_courses_low_visible_count',
+        visibleCount: coursesWithCounts.length,
+        sessionRole: session.role,
+        userId: session.userId,
+      })
+    }
 
     return NextResponse.json(coursesWithCounts)
   } catch (error) {
