@@ -75,8 +75,12 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
   function formatDateTimeForDisplay(value?: string | null) {
     if (!value) return ''
-    // Return the value as-is (stored in user's local timezone)
-    return value.slice(0, 16) || ''
+    // Convert stored UTC date to local datetime-local format
+    const d = new Date(value)
+    if (isNaN(d.getTime())) return ''
+    // datetime-local format: YYYY-MM-DDTHH:MM
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
   }
 
   function openExamEditor() {
@@ -138,8 +142,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
         body: JSON.stringify({
           title: examForm.title,
           description: examForm.description,
-          startDate: examForm.startDate ? `${examForm.startDate}:00.000Z` : null,
-          expiresAt: `${examForm.expiresAt}:00.000Z`,
+          startDate: examForm.startDate ? new Date(examForm.startDate).toISOString() : null,
+          expiresAt: new Date(examForm.expiresAt).toISOString(),
           durationMinutes: parseInt(examForm.durationMinutes, 10)
         })
       })

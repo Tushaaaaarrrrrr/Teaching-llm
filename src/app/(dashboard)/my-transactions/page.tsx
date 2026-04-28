@@ -43,12 +43,7 @@ export default function MyTransactionsPage() {
   return (
     <div className="page-container fade-in">
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '10px' }}>
-            <path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-          </svg>
-          My Upgrade History
-        </h1>
+
         <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>All your PRO batch upgrade transactions</p>
       </div>
 

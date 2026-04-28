@@ -217,7 +217,7 @@ function LoginContent() {
         {/* Explore Courses CTA below the card */}
         <div style={{ marginTop: '28px', textAlign: 'center' }}>
           <a 
-            href="https://genziitian.in/courses" 
+            href="https://app.genziitian.in/courses" 
             target="_blank" 
             rel="noopener noreferrer"
             style={{
@@ -586,7 +586,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
         </button>
       </div>
 
-      <div style={{ marginTop: '40px' }}>
+      <div style={{ marginTop: '16px' }}>
         <p style={{ textAlign: 'center', fontSize: '11px', color: '#9999b0', fontWeight: '500', lineHeight: '1.5', whiteSpace: 'nowrap' }}>
           By continuing, you agree to the <span onClick={onTermsClick} style={{ color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>Terms & Conditions</span> & <span onClick={onPrivacyClick} style={{ color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>privacy policy</span>
         </p>
