@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
-type Tab = 'courses' | 'bundles' | 'lectures' | 'events' | 'materials' | 'announcements' | 'content-bank'
+type Tab = 'courses' | 'offerings' | 'bundles' | 'lectures' | 'events' | 'materials' | 'announcements' | 'content-bank'
 
 export default function ManagePage() {
   const { confirm, confirmDialog } = useConfirmDialog()
@@ -28,10 +28,12 @@ export default function ManagePage() {
   const { data: eventsData, error: eventsError, isLoading: loadingEvents } = useSWR('/api/events', fetcher)
   const { data: materialsData, error: materialsError, isLoading: loadingMaterials } = useSWR('/api/materials', fetcher)
   const { data: announcementsData, error: announcementsError, isLoading: loadingAnnouncements } = useSWR('/api/announcements', fetcher)
-  const { data: contentBankData, error: bankError, isLoading: loadingBank } = useSWR('/api/content-bank', fetcher)
+  const { data: bankError, isLoading: loadingBank } = useSWR('/api/content-bank', fetcher)
   const { data: instructorsData, error: instructorsError } = useSWR('/api/instructors', fetcher)
+  const { data: offeringsData, error: offeringsError, isLoading: loadingOfferings } = useSWR('/api/course-offerings', fetcher)
 
   const courses = Array.isArray(coursesData) ? coursesData : Array.isArray(coursesData?.courses) ? coursesData.courses : []
+  const offerings = Array.isArray(offeringsData) ? offeringsData : []
   const bundles = Array.isArray(bundlesData) ? bundlesData : Array.isArray(bundlesData?.bundles) ? bundlesData.bundles : []
   const lectures = Array.isArray(lecturesData?.content) ? lecturesData.content : []
   const events = Array.isArray(eventsData) ? eventsData : []
@@ -40,10 +42,11 @@ export default function ManagePage() {
   const bankQuestions = Array.isArray(contentBankData) ? contentBankData : []
   const instructors = Array.isArray(instructorsData) ? instructorsData : []
 
-  const loading = loadingCourses || loadingBundles || loadingLectures || loadingEvents || loadingMaterials || loadingAnnouncements
+  const loading = loadingCourses || loadingOfferings || loadingBundles || loadingLectures || loadingEvents || loadingMaterials || loadingAnnouncements
   const loadError =
     authError ||
     coursesError ||
+    offeringsError ||
     bundlesError ||
     lecturesError ||
     eventsError ||
@@ -63,6 +66,7 @@ export default function ManagePage() {
     mutate('/api/announcements')
     mutate('/api/content-bank')
     mutate('/api/instructors')
+    mutate('/api/course-offerings')
   }
 
   const [showModal, setShowModal]       = useState(false)
@@ -154,6 +158,20 @@ export default function ManagePage() {
         courseIds: item.courses?.map((entry: any) => entry.course.id) || [],
       } as any)
       setShowModal(true)
+    } else if (tab === 'offerings') {
+      setFormData({
+        id: item.id,
+        courseId: item.courseId || '',
+        name: item.name || '',
+        thumbnail: item.thumbnail || '',
+        hasRecorded: item.hasRecorded ?? true,
+        recordedOriginalPrice: item.recordedOriginalPrice || '',
+        recordedDiscountPrice: item.recordedDiscountPrice || '',
+        hasLive: item.hasLive ?? false,
+        liveOriginalPrice: item.liveOriginalPrice || '',
+        liveDiscountPrice: item.liveDiscountPrice || '',
+      })
+      setShowModal(true)
     } else {
       setFormData({ ...item, courseId: item.courseId || item.course?.id || '' })
       setShowModal(true)
@@ -190,6 +208,7 @@ export default function ManagePage() {
       } else {
         const endpoints: Record<Tab, string> = {
           courses:       '/api/courses',
+          offerings:     '/api/course-offerings',
           bundles:       '/api/course-bundles',
           lectures:      '',            // handled above
           events:        '/api/events',
@@ -295,6 +314,7 @@ export default function ManagePage() {
 
   const tabs: Array<{ key: Tab; label: string; count: number }> = [
     ...(userRole === 'MANAGER' ? [{ key: 'courses' as Tab, label: 'Courses', count: courses.length }] : []),
+    ...(userRole === 'MANAGER' ? [{ key: 'offerings' as Tab, label: 'Course Offerings', count: offerings.length }] : []),
     ...(userRole === 'MANAGER' ? [{ key: 'bundles' as Tab, label: 'Course Bundles', count: bundles.length }] : []),
     ...(userRole === 'MANAGER' ? [{ key: 'lectures' as Tab, label: 'Lectures', count: lectures.length }] : []),
     { key: 'events',        label: 'Events',        count: events.length },
@@ -642,6 +662,45 @@ export default function ManagePage() {
           </>
         )
 
+      case 'offerings':
+        return (
+          <>
+            <div className="form-group">
+              <label className="form-label">Course *</label>
+              <select className="form-input" value={f.courseId || ''} onChange={e => set('courseId', e.target.value)}>
+                <option value="">Select course...</option>
+                {courseOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div className="form-group"><label className="form-label">Offering Name / Bundle Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="e.g. Full Stack Mastery" /></div>
+            <div className="form-group"><label className="form-label">Thumbnail URL</label><input className="form-input" value={f.thumbnail || ''} onChange={e => set('thumbnail', e.target.value)} placeholder="https://... (optional image URL)" /></div>
+            <div style={{ border: '1px solid #ddd6fe', borderRadius: '12px', padding: '16px', background: '#faf5ff', marginBottom: '16px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <input type="checkbox" checked={!!f.hasRecorded} onChange={e => set('hasRecorded', e.target.checked)} />
+                <span style={{ fontSize: '14px', fontWeight: '700', color: '#1e1e3a' }}>📹 Recorded (Basic) Access</span>
+              </label>
+              {f.hasRecorded && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group"><label className="form-label">Original Price (₹)</label><input type="number" className="form-input" value={f.recordedOriginalPrice || ''} onChange={e => set('recordedOriginalPrice', e.target.value)} placeholder="e.g. 2999" min="0" /></div>
+                  <div className="form-group"><label className="form-label">Discount Price (₹) *</label><input type="number" className="form-input" value={f.recordedDiscountPrice || ''} onChange={e => set('recordedDiscountPrice', e.target.value)} placeholder="e.g. 999" min="0" /></div>
+                </div>
+              )}
+            </div>
+            <div style={{ border: '1px solid #c7d2fe', borderRadius: '12px', padding: '16px', background: '#eef2ff', marginBottom: '16px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <input type="checkbox" checked={!!f.hasLive} onChange={e => set('hasLive', e.target.checked)} />
+                <span style={{ fontSize: '14px', fontWeight: '700', color: '#1e1e3a' }}>🔴 Live (Pro) Access</span>
+              </label>
+              {f.hasLive && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group"><label className="form-label">Original Price (₹)</label><input type="number" className="form-input" value={f.liveOriginalPrice || ''} onChange={e => set('liveOriginalPrice', e.target.value)} placeholder="e.g. 5999" min="0" /></div>
+                  <div className="form-group"><label className="form-label">Discount Price (₹) *</label><input type="number" className="form-input" value={f.liveDiscountPrice || ''} onChange={e => set('liveDiscountPrice', e.target.value)} placeholder="e.g. 2999" min="0" /></div>
+                </div>
+              )}
+            </div>
+          </>
+        )
+
       case 'announcements':
         return (
           <>
@@ -656,6 +715,7 @@ export default function ManagePage() {
   function getItems(): any[] {
     switch (tab) {
       case 'courses':       return courses
+      case 'offerings':     return offerings
       case 'bundles':       return bundles
       case 'lectures':      return lectures
       case 'events':        return events
@@ -843,6 +903,7 @@ export default function ManagePage() {
 
               const iconLabel =
                 tab === 'courses'       ? item.name?.slice(0, 2).toUpperCase() :
+                tab === 'offerings'     ? 'OFF' :
                 tab === 'bundles'       ? 'BG' :
                 tab === 'events'        ? '▶' :
                 tab === 'announcements' ? '!' :
@@ -900,6 +961,20 @@ export default function ManagePage() {
                         {item.isExpired && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#fff7ed', color: '#ea580c', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>EXP</span>}
                         {item.isEffectivelyDisabled && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#fee2e2', color: '#ef4444', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>DIS</span>}
                       </>
+                    )}
+                    {tab === 'offerings' && (
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        {item.hasRecorded && (
+                          <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#f3f0ff', color: '#6366f1', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
+                            REC: ₹{item.recordedDiscountPrice}
+                          </span>
+                        )}
+                        {item.hasLive && (
+                          <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#e0e7ff', color: '#3636e8', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
+                            LIVE: ₹{item.liveDiscountPrice}
+                          </span>
+                        )}
+                      </div>
                     )}
                     {tab === 'bundles' && (
                       <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#ede9fe', color: '#7c3aed', fontWeight: '700' }}>

@@ -70,27 +70,73 @@ export async function GET(request: NextRequest) {
       where.createdAt = dateFilter
     }
 
-    const [transactions, totalRevenue] = await Promise.all([
+    const [upgradeTransactions, upgradeRevenue, orders, orderRevenue] = await Promise.all([
       prisma.upgradeTransaction.findMany({
         where,
         include: {
           user: { select: { id: true, name: true, email: true, mobileNumber: true } },
           course: { select: { id: true, name: true, subject: true } },
         },
-        orderBy: { createdAt: 'desc' },
       }),
       prisma.upgradeTransaction.aggregate({
         where: { ...where, status: 'SUCCESS' },
         _sum: { amount: true },
         _count: true,
       }),
+      prisma.order.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true, mobileNumber: true } },
+          items: {
+            include: {
+              course: { select: { id: true, name: true, subject: true } },
+              courseOffering: { select: { name: true } }
+            }
+          }
+        },
+      }),
+      prisma.order.aggregate({
+        where: { ...where, status: 'SUCCESS' },
+        _sum: { amount: true },
+        _count: true,
+      }),
     ])
+
+    const transactions = [
+      ...upgradeTransactions.map(u => ({
+        id: u.id,
+        orderId: u.orderId,
+        amount: u.amount,
+        status: u.status,
+        createdAt: u.createdAt,
+        type: 'UPGRADE',
+        isExternal: false,
+        course: u.course,
+        user: u.user
+      })),
+      ...orders.map(o => {
+        const firstItem = o.items[0]
+        return {
+          id: o.id,
+          orderId: o.razorpayOrderId || o.id,
+          amount: o.amount,
+          status: o.status,
+          createdAt: o.createdAt,
+          type: 'PURCHASE',
+          isExternal: o.isExternal,
+          course: firstItem ? firstItem.course : { id: '', name: 'Unknown', subject: null },
+          bundleName: firstItem?.courseOffering?.name,
+          accessType: firstItem?.accessType,
+          user: o.user
+        }
+      })
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
     return NextResponse.json({
       transactions,
       summary: {
-        totalRevenue: totalRevenue._sum.amount || 0,
-        totalSuccessful: totalRevenue._count,
+        totalRevenue: (upgradeRevenue._sum.amount || 0) + (orderRevenue._sum.amount || 0),
+        totalSuccessful: upgradeRevenue._count + orderRevenue._count,
         totalRecords: transactions.length,
       },
     })

@@ -8,67 +8,68 @@ datasource db {
 }
 
 model User {
-  id                      String                 @id @default(cuid())
+  id                      String                       @id @default(cuid())
   name                    String
   firstName               String?
   lastName                String?
   mobileNumber            String?
-  email                   String                 @unique
+  email                   String                       @unique
   passwordHash            String
-  role                    String                 @default("STUDENT")
+  role                    String                       @default("STUDENT")
   avatar                  String?
-  securityNumber          String?                @unique
-  isTerminated            Boolean                @default(false)
-  createdAt               DateTime               @default(now())
-  updatedAt               DateTime               @updatedAt
-  canCreateStudents       Boolean                @default(false)
-  canTerminate            Boolean                @default(false)
-  gender                  String?                
+  securityNumber          String?                      @unique
+  isTerminated            Boolean                      @default(false)
+  createdAt               DateTime                     @default(now())
+  updatedAt               DateTime                     @updatedAt
+  canCreateStudents       Boolean                      @default(false)
+  canTerminate            Boolean                      @default(false)
+  gender                  String?
   genderChangedAt         DateTime?
   age                     Int?
   state                   String?
-  isProfileComplete       Boolean                @default(false)
+  isProfileComplete       Boolean                      @default(false)
   blockedUntil            DateTime?
-  hasSeenWelcome          Boolean                @default(false)
-  isSuperManager          Boolean                @default(false)
+  hasSeenWelcome          Boolean                      @default(false)
+  isSuperManager          Boolean                      @default(false)
   lastSeenCommunityAt     DateTime?
   lastSeenNotificationsAt DateTime?
   lastSeenSupportAt       DateTime?
   lastViolationAt         DateTime?
-  tokenVersion            Int                    @default(0)
-  violationCount          Int                    @default(0)
-  isGoogleUser            Boolean                @default(false)
+  tokenVersion            Int                          @default(0)
+  violationCount          Int                          @default(0)
+  isGoogleUser            Boolean                      @default(false)
   encryptedTempPassword   String?
   lastDailyDigestAt       DateTime?
-  enableDetailedLogs      Boolean                @default(false)
+  enableDetailedLogs      Boolean                      @default(false)
   activityLogs            ActivityLog[]
-  announcements           Announcement[]         @relation("AnnouncementCreator")
-  chatMessages            ChatMessage[]          @relation("ChatMsgSender")
-  agentSessions           ChatSession[]          @relation("ChatAgent")
-  chatSessions            ChatSession[]          @relation("ChatStudent")
-  createdCourses          Course[]               @relation("CourseCreator")
+  announcements           Announcement[]               @relation("AnnouncementCreator")
+  chatMessages            ChatMessage[]                @relation("ChatMsgSender")
+  agentSessions           ChatSession[]                @relation("ChatAgent")
+  chatSessions            ChatSession[]                @relation("ChatStudent")
+  createdCourses          Course[]                     @relation("CourseCreator")
   comments                Comment[]
-  communityMessages       CommunityMessage[]     @relation("CommMsgSender")
-  courseEvents            CourseEvent[]          @relation("EventCreator")
-  createdCourseBundles    CourseBundle[]         @relation("BundleCreator")
-  instructorCourseEvents  CourseEvent[]          @relation("EventInstructor")
-  syncedSessionEvents     DailySessionSnapshot[] @relation("SnapshotInstructor")
+  communityMessages       CommunityMessage[]           @relation("CommMsgSender")
+  courseEvents            CourseEvent[]                @relation("EventCreator")
+  createdCourseBundles    CourseBundle[]               @relation("BundleCreator")
+  instructorCourseEvents  CourseEvent[]                @relation("EventInstructor")
+  syncedSessionEvents     DailySessionSnapshot[]       @relation("SnapshotInstructor")
   enrollments             Enrollment[]
   feedbacks               Feedback[]
   instructorAssignments   InstructorAssignment[]
   courseBundleAssignments UserCourseBundleAssignment[]
-  uploadedLectures        Lecture[]              @relation("LectureUploader")
+  uploadedLectures        Lecture[]                    @relation("LectureUploader")
   loginLogs               LoginLog[]
-  uploadedMaterials       Material[]             @relation("MaterialUploader")
+  uploadedMaterials       Material[]                   @relation("MaterialUploader")
   notifications           Notification[]
-  assignedTickets         SupportTicket[]        @relation("TicketAssignee")
-  supportTickets          SupportTicket[]        @relation("TicketStudent")
-  createdUpdates          SystemUpdate[]         @relation("UpdateCreator")
-  ticketReplies           TicketReply[]          @relation("ReplyAuthor")
+  assignedTickets         SupportTicket[]              @relation("TicketAssignee")
+  supportTickets          SupportTicket[]              @relation("TicketStudent")
+  createdUpdates          SystemUpdate[]               @relation("UpdateCreator")
+  ticketReplies           TicketReply[]                @relation("ReplyAuthor")
   updateViews             UpdateView[]
   lectureProgress         LectureProgress[]
   communityReadStates     CommunityReadState[]
   upgradeTransactions     UpgradeTransaction[]
+  orders                  Order[]
 }
 
 model Course {
@@ -108,6 +109,8 @@ model Course {
   groupSyncJobs         GroupSyncJob[]
   communityReadStates   CommunityReadState[]
   upgradeTransactions   UpgradeTransaction[]
+  courseOfferings       CourseOffering[]
+  orderItems            OrderItem[]
 
   @@index([lastMessageAt])
   @@map("Class")
@@ -134,13 +137,13 @@ model Enrollment {
 }
 
 model CourseBundle {
-  id              String                      @id @default(cuid())
+  id              String                       @id @default(cuid())
   name            String
   description     String?
   createdById     String
-  createdAt       DateTime                    @default(now())
-  updatedAt       DateTime                    @updatedAt
-  createdBy       User                        @relation("BundleCreator", fields: [createdById], references: [id])
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime                     @updatedAt
+  createdBy       User                         @relation("BundleCreator", fields: [createdById], references: [id])
   courses         CourseBundleCourse[]
   userAssignments UserCourseBundleAssignment[]
 
@@ -148,11 +151,11 @@ model CourseBundle {
 }
 
 model CourseBundleCourse {
-  id        String       @id @default(cuid())
-  bundleId  String
-  courseId  String       @map("classId")
-  bundle    CourseBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
-  course    Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  id       String       @id @default(cuid())
+  bundleId String
+  courseId String       @map("classId")
+  bundle   CourseBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  course   Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([bundleId, courseId])
   @@index([bundleId])
@@ -197,10 +200,10 @@ model Material {
   courseId     String?  @map("classId")
   title        String
   description  String?
-  fileUrl      String      // URL to file (either uploaded file or external link)
-  fileType     String      // Original file type (pdf, docx, etc.) or "link"
+  fileUrl      String // URL to file (either uploaded file or external link)
+  fileType     String // Original file type (pdf, docx, etc.) or "link"
   fileSize     String?
-  sourceType   String   @default("FILE")  // "FILE" for uploads, "LINK" for external links
+  sourceType   String   @default("FILE") // "FILE" for uploads, "LINK" for external links
   uploadedById String
   uploadedAt   DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -226,8 +229,8 @@ model CourseEvent {
   isGlobal          Boolean   @default(false)
   originalStartTime DateTime? // For rescheduling
   recurrence        String?   @default("ONETIME") // ONETIME, DAILY, WEEKLY, CUSTOM
-  interval          Int?      // For CUSTOM recurrence
-  parentId          String?   // For recurring event chain
+  interval          Int? // For CUSTOM recurrence
+  parentId          String? // For recurring event chain
   instructorId      String?
   createdById       String
   createdAt         DateTime  @default(now())
@@ -261,50 +264,49 @@ model DailySessionSnapshot {
   course        Course?  @relation(fields: [courseId], references: [id])
   instructor    User?    @relation("SnapshotInstructor", fields: [instructorId], references: [id])
 
+  @@unique([snapshotDate, sourceEventId])
   @@index([snapshotDate])
   @@index([sourceEventId])
   @@index([courseId])
-  @@unique([snapshotDate, sourceEventId])
 }
 
-
 model Topic {
-  id        String    @id @default(cuid())
-  courseId  String    @map("classId")
-  title     String
-  order     Int       @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  content   Content[]
+  id                 String               @id @default(cuid())
+  courseId           String               @map("classId")
+  title              String
+  order              Int                  @default(0)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  content            Content[]
   sharedContentLinks TopicSharedContent[]
-  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course             Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
 }
 
 model Content {
-  id          String    @id @default(cuid())
-  topicId     String
-  title       String
-  description String?
-  videoUrl    String?
-  pptUrl      String?
-  isRecordingOnly Boolean @default(false)
-  order       Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  videoSource String    @default("GOOGLE_DRIVE")
-  comments    Comment[]
-  sharedTopics TopicSharedContent[]
-  topic       Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  id              String               @id @default(cuid())
+  topicId         String
+  title           String
+  description     String?
+  videoUrl        String?
+  pptUrl          String?
+  isRecordingOnly Boolean              @default(false)
+  order           Int                  @default(0)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  videoSource     String               @default("GOOGLE_DRIVE")
+  comments        Comment[]
+  sharedTopics    TopicSharedContent[]
+  topic           Topic                @relation(fields: [topicId], references: [id], onDelete: Cascade)
   lectureProgress LectureProgress[]
 }
 
 model TopicSharedContent {
   id        String   @id @default(cuid())
-  topicId    String
-  contentId  String
-  order      Int      @default(0)
+  topicId   String
+  contentId String
+  order     Int      @default(0)
   createdAt DateTime @default(now())
   topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
   content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
@@ -664,10 +666,10 @@ model HelpCardConfig {
 }
 
 model ExamCountdown {
-  id             String    @id @default(cuid())
-  title          String    @default("Upcoming Exam")
-  deadlineDate   DateTime? // When the countdown ends (calculated from deadline date at 12:01 AM IST)
-  updatedAt      DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  title        String    @default("Upcoming Exam")
+  deadlineDate DateTime? // When the countdown ends (calculated from deadline date at 12:01 AM IST)
+  updatedAt    DateTime  @updatedAt
 }
 
 model Feedback {
@@ -719,40 +721,40 @@ model GroupSyncJob {
 }
 
 model GroupSyncLock {
-  id            String   @id @default("singleton")
-  isProcessing  Boolean  @default(false)
-  lockedAt      DateTime?
-  updatedAt     DateTime @updatedAt
+  id           String    @id @default("singleton")
+  isProcessing Boolean   @default(false)
+  lockedAt     DateTime?
+  updatedAt    DateTime  @updatedAt
 }
 
 // ─── Analytics (Precomputed, Read-Only by Frontend) ──────────────────────
 
 model AnalyticsSnapshot {
-  id                  String   @id @default(cuid())
-  date                DateTime @unique           // The day this snapshot covers (date only, no time)
-  totalUsers          Int      @default(0)       // Total STUDENT users at time of snapshot
-  newUsers            Int      @default(0)       // Users where User.createdAt falls on this day
-  returningUsers      Int      @default(0)       // Active users whose createdAt is before this day
-  activeUsers         Int      @default(0)       // Unique users in ActivityLog on this day
-  totalEnrollments    Int      @default(0)       // Enrollments created on this day
-  avgCoursesPerStudent Float   @default(0)       // Total enrollments / total students
-  hourlyActivity      String?                    // JSON: {"0":5,"1":2,...,"23":10}
-  topCourses          String?                    // JSON: [{"courseId":"x","name":"Y","count":50},...]
-  courseDistribution  String?                    // JSON: [{"courseId":"x","name":"Y","count":50},...]
-  demographics        String?                    // JSON: Demographic breakdown of audiences
-  createdAt           DateTime @default(now())
+  id                   String   @id @default(cuid())
+  date                 DateTime @unique // The day this snapshot covers (date only, no time)
+  totalUsers           Int      @default(0) // Total STUDENT users at time of snapshot
+  newUsers             Int      @default(0) // Users where User.createdAt falls on this day
+  returningUsers       Int      @default(0) // Active users whose createdAt is before this day
+  activeUsers          Int      @default(0) // Unique users in ActivityLog on this day
+  totalEnrollments     Int      @default(0) // Enrollments created on this day
+  avgCoursesPerStudent Float    @default(0) // Total enrollments / total students
+  hourlyActivity       String? // JSON: {"0":5,"1":2,...,"23":10}
+  topCourses           String? // JSON: [{"courseId":"x","name":"Y","count":50},...]
+  courseDistribution   String? // JSON: [{"courseId":"x","name":"Y","count":50},...]
+  demographics         String? // JSON: Demographic breakdown of audiences
+  createdAt            DateTime @default(now())
 
   @@index([date])
 }
 
 model AnalyticsCourseDaily {
   id               String   @id @default(cuid())
-  date             DateTime                      // The day
-  courseId          String                        // Course ID (not a FK — read-only snapshot)
-  courseName       String                        // Denormalized for fast reads
-  enrollmentCount  Int      @default(0)          // Enrollments on this day for this course
-  totalEnrollments Int      @default(0)          // Cumulative enrollments for this course
-  growthDelta      Int      @default(0)          // Today's enrollments minus yesterday's
+  date             DateTime // The day
+  courseId         String // Course ID (not a FK — read-only snapshot)
+  courseName       String // Denormalized for fast reads
+  enrollmentCount  Int      @default(0) // Enrollments on this day for this course
+  totalEnrollments Int      @default(0) // Cumulative enrollments for this course
+  growthDelta      Int      @default(0) // Today's enrollments minus yesterday's
   createdAt        DateTime @default(now())
 
   @@unique([date, courseId])
@@ -761,9 +763,9 @@ model AnalyticsCourseDaily {
 }
 
 model AnalyticsConfig {
-  id                 String   @id @default("singleton")
-  lastUpdatedAt      DateTime @default(now())    // When the cron last ran successfully
-  cronIntervalHours  Int      @default(24)       // Used by frontend to compute next update time
+  id                String   @id @default("singleton")
+  lastUpdatedAt     DateTime @default(now()) // When the cron last ran successfully
+  cronIntervalHours Int      @default(24) // Used by frontend to compute next update time
 }
 
 model LectureProgress {
@@ -779,6 +781,7 @@ model LectureProgress {
   @@index([userId])
   @@index([contentId])
 }
+
 model LectureProgressQueue {
   id        String   @id @default(cuid())
   userId    String
@@ -794,7 +797,7 @@ model LectureProgressQueue {
 model CommunityReadState {
   id         String   @id @default(cuid())
   userId     String
-  courseId    String   @map("classId")
+  courseId   String   @map("classId")
   lastReadAt DateTime @default(now())
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -822,6 +825,75 @@ model UpgradeTransaction {
 
   @@index([userId])
   @@index([courseId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model CourseOffering {
+  id                    String      @id @default(cuid())
+  courseId              String      @map("classId")
+  name                  String
+  thumbnail             String?
+  hasRecorded           Boolean     @default(true)
+  recordedOriginalPrice Float?
+  recordedDiscountPrice Float?
+  hasLive               Boolean     @default(false)
+  liveOriginalPrice     Float?
+  liveDiscountPrice     Float?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  course                Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  orderItems            OrderItem[]
+
+  @@index([courseId])
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  userId            String
+  razorpayOrderId   String?     @unique
+  razorpayPaymentId String?
+  razorpaySignature String?
+  amount            Float
+  status            String      @default("PENDING")
+  isExternal        Boolean     @default(false)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items             OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id               String          @id @default(cuid())
+  orderId          String
+  courseOfferingId String?
+  courseId         String          @map("classId")
+  accessType       String          @default("RECORDED")
+  price            Float
+  order            Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  course           Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseOffering   CourseOffering? @relation(fields: [courseOfferingId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([courseId])
+  @@index([courseOfferingId])
+}
+
+model WebhookLog {
+  id              String   @id @default(cuid())
+  webhookEventId  String   @unique
+  eventType       String
+  payload         String   @db.Text
+  status          String   @default("RECEIVED")
+  processedAt     DateTime?
+  createdAt       DateTime @default(now())
+
+  @@index([webhookEventId])
+  @@index([eventType])
   @@index([status])
   @@index([createdAt])
 }
