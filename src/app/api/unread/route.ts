@@ -22,25 +22,28 @@ export async function GET() {
     }
     if (accessibleCourseIds !== null) cw.id = { in: accessibleCourseIds }
 
-    // Find latest entries
-    const [courses, readStates, lastTicket, lastChat, lastAnn] = await Promise.all([
-      prisma.course.findMany({ where: cw, select: { id: true, lastMessageAt: true } }),
-      prisma.communityReadState.findMany({ where: { userId: session.userId }, select: { courseId: true, lastReadAt: true } }),
-      prisma.supportTicket.findFirst({
-        orderBy: { updatedAt: 'desc' },
-        select: { updatedAt: true },
-        where: user.role === 'STUDENT' ? { studentId: session.userId } : {}
-      }).catch(() => null),
-      prisma.chatSession.findFirst({
-        orderBy: { updatedAt: 'desc' },
-        select: { updatedAt: true },
-        where: {
-          type: 'SUPPORT',
-          ...(user.role === 'STUDENT' ? { studentId: session.userId } : {})
-        }
-      }).catch(() => null),
-      prisma.announcement.findFirst({ orderBy: { createdAt: 'desc' }, select: { createdAt: true } }).catch(() => null),
-    ])
+    const courses = await prisma.course.findMany({ where: cw, select: { id: true, lastMessageAt: true } })
+    const readStates = await prisma.communityReadState.findMany({
+      where: { userId: session.userId },
+      select: { courseId: true, lastReadAt: true },
+    })
+    const lastTicket = await prisma.supportTicket.findFirst({
+      orderBy: { updatedAt: 'desc' },
+      select: { updatedAt: true },
+      where: user.role === 'STUDENT' ? { studentId: session.userId } : {},
+    }).catch(() => null)
+    const lastChat = await prisma.chatSession.findFirst({
+      orderBy: { updatedAt: 'desc' },
+      select: { updatedAt: true },
+      where: {
+        type: 'SUPPORT',
+        ...(user.role === 'STUDENT' ? { studentId: session.userId } : {}),
+      },
+    }).catch(() => null)
+    const lastAnn = await prisma.announcement.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    }).catch(() => null)
 
     const readMap = new Map(readStates.map((r: any) => [r.courseId, r.lastReadAt.getTime()]))
     const hasCommunityUnread = courses.some((c: any) => {
