@@ -5,7 +5,7 @@ import { getSession } from '@/lib/auth'
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getSession()
-    if (!session?.user || (session.user.role !== 'MANAGER' && session.user.role !== 'SUPER_MANAGER')) {
+    if (!session || (session.role !== 'MANAGER' && session.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getSession()
-    if (!session?.user || (session.user.role !== 'MANAGER' && session.user.role !== 'SUPER_MANAGER')) {
+    if (!session || (session.role !== 'MANAGER' && session.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

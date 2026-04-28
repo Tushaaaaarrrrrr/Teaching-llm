@@ -28,7 +28,7 @@ export default function ManagePage() {
   const { data: eventsData, error: eventsError, isLoading: loadingEvents } = useSWR('/api/events', fetcher)
   const { data: materialsData, error: materialsError, isLoading: loadingMaterials } = useSWR('/api/materials', fetcher)
   const { data: announcementsData, error: announcementsError, isLoading: loadingAnnouncements } = useSWR('/api/announcements', fetcher)
-  const { data: bankError, isLoading: loadingBank } = useSWR('/api/content-bank', fetcher)
+  const { data: contentBankData, error: bankError, isLoading: loadingBank } = useSWR('/api/content-bank', fetcher)
   const { data: instructorsData, error: instructorsError } = useSWR('/api/instructors', fetcher)
   const { data: offeringsData, error: offeringsError, isLoading: loadingOfferings } = useSWR('/api/course-offerings', fetcher)
 
@@ -300,6 +300,7 @@ export default function ManagePage() {
     } else {
       const endpoints: Record<Tab, string> = {
         courses:       '/api/courses',
+        offerings:     '/api/course-offerings',
         bundles:       '/api/course-bundles',
         lectures:      '',
         events:        '/api/events',

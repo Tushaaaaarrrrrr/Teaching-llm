@@ -23,10 +23,10 @@ export async function GET(request: NextRequest) {
     
     // Filter out disabled courses for students, managers see all
     const session = await getSession()
-    const role = session?.user?.role
+    const role = session?.role
     
     let filteredOfferings = offerings
-    if (role !== 'MANAGER' && role !== 'SUPER_MANAGER') {
+    if (role !== 'MANAGER' && role !== 'SUPER_ADMIN') {
       filteredOfferings = offerings.filter(o => !o.course.isDisabled)
     }
 
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
-    if (!session?.user || (session.user.role !== 'MANAGER' && session.user.role !== 'SUPER_MANAGER')) {
+    if (!session || (session.role !== 'MANAGER' && session.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
