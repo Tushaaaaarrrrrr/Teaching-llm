@@ -304,29 +304,21 @@ export default function ExploreCoursesPage() {
             <div
               key={offering.id}
               style={{
-                background: isLiveEnrolled ? '#d1d5db' : '#e8eaf0',
+                background: '#e8eaf0',
                 borderRadius: '28px',
-                boxShadow: isLiveEnrolled 
-                  ? '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, inset 0 0 0 1px rgba(0,0,0,0.05)'
-                  : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'all 0.25s ease',
-                opacity: isLiveEnrolled ? 0.7 : 1,
-                pointerEvents: isLiveEnrolled ? 'none' : 'auto',
               }}
               onMouseEnter={e => {
-                if (!isLiveEnrolled) {
-                  e.currentTarget.style.transform = 'translateY(-6px)'
-                  e.currentTarget.style.boxShadow = '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
-                }
+                e.currentTarget.style.transform = 'translateY(-6px)'
+                e.currentTarget.style.boxShadow = '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
               }}
               onMouseLeave={e => {
-                if (!isLiveEnrolled) {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
-                }
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
               }}
             >
               {/* Banner */}
@@ -444,22 +436,161 @@ export default function ExploreCoursesPage() {
 
                 {/* Pricing Tiers */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto' }}>
-                  {/* Show \"Already Enrolled\" for LIVE users */}
-                  {isLiveEnrolled && (
+                  {/* Already Enrolled in LIVE - Show both sections with "Already Enrolled" */}
+                  {isLiveEnrolled && offering.hasRecorded && (
+                    <>
+                      <div style={{
+                        padding: '14px 16px', borderRadius: '18px',
+                        background: '#e8eaf0',
+                        boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <div>
+                            <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                              📹 Recorded Access
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.recordedDiscountPrice}</span>
+                              {offering.recordedOriginalPrice > offering.recordedDiscountPrice && (
+                                <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{offering.recordedOriginalPrice}</span>
+                              )}
+                            </div>
+                          </div>
+                          {discountRecorded > 0 && (
+                            <div style={{
+                              padding: '4px 10px', borderRadius: '20px',
+                              background: '#dcfce7', color: '#15803d',
+                              fontSize: '10px', fontWeight: '800',
+                            }}>
+                              {discountRecorded}% OFF
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          disabled={true}
+                          style={{
+                            width: '100%', padding: '11px', borderRadius: '50px',
+                            border: '2px solid #6366f1', background: '#e8eaf0',
+                            color: '#6366f1', fontSize: '13px', fontWeight: '800',
+                            cursor: 'not-allowed',
+                            opacity: 0.6,
+                            boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          ✅ Already Enrolled
+                        </button>
+                      </div>
+                      <div style={{
+                        padding: '14px 16px', borderRadius: '18px',
+                        background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
+                        border: '1.5px solid #c7d2fe',
+                        position: 'relative', overflow: 'hidden',
+                      }}>
+                        <div style={{
+                          position: 'absolute', top: '10px', right: '12px',
+                          padding: '3px 10px', borderRadius: '20px',
+                          background: '#6366f1', color: '#fff',
+                          fontSize: '9px', fontWeight: '900', letterSpacing: '0.08em',
+                        }}>
+                          PRO
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <div>
+                            <div style={{ fontSize: '10px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                              🔴 Live + Recorded
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.liveDiscountPrice}</span>
+                              {offering.liveOriginalPrice > offering.liveDiscountPrice && (
+                                <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{offering.liveOriginalPrice}</span>
+                              )}
+                            </div>
+                          </div>
+                          {discountLive > 0 && (
+                            <div style={{
+                              padding: '4px 10px', borderRadius: '20px',
+                              background: '#dcfce7', color: '#15803d',
+                              fontSize: '10px', fontWeight: '800',
+                            }}>
+                              {discountLive}% OFF
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          disabled={true}
+                          style={{
+                            width: '100%', padding: '11px', borderRadius: '50px',
+                            border: 'none', background: '#6366f1',
+                            color: '#fff', fontSize: '13px', fontWeight: '800',
+                            cursor: 'not-allowed',
+                            opacity: 0.6,
+                            boxShadow: '0 8px 16px rgba(99,102,241,0.35)',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          ✅ Already Enrolled
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Already Enrolled in LIVE but no recorded option */}
+                  {isLiveEnrolled && !offering.hasRecorded && (
                     <div style={{
                       padding: '14px 16px', borderRadius: '18px',
-                      background: 'transparent',
-                      border: 'none',
-                      textAlign: 'center',
+                      background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
+                      border: '1.5px solid #c7d2fe',
+                      position: 'relative', overflow: 'hidden',
                     }}>
-                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e1e3a', letterSpacing: '0.02em' }}>
-                        ✅ Already Enrolled
+                      <div style={{
+                        position: 'absolute', top: '10px', right: '12px',
+                        padding: '3px 10px', borderRadius: '20px',
+                        background: '#6366f1', color: '#fff',
+                        fontSize: '9px', fontWeight: '900', letterSpacing: '0.08em',
+                      }}>
+                        PRO
                       </div>
-                      <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>Live + Recorded (PRO)</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <div>
+                          <div style={{ fontSize: '10px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                            🔴 Live + Recorded
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.liveDiscountPrice}</span>
+                            {offering.liveOriginalPrice > offering.liveDiscountPrice && (
+                              <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{offering.liveOriginalPrice}</span>
+                            )}
+                          </div>
+                        </div>
+                        {discountLive > 0 && (
+                          <div style={{
+                            padding: '4px 10px', borderRadius: '20px',
+                            background: '#dcfce7', color: '#15803d',
+                            fontSize: '10px', fontWeight: '800',
+                          }}>
+                            {discountLive}% OFF
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        disabled={true}
+                        style={{
+                          width: '100%', padding: '11px', borderRadius: '50px',
+                          border: 'none', background: '#6366f1',
+                          color: '#fff', fontSize: '13px', fontWeight: '800',
+                          cursor: 'not-allowed',
+                          opacity: 0.6,
+                          boxShadow: '0 8px 16px rgba(99,102,241,0.35)',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        ✅ Already Enrolled
+                      </button>
                     </div>
                   )}
 
-                  {/* Recorded Option - Show purchase or upgrade */}
+                  {/* Recorded Option - Show purchase when not enrolled */}
                   {offering.hasRecorded && !isLiveEnrolled && (
                     <div style={{
                       padding: '14px 16px', borderRadius: '18px',
