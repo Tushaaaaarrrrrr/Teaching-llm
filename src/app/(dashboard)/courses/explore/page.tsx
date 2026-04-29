@@ -21,6 +21,7 @@ export default function ExploreCoursesPage() {
   const [upgrading, setUpgrading] = useState(false)
   const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
   const [showInfoHint, setShowInfoHint] = useState<string | null>(null)
+  const [editingOffering, setEditingOffering] = useState<any | null>(null)
   
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -353,26 +354,12 @@ export default function ExploreCoursesPage() {
                   </svg>
                 </div>
 
-                {/* Info button with tooltip */}
-                {(offering.hasRecorded || offering.hasLive) && (
-                  <div style={{ position: 'absolute', bottom: '12px', right: '14px' }}>
-                    {showInfoHint === offering.id && (
-                      <div style={{
-                        position: 'absolute', bottom: '100%', right: '0',
-                        background: '#1e1e3a', color: '#fff', padding: '10px 14px', borderRadius: '12px',
-                        fontSize: '12px', fontWeight: '600', width: '220px', textAlign: 'center',
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)', marginBottom: '10px', zIndex: 10,
-                        animation: 'fadeIn 0.2s ease-out',
-                        pointerEvents: 'none',
-                      }}>
-                        Click here to see the difference between PRO and Recorded Access
-                        <div style={{ position: 'absolute', top: '100%', right: '8px', border: '6px solid transparent', borderTopColor: '#1e1e3a' }} />
-                      </div>
-                    )}
+                {/* Info button with tooltip and Edit button */}
+                <div style={{ position: 'absolute', bottom: '12px', right: '14px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {/* Edit button for managers */}
+                  {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
                     <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInfoModalOffering(offering) }}
-                      onMouseEnter={() => setShowInfoHint(offering.id)}
-                      onMouseLeave={() => setShowInfoHint(null)}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingOffering(offering) }}
                       style={{
                         width: '28px', height: '28px', borderRadius: '50%',
                         background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)',
@@ -380,12 +367,46 @@ export default function ExploreCoursesPage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         color: '#fff', fontSize: '14px', fontWeight: '800',
                       }}
-                      title="Compare access types"
+                      title="Edit course offering"
                     >
-                      i
+                      ✎
                     </button>
-                  </div>
-                )}
+                  )}
+                  
+                  {/* Info button */}
+                  {(offering.hasRecorded || offering.hasLive) && (
+                    <div style={{ position: 'relative' }}>
+                      {showInfoHint === offering.id && (
+                        <div style={{
+                          position: 'absolute', bottom: '100%', right: '0',
+                          background: '#1e1e3a', color: '#fff', padding: '10px 14px', borderRadius: '12px',
+                          fontSize: '12px', fontWeight: '600', width: '220px', textAlign: 'center',
+                          boxShadow: '0 4px 15px rgba(0,0,0,0.3)', marginBottom: '10px', zIndex: 10,
+                          animation: 'fadeIn 0.2s ease-out',
+                          pointerEvents: 'none',
+                        }}>
+                          Click here to see the difference between PRO and Recorded Access
+                          <div style={{ position: 'absolute', top: '100%', right: '8px', border: '6px solid transparent', borderTopColor: '#1e1e3a' }} />
+                        </div>
+                      )}
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInfoModalOffering(offering) }}
+                        onMouseEnter={() => setShowInfoHint(offering.id)}
+                        onMouseLeave={() => setShowInfoHint(null)}
+                        style={{
+                          width: '28px', height: '28px', borderRadius: '50%',
+                          background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)',
+                          border: 'none', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: '#fff', fontSize: '14px', fontWeight: '800',
+                        }}
+                        title="Compare access types"
+                      >
+                        i
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Content */}
@@ -427,14 +448,14 @@ export default function ExploreCoursesPage() {
                   {isLiveEnrolled && (
                     <div style={{
                       padding: '14px 16px', borderRadius: '18px',
-                      background: '#ffffff',
-                      border: '2px solid #000000',
+                      background: 'transparent',
+                      border: 'none',
                       textAlign: 'center',
                     }}>
-                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#000000', letterSpacing: '0.02em' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e1e3a', letterSpacing: '0.02em' }}>
                         ✅ Already Enrolled
                       </div>
-                      <div style={{ fontSize: '11px', color: '#333333', marginTop: '4px' }}>Live + Recorded (PRO)</div>
+                      <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>Live + Recorded (PRO)</div>
                     </div>
                   )}
 
@@ -1057,6 +1078,86 @@ export default function ExploreCoursesPage() {
             >
               Go to My Courses 🚀
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Offering Modal */}
+      {editingOffering && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px'
+        }} onClick={() => setEditingOffering(null)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '600px',
+            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px',
+            animation: 'modalSlideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#1e1e3a', marginBottom: '24px' }}>
+              Edit Course Offering
+            </h2>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Course</label>
+              <div style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a' }}>{editingOffering.course?.name}</div>
+            </div>
+
+            {editingOffering.hasRecorded && (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Original Price</label>
+                    <input type="number" defaultValue={editingOffering.recordedOriginalPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Discount Price</label>
+                    <input type="number" defaultValue={editingOffering.recordedDiscountPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {editingOffering.hasLive && (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Original Price</label>
+                    <input type="number" defaultValue={editingOffering.liveOriginalPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Discount Price</label>
+                    <input type="number" defaultValue={editingOffering.liveDiscountPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setEditingOffering(null)}
+                style={{
+                  flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff',
+                  background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => alert('Save functionality coming soon!')}
+                style={{
+                  flex: 1, padding: '14px', borderRadius: '12px', border: 'none',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#fff', fontWeight: '700', fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       )}
