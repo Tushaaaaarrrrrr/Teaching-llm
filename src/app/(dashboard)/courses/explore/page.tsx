@@ -427,15 +427,14 @@ export default function ExploreCoursesPage() {
                   {isLiveEnrolled && (
                     <div style={{
                       padding: '14px 16px', borderRadius: '18px',
-                      background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
-                      border: '1.5px solid #c7d2fe',
+                      background: '#ffffff',
+                      border: '2px solid #000000',
                       textAlign: 'center',
-                      opacity: 0.6,
                     }}>
-                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#6366f1', letterSpacing: '0.02em' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#000000', letterSpacing: '0.02em' }}>
                         ✅ Already Enrolled
                       </div>
-                      <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>Live + Recorded (PRO)</div>
+                      <div style={{ fontSize: '11px', color: '#333333', marginTop: '4px' }}>Live + Recorded (PRO)</div>
                     </div>
                   )}
 
