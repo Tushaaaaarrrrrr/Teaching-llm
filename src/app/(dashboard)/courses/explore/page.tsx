@@ -18,6 +18,9 @@ export default function ExploreCoursesPage() {
   const [successOrderId, setSuccessOrderId] = useState<string | null>(null)
   const [verifyingPayment, setVerifyingPayment] = useState(false)
   const [purchasedCourse, setPurchasedCourse] = useState<any>(null)
+  const [upgrading, setUpgrading] = useState(false)
+  const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
+  const [showInfoHint, setShowInfoHint] = useState<string | null>(null)
   
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -29,6 +32,77 @@ export default function ExploreCoursesPage() {
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [creating, setCreating] = useState(false)
+  const [infoModalOffering, setInfoModalOffering] = useState<any | null>(null)
+
+  // Helper to get enrollment status
+  const getEnrollmentStatus = (courseId: string) => {
+    const coursesArray = Array.isArray(courses) ? courses : (courses as any)?.courses || []
+    const course = coursesArray.find((c: any) => c.id === courseId)
+    return course?.enrollmentType || null
+  }
+
+  // Handle upgrade to Live Pro
+  const handleUpgrade = async (courseId: string, offeringId: string) => {
+    setUpgrading(true)
+    try {
+      // Create Razorpay order
+      const orderRes = await fetch(`/api/courses/${courseId}/create-razorpay-order`, { method: 'POST' })
+      if (!orderRes.ok) {
+        const data = await orderRes.json()
+        alert(data.error || 'Failed to create order')
+        setUpgrading(false)
+        return
+      }
+      const orderData = await orderRes.json()
+
+      // Open Razorpay checkout
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'GenZ IItian',
+        description: `PRO Upgrade — ${orderData.courseName}`,
+        order_id: orderData.razorpayOrderId,
+        prefill: {
+          name: orderData.userName,
+          email: orderData.userEmail,
+        },
+        theme: { color: '#6366f1' },
+        handler: async (response: any) => {
+          try {
+            const verifyRes = await fetch(`/api/courses/${courseId}/upgrade`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            })
+            const verifyData = await verifyRes.json()
+            if (verifyRes.ok) {
+              setUpgradeSuccessOrderId(verifyData.orderId)
+            } else {
+              alert(verifyData.error || 'Payment verification failed')
+            }
+          } catch {
+            alert('Payment verification failed. Please contact support.')
+          } finally {
+            setUpgrading(false)
+          }
+        },
+        modal: {
+          ondismiss: () => setUpgrading(false),
+        },
+      }
+
+      const rzp = new (window as any).Razorpay(options)
+      rzp.open()
+    } catch (e: any) {
+      alert(e.message || 'Something went wrong')
+      setUpgrading(false)
+    }
+  }
 
   const handlePurchase = async (offeringId: string, accessType: 'RECORDED' | 'LIVE') => {
     setPurchasing(`${offeringId}-${accessType}`)
@@ -132,9 +206,17 @@ export default function ExploreCoursesPage() {
   const activeOfferings = offerings || []
 
   return (
-    <div className="page-container fade-in">
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '48px', paddingTop: '16px' }}>
+    <>
+      {/* Header Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%)',
+        padding: '32px 24px',
+        marginBottom: '32px',
+        borderBottom: '1px solid #d1d5db',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
         <div style={{ flex: 1 }}>
           <h1 style={{
             fontSize: '32px', fontWeight: '900', color: '#1e1e3a',
@@ -143,7 +225,7 @@ export default function ExploreCoursesPage() {
             GenZ IITian Official Store
           </h1>
           <p style={{
-            fontSize: '15px', color: '#9999b0', fontWeight: '500',
+            fontSize: '15px', color: '#6b6b8a', fontWeight: '500',
             lineHeight: '1.6', display: 'flex', alignItems: 'center', gap: '8px'
           }}>
             You can also buy courses from
@@ -191,6 +273,8 @@ export default function ExploreCoursesPage() {
         )}
       </div>
 
+      <div className="page-container fade-in">
+
       {activeOfferings.length === 0 && (
         <div className="empty-state" style={{ padding: '60px 20px' }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="1.5">
@@ -209,26 +293,39 @@ export default function ExploreCoursesPage() {
           const discountLive = offering.liveOriginalPrice > 0
             ? Math.round((1 - offering.liveDiscountPrice / offering.liveOriginalPrice) * 100)
             : 0
+          
+          // Get enrollment status
+          const enrollmentType = getEnrollmentStatus(offering.courseId)
+          const isRecordedEnrolled = enrollmentType === 'RECORDED'
+          const isLiveEnrolled = enrollmentType === 'LIVE'
 
           return (
             <div
               key={offering.id}
               style={{
-                background: '#e8eaf0',
+                background: isLiveEnrolled ? '#d1d5db' : '#e8eaf0',
                 borderRadius: '28px',
-                boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                boxShadow: isLiveEnrolled 
+                  ? '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, inset 0 0 0 1px rgba(0,0,0,0.05)'
+                  : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'all 0.25s ease',
+                opacity: isLiveEnrolled ? 0.7 : 1,
+                pointerEvents: isLiveEnrolled ? 'none' : 'auto',
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.transform = 'translateY(-6px)'
-                e.currentTarget.style.boxShadow = '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
+                if (!isLiveEnrolled) {
+                  e.currentTarget.style.transform = 'translateY(-6px)'
+                  e.currentTarget.style.boxShadow = '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
+                }
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
+                if (!isLiveEnrolled) {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
+                }
               }}
             >
               {/* Banner */}
@@ -256,16 +353,39 @@ export default function ExploreCoursesPage() {
                   </svg>
                 </div>
 
-                {/* Best seller badge */}
-                <div style={{
-                  position: 'absolute', top: '12px', left: '14px',
-                  padding: '4px 12px', borderRadius: '20px',
-                  background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)',
-                  fontSize: '10px', fontWeight: '800', color: '#fff',
-                  letterSpacing: '0.06em', textTransform: 'uppercase',
-                }}>
-                  ⭐ Popular
-                </div>
+                {/* Info button with tooltip */}
+                {(offering.hasRecorded || offering.hasLive) && (
+                  <div style={{ position: 'absolute', bottom: '12px', right: '14px' }}>
+                    {showInfoHint === offering.id && (
+                      <div style={{
+                        position: 'absolute', bottom: '100%', right: '0',
+                        background: '#1e1e3a', color: '#fff', padding: '10px 14px', borderRadius: '12px',
+                        fontSize: '12px', fontWeight: '600', width: '220px', textAlign: 'center',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)', marginBottom: '10px', zIndex: 10,
+                        animation: 'fadeIn 0.2s ease-out',
+                        pointerEvents: 'none',
+                      }}>
+                        Click here to see the difference between PRO and Recorded Access
+                        <div style={{ position: 'absolute', top: '100%', right: '8px', border: '6px solid transparent', borderTopColor: '#1e1e3a' }} />
+                      </div>
+                    )}
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInfoModalOffering(offering) }}
+                      onMouseEnter={() => setShowInfoHint(offering.id)}
+                      onMouseLeave={() => setShowInfoHint(null)}
+                      style={{
+                        width: '28px', height: '28px', borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)',
+                        border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontSize: '14px', fontWeight: '800',
+                      }}
+                      title="Compare access types"
+                    >
+                      i
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Content */}
@@ -289,14 +409,7 @@ export default function ExploreCoursesPage() {
                   </p>
                 )}
 
-                {/* Offering Name - Small */}
-                <h3 style={{
-                  fontSize: '14px', fontWeight: '700', color: '#6366f1',
-                  marginBottom: '8px', lineHeight: '1.3',
-                  textTransform: 'uppercase', letterSpacing: '0.05em',
-                }}>
-                  {offering.name}
-                </h3>
+                {/* Duplicate name removed - course name already shown above */}
 
                 {offering.description && (
                   <p style={{
@@ -310,8 +423,24 @@ export default function ExploreCoursesPage() {
 
                 {/* Pricing Tiers */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto' }}>
-                  {/* Recorded Option */}
-                  {offering.hasRecorded && (
+                  {/* Show \"Already Enrolled\" for LIVE users */}
+                  {isLiveEnrolled && (
+                    <div style={{
+                      padding: '14px 16px', borderRadius: '18px',
+                      background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
+                      border: '1.5px solid #c7d2fe',
+                      textAlign: 'center',
+                      opacity: 0.6,
+                    }}>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#6366f1', letterSpacing: '0.02em' }}>
+                        ✅ Already Enrolled
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>Live + Recorded (PRO)</div>
+                    </div>
+                  )}
+
+                  {/* Recorded Option - Show purchase or upgrade */}
+                  {offering.hasRecorded && !isLiveEnrolled && (
                     <div style={{
                       padding: '14px 16px', borderRadius: '18px',
                       background: '#e8eaf0',
@@ -357,8 +486,53 @@ export default function ExploreCoursesPage() {
                     </div>
                   )}
 
-                  {/* Live Option */}
-                  {offering.hasLive && (
+                  {/* Upgrade Option - Show for RECORDED enrolled users */}
+                  {isRecordedEnrolled && offering.hasLive && (
+                    <div style={{
+                      padding: '14px 16px', borderRadius: '18px',
+                      background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
+                      border: '1.5px solid #c7d2fe',
+                      position: 'relative', overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        position: 'absolute', top: '10px', right: '12px',
+                        padding: '3px 10px', borderRadius: '20px',
+                        background: '#6366f1', color: '#fff',
+                        fontSize: '9px', fontWeight: '900', letterSpacing: '0.08em',
+                      }}>
+                        PRO
+                      </div>
+                      <div style={{ marginBottom: '10px' }}>
+                        <div style={{ fontSize: '10px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                          ⚡ Upgrade to Live + Recorded
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.liveDiscountPrice}</span>
+                          {offering.liveOriginalPrice > offering.liveDiscountPrice && (
+                            <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{offering.liveOriginalPrice}</span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleUpgrade(offering.courseId, offering.id)}
+                        disabled={upgrading}
+                        style={{
+                          width: '100%', padding: '11px', borderRadius: '50px',
+                          border: 'none', background: '#1e1e3a',
+                          color: '#fff', fontSize: '13px', fontWeight: '800',
+                          cursor: upgrading ? 'not-allowed' : 'pointer',
+                          opacity: upgrading ? 0.5 : 1,
+                          boxShadow: '0 8px 16px rgba(30, 30, 58, 0.4)',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        {upgrading ? 'Processing Upgrade...' : '⚡ Upgrade to PRO'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Live Option - Show only for non-recorded users */}
+                  {offering.hasLive && !isRecordedEnrolled && !isLiveEnrolled && (
                     <div style={{
                       padding: '14px 16px', borderRadius: '18px',
                       background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
@@ -414,8 +588,7 @@ export default function ExploreCoursesPage() {
                 display: 'flex', justifyContent: 'space-between',
                 fontSize: '11px', color: '#9999b0', fontWeight: '600',
               }}>
-                <span>🕐 Lifetime Access</span>
-                <span>✅ Certified</span>
+                <span>� Access Till End Term</span>
               </div>
             </div>
           )
@@ -814,6 +987,152 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
+      {/* Upgrade Success Modal */}
+      {upgradeSuccessOrderId && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px'
+        }} onClick={() => { setUpgradeSuccessOrderId(null); router.push('/courses') }}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '480px',
+            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', textAlign: 'center',
+            animation: 'modalSlideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '64px', marginBottom: '24px' }}>⚡</div>
+            <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#1e293b', marginBottom: '16px' }}>
+              Upgraded to PRO!
+            </h2>
+
+            <div style={{
+              background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
+              borderRadius: '20px', padding: '20px', marginBottom: '24px',
+              border: '2px solid #c7d2fe'
+            }}>
+              <div style={{ fontSize: '12px', color: '#6366f1', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>
+                Access Upgraded
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#4f46e5', marginBottom: '6px' }}>
+                Live + Recorded (PRO)
+              </h3>
+              <div style={{ fontSize: '13px', color: '#818cf8', fontWeight: '700', marginBottom: '0' }}>
+                You now have full access to live sessions!
+              </div>
+            </div>
+
+            {/* Order ID */}
+            {upgradeSuccessOrderId && upgradeSuccessOrderId !== 'SUCCESS' && (
+              <div style={{ background: '#f3f4f6', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #d1d5db' }}>
+                <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Order ID
+                </div>
+                <div style={{ fontSize: '15px', fontWeight: '800', color: '#374151', fontFamily: 'monospace', letterSpacing: '1px' }}>
+                  {upgradeSuccessOrderId}
+                </div>
+              </div>
+            )}
+
+            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
+              Your upgrade is complete! You can now join live sessions and access all premium features.
+            </p>
+
+            <button
+              onClick={() => { setUpgradeSuccessOrderId(null); router.push('/courses') }}
+              style={{
+                width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 8px 16px rgba(99, 102, 241, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)'
+              }}
+            >
+              Go to My Courses 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Access Type Comparison Modal */}
+      {infoModalOffering && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          padding: '20px'
+        }} onClick={() => setInfoModalOffering(null)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '750px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
+            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+          }} onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
+              <button onClick={() => setInfoModalOffering(null)} style={{ position: 'absolute', top: '25px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Access Comparison</h2>
+              <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500' }}>Choose the access type that suits your learning needs</p>
+            </div>
+
+            {/* Comparison Table */}
+            <div style={{ padding: '30px 40px' }}>
+              <div style={{ borderRadius: '24px', overflow: 'hidden', border: '1.5px solid #e2e8f0', background: '#fff' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc' }}>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
+                      {infoModalOffering.hasRecorded && (
+                        <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>Recorded Access</th>
+                      )}
+                      {infoModalOffering.hasLive && (
+                        <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>Live + Recorded (PRO)</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { f: 'Recorded Lectures', recorded: '✅ Full Access', live: '✅ Full Access' },
+                      { f: 'Course Materials', recorded: '✅ Full Access', live: '✅ Full Access' },
+                      { f: 'Live Classes', recorded: '❌ No Access', live: '✅ Direct Entry' },
+                      { f: 'Direct Q&A with Teacher', recorded: '❌ No', live: '✅ Yes (Live)' },
+                      { f: 'Class Recordings', recorded: '✅ Available', live: '✅ Available' },
+                      { f: 'Priority Support', recorded: '❌ Standard', live: '✅ 24/7 Priority' },
+                      { f: 'Course Duration', recorded: 'Access Till End Term', live: 'Access Till End Term' },
+                    ].map((row, i) => (
+                      <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#334155', fontWeight: '600' }}>{row.f}</td>
+                        {infoModalOffering.hasRecorded && (
+                          <td style={{ padding: '16px 24px', fontSize: '14px', color: '#92400e', textAlign: 'center', background: '#fffdf5' }}>{row.recorded}</td>
+                        )}
+                        {infoModalOffering.hasLive && (
+                          <td style={{ padding: '16px 24px', fontSize: '14px', color: '#4338ca', fontWeight: '700', textAlign: 'center', background: '#f5f7ff' }}>{row.live}</td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={{ padding: '0 40px 40px', textAlign: 'center' }}>
+              <button onClick={() => setInfoModalOffering(null)} style={{ background: '#1e293b', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+                Got it, thanks!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <style>{`
         @keyframes modalSlideUp {
@@ -824,7 +1143,12 @@ export default function ExploreCoursesPage() {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translate(-50%, 5px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
       `}</style>
-    </div>
+      </div>
+    </>
   )
 }
