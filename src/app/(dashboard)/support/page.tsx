@@ -80,6 +80,17 @@ function shortId(id: string): string {
   return String(8000 + (hash % 2000))
 }
 
+function formatMessageDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleString([], {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 function TicketStatusIcon({ status }: { status: string }) {
   const c = STATUS_COLORS[status] || '#9999b0'
   return (
@@ -544,10 +555,10 @@ export default function SupportPage() {
         {confirmDialog}
 
         {/* Top row: FAQ card + Live Chat card */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px', alignItems: 'stretch' }}>
 
           {/* FAQ Card */}
-          <div style={{ ...card, padding: '28px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ ...card, padding: '28px', display: 'flex', flexDirection: 'column', minHeight: '560px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f0f0fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
@@ -566,7 +577,7 @@ export default function SupportPage() {
             </p>
 
             {/* FAQ accordion */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, overflowY: 'auto', maxHeight: '280px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, overflowY: 'auto', maxHeight: '390px' }}>
               {faqs.length === 0 ? (
                 <p style={{ fontSize: '13px', color: '#9999b0', textAlign: 'center', padding: '20px 0' }}>
                   {userRole === 'MANAGER' ? 'No FAQs yet. Click "+ Add FAQ" to create one.' : 'No FAQs available yet.'}
@@ -608,7 +619,7 @@ export default function SupportPage() {
 
           {/* Live Chat Card */}
           {(userRole === 'STUDENT' || userRole === 'MANAGER' || userRole === 'ADMIN') && (
-            <div style={{ ...card, padding: '32px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <div style={{ ...card, padding: '32px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minHeight: '560px', justifyContent: 'flex-start' }}>
             <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#ebebff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '18px' }}>
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
             </div>
@@ -623,6 +634,21 @@ export default function SupportPage() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
               {(userRole === 'STUDENT' || userRole === 'ADMIN') ? 'Start Live Chat Support' : 'Manage Live Chats'}
             </button>
+
+            <div style={{ width: '100%', borderRadius: '20px', background: '#f7f7ff', border: '1.5px solid #d9dcff', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)', padding: '16px 18px', marginTop: '6px', marginBottom: '14px', textAlign: 'left' }}>
+              <div style={{ fontSize: '12px', fontWeight: '800', color: '#3636e8', letterSpacing: '0.03em', marginBottom: '6px', textTransform: 'uppercase' }}>
+                Raise a Ticket
+              </div>
+              <div style={{ fontSize: '12.5px', color: '#6b6b8a', lineHeight: '1.55', marginBottom: '12px' }}>
+                Send a support ticket if your issue needs follow-up instead of live chat.
+              </div>
+              {(userRole === 'STUDENT' || userRole === 'ADMIN') ? (
+                <button onClick={() => setShowCreate(true)} className="btn btn-primary" style={{ borderRadius: '50px', width: '100%' }}>+ Raise a Ticket</button>
+              ) : (
+                <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: '600' }}>Managers can review tickets from the list below.</div>
+              )}
+            </div>
+
             <p style={{ fontSize: '12px', color: '#9999b0', marginBottom: userRole === 'MANAGER' ? '12px' : '0' }}>Average response time: &lt; 2 minutes</p>
             {userRole === 'MANAGER' && (
               <button onClick={loadChatHistory} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', fontSize: '13px', fontWeight: '700', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -649,9 +675,7 @@ export default function SupportPage() {
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="1.5" style={{ marginBottom: '10px' }}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
               <p style={{ fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px' }}>No tickets yet</p>
               <p style={{ fontSize: '13px' }}>{(userRole === 'STUDENT' || userRole === 'ADMIN') ? 'Create a ticket to get help from our support team.' : 'No tickets have been raised yet.'}</p>
-              {(userRole === 'STUDENT' || userRole === 'ADMIN') && (
-                <button onClick={() => setShowCreate(true)} className="btn btn-primary" style={{ marginTop: '16px', borderRadius: '50px' }}>+ Raise a Ticket</button>
-              )}
+              <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '16px' }}>Use the ticket box in the live chat section to raise a ticket.</div>
             </div>
           ) : (
             <>
@@ -795,6 +819,7 @@ export default function SupportPage() {
                       <span style={pill(STATUS_COLORS[selected.status])}>{selected.status.replace('_', ' ')}</span>
                       <span style={pill(PRIORITY_COLORS[selected.priority])}>{selected.priority}</span>
                       {selected.assignedTo && <span style={pill('#3636e8')}>→ {selected.assignedTo.name}</span>}
+                      {selected.class && userRole === 'MANAGER' && <span style={pill(selected.class.color)}>📚 {selected.class.name}</span>}
                     </div>
                   </div>
                   <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
@@ -884,7 +909,7 @@ export default function SupportPage() {
                           />
                         )}
                         {r.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5' }}>{r.content}</div>}
-                        <div style={{ fontSize: '10.5px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div style={{ fontSize: '10.5px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{new Date(r.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                       </div>
                     </div>
                   )
@@ -1138,7 +1163,7 @@ export default function SupportPage() {
                             />
                           )}
                           {m.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', padding: m.imageUrl ? '0 8px 4px' : '0' }}>{m.content}</div>}
-                          <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right', padding: m.imageUrl ? '0 8px 2px' : '0' }}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right', padding: m.imageUrl ? '0 8px 2px' : '0' }}>{new Date(m.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                         </div>
                       </div>
                     )

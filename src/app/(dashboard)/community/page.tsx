@@ -913,7 +913,7 @@ export default function CommunityPage() {
                         )}
                       </div>
                       <div style={{ fontSize: '10.5px', color: '#9999b0', padding: '0 4px' }}>
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(msg.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                     </div>
