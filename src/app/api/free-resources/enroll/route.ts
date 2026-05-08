@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
+import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,6 +26,15 @@ export async function POST(request: NextRequest) {
 
     if (course.isDisabled) {
       return NextResponse.json({ error: 'This course is currently disabled' }, { status: 403 })
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { id: true, name: true, email: true, role: true },
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     const existingEnrollment = await prisma.enrollment.findUnique({
@@ -53,6 +63,17 @@ export async function POST(request: NextRequest) {
         courseIds: [courseId],
         action: 'ADD',
       })
+    })
+
+    // Log the free course enrollment activity
+    logActivity({
+      userId: user.id,
+      userName: user.name || 'Unknown',
+      userRole: user.role || 'STUDENT',
+      actionType: ACTION.FREE_ENROLLMENT,
+      actionDescription: `Enrolled in free course "${course.name}"`,
+      moduleName: MODULE.ENROLLMENT,
+      targetId: courseId,
     })
 
     return NextResponse.json({ message: 'Successfully enrolled' }, { status: 201 })
@@ -92,6 +113,15 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Not enrolled' }, { status: 400 })
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { id: true, name: true, email: true, role: true },
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
     // Only allow unenrollment if it's a free enrollment OR the course is currently free
     if (!enrollment.isFreeEnrollment && !enrollment.course.isFree) {
        return NextResponse.json({ error: 'Cannot self-unenroll from paid courses' }, { status: 403 })
@@ -108,6 +138,17 @@ export async function DELETE(request: NextRequest) {
         courseIds: [courseId],
         action: 'REMOVE',
       })
+    })
+
+    // Log the unenrollment activity
+    logActivity({
+      userId: user.id,
+      userName: user.name || 'Unknown',
+      userRole: user.role || 'STUDENT',
+      actionType: ACTION.FREE_UNENROLLMENT,
+      actionDescription: `Unenrolled from free course "${enrollment.course.name}"`,
+      moduleName: MODULE.ENROLLMENT,
+      targetId: courseId,
     })
 
     return NextResponse.json({ message: 'Successfully unenrolled' })
