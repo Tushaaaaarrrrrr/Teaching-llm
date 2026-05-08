@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isManager } from '@/lib/auth'
+import { ACTION, MODULE } from '@/lib/activity-log'
 
 // GET: Return transcript data for a community (courseId query param)
 // Manager-only — includes ALL messages, including deleted ones with original content
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ classes: classesWithStats })
     }
 
-    // Fetch all messages for this class, including deleted ones with full content
+    // Fetch all messages for this class
     const messages = await prisma.communityMessage.findMany({
       where: { courseId },
       include: {
@@ -66,7 +67,41 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'asc' },
     })
 
-    return NextResponse.json({ messages })
+    // For deleted messages, try to surface original content from activity logs (if available)
+    const deletedIds = messages.filter(m => m.isDeleted).map(m => m.id)
+    let logMap: Record<string, any> = {}
+    if (deletedIds.length > 0) {
+      try {
+        const logs = await prisma.activityLog.findMany({
+          where: {
+            actionType: ACTION.MESSAGE_DELETED,
+            moduleName: MODULE.COMMUNITY,
+            targetId: { in: deletedIds },
+          },
+          orderBy: { timestamp: 'asc' },
+        })
+        logs.forEach(l => {
+          try {
+            logMap[l.targetId || ''] = l.metadata ? JSON.parse(l.metadata) : null
+          } catch (e) {
+            logMap[l.targetId || ''] = null
+          }
+        })
+      } catch (err) {
+        console.error('Failed to load activity logs for transcripts', err)
+      }
+    }
+
+    const enriched = messages.map(m => {
+      if (m.isDeleted) {
+        const meta = logMap[m.id]
+        const original = meta && meta.originalContent ? meta.originalContent : m.content
+        return { ...m, content: original }
+      }
+      return m
+    })
+
+    return NextResponse.json({ messages: enriched })
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
