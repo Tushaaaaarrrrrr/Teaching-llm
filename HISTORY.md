@@ -560,3 +560,24 @@ Outcome:
     - ✓ Selected subject/class visible to managers in ticket thread header (already implemented).
     - ✓ Image lightbox modal with close and download buttons fully functional in support chats and ticket replies.
   - All user requests from session have been implemented, tested, and pushed to feature/course-offerings-management branch.
+
+  26. Date and time: 2026-05-08 19:45:00 IST
+  Summary: Fix missing activity logging for free course enrollments.
+  What changed:
+  - The free course enrollment endpoint was not recording activity logs when users enrolled in free courses.
+  - Added logActivity calls to both enrollment and unenrollment operations.
+  - Created two new ACTION types: FREE_ENROLLMENT and FREE_UNENROLLMENT for better audit trail clarity.
+  What was added:
+  - Import of `logActivity`, `ACTION`, `MODULE` to `/api/free-resources/enroll/route.ts`.
+  - Activity log entry on POST (free course enrollment) with user details and course name.
+  - Activity log entry on DELETE (free course unenrollment) with user details and course name.
+  - New action types in `src/lib/activity-log.ts`: `FREE_ENROLLMENT`, `FREE_UNENROLLMENT`.
+  What was removed:
+  - Nothing
+  Files affected:
+  - `src/app/api/free-resources/enroll/route.ts` — added logActivity calls for enrollment/unenrollment.
+  - `src/lib/activity-log.ts` — added two new ACTION types.
+  Outcome:
+  - Free course enrollments are now properly recorded in ActivityLog with full user and course information.
+  - Managers can now see a complete audit trail of who enrolled in free courses and when.
+  - Unenrollment actions are also logged for audit compliance.
