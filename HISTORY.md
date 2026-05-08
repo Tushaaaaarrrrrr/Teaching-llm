@@ -537,3 +537,26 @@ Outcome:
   Outcome:
   - Managers viewing community transcripts will see original text for deleted messages when available, without requiring a DB schema migration.
   - This uses the existing `ActivityLog.metadata` as a safe audit store for original message content.
+
+  25. Date and time: 2026-05-08 19:15:00 IST
+  Summary: **COMPLETED** — All pending support/community UX enhancements verified and finalized.
+  What changed:
+  - Updated message timestamp displays throughout the app to show full date + time (not time-only).
+  - Verified that selected subject/class is displayed in ticket thread headers for managers.
+  - Confirmed lightbox modal implementation for images in support chats and ticket replies.
+  What was added:
+  - Full date+time formatting in chat/support message timestamps (month, day, hour, minute).
+  What was removed:
+  - None
+  Files affected:
+  - `src/app/(dashboard)/support/page.tsx` — updated live chat message timestamps to show full dates.
+  - `src/app/(dashboard)/community/page.tsx` — updated community chat message timestamps to show full dates.
+  Outcome:
+  - **Support/Ticket/Community Feature Complete:**
+    - ✓ Store button restyled with dark gradient and shimmer effect (Entry 22).
+    - ✓ FAQ section expanded vertically; Raise Ticket CTA moved into Live Chat card (Entry 23).
+    - ✓ Deleted messages now visible to managers in community transcripts with original content restored (Entry 24).
+    - ✓ Chat message timestamps show full date + time for clarity across support and community sections.
+    - ✓ Selected subject/class visible to managers in ticket thread header (already implemented).
+    - ✓ Image lightbox modal with close and download buttons fully functional in support chats and ticket replies.
+  - All user requests from session have been implemented, tested, and pushed to feature/course-offerings-management branch.
