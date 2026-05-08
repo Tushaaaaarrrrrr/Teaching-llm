@@ -462,3 +462,78 @@ Outcome:
   - ❗ When adding columns via raw SQL on Supabase (as done in entry #17), ensure the same raw SQL is also captured in a migration file or manual script for future database setups (e.g., DigitalOcean migration).
   - ❗ Consider adding a startup health-check query that touches critical tables before accepting traffic.
   - ❗ Check PM2 server logs (`pm2 logs --lines 200`), not just browser console, when investigating "clean logs" situations.
+
+  21. Date and time: 2026-05-08 16:45:00 IST
+  Summary: Refined sidebar navigation and store card interactions while restricting study materials to managers.
+  What changed:
+  - Removed the visible "Resources" section label from the dashboard sidebar.
+  - Moved `Support` to appear immediately after `Exams` in the sidebar navigation order.
+  - Restricted `Study Materials` visibility in the sidebar to `MANAGER` users only.
+  - Added middleware protection so non-managers are redirected away from `/materials` routes.
+  - Updated the store cards to show a hover tooltip with the PRO vs Recorded comparison message.
+  - Adjusted the tooltip placement so it renders cleanly above the card actions.
+  - Enforced a minimum display and submission price of `1` for store offerings, including create/edit flows.
+  What was added:
+  - Manager-only sidebar visibility for `Study Materials`.
+  - Hover tooltip behavior for course offering cards in the store.
+  - Minimum price validation and clamping in the store UI.
+  What was removed:
+  - Sidebar "Resources" section header.
+  - Raw zero-price display paths in the store cards.
+  Files affected:
+  - `src/components/layout/Sidebar.tsx`
+  - `src/middleware.ts`
+  - `src/app/(dashboard)/courses/explore/page.tsx`
+  Outcome:
+  - The sidebar is cleaner and better ordered.
+  - Only managers can see and open study materials.
+  - Store cards now explain access tiers more clearly on hover, and course pricing no longer accepts `0` or negative values.
+
+  22. Date and time: 2026-05-08 17:05:00 IST
+  Summary: Highlighted the sidebar `Store` button with a darker theme and shimmer effect.
+  What changed:
+  - Re-styled the `Store` sidebar button to use a darker black/grey gradient so it stands out from the other navigation items.
+  - Added a subtle animated shine pass across the `Store` button to draw attention without changing navigation behavior.
+  What was added:
+  - Dark gradient treatment for the `Store` button.
+  - Animated shine effect for the `Store` button.
+  What was removed:
+  - None
+  Files affected:
+  - `src/components/layout/Sidebar.tsx`
+  Outcome:
+  - The `Store` button is now visually distinct and easier for users to notice in the sidebar.
+
+  23. Date and time: 2026-05-08 17:25:00 IST
+  Summary: Expanded the support FAQ area and moved the ticket CTA into the live chat panel.
+  What changed:
+  - Increased the FAQ section height so more questions can be shown without feeling cramped.
+  - Expanded the FAQ accordion scroll area to better use the available vertical space.
+  - Moved the `Raise a Ticket` action into a dedicated box inside the live chat card.
+  - Removed the duplicate ticket button from the recent tickets footer to keep the support area cleaner.
+  What was added:
+  - A boxed `Raise a Ticket` callout within the live chat card.
+  - Taller FAQ layout for additional entries.
+  What was removed:
+  - The standalone `Raise a Ticket` button from the recent tickets block.
+  Files affected:
+  - `src/app/(dashboard)/support/page.tsx`
+  Outcome:
+  - The support home screen now has clearer hierarchy, more FAQ capacity, and a more intentional ticket CTA placement.
+
+  24. Date and time: 2026-05-08 18:55:00 IST
+  Summary: Preserve original deleted community message content for manager transcripts.
+  What changed:
+  - When a community message is deleted, the API now records the original message content in `ActivityLog.metadata` as part of the delete flow.
+  - The transcripts endpoint for managers was enhanced to look up those activity-log entries and restore original content for deleted messages when available.
+  What was added:
+  - `src/app/api/community/[courseid]/messages/route.ts` — activity-log entry creation on delete (stores original message content in metadata).
+  - `src/app/api/community/transcripts/route.ts` — transcript endpoint now enriches deleted messages with original content from activity logs.
+  What was removed:
+  - Nothing (behavior is backward-compatible; message rows continue to hold deletion markers).
+  Files affected:
+  - `src/app/api/community/[courseid]/messages/route.ts`
+  - `src/app/api/community/transcripts/route.ts`
+  Outcome:
+  - Managers viewing community transcripts will see original text for deleted messages when available, without requiring a DB schema migration.
+  - This uses the existing `ActivityLog.metadata` as a safe audit store for original message content.
