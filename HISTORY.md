@@ -581,3 +581,25 @@ Outcome:
   - Free course enrollments are now properly recorded in ActivityLog with full user and course information.
   - Managers can now see a complete audit trail of who enrolled in free courses and when.
   - Unenrollment actions are also logged for audit compliance.
+
+  27. Date and time: 2026-05-08 20:15:00 IST
+  Summary: Implement correct batch type badges based on enrollment/access type.
+  What changed:
+  - Updated badge display logic in course cards to show correct tier names based on course type.
+  - Free/demo courses now show "General Batch" badge.
+  - Live courses show "PRO Batch" badge.
+  - Recorded (paid) courses show "Plus Batch" badge.
+  - Badge colors and backgrounds adjusted appropriately for each tier.
+  What was added:
+  - `getBatchBadge()` helper function to determine correct badge text and color based on enrollmentType.
+  - Logic to differentiate between FREE/DEMO vs RECORDED enrollment types.
+  What was removed:
+  - None (logic improved instead)
+  Files affected:
+  - `src/app/(dashboard)/courses/page.tsx` — implemented correct batch badge display logic.
+  Outcome:
+  - Course cards now clearly show badge indicating course tier:
+    - General = Free/demo access (recorded videos)
+    - Plus = Paid recorded access
+    - PRO = Paid live + recorded access
+  - Clearer visual distinction between free and paid course options for students.
