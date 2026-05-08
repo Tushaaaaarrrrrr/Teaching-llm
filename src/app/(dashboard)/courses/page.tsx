@@ -186,7 +186,17 @@ export default function CoursesPage() {
         {filtered.map((course: CourseItem) => {
           const isRecorded = ['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '')
           const isLive = course.enrollmentType === 'LIVE'
+          const isFreeOrDemo = course.enrollmentType === 'FREE' || course.enrollmentType === 'DEMO'
           const hasUpgradePrice = isRecorded && course.liveUpgradePrice != null && course.liveUpgradePrice > 0
+          
+          // Determine batch type: General (free/demo), PRO (live), or Plus (recorded)
+          const getBatchBadge = () => {
+            if (isFreeOrDemo) return { text: 'General Batch', color: '#fde68a' }
+            if (isLive) return { text: 'PRO Batch', color: '#fff' }
+            if (isRecorded) return { text: 'Plus Batch', color: '#fde68a' }
+            return { text: 'General Batch', color: '#fde68a' }
+          }
+          const batchBadge = getBatchBadge()
 
           return (
           <Link key={course.id} href={`/courses/${course.id}`} style={{ textDecoration: 'none', display: 'flex' }}>
@@ -211,7 +221,7 @@ export default function CoursesPage() {
                 e.currentTarget.style.boxShadow = isLive
                   ? `12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff, 0 0 0 2px ${course.color}60`
                   : '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
-                if (isRecorded) setShowUpgradeHint(course.id)
+                if (!isFreeOrDemo && isRecorded) setShowUpgradeHint(course.id)
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = 'translateY(0)'
@@ -233,7 +243,7 @@ export default function CoursesPage() {
               {/* Gradient Banner */}
               <div style={{
                 height: '100px',
-                background: isRecorded ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(135deg, ${course.color}ee, ${course.color}99)`,
+                background: isRecorded || isFreeOrDemo ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(135deg, ${course.color}ee, ${course.color}99)`,
                 position: 'relative',
                 overflow: 'hidden',
                 display: 'flex',
@@ -258,34 +268,22 @@ export default function CoursesPage() {
                   {COURSE_ICONS[course.icon] || COURSE_ICONS.BookOpen}
                 </div>
 
-                {/* Live badge on banner */}
-                {isLive && (
+                {/* Batch badge on banner */}
+                {(isLive || isRecorded || isFreeOrDemo) && (
                   <div style={{
                     position: 'absolute', top: '10px', left: '12px',
                     padding: '3px 10px', borderRadius: '20px',
-                    background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)',
-                    fontSize: '10px', fontWeight: '800', color: '#fff',
+                    background: isLive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)',
+                    backdropFilter: 'blur(8px)',
+                    fontSize: '10px', fontWeight: '800', color: batchBadge.color,
                     letterSpacing: '0.06em',
                   }}>
-                    PRO Batch
+                    {batchBadge.text}
                   </div>
                 )}
 
-                {/* Recording badge on banner */}
-                {isRecorded && (
-                  <div style={{
-                    position: 'absolute', top: '10px', left: '12px',
-                    padding: '3px 10px', borderRadius: '20px',
-                    background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
-                    fontSize: '10px', fontWeight: '800', color: '#fde68a',
-                    letterSpacing: '0.06em',
-                  }}>
-                    General Batch
-                  </div>
-                )}
-
-                {/* Info button for recorded users + tooltip */}
-                {isRecorded && (
+                {/* Info button for recorded non-free users + tooltip */}
+                {isRecorded && !isFreeOrDemo && (
                   <div style={{ position: 'absolute', top: '10px', right: '12px' }}>
                     {showUpgradeHint === course.id && (
                       <div style={{
