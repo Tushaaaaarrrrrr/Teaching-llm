@@ -75,6 +75,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/materials',
     label: 'Study Materials',
+    roles: ['MANAGER'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -137,6 +138,15 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/support',
+    label: 'Support',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    ),
+  },
+  {
     href: '/study/content-bank',
     label: 'Content Bank',
     roles: ['MANAGER', 'ADMIN'],
@@ -168,15 +178,7 @@ const NAV_ITEMS: NavItem[] = [
       </svg>
     ),
   },
-  {
-    href: '/support',
-    label: 'Support',
-    icon: (
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-      </svg>
-    ),
-  },
+  
   {
     href: '/feedback',
     label: 'Course Feedback',
@@ -394,7 +396,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
 
           // Add Section Headers
           const showGeneralHeader = idx === 0
-          const showResourcesHeader = item.href === '/materials'
+          
           const showCommunityHeader = item.href === '/community'
           const showAdminHeader = item.href === '/manage'
           
@@ -411,11 +413,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   General
                 </div>
               )}
-              {showResourcesHeader && (
-                <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '16px', paddingLeft: '12px' }}>
-                  Resources
-                </div>
-              )}
+              
               {showCommunityHeader && (
                 <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '16px', paddingLeft: '12px' }}>
                   Engagement

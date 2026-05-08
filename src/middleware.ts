@@ -170,6 +170,10 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/work-log') && payload.role !== 'MANAGER') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
+    // Only managers can access study materials
+    if (pathname.startsWith('/materials') && payload.role !== 'MANAGER') {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
   } catch (error) {
     console.error('JWT Verification failed in middleware:', error)
     const response = NextResponse.redirect(new URL('/login', request.url))

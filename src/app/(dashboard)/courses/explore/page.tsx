@@ -22,7 +22,7 @@ export default function ExploreCoursesPage() {
   const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
   const [showInfoHint, setShowInfoHint] = useState<string | null>(null)
   const [editingOffering, setEditingOffering] = useState<any | null>(null)
-  
+
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState('')
@@ -288,11 +288,15 @@ export default function ExploreCoursesPage() {
 
       <div className="grid-3">
         {activeOfferings.map((offering: any) => {
-          const discountRecorded = offering.recordedOriginalPrice > 0
-            ? Math.round((1 - offering.recordedDiscountPrice / offering.recordedOriginalPrice) * 100)
+          const recPrice = Math.max(Number(offering.recordedDiscountPrice || 0), 1)
+          const recOriginal = Math.max(Number(offering.recordedOriginalPrice || 0), recPrice)
+          const livePrice = Math.max(Number(offering.liveDiscountPrice || 0), 1)
+          const liveOriginal = Math.max(Number(offering.liveOriginalPrice || 0), livePrice)
+          const discountRecorded = recOriginal > 0
+            ? Math.round((1 - recPrice / recOriginal) * 100)
             : 0
-          const discountLive = offering.liveOriginalPrice > 0
-            ? Math.round((1 - offering.liveDiscountPrice / offering.liveOriginalPrice) * 100)
+          const discountLive = liveOriginal > 0
+            ? Math.round((1 - livePrice / liveOriginal) * 100)
             : 0
           
           // Get enrollment status
@@ -307,7 +311,7 @@ export default function ExploreCoursesPage() {
                 background: '#e8eaf0',
                 borderRadius: '28px',
                 boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
-                overflow: 'hidden',
+                overflow: 'visible',
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'all 0.25s ease',
@@ -315,10 +319,12 @@ export default function ExploreCoursesPage() {
               onMouseEnter={e => {
                 e.currentTarget.style.transform = 'translateY(-6px)'
                 e.currentTarget.style.boxShadow = '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
+                setShowInfoHint(offering.id)
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.boxShadow = '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
+                setShowInfoHint(null)
               }}
             >
               {/* Banner */}
@@ -370,15 +376,15 @@ export default function ExploreCoursesPage() {
                     <div style={{ position: 'relative' }}>
                       {showInfoHint === offering.id && (
                         <div style={{
-                          position: 'absolute', bottom: '100%', right: '0',
+                          position: 'absolute', bottom: 'calc(100% + 12px)', right: '-6px',
                           background: '#1e1e3a', color: '#fff', padding: '10px 14px', borderRadius: '12px',
-                          fontSize: '12px', fontWeight: '600', width: '220px', textAlign: 'center',
-                          boxShadow: '0 4px 15px rgba(0,0,0,0.3)', marginBottom: '10px', zIndex: 10,
+                          fontSize: '12px', fontWeight: '600', width: '245px', textAlign: 'center',
+                          boxShadow: '0 8px 20px rgba(0,0,0,0.28)', zIndex: 60,
                           animation: 'fadeIn 0.2s ease-out',
                           pointerEvents: 'none',
                         }}>
                           Click here to see the difference between PRO and Recorded Access
-                          <div style={{ position: 'absolute', top: '100%', right: '8px', border: '6px solid transparent', borderTopColor: '#1e1e3a' }} />
+                          <div style={{ position: 'absolute', top: '100%', right: '12px', border: '7px solid transparent', borderTopColor: '#1e1e3a' }} />
                         </div>
                       )}
                       <button
@@ -450,9 +456,9 @@ export default function ExploreCoursesPage() {
                               📹 Recorded Access
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.recordedDiscountPrice}</span>
-                              {offering.recordedOriginalPrice > offering.recordedDiscountPrice && (
-                                <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{offering.recordedOriginalPrice}</span>
+                              <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{recPrice}</span>
+                              {recOriginal > recPrice && (
+                                <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{recOriginal}</span>
                               )}
                             </div>
                           </div>
@@ -501,9 +507,9 @@ export default function ExploreCoursesPage() {
                               🔴 Live + Recorded
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.liveDiscountPrice}</span>
-                              {offering.liveOriginalPrice > offering.liveDiscountPrice && (
-                                <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{offering.liveOriginalPrice}</span>
+                              <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{livePrice}</span>
+                              {liveOriginal > livePrice && (
+                                <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{liveOriginal}</span>
                               )}
                             </div>
                           </div>
@@ -557,9 +563,9 @@ export default function ExploreCoursesPage() {
                             🔴 Live + Recorded
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.liveDiscountPrice}</span>
-                            {offering.liveOriginalPrice > offering.liveDiscountPrice && (
-                              <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{offering.liveOriginalPrice}</span>
+                            <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{livePrice}</span>
+                            {liveOriginal > livePrice && (
+                              <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{liveOriginal}</span>
                             )}
                           </div>
                         </div>
@@ -603,9 +609,9 @@ export default function ExploreCoursesPage() {
                             📹 Recorded Access
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.recordedDiscountPrice}</span>
-                            {offering.recordedOriginalPrice > offering.recordedDiscountPrice && (
-                              <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{offering.recordedOriginalPrice}</span>
+                            <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{recPrice}</span>
+                            {recOriginal > recPrice && (
+                              <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{recOriginal}</span>
                             )}
                           </div>
                         </div>
@@ -658,9 +664,9 @@ export default function ExploreCoursesPage() {
                           ⚡ Upgrade to Live + Recorded
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.liveDiscountPrice}</span>
-                          {offering.liveOriginalPrice > offering.liveDiscountPrice && (
-                            <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{offering.liveOriginalPrice}</span>
+                          <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{livePrice}</span>
+                          {liveOriginal > livePrice && (
+                            <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{liveOriginal}</span>
                           )}
                         </div>
                       </div>
@@ -705,9 +711,9 @@ export default function ExploreCoursesPage() {
                             🔴 Live + Recorded
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.liveDiscountPrice}</span>
-                            {offering.liveOriginalPrice > offering.liveDiscountPrice && (
-                              <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{offering.liveOriginalPrice}</span>
+                            <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{livePrice}</span>
+                            {liveOriginal > livePrice && (
+                              <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{liveOriginal}</span>
                             )}
                           </div>
                         </div>
@@ -827,6 +833,7 @@ export default function ExploreCoursesPage() {
                   </label>
                   <input
                     type="number"
+                    min={1}
                     value={recordedOriginalPrice}
                     onChange={(e) => setRecordedOriginalPrice(e.target.value)}
                     placeholder="0"
@@ -842,6 +849,7 @@ export default function ExploreCoursesPage() {
                   </label>
                   <input
                     type="number"
+                    min={1}
                     value={recordedDiscountPrice}
                     onChange={(e) => setRecordedDiscountPrice(e.target.value)}
                     placeholder="0"
@@ -866,6 +874,7 @@ export default function ExploreCoursesPage() {
                   </label>
                   <input
                     type="number"
+                    min={1}
                     value={liveOriginalPrice}
                     onChange={(e) => setLiveOriginalPrice(e.target.value)}
                     placeholder="0"
@@ -881,6 +890,7 @@ export default function ExploreCoursesPage() {
                   </label>
                   <input
                     type="number"
+                    min={1}
                     value={liveDiscountPrice}
                     onChange={(e) => setLiveDiscountPrice(e.target.value)}
                     placeholder="0"
@@ -970,8 +980,17 @@ export default function ExploreCoursesPage() {
                     alert('Please select a course')
                     return
                   }
-                  if (!recordedOriginalPrice && !liveOriginalPrice) {
+                  const recordedOriginal = Math.max(parseInt(recordedOriginalPrice || '0', 10) || 0, 0)
+                  const recordedDiscount = Math.max(parseInt(recordedDiscountPrice || '0', 10) || 0, 0)
+                  const liveOriginal = Math.max(parseInt(liveOriginalPrice || '0', 10) || 0, 0)
+                  const liveDiscount = Math.max(parseInt(liveDiscountPrice || '0', 10) || 0, 0)
+
+                  if (!recordedOriginal && !liveOriginal) {
                     alert('Please enter at least one price (recording or live)')
+                    return
+                  }
+                  if ((recordedOriginal && recordedOriginal < 1) || (recordedDiscount && recordedDiscount < 1) || (liveOriginal && liveOriginal < 1) || (liveDiscount && liveDiscount < 1)) {
+                    alert('Price cannot be less than 1')
                     return
                   }
                   setCreating(true)
@@ -981,13 +1000,13 @@ export default function ExploreCoursesPage() {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         courseId: selectedCourse,
-                        recordedOriginalPrice: recordedOriginalPrice ? parseInt(recordedOriginalPrice) : 0,
-                        recordedDiscountPrice: recordedDiscountPrice ? parseInt(recordedDiscountPrice) : 0,
-                        liveOriginalPrice: liveOriginalPrice ? parseInt(liveOriginalPrice) : 0,
-                        liveDiscountPrice: liveDiscountPrice ? parseInt(liveDiscountPrice) : 0,
+                        recordedOriginalPrice: recordedOriginal,
+                        recordedDiscountPrice: recordedDiscount,
+                        liveOriginalPrice: liveOriginal,
+                        liveDiscountPrice: liveDiscount,
                         tags: tags,
-                        hasRecorded: !!(recordedOriginalPrice || recordedDiscountPrice),
-                        hasLive: !!(liveOriginalPrice || liveDiscountPrice),
+                        hasRecorded: recordedOriginal > 0 || recordedDiscount > 0,
+                        hasLive: liveOriginal > 0 || liveDiscount > 0,
                       }),
                     })
                     if (res.ok) {
@@ -1241,11 +1260,11 @@ export default function ExploreCoursesPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                   <div>
                     <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Original Price</label>
-                    <input type="number" defaultValue={editingOffering.recordedOriginalPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                    <input type="number" min={1} defaultValue={editingOffering.recordedOriginalPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                   <div>
                     <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Discount Price</label>
-                    <input type="number" defaultValue={editingOffering.recordedDiscountPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                    <input type="number" min={1} defaultValue={editingOffering.recordedDiscountPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                 </div>
               </>
@@ -1256,11 +1275,11 @@ export default function ExploreCoursesPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                   <div>
                     <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Original Price</label>
-                    <input type="number" defaultValue={editingOffering.liveOriginalPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                    <input type="number" min={1} defaultValue={editingOffering.liveOriginalPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                   <div>
                     <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Discount Price</label>
-                    <input type="number" defaultValue={editingOffering.liveDiscountPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                    <input type="number" min={1} defaultValue={editingOffering.liveDiscountPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                 </div>
               </>
