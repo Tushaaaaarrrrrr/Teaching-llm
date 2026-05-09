@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_KEY || ''
 
@@ -18,48 +18,41 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 export function usePushNotifications() {
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
+  const [permissionState, setPermissionState] = useState<'default' | 'granted' | 'denied'>('default')
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
-      setIsSupported(true)
-      checkSubscription().then((hasSub) => {
-        // Automatically ask for permission if not already answered
-        if (!hasSub && Notification.permission === 'default') {
-          // Timeout to avoid blocking immediate render
-          setTimeout(() => subscribe(), 2000)
-        }
-      })
-    }
+    if (typeof window === 'undefined') return
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return
+    if (!VAPID_PUBLIC_KEY) return
+
+    setIsSupported(true)
+    setPermissionState(Notification.permission as any)
+
+    // Check if user already has an active subscription
+    navigator.serviceWorker.ready.then(async (reg) => {
+      try {
+        const sub = await reg.pushManager.getSubscription()
+        setIsSubscribed(!!sub)
+      } catch (err) {
+        console.error('Error checking push subscription:', err)
+      }
+    })
   }, [])
 
-  async function checkSubscription() {
-    try {
-      const reg = await navigator.serviceWorker.register('/sw-push.js', { scope: '/' })
-      await navigator.serviceWorker.ready
-      const subscription = await reg.pushManager.getSubscription()
-      setIsSubscribed(!!subscription)
-      return !!subscription
-    } catch (err) {
-      console.error('Error checking push subscription:', err)
-      return false
-    }
-  }
-
-  async function subscribe() {
+  const subscribe = useCallback(async () => {
     if (!isSupported || !VAPID_PUBLIC_KEY) return false
 
     try {
-      // Must be called immediately on click for Safari to recognize the user gesture
+      // This MUST be called directly from a user click handler
       const permission = await Notification.requestPermission()
-      
+      setPermissionState(permission as any)
+
       if (permission !== 'granted') {
-        console.warn('Push permission denied.')
         return false
       }
 
-      // Ensure SW is registered before subscribing
-      const reg = await navigator.serviceWorker.register('/sw-push.js', { scope: '/' })
-      await navigator.serviceWorker.ready
+      // Use the already-registered PWA service worker (from next-pwa)
+      const reg = await navigator.serviceWorker.ready
 
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -84,9 +77,9 @@ export function usePushNotifications() {
       console.error('Failed to subscribe to push notifications:', err)
       return false
     }
-  }
+  }, [isSupported])
 
-  async function unsubscribe() {
+  const unsubscribe = useCallback(async () => {
     if (!isSupported) return false
 
     try {
@@ -106,7 +99,7 @@ export function usePushNotifications() {
       console.error('Failed to unsubscribe from push notifications:', err)
       return false
     }
-  }
+  }, [isSupported])
 
-  return { isSupported, isSubscribed, subscribe, unsubscribe }
+  return { isSupported, isSubscribed, permissionState, subscribe, unsubscribe }
 }
