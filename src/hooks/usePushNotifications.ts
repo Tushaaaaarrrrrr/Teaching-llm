@@ -49,13 +49,17 @@ export function usePushNotifications() {
     if (!isSupported || !VAPID_PUBLIC_KEY) return false
 
     try {
-      const reg = await navigator.serviceWorker.ready
+      // Must be called immediately on click for Safari to recognize the user gesture
       const permission = await Notification.requestPermission()
       
       if (permission !== 'granted') {
         console.warn('Push permission denied.')
         return false
       }
+
+      // Ensure SW is registered before subscribing
+      const reg = await navigator.serviceWorker.register('/sw-push.js', { scope: '/' })
+      await navigator.serviceWorker.ready
 
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
