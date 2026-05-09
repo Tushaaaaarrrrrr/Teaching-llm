@@ -319,9 +319,30 @@ export default function SupportPage() {
     setClasses((cr.classes || cr || []).map((c: ClassItem) => ({ id: c.id, name: c.name, color: c.color })))
   }, [])
 
-  const loadFaqs = useCallback(async () => {
-    const data = await fetch('/api/support/faq').then(r => r.json())
-    setFaqs(Array.isArray(data) ? data : [])
+  const loadFaqs = useCallback(() => {
+    const staticFaqs: Faq[] = [
+      { id: '1', question: 'What is the difference between PLUS and PRO Batch?', answer: 'PLUS Batch includes full access to recorded lectures and course materials. PRO Batch includes everything in PLUS, plus direct entry to Live Classes, priority 1:1 doubt support, and interactive Q&A sessions with teachers.', order: 0 },
+      { id: '2', question: 'Can I upgrade from PLUS to PRO later?', answer: 'Yes, you can upgrade at any time! Simply visit the course store, find your course, and you will see a discounted "Upgrade to PRO" option that only charges the price difference.', order: 1 },
+      { id: '3', question: 'How long do I have access to the course?', answer: 'Most courses provide access until the end of the academic term (e.g., End Term 1 or Term 2). You can find the exact expiry date in the footer of the course card in the store.', order: 2 },
+      { id: '4', question: 'Is there a mobile app available?', answer: 'We are currently optimized for mobile browsers. You can "Add to Home Screen" on your phone to use it like an app. A native mobile app is in our roadmap!', order: 3 },
+      { id: '5', question: 'What payment methods do you accept?', answer: 'We accept all major Credit/Debit cards, UPI (PhonePe, Google Pay, Paytm), Net Banking, and popular Wallets via our secure Razorpay integration.', order: 4 },
+      { id: '6', question: 'What should I do if my payment fails but money is deducted?', answer: 'Don\'t worry! Usually, it settles automatically within 24-48 hours. If you don\'t see your course in the "Study" section within 2 hours, please raise a support ticket with your transaction ID.', order: 5 },
+      { id: '7', question: 'Can I get a refund?', answer: 'Refund policies vary by course. Generally, we offer a 2-day "no questions asked" refund if you haven\'t consumed more than 10% of the content. Check the specific course terms for details.', order: 6 },
+      { id: '8', question: 'How do I access the Live Classes?', answer: 'If you have a PRO Batch enrollment, go to the "Live" tab in your dashboard. You will see upcoming sessions and a "Join Now" button when a class is live.', order: 7 },
+      { id: '9', question: 'Where can I find my course certificates?', answer: 'Once you complete 100% of the course content and pass the final assessment, your certificate will be available for download in the "Profile" or "Course Details" section.', order: 8 },
+      { id: '10', question: 'I forgot my password, how do I reset it?', answer: 'Click on the "Forgot Password" link on the login page. We will send a secure reset link to your registered email address.', order: 9 },
+      { id: '11', question: 'Can I share my account with a friend?', answer: 'Account sharing is strictly prohibited. Our system monitors concurrent logins and IP changes. Multiple simultaneous logins may lead to permanent account suspension.', order: 10 },
+      { id: '12', question: 'What are "Free Resources"?', answer: 'Free Resources include guest lectures, demo notes, and sample papers available to all registered users without any purchase.', order: 11 },
+      { id: '13', question: 'How can I contact my instructor?', answer: 'PRO Batch users can use the "Doubt" section inside each lesson or the dedicated Q&A feature during Live Classes to interact directly with instructors.', order: 12 },
+      { id: '14', question: 'Do you provide offline access to videos?', answer: 'Currently, videos require an active internet connection to prevent piracy. However, you can download course PDFs and materials for offline viewing.', order: 13 },
+      { id: '15', question: 'What is the "Community" tab?', answer: 'The Community tab is a discussion forum where you can interact with fellow students, share insights, and participate in subject-specific groups.', order: 14 },
+      { id: '16', question: 'How do I track my progress?', answer: 'Your progress is tracked automatically. You can see your completion percentage on the dashboard and inside each individual course module.', order: 15 },
+      { id: '17', question: 'Are the recordings available immediately after a Live Class?', answer: 'Yes, recordings are usually processed and made available in the "Recorded" section within 4-6 hours after the Live Class ends.', order: 16 },
+      { id: '18', question: 'Can I change my registered email address?', answer: 'For security reasons, email changes require manual verification. Please raise a support ticket from your current account to request a change.', order: 17 },
+      { id: '19', question: 'What browsers are recommended?', answer: 'We recommend using the latest versions of Google Chrome, Mozilla Firefox, or Microsoft Edge for the best experience.', order: 18 },
+      { id: '20', question: 'How do I report a technical bug?', answer: 'Please raise a "Technical Support" ticket with a screenshot of the error and your device/browser details. Our team will investigate it promptly.', order: 19 }
+    ]
+    setFaqs(staticFaqs)
   }, [])
 
   useEffect(() => {

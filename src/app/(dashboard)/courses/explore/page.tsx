@@ -501,7 +501,6 @@ export default function ExploreCoursesPage() {
                               )}
                             </div>
                           </div>
-                          </div>
                         </div>
                         <button
                           disabled={true}
@@ -543,7 +542,6 @@ export default function ExploreCoursesPage() {
                                 <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{liveOriginal}</span>
                               )}
                             </div>
-                          </div>
                           </div>
                         </div>
                         <button
@@ -592,8 +590,7 @@ export default function ExploreCoursesPage() {
                             )}
                           </div>
                         </div>
-                          </div>
-                        </div>
+                      </div>
                       <button
                         disabled={true}
                         style={{
@@ -641,8 +638,7 @@ export default function ExploreCoursesPage() {
                             )}
                           </div>
                         </div>
-                          </div>
-                        </div>
+                      </div>
                       <button
                         onClick={() => handlePurchase(offering.id, 'RECORDED')}
                         disabled={!!purchasing}
