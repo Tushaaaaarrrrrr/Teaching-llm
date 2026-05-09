@@ -7,6 +7,7 @@ import UpdateOverlay from '@/components/UpdateOverlay'
 import SupportFloatingButton from '@/components/ui/SupportFloatingButton'
 import ProfileSetupBlocker from '@/components/ProfileSetupBlocker'
 import UserJourneyTracker from '@/components/UserJourneyTracker'
+import PushNotificationSetup from '@/components/PushNotificationSetup'
 
 export default async function DashboardLayout({
   children,
@@ -57,6 +58,7 @@ export default async function DashboardLayout({
       </div>
       <UpdateOverlay />
       <UserJourneyTracker enableDetailedLogs={session.enableDetailedLogs} />
+      <PushNotificationSetup />
     </div>
   )
 }

@@ -7,6 +7,10 @@ import MobileBlocker from '@/components/layout/MobileBlocker'
 export const metadata: Metadata = {
   title: 'GENz IITIAN',
   description: 'Upgrade How You Learn',
+  manifest: '/site.webmanifest',
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 export default function RootLayout({

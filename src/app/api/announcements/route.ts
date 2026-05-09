@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds, canCreateAnnouncements } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { sseEmitter } from '@/lib/sse'
+import { sendPushToUsers, sendPushToAllStudents } from '@/lib/push'
 
 export async function GET() {
   try {
@@ -104,8 +105,27 @@ export async function POST(request: NextRequest) {
         })),
       })
 
-      // Notify connected clients
+      // Notify connected clients via SSE
       targetUsers.forEach(u => sseEmitter.emit(`user:${u.id}:notify`))
+
+      // Fire browser push notifications (works even when browser tab is closed)
+      const targetUserIds = targetUsers.map(u => u.id)
+      const pushBody = content.length > 120 ? content.slice(0, 117) + '...' : content
+      if (courseId) {
+        sendPushToUsers(targetUserIds, {
+          title,
+          body: pushBody,
+          url: '/announcements',
+          tag: `announcement-${announcement.id}`,
+        }).catch(console.error)
+      } else {
+        sendPushToAllStudents({
+          title,
+          body: pushBody,
+          url: '/announcements',
+          tag: `announcement-${announcement.id}`,
+        }).catch(console.error)
+      }
     }
 
     logActivity({
