@@ -575,11 +575,10 @@ export default function SupportPage() {
       <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', overflowY: 'auto' }}>
         {confirmDialog}
 
-        {/* Top row: FAQ card + Live Chat card */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px', alignItems: 'stretch' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', marginBottom: '24px', alignItems: 'flex-start' }}>
 
-          {/* FAQ Card */}
-          <div style={{ ...card, padding: '28px', display: 'flex', flexDirection: 'column', minHeight: '560px' }}>
+          {/* FAQ Card (Left Side) */}
+          <div style={{ ...card, padding: '28px', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f0f0fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
@@ -598,131 +597,127 @@ export default function SupportPage() {
             </p>
 
             {/* FAQ accordion */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, overflowY: 'auto', maxHeight: '390px' }}>
+            <div style={{ flex: 1 }}>
               {faqs.length === 0 ? (
-                <p style={{ fontSize: '13px', color: '#9999b0', textAlign: 'center', padding: '20px 0' }}>
-                  {userRole === 'MANAGER' ? 'No FAQs yet. Click "+ Add FAQ" to create one.' : 'No FAQs available yet.'}
-                </p>
-              ) : faqs.map(f => (
-                <div key={f.id} style={{ background: '#f8f8fc', borderRadius: '14px', overflow: 'hidden', border: '1px solid #eeeef5' }}>
-                  <div
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', cursor: 'pointer' }}
-                    onClick={() => setExpandedFaq(expandedFaq === f.id ? null : f.id)}
-                  >
-                    <span style={{ fontSize: '13.5px', fontWeight: '700', color: '#1e1e3a', flex: 1, marginRight: '8px' }}>{f.question}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                      {userRole === 'MANAGER' && (
-                        <>
-                          <button onClick={e => { e.stopPropagation(); setFaqForm({ question: f.question, answer: f.answer }); setEditingFaq(f); setShowFaqForm(true) }}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b8a', padding: '2px', display: 'flex' }} title="Edit">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                          </button>
-                          <button onClick={e => { e.stopPropagation(); deleteFaq(f.id) }}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '2px', display: 'flex' }} title="Delete">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
-                          </button>
-                        </>
+                <p style={{ fontSize: '13px', color: '#9999b0', textAlign: 'center', padding: '20px 0' }}>No FAQs yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {faqs.map(f => (
+                    <div key={f.id} style={{ borderRadius: '16px', border: '1.5px solid #f0f1f5', overflow: 'hidden' }}>
+                      <div 
+                        onClick={() => setExpandedFaq(expandedFaq === f.id ? null : f.id)}
+                        style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: expandedFaq === f.id ? '#f8f9ff' : '#fff', transition: 'background 0.2s' }}
+                      >
+                        <span style={{ fontSize: '13.5px', fontWeight: '700', color: '#1e1e3a' }}>{f.question}</span>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          {userRole === 'MANAGER' && (
+                            <>
+                              <button onClick={e => { e.stopPropagation(); setFaqForm({ question: f.question, answer: f.answer }); setEditingFaq(f); setShowFaqForm(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0', padding: '4px' }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                              </button>
+                              <button onClick={e => { e.stopPropagation(); deleteFaq(f.id) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
+                              </button>
+                            </>
+                          )}
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.5" style={{ transform: expandedFaq === f.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
+                        </div>
+                      </div>
+                      {expandedFaq === f.id && (
+                        <div style={{ padding: '0 18px 16px', fontSize: '13px', color: '#6b6b8a', lineHeight: '1.6', background: '#f8f9ff', whiteSpace: 'pre-wrap' }}>
+                          {f.answer}
+                        </div>
                       )}
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.5" style={{ transform: expandedFaq === f.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
                     </div>
-                  </div>
-                  {expandedFaq === f.id && (
-                    <div style={{ padding: '0 16px 14px', fontSize: '13px', color: '#6b6b8a', lineHeight: '1.65', borderTop: '1px solid #eeeef5' }}>
-                      <div style={{ paddingTop: '10px' }}>{f.answer}</div>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
-          {/* Live Chat Card */}
-          {(userRole === 'STUDENT' || userRole === 'MANAGER' || userRole === 'ADMIN') && (
-            <div style={{ ...card, padding: '32px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minHeight: '560px', justifyContent: 'flex-start' }}>
-            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#ebebff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '18px' }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
-            </div>
-            <h2 style={{ fontSize: '17px', fontWeight: '800', color: '#1e1e3a', marginBottom: '10px' }}>Need Immediate Help?</h2>
-            <p style={{ fontSize: '13.5px', color: '#6b6b8a', lineHeight: '1.65', marginBottom: '22px' }}>
-              Our support team is online and ready to help. Each session is private and expires after 24 hours.
-            </p>
-            <button
-              onClick={() => (userRole === 'STUDENT' || userRole === 'ADMIN') ? setShowChatStart(true) : setView('chat')}
-              style={{ background: 'linear-gradient(135deg, #3636e8, #5b5bf0)', color: '#fff', borderRadius: '50px', padding: '13px 28px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '14.5px', fontWeight: '700', boxShadow: '0 4px 16px rgba(54,54,232,0.35)', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
-              {(userRole === 'STUDENT' || userRole === 'ADMIN') ? 'Start Live Chat Support' : 'Manage Live Chats'}
-            </button>
-
-            <div style={{ width: '100%', borderRadius: '20px', background: '#f7f7ff', border: '1.5px solid #d9dcff', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)', padding: '16px 18px', marginTop: '6px', marginBottom: '14px', textAlign: 'left' }}>
-              <div style={{ fontSize: '12px', fontWeight: '800', color: '#3636e8', letterSpacing: '0.03em', marginBottom: '6px', textTransform: 'uppercase' }}>
-                Raise a Ticket
+          {/* Right Column (Chat + Tickets) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            
+            {/* Live Chat Card */}
+            <div style={{ ...card, padding: '28px', textAlign: 'center' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f0f0fa', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                </svg>
               </div>
-              <div style={{ fontSize: '12.5px', color: '#6b6b8a', lineHeight: '1.55', marginBottom: '12px' }}>
-                Send a support ticket if your issue needs follow-up instead of live chat.
-              </div>
-              {(userRole === 'STUDENT' || userRole === 'ADMIN') ? (
-                <button onClick={() => setShowCreate(true)} className="btn btn-primary" style={{ borderRadius: '50px', width: '100%' }}>+ Raise a Ticket</button>
-              ) : (
-                <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: '600' }}>Managers can review tickets from the list below.</div>
-              )}
+              <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a', marginBottom: '6px' }}>Live Support Chat</h2>
+              <p style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.6', marginBottom: '18px' }}>
+                Chat with our team in real-time for immediate concerns.
+              </p>
+              <button
+                onClick={() => (userRole === 'STUDENT' || userRole === 'ADMIN') ? setShowChatStart(true) : setView('chat')}
+                style={{ background: 'linear-gradient(135deg, #3636e8, #5b5bf0)', color: '#fff', borderRadius: '50px', padding: '13px 28px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '14.5px', fontWeight: '700', boxShadow: '0 4px 16px rgba(54,54,232,0.35)', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                {(userRole === 'STUDENT' || userRole === 'ADMIN') ? 'Start Live Chat' : 'Manage Live Chats'}
+              </button>
+              <p style={{ fontSize: '12px', color: '#9999b0', marginTop: '4px' }}>Average response time: &lt; 2 minutes</p>
             </div>
 
-            <p style={{ fontSize: '12px', color: '#9999b0', marginBottom: userRole === 'MANAGER' ? '12px' : '0' }}>Average response time: &lt; 2 minutes</p>
+            {/* Raise a Ticket Box (History merged inside) */}
+            <div style={{ width: '100%', borderRadius: '24px', background: '#f7f7ff', border: '1.5px solid #d9dcff', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)', padding: '24px', textAlign: 'left' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#3636e8', letterSpacing: '0.03em', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Raise a Ticket
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.5' }}>
+                    Send a ticket for follow-up issues.
+                  </div>
+                </div>
+                {(userRole === 'STUDENT' || userRole === 'ADMIN') ? (
+                  <button onClick={() => setShowCreate(true)} className="btn btn-primary" style={{ borderRadius: '50px', padding: '10px 20px' }}>+ New Ticket</button>
+                ) : (
+                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Review tickets below</div>
+                )}
+              </div>
+
+              {/* History Section inside the box */}
+              <div style={{ marginTop: '20px', borderTop: '1px solid #d9dcff', paddingTop: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#1e1e3a' }}>Recent History</h3>
+                  <button onClick={() => { setSelected(null); setView('allTickets') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', fontSize: '12px', fontWeight: '700', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    View All →
+                  </button>
+                </div>
+
+                {tickets.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px 0', color: '#9999b0' }}>
+                    <p style={{ fontSize: '12px' }}>No tickets raised yet.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {tickets.slice(0, 5).map((t) => (
+                      <div key={t.id} onClick={() => { setSelected(t); setView('allTickets') }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#fff', borderRadius: '16px', cursor: 'pointer', border: '1px solid #e8eaf0' }}
+                      >
+                        <TicketStatusIcon status={t.status} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1e1e3a', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
+                          <div style={{ fontSize: '11px', color: '#9999b0' }}>{getRelativeTime(t.updatedAt, t.status)}</div>
+                        </div>
+                        <span style={{ ...pill(STATUS_COLORS[t.status]), fontSize: '10px', padding: '2px 8px' }}>{t.status.replace('_', ' ')}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {userRole === 'MANAGER' && (
-              <button onClick={loadChatHistory} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', fontSize: '13px', fontWeight: '700', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <button onClick={loadChatHistory} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', fontSize: '13px', fontWeight: '700', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: '4px', alignSelf: 'center' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                 View Chat History
               </button>
             )}
-            </div>
-          )}
-        </div>
-
-        {/* Recent Support Tickets */}
-        <div style={{ ...card, padding: '24px 28px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#1e1e3a' }}>Recent Support Tickets</h3>
-            <button onClick={() => { setSelected(null); setView('allTickets') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0', fontSize: '13px', fontFamily: 'inherit', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              View All History
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M7 17L17 7M7 7h10v10" /></svg>
-            </button>
           </div>
-
-          {tickets.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9999b0' }}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="1.5" style={{ marginBottom: '10px' }}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-              <p style={{ fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px' }}>No tickets yet</p>
-              <p style={{ fontSize: '13px' }}>{(userRole === 'STUDENT' || userRole === 'ADMIN') ? 'Create a ticket to get help from our support team.' : 'No tickets have been raised yet.'}</p>
-              <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '16px' }}>Use the ticket box in the live chat section to raise a ticket.</div>
-            </div>
-          ) : (
-            <>
-              {tickets.slice(0, 5).map((t, idx) => (
-                <div key={t.id} onClick={() => { setSelected(t); setView('allTickets') }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '15px 0', borderBottom: idx < Math.min(tickets.length, 5) - 1 ? '1px solid #f0f1f5' : 'none', cursor: 'pointer', transition: 'opacity 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = '0.75')}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                >
-                  <TicketStatusIcon status={t.status} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '14.5px', fontWeight: '700', color: '#1e1e3a', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
-                    <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: '600' }}>
-                      Ticket #LLM-{shortId(t.id)} · {getRelativeTime(t.updatedAt, t.status)}
-                      {t.assignedTo && <span style={{ color: '#3636e8' }}> · Assigned to {t.assignedTo.name}</span>}
-                    </div>
-                  </div>
-                  <span style={pill(STATUS_COLORS[t.status])}>{t.status.replace('_', ' ')}</span>
-                </div>
-              ))}
-              <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {(userRole === 'STUDENT' || userRole === 'ADMIN') && <button onClick={() => setShowCreate(true)} className="btn btn-primary" style={{ borderRadius: '50px' }}>+ Raise a Ticket</button>}
-                {tickets.length > 5 && <button onClick={() => setView('allTickets')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', fontSize: '13px', fontWeight: '700', fontFamily: 'inherit' }}>+{tickets.length - 5} more →</button>}
-              </div>
-            </>
-          )}
         </div>
 
         {showCreate && (

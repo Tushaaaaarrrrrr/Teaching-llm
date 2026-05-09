@@ -307,17 +307,17 @@ export default function CoursesPage() {
                         </button>
                         <div style={{
                           position: 'absolute', top: 'calc(100% + 8px)', right: '0',
-                          background: '#1e1e3a', color: '#fff', padding: '6px 12px', borderRadius: '10px',
-                          fontSize: '11px', fontWeight: '600', width: '150px', textAlign: 'center',
-                          boxShadow: '0 4px 15px rgba(0,0,0,0.3)', pointerEvents: 'none',
-                          opacity: 0, transition: 'opacity 0.2s', zIndex: 100,
-                        }} className="info-tooltip-list">
-                          Batch Differences
+                          background: '#1e1e3a', color: '#fff', padding: '8px 14px', borderRadius: '12px',
+                          fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
+                          boxShadow: '0 8px 25px rgba(0,0,0,0.4)', pointerEvents: 'none',
+                          opacity: showUpgradeHint === course.id ? 1 : 0, 
+                          transform: showUpgradeHint === course.id ? 'translateY(0)' : 'translateY(5px)',
+                          transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)', zIndex: 100,
+                          lineHeight: '1.4'
+                        }}>
+                          Click here to see difference between PLUS AND PRO batches
                           <div style={{ position: 'absolute', bottom: '100%', right: '10px', border: '6px solid transparent', borderBottomColor: '#1e1e3a' }} />
                         </div>
-                        <style dangerouslySetInnerHTML={{ __html: `
-                          div:hover > .info-tooltip-list { opacity: 1 !important; }
-                        `}} />
                       </div>
                     )}
               </div>
@@ -354,8 +354,8 @@ export default function CoursesPage() {
                   </span>
                 )}
 
-                {/* Show description only for LIVE users */}
-                {!isRecorded && course.description && (
+                {/* Show description for LIVE users and General Batch */}
+                {(!isRecorded || isFreeOrDemo) && course.description && (
                   <p style={{
                     fontSize: '13px',
                     color: '#6b6b8a',
@@ -370,8 +370,8 @@ export default function CoursesPage() {
                   </p>
                 )}
 
-                {/* Show teacher only for LIVE users */}
-                {!isRecorded && course.teacherName && (
+                {/* Show teacher for LIVE users and General Batch */}
+                {(!isRecorded || isFreeOrDemo) && course.teacherName && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
                     <div style={{
                       width: '24px', height: '24px', borderRadius: '50%',

@@ -216,12 +216,12 @@ export default function ExploreCoursesPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginTop: '-10px'
+        marginTop: '-35px'
       }}>
         <div style={{ flex: 1 }}>
           <h1 style={{
             fontSize: '32px', fontWeight: '900', color: '#1e1e3a',
-            marginBottom: '12px', letterSpacing: '-0.02em'
+            marginTop: 0, marginBottom: '8px', letterSpacing: '-0.02em'
           }}>
             GenZ IITian Official Store
           </h1>
@@ -336,9 +336,10 @@ export default function ExploreCoursesPage() {
             : 0
           
           // Get enrollment status
+          const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
           const enrollmentType = getEnrollmentStatus(offering.courseId)
-          const isRecordedEnrolled = enrollmentType === 'RECORDED'
-          const isLiveEnrolled = enrollmentType === 'LIVE'
+          const isRecordedEnrolled = !isManager && enrollmentType === 'RECORDED'
+          const isLiveEnrolled = !isManager && enrollmentType === 'LIVE'
           const isFullyPurchased = isLiveEnrolled || (isRecordedEnrolled && !offering.hasLive)
 
           return (
@@ -353,7 +354,7 @@ export default function ExploreCoursesPage() {
                 flexDirection: 'column',
                 transition: 'all 0.25s ease',
                 filter: isFullyPurchased ? 'grayscale(0.4) opacity(0.9)' : 'none',
-                pointerEvents: isFullyPurchased ? 'none' : 'auto',
+                pointerEvents: (isFullyPurchased && !isManager) ? 'none' : 'auto',
               } as React.CSSProperties}
               onMouseEnter={e => {
                 e.currentTarget.style.transform = 'translateY(-6px)'
@@ -488,11 +489,12 @@ export default function ExploreCoursesPage() {
                         padding: '14px 16px', borderRadius: '18px',
                         background: '#e8eaf0',
                         boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                        filter: 'grayscale(0.8)', opacity: 0.8,
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                           <div>
                             <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                              📹 Recorded ( PLUS ) Batch
+                              📹 Recorded Batch - PLUS
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{recPrice}</span>
@@ -522,6 +524,7 @@ export default function ExploreCoursesPage() {
                         background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
                         border: '1.5px solid #c7d2fe',
                         position: 'relative', overflow: 'hidden',
+                        filter: 'grayscale(0.8)', opacity: 0.8,
                       }}>
                         <div style={{
                           position: 'absolute', top: '10px', right: '12px',
@@ -534,7 +537,7 @@ export default function ExploreCoursesPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                           <div>
                             <div style={{ fontSize: '10px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                              🔴 Live + Recorded ( PRO ) Batch
+                              🔴 Live + Recorded Batch - PRO
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{livePrice}</span>
@@ -569,6 +572,7 @@ export default function ExploreCoursesPage() {
                       background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
                       border: '1.5px solid #c7d2fe',
                       position: 'relative', overflow: 'hidden',
+                      filter: 'grayscale(0.8)', opacity: 0.8,
                     }}>
                       <div style={{
                         position: 'absolute', top: '10px', right: '12px',
@@ -581,7 +585,7 @@ export default function ExploreCoursesPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <div>
                           <div style={{ fontSize: '10px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                            🔴 Live + Recorded ( PRO ) Batch
+                            🔴 Live + Recorded Batch - PRO
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{livePrice}</span>
@@ -609,7 +613,7 @@ export default function ExploreCoursesPage() {
                   )}
 
                   {/* Recorded Option - Show purchase when not enrolled */}
-                  {offering.hasRecorded && !isLiveEnrolled && (
+                  {offering.hasRecorded && !isLiveEnrolled && !isRecordedEnrolled && (
                     <div 
                       style={{
                         padding: '14px 16px', borderRadius: '18px',
@@ -629,7 +633,7 @@ export default function ExploreCoursesPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <div>
                           <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                            📹 Recorded ( PLUS ) Batch
+                            📹 Recorded Batch - PLUS
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{recPrice}</span>
@@ -653,6 +657,44 @@ export default function ExploreCoursesPage() {
                         }}
                       >
                         {purchasing === `${offering.id}-RECORDED` ? 'Processing...' : 'Buy PLUS Batch'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Recorded Option - Show "Already Enrolled" when user has PLUS but not PRO */}
+                  {offering.hasRecorded && isRecordedEnrolled && !isLiveEnrolled && (
+                    <div style={{
+                      padding: '14px 16px', borderRadius: '18px',
+                      background: '#e8eaf0',
+                      boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                      filter: 'grayscale(0.8)', opacity: 0.8,
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <div>
+                          <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                            📹 Recorded Batch - PLUS
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{recPrice}</span>
+                            {recOriginal > recPrice && (
+                              <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{recOriginal}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        disabled={true}
+                        style={{
+                          width: '100%', padding: '11px', borderRadius: '50px',
+                          border: '2px solid #6366f1', background: '#e8eaf0',
+                          color: '#6366f1', fontSize: '13px', fontWeight: '800',
+                          cursor: 'not-allowed',
+                          opacity: 0.6,
+                          boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        ✅ Already Enrolled
                       </button>
                     </div>
                   )}
@@ -748,7 +790,7 @@ export default function ExploreCoursesPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <div>
                           <div style={{ fontSize: '10px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                            🔴 Live + Recorded ( PRO ) Batch
+                            🔴 Live + Recorded Batch - PRO
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{livePrice}</span>

@@ -245,10 +245,14 @@ export default function CourseDetailPage() {
     <div className="page-container fade-in">
       {/* Course Header Banner */}
       <div className="card" style={{ overflow: 'hidden', marginBottom: '20px' }}>
-        <div style={{
-          background: ['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '') ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(135deg, ${course.color}, ${course.color}cc)`,
-          padding: '28px 24px', position: 'relative', overflow: 'hidden',
-        }}>
+        <div 
+          onMouseEnter={() => setShowUpgradeHint(true)}
+          onMouseLeave={() => setShowUpgradeHint(false)}
+          style={{
+            background: ['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '') ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(135deg, ${course.color}, ${course.color}cc)`,
+            padding: '28px 24px', position: 'relative', overflow: 'hidden',
+          }}
+        >
           <div style={{ position: 'absolute', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', top: '-60px', right: '40px' }} />
           <div style={{ position: 'absolute', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', bottom: '-30px', right: '200px' }} />
 
@@ -271,17 +275,17 @@ export default function CourseDetailPage() {
               </button>
               <div style={{
                 position: 'absolute', top: 'calc(100% + 8px)', right: '0',
-                background: '#1e1e3a', color: '#fff', padding: '6px 12px', borderRadius: '10px',
-                fontSize: '11px', fontWeight: '600', width: '160px', textAlign: 'center',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.3)', pointerEvents: 'none',
-                opacity: 0, transition: 'opacity 0.2s',
+                background: '#1e1e3a', color: '#fff', padding: '8px 14px', borderRadius: '12px',
+                fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
+                boxShadow: '0 8px 25px rgba(0,0,0,0.4)', pointerEvents: 'none',
+                opacity: showUpgradeHint ? 1 : 0, 
+                transform: showUpgradeHint ? 'translateY(0)' : 'translateY(5px)',
+                transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)', zIndex: 100,
+                lineHeight: '1.4'
               }} className="info-tooltip">
-                Compare Batch Benefits
+                Click here to see difference between PLUS AND PRO batches
                 <div style={{ position: 'absolute', bottom: '100%', right: '10px', border: '6px solid transparent', borderBottomColor: '#1e1e3a' }} />
               </div>
-              <style dangerouslySetInnerHTML={{ __html: `
-                div:hover > .info-tooltip { opacity: 1 !important; }
-              `}} />
             </div>
           )}
 
