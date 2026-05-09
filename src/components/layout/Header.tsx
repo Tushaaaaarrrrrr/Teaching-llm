@@ -3,7 +3,6 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import useSWR from 'swr'
-import { usePushNotifications } from '@/hooks/usePushNotifications'
 
 interface HeaderProps {
   userName: string
@@ -65,8 +64,6 @@ export default function Header({ userName, userRole }: HeaderProps) {
   const [avatar, setAvatar] = useState<string | null>(null)
   const notifRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
-  
-  const { isSupported, isSubscribed, subscribe, unsubscribe } = usePushNotifications()
 
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const { data: notificationsData, mutate: mutateNotifications } = useSWR('/api/notifications', fetcher, {
@@ -263,50 +260,6 @@ export default function Header({ userName, userRole }: HeaderProps) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-
-        {/* Push Notifications Toggle Button */}
-        {mounted && isSupported && (
-          <button
-            onClick={() => {
-              if (isSubscribed) unsubscribe()
-              else subscribe()
-            }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '8px 14px', borderRadius: '50px',
-              background: isSubscribed 
-                ? 'transparent'
-                : 'linear-gradient(135deg, #3636e8, #6b6b8a)',
-              color: isSubscribed ? '#6b6b8a' : 'white', 
-              border: isSubscribed ? '1.5px solid #c5c7cf' : 'none', 
-              cursor: 'pointer',
-              fontSize: '12.5px', fontWeight: '600',
-              boxShadow: isSubscribed 
-                ? 'none'
-                : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={e => {
-              if (!isSubscribed) {
-                e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff'
-              } else {
-                e.currentTarget.style.background = '#e8eaf0'
-              }
-            }}
-            onMouseLeave={e => {
-              if (!isSubscribed) {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff'
-              } else {
-                e.currentTarget.style.background = 'transparent'
-              }
-            }}
-          >
-            <span style={{ fontSize: '14px' }}>{isSubscribed ? '🔕' : '🔔'}</span>
-            {isSubscribed ? 'Disable Alerts' : 'Enable Alerts'}
-          </button>
-        )}
 
         {/* Notification bell */}
         <div ref={notifRef} style={{ position: 'relative' }}>
