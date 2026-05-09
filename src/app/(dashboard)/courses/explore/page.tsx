@@ -21,6 +21,7 @@ export default function ExploreCoursesPage() {
   const [upgrading, setUpgrading] = useState(false)
   const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
   const [showInfoHint, setShowInfoHint] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
   const [editingOffering, setEditingOffering] = useState<any | null>(null)
 
   // Modal states
@@ -44,6 +45,7 @@ export default function ExploreCoursesPage() {
 
   // Handle upgrade to Live Pro
   const handleUpgrade = async (courseId: string, offeringId: string) => {
+    setIsProcessing(true)
     setUpgrading(true)
     try {
       // Create Razorpay order
@@ -51,6 +53,7 @@ export default function ExploreCoursesPage() {
       if (!orderRes.ok) {
         const data = await orderRes.json()
         alert(data.error || 'Failed to create order')
+        setIsProcessing(false)
         setUpgrading(false)
         return
       }
@@ -70,6 +73,7 @@ export default function ExploreCoursesPage() {
         },
         theme: { color: '#6366f1' },
         handler: async (response: any) => {
+          setIsProcessing(true)
           try {
             const verifyRes = await fetch(`/api/courses/${courseId}/upgrade`, {
               method: 'POST',
@@ -89,23 +93,30 @@ export default function ExploreCoursesPage() {
           } catch {
             alert('Payment verification failed. Please contact support.')
           } finally {
+            setIsProcessing(false)
             setUpgrading(false)
           }
         },
         modal: {
-          ondismiss: () => setUpgrading(false),
+          ondismiss: () => {
+            setIsProcessing(false)
+            setUpgrading(false)
+          },
         },
       }
 
+      setIsProcessing(false)
       const rzp = new (window as any).Razorpay(options)
       rzp.open()
     } catch (e: any) {
       alert(e.message || 'Something went wrong')
+      setIsProcessing(false)
       setUpgrading(false)
     }
   }
 
   const handlePurchase = async (offeringId: string, accessType: 'RECORDED' | 'LIVE') => {
+    setIsProcessing(true)
     setPurchasing(`${offeringId}-${accessType}`)
     try {
       const res = await fetch(`/api/course-offerings/${offeringId}/create-order`, {
@@ -117,6 +128,7 @@ export default function ExploreCoursesPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to initialize payment')
 
       if (data.isFree) {
+        setIsProcessing(false)
         setSuccessOrderId('FREE-ENROLLMENT')
         setPurchasedCourse({ courseName: data.courseName, accessType })
         return
@@ -138,6 +150,7 @@ export default function ExploreCoursesPage() {
         },
         theme: { color: '#6366f1' },
         handler: async (response: any) => {
+          setIsProcessing(true)
           setVerifyingPayment(true)
           try {
             const verifyRes = await fetch(`/api/course-offerings/${offeringId}/verify`, {
@@ -165,19 +178,25 @@ export default function ExploreCoursesPage() {
           } catch {
             alert('Payment verification failed. Please contact support.')
           } finally {
+            setIsProcessing(false)
             setPurchasing(null)
             setVerifyingPayment(false)
           }
         },
         modal: {
-          ondismiss: () => setPurchasing(null),
+          ondismiss: () => {
+            setIsProcessing(false)
+            setPurchasing(null)
+          },
         },
       }
 
+      setIsProcessing(false)
       const rzp = new (window as any).Razorpay(options)
       rzp.open()
     } catch (err: any) {
       alert(err.message)
+      setIsProcessing(false)
       setPurchasing(null)
     }
   }
@@ -216,7 +235,7 @@ export default function ExploreCoursesPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginTop: '-35px'
+        marginTop: '0'
       }}>
         <div style={{ flex: 1 }}>
           <h1 style={{
@@ -412,7 +431,7 @@ export default function ExploreCoursesPage() {
                   )}
                   
                   {/* Info button */}
-                  {(offering.hasRecorded || offering.hasLive) && !isFullyPurchased && (
+                  {(offering.hasRecorded || offering.hasLive) && !isFullyPurchased && !isManager && (
                     <div style={{ position: 'relative' }}>
                       {showInfoHint === offering.id && (
                         <div style={{
@@ -1461,6 +1480,29 @@ export default function ExploreCoursesPage() {
                 Got it, thanks!
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Processing Modal */}
+      {isProcessing && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(8px)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'white', padding: '40px', borderRadius: '32px',
+            textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+            width: '320px'
+          }}>
+            <div className="spinner" style={{
+              width: '40px', height: '40px', border: '4px solid #f3f3f3',
+              borderTop: '4px solid #6366f1', borderRadius: '50%',
+              margin: '0 auto 20px'
+            }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Processing...</h3>
+            <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Please wait while we set up your course access.</p>
           </div>
         </div>
       )}

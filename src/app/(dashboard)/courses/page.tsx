@@ -41,7 +41,9 @@ export default function CoursesPage() {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
   })
+  const { data: userData } = useSWR('/api/auth/me', fetcher, { revalidateOnFocus: false })
   const { data: helpCard } = useSWR('/api/support/help-card', fetcher)
+  const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
   const courses = Array.isArray(data) ? data : (data as any)?.courses || []
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -50,6 +52,7 @@ export default function CoursesPage() {
   const [upgrading, setUpgrading] = useState(false)
   const [showUpgradeHint, setShowUpgradeHint] = useState<string | null>(null)
   const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -64,6 +67,7 @@ export default function CoursesPage() {
   )
 
   async function handleUpgrade(courseId: string) {
+    setIsProcessing(true)
     setUpgrading(true)
     try {
       // Step 1: Create Razorpay order
@@ -71,6 +75,7 @@ export default function CoursesPage() {
       if (!orderRes.ok) {
         const data = await orderRes.json()
         alert(data.error || 'Failed to create order')
+        setIsProcessing(false)
         setUpgrading(false)
         return
       }
@@ -90,6 +95,7 @@ export default function CoursesPage() {
         },
         theme: { color: '#6366f1' },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+          setIsProcessing(true)
           try {
             const verifyRes = await fetch(`/api/courses/${courseId}/upgrade`, {
               method: 'POST',
@@ -111,20 +117,24 @@ export default function CoursesPage() {
           } catch {
             alert('Payment verification failed. Please contact support.')
           } finally {
+            setIsProcessing(false)
             setUpgrading(false)
           }
         },
         modal: {
           ondismiss: () => {
+            setIsProcessing(false)
             setUpgrading(false)
           },
         },
       }
 
+      setIsProcessing(false)
       const rzp = new (window as unknown as { Razorpay: new (opts: typeof options) => { open: () => void } }).Razorpay(options)
       rzp.open()
     } catch (e: any) {
       alert(e.message || 'Something went wrong')
+      setIsProcessing(false)
       setUpgrading(false)
     }
   }
@@ -290,7 +300,7 @@ export default function CoursesPage() {
                 )}
 
                     {/* Info button for recorded non-free users + tooltip */}
-                    {isRecorded && !isFreeOrDemo && (
+                    {isRecorded && !isFreeOrDemo && !isManager && (
                       <div style={{ position: 'absolute', top: '10px', right: '12px' }}>
                         <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInfoModalCourse(course) }}
@@ -767,6 +777,29 @@ export default function CoursesPage() {
             >
               Got it, let&apos;s go! 🚀
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Processing Modal */}
+      {isProcessing && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(8px)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'white', padding: '40px', borderRadius: '32px',
+            textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+            width: '320px'
+          }}>
+            <div className="spinner" style={{
+              width: '40px', height: '40px', border: '4px solid #f3f3f3',
+              borderTop: '4px solid #6366f1', borderRadius: '50%',
+              margin: '0 auto 20px'
+            }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Processing...</h3>
+            <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Please wait while we set up your course access.</p>
           </div>
         </div>
       )}

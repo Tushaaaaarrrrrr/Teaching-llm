@@ -70,6 +70,7 @@ export default function CourseDetailPage() {
   const [upgradeModalCourse, setUpgradeModalCourse] = useState<CourseDetail | null>(null)
   const [upgrading, setUpgrading] = useState(false)
   const [showUpgradeHint, setShowUpgradeHint] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -151,6 +152,7 @@ export default function CourseDetailPage() {
   const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
 
   const handleUpgrade = async (courseId: string) => {
+    setIsProcessing(true)
     setUpgrading(true)
     try {
       // Step 1: Create Razorpay order
@@ -158,6 +160,8 @@ export default function CourseDetailPage() {
       if (!orderRes.ok) {
         const data = await orderRes.json()
         alert(data.error || 'Failed to create order')
+        setIsProcessing(false)
+        setUpgrading(false)
         return
       }
       const orderData = await orderRes.json()
@@ -177,6 +181,7 @@ export default function CourseDetailPage() {
         theme: { color: '#6366f1' },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
           // Step 3: Verify payment and upgrade
+          setIsProcessing(true)
           try {
             const verifyRes = await fetch(`/api/courses/${courseId}/upgrade`, {
               method: 'POST',
@@ -198,20 +203,24 @@ export default function CourseDetailPage() {
           } catch {
             alert('Payment verification failed. Please contact support.')
           } finally {
+            setIsProcessing(false)
             setUpgrading(false)
           }
         },
         modal: {
           ondismiss: () => {
+            setIsProcessing(false)
             setUpgrading(false)
           },
         },
       }
 
+      setIsProcessing(false)
       const rzp = new (window as unknown as { Razorpay: new (opts: typeof options) => { open: () => void } }).Razorpay(options)
       rzp.open()
-    } catch (e) {
-      alert('Something went wrong')
+    } catch (e: any) {
+      alert(e.message || 'Something went wrong')
+      setIsProcessing(false)
       setUpgrading(false)
     }
   }
@@ -257,7 +266,7 @@ export default function CourseDetailPage() {
           <div style={{ position: 'absolute', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', bottom: '-30px', right: '200px' }} />
 
           {/* Info Button for Recorded users (Top Right) */}
-          {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && (
+          {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && !isManager && (
             <div style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 10 }}>
               <button
                 onClick={() => setInfoModalCourse(course)}
@@ -797,6 +806,29 @@ export default function CourseDetailPage() {
             >
               Got it, let&apos;s go! 🚀
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Processing Modal */}
+      {isProcessing && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(8px)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'white', padding: '40px', borderRadius: '32px',
+            textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+            width: '320px'
+          }}>
+            <div className="spinner" style={{
+              width: '40px', height: '40px', border: '4px solid #f3f3f3',
+              borderTop: '4px solid #6366f1', borderRadius: '50%',
+              margin: '0 auto 20px'
+            }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Processing...</h3>
+            <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Please wait while we set up your course access.</p>
           </div>
         </div>
       )}

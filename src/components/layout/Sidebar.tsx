@@ -412,8 +412,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               return {
                 display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 18px', borderRadius: '50px',
                 color: '#ffffff',
-                background: 'linear-gradient(135deg, #64748b, #334155)',
-                boxShadow: '0 4px 15px rgba(100, 116, 139, 0.4), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.2)',
+                background: 'linear-gradient(135deg, #4b5563, #1f2937)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255,255,255,0.2)',
                 textDecoration: 'none', fontSize: '14px', fontWeight: '800', transition: 'all 0.2s ease',
                 marginBottom: '4px', position: 'relative' as const, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const
               }
