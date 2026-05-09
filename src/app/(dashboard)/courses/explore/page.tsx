@@ -210,13 +210,13 @@ export default function ExploreCoursesPage() {
     <>
       {/* Header Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%)',
-        padding: '32px 24px',
-        marginBottom: '32px',
-        borderBottom: '1px solid #d1d5db',
+        background: 'transparent',
+        padding: '0 32px 16px',
+        marginBottom: '16px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        marginTop: '-10px'
       }}>
         <div style={{ flex: 1 }}>
           <h1 style={{
@@ -236,42 +236,78 @@ export default function ExploreCoursesPage() {
           </p>
         </div>
 
-        {userData?.user?.role === 'MANAGER' && (
-          <button
-            onClick={() => setShowCreateModal(true)}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Help Button */}
+          <a
+            href="/support"
             style={{
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: 'white',
+              background: '#f1f5f9',
+              color: '#475569',
               padding: '10px 18px',
               borderRadius: '12px',
-              border: 'none',
+              border: '1.5px solid #e2e8f0',
               fontSize: '13px',
               fontWeight: '700',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+              gap: '8px',
               transition: 'all 0.2s ease',
-              flexShrink: 0,
+              textDecoration: 'none',
               whiteSpace: 'nowrap'
             }}
             onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#e2e8f0'
               e.currentTarget.style.transform = 'translateY(-1px)'
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(99, 102, 241, 0.4)'
             }}
             onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#f1f5f9'
               e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)'
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
-            Add Course
-          </button>
-        )}
+            Facing any issue? Get Support
+          </a>
+
+          {userData?.user?.role === 'MANAGER' && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              style={{
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: 'white',
+                padding: '10px 18px',
+                borderRadius: '12px',
+                border: 'none',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                transition: 'all 0.2s ease',
+                flexShrink: 0,
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)'
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(99, 102, 241, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)'
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add Course
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="page-container fade-in">
@@ -303,19 +339,22 @@ export default function ExploreCoursesPage() {
           const enrollmentType = getEnrollmentStatus(offering.courseId)
           const isRecordedEnrolled = enrollmentType === 'RECORDED'
           const isLiveEnrolled = enrollmentType === 'LIVE'
+          const isFullyPurchased = isLiveEnrolled || (isRecordedEnrolled && !offering.hasLive)
 
           return (
             <div
               key={offering.id}
               style={{
-                background: '#e8eaf0',
+                background: isFullyPurchased ? '#dfdfe5' : '#e8eaf0',
                 borderRadius: '28px',
-                boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                boxShadow: isFullyPurchased ? 'none' : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
                 overflow: 'visible',
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'all 0.25s ease',
-              }}
+                filter: isFullyPurchased ? 'grayscale(0.4) opacity(0.9)' : 'none',
+                pointerEvents: isFullyPurchased ? 'none' : 'auto',
+              } as React.CSSProperties}
               onMouseEnter={e => {
                 e.currentTarget.style.transform = 'translateY(-6px)'
                 e.currentTarget.style.boxShadow = '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
@@ -372,7 +411,7 @@ export default function ExploreCoursesPage() {
                   )}
                   
                   {/* Info button */}
-                  {(offering.hasRecorded || offering.hasLive) && (
+                  {(offering.hasRecorded || offering.hasLive) && !isFullyPurchased && (
                     <div style={{ position: 'relative' }}>
                       {showInfoHint === offering.id && (
                         <div style={{
@@ -383,7 +422,7 @@ export default function ExploreCoursesPage() {
                           animation: 'fadeIn 0.2s ease-out',
                           pointerEvents: 'none',
                         }}>
-                          Click here to see the difference between PRO and Recorded Access
+                          Click here to see the difference between PRO and PLUS Batch
                           <div style={{ position: 'absolute', top: '100%', right: '12px', border: '7px solid transparent', borderTopColor: '#1e1e3a' }} />
                         </div>
                       )}
@@ -453,7 +492,7 @@ export default function ExploreCoursesPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                           <div>
                             <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                              📹 Recorded Access
+                              📹 Recorded ( PLUS ) Batch
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{recPrice}</span>
@@ -462,15 +501,7 @@ export default function ExploreCoursesPage() {
                               )}
                             </div>
                           </div>
-                          {discountRecorded > 0 && (
-                            <div style={{
-                              padding: '4px 10px', borderRadius: '20px',
-                              background: '#dcfce7', color: '#15803d',
-                              fontSize: '10px', fontWeight: '800',
-                            }}>
-                              {discountRecorded}% OFF
-                            </div>
-                          )}
+                          </div>
                         </div>
                         <button
                           disabled={true}
@@ -504,7 +535,7 @@ export default function ExploreCoursesPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                           <div>
                             <div style={{ fontSize: '10px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                              🔴 Live + Recorded
+                              🔴 Live + Recorded ( PRO ) Batch
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{livePrice}</span>
@@ -513,15 +544,7 @@ export default function ExploreCoursesPage() {
                               )}
                             </div>
                           </div>
-                          {discountLive > 0 && (
-                            <div style={{
-                              padding: '4px 10px', borderRadius: '20px',
-                              background: '#dcfce7', color: '#15803d',
-                              fontSize: '10px', fontWeight: '800',
-                            }}>
-                              {discountLive}% OFF
-                            </div>
-                          )}
+                          </div>
                         </div>
                         <button
                           disabled={true}
@@ -560,7 +583,7 @@ export default function ExploreCoursesPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <div>
                           <div style={{ fontSize: '10px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                            🔴 Live + Recorded
+                            🔴 Live + Recorded ( PRO ) Batch
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{livePrice}</span>
@@ -569,16 +592,8 @@ export default function ExploreCoursesPage() {
                             )}
                           </div>
                         </div>
-                        {discountLive > 0 && (
-                          <div style={{
-                            padding: '4px 10px', borderRadius: '20px',
-                            background: '#dcfce7', color: '#15803d',
-                            fontSize: '10px', fontWeight: '800',
-                          }}>
-                            {discountLive}% OFF
                           </div>
-                        )}
-                      </div>
+                        </div>
                       <button
                         disabled={true}
                         style={{
@@ -598,15 +613,26 @@ export default function ExploreCoursesPage() {
 
                   {/* Recorded Option - Show purchase when not enrolled */}
                   {offering.hasRecorded && !isLiveEnrolled && (
-                    <div style={{
-                      padding: '14px 16px', borderRadius: '18px',
-                      background: '#e8eaf0',
-                      boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
-                    }}>
+                    <div 
+                      style={{
+                        padding: '14px 16px', borderRadius: '18px',
+                        background: '#e8eaf0',
+                        boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                        transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'scale(1.02)'
+                        e.currentTarget.style.boxShadow = '4px 4px 12px #c5c7cf, -4px -4px 12px #ffffff, inset 2px 2px 4px #c5c7cf'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'scale(1)'
+                        e.currentTarget.style.boxShadow = 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff'
+                      }}
+                    >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <div>
                           <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                            📹 Recorded Access
+                            📹 Recorded ( PLUS ) Batch
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{recPrice}</span>
@@ -615,16 +641,8 @@ export default function ExploreCoursesPage() {
                             )}
                           </div>
                         </div>
-                        {discountRecorded > 0 && (
-                          <div style={{
-                            padding: '4px 10px', borderRadius: '20px',
-                            background: '#dcfce7', color: '#15803d',
-                            fontSize: '10px', fontWeight: '800',
-                          }}>
-                            {discountRecorded}% OFF
                           </div>
-                        )}
-                      </div>
+                        </div>
                       <button
                         onClick={() => handlePurchase(offering.id, 'RECORDED')}
                         disabled={!!purchasing}
@@ -638,19 +656,32 @@ export default function ExploreCoursesPage() {
                           transition: 'all 0.2s',
                         }}
                       >
-                        {purchasing === `${offering.id}-RECORDED` ? 'Processing...' : 'Buy Recorded Access'}
+                        {purchasing === `${offering.id}-RECORDED` ? 'Processing...' : 'Buy PLUS Batch'}
                       </button>
                     </div>
                   )}
 
                   {/* Upgrade Option - Show for RECORDED enrolled users */}
                   {isRecordedEnrolled && offering.hasLive && (
-                    <div style={{
-                      padding: '14px 16px', borderRadius: '18px',
-                      background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
-                      border: '1.5px solid #c7d2fe',
-                      position: 'relative', overflow: 'hidden',
-                    }}>
+                    <div 
+                      style={{
+                        padding: '14px 16px', borderRadius: '18px',
+                        background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
+                        border: '1.5px solid #c7d2fe',
+                        position: 'relative', overflow: 'hidden',
+                        transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'scale(1.02)'
+                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(99, 102, 241, 0.15)'
+                        e.currentTarget.style.borderColor = '#818cf8'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'scale(1)'
+                        e.currentTarget.style.boxShadow = 'none'
+                        e.currentTarget.style.borderColor = '#c7d2fe'
+                      }}
+                    >
                       <div style={{
                         position: 'absolute', top: '10px', right: '12px',
                         padding: '3px 10px', borderRadius: '20px',
@@ -661,7 +692,7 @@ export default function ExploreCoursesPage() {
                       </div>
                       <div style={{ marginBottom: '10px' }}>
                         <div style={{ fontSize: '10px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                          ⚡ Upgrade to Live + Recorded
+                          ⚡ Upgrade to PRO Batch
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{livePrice}</span>
@@ -690,12 +721,25 @@ export default function ExploreCoursesPage() {
 
                   {/* Live Option - Show only for non-recorded users */}
                   {offering.hasLive && !isRecordedEnrolled && !isLiveEnrolled && (
-                    <div style={{
-                      padding: '14px 16px', borderRadius: '18px',
-                      background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
-                      border: '1.5px solid #c7d2fe',
-                      position: 'relative', overflow: 'hidden',
-                    }}>
+                    <div 
+                      style={{
+                        padding: '14px 16px', borderRadius: '18px',
+                        background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)',
+                        border: '1.5px solid #c7d2fe',
+                        position: 'relative', overflow: 'hidden',
+                        transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'scale(1.02)'
+                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(99, 102, 241, 0.15)'
+                        e.currentTarget.style.borderColor = '#818cf8'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'scale(1)'
+                        e.currentTarget.style.boxShadow = 'none'
+                        e.currentTarget.style.borderColor = '#c7d2fe'
+                      }}
+                    >
                       {/* PRO Badge */}
                       <div style={{
                         position: 'absolute', top: '10px', right: '12px',
@@ -708,7 +752,7 @@ export default function ExploreCoursesPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <div>
                           <div style={{ fontSize: '10px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                            🔴 Live + Recorded
+                            🔴 Live + Recorded ( PRO ) Batch
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{livePrice}</span>
@@ -731,7 +775,7 @@ export default function ExploreCoursesPage() {
                           transition: 'all 0.2s',
                         }}
                       >
-                        {purchasing === `${offering.id}-LIVE` ? 'Processing...' : '⚡ Buy Live Pro Access'}
+                        {purchasing === `${offering.id}-LIVE` ? 'Processing...' : '⚡ Buy PLUS + PRO Batch'}
                       </button>
                     </div>
                   )}
@@ -1342,7 +1386,7 @@ export default function ExploreCoursesPage() {
                     <tr style={{ background: '#f8fafc' }}>
                       <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
                       {infoModalOffering.hasRecorded && (
-                        <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>Recorded Access</th>
+                        <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>Recorded ( PLUS )</th>
                       )}
                       {infoModalOffering.hasLive && (
                         <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>Live + Recorded (PRO)</th>

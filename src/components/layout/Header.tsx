@@ -268,6 +268,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
             onClick={() => setShowNotif(v => !v)}
             onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
             onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+            title="Notifications & Announcements"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -351,6 +352,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
             onClick={() => setShowUserMenu(v => !v)}
             onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
             onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+            title="My Account & Profile"
           >
             <div style={{
               width: '32px', height: '32px', borderRadius: '50%',

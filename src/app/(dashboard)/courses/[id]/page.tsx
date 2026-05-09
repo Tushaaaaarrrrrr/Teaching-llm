@@ -254,21 +254,35 @@ export default function CourseDetailPage() {
 
           {/* Info Button for Recorded users (Top Right) */}
           {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && (
-            <button
-              onClick={() => setInfoModalCourse(course)}
-              style={{
-                position: 'absolute', top: '24px', right: '24px', zIndex: 10,
-                width: '32px', height: '32px', borderRadius: '50%',
-                background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
-                color: '#fff', fontSize: '16px', fontWeight: '800', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                transition: 'all 0.2s',
-              }}
-              title={`Compare PRO vs ${['FREE', 'DEMO'].includes(course.enrollmentType || '') ? 'General Batch' : 'Plus Recorded'}`}
-            >
-              i
-            </button>
+            <div style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 10 }}>
+              <button
+                onClick={() => setInfoModalCourse(course)}
+                style={{
+                  width: '32px', height: '32px', borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+                  color: '#fff', fontSize: '16px', fontWeight: '800', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  transition: 'all 0.2s',
+                }}
+                title={`Compare PRO vs ${['FREE', 'DEMO'].includes(course.enrollmentType || '') ? 'General Batch' : 'PLUS ( Recorded )'}`}
+              >
+                i
+              </button>
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 8px)', right: '0',
+                background: '#1e1e3a', color: '#fff', padding: '6px 12px', borderRadius: '10px',
+                fontSize: '11px', fontWeight: '600', width: '160px', textAlign: 'center',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.3)', pointerEvents: 'none',
+                opacity: 0, transition: 'opacity 0.2s',
+              }} className="info-tooltip">
+                Compare Batch Benefits
+                <div style={{ position: 'absolute', bottom: '100%', right: '10px', border: '6px solid transparent', borderBottomColor: '#1e1e3a' }} />
+              </div>
+              <style dangerouslySetInnerHTML={{ __html: `
+                div:hover > .info-tooltip { opacity: 1 !important; }
+              `}} />
+            </div>
           )}
 
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative' }}>
@@ -323,17 +337,6 @@ export default function CourseDetailPage() {
                 {/* Upgrade Button for Recorded users perfectly inline */}
                 {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && (
                   <div style={{ position: 'relative' }}>
-                    {showUpgradeHint && (
-                      <div style={{
-                        position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
-                        background: '#1e1e3a', color: '#fff', padding: '8px 12px', borderRadius: '12px',
-                        fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.2)', marginBottom: '12px', zIndex: 10,
-                      }}>
-                        Click the "i" button in the top right to see batch differences
-                        <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', border: '6px solid transparent', borderTopColor: '#1e1e3a' }} />
-                      </div>
-                    )}
                     <button
                       onClick={() => setUpgradeModalCourse(course)}
                       onMouseEnter={() => setShowUpgradeHint(true)}
@@ -640,9 +643,9 @@ export default function CourseDetailPage() {
                     <tr style={{ background: '#f8fafc' }}>
                       <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
                       <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>
-                        {['FREE', 'DEMO'].includes(infoModalCourse?.enrollmentType || '') ? 'General Batch' : 'Plus Recorded'}
+                        {['FREE', 'DEMO'].includes(infoModalCourse?.enrollmentType || '') ? 'General Batch' : 'PLUS ( Recorded )'}
                       </th>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO Batch</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO ( LIVE )</th>
                     </tr>
                   </thead>
                   <tbody>

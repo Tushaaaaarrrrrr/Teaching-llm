@@ -200,7 +200,7 @@ export default function CoursesPage() {
           const getBatchBadge = () => {
             if (isFreeOrDemo) return { text: 'General Batch', color: '#bae6fd' }
             if (isLive) return { text: 'PRO Batch', color: '#fff' }
-            if (isRecorded) return { text: 'Plus Recorded', color: '#fde68a' }
+            if (isRecorded) return { text: 'PLUS', color: '#fde68a' }
             return { text: 'General Batch', color: '#bae6fd' }
           }
           const batchBadge = getBatchBadge()
@@ -289,37 +289,37 @@ export default function CoursesPage() {
                   </div>
                 )}
 
-                {/* Info button for recorded non-free users + tooltip */}
-                {isRecorded && !isFreeOrDemo && (
-                  <div style={{ position: 'absolute', top: '10px', right: '12px' }}>
-                    {showUpgradeHint === course.id && (
-                      <div style={{
-                        position: 'absolute', top: '100%', right: '0',
-                        background: '#1e1e3a', color: '#fff', padding: '8px 12px', borderRadius: '12px',
-                        fontSize: '11px', fontWeight: '600', width: '210px', textAlign: 'center',
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)', marginTop: '10px', zIndex: 10,
-                        animation: 'fadeIn 0.2s ease-out',
-                        pointerEvents: 'none',
-                      }}>
-                        Click here to see the difference between PRO and {isFreeOrDemo ? 'General Batch' : 'Plus Recorded'}
-                        <div style={{ position: 'absolute', bottom: '100%', right: '8px', border: '6px solid transparent', borderBottomColor: '#1e1e3a' }} />
+                    {/* Info button for recorded non-free users + tooltip */}
+                    {isRecorded && !isFreeOrDemo && (
+                      <div style={{ position: 'absolute', top: '10px', right: '12px' }}>
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInfoModalCourse(course) }}
+                          style={{
+                            width: '28px', height: '28px', borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)',
+                            border: 'none', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#fff', fontSize: '14px', fontWeight: '800',
+                          }}
+                          title={`Compare PRO vs ${isFreeOrDemo ? 'General Batch' : 'PLUS'}`}
+                        >
+                          i
+                        </button>
+                        <div style={{
+                          position: 'absolute', top: 'calc(100% + 8px)', right: '0',
+                          background: '#1e1e3a', color: '#fff', padding: '6px 12px', borderRadius: '10px',
+                          fontSize: '11px', fontWeight: '600', width: '150px', textAlign: 'center',
+                          boxShadow: '0 4px 15px rgba(0,0,0,0.3)', pointerEvents: 'none',
+                          opacity: 0, transition: 'opacity 0.2s', zIndex: 100,
+                        }} className="info-tooltip-list">
+                          Batch Differences
+                          <div style={{ position: 'absolute', bottom: '100%', right: '10px', border: '6px solid transparent', borderBottomColor: '#1e1e3a' }} />
+                        </div>
+                        <style dangerouslySetInnerHTML={{ __html: `
+                          div:hover > .info-tooltip-list { opacity: 1 !important; }
+                        `}} />
                       </div>
                     )}
-                    <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInfoModalCourse(course) }}
-                      style={{
-                        width: '28px', height: '28px', borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)',
-                        border: 'none', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#fff', fontSize: '14px', fontWeight: '800',
-                      }}
-                      title={`Compare PRO vs ${isFreeOrDemo ? 'General Batch' : 'Plus Recorded'}`}
-                    >
-                      i
-                    </button>
-                  </div>
-                )}
               </div>
 
               {/* Card Body */}
@@ -616,9 +616,9 @@ export default function CoursesPage() {
                     <tr style={{ background: '#f8fafc' }}>
                       <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
                       <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>
-                        {infoModalCourse?.enrollmentType === 'FREE' || infoModalCourse?.enrollmentType === 'DEMO' ? 'General Batch' : 'Plus Recorded'}
+                        {infoModalCourse?.enrollmentType === 'FREE' || infoModalCourse?.enrollmentType === 'DEMO' ? 'General Batch' : 'PLUS ( Recorded )'}
                       </th>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO Batch</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO ( LIVE )</th>
                     </tr>
                   </thead>
                   <tbody>

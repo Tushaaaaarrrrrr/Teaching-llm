@@ -93,7 +93,7 @@ export async function GET() {
         ...rest,
         isExpired: isCourseExpired(course),
         isEffectivelyDisabled: isCourseEffectivelyDisabled(course),
-        enrollmentType: enrollmentTypeMap.get(course.id) || 'LIVE',
+        enrollmentType: course.isDemo ? 'DEMO' : course.isFree ? 'FREE' : (enrollmentTypeMap.get(course.id) || 'LIVE'),
         _count: {
           ...course._count,
           topics: topicsCount,

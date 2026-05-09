@@ -106,7 +106,7 @@ export async function GET(
       },
     })
 
-    const userEnrollmentType = enrollment?.type || (hasPrivilegedCourseAccess ? 'LIVE' : null)
+    const userEnrollmentType = courseData.isDemo ? 'DEMO' : courseData.isFree ? 'FREE' : (enrollment?.type || (hasPrivilegedCourseAccess ? 'LIVE' : null))
 
     // Filter courseEvents based on enrollment type
     // Only LIVE enrollment users can see live sessions
