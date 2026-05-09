@@ -1,12 +1,6 @@
 import webpush from 'web-push'
 import { prisma } from '@/lib/db'
 
-webpush.setVapidDetails(
-  'mailto:admin@genz-iitian.com',
-  process.env.VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-)
-
 interface PushPayload {
   title: string
   body: string
@@ -21,10 +15,20 @@ interface PushPayload {
  * Silently removes expired/invalid subscriptions from DB.
  */
 export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
-  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+  const pubKey = process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_KEY
+  const privKey = process.env.VAPID_PRIVATE_KEY
+
+  if (!pubKey || !privKey) {
     console.warn('VAPID keys not configured — skipping push notifications')
     return
   }
+
+  // Set VAPID details right before sending to avoid build-time top-level execution errors
+  webpush.setVapidDetails(
+    'mailto:admin@genz-iitian.com',
+    pubKey,
+    privKey
+  )
 
   const subscriptions = await prisma.pushSubscription.findMany({
     where: { userId: { in: userIds } },
