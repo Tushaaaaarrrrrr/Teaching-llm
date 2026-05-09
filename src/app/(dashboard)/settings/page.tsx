@@ -58,7 +58,6 @@ export default function SettingsPage() {
 
   // Notification preferences (UI state — backend integration ready when needed)
   const [notifEmail, setNotifEmail] = useState(true)
-  const [notifSms, setNotifSms] = useState(false)
   const { isSupported, isSubscribed, subscribe, unsubscribe } = usePushNotifications()
 
   // Theme preference
@@ -272,13 +271,6 @@ export default function SettingsPage() {
                     <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Receive updates and alerts via email</div>
                   </div>
                   <Toggle checked={notifEmail} onChange={setNotifEmail} />
-                </div>
-                <div style={insetRow}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>SMS Alerts</div>
-                    <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Get important reminders by text message</div>
-                  </div>
-                  <Toggle checked={notifSms} onChange={setNotifSms} />
                 </div>
 
                 {/* Push Notification Toggle */}

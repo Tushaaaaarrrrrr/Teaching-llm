@@ -22,7 +22,13 @@ export function usePushNotifications() {
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
       setIsSupported(true)
-      checkSubscription()
+      checkSubscription().then((hasSub) => {
+        // Automatically ask for permission if not already answered
+        if (!hasSub && Notification.permission === 'default') {
+          // Timeout to avoid blocking immediate render
+          setTimeout(() => subscribe(), 2000)
+        }
+      })
     }
   }, [])
 
@@ -32,8 +38,10 @@ export function usePushNotifications() {
       await navigator.serviceWorker.ready
       const subscription = await reg.pushManager.getSubscription()
       setIsSubscribed(!!subscription)
+      return !!subscription
     } catch (err) {
       console.error('Error checking push subscription:', err)
+      return false
     }
   }
 
