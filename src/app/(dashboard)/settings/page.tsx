@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 
 const EyeIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -58,7 +59,7 @@ export default function SettingsPage() {
   // Notification preferences (UI state — backend integration ready when needed)
   const [notifEmail, setNotifEmail] = useState(true)
   const [notifSms, setNotifSms] = useState(false)
-  const [notifAssignment, setNotifAssignment] = useState(true)
+  const { isSupported, isSubscribed, subscribe, unsubscribe } = usePushNotifications()
 
   // Theme preference
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
@@ -263,21 +264,40 @@ export default function SettingsPage() {
             </h3>
             <p style={{ fontSize: '12px', color: '#9999b0', marginBottom: '18px' }}>Choose what alerts you want to receive.</p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-              {[
-                { label: 'Email Notifications',      sub: 'Receive updates and alerts via email',           value: notifEmail,      set: setNotifEmail },
-                { label: 'SMS Alerts',                sub: 'Get important reminders by text message',        value: notifSms,        set: setNotifSms },
-                { label: 'New Assignment Reminders',  sub: 'Notify me before assignment deadlines',          value: notifAssignment, set: setNotifAssignment },
-              ].map(item => (
-                <div key={item.label} style={insetRow}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                {/* Regular Toggles */}
+                <div style={insetRow}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>{item.label}</div>
-                    <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>{item.sub}</div>
+                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>Email Notifications</div>
+                    <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Receive updates and alerts via email</div>
                   </div>
-                  <Toggle checked={item.value} onChange={item.set} />
+                  <Toggle checked={notifEmail} onChange={setNotifEmail} />
                 </div>
-              ))}
-            </div>
+                <div style={insetRow}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>SMS Alerts</div>
+                    <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Get important reminders by text message</div>
+                  </div>
+                  <Toggle checked={notifSms} onChange={setNotifSms} />
+                </div>
+
+                {/* Push Notification Toggle */}
+                {isSupported && (
+                  <div style={insetRow}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>Browser Push Alerts</div>
+                      <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Get live alerts even when the site is closed</div>
+                    </div>
+                    <Toggle 
+                      checked={isSubscribed} 
+                      onChange={async (v) => {
+                        if (v) await subscribe()
+                        else await unsubscribe()
+                      }} 
+                    />
+                  </div>
+                )}
+              </div>
           </div>
 
           {/* ── Preferences ── */}

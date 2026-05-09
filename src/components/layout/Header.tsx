@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import useSWR from 'swr'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 
 interface HeaderProps {
   userName: string
@@ -64,6 +65,8 @@ export default function Header({ userName, userRole }: HeaderProps) {
   const [avatar, setAvatar] = useState<string | null>(null)
   const notifRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
+  
+  const { isSupported, isSubscribed, subscribe } = usePushNotifications()
 
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const { data: notificationsData, mutate: mutateNotifications } = useSWR('/api/notifications', fetcher, {
@@ -260,6 +263,33 @@ export default function Header({ userName, userRole }: HeaderProps) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+
+        {/* Push Notifications Enable Button */}
+        {mounted && isSupported && !isSubscribed && (
+          <button
+            onClick={() => subscribe()}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 14px', borderRadius: '50px',
+              background: 'linear-gradient(135deg, #3636e8, #6b6b8a)',
+              color: 'white', border: 'none', cursor: 'pointer',
+              fontSize: '12.5px', fontWeight: '600',
+              boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff'
+            }}
+          >
+            <span style={{ fontSize: '14px' }}>🔔</span>
+            Enable Course Alerts
+          </button>
+        )}
 
         {/* Notification bell */}
         <div ref={notifRef} style={{ position: 'relative' }}>
