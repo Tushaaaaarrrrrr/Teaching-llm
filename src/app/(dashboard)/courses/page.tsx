@@ -180,6 +180,13 @@ export default function CoursesPage() {
           20% { left: 200%; }
           100% { left: 200%; }
         }
+        @keyframes gentleFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        .help-icon-float {
+          animation: gentleFloat 3s ease-in-out infinite;
+        }
       `}</style>
 
       <div className="grid-3">
@@ -187,14 +194,14 @@ export default function CoursesPage() {
           const isRecorded = ['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '')
           const isLive = course.enrollmentType === 'LIVE'
           const isFreeOrDemo = course.enrollmentType === 'FREE' || course.enrollmentType === 'DEMO'
-          const hasUpgradePrice = isRecorded && course.liveUpgradePrice != null && course.liveUpgradePrice > 0
+          const hasUpgradePrice = isRecorded && !isFreeOrDemo && course.liveUpgradePrice != null && course.liveUpgradePrice > 0
           
           // Determine batch type: General (free/demo), PRO (live), or Plus (recorded)
           const getBatchBadge = () => {
-            if (isFreeOrDemo) return { text: 'General Batch', color: '#fde68a' }
+            if (isFreeOrDemo) return { text: 'General Batch', color: '#bae6fd' }
             if (isLive) return { text: 'PRO Batch', color: '#fff' }
-            if (isRecorded) return { text: 'Plus Batch', color: '#fde68a' }
-            return { text: 'General Batch', color: '#fde68a' }
+            if (isRecorded) return { text: 'Plus Recorded', color: '#fde68a' }
+            return { text: 'General Batch', color: '#bae6fd' }
           }
           const batchBadge = getBatchBadge()
 
@@ -294,7 +301,7 @@ export default function CoursesPage() {
                         animation: 'fadeIn 0.2s ease-out',
                         pointerEvents: 'none',
                       }}>
-                        Click here to see the difference between PRO and General Batch
+                        Click here to see the difference between PRO and {isFreeOrDemo ? 'General Batch' : 'Plus Recorded'}
                         <div style={{ position: 'absolute', bottom: '100%', right: '8px', border: '6px solid transparent', borderBottomColor: '#1e1e3a' }} />
                       </div>
                     )}
@@ -307,7 +314,7 @@ export default function CoursesPage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         color: '#fff', fontSize: '14px', fontWeight: '800',
                       }}
-                      title="Compare PRO vs General Batch"
+                      title={`Compare PRO vs ${isFreeOrDemo ? 'General Batch' : 'Plus Recorded'}`}
                     >
                       i
                     </button>
@@ -532,7 +539,7 @@ export default function CoursesPage() {
                   color: 'white',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                   zIndex: 1,
-                }}>
+                }} className="help-icon-float">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </div>
               </div>
@@ -608,7 +615,9 @@ export default function CoursesPage() {
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
                       <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>General Batch</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>
+                        {infoModalCourse?.enrollmentType === 'FREE' || infoModalCourse?.enrollmentType === 'DEMO' ? 'General Batch' : 'Plus Recorded'}
+                      </th>
                       <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO Batch</th>
                     </tr>
                   </thead>

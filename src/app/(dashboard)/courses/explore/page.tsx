@@ -157,7 +157,7 @@ export default function ExploreCoursesPage() {
                 courseName: data.courseName,
                 accessType,
                 orderId: verifyData.orderId,
-                courseTier: accessType === 'LIVE' ? 'Live + Recorded (Pro)' : 'Recorded (General)'
+                courseTier: accessType === 'LIVE' ? 'Live + Recorded (Pro)' : 'Recorded (Plus)'
               })
             } else {
               alert('Verification failed: ' + verifyData.error)
@@ -824,7 +824,7 @@ export default function ExploreCoursesPage() {
             {/* Recording Batch Pricing */}
             <div style={{ background: '#f8f9fc', padding: '20px', borderRadius: '18px', marginBottom: '24px', border: '2px solid #e0e7ff' }}>
               <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#1e1e3a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                📹 Recording Batch - General
+                📹 Recording Batch - Plus
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>

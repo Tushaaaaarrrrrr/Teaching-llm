@@ -406,6 +406,30 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             (item.href === '/announcements' && unread?.announcements)
           )
 
+          const isStore = item.href === '/courses/explore'
+          const getLinkStyle = () => {
+            if (isStore) {
+              return {
+                display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 18px', borderRadius: '50px',
+                color: '#ffffff',
+                background: 'linear-gradient(135deg, #64748b, #334155)',
+                boxShadow: '0 4px 15px rgba(100, 116, 139, 0.4), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.2)',
+                textDecoration: 'none', fontSize: '14px', fontWeight: '800', transition: 'all 0.2s ease',
+                marginBottom: '4px', position: 'relative' as const, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const
+              }
+            }
+            return {
+              display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 18px', borderRadius: '50px',
+              color: isActive ? '#ffffff' : '#6b6b8a',
+              background: isActive ? '#3636e8' : '#e8eaf0',
+              boxShadow: isActive
+                ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)'
+                : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+              textDecoration: 'none', fontSize: '14px', fontWeight: isActive ? '700' : '500', transition: 'all 0.2s ease',
+              marginBottom: '4px', position: 'relative' as const, whiteSpace: 'nowrap' as const
+            }
+          }
+
           return (
             <div key={item.href}>
               {showGeneralHeader && (
@@ -426,31 +450,30 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               )}
               <Link
                 href={item.href}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '11px 18px',
-                  borderRadius: '50px',
-                  color: isActive ? '#ffffff' : '#6b6b8a',
-                  background: isActive ? '#3636e8' : '#e8eaf0',
-                  boxShadow: isActive
-                    ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)'
-                    : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                  fontWeight: isActive ? '700' : '500',
-                  transition: 'all 0.2s ease',
-                  marginBottom: '4px',
-                  position: 'relative',
-                  whiteSpace: 'nowrap'
-                }}
+                style={getLinkStyle()}
+                className={isStore ? 'store-link' : ''}
               >
+                {isStore && (
+                  <style dangerouslySetInnerHTML={{__html: `
+                    .store-link::before {
+                      content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+                      background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+                      transform: skewX(-25deg);
+                      animation: shine 3s infinite;
+                    }
+                    @keyframes shine {
+                      0% { left: -100%; }
+                      20% { left: 200%; }
+                      100% { left: 200%; }
+                    }
+                  `}} />
+                )}
                 <span style={{
-                  color: isActive ? '#ffffff' : '#6b6b8a',
+                  color: isStore ? '#ffffff' : (isActive ? '#ffffff' : '#6b6b8a'),
                   flexShrink: 0,
                   display: 'flex',
-                  position: 'relative'
+                  position: 'relative',
+                  zIndex: 1
                 }}>
                   {item.icon}
                   {hasRedDot && (
@@ -462,17 +485,17 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                       height: '8px',
                       borderRadius: '50%',
                       background: '#ef4444',
-                      border: `2px solid ${isActive ? '#3636e8' : '#e8eaf0'}`,
+                      border: `2px solid ${isStore ? '#64748b' : (isActive ? '#3636e8' : '#e8eaf0')}`,
                       boxShadow: '0 0 6px rgba(239, 68, 68, 0.4)'
                     }} />
                   )}
                 </span>
                 {item.label === 'Analytics & Performance' ? (
-                  <div style={{ lineHeight: '1.2', whiteSpace: 'normal' }}>
+                  <div style={{ lineHeight: '1.2', whiteSpace: 'normal', zIndex: 1, position: 'relative' }}>
                     {item.label}
                   </div>
                 ) : (
-                  item.label
+                  <span style={{ zIndex: 1, position: 'relative' }}>{item.label}</span>
                 )}
               </Link>
             </div>

@@ -253,7 +253,7 @@ export default function CourseDetailPage() {
           <div style={{ position: 'absolute', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', bottom: '-30px', right: '200px' }} />
 
           {/* Info Button for Recorded users (Top Right) */}
-          {['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '') && course.liveUpgradePrice && (
+          {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && (
             <button
               onClick={() => setInfoModalCourse(course)}
               style={{
@@ -265,7 +265,7 @@ export default function CourseDetailPage() {
                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                 transition: 'all 0.2s',
               }}
-              title="Compare PRO vs General Batch"
+              title={`Compare PRO vs ${['FREE', 'DEMO'].includes(course.enrollmentType || '') ? 'General Batch' : 'Plus Recorded'}`}
             >
               i
             </button>
@@ -321,7 +321,7 @@ export default function CourseDetailPage() {
                   </span>
 
                 {/* Upgrade Button for Recorded users perfectly inline */}
-                {['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '') && course.liveUpgradePrice && (
+                {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && (
                   <div style={{ position: 'relative' }}>
                     {showUpgradeHint && (
                       <div style={{
@@ -517,8 +517,19 @@ export default function CourseDetailPage() {
 
                         {/* Title + description */}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px' }}>
-                            {item.title}
+                          <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
+                            {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
+                              <span style={{
+                                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                color: 'white', padding: '2px 6px', borderRadius: '4px',
+                                fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
+                                letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                                flexShrink: 0
+                              }}>
+                                New
+                              </span>
+                            )}
                           </div>
                           {item.description && (
                             <p style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -628,7 +639,9 @@ export default function CourseDetailPage() {
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
                       <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>General Batch</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>
+                        {['FREE', 'DEMO'].includes(infoModalCourse?.enrollmentType || '') ? 'General Batch' : 'Plus Recorded'}
+                      </th>
                       <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO Batch</th>
                     </tr>
                   </thead>

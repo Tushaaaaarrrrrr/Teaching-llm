@@ -64,6 +64,7 @@ export async function GET(
         order: link.order,
         isImported: true,
         importedIntoTopicId: topic.id,
+        createdAt: link.createdAt,
       }))
 
       return {
