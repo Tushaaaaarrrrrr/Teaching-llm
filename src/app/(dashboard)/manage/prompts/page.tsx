@@ -262,6 +262,3 @@ export default function PromptsAdminPage() {
     </div>
   )
 }
-
-  )
-}
