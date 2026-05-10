@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import useSWR from 'swr'
+import Link from 'next/link'
 import { Plus, Trash, Users, ChevronDown, ChevronUp } from 'lucide-react'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
@@ -11,11 +12,10 @@ export default function PromptsAdminPage() {
   const prompts = data?.prompts || []
 
   const [isCreating, setIsCreating] = useState(false)
-  const [expandedPromptId, setExpandedPromptId] = useState<string | null>(null)
-
   const [newTitle, setNewTitle] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [questions, setQuestions] = useState<any[]>([])
+  const [editingPromptId, setEditingPromptId] = useState<string | null>(null)
 
   const addQuestion = (type: string) => {
     setQuestions([...questions, { id: `q_${Date.now()}`, text: '', type, options: [], link: '', linkText: '' }])
@@ -29,36 +29,53 @@ export default function PromptsAdminPage() {
     setQuestions(questions.filter(q => q.id !== id))
   }
 
-  const handleCreate = async () => {
+  const startEdit = (prompt: any) => {
+    setEditingPromptId(prompt.id)
+    setNewTitle(prompt.title)
+    setNewDesc(prompt.description || '')
+    setQuestions(JSON.parse(prompt.questions))
+    setIsCreating(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const cancelCreate = () => {
+    setEditingPromptId(null)
+    setNewTitle('')
+    setNewDesc('')
+    setQuestions([])
+    setIsCreating(false)
+  }
+
+  const handleSave = async () => {
     if (!newTitle || questions.length === 0) return alert('Title and at least 1 question are required.')
     
     // Clean up empty options
     const cleanedQuestions = questions.map(q => {
       if (q.type === 'MULTIPLE_CHOICE') {
-        return { ...q, options: q.options.filter((o: string) => o.trim() !== '') }
+        return { ...q, options: Array.isArray(q.options) ? q.options.filter((o: string) => o.trim() !== '') : [] }
       }
       return q
     })
 
-    const res = await fetch('/api/admin/prompts', {
-      method: 'POST',
+    const url = editingPromptId ? `/api/admin/prompts/${editingPromptId}` : '/api/admin/prompts'
+    const method = editingPromptId ? 'PUT' : 'POST'
+
+    const res = await fetch(url, {
+      method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: newTitle,
         description: newDesc,
-        isActive: false,
+        isActive: editingPromptId ? undefined : false, // Don't change active state on edit unless requested
         questions: cleanedQuestions
       })
     })
 
     if (res.ok) {
-      setNewTitle('')
-      setNewDesc('')
-      setQuestions([])
-      setIsCreating(false)
+      cancelCreate()
       mutate()
     } else {
-      alert('Failed to create prompt')
+      alert('Failed to save prompt')
     }
   }
 
@@ -85,7 +102,7 @@ export default function PromptsAdminPage() {
           <p style={{ color: '#6b6b8a', fontSize: '14px' }}>Create full-page blockers to ask users questions or drive actions.</p>
         </div>
         <button 
-          onClick={() => setIsCreating(!isCreating)}
+          onClick={() => isCreating ? cancelCreate() : setIsCreating(true)}
           className="btn btn-primary"
           style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
         >
@@ -95,7 +112,7 @@ export default function PromptsAdminPage() {
 
       {isCreating && (
         <div className="card" style={{ padding: '24px', marginBottom: '30px', borderTop: '4px solid #6366f1' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px' }}>Create New Prompt</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px' }}>{editingPromptId ? 'Edit Prompt' : 'Create New Prompt'}</h2>
           
           <div className="form-group">
             <label className="form-label">Title (Required)</label>
@@ -108,10 +125,10 @@ export default function PromptsAdminPage() {
           </div>
 
           <div style={{ marginTop: '24px' }}>
-            <label className="form-label">Questions / CTAs</label>
+            <label className="form-label">Questions / CTAs (Max 3)</label>
             {questions.length === 0 && (
               <div style={{ padding: '20px', textAlign: 'center', background: '#f8f9fa', borderRadius: '12px', border: '1px dashed #c5c7cf', color: '#9999b0', fontSize: '14px' }}>
-                No questions added yet. Add one below.
+                No questions added yet. Add one below. (Max 3)
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -164,14 +181,16 @@ export default function PromptsAdminPage() {
             </div>
             
             <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-              <button onClick={() => addQuestion('YES_NO')} className="btn btn-ghost" style={{ fontSize: '13px' }}>+ Add Yes/No</button>
-              <button onClick={() => addQuestion('MULTIPLE_CHOICE')} className="btn btn-ghost" style={{ fontSize: '13px' }}>+ Add Multiple Choice</button>
-              <button onClick={() => addQuestion('CTA_ONLY')} className="btn btn-ghost" style={{ fontSize: '13px' }}>+ Add CTA Button</button>
+              <button disabled={questions.length >= 3} onClick={() => addQuestion('YES_NO')} className="btn btn-ghost" style={{ fontSize: '13px', opacity: questions.length >= 3 ? 0.5 : 1 }}>+ Add Yes/No</button>
+              <button disabled={questions.length >= 3} onClick={() => addQuestion('MULTIPLE_CHOICE')} className="btn btn-ghost" style={{ fontSize: '13px', opacity: questions.length >= 3 ? 0.5 : 1 }}>+ Add Multiple Choice</button>
+              <button disabled={questions.length >= 3} onClick={() => addQuestion('CTA_ONLY')} className="btn btn-ghost" style={{ fontSize: '13px', opacity: questions.length >= 3 ? 0.5 : 1 }}>+ Add CTA Button</button>
             </div>
+            {questions.length >= 3 && <p style={{ fontSize: '11px', color: '#ef4444', marginTop: '8px' }}>Maximum limit of 3 questions reached.</p>}
           </div>
 
-          <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end' }}>
-            <button onClick={handleCreate} className="btn btn-primary">Save Prompt</button>
+          <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            {editingPromptId && <button onClick={cancelCreate} className="btn btn-ghost">Cancel Edit</button>}
+            <button onClick={handleSave} className="btn btn-primary">{editingPromptId ? 'Update Prompt' : 'Save Prompt'}</button>
           </div>
         </div>
       )}
@@ -202,15 +221,22 @@ export default function PromptsAdminPage() {
                   {p.description && <p style={{ fontSize: '13px', color: '#6b6b8a', margin: 0 }}>{p.description}</p>}
                 </div>
                 
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <button 
                     onClick={() => toggleActive(p.id, p.isActive)} 
                     className="btn btn-ghost"
-                    style={{ fontSize: '13px', fontWeight: 600, color: p.isActive ? '#f59e0b' : '#10b981' }}
+                    style={{ fontSize: '12px', padding: '6px 12px', fontWeight: 600, color: p.isActive ? '#f59e0b' : '#10b981' }}
                   >
                     {p.isActive ? 'Deactivate' : 'Activate'}
                   </button>
-                  <button onClick={() => deletePrompt(p.id)} className="btn btn-ghost" style={{ color: '#ef4444' }}>
+                  <button 
+                    onClick={() => startEdit(p)}
+                    className="btn btn-ghost"
+                    style={{ fontSize: '12px', padding: '6px 12px', color: '#6366f1' }}
+                  >
+                    Edit
+                  </button>
+                  <button onClick={() => deletePrompt(p.id)} className="btn btn-ghost" style={{ padding: '6px', color: '#ef4444' }}>
                     <Trash size={18} />
                   </button>
                 </div>
@@ -221,20 +247,14 @@ export default function PromptsAdminPage() {
                   <Users size={18} /> {p._count?.responses || 0} Responses
                 </div>
                 
-                <button 
-                  onClick={() => setExpandedPromptId(expandedPromptId === p.id ? null : p.id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 600, cursor: 'pointer', fontSize: '13px' }}
+                <Link 
+                  href={`/manage/prompts/${p.id}/responses`}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: '#6b6b8a', fontWeight: 600, fontSize: '13px' }}
                 >
-                  {expandedPromptId === p.id ? 'Hide Responses' : 'View Responses'}
-                  {expandedPromptId === p.id ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
-                </button>
+                  View All Responses
+                  <ChevronDown size={16} style={{ transform: 'rotate(-90deg)' }}/>
+                </Link>
               </div>
-
-              {expandedPromptId === p.id && (
-                <div style={{ marginTop: '20px', background: '#f8f9fa', padding: '20px', borderRadius: '12px' }}>
-                  <PromptResponses promptId={p.id} questions={JSON.parse(p.questions)} />
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -243,44 +263,5 @@ export default function PromptsAdminPage() {
   )
 }
 
-function PromptResponses({ promptId, questions }: { promptId: string, questions: any[] }) {
-  const { data, isLoading } = useSWR(`/api/admin/prompts/${promptId}`, fetcher)
-  
-  if (isLoading) return <div style={{ fontSize: '13px', color: '#9999b0' }}>Loading responses...</div>
-  
-  const responses = data?.prompt?.responses || []
-
-  if (responses.length === 0) return <div style={{ fontSize: '13px', color: '#9999b0' }}>No responses yet.</div>
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {responses.map((r: any) => {
-        let answers = {}
-        try { answers = JSON.parse(r.answers) } catch(e){}
-        
-        return (
-          <div key={r.id} style={{ background: '#fff', padding: '16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#e0e7ff', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>
-                {r.user.name.charAt(0)}
-              </div>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '14px', color: '#1e1e3a' }}>{r.user.name}</div>
-                <div style={{ fontSize: '12px', color: '#9999b0' }}>{r.user.email}</div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gap: '8px' }}>
-              {questions.map(q => (
-                <div key={q.id} style={{ fontSize: '13px' }}>
-                  <span style={{ color: '#6b6b8a' }}>{q.text}: </span>
-                  <strong style={{ color: '#1e1e3a' }}>{answers[q.id as keyof typeof answers] || 'N/A'}</strong>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      })}
-    </div>
   )
 }
