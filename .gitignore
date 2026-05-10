@@ -29,3 +29,27 @@ pnpm-debug.log*
 .DS_Store
 .vercel/
 *.tsbuildinfo
+
+# One-off scripts & python
+*.py
+check_db.js
+backup-supabase.js
+check_course_status.js
+create_analytics_tables.js
+create_test_manager.js
+emergency_schema_sync.js
+init_super_manager.js
+manual_migrate.js
+verify_production_deployment.js
+scratch_db.js
+
+# Data dumps
+students.json
+codebase-tree.json
+
+# Markdown docs (keeping README)
+*.md
+!README.md
+
+# Weird artifacts
+--version

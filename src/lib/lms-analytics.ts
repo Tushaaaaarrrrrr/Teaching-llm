@@ -103,6 +103,8 @@ export async function computeDailyAnalytics(targetDate: Date): Promise<{
   const courseStats: { courseId: string; name: string; count: number; total: number }[] = []
 
   for (const course of courses) {
+    // Exclude Demo Course from analytics tracking
+    if (course.id === 'cmn2sm2gl000fcqgo540cdrbj') continue
     const dayCount = await (prisma.enrollment as any).count({
       where: { courseId: course.id, createdAt: { gte: start, lte: end } },
     })

@@ -22,15 +22,32 @@ export default function ManagePage() {
   const { data: authData, error: authError } = useSWR('/api/auth/me', fetcher)
   const userRole = authData?.user?.role || ''
 
+  // Courses & instructors always loaded — used in form dropdowns across all tabs
   const { data: coursesData, error: coursesError, isLoading: loadingCourses } = useSWR('/api/courses', fetcher)
-  const { data: bundlesData, error: bundlesError, isLoading: loadingBundles } = useSWR(userRole === 'MANAGER' ? '/api/course-bundles' : null, fetcher)
-  const { data: lecturesData, error: lecturesError, isLoading: loadingLectures } = useSWR('/api/content?hasVideo=true', fetcher)
-  const { data: eventsData, error: eventsError, isLoading: loadingEvents } = useSWR('/api/events', fetcher)
-  const { data: materialsData, error: materialsError, isLoading: loadingMaterials } = useSWR('/api/materials', fetcher)
-  const { data: announcementsData, error: announcementsError, isLoading: loadingAnnouncements } = useSWR('/api/announcements', fetcher)
-  const { data: contentBankData, error: bankError, isLoading: loadingBank } = useSWR('/api/content-bank', fetcher)
   const { data: instructorsData, error: instructorsError } = useSWR('/api/instructors', fetcher)
-  const { data: offeringsData, error: offeringsError, isLoading: loadingOfferings } = useSWR('/api/course-offerings', fetcher)
+
+  // All other tabs: only fetch when that tab is active
+  const { data: bundlesData, error: bundlesError, isLoading: loadingBundles } = useSWR(
+    tab === 'bundles' && userRole === 'MANAGER' ? '/api/course-bundles' : null, fetcher
+  )
+  const { data: lecturesData, error: lecturesError, isLoading: loadingLectures } = useSWR(
+    tab === 'lectures' ? '/api/content?hasVideo=true' : null, fetcher
+  )
+  const { data: eventsData, error: eventsError, isLoading: loadingEvents } = useSWR(
+    tab === 'events' ? '/api/events' : null, fetcher
+  )
+  const { data: materialsData, error: materialsError, isLoading: loadingMaterials } = useSWR(
+    tab === 'materials' ? '/api/materials' : null, fetcher
+  )
+  const { data: announcementsData, error: announcementsError, isLoading: loadingAnnouncements } = useSWR(
+    tab === 'announcements' ? '/api/announcements' : null, fetcher
+  )
+  const { data: contentBankData, error: bankError, isLoading: loadingBank } = useSWR(
+    tab === 'content-bank' ? '/api/content-bank' : null, fetcher
+  )
+  const { data: offeringsData, error: offeringsError, isLoading: loadingOfferings } = useSWR(
+    tab === 'offerings' ? '/api/course-offerings' : null, fetcher
+  )
 
   const courses = Array.isArray(coursesData) ? coursesData : Array.isArray(coursesData?.courses) ? coursesData.courses : []
   const offerings = Array.isArray(offeringsData) ? offeringsData : []
@@ -42,7 +59,15 @@ export default function ManagePage() {
   const bankQuestions = Array.isArray(contentBankData) ? contentBankData : []
   const instructors = Array.isArray(instructorsData) ? instructorsData : []
 
-  const loading = loadingCourses || loadingOfferings || loadingBundles || loadingLectures || loadingEvents || loadingMaterials || loadingAnnouncements
+  // Loading = only the active tab's loader
+  const loading = loadingCourses ||
+    (tab === 'offerings' && loadingOfferings) ||
+    (tab === 'bundles' && loadingBundles) ||
+    (tab === 'lectures' && loadingLectures) ||
+    (tab === 'events' && loadingEvents) ||
+    (tab === 'materials' && loadingMaterials) ||
+    (tab === 'announcements' && loadingAnnouncements) ||
+    (tab === 'content-bank' && loadingBank)
   const loadError =
     authError ||
     coursesError ||
@@ -57,16 +82,17 @@ export default function ManagePage() {
 
 
 
+  // Revalidate only the active tab's data (+ courses which are always loaded)
   async function loadData() {
     mutate('/api/courses')
-    mutate('/api/course-bundles')
-    mutate('/api/content?hasVideo=true')
-    mutate('/api/events')
-    mutate('/api/materials')
-    mutate('/api/announcements')
-    mutate('/api/content-bank')
     mutate('/api/instructors')
-    mutate('/api/course-offerings')
+    if (tab === 'bundles')       mutate('/api/course-bundles')
+    if (tab === 'lectures')      mutate('/api/content?hasVideo=true')
+    if (tab === 'events')        mutate('/api/events')
+    if (tab === 'materials')     mutate('/api/materials')
+    if (tab === 'announcements') mutate('/api/announcements')
+    if (tab === 'content-bank')  mutate('/api/content-bank')
+    if (tab === 'offerings')     mutate('/api/course-offerings')
   }
 
   const [showModal, setShowModal]       = useState(false)

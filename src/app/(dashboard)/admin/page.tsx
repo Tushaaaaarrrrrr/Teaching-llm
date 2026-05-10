@@ -151,10 +151,16 @@ export default function AdminPage() {
     }
   }
 
-  const { data: usersData, mutate: mutateUsers, isLoading: usersLoading } = useSWR('/api/users', url => fetch(url).then(r => r.json()))
+  // Build the SWR key: only add ?search= when there's a debounced query
+  const usersApiKey = debouncedSearchQuery
+    ? `/api/users?search=${encodeURIComponent(debouncedSearchQuery)}`
+    : '/api/users'
+
+  const { data: usersData, mutate: mutateUsers, isLoading: usersLoading } = useSWR(usersApiKey, url => fetch(url).then(r => r.json()))
   const { data: bundlesData } = useSWR(userRole === 'MANAGER' ? '/api/course-bundles' : null, url => fetch(url).then(r => r.json()))
 
   const users = normalizeCollection<User>(usersData, 'users')
+  const isLimitedView = !debouncedSearchQuery
   const bundles = normalizeCollection<CourseBundleInfo>(bundlesData, 'bundles')
   const managerCount = users.filter(u => u.role === 'MANAGER').length
   const bundledCourseIds = new Set(
@@ -341,21 +347,14 @@ export default function AdminPage() {
     STUDENT: { bg: '#d1fae5', color: '#10b981' },
   }
 
-  // Filter users based on current user role and search query
+  // Filter users by role tab and course — server already handles search filtering
   const visibleUsers = users
   const filtered = visibleUsers.filter(u => {
     if (filter !== 'all' && u.role !== filter) return false
     if (selectedCourseId !== 'all' && !(u.enrollments || []).some(enrollment => enrollment.courseId === selectedCourseId)) {
       return false
     }
-    if (!debouncedSearchQuery) return true
-    
-    const query = debouncedSearchQuery.toLowerCase()
-    return (
-      getDisplayName(u).toLowerCase().includes(query) ||
-      (u.email || '').toLowerCase().includes(query) ||
-      (u.securityNumber && u.securityNumber.toLowerCase().includes(query))
-    )
+    return true
   })
 
   const counts = {
@@ -516,6 +515,21 @@ export default function AdminPage() {
           </button>
         ))}
       </div>
+
+      {/* Search hint banner — shown when no search query is active */}
+      {isLimitedView && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '10px',
+          padding: '10px 18px', marginBottom: '12px', borderRadius: '12px',
+          background: 'linear-gradient(135deg, #eff6ff, #e0e7ff)',
+          border: '1px solid #c7d2fe', fontSize: '13px', color: '#3730a3',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Showing 10 most recently enrolled users. <strong style={{ marginLeft: 4 }}>Search by name, email, or security number to find anyone.</strong>
+        </div>
+      )}
 
       {/* Users List */}
       <div className="card" style={{ overflow: 'hidden' }}>

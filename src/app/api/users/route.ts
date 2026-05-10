@@ -5,7 +5,7 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseExpired } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession()
     if (!session) {
@@ -16,56 +16,82 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        firstName: true,
-        lastName: true,
-        mobileNumber: true,
-        email: true,
-        role: true,
-        gender: true,
-        securityNumber: true,
-        isTerminated: true,
-        isGoogleUser: true,
-        isSuperManager: true,
-        canTerminate: true,
-        canCreateStudents: true,
-        createdAt: true,
-        enrollments: {
-          select: {
-            courseId: true,
-            course: { select: { id: true, name: true, color: true, subject: true } },
-          },
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search')?.trim() || ''
+
+    const userSelect = {
+      id: true,
+      name: true,
+      firstName: true,
+      lastName: true,
+      mobileNumber: true,
+      email: true,
+      role: true,
+      gender: true,
+      securityNumber: true,
+      isTerminated: true,
+      isGoogleUser: true,
+      isSuperManager: true,
+      canTerminate: true,
+      canCreateStudents: true,
+      createdAt: true,
+      enrollments: {
+        select: {
+          courseId: true,
+          course: { select: { id: true, name: true, color: true, subject: true } },
         },
-        instructorAssignments: {
-          select: {
-            courseId: true,
-            course: { select: { id: true, name: true, color: true, subject: true } },
-          },
+      },
+      instructorAssignments: {
+        select: {
+          courseId: true,
+          course: { select: { id: true, name: true, color: true, subject: true } },
         },
-        courseBundleAssignments: {
-          select: {
-            bundleId: true,
-            bundle: {
-              select: {
-                id: true,
-                name: true,
-                courses: {
-                  select: {
-                    course: { select: { id: true, name: true, color: true, subject: true } },
-                  },
+      },
+      courseBundleAssignments: {
+        select: {
+          bundleId: true,
+          bundle: {
+            select: {
+              id: true,
+              name: true,
+              courses: {
+                select: {
+                  course: { select: { id: true, name: true, color: true, subject: true } },
                 },
               },
             },
           },
         },
       },
+    }
+
+    // No search query: return latest 10 recently enrolled users (any role) to avoid overloading
+    if (!search) {
+      const users = await prisma.user.findMany({
+        select: userSelect,
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      })
+      return NextResponse.json({ users, limited: true })
+    }
+
+    // Search query provided: search across all users
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { securityNumber: { contains: search, mode: 'insensitive' } },
+        ],
+      },
+      select: userSelect,
       orderBy: { createdAt: 'desc' },
+      take: 50,
     })
 
-    return NextResponse.json(users)
+    return NextResponse.json({ users, limited: false })
   } catch (error) {
     console.error('Error fetching users:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

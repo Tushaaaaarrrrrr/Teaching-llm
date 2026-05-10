@@ -216,7 +216,6 @@ export default function AnalyticsDashboard() {
           { label: 'New Users', value: summary.newUsers, color: '#10b981', icon: '🆕' },
           { label: 'Returning Users', value: summary.returningUsers, color: '#6366f1', icon: '🔄' },
           { label: 'Active Users', value: summary.activeUsers, color: '#f59e0b', icon: '⚡' },
-          { label: 'Avg Courses/Student', value: summary.avgCoursesPerStudent, color: '#ec4899', icon: '📊' },
         ].map((kpi, i) => (
           <div key={i} style={{ ...neuCard, position: 'relative', overflow: 'hidden' }}>
             <div style={kpiAccentBar(kpi.color)} />
@@ -350,40 +349,7 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      {/* ─── Peak Hours (Bar Chart) ─────────────────────────────────── */}
-      <div style={neuCard}>
-        <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>
-          🕐 Peak Usage Hours (IST)
-        </h3>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={hourlyData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#dddfe6" vertical={false} />
-            <XAxis
-              dataKey="hour"
-              tick={{ fontSize: 10, fill: '#9999b0' }}
-              tickLine={false} axisLine={false}
-              interval={2}
-            />
-            <YAxis tick={{ fontSize: 11, fill: '#9999b0' }} tickLine={false} axisLine={false} allowDecimals={false} />
-            <Tooltip contentStyle={tooltipStyle} />
-            <Bar dataKey="Activity" radius={[4, 4, 0, 0]} barSize={16}>
-              {hourlyData.map((entry, i) => {
-                const maxVal = Math.max(...hourlyData.map(d => d.Activity))
-                const isPeak = entry.Activity === maxVal && entry.Activity > 0
-                return <Cell key={i} fill={isPeak ? '#f59e0b' : '#6366f1'} />
-              })}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-        <div style={{ marginTop: '10px', display: 'flex', gap: '16px', fontSize: '11px', color: '#6b6b8a', fontWeight: 600 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#6366f1' }} /> Activity
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#f59e0b' }} /> Peak
-          </div>
-        </div>
-      </div>
+
 
       {/* ─── Audience Demographics ─────────────────────────────────── */}
       <div>
@@ -488,56 +454,8 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      {/* ─── New vs Returning & Course Growth ────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '24px' }}>
-
-        {/* New vs Returning */}
-        <div style={neuCard}>
-          <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>
-            👥 New vs Returning
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#10b981' }}>New Users</span>
-                <span style={{ fontSize: '13px', fontWeight: 800 }}>{summary.newUsers || 0}</span>
-              </div>
-              <div style={{ height: '10px', borderRadius: '5px', background: '#e0e3ea', overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%',
-                  width: `${(summary.newUsers && (summary.newUsers + summary.returningUsers)) ? ((summary.newUsers / Math.max(summary.newUsers + summary.returningUsers, 1)) * 100) : 0}%`,
-                  background: 'linear-gradient(90deg, #10b981, #34d399)',
-                  borderRadius: '5px', transition: 'width 0.4s ease',
-                }} />
-              </div>
-            </div>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#6366f1' }}>Returning Users</span>
-                <span style={{ fontSize: '13px', fontWeight: 800 }}>{summary.returningUsers || 0}</span>
-              </div>
-              <div style={{ height: '10px', borderRadius: '5px', background: '#e0e3ea', overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%',
-                  width: `${(summary.returningUsers && (summary.newUsers + summary.returningUsers)) ? ((summary.returningUsers / Math.max(summary.newUsers + summary.returningUsers, 1)) * 100) : 0}%`,
-                  background: 'linear-gradient(90deg, #6366f1, #818cf8)',
-                  borderRadius: '5px', transition: 'width 0.4s ease',
-                }} />
-              </div>
-            </div>
-            {(summary.newUsers > 0 || summary.returningUsers > 0) && (
-              <div style={{
-                padding: '12px 16px', borderRadius: '12px', background: '#fff',
-                display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700,
-              }}>
-                <span style={{ color: '#9999b0' }}>Return Rate</span>
-                <span style={{ color: '#6366f1' }}>
-                  {((summary.returningUsers / Math.max(summary.newUsers + summary.returningUsers, 1)) * 100).toFixed(1)}%
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
+      {/* ─── Course Growth ────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
 
         {/* Course Growth Table */}
         <div style={neuCard}>
@@ -587,26 +505,7 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      {/* ─── Enrollments Summary Banner ─────────────────────────────── */}
-      <div style={{
-        ...neuCard,
-        background: 'linear-gradient(135deg, #3636e8, #6366f1)',
-        color: 'white',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
-        <div>
-          <div style={{ fontSize: '12px', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Enrollments in Range
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 900, marginTop: '4px' }}>
-            {summary.totalEnrollments || 0}
-          </div>
-          <div style={{ fontSize: '12px', opacity: 0.7, marginTop: '4px' }}>
-            {RANGE_LABELS[range]}
-          </div>
-        </div>
-        <div style={{ opacity: 0.15, fontSize: '80px' }}>📚</div>
-      </div>
+
     </div>
   )
 }

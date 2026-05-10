@@ -8,7 +8,7 @@ interface Transaction {
   amount: number
   status: string
   createdAt: string
-  course: { id: string; name: string; subject: string | null }
+  courses: { id: string; name: string; subject: string | null }[]
 }
 
 export default function MyTransactionsPage() {
@@ -62,7 +62,9 @@ export default function MyTransactionsPage() {
           {transactions.map(tx => (
             <div key={tx.id} className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ flex: 1, minWidth: '200px' }}>
-                <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>{tx.course.name}</div>
+                <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                  {tx.courses && tx.courses.length > 0 ? tx.courses.map(c => c.name).join(', ') : 'Unknown Course'}
+                </div>
                 <div style={{ fontSize: '12px', color: '#6366f1', fontWeight: '700', fontFamily: 'monospace' }}>{tx.orderId}</div>
               </div>
               <div style={{ textAlign: 'center', minWidth: '80px' }}>

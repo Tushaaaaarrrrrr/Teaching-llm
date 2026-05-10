@@ -55,12 +55,15 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
     if (!formData.mobileNumber.match(/^\d{10}$/)) {
       return setError('Mobile number must be exactly 10 digits.')
     }
+    if (!formData.mobileNumber.match(/^[6789]/)) {
+      return setError('Please enter a valid mobile number.')
+    }
     if (!formData.gender) {
       return setError('Please select a gender option.')
     }
     const ageNum = parseInt(formData.age, 10)
-    if (!ageNum || isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
-      return setError('Please enter a valid age (1-120).')
+    if (!ageNum || isNaN(ageNum) || ageNum < 15 || ageNum > 120) {
+      return setError('Age must be at least 15.')
     }
     if (!formData.state) {
       return setError('Please choose your state from the dropdown.')

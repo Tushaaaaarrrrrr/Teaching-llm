@@ -71,6 +71,7 @@ model User {
   communityReadStates     CommunityReadState[]
   upgradeTransactions     UpgradeTransaction[]
   orders                  Order[]
+  promptResponses         PromptResponse[]
 }
 
 model Course {
@@ -910,4 +911,34 @@ model WebhookLog {
   @@index([eventType])
   @@index([status])
   @@index([createdAt])
+}
+
+model UserPrompt {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  questions   String   @default("[]")
+
+  responses   PromptResponse[]
+}
+
+model PromptResponse {
+  id        String   @id @default(cuid())
+  userId    String
+  promptId  String
+  
+  answers   String   @default("{}")
+  
+  createdAt DateTime @default(now())
+  
+  prompt    UserPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promptId])
+  @@index([userId])
+  @@index([promptId])
 }
