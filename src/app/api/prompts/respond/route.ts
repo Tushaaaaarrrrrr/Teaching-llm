@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 
 export async function POST(req: Request) {
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     // Save the response
     await prisma.promptResponse.create({
       data: {
-        userId: session.id,
+        userId: session.userId,
         promptId: promptId,
         answers: JSON.stringify(answers)
       }
