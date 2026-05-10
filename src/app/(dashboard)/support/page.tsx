@@ -1180,6 +1180,7 @@ export default function SupportPage() {
           ) : (() => {
             const activeChat = allChats.find(c => c.id === activeChatId)
             return (
+              <>
                 <div style={{ padding: '14px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: '800', fontSize: '15px', color: '#1e1e3a' }}>
