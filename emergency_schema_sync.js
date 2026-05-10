@@ -100,8 +100,43 @@ async function main() {
   await safeExec(`ALTER TABLE "WebhookLog" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`, 'updatedAt col')
   console.log('  ✅ WebhookLog table ready')
 
+  // ─── FIX #5: UserPrompt & PromptResponse tables ──────────────
+  console.log('[5/6] Creating UserPrompt and PromptResponse tables...')
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "UserPrompt" (
+      "id" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "description" TEXT,
+      "isActive" BOOLEAN NOT NULL DEFAULT false,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "questions" TEXT NOT NULL DEFAULT '[]',
+      CONSTRAINT "UserPrompt_pkey" PRIMARY KEY ("id")
+    );
+  `, 'UserPrompt')
+  
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "PromptResponse" (
+      "id" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "promptId" TEXT NOT NULL,
+      "answers" TEXT NOT NULL DEFAULT '{}',
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "PromptResponse_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "PromptResponse_promptId_fkey" FOREIGN KEY ("promptId")
+        REFERENCES "UserPrompt"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "PromptResponse_userId_fkey" FOREIGN KEY ("userId")
+        REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `, 'PromptResponse')
+
+  await safeExec(`CREATE UNIQUE INDEX IF NOT EXISTS "PromptResponse_userId_promptId_key" ON "PromptResponse"("userId", "promptId");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "PromptResponse_userId_idx" ON "PromptResponse"("userId");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "PromptResponse_promptId_idx" ON "PromptResponse"("promptId");`, 'idx')
+  console.log('  ✅ UserPrompt and PromptResponse tables ready')
+
   // ─── VERIFICATION ─────────────────────────────────────────
-  console.log('[5/5] Verifying fix...')
+  console.log('[6/6] Verifying fix...')
   try {
     const courseCount = await prisma.$queryRawUnsafe(`SELECT COUNT(*) as count FROM "Class"`)
     console.log(`  ✅ Course query works! Found ${courseCount[0].count} courses in database.`)

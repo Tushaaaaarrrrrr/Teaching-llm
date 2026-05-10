@@ -89,6 +89,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
       }
 
       // Force a hard reload to clear Next.js layout cache and unblock the user immediately
+      sessionStorage.setItem('profileJustCompleted', 'true')
       window.location.reload()
     } catch (err: any) {
       console.error(err)

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, hashPassword, isManagerOrSuperAdmin } from '@/lib/auth'
+import { getSession, isManagerOrSuperAdmin } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseExpired } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
@@ -115,7 +115,6 @@ export async function POST(request: NextRequest) {
       lastName,
       mobileNumber,
       email,
-      password,
       role,
       gender = 'MALE',
       classIds = [],
@@ -134,15 +133,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email already in use' }, { status: 400 })
     }
 
-    // Handle auto-password generation if missing
-    let tempPassword = ''
-    let actualPassword = password
-    if (!password || password.trim() === '') {
-      tempPassword = Math.random().toString(36).substring(2, 10).toUpperCase()
-      actualPassword = tempPassword
-    }
-
-    const passwordHash = await hashPassword(actualPassword)
     const securityNumber = 'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase()
     const uniqueBundleIds = Array.from(new Set((bundleIds || []).filter(Boolean))) as string[]
 
@@ -198,7 +188,6 @@ export async function POST(request: NextRequest) {
           lastName: lastName || name?.split(' ').slice(1).join(' ') || '',
           mobileNumber,
           email: email.toLowerCase(),
-          passwordHash,
           role,
           securityNumber,
           gender,
@@ -264,7 +253,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ...user,
-      tempPassword: tempPassword || undefined
     }, { status: 201 })
   } catch (error) {
     console.error('Error creating user:', error)

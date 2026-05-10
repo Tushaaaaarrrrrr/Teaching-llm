@@ -2,59 +2,13 @@
 
 import { useState, Suspense, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import CreepyButton from '@/components/ui/CreepyButton'
 
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [isAwake, setIsAwake] = useState(false)
   const [showRefundPolicy, setShowRefundPolicy] = useState(false)
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const [showTermsConditions, setShowTermsConditions] = useState(false)
-
-   const signInBtnRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    let idleTimeout: NodeJS.Timeout;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      let awake = false;
-      const checkDist = (ref: React.RefObject<HTMLElement>) => {
-        if (!ref.current) return false;
-        const rect = ref.current.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-        return dist < 250;
-      };
-
-      if (checkDist(signInBtnRef)) {
-        awake = true;
-      }
-      setIsAwake(awake);
-
-      clearTimeout(idleTimeout);
-      idleTimeout = setTimeout(() => {
-        setIsAwake(true);
-        setTimeout(() => setIsAwake(false), 2000);
-      }, 30000);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    idleTimeout = setTimeout(() => {
-      setIsAwake(true);
-      setTimeout(() => setIsAwake(false), 2000);
-    }, 30000);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      clearTimeout(idleTimeout);
-    };
-  }, []);
 
   // Show error from query params if any
   const queryError = searchParams.get('error')
@@ -63,35 +17,7 @@ function LoginContent() {
     InternalError: 'An internal error occurred. Please try again later.',
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || 'Login failed')
-        return
-      }
-
-      router.push('/dashboard')
-      router.refresh()
-    } catch {
-      setError('Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const displayError = error || (queryError ? errorMap[queryError] || `Login error: ${queryError}` : '')
+  const displayError = queryError ? errorMap[queryError] || `Login error: ${queryError}` : ''
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', background: '#F3F4F6' }}>
@@ -216,34 +142,7 @@ function LoginContent() {
             </div>
           )}
 
-          {/* Email / Password form */}
-          <form onSubmit={handleSubmit}>
-            <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label className="form-label" htmlFor="email">Email</label>
-              <input id="email" type="email" className="form-input" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
-            </div>
-            <div className="form-group" style={{ marginBottom: '24px' }}>
-              <label className="form-label" htmlFor="password">Password</label>
-              <input id="password" type="password" className="form-input" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
-            </div>
-            <div ref={signInBtnRef}>
-              <CreepyButton
-                type="submit"
-                loading={loading}
-                disabled={loading}
-                isAwake={isAwake}
-              >
-                Sign In
-              </CreepyButton>
-            </div>
-          </form>
 
-          {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '24px 0' }}>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(0,0,0,0.08)' }} />
-            <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: '600' }}>or</span>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(0,0,0,0.08)' }} />
-          </div>
 
           <GoogleLoginButton onTermsClick={() => setShowTermsConditions(true)} onPrivacyClick={() => setShowPrivacyPolicy(true)} />
         </div>

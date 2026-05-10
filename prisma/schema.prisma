@@ -14,7 +14,6 @@ model User {
   lastName                String?
   mobileNumber            String?
   email                   String                       @unique
-  passwordHash            String
   role                    String                       @default("STUDENT")
   avatar                  String?
   securityNumber          String?                      @unique
@@ -38,7 +37,6 @@ model User {
   tokenVersion            Int                          @default(0)
   violationCount          Int                          @default(0)
   isGoogleUser            Boolean                      @default(false)
-  encryptedTempPassword   String?
   lastDailyDigestAt       DateTime?
   enableDetailedLogs      Boolean                      @default(false)
   activityLogs            ActivityLog[]

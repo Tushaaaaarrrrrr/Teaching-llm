@@ -4,19 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 
-const EyeIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-    <circle cx="12" cy="12" r="3"/>
-  </svg>
-)
-
-const EyeOffIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-    <line x1="1" y1="1" x2="23" y2="23"/>
-  </svg>
-)
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -48,13 +35,6 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 export default function SettingsPage() {
   const router = useRouter()
 
-  // Password change
-  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
-  const [savingPw, setSavingPw] = useState(false)
-  const [pwMsg, setPwMsg] = useState({ type: '', text: '' })
-  const [showCurrentPw, setShowCurrentPw] = useState(false)
-  const [showNewPw, setShowNewPw] = useState(false)
-  const [showConfirmPw, setShowConfirmPw] = useState(false)
 
   // Notification preferences (UI state — backend integration ready when needed)
   const [notifEmail, setNotifEmail] = useState(true)
@@ -130,34 +110,7 @@ export default function SettingsPage() {
     }
     setSavingHelpCard(false)
   }
-  async function handlePasswordChange() {
-    if (!pwForm.currentPassword || !pwForm.newPassword || !pwForm.confirmPassword) {
-      setPwMsg({ type: 'error', text: 'All fields are required' }); return
-    }
-    if (pwForm.newPassword.length < 6) {
-      setPwMsg({ type: 'error', text: 'New password must be at least 6 characters' }); return
-    }
-    if (pwForm.newPassword !== pwForm.confirmPassword) {
-      setPwMsg({ type: 'error', text: 'New passwords do not match' }); return
-    }
-    setSavingPw(true)
-    setPwMsg({ type: '', text: '' })
-    try {
-      const res = await fetch('/api/profile/password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        setPwMsg({ type: 'success', text: 'Password updated successfully' })
-        setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
-      } else {
-        setPwMsg({ type: 'error', text: data.error || 'Failed to update password' })
-      }
-    } catch { setPwMsg({ type: 'error', text: 'Something went wrong' }) }
-    setSavingPw(false)
-  }
+
 
   const insetRow: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -166,11 +119,6 @@ export default function SettingsPage() {
     gap: '16px',
   }
 
-  const eyeBtn: React.CSSProperties = {
-    position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
-    color: '#9999b0', background: 'none', border: 'none', cursor: 'pointer',
-    padding: '2px', display: 'flex', alignItems: 'center',
-  }
 
   return (
     <div className="page-container fade-in">
@@ -198,56 +146,6 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {/* ── Change Password ── */}
-        <div className="card" style={{ padding: '28px' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-            Change Password
-          </h3>
-
-          {pwMsg.text && (
-            <div style={{
-              padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '14px',
-              background: pwMsg.type === 'success' ? '#d1fae5' : '#fee2e2',
-              color: pwMsg.type === 'success' ? '#065f46' : '#991b1b',
-            }}>
-              {pwMsg.text}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {[
-              { label: 'Current Password',    key: 'currentPassword' as const, show: showCurrentPw,  setShow: setShowCurrentPw,  placeholder: 'Enter current password' },
-              { label: 'New Password',         key: 'newPassword' as const,     show: showNewPw,       setShow: setShowNewPw,       placeholder: 'Min. 6 characters' },
-              { label: 'Confirm New Password', key: 'confirmPassword' as const, show: showConfirmPw,   setShow: setShowConfirmPw,   placeholder: 'Repeat new password' },
-            ].map(field => (
-              <div key={field.key} className="form-group">
-                <label className="form-label">{field.label}</label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={field.show ? 'text' : 'password'}
-                    className="form-input"
-                    value={pwForm[field.key]}
-                    onChange={e => setPwForm(p => ({ ...p, [field.key]: e.target.value }))}
-                    placeholder={field.placeholder}
-                    style={{ paddingRight: '42px' }}
-                  />
-                  <button type="button" onClick={() => field.setShow(v => !v)} style={eyeBtn}>
-                    {field.show ? <EyeOffIcon /> : <EyeIcon />}
-                  </button>
-                </div>
-              </div>
-            ))}
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={handlePasswordChange} disabled={savingPw} className="btn btn-primary">
-                {savingPw ? 'Updating...' : 'Update Password'}
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* ── Notifications + Preferences (side by side) ── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>

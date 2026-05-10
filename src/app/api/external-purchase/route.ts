@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
           name: name || email.split('@')[0],
           mobileNumber: phone || null,
           gender: gender || null,
-          passwordHash: '', // External users don't have password
           role: 'STUDENT',
           isProfileComplete: false
         }

@@ -1,0 +1,183 @@
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+export default function DynamicPromptBlocker() {
+  const router = useRouter()
+  const [prompt, setPrompt] = useState<any>(null)
+  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function checkActivePrompt() {
+      // Don't show if the user JUST completed their permanent profile in this session
+      if (typeof window !== 'undefined' && sessionStorage.getItem('profileJustCompleted') === 'true') {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const res = await fetch('/api/prompts/active')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.prompt) {
+            setPrompt(data.prompt)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch active prompt:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    checkActivePrompt()
+  }, [])
+
+  if (loading || !prompt) return null
+
+  let questions = []
+  try {
+    questions = JSON.parse(prompt.questions)
+  } catch (e) {}
+
+  const handleAnswerChange = (questionId: string, val: string) => {
+    setAnswers(prev => ({ ...prev, [questionId]: val }))
+    setError('')
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Validation
+    for (const q of questions) {
+      if (q.type !== 'CTA_ONLY' && !answers[q.id]) {
+        setError('Please answer all questions before continuing.')
+        return
+      }
+    }
+
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/prompts/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ promptId: prompt.id, answers })
+      })
+
+      if (!res.ok) throw new Error('Failed to submit response')
+      
+      setPrompt(null) // Dismiss modal
+      router.refresh()
+    } catch (err) {
+      setError('Something went wrong. Please try again.')
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 9999, padding: '20px'
+    }}>
+      <div className="fade-in" style={{
+        background: '#fff', width: '100%', maxWidth: '540px',
+        padding: '40px', borderRadius: '24px',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#1e1e3a', marginBottom: '8px' }}>
+            {prompt.title}
+          </h1>
+          {prompt.description && (
+            <p style={{ fontSize: '15px', color: '#6b6b8a', lineHeight: 1.6 }}>
+              {prompt.description}
+            </p>
+          )}
+        </div>
+
+        {error && (
+          <div style={{
+            background: '#fee2e2', color: '#b91c1c', padding: '12px 16px',
+            borderRadius: '12px', fontSize: '13px', fontWeight: 600,
+            marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px'
+          }}>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {questions.map((q: any) => (
+            <div key={q.id}>
+              <label style={{ display: 'block', fontWeight: 700, marginBottom: '12px', color: '#1e1e3a', fontSize: '15px' }}>
+                {q.text}
+              </label>
+
+              {q.type === 'YES_NO' && (
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  {['Yes', 'No'].map(opt => (
+                    <div key={opt} onClick={() => handleAnswerChange(q.id, opt)} style={{
+                      flex: 1, padding: '12px', borderRadius: '12px', textAlign: 'center', cursor: 'pointer',
+                      fontSize: '14px', fontWeight: 700,
+                      border: answers[q.id] === opt ? '2px solid #6366f1' : '2px solid #e0e3ea',
+                      background: answers[q.id] === opt ? '#eff0fe' : '#f8f9fa',
+                      color: answers[q.id] === opt ? '#6366f1' : '#6b6b8a',
+                      transition: 'all 0.2s'
+                    }}>
+                      {opt}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {q.type === 'MULTIPLE_CHOICE' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {(q.options || []).map((opt: string) => (
+                    <div key={opt} onClick={() => handleAnswerChange(q.id, opt)} style={{
+                      padding: '12px 16px', borderRadius: '12px', cursor: 'pointer',
+                      fontSize: '14px', fontWeight: 600,
+                      border: answers[q.id] === opt ? '2px solid #6366f1' : '2px solid #e0e3ea',
+                      background: answers[q.id] === opt ? '#eff0fe' : '#f8f9fa',
+                      color: answers[q.id] === opt ? '#6366f1' : '#1e1e3a',
+                      transition: 'all 0.2s'
+                    }}>
+                      {opt}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {q.type === 'CTA_ONLY' && q.link && (
+                <a href={q.link} target="_blank" rel="noopener noreferrer" onClick={() => handleAnswerChange(q.id, 'CLICKED')} style={{
+                  display: 'block', textAlign: 'center', padding: '14px', borderRadius: '12px',
+                  background: '#1e1e3a', color: '#fff', fontSize: '15px', fontWeight: 700, textDecoration: 'none'
+                }}>
+                  {q.linkText || 'Click Here'}
+                </a>
+              )}
+            </div>
+          ))}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn btn-primary"
+            style={{
+              marginTop: '10px', width: '100%', padding: '16px',
+              fontSize: '16px', fontWeight: 800,
+              boxShadow: '0 8px 20px rgba(99,102,241,0.3)',
+              display: 'flex', justifyContent: 'center', alignItems: 'center',
+              opacity: submitting ? 0.7 : 1
+            }}
+          >
+            {submitting ? 'Saving...' : 'Submit & Continue'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}

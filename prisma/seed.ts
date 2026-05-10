@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -34,17 +33,12 @@ async function main() {
   // ──────────────────────────────────────────────
   console.log("Creating users...");
 
-  const managerPassword = await bcrypt.hash("manager123", 10);
-  const adminPassword = await bcrypt.hash("admin123", 10);
-  const studentPassword = await bcrypt.hash("student123", 10);
-
   const genSec = () => 'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase();
 
   const manager = await prisma.user.create({
     data: {
       name: "Platform Manager",
       email: "manager@teacherai.com",
-      passwordHash: managerPassword,
       role: "MANAGER",
       avatar: "/avatars/manager.png",
       securityNumber: genSec(),
@@ -55,7 +49,6 @@ async function main() {
     data: {
       name: "Content Admin",
       email: "admin@teacherai.com",
-      passwordHash: adminPassword,
       role: "ADMIN",
       avatar: "/avatars/admin.png",
       securityNumber: genSec(),
@@ -66,7 +59,6 @@ async function main() {
     data: {
       name: "Rahul Sharma",
       email: "student@teacherai.com",
-      passwordHash: studentPassword,
       role: "STUDENT",
       avatar: "/avatars/rahul.png",
       securityNumber: genSec(),
@@ -77,7 +69,6 @@ async function main() {
     data: {
       name: "Priya Patel",
       email: "priya@teacherai.com",
-      passwordHash: studentPassword,
       role: "STUDENT",
       avatar: "/avatars/priya.png",
       securityNumber: genSec(),
@@ -88,7 +79,6 @@ async function main() {
     data: {
       name: "Amit Kumar",
       email: "amit@teacherai.com",
-      passwordHash: studentPassword,
       role: "STUDENT",
       avatar: "/avatars/amit.png",
       securityNumber: genSec(),

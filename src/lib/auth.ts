@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken'
-import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { isCourseEffectivelyDisabled } from '@/lib/course-state'
@@ -47,13 +46,7 @@ export function verifyToken(token: string): JWTPayload | null {
   }
 }
 
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12)
-}
 
-export async function comparePassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash)
-}
 
 export async function getSession(): Promise<JWTPayload | null> {
   try {

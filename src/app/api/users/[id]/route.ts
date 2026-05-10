@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, hashPassword } from '@/lib/auth'
+import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseExpired } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
@@ -115,8 +115,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden: SUPER_ADMIN can only toggle detailed logs' }, { status: 403 })
     }
 
-    const { name, firstName, lastName, mobileNumber, email, role, password, isTerminated, gender, age, state, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes, enableDetailedLogs } = body
-    // enrollmentTypes is an optional map: { courseId: 'LIVE' | 'RECORDED' }
+    const { name, firstName, lastName, mobileNumber, email, role, isTerminated, gender, age, state, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes, enableDetailedLogs } = body
     const nextCourseIds = classIds !== undefined ? classIds : courseIds
     const nextAssignedCourseIds = assignedClassIds !== undefined ? assignedClassIds : assignedCourseIds
     const nextBundleIds = Array.isArray(bundleIds) ? Array.from(new Set(bundleIds.filter(Boolean))) : undefined
@@ -156,23 +155,6 @@ export async function PUT(
           { error: 'Invalid gender value. Must be MALE or FEMALE' }, 
           { status: 400 }
         )
-      }
-    }
-
-    let tempPassword = ''
-    if (password) {
-      if (password === 'RESET') {
-        // Generate random 8-char alphanumeric password
-        const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-        for (let i = 0; i < 8; i++) {
-          tempPassword += chars.charAt(Math.floor(Math.random() * chars.length))
-        }
-        data.passwordHash = await hashPassword(tempPassword)
-        // Increment token version to log out of current sessions
-        data.tokenVersion = { increment: 1 }
-      } else {
-        data.passwordHash = await hashPassword(password)
-        data.tokenVersion = { increment: 1 }
       }
     }
 
@@ -360,7 +342,7 @@ export async function PUT(
       metadata: { changedFields: Object.keys(data) },
     })
 
-    return NextResponse.json({ ...updatedUser, tempPassword })
+    return NextResponse.json(updatedUser)
   } catch (error) {
     console.error('Error updating user:', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: error instanceof Error ? 400 : 500 })

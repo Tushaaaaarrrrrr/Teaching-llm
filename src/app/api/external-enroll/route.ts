@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { hashPassword } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseEffectivelyDisabled } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
@@ -137,10 +136,6 @@ export async function POST(request: NextRequest) {
 
       if (!user) {
         // 4b. Create new user as a Google-login student
-        // Use a random placeholder hash — user will authenticate via Google OAuth
-        const placeholderHash = await hashPassword(
-          crypto.randomUUID() + Date.now().toString()
-        )
         const securityNumber =
           'SEC' + Math.random().toString(36).substring(2, 9).toUpperCase()
 
@@ -155,7 +150,6 @@ export async function POST(request: NextRequest) {
             lastName,
             email: normalizedEmail,
             mobileNumber: phone?.trim() || null,
-            passwordHash: placeholderHash,
             role: 'STUDENT',
             gender: gender === 'FEMALE' ? 'FEMALE' : 'MALE',
             securityNumber,

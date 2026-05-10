@@ -217,31 +217,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     }
   }
 
-  async function handleResetPassword() {
-    if (!userId) return
-    const allowed = await confirm({
-      title: 'Reset Password?',
-      message: 'A new temporary password will be generated for this user.',
-      confirmLabel: 'Reset Password',
-      tone: 'default',
-    })
-    if (!allowed) return
-    try {
-      const res = await fetch(`/api/users/${userId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: 'RESET' }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        alert(`Password reset successfully. New temporary password: ${data.tempPassword}`)
-      } else {
-        alert(data.error || 'Failed to reset')
-      }
-    } catch (e) {
-      alert('Error resetting password')
-    }
-  }
+
 
   if (!userId) return null
 
@@ -393,19 +369,9 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                  <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Role</label>
-                    <select style={neuInset} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value, courseIds: e.target.value === 'MANAGER' ? [] : formData.courseIds, bundleIds: e.target.value === 'MANAGER' ? [] : formData.bundleIds})}>
-                      <option value="STUDENT">Student</option>
-                      <option value="ADMIN">Admin</option>
-                      <option value="MANAGER">Manager</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Account Created</label>
-                    <div style={neuInset}>{createdAtLabel}</div>
-                  </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Account Created</label>
+                  <div style={neuInset}>{createdAtLabel}</div>
                 </div>
 
               </div>
@@ -438,7 +404,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   </div>
                 </div>
 
-                {/* Security ID + Reset Password */}
+                {/* Security ID */}
                 <div style={{
                   padding: '20px', borderRadius: '20px',
                   background: 'linear-gradient(135deg, #f0f2f8, #f8fafc)',
@@ -449,23 +415,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Security Identification</div>
                     <span style={{ fontSize: '9px', fontWeight: '800', color: '#6366f1', background: '#e0e7ff', padding: '3px 10px', borderRadius: '50px' }}>SECURE ACCESS</span>
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', letterSpacing: '0.1em', fontFamily: 'monospace', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
                     {user.securityNumber || 'NOT ASSIGNED'}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderRadius: '14px', background: '#f0f2f8', boxShadow: 'inset 3px 3px 6px #d1d9e6, inset -3px -3px 6px #ffffff' }}>
-                    <div style={{ color: '#9999b0', fontSize: '14px', letterSpacing: '0.3em' }}>••••••••••••</div>
-                    <button
-                      onClick={handleResetPassword}
-                      style={{
-                        padding: '8px 18px', borderRadius: '12px', border: 'none', background: '#fff',
-                        boxShadow: '4px 4px 8px #d1d9e6, -2px -2px 4px #ffffff',
-                        fontSize: '12px', fontWeight: '700', color: '#3636e8', cursor: 'pointer', transition: 'transform 0.1s'
-                      }}
-                      onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
-                      onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                      Reset Password
-                    </button>
                   </div>
                 </div>
 

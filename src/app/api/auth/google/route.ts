@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { signToken, getCookieConfig, hashPassword } from '@/lib/auth'
+import { signToken, getCookieConfig } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { v4 as uuidv4 } from 'uuid'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
@@ -59,9 +59,6 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // New user — create account as STUDENT with Google auth
-      // Google users get a random password hash (they won't use it)
-      const randomPassword = uuidv4()
-      const passwordHash = await hashPassword(randomPassword)
 
       // Generate security number
       const securityNumber = `SEC${Math.random().toString(36).substring(2, 9).toUpperCase()}`
@@ -72,7 +69,6 @@ export async function POST(request: NextRequest) {
           firstName,
           lastName,
           email,
-          passwordHash,
           role: 'STUDENT',
           isGoogleUser: true,
           securityNumber,

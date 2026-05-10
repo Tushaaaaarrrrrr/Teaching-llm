@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header'
 import UpdateOverlay from '@/components/UpdateOverlay'
 import SupportFloatingButton from '@/components/ui/SupportFloatingButton'
 import ProfileSetupBlocker from '@/components/ProfileSetupBlocker'
+import DynamicPromptBlocker from '@/components/DynamicPromptBlocker'
 import UserJourneyTracker from '@/components/UserJourneyTracker'
 import PushNotificationSetup from '@/components/PushNotificationSetup'
 
@@ -57,6 +58,7 @@ export default async function DashboardLayout({
         <SupportFloatingButton />
       </div>
       <UpdateOverlay />
+      <DynamicPromptBlocker />
       <UserJourneyTracker enableDetailedLogs={session.enableDetailedLogs} />
       <PushNotificationSetup />
     </div>
