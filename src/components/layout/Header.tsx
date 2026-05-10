@@ -31,6 +31,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/announcements': { title: 'Announcements',  subtitle: 'Stay updated with the latest news' },
   '/support':    { title: 'Contact & Support', subtitle: 'Raise a ticket or chat with support' },
   '/manage':     { title: 'Manage Content',    subtitle: 'Create and edit courses, lectures, and sessions' },
+  '/manage/prompts': { title: '', subtitle: '' },
   '/manage/updates': { title: 'Update System', subtitle: 'Manage greetings, updates, and user messages' },
   '/admin':      { title: 'User Management',   subtitle: 'Manage platform accounts and permissions' },
   '/profile':    { title: 'My Profile',         subtitle: 'View and edit your personal information' },
