@@ -603,3 +603,39 @@ Outcome:
     - Plus = Paid recorded access
     - PRO = Paid live + recorded access
   - Clearer visual distinction between free and paid course options for students.
+
+28. Date and time: 2026-05-10 15:05:00 IST
+Summary: Implemented Dynamic User Prompt/Survey system for manager-controlled student interaction.
+What changed:
+- Added a full-page, non-dismissible blocker modal that forces students to interact with active manager-defined prompts (surveys, feedback, CTAs) before accessing the dashboard.
+- Implemented intelligent sequencing: Permanent profile setup (Name, Age, Number) is asked first; dynamic prompts are only shown after profile completion and not in the same session to avoid fatigue.
+- Added a new "User Prompts" management page for administrators to create, activate/deactivate, and analyze student responses.
+- Supports three question types: Yes/No, Multiple Choice, and CTA Button (with link).
+- Integrated into the global dashboard layout.
+What was added:
+- `UserPrompt` and `PromptResponse` Prisma models (added via `emergency_schema_sync.js` to bypass Supabase schema constraints).
+- `src/components/DynamicPromptBlocker.tsx` — the student-facing modal component.
+- `src/app/api/prompts/active/route.ts` — fetches unanswered active prompts for the current user.
+- `src/app/api/prompts/respond/route.ts` — saves user answers.
+- `src/app/api/admin/prompts/route.ts` and `src/app/api/admin/prompts/[id]/route.ts` — admin CRUD APIs.
+- `src/app/(dashboard)/manage/prompts/page.tsx` — manager UI for prompt management.
+- "User Prompts" link in the sidebar under Administration.
+What was removed:
+- None
+Files affected:
+- `prisma/schema.prisma`
+- `emergency_schema_sync.js`
+- `src/app/(dashboard)/layout.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/ProfileSetupBlocker.tsx`
+- `src/app/api/prompts/active/route.ts` (NEW)
+- `src/app/api/prompts/respond/route.ts` (NEW)
+- `src/app/api/admin/prompts/route.ts` (NEW)
+- `src/app/api/admin/prompts/[id]/route.ts` (NEW)
+- `src/app/(dashboard)/manage/prompts/page.tsx` (NEW)
+- `src/components/DynamicPromptBlocker.tsx` (NEW)
+Outcome:
+- Managers can now create targeted surveys and call-to-actions that students must engage with upon login.
+- Responses are collected and viewable by managers per prompt.
+- The user flow is protected from overlapping blockers.
+
