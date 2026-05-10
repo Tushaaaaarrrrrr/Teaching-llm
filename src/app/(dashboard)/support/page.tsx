@@ -898,34 +898,72 @@ export default function SupportPage() {
               </div>
 
               <div style={{ flex: 1, overflowY: 'auto', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {selected.replies.map(r => {
+                {selected.replies.map((r, idx) => {
                   const isMe = r.sender.id === userId
                   const isAdmin = r.sender.role !== 'STUDENT'
+                  const showAvatar = idx === 0 || selected.replies[idx - 1]?.sender.id !== r.sender.id
                   return (
-                    <div key={r.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
-                      <div style={{ maxWidth: '78%', padding: '10px 14px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0', boxShadow: isMe ? '3px 3px 8px rgba(54,54,232,0.3)' : '3px 3px 8px #c5c7cf, -3px -3px 8px #ffffff', color: isMe ? '#fff' : '#1e1e3a' }}>
-                        <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '4px', opacity: isMe ? 0.8 : 1, color: isMe ? '#c5c8ff' : isAdmin ? '#3636e8' : '#9999b0' }}>
-                          <span 
-                            onClick={() => {
-                              if (userRole === 'MANAGER') setSelectedUserDetailsId(r.sender.id)
-                            }}
-                            style={{ 
-                              cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
-                              textDecoration: userRole === 'MANAGER' ? 'underline' : 'none'
-                            }}
-                          >{r.sender.name}</span>
-                          {isAdmin && ' · Staff'}
+                    <div key={r.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '8px', alignItems: 'flex-start', marginBottom: showAvatar ? '8px' : '2px' }}>
+                      {!isMe && (
+                        <div 
+                          onClick={() => userRole === 'MANAGER' && setSelectedUserDetailsId(r.sender.id)}
+                          style={{ 
+                            width: '28px', height: '28px', borderRadius: '50%', 
+                            background: isAdmin ? '#3636e8' : '#e8eaf0', 
+                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '2px 2px 5px #c5c7cf', 
+                            display: showAvatar ? 'flex' : 'none', 
+                            alignItems: 'center', justifyContent: 'center', 
+                            fontSize: '10px', fontWeight: '700', 
+                            color: isAdmin ? '#fff' : '#6b6b8a', flexShrink: 0,
+                            cursor: userRole === 'MANAGER' ? 'pointer' : 'default'
+                          }}
+                        >
+                          {r.sender.name.charAt(0).toUpperCase()}
                         </div>
-                        {r.imageUrl && (
-                          <img
-                            src={r.imageUrl}
-                            alt="Attached image"
-                            onClick={() => setLightboxUrl(r.imageUrl!)}
-                            style={{ maxWidth: '240px', maxHeight: '160px', borderRadius: '10px', cursor: 'pointer', display: 'block', objectFit: 'cover', marginBottom: r.content ? '6px' : '0' }}
-                          />
-                        )}
-                        {r.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5' }}>{r.content}</div>}
-                        <div style={{ fontSize: '10.5px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{new Date(r.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                      )}
+                      {!isMe && !showAvatar && <div style={{ width: '28px', flexShrink: 0 }} />}
+                      <div style={{ maxWidth: '78%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                        <div style={{ 
+                          padding: r.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px', 
+                          borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', 
+                          background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff', 
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.1)', 
+                          color: '#1e1e3a',
+                          border: isMe ? 'none' : '1px solid #e8eaf0',
+                          minWidth: '60px'
+                        }}>
+                          {!isMe && showAvatar && (
+                            <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '4px', color: isAdmin ? '#3636e8' : '#888', textTransform: 'uppercase' }}>
+                              <span 
+                                onClick={() => {
+                                  if (userRole === 'MANAGER') setSelectedUserDetailsId(r.sender.id)
+                                }}
+                                style={{ 
+                                  cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                                  textDecoration: userRole === 'MANAGER' ? 'underline' : 'none'
+                                }}
+                              >{r.sender.name}</span>
+                              {isAdmin && ' · Staff'}
+                            </div>
+                          )}
+                          {r.imageUrl && (
+                            <img
+                              src={r.imageUrl}
+                              alt="Attached image"
+                              onClick={() => setLightboxUrl(r.imageUrl!)}
+                              style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '10px', cursor: 'pointer', display: 'block', objectFit: 'cover', marginBottom: r.content ? '6px' : '0' }}
+                            />
+                          )}
+                          {r.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{r.content}</div>}
+                          
+                          {/* Time inside bubble */}
+                          <div style={{ position: 'absolute', bottom: '4px', right: '8px', fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            {new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {isMe && (
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )
@@ -1071,6 +1109,9 @@ export default function SupportPage() {
   // ══════════════════════════════════════════════════════════════════════════
   return (
     <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', display: 'flex', flexDirection: 'column' }}>
+      <style>{`
+        .msg-row:hover .msg-actions { opacity: 1 !important; }
+      `}</style>
       {confirmDialog}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <BackButton onClick={() => { setView('home'); setActiveChatId(null) }} />
@@ -1139,7 +1180,6 @@ export default function SupportPage() {
           ) : (() => {
             const activeChat = allChats.find(c => c.id === activeChatId)
             return (
-              <>
                 <div style={{ padding: '14px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: '800', fontSize: '15px', color: '#1e1e3a' }}>
@@ -1162,24 +1202,59 @@ export default function SupportPage() {
                   {chatMsgs.length === 0 && (
                     <div style={{ textAlign: 'center', color: '#9999b0', fontSize: '13px', marginTop: '20px' }}>Chat started. Waiting for messages...</div>
                   )}
-                  {chatMsgs.map(m => {
+                  {chatMsgs.map((m, idx) => {
                     const isMe = m.sender.id === userId
                     const isAdmin = m.sender.role !== 'STUDENT'
+                    const showAvatar = idx === 0 || chatMsgs[idx - 1]?.sender.id !== m.sender.id
                     return (
-                      <div key={m.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '8px', alignItems: 'flex-end' }}>
-                        {!isMe && <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: isAdmin ? '#3636e8' : '#e8eaf0', boxShadow: '2px 2px 5px #c5c7cf', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: isAdmin ? '#fff' : '#6b6b8a', flexShrink: 0 }}>{m.sender.name.charAt(0)}</div>}
-                        <div style={{ maxWidth: '70%', padding: m.imageUrl ? '6px' : '10px 14px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0', boxShadow: isMe ? '3px 3px 8px rgba(54,54,232,0.3)' : '3px 3px 8px #c5c7cf, -3px -3px 8px #ffffff', color: isMe ? '#fff' : '#1e1e3a', overflow: 'hidden' }}>
-                          {!isMe && <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isAdmin ? '#3636e8' : '#9999b0', padding: m.imageUrl ? '4px 8px 0' : '0' }}>{m.sender.name}</div>}
-                          {m.imageUrl && (
-                            <img
-                              src={m.imageUrl}
-                              alt="Shared image"
-                              onClick={() => setLightboxUrl(m.imageUrl!)}
-                              style={{ maxWidth: '260px', maxHeight: '180px', borderRadius: '10px', cursor: 'pointer', display: 'block', objectFit: 'cover', marginBottom: m.content ? '6px' : '0', margin: '4px auto' }}
-                            />
-                          )}
-                          {m.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', padding: m.imageUrl ? '0 8px 4px' : '0' }}>{m.content}</div>}
-                          <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right', padding: m.imageUrl ? '0 8px 2px' : '0' }}>{new Date(m.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                      <div key={m.id} className="msg-row" style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '8px', alignItems: 'flex-start', marginBottom: showAvatar ? '8px' : '2px' }}>
+                        {!isMe && (
+                          <div style={{ 
+                            width: '28px', height: '28px', borderRadius: '50%', 
+                            background: isAdmin ? '#3636e8' : '#e8eaf0', 
+                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '2px 2px 5px #c5c7cf', 
+                            display: showAvatar ? 'flex' : 'none', 
+                            alignItems: 'center', justifyContent: 'center', 
+                            fontSize: '10px', fontWeight: '700', 
+                            color: isAdmin ? '#fff' : '#6b6b8a', flexShrink: 0 
+                          }}>
+                            {m.sender.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        {!isMe && !showAvatar && <div style={{ width: '28px', flexShrink: 0 }} />}
+                        <div style={{ maxWidth: '75%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                          <div style={{ 
+                            padding: m.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px', 
+                            borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', 
+                            background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff', 
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)', 
+                            color: '#1e1e3a',
+                            border: isMe ? 'none' : '1px solid #e8eaf0',
+                            minWidth: '60px'
+                          }}>
+                            {!isMe && showAvatar && (
+                              <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '4px', color: isAdmin ? '#3636e8' : '#888', textTransform: 'uppercase' }}>
+                                {m.sender.name}
+                              </div>
+                            )}
+                            {m.imageUrl && (
+                              <img
+                                src={m.imageUrl}
+                                alt="Shared image"
+                                onClick={() => setLightboxUrl(m.imageUrl!)}
+                                style={{ maxWidth: '100%', maxHeight: '240px', borderRadius: '10px', cursor: 'pointer', display: 'block', objectFit: 'cover', marginBottom: m.content ? '6px' : '0' }}
+                              />
+                            )}
+                            {m.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.content}</div>}
+                            
+                            {/* Time inside bubble */}
+                            <div style={{ position: 'absolute', bottom: '4px', right: '8px', fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                              {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {isMe && (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )

@@ -92,6 +92,7 @@ export default function CommunityPage() {
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [replyingTo, setReplyingTo] = useState<CommMsg | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
   const loadMessages = useCallback(async (classId: string) => {
@@ -283,8 +284,13 @@ export default function CommunityPage() {
     await fetch(`/api/community/${selectedClass.id}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: msgContent || '', imageUrl }),
+      body: JSON.stringify({ 
+        content: msgContent || '', 
+        imageUrl,
+        replyToId: replyingTo?.id 
+      }),
     })
+    setReplyingTo(null)
     loadMessages(selectedClass.id)
   }
 
@@ -464,6 +470,9 @@ export default function CommunityPage() {
 
   return (
     <div className="page-container fade-in" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
+      <style>{`
+        .msg-row:hover .msg-actions { opacity: 1 !important; }
+      `}</style>
       {confirmDialog}
       {loadError ? (
         <div
@@ -766,31 +775,26 @@ export default function CommunityPage() {
                           </span>
                         </div>
                       )}
-                      <div style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
+                      <div style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-start' }}>
                         {!isMe && (
-                          <>
-                            {showAvatar ? (
-                              <div style={{
-                                width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                                background: '#e8eaf0',
-                                boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '11px', fontWeight: '800', color: '#9999b0',
-                              }}>
-                                {msg.sender.name.charAt(0).toUpperCase()}
-                              </div>
-                            ) : <div style={{ width: '32px', flexShrink: 0 }} />}
-                          </>
+                          <div style={{
+                            width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+                            background: '#e8eaf0',
+                            boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                            display: showAvatar ? 'flex' : 'none',
+                            alignItems: 'center', justifyContent: 'center',
+                            fontSize: '11px', fontWeight: '800', color: '#9999b0',
+                          }}>
+                            {msg.sender.name.charAt(0).toUpperCase()}
+                          </div>
                         )}
+                        {!isMe && !showAvatar && <div style={{ width: '32px', flexShrink: 0 }} />}
                         <div style={{
                           padding: '8px 14px', borderRadius: '14px',
                           background: 'transparent',
                           border: '1.5px dashed #c5c7cf',
                           color: '#9999b0', fontSize: '13px', fontStyle: 'italic',
                         }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}>
-                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                          </svg>
                           Message deleted
                         </div>
                       </div>
@@ -811,111 +815,128 @@ export default function CommunityPage() {
                         </span>
                       </div>
                     )}
-                    <div style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-end' }}>
-                    {/* Avatar */}
-                    {!isMe && (
-                      <div style={{
-                        width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                        background: isAdmin ? '#3636e8' : '#e8eaf0',
-                        boxShadow: isAdmin ? 'none' : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                        display: showAvatar ? 'flex' : 'none',
-                        alignItems: 'center', justifyContent: 'center',
-                        fontSize: '11px', fontWeight: '800',
-                        color: isAdmin ? '#fff' : '#6b6b8a',
-                      }}>
-                        {msg.sender.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    {!isMe && !showAvatar && <div style={{ width: '32px', flexShrink: 0 }} />}
-
-                    <div style={{ maxWidth: '65%', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                      {showAvatar && !isMe && (
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', paddingLeft: '2px' }}>
-                          <span 
-                            onClick={() => {
-                              if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
-                            }}
-                            style={{ 
-                              fontSize: '12px', fontWeight: '700', 
-                              color: isAdmin ? '#3636e8' : '#6b6b8a',
-                              cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
-                              textDecoration: userRole === 'MANAGER' ? 'underline' : 'none',
-                              textUnderlineOffset: '2px'
-                            }}
-                          >
-                            {msg.sender.name}
-                          </span>
-                          {isAdmin && (
-                            <span style={{ fontSize: '10px', background: '#3636e8', color: '#fff', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
-                              {msg.sender.role.charAt(0) + msg.sender.role.slice(1).toLowerCase()}
-                            </span>
-                          )}
-                          {userRole === 'MANAGER' && msg.sender.securityNumber && (
-                            <span style={{ fontSize: '10px', background: '#f59e0b22', color: '#f59e0b', padding: '1px 7px', borderRadius: '50px', fontWeight: '700' }}>
-                              {msg.sender.securityNumber}
-                            </span>
-                          )}
+                    <div className="msg-row" style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-start', marginBottom: showAvatar ? '8px' : '2px' }}>
+                      {/* Avatar */}
+                      {!isMe && (
+                        <div 
+                          onClick={() => userRole === 'MANAGER' && setSelectedUserDetailsId(msg.sender.id)}
+                          style={{
+                            width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+                            background: isAdmin ? '#3636e8' : '#e8eaf0',
+                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                            display: showAvatar ? 'flex' : 'none',
+                            alignItems: 'center', justifyContent: 'center',
+                            fontSize: '11px', fontWeight: '800',
+                            color: isAdmin ? '#fff' : '#6b6b8a',
+                            cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                          }}
+                        >
+                          {msg.sender.name.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
-                        <div style={{
-                          padding: msg.imageUrl ? '6px' : '10px 16px',
-                          borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                          background: isMe ? '#3636e8' : isAdmin ? '#f0f0ff' : '#e8eaf0',
-                          color: isMe ? '#fff' : '#1e1e3a',
-                          fontSize: '14px', lineHeight: '1.5',
-                          boxShadow: isMe
-                            ? '4px 4px 10px rgba(54,54,232,0.25)'
-                            : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                          overflow: 'hidden',
-                        }}>
-                          {msg.imageUrl && (
-                            <img
-                              src={msg.imageUrl}
-                              alt="Shared image"
-                              onClick={() => setLightboxUrl(msg.imageUrl!)}
-                              style={{
-                                maxWidth: '280px', maxHeight: '200px',
-                                borderRadius: msg.content ? '12px 12px 4px 4px' : '12px',
-                                cursor: 'pointer', display: 'block',
-                                objectFit: 'cover',
-                                marginBottom: msg.content ? '6px' : '0',
-                              }}
-                            />
-                          )}
-                          {msg.content && (
-                            <div style={{ padding: msg.imageUrl ? '2px 10px 4px' : '0' }}>
-                              {msg.content}
+                      {!isMe && !showAvatar && <div style={{ width: '32px', flexShrink: 0 }} />}
+
+                      <div style={{ maxWidth: '75%', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                          <div style={{
+                            padding: msg.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px',
+                            borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                            background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff', // WhatsApp-like light green for me
+                            color: '#1e1e3a',
+                            fontSize: '14px', lineHeight: '1.5',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                            minWidth: '60px',
+                            border: isMe ? 'none' : '1px solid #e8eaf0',
+                          }}>
+                            {/* Name inside for group/staff */}
+                            {!isMe && showAvatar && (
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
+                                <span 
+                                  onClick={() => {
+                                    if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
+                                  }}
+                                  style={{ 
+                                    fontSize: '11px', fontWeight: '800', 
+                                    color: isAdmin ? '#3636e8' : '#888',
+                                    cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                                    textTransform: 'uppercase',
+                                  }}
+                                >
+                                  {msg.sender.name}
+                                </span>
+                                {isAdmin && (
+                                  <span style={{ fontSize: '9px', background: '#3636e815', color: '#3636e8', padding: '1px 5px', borderRadius: '4px', fontWeight: '700' }}>
+                                    STAFF
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {msg.imageUrl && (
+                              <img
+                                src={msg.imageUrl}
+                                alt="Shared image"
+                                onClick={() => setLightboxUrl(msg.imageUrl!)}
+                                style={{
+                                  maxWidth: '100%', maxHeight: '240px',
+                                  borderRadius: '12px',
+                                  cursor: 'pointer', display: 'block',
+                                  objectFit: 'cover',
+                                  marginBottom: msg.content ? '6px' : '0',
+                                }}
+                              />
+                            )}
+                            {msg.content && (
+                              <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                {msg.content}
+                              </div>
+                            )}
+
+                            {/* Time inside bubble */}
+                            <div style={{ 
+                              position: 'absolute', bottom: '4px', right: '8px', 
+                              fontSize: '10px', color: '#999', 
+                              display: 'flex', alignItems: 'center', gap: '3px' 
+                            }}>
+                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {isMe && (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                              )}
                             </div>
-                          )}
+                          </div>
+
+                          {/* Message Actions (Visible on Hover/Right Side) */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', opacity: 0, transition: 'opacity 0.2s' }} className="msg-actions">
+                            {(userRole === 'MANAGER' || isMe) && !msg.id.startsWith('temp-') && (
+                              <button
+                                onClick={() => deleteMessage(msg.id)}
+                                disabled={deletingId === msg.id}
+                                style={{
+                                  width: '24px', height: '24px', borderRadius: '50%',
+                                  border: 'none', cursor: 'pointer',
+                                  background: '#fff',
+                                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setReplyingTo(msg)}
+                              style={{
+                                width: '24px', height: '24px', borderRadius: '50%',
+                                border: 'none', cursor: 'pointer',
+                                background: '#fff',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2.5"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>
+                            </button>
+                          </div>
                         </div>
-                        {(userRole === 'MANAGER' || isMe) && !msg.id.startsWith('temp-') && (
-                          <button
-                            onClick={() => deleteMessage(msg.id)}
-                            disabled={deletingId === msg.id}
-                            title={userRole === 'MANAGER' && !isMe ? 'Delete message as manager' : 'Delete message'}
-                            style={{
-                              width: '26px', height: '26px', borderRadius: '50%',
-                              border: 'none', cursor: 'pointer',
-                              background: '#e8eaf0',
-                              boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0, opacity: deletingId === msg.id ? 0.4 : 0.5,
-                              transition: 'opacity 0.2s',
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                            onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-                            </svg>
-                          </button>
-                        )}
                       </div>
-                      <div style={{ fontSize: '10.5px', color: '#9999b0', padding: '0 4px' }}>
-                        {new Date(msg.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
                     </div>
                   </React.Fragment>
                 )
@@ -931,6 +952,27 @@ export default function CommunityPage() {
               </div>
             ) : (
             <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)' }}>
+              {/* Reply Preview */}
+              {replyingTo && (
+                <div style={{ 
+                  marginBottom: '8px', padding: '10px 14px', 
+                  background: '#f0f0ff', borderRadius: '12px',
+                  borderLeft: '4px solid #3636e8',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  fontSize: '12px'
+                }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: '800', color: '#3636e8', marginBottom: '2px' }}>Replying to {replyingTo.sender.name}</div>
+                    <div style={{ color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {replyingTo.content || 'Image'}
+                    </div>
+                  </div>
+                  <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+              )}
+
               {/* Image preview */}
               {pendingImagePreview && (
                 <div style={{ 
