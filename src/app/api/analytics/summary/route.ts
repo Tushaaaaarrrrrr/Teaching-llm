@@ -117,7 +117,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Use the latest snapshot for current totals
-    const latest = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null
+    let latest = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null
+
+    // Fallback: If no snapshot found in range, get the latest one available before this range
+    if (!latest) {
+      latest = await (prisma.analyticsSnapshot as any).findFirst({
+        where: { date: { lt: startDate } },
+        orderBy: { date: 'desc' },
+      })
+    }
 
     // Parse latest topCourses, courseDistribution, demographics
     let topCourses = []

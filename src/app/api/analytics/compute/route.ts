@@ -44,9 +44,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // ─── 2. Run aggregation for today ────────────────────────────────
-    const today = new Date()
-    const result = await computeDailyAnalytics(today)
+    // ─── 2. Run aggregation ──────────────────────────────────────────
+    const { searchParams } = new URL(req.url)
+    const dateParam = searchParams.get('date')
+    const targetDate = dateParam ? new Date(dateParam) : new Date()
+
+    if (isNaN(targetDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid date parameter' }, { status: 400 })
+    }
+
+    const result = await computeDailyAnalytics(targetDate)
 
     // ─── 3. Log success ──────────────────────────────────────────────
     logActivity({
