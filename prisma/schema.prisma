@@ -150,6 +150,38 @@ model CourseBundle {
   @@unique([createdById, name])
 }
 
+// Store-facing bundle offering (recommended bundle shown in Store)
+model BundleOffering {
+  id                         String                     @id @default(cuid())
+  name                       String
+  description                String?
+  createdById                String
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime                   @updatedAt
+  // Optional bundle prices (manager may leave empty)
+  recordedOriginalPrice     Float?
+  recordedDiscountPrice     Float?
+  liveOriginalPrice         Float?
+  liveDiscountPrice         Float?
+  allowIndividualPurchase   Boolean                    @default(true)
+  createdBy                 User                       @relation(fields: [createdById], references: [id])
+  courses                   BundleOfferingCourse[]
+
+  @@index([createdById])
+}
+
+model BundleOfferingCourse {
+  id               String          @id @default(cuid())
+  bundleOfferingId String
+  courseId         String          @map("classId")
+  bundleOffering   BundleOffering  @relation(fields: [bundleOfferingId], references: [id], onDelete: Cascade)
+  course           Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([bundleOfferingId, courseId])
+  @@index([bundleOfferingId])
+  @@index([courseId])
+}
+
 model CourseBundleCourse {
   id       String       @id @default(cuid())
   bundleId String

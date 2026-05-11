@@ -13,6 +13,7 @@ export default function ExploreCoursesPage() {
   const { data: offerings, error, isLoading } = useSWR('/api/course-offerings', fetcher, {
     revalidateOnFocus: false,
   })
+  const { data: bundleOfferings } = useSWR('/api/bundle-offerings', fetcher, { revalidateOnFocus: false })
   const { data: courses } = useSWR('/api/courses', fetcher, { revalidateOnFocus: false })
   const [purchasing, setPurchasing] = useState<string | null>(null)
   const [successOrderId, setSuccessOrderId] = useState<string | null>(null)
@@ -34,7 +35,21 @@ export default function ExploreCoursesPage() {
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [creating, setCreating] = useState(false)
+  // Bundle creation (recommended bundle) states
+  const [createBundle, setCreateBundle] = useState(false)
+  const [bundleName, setBundleName] = useState('')
+  const [bundleSelectedCourses, setBundleSelectedCourses] = useState<string[]>([])
+  const [bundleRecordedOriginalPrice, setBundleRecordedOriginalPrice] = useState('')
+  const [bundleRecordedDiscountPrice, setBundleRecordedDiscountPrice] = useState('')
+  const [bundleLiveOriginalPrice, setBundleLiveOriginalPrice] = useState('')
+  const [bundleLiveDiscountPrice, setBundleLiveDiscountPrice] = useState('')
+  const [bundleAllowIndividualPurchase, setBundleAllowIndividualPurchase] = useState(true)
   const [infoModalOffering, setInfoModalOffering] = useState<any | null>(null)
+  // Bundle purchase UI states
+  const [showBundleModal, setShowBundleModal] = useState(false)
+  const [activeBundle, setActiveBundle] = useState<any | null>(null)
+  const [bundleAccessType, setBundleAccessType] = useState<'RECORDED' | 'LIVE'>('RECORDED')
+  const [bundleSelectedForPurchase, setBundleSelectedForPurchase] = useState<Record<string, 'RECORDED' | 'LIVE'>>({})
 
   // Helper to get enrollment status
   const getEnrollmentStatus = (courseId: string) => {
@@ -224,6 +239,7 @@ export default function ExploreCoursesPage() {
   }
 
   const activeOfferings = offerings || []
+  const activeBundles = bundleOfferings || []
 
   return (
     <>
@@ -330,6 +346,37 @@ export default function ExploreCoursesPage() {
       </div>
 
       <div className="page-container fade-in">
+
+      {/* Bundle offerings section */}
+      {activeBundles.length > 0 && (
+        <div style={{ marginBottom: '18px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a', margin: '6px 0 12px' }}>Bundles</h2>
+          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+            {activeBundles.map((b: any) => {
+              const bundlePriceRecorded = b.recordedDiscountPrice ?? b.recordedOriginalPrice
+              const bundlePriceLive = b.liveDiscountPrice ?? b.liveOriginalPrice
+              return (
+                <div key={b.id} style={{ minWidth: '320px', background: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '900', marginBottom: '6px' }}>{b.name}</div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px' }}>{b.description || `${b.courses.length} courses`}</div>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
+                    {bundlePriceRecorded ? <div style={{ fontWeight: '800', color: '#1e293b' }}>Recorded: ₹{bundlePriceRecorded}</div> : null}
+                    {bundlePriceLive ? <div style={{ fontWeight: '800', color: '#4f46e5' }}>Live: ₹{bundlePriceLive}</div> : null}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {bundlePriceRecorded || bundlePriceLive ? (
+                      <button onClick={() => { setActiveBundle(b); setBundleAccessType(bundlePriceRecorded ? 'RECORDED' : 'LIVE'); setShowBundleModal(true) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '800' }}>View / Buy</button>
+                    ) : (
+                      <button onClick={() => { setActiveBundle(b); setShowBundleModal(true) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: '#f3f4f6', color: '#111827', fontWeight: '800' }}>View</button>
+                    )}
+                    <button onClick={() => { setActiveBundle(b); setShowBundleModal(true) }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fff', border: '1px solid #e6eefc' }}>Choose Courses</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {activeOfferings.length === 0 && (
         <div className="empty-state" style={{ padding: '60px 20px' }}>
@@ -853,6 +900,144 @@ export default function ExploreCoursesPage() {
         })}
       </div>
 
+      {/* Bundle Choose / Buy Modal */}
+      {showBundleModal && activeBundle && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }} onClick={() => { setShowBundleModal(false); setActiveBundle(null) }}>
+          <div style={{ width: '100%', maxWidth: '880px', background: '#fff', borderRadius: '20px', padding: '24px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '900' }}>{activeBundle.name}</h3>
+              <div style={{ fontSize: '13px', color: '#64748b' }}>{activeBundle.courses.length} courses</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '18px' }}>
+              <div style={{ maxHeight: '360px', overflow: 'auto', paddingRight: '8px' }}>
+                {activeBundle.courses.map((bc: any) => {
+                  const course = bc.course
+                  const offering = (activeOfferings as any[]).find(o => o.courseId === course.id)
+                  const recPrice = offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0
+                  const livePrice = offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0
+                  return (
+                    <div key={course.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: '800' }}>{course.name}</div>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>{course.teacherName || ''}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '800' }}>₹{recPrice}</div>
+                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>Recorded</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '800', color: '#4f46e5' }}>₹{livePrice}</div>
+                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>Live</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <label style={{ fontSize: '12px', color: '#334155', fontWeight: '700' }}>Choose</label>
+                          <select value={bundleSelectedForPurchase[course.id] || 'RECORDED'} onChange={e => setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: e.target.value as 'RECORDED' | 'LIVE' })} style={{ padding: '6px 8px', borderRadius: '8px' }}>
+                            <option value="RECORDED">Recorded</option>
+                            <option value="LIVE">Live</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ borderLeft: '1px solid #f1f5f9', paddingLeft: '12px' }}>
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>Bundle Purchase</div>
+                  <div style={{ fontSize: '20px', fontWeight: '900', marginTop: '8px' }}>Buy all at:</div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    <button onClick={() => setBundleAccessType('RECORDED')} style={{ padding: '10px', borderRadius: '12px', background: bundleAccessType === 'RECORDED' ? '#6366f1' : '#f3f4f6', color: bundleAccessType === 'RECORDED' ? '#fff' : '#111827', fontWeight: '800' }}>Recorded</button>
+                    <button onClick={() => setBundleAccessType('LIVE')} style={{ padding: '10px', borderRadius: '12px', background: bundleAccessType === 'LIVE' ? '#4f46e5' : '#f3f4f6', color: bundleAccessType === 'LIVE' ? '#fff' : '#111827', fontWeight: '800' }}>Live</button>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '18px' }}>
+                  <button onClick={async () => {
+                    // Buy all flow
+                    try {
+                      setIsProcessing(true)
+                      const res = await fetch(`/api/bundle-offerings/${activeBundle.id}/create-order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buyAll: true, accessType: bundleAccessType }) })
+                      const data = await res.json()
+                      if (!res.ok) { alert(data.error || 'Failed to create order'); setIsProcessing(false); return }
+                      const options = {
+                        key: data.keyId,
+                        amount: data.amount,
+                        currency: data.currency,
+                        name: 'GenZ IItian',
+                        description: `Purchase bundle — ${data.bundleName}`,
+                        order_id: data.razorpayOrderId,
+                        prefill: { name: data.userName || '', email: data.userEmail || '' },
+                        theme: { color: '#6366f1' },
+                        handler: async (response: any) => {
+                          try {
+                            const verifyRes = await fetch('/api/orders/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature }) })
+                            const verifyData = await verifyRes.json()
+                            if (verifyRes.ok) {
+                              setSuccessOrderId(verifyData.orderId || verifyData.orderId || 'SUCCESS')
+                              setPurchasedCourse({ courseName: data.bundleName, accessType: bundleAccessType })
+                              setShowBundleModal(false)
+                            } else {
+                              alert('Verification failed: ' + verifyData.error)
+                            }
+                          } catch (err) { alert('Payment verification failed') }
+                          finally { setIsProcessing(false) }
+                        },
+                        modal: { ondismiss: () => setIsProcessing(false) }
+                      }
+                      setIsProcessing(false)
+                      const rzp = new (window as any).Razorpay(options)
+                      rzp.open()
+                    } catch (err: any) { alert(err.message || 'Something went wrong'); setIsProcessing(false) }
+                  }} style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: '800' }}>Buy All</button>
+
+                  <div style={{ height: '8px' }} />
+                  <button onClick={async () => {
+                    // Buy selected courses flow
+                    try {
+                      const selected = Object.keys(bundleSelectedForPurchase).length ? Object.keys(bundleSelectedForPurchase) : activeBundle.courses.map((c: any) => c.course.id)
+                      if (selected.length === 0) { alert('Select at least one course'); return }
+                      setIsProcessing(true)
+                      const res = await fetch(`/api/bundle-offerings/${activeBundle.id}/create-order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buyAll: false, accessType: 'RECORDED', selectedCourseIds: selected, perCourseAccessTypes: bundleSelectedForPurchase }) })
+                      const data = await res.json()
+                      if (!res.ok) { alert(data.error || 'Failed to create order'); setIsProcessing(false); return }
+                      const options = {
+                        key: data.keyId,
+                        amount: data.amount,
+                        currency: data.currency,
+                        name: 'GenZ IItian',
+                        description: `Purchase from bundle — ${data.bundleName}`,
+                        order_id: data.razorpayOrderId,
+                        prefill: { name: data.userName || '', email: data.userEmail || '' },
+                        theme: { color: '#6366f1' },
+                        handler: async (response: any) => {
+                          try {
+                            const verifyRes = await fetch('/api/orders/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature }) })
+                            const verifyData = await verifyRes.json()
+                            if (verifyRes.ok) {
+                              setSuccessOrderId(verifyData.orderId || 'SUCCESS')
+                              setPurchasedCourse({ courseName: data.bundleName, accessType: 'MIXED' })
+                              setShowBundleModal(false)
+                            } else {
+                              alert('Verification failed: ' + verifyData.error)
+                            }
+                          } catch (err) { alert('Payment verification failed') }
+                          finally { setIsProcessing(false) }
+                        },
+                        modal: { ondismiss: () => setIsProcessing(false) }
+                      }
+                      setIsProcessing(false)
+                      const rzp = new (window as any).Razorpay(options)
+                      rzp.open()
+                    } catch (err: any) { alert(err.message || 'Something went wrong'); setIsProcessing(false) }
+                  }} style={{ width: '100%', padding: '12px', borderRadius: '12px', background: '#fff', border: '1px solid #e6eefc', color: '#111827', fontWeight: '800' }}>Buy Selected</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Offering Modal */}
       {showCreateModal && (
         <div style={{
@@ -1062,6 +1247,61 @@ export default function ExploreCoursesPage() {
                 </button>
               </div>
             </div>
+            
+            {/* Recommended Bundle Section */}
+            <div style={{ marginBottom: '20px', padding: '14px', borderRadius: '12px', border: '1px dashed #e6eefc', background: '#fbfdff' }}>
+              <label style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
+                <input type="checkbox" checked={createBundle} onChange={(e) => setCreateBundle(e.target.checked)} />
+                <span style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>Also create a Recommended Bundle</span>
+              </label>
+
+              {createBundle && (
+                <div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Bundle Name</label>
+                    <input value={bundleName} onChange={e => setBundleName(e.target.value)} placeholder="E.g., Level 1: Foundations" style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #dbeafe' }} />
+                  </div>
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Select Recommended Courses</label>
+                    <div style={{ maxHeight: '160px', overflow: 'auto', padding: '10px', borderRadius: '8px', border: '1px solid #eef2ff', background: '#fff' }}>
+                      {(courses || []).map((c: any) => (
+                        <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0' }}>
+                          <input
+                            type="checkbox"
+                            checked={bundleSelectedCourses.includes(c.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) setBundleSelectedCourses([...bundleSelectedCourses, c.id])
+                              else setBundleSelectedCourses(bundleSelectedCourses.filter(id => id !== c.id))
+                            }}
+                          />
+                          <div style={{ fontSize: '14px', fontWeight: '700' }}>{c.name}</div>
+                        </label>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>Tip: Select all to get all at the bundle price below.</div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                    <div style={{ background: '#fbfbff', padding: '12px', borderRadius: '10px', border: '1px solid #eef2ff' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Bundle - Recorded Price</div>
+                      <input type="number" min={1} placeholder="Original (₹)" value={bundleRecordedOriginalPrice} onChange={e => setBundleRecordedOriginalPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc', marginBottom: '8px' }} />
+                      <input type="number" min={1} placeholder="Discount (₹)" value={bundleRecordedDiscountPrice} onChange={e => setBundleRecordedDiscountPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc' }} />
+                    </div>
+                    <div style={{ background: '#fbfbff', padding: '12px', borderRadius: '10px', border: '1px solid #eef2ff' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Bundle - Live Price</div>
+                      <input type="number" min={1} placeholder="Original (₹)" value={bundleLiveOriginalPrice} onChange={e => setBundleLiveOriginalPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc', marginBottom: '8px' }} />
+                      <input type="number" min={1} placeholder="Discount (₹)" value={bundleLiveDiscountPrice} onChange={e => setBundleLiveDiscountPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input type="checkbox" checked={bundleAllowIndividualPurchase} onChange={e => setBundleAllowIndividualPurchase(e.target.checked)} />
+                    <div style={{ fontSize: '13px', color: '#334155', fontWeight: '700' }}>Allow users to buy individual courses from this bundle</div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -1111,7 +1351,42 @@ export default function ExploreCoursesPage() {
                       }),
                     })
                     if (res.ok) {
-                      alert('Course added to store successfully!')
+                      // If manager requested creating a recommended bundle, create it too
+                      if (createBundle) {
+                        try {
+                          // Ensure selectedCourse is included
+                          const coursesForBundle = Array.from(new Set([...(bundleSelectedCourses || []), selectedCourse]))
+                          if (!bundleName || coursesForBundle.length === 0) {
+                            alert('Bundle requires a name and at least one course. Bundle was not created.')
+                          } else {
+                            const bundleRes = await fetch('/api/bundle-offerings', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                name: bundleName,
+                                description: '',
+                                courseIds: coursesForBundle,
+                                recordedOriginalPrice: bundleRecordedOriginalPrice ? Number(bundleRecordedOriginalPrice) : undefined,
+                                recordedDiscountPrice: bundleRecordedDiscountPrice ? Number(bundleRecordedDiscountPrice) : undefined,
+                                liveOriginalPrice: bundleLiveOriginalPrice ? Number(bundleLiveOriginalPrice) : undefined,
+                                liveDiscountPrice: bundleLiveDiscountPrice ? Number(bundleLiveDiscountPrice) : undefined,
+                                allowIndividualPurchase: !!bundleAllowIndividualPurchase,
+                              }),
+                            })
+                            if (!bundleRes.ok) {
+                              const data = await bundleRes.json().catch(() => ({}))
+                              alert('Course added but failed to create bundle: ' + (data.error || 'Unknown error'))
+                            } else {
+                              alert('Course and recommended bundle created successfully!')
+                            }
+                          }
+                        } catch (bundleErr: any) {
+                          console.error('Bundle create error', bundleErr)
+                          alert('Course added but failed to create bundle: ' + (bundleErr?.message || 'Unknown'))
+                        }
+                      } else {
+                        alert('Course added to store successfully!')
+                      }
                       setShowCreateModal(false)
                       setSelectedCourse('')
                       setRecordedOriginalPrice('')
@@ -1119,6 +1394,15 @@ export default function ExploreCoursesPage() {
                       setLiveOriginalPrice('')
                       setLiveDiscountPrice('')
                       setTags([])
+                      // reset bundle form
+                      setCreateBundle(false)
+                      setBundleName('')
+                      setBundleSelectedCourses([])
+                      setBundleRecordedOriginalPrice('')
+                      setBundleRecordedDiscountPrice('')
+                      setBundleLiveOriginalPrice('')
+                      setBundleLiveDiscountPrice('')
+                      setBundleAllowIndividualPurchase(true)
                       window.location.reload()
                     } else {
                       const data = await res.json()
