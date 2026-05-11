@@ -7,6 +7,7 @@ interface Transaction {
   orderId: string
   amount: number
   status: string
+  type: 'PURCHASE' | 'UPGRADE'
   createdAt: string
   courses: { id: string; name: string; subject: string | null }[]
 }
@@ -40,11 +41,43 @@ export default function MyTransactionsPage() {
     )
   }
 
+  const typeBadge = (type: string) => {
+    const isUpgrade = type === 'UPGRADE'
+    return (
+      <span style={{
+        background: isUpgrade ? '#e0e7ff' : '#f0fdf4',
+        color: isUpgrade ? '#4338ca' : '#15803d',
+        padding: '2px 8px',
+        borderRadius: '6px',
+        fontSize: '10px',
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        border: `1px solid ${isUpgrade ? '#c7d2fe' : '#dcfce7'}`,
+        marginBottom: '6px'
+      }}>
+        {isUpgrade ? (
+          <>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            Upgraded
+          </>
+        ) : (
+          <>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            Purchased
+          </>
+        )}
+      </span>
+    )
+  }
+
   return (
     <div className="page-container fade-in">
       <div style={{ marginBottom: '24px' }}>
 
-        <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>All your PRO batch upgrade transactions</p>
+        <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>All your course purchases and PRO batch upgrade transactions</p>
       </div>
 
       {loading ? (
@@ -54,14 +87,15 @@ export default function MyTransactionsPage() {
       ) : !transactions.length ? (
         <div className="card" style={{ padding: '60px', textAlign: 'center' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
-          <h3 style={{ color: '#64748b', fontWeight: '600' }}>No upgrade history yet</h3>
-          <p style={{ color: '#94a3b8', fontSize: '14px' }}>When you upgrade a course to PRO, your transaction will appear here.</p>
+          <h3 style={{ color: '#64748b', fontWeight: '600' }}>No transaction history yet</h3>
+          <p style={{ color: '#94a3b8', fontSize: '14px' }}>When you purchase a course or upgrade to PRO, your transaction will appear here.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {transactions.map(tx => (
             <div key={tx.id} className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ flex: 1, minWidth: '200px' }}>
+                {typeBadge(tx.type)}
                 <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
                   {tx.courses && tx.courses.length > 0 ? tx.courses.map(c => c.name).join(', ') : 'Unknown Course'}
                 </div>

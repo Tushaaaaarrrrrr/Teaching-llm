@@ -48,7 +48,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/free-resources/materials': { title: 'Free Materials', subtitle: 'Download study materials available for free' },
   '/free-resources': { title: 'Free Resources', subtitle: 'Access free courses and study materials' },
   '/transactions': { title: 'Upgrade Transactions', subtitle: 'Monitor student course upgrades and revenue' },
-  '/my-transactions': { title: 'My Upgrade History', subtitle: 'View all your course upgrade transactions' },
+  '/my-transactions': { title: 'My Transaction History', subtitle: 'View all your course transactions and upgrades' },
 }
 
 const TYPE_COLORS: Record<string, string> = {
