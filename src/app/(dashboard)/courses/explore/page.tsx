@@ -1062,6 +1062,8 @@ export default function ExploreCoursesPage() {
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '28px',
             maxHeight: 'calc(100vh - 40px)',
+            overflowY: 'auto',
+            paddingRight: '6px',
             display: 'flex',
             flexDirection: 'column',
             animation: 'modalSlideUp 0.3s ease-out'
@@ -1069,8 +1071,6 @@ export default function ExploreCoursesPage() {
             <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#1e1e3a', marginBottom: '24px' }}>
               Add Course to Store
             </h2>
-
-            <div style={{ overflowY: 'auto', paddingRight: '6px' }}>
 
             {/* Course Selection */}
             <div style={{ marginBottom: '24px' }}>
@@ -1335,8 +1335,6 @@ export default function ExploreCoursesPage() {
                   </div>
                 </div>
               )}
-            </div>
-
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '12px', paddingBottom: '2px' }}>
               <button
