@@ -49,6 +49,7 @@ model User {
   communityMessages       CommunityMessage[]           @relation("CommMsgSender")
   courseEvents            CourseEvent[]                @relation("EventCreator")
   createdCourseBundles    CourseBundle[]               @relation("BundleCreator")
+  createdBundleOfferings  BundleOffering[]
   instructorCourseEvents  CourseEvent[]                @relation("EventInstructor")
   syncedSessionEvents     DailySessionSnapshot[]       @relation("SnapshotInstructor")
   enrollments             Enrollment[]
@@ -98,6 +99,7 @@ model Course {
   courseEvents          CourseEvent[]
   dailySessionSnapshots DailySessionSnapshot[]
   courseBundles         CourseBundleCourse[]
+  bundleOfferingCourses BundleOfferingCourse[]
   enrollments           Enrollment[]
   exams                 Exam[]
   feedbacks             Feedback[]
