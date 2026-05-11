@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Script from 'next/script'
 import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
@@ -50,6 +50,17 @@ export default function ExploreCoursesPage() {
   const [activeBundle, setActiveBundle] = useState<any | null>(null)
   const [bundleAccessType, setBundleAccessType] = useState<'RECORDED' | 'LIVE'>('RECORDED')
   const [bundleSelectedForPurchase, setBundleSelectedForPurchase] = useState<Record<string, 'RECORDED' | 'LIVE'>>({})
+
+  useEffect(() => {
+    if (!showCreateModal && !showBundleModal) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [showCreateModal, showBundleModal])
 
   // Helper to get enrollment status
   const getEnrollmentStatus = (courseId: string) => {
@@ -1044,17 +1055,22 @@ export default function ExploreCoursesPage() {
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
-          padding: '20px', overflow: 'auto'
+          padding: '20px', overflow: 'hidden'
         }} onClick={() => setShowCreateModal(false)}>
           <div style={{
-            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '600px',
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '1040px',
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-            padding: '40px',
+            padding: '28px',
+            maxHeight: 'calc(100vh - 40px)',
+            display: 'flex',
+            flexDirection: 'column',
             animation: 'modalSlideUp 0.3s ease-out'
           }} onClick={e => e.stopPropagation()}>
             <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#1e1e3a', marginBottom: '24px' }}>
               Add Course to Store
             </h2>
+
+            <div style={{ overflowY: 'auto', paddingRight: '6px' }}>
 
             {/* Course Selection */}
             <div style={{ marginBottom: '24px' }}>
@@ -1249,62 +1265,80 @@ export default function ExploreCoursesPage() {
             </div>
             
             {/* Recommended Bundle Section */}
-            <div style={{ marginBottom: '20px', padding: '14px', borderRadius: '12px', border: '1px dashed #e6eefc', background: '#fbfdff' }}>
+            <div style={{ marginBottom: '20px', padding: '16px', borderRadius: '16px', border: '1px dashed #e6eefc', background: '#fbfdff' }}>
               <label style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
                 <input type="checkbox" checked={createBundle} onChange={(e) => setCreateBundle(e.target.checked)} />
                 <span style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>Also create a Recommended Bundle</span>
               </label>
 
               {createBundle && (
-                <div>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Bundle Name</label>
-                    <input value={bundleName} onChange={e => setBundleName(e.target.value)} placeholder="E.g., Level 1: Foundations" style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #dbeafe' }} />
-                  </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Select Recommended Courses</label>
-                    <div style={{ maxHeight: '160px', overflow: 'auto', padding: '10px', borderRadius: '8px', border: '1px solid #eef2ff', background: '#fff' }}>
-                      {(courses || []).map((c: any) => (
-                        <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0' }}>
-                          <input
-                            type="checkbox"
-                            checked={bundleSelectedCourses.includes(c.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) setBundleSelectedCourses([...bundleSelectedCourses, c.id])
-                              else setBundleSelectedCourses(bundleSelectedCourses.filter(id => id !== c.id))
-                            }}
-                          />
-                          <div style={{ fontSize: '14px', fontWeight: '700' }}>{c.name}</div>
-                        </label>
-                      ))}
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.15fr) minmax(300px, 0.85fr)', gap: '16px', alignItems: 'start' }}>
+                  <div>
+                    <div style={{ marginBottom: '12px' }}>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Bundle Name</label>
+                      <input value={bundleName} onChange={e => setBundleName(e.target.value)} placeholder="E.g., Level 1: Foundations" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #dbeafe' }} />
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>Tip: Select all to get all at the bundle price below.</div>
-                  </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                    <div style={{ background: '#fbfbff', padding: '12px', borderRadius: '10px', border: '1px solid #eef2ff' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Bundle - Recorded Price</div>
-                      <input type="number" min={1} placeholder="Original (₹)" value={bundleRecordedOriginalPrice} onChange={e => setBundleRecordedOriginalPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc', marginBottom: '8px' }} />
-                      <input type="number" min={1} placeholder="Discount (₹)" value={bundleRecordedDiscountPrice} onChange={e => setBundleRecordedDiscountPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc' }} />
-                    </div>
-                    <div style={{ background: '#fbfbff', padding: '12px', borderRadius: '10px', border: '1px solid #eef2ff' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Bundle - Live Price</div>
-                      <input type="number" min={1} placeholder="Original (₹)" value={bundleLiveOriginalPrice} onChange={e => setBundleLiveOriginalPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc', marginBottom: '8px' }} />
-                      <input type="number" min={1} placeholder="Discount (₹)" value={bundleLiveDiscountPrice} onChange={e => setBundleLiveDiscountPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc' }} />
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Select Recommended Courses</label>
+                      <div style={{ maxHeight: '210px', overflow: 'auto', padding: '12px', borderRadius: '12px', border: '1px solid #eef2ff', background: '#fff' }}>
+                        {(courses || []).map((c: any) => (
+                          <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: '1px solid #f8fafc' }}>
+                            <input
+                              type="checkbox"
+                              checked={bundleSelectedCourses.includes(c.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) setBundleSelectedCourses([...bundleSelectedCourses, c.id])
+                                else setBundleSelectedCourses(bundleSelectedCourses.filter(id => id !== c.id))
+                              }}
+                            />
+                            <div style={{ fontSize: '14px', fontWeight: '700' }}>{c.name}</div>
+                          </label>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>Tip: Select all to get all at the bundle price below.</div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input type="checkbox" checked={bundleAllowIndividualPurchase} onChange={e => setBundleAllowIndividualPurchase(e.target.checked)} />
-                    <div style={{ fontSize: '13px', color: '#334155', fontWeight: '700' }}>Allow users to buy individual courses from this bundle</div>
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    <div style={{ background: '#fbfbff', padding: '14px', borderRadius: '14px', border: '1px solid #eef2ff' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Bundle Pricing</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Recorded Original</label>
+                          <input type="number" min={1} placeholder="₹" value={bundleRecordedOriginalPrice} onChange={e => setBundleRecordedOriginalPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #e6eefc' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Recorded Discount</label>
+                          <input type="number" min={1} placeholder="₹" value={bundleRecordedDiscountPrice} onChange={e => setBundleRecordedDiscountPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #e6eefc' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Live Original</label>
+                          <input type="number" min={1} placeholder="₹" value={bundleLiveOriginalPrice} onChange={e => setBundleLiveOriginalPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #e6eefc' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Live Discount</label>
+                          <input type="number" min={1} placeholder="₹" value={bundleLiveDiscountPrice} onChange={e => setBundleLiveDiscountPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #e6eefc' }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                      <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input type="checkbox" checked={bundleAllowIndividualPurchase} onChange={e => setBundleAllowIndividualPurchase(e.target.checked)} />
+                        <div style={{ fontSize: '13px', color: '#334155', fontWeight: '700' }}>Allow users to buy individual courses from this bundle</div>
+                      </label>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px', lineHeight: '1.5' }}>
+                        If you don’t set a bundle price, the bundle card will not show a “Buy all” banner.
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', paddingBottom: '2px' }}>
               <button
                 onClick={() => setShowCreateModal(false)}
                 style={{
