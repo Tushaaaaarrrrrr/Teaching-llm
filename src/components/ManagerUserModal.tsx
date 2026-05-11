@@ -472,6 +472,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: '11px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Subject Bundles</label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                        {bundles.filter(bundle => formData.bundleIds.includes(bundle.id)).map(bundle => (
                           <div key={bundle.id} style={{
                             padding: '10px 18px', borderRadius: '16px', background: '#f3f0ff',
                             boxShadow: 'var(--shadow-sm)',
