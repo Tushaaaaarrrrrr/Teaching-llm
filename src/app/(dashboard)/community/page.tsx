@@ -612,7 +612,6 @@ export default function CommunityPage() {
                   <div style={{ fontSize: '10px', opacity: 0.6, textTransform: 'capitalize' }}>
                     {cls.isDmDisabled ? 'Hidden from student' : (cls.role && cls.role !== 'STUDENT' ? cls.role.toLowerCase() : 'Direct Message')}
                   </div>
-                </div>
               </button>
             ))}
             {classes.filter(cls => cls.isDirectChat).length === 0 && (
