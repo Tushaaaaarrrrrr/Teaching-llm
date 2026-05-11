@@ -82,8 +82,8 @@ export async function GET() {
     const chats = await prisma.chatSession.findMany({
       where: chatWhere,
       include: {
-        student: { select: { name: true } },
-        agent: { select: { name: true } },
+        student: { select: { name: true, role: true } },
+        agent: { select: { name: true, role: true } },
       },
       orderBy: { updatedAt: 'desc' }
     })
@@ -102,7 +102,8 @@ export async function GET() {
         lastMessageAt: chat.updatedAt,
         hasUnread: lastMsgTime > lastReadTime,
         isDirectChat: true,
-        _count: { lectures: 0 }
+        _count: { lectures: 0 },
+        role: session.role === 'STUDENT' ? (chat.agent?.role || 'MANAGER') : chat.student.role,
       }
     })
 

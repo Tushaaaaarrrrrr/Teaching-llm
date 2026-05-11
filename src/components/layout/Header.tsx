@@ -372,7 +372,14 @@ export default function Header({ userName, userRole }: HeaderProps) {
             </div>
             <div>
               <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1.2' }}>{currentUserName}</div>
-              <div style={{ fontSize: '11px', color: '#9999b0' }}>{currentUserRole.charAt(0) + currentUserRole.slice(1).toLowerCase()}</div>
+              <div style={{ fontSize: '11px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                {currentUserRole.charAt(0) + currentUserRole.slice(1).toLowerCase()}
+                {currentUserRole !== 'STUDENT' && (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                )}
+              </div>
             </div>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2" style={{ marginLeft: '4px' }}>
               <polyline points="6 9 12 15 18 9"/>

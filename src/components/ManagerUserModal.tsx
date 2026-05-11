@@ -300,7 +300,14 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   </div>
                   <div style={{ textAlign: 'left' }}>
                     <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e1e3a', marginBottom: '4px' }}>{displayName}</h2>
-                    <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600' }}>{formData.role || user.role} Account</div>
+                    <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {(formData.role || user.role).charAt(0) + (formData.role || user.role).slice(1).toLowerCase()} Account
+                      {(formData.role || user.role) !== 'STUDENT' && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                       {user.isGoogleUser && (
                         <span style={{

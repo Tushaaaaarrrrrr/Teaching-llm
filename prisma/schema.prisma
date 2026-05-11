@@ -510,8 +510,11 @@ model ChatMessage {
   deletedAt       DateTime?
   isDeleted       Boolean     @default(false)
   isSystemDeleted Boolean     @default(false)
+  replyToId       String?
   chat            ChatSession @relation(fields: [chatId], references: [id], onDelete: Cascade)
   sender          User        @relation("ChatMsgSender", fields: [senderId], references: [id])
+  replyTo         ChatMessage? @relation("ChatMessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies         ChatMessage[] @relation("ChatMessageReplies")
 }
 
 model CommunityMessage {
@@ -523,12 +526,16 @@ model CommunityMessage {
   isDeleted       Boolean   @default(false)
   deletedAt       DateTime?
   createdAt       DateTime  @default(now())
-  isSystemDeleted Boolean   @default(false)
+  isSystemDeleted Boolean     @default(false)
+  replyToId       String?
   course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   sender          User      @relation("CommMsgSender", fields: [senderId], references: [id])
+  replyTo         CommunityMessage? @relation("CommunityMessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies         CommunityMessage[] @relation("CommunityMessageReplies")
 
   @@index([courseId])
   @@index([senderId])
+  @@index([replyToId])
 }
 
 model Comment {

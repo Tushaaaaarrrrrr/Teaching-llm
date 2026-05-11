@@ -186,12 +186,21 @@ export default function LecturePage() {
               <span style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>{comment.user.name}</span>
               {comment.user.role !== 'STUDENT' && (
                 <span style={{ 
-                  fontSize: '10px', fontWeight: '700', 
-                  background: comment.user.role === 'ADMIN' ? '#fee2e2' : '#f0f9ff', 
-                  color: comment.user.role === 'ADMIN' ? '#ef4444' : '#0ea5e9',
-                  padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase'
+                  fontSize: '10px', 
+                  background: 'linear-gradient(135deg, #3636e8, #6366f1)', 
+                  color: '#fff', 
+                  padding: '1px 8px', 
+                  borderRadius: '50px', 
+                  fontWeight: '800',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  textTransform: 'capitalize'
                 }}>
-                  {comment.user.role}
+                  {comment.user.role.toLowerCase()}
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
                 </span>
               )}
               <span style={{ fontSize: '12px', color: '#94a3b8' }}>

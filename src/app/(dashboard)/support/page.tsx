@@ -792,7 +792,12 @@ export default function SupportPage() {
                       <span style={pill(STATUS_COLORS[t.status])}>{t.status.replace('_', ' ')}</span>
                       <span style={pill(PRIORITY_COLORS[t.priority])}>{t.priority}</span>
                       {t.class && <span style={pill(t.class.color)}>{t.class.name}</span>}
-                      {t.assignedTo && <span style={pill('#3636e8')}>{t.assignedTo.name}</span>}
+                      {t.assignedTo && (
+                        <span style={{ ...pill('#3636e8'), display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          {t.assignedTo.name}
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
@@ -834,7 +839,12 @@ export default function SupportPage() {
                     <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
                       <span style={pill(STATUS_COLORS[selected.status])}>{selected.status.replace('_', ' ')}</span>
                       <span style={pill(PRIORITY_COLORS[selected.priority])}>{selected.priority}</span>
-                      {selected.assignedTo && <span style={pill('#3636e8')}>→ {selected.assignedTo.name}</span>}
+                      {selected.assignedTo && (
+                        <span style={{ ...pill('#3636e8'), display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          → {selected.assignedTo.name}
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                      )}
                       {selected.class && userRole === 'MANAGER' && <span style={pill(selected.class.color)}>📚 {selected.class.name}</span>}
                     </div>
                   </div>
@@ -943,7 +953,24 @@ export default function SupportPage() {
                                   textDecoration: userRole === 'MANAGER' ? 'underline' : 'none'
                                 }}
                               >{r.sender.name}</span>
-                              {isAdmin && ' · Staff'}
+                              {isAdmin && (
+                                <span style={{ 
+                                  display: 'inline-flex', 
+                                  alignItems: 'center', 
+                                  gap: '3px',
+                                  marginLeft: '6px',
+                                  padding: '1px 6px',
+                                  borderRadius: '50px',
+                                  background: 'linear-gradient(135deg, #3636e8, #6366f1)',
+                                  color: '#fff',
+                                  fontSize: '9px',
+                                  fontWeight: '800',
+                                  textTransform: 'capitalize'
+                                }}>
+                                  {r.sender.role.toLowerCase()}
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                </span>
+                              )}
                             </div>
                           )}
                           {r.imageUrl && (
@@ -1089,7 +1116,26 @@ export default function SupportPage() {
                     <div key={m.id} style={{ display: 'flex', justifyContent: isStudent ? 'flex-start' : 'flex-end', gap: '8px', alignItems: 'flex-end' }}>
                       {isStudent && <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#e8eaf0', boxShadow: '2px 2px 5px #c5c7cf', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: '#6b6b8a', flexShrink: 0 }}>{m.sender.name.charAt(0)}</div>}
                       <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: isStudent ? '18px 18px 18px 4px' : '18px 18px 4px 18px', background: isStudent ? '#e8eaf0' : '#f0f0ff', boxShadow: '3px 3px 8px #c5c7cf, -3px -3px 8px #ffffff', color: '#1e1e3a' }}>
-                        <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isStudent ? '#9999b0' : '#3636e8' }}>{m.sender.name}{!isStudent && ' · Staff'}</div>
+                        <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isStudent ? '#9999b0' : '#3636e8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {m.sender.name}
+                          {!isStudent && (
+                            <span style={{ 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              gap: '2px',
+                              padding: '1px 5px',
+                              borderRadius: '50px',
+                              background: 'linear-gradient(135deg, #3636e8, #6366f1)',
+                              color: '#fff',
+                              fontSize: '8px',
+                              fontWeight: '800',
+                              textTransform: 'capitalize'
+                            }}>
+                              {m.sender.role.toLowerCase()}
+                              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </span>
+                          )}
+                        </div>
                         <div style={{ fontSize: '13.5px', lineHeight: '1.5' }}>{m.content}</div>
                         <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                       </div>
@@ -1234,8 +1280,25 @@ export default function SupportPage() {
                             minWidth: '60px'
                           }}>
                             {!isMe && showAvatar && (
-                              <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '4px', color: isAdmin ? '#3636e8' : '#888', textTransform: 'uppercase' }}>
+                              <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '4px', color: isAdmin ? '#3636e8' : '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 {m.sender.name}
+                                {isAdmin && (
+                                  <span style={{ 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center', 
+                                    gap: '3px',
+                                    padding: '1px 6px',
+                                    borderRadius: '50px',
+                                    background: 'linear-gradient(135deg, #3636e8, #6366f1)',
+                                    color: '#fff',
+                                    fontSize: '9px',
+                                    fontWeight: '800',
+                                    textTransform: 'capitalize'
+                                  }}>
+                                    {m.sender.role.toLowerCase()}
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                  </span>
+                                )}
                               </div>
                             )}
                             {m.imageUrl && (

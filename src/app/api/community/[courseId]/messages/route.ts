@@ -62,6 +62,7 @@ export async function GET(
           role: m.sender.role,
           securityNumber: undefined,
         },
+        replyTo: undefined, // DM replies not fully implemented in DB relation yet for simple retrieval, but field exists
       }))
       return NextResponse.json(messages)
     }
@@ -91,6 +92,11 @@ export async function GET(
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       include: {
         sender: { select: { id: true, name: true, role: true, securityNumber: true } },
+        replyTo: {
+          include: {
+            sender: { select: { id: true, name: true } }
+          }
+        }
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -124,7 +130,7 @@ export async function POST(
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { content, imageUrl } = await request.json()
+    const { content, imageUrl, replyToId } = await request.json()
     if ((!content || !content.trim()) && !imageUrl) {
       return NextResponse.json({ error: 'Message must have content or an image' }, { status: 400 })
     }
@@ -142,9 +148,20 @@ export async function POST(
       // Both sides can send messages in a DIRECT chat
 
       const msg = await prisma.chatMessage.create({
-        data: { chatId: id, senderId: session.userId, content: sanitizedContent, imageUrl: imageUrl || null },
+        data: { 
+          chatId: id, 
+          senderId: session.userId, 
+          content: sanitizedContent, 
+          imageUrl: imageUrl || null,
+          replyToId: replyToId || null
+        },
         include: {
           sender: { select: { id: true, name: true, role: true } },
+          replyTo: {
+            include: {
+              sender: { select: { id: true, name: true } }
+            }
+          }
         },
       })
 
@@ -187,9 +204,20 @@ export async function POST(
     }
 
     const message = await prisma.communityMessage.create({
-      data: { courseId: params.courseId, senderId: session.userId, content: sanitizedContent, imageUrl: imageUrl || null },
+      data: { 
+        courseId: params.courseId, 
+        senderId: session.userId, 
+        content: sanitizedContent, 
+        imageUrl: imageUrl || null,
+        replyToId: replyToId || null
+      },
       include: {
         sender: { select: { id: true, name: true, role: true, securityNumber: true } },
+        replyTo: {
+          include: {
+            sender: { select: { id: true, name: true } }
+          }
+        }
       },
     })
 

@@ -16,6 +16,7 @@ interface ClassItem {
   isDirectChat?: boolean
   isDmDisabled?: boolean
   _count?: { lectures: number }
+  role?: string
 }
 
 interface CommMsg {
@@ -31,6 +32,15 @@ interface CommMsg {
     role: string
     securityNumber?: string
   }
+  replyTo?: {
+    id: string
+    content: string
+    imageUrl?: string | null
+    sender: {
+      id: string
+      name: string
+    }
+  } | null
 }
 
 interface TranscriptMsg {
@@ -591,12 +601,16 @@ export default function CommunityPage() {
                 }}>
                   {cls.name.replace('Chat with ', '').charAt(0).toUpperCase()}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     {cls.name.replace('Chat with ', '')}
+                    {cls.role && cls.role !== 'STUDENT' && (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" style={{ color: selectedClass?.id === cls.id ? '#fff' : '#3636e8' }}>
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
                   </div>
-                  <div style={{ fontSize: '10px', opacity: 0.6 }}>
-                    {cls.isDmDisabled ? 'Hidden from student' : 'Direct Message'}
+                  <div style={{ fontSize: '10px', opacity: 0.6, textTransform: 'capitalize' }}>
+                    {cls.isDmDisabled ? 'Hidden from student' : (cls.role && cls.role !== 'STUDENT' ? cls.role.toLowerCase() : 'Direct Message')}
                   </div>
                 </div>
               </button>
@@ -841,13 +855,35 @@ export default function CommunityPage() {
                           <div style={{
                             padding: msg.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px',
                             borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                            background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff', // WhatsApp-like light green for me
+                            background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff',
                             color: '#1e1e3a',
                             fontSize: '14px', lineHeight: '1.5',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                            minWidth: '60px',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                            minWidth: '80px',
                             border: isMe ? 'none' : '1px solid #e8eaf0',
+                            position: 'relative',
+                            transition: 'all 0.2s',
                           }}>
+                            {/* Reply info */}
+                            {msg.replyTo && (
+                              <div style={{
+                                background: isMe ? 'rgba(0,0,0,0.05)' : 'rgba(54,54,232,0.05)',
+                                padding: '6px 10px',
+                                borderRadius: '8px',
+                                borderLeft: `3px solid ${isAdmin ? '#3636e8' : '#6b6b8a'}`,
+                                marginBottom: '8px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                opacity: 0.8
+                              }}>
+                                <div style={{ fontWeight: '800', color: isAdmin ? '#3636e8' : '#6b6b8a', fontSize: '11px' }}>
+                                  {msg.replyTo.sender.name}
+                                </div>
+                                <div style={{ color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
+                                  {msg.replyTo.content || (msg.replyTo.imageUrl ? '📷 Image' : 'Message')}
+                                </div>
+                              </div>
+                            )}
                             {/* Name inside for group/staff */}
                             {!isMe && showAvatar && (
                               <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
@@ -865,8 +901,24 @@ export default function CommunityPage() {
                                   {msg.sender.name}
                                 </span>
                                 {isAdmin && (
-                                  <span style={{ fontSize: '9px', background: '#3636e815', color: '#3636e8', padding: '1px 5px', borderRadius: '4px', fontWeight: '700' }}>
-                                    STAFF
+                                  <span style={{ 
+                                    fontSize: '9px', 
+                                    background: 'linear-gradient(135deg, #3636e8, #6366f1)', 
+                                    color: '#fff', 
+                                    padding: '2px 8px', 
+                                    borderRadius: '50px', 
+                                    fontWeight: '800',
+                                    letterSpacing: '0.02em',
+                                    boxShadow: '0 2px 4px rgba(54,54,232,0.2)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    textTransform: 'capitalize'
+                                  }}>
+                                    {msg.sender.role.toLowerCase()}
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
                                   </span>
                                 )}
                               </div>
@@ -894,13 +946,14 @@ export default function CommunityPage() {
 
                             {/* Time inside bubble */}
                             <div style={{ 
-                              position: 'absolute', bottom: '4px', right: '8px', 
-                              fontSize: '10px', color: '#999', 
-                              display: 'flex', alignItems: 'center', gap: '3px' 
+                              position: 'absolute', bottom: '4px', right: '10px', 
+                              fontSize: '10px', color: isMe ? '#4a7c44' : '#999', 
+                              display: 'flex', alignItems: 'center', gap: '3px',
+                              fontWeight: '600',
                             }}>
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               {isMe && (
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                               )}
                             </div>
                           </div>
@@ -1134,8 +1187,22 @@ export default function CommunityPage() {
                           >
                             {msg.sender.name}
                           </span>
-                          <span style={{ fontSize: '10px', background: '#3636e8', color: '#fff', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
-                            {msg.sender.role}
+                          <span style={{ 
+                            fontSize: '10px', 
+                            background: 'linear-gradient(135deg, #3636e8, #6366f1)', 
+                            color: '#fff', 
+                            padding: '1px 8px', 
+                            borderRadius: '50px', 
+                            fontWeight: '800',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            textTransform: 'capitalize'
+                          }}>
+                            {msg.sender.role.toLowerCase()}
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
                           </span>
                           {msg.sender.securityNumber && (
                             <span style={{ fontSize: '10px', background: '#f59e0b22', color: '#f59e0b', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
