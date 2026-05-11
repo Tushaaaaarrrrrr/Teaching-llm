@@ -112,14 +112,14 @@ function LoginContent() {
               style={{
                 fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600',
                 padding: '8px 16px', background: '#F3F4F6', borderRadius: '50px', border: 'none', cursor: 'pointer',
-                boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff', transition: 'all 0.2s ease'
+                boxShadow: 'var(--shadow-sm)', transition: 'all 0.25s ease'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
+                e.currentTarget.style.transform = 'translateY(-1px)';
                 e.currentTarget.style.color = '#3636e8';
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
+                e.currentTarget.style.transform = 'none';
                 e.currentTarget.style.color = '#9999b0';
               }}
             >
@@ -203,15 +203,15 @@ function LoginContent() {
             padding: '8px 16px',
             background: '#F3F4F6',
             borderRadius: '50px',
-            boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff',
+            boxShadow: 'var(--shadow)',
             transition: 'all 0.2s ease'
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
+            e.currentTarget.style.transform = 'translateY(-1px)';
             e.currentTarget.style.color = '#3636e8';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
+            e.currentTarget.style.transform = 'none';
             e.currentTarget.style.color = '#9999b0';
           }}
         >

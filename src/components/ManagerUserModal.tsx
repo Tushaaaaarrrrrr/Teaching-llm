@@ -233,9 +233,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
 
   const neuBox = {
     background: '#ffffff',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+    boxShadow: 'var(--shadow)',
     borderRadius: '16px',
     padding: '24px',
+    border: '1px solid rgba(0,0,0,0.02)'
   }
 
   const neuInset = {
@@ -288,9 +289,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
                   <div style={{
                     width: '90px', height: '90px', borderRadius: '50%',
-                    background: '#f0f2f8', boxShadow: '4px 4px 10px #d1d9e6, -4px -4px 10px #ffffff',
+                    background: '#f8fafc', 
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                    border: '3px solid #fff', flexShrink: 0
+                    border: '2px solid #fff', flexShrink: 0
                   }}>
                     {user.avatar || user.gender ? (
                       <img src={user.avatar || getDefaultAvatar(formData.gender || user.gender)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -396,12 +398,13 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         padding: '10px', borderRadius: '16px',
                         background: formData.gender === g
                           ? g === 'MALE' ? '#e0e7ff' : g === 'FEMALE' ? '#fce7f3' : '#f3e8ff'
-                          : '#f0f2f8',
+                          : '#f8fafc',
                         boxShadow: formData.gender === g
-                          ? g === 'MALE' ? 'inset 3px 3px 6px rgba(99,102,241,0.18), inset -3px -3px 6px #ffffff'
-                          : g === 'FEMALE' ? 'inset 3px 3px 6px rgba(236,72,153,0.14), inset -3px -3px 6px #ffffff'
-                          : 'inset 3px 3px 6px rgba(168,85,247,0.14), inset -3px -3px 6px #ffffff'
-                          : '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
+                          ? '0 2px 8px rgba(0,0,0,0.05)'
+                          : 'none',
+                        border: formData.gender === g 
+                          ? '1.5px solid rgba(0,0,0,0.05)' 
+                          : '1.5px solid #e2e8f0',
                         cursor: 'pointer', color: '#1e1e3a', fontSize: '13px', fontWeight: '700', transition: 'all 0.2s'
                       }}>
                         <input type="radio" checked={formData.gender === g} onChange={() => setFormData({ ...formData, gender: g })} />
@@ -414,9 +417,9 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 {/* Security ID */}
                 <div style={{
                   padding: '20px', borderRadius: '20px',
-                  background: 'linear-gradient(135deg, #f0f2f8, #f8fafc)',
-                  boxShadow: 'inset 4px 4px 10px #d1d9e6, inset -4px -4px 10px #ffffff',
-                  border: '1px solid rgba(255,255,255,0.6)'
+                  background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
+                  boxShadow: 'var(--shadow-inset)',
+                  border: '1px solid #e2e8f0'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Security Identification</div>
@@ -430,9 +433,9 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 {user && 'enableDetailedLogs' in user && (
                   <div style={{
                     padding: '20px', borderRadius: '20px', marginTop: '24px',
-                    background: 'linear-gradient(135deg, #f0f2f8, #f8fafc)',
-                    boxShadow: 'inset 4px 4px 10px #d1d9e6, inset -4px -4px 10px #ffffff',
-                    border: '1px solid rgba(255,255,255,0.6)'
+                    background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
+                    boxShadow: 'var(--shadow-inset)',
+                    border: '1px solid #e2e8f0'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Stealth Tracking</div>
@@ -469,10 +472,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: '11px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Subject Bundles</label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                        {bundles.filter(bundle => formData.bundleIds.includes(bundle.id)).map(bundle => (
                           <div key={bundle.id} style={{
                             padding: '10px 18px', borderRadius: '16px', background: '#f3f0ff',
-                            boxShadow: '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
+                            boxShadow: 'var(--shadow-sm)',
+                            border: '1px solid #ddd6fe',
                             display: 'flex', alignItems: 'center', gap: '10px'
                           }}>
                             <span style={{ fontSize: '13px', fontWeight: '700', color: '#6d28d9' }}>{bundle.name}</span>
@@ -515,8 +518,9 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           const isLive = enrollType === 'LIVE'
                           return (
                           <div key={c.id} style={{
-                            padding: '10px 18px', borderRadius: '16px', background: '#f0f2f8',
-                            boxShadow: '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
+                            padding: '10px 18px', borderRadius: '16px', background: '#ffffff',
+                            boxShadow: 'var(--shadow-sm)',
+                            border: '1px solid #e2e8f0',
                             display: 'flex', alignItems: 'center', gap: '10px'
                           }}>
                              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
@@ -537,7 +541,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                   color: isLive ? '#166534' : '#92400e',
                                   fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em',
                                   cursor: 'pointer', transition: 'all 0.2s',
-                                  boxShadow: '2px 2px 4px #d1d9e6, -2px -2px 4px #ffffff',
+                                  boxShadow: 'var(--shadow-sm)',
                                   outline: 'none',
                                 }}
                               >

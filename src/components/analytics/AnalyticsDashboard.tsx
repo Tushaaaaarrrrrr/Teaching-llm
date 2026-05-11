@@ -77,7 +77,7 @@ export default function AnalyticsDashboard() {
   const neuCard: React.CSSProperties = {
     borderRadius: '20px',
     background: '#e8eaf0',
-    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+    boxShadow: 'var(--shadow)',
     padding: '24px',
   }
 
@@ -198,7 +198,7 @@ export default function AnalyticsDashboard() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
           padding: '10px 20px', borderRadius: '50px', background: '#e8eaf0',
-          boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+          boxShadow: 'var(--shadow-inset)',
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.5">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>

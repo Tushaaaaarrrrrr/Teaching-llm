@@ -474,8 +474,8 @@ export default function CommunityPage() {
 
   const isDM = (cls: ClassItem | null) => cls?.isDirectChat === true
 
-  const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
-  const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
+  const neu = { background: '#ffffff', boxShadow: 'var(--shadow)', border: '1px solid rgba(0,0,0,0.02)' }
+  const neuInset = { background: '#f8fafc', boxShadow: 'var(--shadow-inset)', border: '1px solid #e2e8f0' }
 
 
   return (
@@ -521,8 +521,8 @@ export default function CommunityPage() {
               background: selectedClass?.id === cls.id ? cls.color : '#e8eaf0',
               color: selectedClass?.id === cls.id ? '#fff' : '#1e1e3a',
               boxShadow: selectedClass?.id === cls.id
-                ? `5px 5px 12px ${cls.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
-                : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                ? `0 4px 12px ${cls.color}44`
+                : 'var(--shadow-sm)',
               position: 'relative'
             }}
           >
@@ -583,8 +583,8 @@ export default function CommunityPage() {
                   background: selectedClass?.id === cls.id ? '#3636e8' : '#e8eaf0',
                   color: selectedClass?.id === cls.id ? '#fff' : '#1e1e3a',
                   boxShadow: selectedClass?.id === cls.id
-                    ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px rgba(255,255,255,0.6)'
-                    : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    ? '0 4px 12px rgba(54,54,232,0.3)'
+                    : 'var(--shadow-sm)',
                   opacity: cls.isDmDisabled ? 0.55 : 1,
                   position: 'relative'
                 }}
@@ -670,7 +670,7 @@ export default function CommunityPage() {
                 </span>
                 {userRole === 'MANAGER' && (
                   <>
-                    <button onClick={openTranscript} style={{ padding: '6px 12px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', ...neu, boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', color: '#3636e8' }}>
+                    <button onClick={openTranscript} style={{ padding: '6px 12px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', ...neu, color: '#3636e8' }}>
                       Transcript
                     </button>
                     {!isDM(selectedClass) && (
@@ -793,7 +793,7 @@ export default function CommunityPage() {
                           <div style={{
                             width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
                             background: '#e8eaf0',
-                            boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                            boxShadow: 'var(--shadow-sm)',
                             display: showAvatar ? 'flex' : 'none',
                             alignItems: 'center', justifyContent: 'center',
                             fontSize: '11px', fontWeight: '800', color: '#9999b0',
@@ -836,7 +836,7 @@ export default function CommunityPage() {
                           style={{
                             width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
                             background: isAdmin ? '#3636e8' : '#e8eaf0',
-                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : 'var(--shadow-sm)',
                             display: showAvatar ? 'flex' : 'none',
                             alignItems: 'center', justifyContent: 'center',
                             fontSize: '11px', fontWeight: '800',
@@ -1069,7 +1069,7 @@ export default function CommunityPage() {
                     width: '40px', height: '40px', borderRadius: '50%', border: 'none',
                     cursor: 'pointer', flexShrink: 0,
                     background: pendingImage ? '#3636e818' : '#e8eaf0',
-                    boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    boxShadow: 'var(--shadow-sm)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: pendingImage ? '#3636e8' : '#9999b0',
                     transition: 'all 0.2s',
@@ -1114,7 +1114,7 @@ export default function CommunityPage() {
                     background: (input.trim() || pendingImage) ? selectedClass.color : '#e8eaf0',
                     color: (input.trim() || pendingImage) ? '#fff' : '#9999b0',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, gap: '6px',
-                    boxShadow: (input.trim() || pendingImage) ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    boxShadow: (input.trim() || pendingImage) ? `0 4px 12px ${selectedClass.color}44` : 'var(--shadow-sm)',
                     transition: 'all 0.2s', fontWeight: '700', fontSize: '13px', fontFamily: 'inherit',
                   }}
                 >
@@ -1279,7 +1279,7 @@ export default function CommunityPage() {
                         padding: '10px 14px', borderRadius: '14px', border: 'none',
                         cursor: dmStarting ? 'default' : 'pointer', textAlign: 'left',
                         background: '#e8eaf0', fontFamily: 'inherit',
-                        boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                        boxShadow: 'var(--shadow-sm)',
                         transition: 'all 0.15s', opacity: dmStarting ? 0.6 : 1,
                       }}
                       onMouseEnter={e => { if (!dmStarting) (e.currentTarget as HTMLButtonElement).style.background = '#3636e8'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}

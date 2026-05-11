@@ -321,7 +321,7 @@ export default function DashboardPage() {
                         style={{
                           width: '32px', height: '32px', borderRadius: '50%',
                           background: '#e8eaf0',
-                          boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                          boxShadow: 'var(--shadow-sm)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           border: 'none', cursor: 'pointer', transition: 'box-shadow 0.2s',
                         }}
@@ -570,7 +570,7 @@ export default function DashboardPage() {
                           style={{
                             width: '30px', height: '30px', borderRadius: '50%',
                             background: '#e8eaf0',
-                            boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                            boxShadow: 'var(--shadow-sm)',
                             border: 'none', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             flexShrink: 0,
@@ -701,7 +701,7 @@ export default function DashboardPage() {
                           padding: '13px 14px',
                           borderRadius: '14px',
                           background: '#e8eaf0',
-                          boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                          boxShadow: 'var(--shadow-sm)',
                           transition: 'box-shadow 0.2s',
                         }}
                       >
@@ -768,7 +768,7 @@ export default function DashboardPage() {
                         padding: '24px',
                         borderRadius: '24px',
                         background: '#e8eaf0',
-                        boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                        boxShadow: 'var(--shadow)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '24px',

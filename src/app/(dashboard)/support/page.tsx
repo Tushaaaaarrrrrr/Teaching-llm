@@ -104,7 +104,7 @@ function TicketStatusIcon({ status }: { status: string }) {
 }
 
 function BackButton({ onClick }: { onClick: () => void }) {
-  const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
+  const neu = { background: '#ffffff', boxShadow: 'var(--shadow)', border: '1px solid rgba(0,0,0,0.02)' }
   return (
     <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b8a', fontFamily: 'inherit', fontSize: '14px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '50px', ...neu }}>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
@@ -134,7 +134,7 @@ function CreateTicketModal({
             <label className="form-label">Issue Type</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               {['GENERAL', 'SUBJECT'].map(t => (
-                <button key={t} onClick={() => setForm((f: any) => ({ ...f, type: t }))} style={{ flex: 1, padding: '10px', borderRadius: '14px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', background: form.type === t ? '#3636e8' : '#e8eaf0', color: form.type === t ? '#fff' : '#6b6b8a', boxShadow: form.type === t ? '4px 4px 10px rgba(54,54,232,0.3)' : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }}>
+                <button key={t} onClick={() => setForm((f: any) => ({ ...f, type: t }))} style={{ flex: 1, padding: '10px', borderRadius: '14px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', background: form.type === t ? '#3636e8' : '#e8eaf0', color: form.type === t ? '#fff' : '#6b6b8a', boxShadow: form.type === t ? '0 4px 12px rgba(54,54,232,0.3)' : 'var(--shadow-sm)' }}>
                   {t === 'GENERAL' ? '📋 General Support' : '📚 Subject Related'}
                 </button>
               ))}

@@ -195,7 +195,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
   const neuIconStyle = {
     width: '40px', height: '40px', borderRadius: '50%',
     background: '#e8eaf0',
-    boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+    boxShadow: 'var(--shadow-sm)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#6b6b8a', cursor: 'pointer',
     transition: 'box-shadow 0.2s ease', border: 'none', flexShrink: 0,
@@ -293,8 +293,9 @@ export default function Header({ userName, userRole }: HeaderProps) {
             <div style={{
               position: 'absolute', right: 0, top: 'calc(100% + 10px)',
               width: '340px', borderRadius: '20px',
-              background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
+              background: '#ffffff', boxShadow: 'var(--shadow-md)',
               zIndex: 200, overflow: 'hidden',
+              border: '1px solid rgba(0,0,0,0.05)'
             }}>
               <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1.5px solid rgba(0,0,0,0.06)' }}>
                 <span style={{ fontWeight: '800', fontSize: '14px', color: '#1e1e3a' }}>
@@ -350,16 +351,16 @@ export default function Header({ userName, userRole }: HeaderProps) {
         {/* User pill with dropdown */}
         <div ref={userMenuRef} style={{ position: 'relative' }}>
           <div
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', cursor: 'pointer', transition: 'box-shadow 0.2s ease' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: '#f8fafc', boxShadow: 'var(--shadow-sm)', cursor: 'pointer', transition: 'all 0.2s ease' }}
             onClick={() => setShowUserMenu(v => !v)}
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+            onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
+            onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
             title="My Account & Profile"
           >
             <div style={{
               width: '32px', height: '32px', borderRadius: '50%',
               background: currentAvatar ? 'transparent' : '#e8eaf0',
-              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+              boxShadow: 'var(--shadow-sm)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#3636e8', fontSize: '12px', fontWeight: '800',
               overflow: 'hidden',
@@ -391,8 +392,9 @@ export default function Header({ userName, userRole }: HeaderProps) {
             <div style={{
               position: 'absolute', right: 0, top: 'calc(100% + 10px)',
               width: '200px', borderRadius: '16px',
-              background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
+              background: '#ffffff', boxShadow: 'var(--shadow-md)',
               zIndex: 200, overflow: 'hidden', padding: '6px',
+              border: '1px solid rgba(0,0,0,0.05)'
             }}>
               <button
                 onClick={() => { setShowUserMenu(false); router.push('/profile') }}
