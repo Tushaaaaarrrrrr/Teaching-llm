@@ -107,7 +107,7 @@ export default function ExamTimingStatus({ startDate, expiresAt, compact = false
   }
 
   return (
-    <div style={{ padding: '16px 18px', borderRadius: '18px', background: '#fff', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div style={{ padding: '16px 18px', borderRadius: '18px', background: '#fff', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <span style={{ alignSelf: 'flex-start', padding: '5px 12px', borderRadius: '50px', background: tone.background, color: tone.color, fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {label}
       </span>

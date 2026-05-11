@@ -373,7 +373,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           padding: '12px 16px',
           borderRadius: '999px',
           background: 'linear-gradient(145deg, #f6f7fb, #dde0e8)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          boxShadow: '14px 14px 28px rgba(197, 199, 207, 0.85), -10px -10px 22px rgba(255, 255, 255, 0.95), inset 1px 1px 0 rgba(255, 255, 255, 0.7)',
         }}>
           <img 
             src="/logo.png" 
@@ -424,7 +424,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 18px', borderRadius: '50px',
                 color: '#ffffff',
                 background: 'linear-gradient(135deg, #4b5563, #1f2937)',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255,255,255,0.2)',
                 textDecoration: 'none', fontSize: '14px', fontWeight: '800', transition: 'all 0.2s ease',
                 marginBottom: '4px', position: 'relative' as const, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const
               }
@@ -556,7 +556,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           borderRadius: '50px',
           color: '#ef4444',
           background: '#e8eaf0',
-          boxShadow: 'var(--shadow-sm)',
+          boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
           border: 'none',
           cursor: 'pointer',
           fontSize: '14.5px',
