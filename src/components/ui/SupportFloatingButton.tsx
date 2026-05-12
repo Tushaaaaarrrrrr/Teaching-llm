@@ -25,7 +25,6 @@ export default function SupportFloatingButton() {
     '/materials/recordings',
     '/support',
     '/community',
-    '/courses',
     '/calendar',
     '/materials',
     '/study/content-bank'

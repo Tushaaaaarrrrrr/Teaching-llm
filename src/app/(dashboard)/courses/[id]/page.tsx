@@ -247,8 +247,29 @@ export default function CourseDetailPage() {
     )
   }
 
-  const isManager = role === 'MANAGER'
+  const isManager = ['MANAGER', 'ADMIN'].includes(role)
   const canManage = isManager
+
+  const isCourseExpired = course.expiresAt && new Date(course.expiresAt).getTime() < new Date().getTime();
+
+  if (isCourseExpired && !isManager) {
+    return (
+      <div className="page-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div style={{ textAlign: 'center', background: '#fff', padding: '40px', borderRadius: '32px', boxShadow: '0 20px 40px rgba(0,0,0,0.05)', maxWidth: '500px', width: '100%' }}>
+          <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '16px' }}>Access Expired</h1>
+          <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
+            Your access to <strong>{course.name}</strong> has expired. You can no longer view the course lectures or materials.
+          </p>
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+            <Link href="/courses" className="btn btn-ghost" style={{ padding: '12px 24px', borderRadius: '16px', background: '#f1f5f9', color: '#475569', fontWeight: '700' }}>Back to Courses</Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="page-container fade-in">

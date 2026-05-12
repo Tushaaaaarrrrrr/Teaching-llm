@@ -1047,7 +1047,7 @@ export default function ExploreCoursesPage() {
           padding: '20px', overflow: 'auto'
         }} onClick={() => setShowCreateModal(false)}>
           <div style={{
-            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '600px',
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '960px',
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px',
             animation: 'modalSlideUp 0.3s ease-out'
@@ -1056,7 +1056,9 @@ export default function ExploreCoursesPage() {
               Add Course to Store
             </h2>
 
-            {/* Course Selection */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+              <div>
+                {/* Course Selection */}
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '8px' }}>
                 Select Course *
@@ -1189,9 +1191,12 @@ export default function ExploreCoursesPage() {
               </div>
             </div>
 
-            {/* Tags */}
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '8px' }}>
+              </div>
+
+              <div>
+                {/* Tags */}
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '8px' }}>
                 Tags / Badges
               </label>
               <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
@@ -1303,8 +1308,11 @@ export default function ExploreCoursesPage() {
               )}
             </div>
 
+              </div>
+            </div>
+
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
               <button
                 onClick={() => setShowCreateModal(false)}
                 style={{

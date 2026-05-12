@@ -1060,15 +1060,17 @@ export default function ManagePage() {
                         <button
                           onClick={() => toggleCourseDisabled(item)}
                           className="btn btn-ghost btn-sm"
+                          disabled={item.isExpired && !item.isDisabled}
                           style={{
-                            color: item.isDisabled ? '#10b981' : '#ef4444',
-                            border: `1px solid ${item.isDisabled ? '#d1fae5' : '#fee2e2'}`,
+                            color: item.isDisabled ? '#10b981' : (item.isExpired ? '#9999b0' : '#ef4444'),
+                            border: `1px solid ${item.isDisabled ? '#d1fae5' : (item.isExpired ? '#e5e7eb' : '#fee2e2')}`,
                             padding: '6px 10px',
                             fontSize: '11px',
+                            cursor: (item.isExpired && !item.isDisabled) ? 'not-allowed' : 'pointer'
                           }}
                           title={item.isExpired && !item.isDisabled ? 'Disabled by expiry' : (item.isDisabled ? 'Enable Course' : 'Disable Course')}
                         >
-                          {item.isDisabled ? 'Enable' : 'Disable'}
+                          {item.isDisabled ? 'Enable' : (item.isExpired ? 'Auto-Disabled' : 'Disable')}
                         </button>
                       )}
                       {tab === 'courses' && (

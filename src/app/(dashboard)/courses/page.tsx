@@ -215,25 +215,28 @@ export default function CoursesPage() {
           }
           const batchBadge = getBatchBadge()
 
-          return (
-          <Link key={course.id} href={`/courses/${course.id}`} style={{ textDecoration: 'none', display: 'flex' }}>
+          const isCourseExpired = (course as any).isExpired
+
+          const innerCard = (
             <div
               style={{
                 background: '#e8eaf0',
                 borderRadius: '28px',
-                boxShadow: isLive
+                boxShadow: (isLive && !isCourseExpired)
                   ? `8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, 0 0 0 2px ${course.color}40`
                   : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
                 overflow: 'hidden',
-                cursor: 'pointer',
+                cursor: isCourseExpired ? 'default' : 'pointer',
                 transition: 'all 0.25s ease',
                 display: 'flex',
                 flexDirection: 'column',
                 width: '100%',
                 height: '100%',
                 position: 'relative',
+                filter: isCourseExpired ? 'grayscale(100%) opacity(0.85)' : 'none',
               }}
               onMouseEnter={e => {
+                if (isCourseExpired) return;
                 e.currentTarget.style.transform = 'translateY(-4px)'
                 e.currentTarget.style.boxShadow = isLive
                   ? `12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff, 0 0 0 2px ${course.color}60`
@@ -241,6 +244,7 @@ export default function CoursesPage() {
                 if (!isFreeOrDemo && isRecorded) setShowUpgradeHint(course.id)
               }}
               onMouseLeave={e => {
+                if (isCourseExpired) return;
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.boxShadow = isLive
                   ? `8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, 0 0 0 2px ${course.color}40`
@@ -248,6 +252,16 @@ export default function CoursesPage() {
                 setShowUpgradeHint(null)
               }}
             >
+              {isCourseExpired && (
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, height: '100px',
+                  background: 'rgba(0,0,0,0.6)', zIndex: 20,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'white', fontSize: '20px', fontWeight: '900', letterSpacing: '0.1em'
+                }}>
+                  EXPIRED
+                </div>
+              )}
               {isLive && (
                 <div style={{
                   position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%',
@@ -497,7 +511,16 @@ export default function CoursesPage() {
                 </div>
               </div>
             </div>
-          </Link>
+          )
+
+          return isCourseExpired ? (
+            <div key={course.id} style={{ display: 'flex' }}>
+              {innerCard}
+            </div>
+          ) : (
+            <Link key={course.id} href={`/courses/${course.id}`} style={{ textDecoration: 'none', display: 'flex' }}>
+              {innerCard}
+            </Link>
           )
         })}
 

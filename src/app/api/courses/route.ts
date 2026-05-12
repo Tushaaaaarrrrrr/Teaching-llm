@@ -69,6 +69,9 @@ export async function GET() {
     })
     const enrollmentTypeMap = new Map(userEnrollments.map(e => [e.courseId, e.type]))
 
+    const nowTime = new Date().getTime()
+    const isManager = isManagerOrSuperAdmin(session.role)
+
     const coursesWithCounts = courses.map(course => {
       const topicsCount = course.topics.length
       let lecturesCount = 0
@@ -101,6 +104,14 @@ export async function GET() {
           materials: materialsCount,
         }
       }
+    }).filter(course => {
+      if (isManager) return true;
+      if (course.isExpired && course.expiresAt) {
+        const expiryTime = new Date(course.expiresAt).getTime()
+        const isPast72Hours = (nowTime - expiryTime) > 72 * 60 * 60 * 1000
+        if (isPast72Hours) return false
+      }
+      return true
     })
 
     if (coursesWithCounts.length <= 1) {
