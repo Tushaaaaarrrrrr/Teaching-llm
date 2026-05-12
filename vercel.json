@@ -3,6 +3,10 @@
     {
       "path": "/api/sync-queue",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/admin/google-sync/expire-cleanup",
+      "schedule": "0 0 * * *"
     }
   ]
 }

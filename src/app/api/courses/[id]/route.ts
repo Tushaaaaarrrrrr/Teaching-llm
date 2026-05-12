@@ -218,7 +218,10 @@ export async function PUT(
         },
       })
 
-      if (existingCourse.googleGroupEmail !== normalizedGoogleGroupEmail) {
+      const wasInGroup = !existingCourse.isDisabled && !!existingCourse.googleGroupEmail;
+      const willBeInGroup = !updated.isDisabled && !!updated.googleGroupEmail;
+
+      if (wasInGroup || willBeInGroup) {
         const enrollments = await tx.enrollment.findMany({
           where: { courseId: id },
           include: {
@@ -228,22 +231,30 @@ export async function PUT(
           },
         })
 
-        if (existingCourse.googleGroupEmail) {
-          await queueExplicitGoogleGroupSyncJobs(tx, enrollments.map(enrollment => ({
-            userEmail: enrollment.user.email,
-            courseId: id,
-            groupEmail: existingCourse.googleGroupEmail as string,
-            action: 'REMOVE' as const,
-          })))
+        // 1. Remove from old group if we are no longer going to be in it, or if the email changed
+        if (wasInGroup && existingCourse.googleGroupEmail) {
+          const emailChanging = existingCourse.googleGroupEmail !== updated.googleGroupEmail;
+          if (!willBeInGroup || emailChanging) {
+            await queueExplicitGoogleGroupSyncJobs(tx, enrollments.map(enrollment => ({
+              userEmail: enrollment.user.email,
+              courseId: id,
+              groupEmail: existingCourse.googleGroupEmail as string,
+              action: 'REMOVE' as const,
+            })))
+          }
         }
 
-        if (normalizedGoogleGroupEmail) {
-          await queueExplicitGoogleGroupSyncJobs(tx, enrollments.map(enrollment => ({
-            userEmail: enrollment.user.email,
-            courseId: id,
-            groupEmail: normalizedGoogleGroupEmail,
-            action: 'ADD' as const,
-          })))
+        // 2. Add to new group if we are going to be in it, and we weren't before OR the email changed
+        if (willBeInGroup && updated.googleGroupEmail) {
+          const emailChanging = existingCourse.googleGroupEmail !== updated.googleGroupEmail;
+          if (!wasInGroup || emailChanging) {
+            await queueExplicitGoogleGroupSyncJobs(tx, enrollments.map(enrollment => ({
+              userEmail: enrollment.user.email,
+              courseId: id,
+              groupEmail: updated.googleGroupEmail as string,
+              action: 'ADD' as const,
+            })))
+          }
         }
       }
 

@@ -285,6 +285,12 @@ export default function CommunityPage() {
       imageUrl,
       createdAt: new Date().toISOString(),
       sender: { id: userId, name: 'You', role: userRole },
+      replyTo: replyingTo ? {
+        id: replyingTo.id,
+        content: replyingTo.content,
+        imageUrl: replyingTo.imageUrl,
+        sender: { id: replyingTo.sender.id, name: replyingTo.sender.name }
+      } : undefined
     }
     setMessages(prev => [...prev, optimistic])
     const msgContent = input
@@ -828,7 +834,7 @@ export default function CommunityPage() {
                         </span>
                       </div>
                     )}
-                    <div className="msg-row" style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-start', marginBottom: showAvatar ? '8px' : '2px' }}>
+                    <div id={`msg-${msg.id}`} className="msg-row" style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '8px', alignItems: 'flex-end', marginBottom: showAvatar ? '6px' : '1px' }}>
                       {/* Avatar */}
                       {!isMe && (
                         <div 
@@ -852,8 +858,8 @@ export default function CommunityPage() {
                       <div style={{ maxWidth: '75%', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
                           <div style={{
-                            padding: msg.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px',
-                            borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                            padding: msg.imageUrl ? '5px 5px 15px 5px' : '7px 12px 15px 12px',
+                            borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                             background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff',
                             color: '#1e1e3a',
                             fontSize: '14px', lineHeight: '1.5',
@@ -865,20 +871,34 @@ export default function CommunityPage() {
                           }}>
                             {/* Reply info */}
                             {msg.replyTo && (
-                              <div style={{
-                                background: isMe ? 'rgba(0,0,0,0.05)' : 'rgba(54,54,232,0.05)',
-                                padding: '6px 10px',
-                                borderRadius: '8px',
-                                borderLeft: `3px solid ${isAdmin ? '#3636e8' : '#6b6b8a'}`,
-                                marginBottom: '8px',
-                                fontSize: '12px',
-                                cursor: 'pointer',
-                                opacity: 0.8
-                              }}>
-                                <div style={{ fontWeight: '800', color: isAdmin ? '#3636e8' : '#6b6b8a', fontSize: '11px' }}>
-                                  {msg.replyTo.sender.name}
+                              <div 
+                                onClick={() => {
+                                  const el = document.getElementById(`msg-${msg.replyTo!.id}`)
+                                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                }}
+                                style={{
+                                  background: isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)',
+                                  padding: '8px 12px',
+                                  borderRadius: '10px',
+                                  borderLeft: `4px solid ${isAdmin ? '#3636e8' : '#6b6b8a'}`,
+                                  marginBottom: '8px',
+                                  fontSize: '12px',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '2px',
+                                  borderTop: '1px solid rgba(0,0,0,0.02)',
+                                  borderRight: '1px solid rgba(0,0,0,0.02)',
+                                  borderBottom: '1px solid rgba(0,0,0,0.02)',
+                                  transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.1)' : 'rgba(54,54,232,0.08)'}
+                                onMouseLeave={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)'}
+                              >
+                                <div style={{ fontWeight: '800', color: isAdmin ? '#3636e8' : '#6b6b8a', fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>{msg.replyTo.sender.name}</span>
                                 </div>
-                                <div style={{ color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
+                                <div style={{ color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '11.5px', lineHeight: '1.4' }}>
                                   {msg.replyTo.content || (msg.replyTo.imageUrl ? '📷 Image' : 'Message')}
                                 </div>
                               </div>
@@ -945,7 +965,7 @@ export default function CommunityPage() {
 
                             {/* Time inside bubble */}
                             <div style={{ 
-                              position: 'absolute', bottom: '4px', right: '10px', 
+                              position: 'absolute', bottom: '2px', right: '10px', 
                               fontSize: '10px', color: isMe ? '#4a7c44' : '#999', 
                               display: 'flex', alignItems: 'center', gap: '3px',
                               fontWeight: '600',

@@ -46,6 +46,11 @@ export async function GET(
         where: { chatId: id },
         include: {
           sender: { select: { id: true, name: true, role: true } },
+          replyTo: {
+            include: {
+              sender: { select: { id: true, name: true } }
+            }
+          }
         },
         orderBy: { createdAt: 'asc' },
       })
@@ -62,7 +67,15 @@ export async function GET(
           role: m.sender.role,
           securityNumber: undefined,
         },
-        replyTo: undefined, // DM replies not fully implemented in DB relation yet for simple retrieval, but field exists
+        replyTo: m.replyTo ? {
+          id: m.replyTo.id,
+          content: m.replyTo.content,
+          imageUrl: m.replyTo.imageUrl,
+          sender: {
+            id: m.replyTo.sender.id,
+            name: m.replyTo.sender.name
+          }
+        } : undefined,
       }))
       return NextResponse.json(messages)
     }
@@ -182,7 +195,23 @@ export async function POST(
       })
 
       // Emit SSE to both DM channel participants
-      const event = { id: msg.id, content: msg.content, imageUrl: msg.imageUrl, createdAt: msg.createdAt, isDeleted: false, sender: { id: msg.sender.id, name: msg.sender.name, role: msg.sender.role } }
+      const event = { 
+        id: msg.id, 
+        content: msg.content, 
+        imageUrl: msg.imageUrl, 
+        createdAt: msg.createdAt, 
+        isDeleted: false, 
+        sender: { id: msg.sender.id, name: msg.sender.name, role: msg.sender.role },
+        replyTo: msg.replyTo ? {
+          id: msg.replyTo.id,
+          content: msg.replyTo.content,
+          imageUrl: msg.replyTo.imageUrl,
+          sender: {
+            id: msg.replyTo.sender.id,
+            name: msg.replyTo.sender.name
+          }
+        } : undefined
+      }
       sseEmitter.emit(`chat:dm_${id}:message`, event)
 
       return NextResponse.json(event, { status: 201 })

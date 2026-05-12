@@ -1254,7 +1254,7 @@ export default function SupportPage() {
                     const isAdmin = m.sender.role !== 'STUDENT'
                     const showAvatar = idx === 0 || chatMsgs[idx - 1]?.sender.id !== m.sender.id
                     return (
-                      <div key={m.id} className="msg-row" style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '8px', alignItems: 'flex-start', marginBottom: showAvatar ? '8px' : '2px' }}>
+                      <div key={m.id} className="msg-row" style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '8px', alignItems: 'flex-end', marginBottom: showAvatar ? '6px' : '1px' }}>
                         {!isMe && (
                           <div style={{ 
                             width: '28px', height: '28px', borderRadius: '50%', 
@@ -1271,8 +1271,8 @@ export default function SupportPage() {
                         {!isMe && !showAvatar && <div style={{ width: '28px', flexShrink: 0 }} />}
                         <div style={{ maxWidth: '75%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                           <div style={{ 
-                            padding: m.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px', 
-                            borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', 
+                            padding: m.imageUrl ? '5px 5px 15px 5px' : '7px 12px 15px 12px', 
+                            borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px', 
                             background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff', 
                             boxShadow: '0 1px 2px rgba(0,0,0,0.1)', 
                             color: '#1e1e3a',
@@ -1312,7 +1312,7 @@ export default function SupportPage() {
                             {m.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.content}</div>}
                             
                             {/* Time inside bubble */}
-                            <div style={{ position: 'absolute', bottom: '4px', right: '8px', fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <div style={{ position: 'absolute', bottom: '2px', right: '8px', fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', gap: '3px' }}>
                               {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               {isMe && (
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
