@@ -135,8 +135,50 @@ async function main() {
   await safeExec(`CREATE INDEX IF NOT EXISTS "PromptResponse_promptId_idx" ON "PromptResponse"("promptId");`, 'idx')
   console.log('  ✅ UserPrompt and PromptResponse tables ready')
 
+  // ─── FIX #6: BundleOffering tables ──────────────────────────
+  console.log('[6/7] Creating BundleOffering tables...')
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "BundleOffering" (
+      "id" TEXT NOT NULL,
+      "name" TEXT NOT NULL,
+      "description" TEXT,
+      "createdById" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "recordedOriginalPrice" DOUBLE PRECISION,
+      "recordedDiscountPrice" DOUBLE PRECISION,
+      "liveOriginalPrice" DOUBLE PRECISION,
+      "liveDiscountPrice" DOUBLE PRECISION,
+      "allowIndividualPurchase" BOOLEAN NOT NULL DEFAULT true,
+      CONSTRAINT "BundleOffering_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "BundleOffering_createdById_fkey" FOREIGN KEY ("createdById")
+        REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `, 'BundleOffering')
+
+  await safeExec(`CREATE INDEX IF NOT EXISTS "BundleOffering_createdById_idx" ON "BundleOffering"("createdById");`, 'idx')
+
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "BundleOfferingCourse" (
+      "id" TEXT NOT NULL,
+      "bundleOfferingId" TEXT NOT NULL,
+      "classId" TEXT NOT NULL,
+      CONSTRAINT "BundleOfferingCourse_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "BundleOfferingCourse_bundleOfferingId_fkey" FOREIGN KEY ("bundleOfferingId")
+        REFERENCES "BundleOffering"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "BundleOfferingCourse_classId_fkey" FOREIGN KEY ("classId")
+        REFERENCES "Class"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `, 'BundleOfferingCourse')
+
+  await safeExec(`CREATE UNIQUE INDEX IF NOT EXISTS "BundleOfferingCourse_bundleOfferingId_classId_key" ON "BundleOfferingCourse"("bundleOfferingId", "classId");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "BundleOfferingCourse_bundleOfferingId_idx" ON "BundleOfferingCourse"("bundleOfferingId");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "BundleOfferingCourse_classId_idx" ON "BundleOfferingCourse"("classId");`, 'idx')
+
+  console.log('  ✅ BundleOffering tables ready')
+
   // ─── VERIFICATION ─────────────────────────────────────────
-  console.log('[6/6] Verifying fix...')
+  console.log('[7/7] Verifying fix...')
   try {
     const courseCount = await prisma.$queryRawUnsafe(`SELECT COUNT(*) as count FROM "Class"`)
     console.log(`  ✅ Course query works! Found ${courseCount[0].count} courses in database.`)
