@@ -101,10 +101,10 @@ export async function getFullSession(): Promise<FullSession | null> {
           where: {
             course: {
               isDisabled: false,
-              OR: [
-                { expiresAt: null },
-                { expiresAt: { gt: now } },
-              ],
+                OR: [
+                  { expiresAt: null },
+                  { expiresAt: { gt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000) } },
+                ],
             },
           },
           select: { courseId: true, type: true },
@@ -233,7 +233,7 @@ export async function getAccessibleCourseIds(
         isDisabled: false,
         OR: [
           { expiresAt: null },
-          { expiresAt: { gt: now } }
+          { expiresAt: { gt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000) } }
         ]
       }
     },
