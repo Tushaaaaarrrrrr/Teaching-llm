@@ -48,23 +48,13 @@ export default function DynamicPromptBlocker() {
     setError('')
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Validation
-    for (const q of questions) {
-      if (q.type !== 'CTA_ONLY' && !answers[q.id]) {
-        setError('Please answer all questions before continuing.')
-        return
-      }
-    }
-
+  const submitResponse = async (finalAnswers: Record<string, string>) => {
     setSubmitting(true)
     try {
       const res = await fetch('/api/prompts/respond', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ promptId: prompt.id, answers })
+        body: JSON.stringify({ promptId: prompt.id, answers: finalAnswers })
       })
 
       if (!res.ok) throw new Error('Failed to submit response')
@@ -77,6 +67,27 @@ export default function DynamicPromptBlocker() {
     }
   }
 
+  const handleCTAClick = async (questionId: string) => {
+    // Immediately dismiss modal and save response
+    const newAnswers = { ...answers, [questionId]: 'CLICKED' }
+    setAnswers(newAnswers)
+    await submitResponse(newAnswers)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Validation
+    for (const q of questions) {
+      if (q.type !== 'CTA_ONLY' && !answers[q.id]) {
+        setError('Please answer all questions before continuing.')
+        return
+      }
+    }
+
+    await submitResponse(answers)
+  }
+
   return (
     <div style={{
       position: 'fixed', inset: 0,
@@ -85,7 +96,7 @@ export default function DynamicPromptBlocker() {
       zIndex: 9999, padding: '20px'
     }}>
       <div className="fade-in" style={{
-        background: '#fff', width: '100%', maxWidth: '540px',
+        background: '#fff', width: '100%', maxWidth: '650px',
         padding: '40px', borderRadius: '24px',
         boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
       }}>
@@ -152,8 +163,8 @@ export default function DynamicPromptBlocker() {
               )}
 
               {q.type === 'CTA_ONLY' && q.link && (
-                <a href={q.link} target="_blank" rel="noopener noreferrer" onClick={() => handleAnswerChange(q.id, 'CLICKED')} style={{
-                  display: 'block', textAlign: 'center', padding: '14px', borderRadius: '12px',
+                <a href={q.link} target="_blank" rel="noopener noreferrer" onClick={() => handleCTAClick(q.id)} style={{
+                  display: 'block', textAlign: 'center', padding: '12px', borderRadius: '12px',
                   background: '#1e1e3a', color: '#fff', fontSize: '15px', fontWeight: 700, textDecoration: 'none'
                 }}>
                   {q.linkText || 'Click Here'}
@@ -167,8 +178,8 @@ export default function DynamicPromptBlocker() {
             disabled={submitting}
             className="btn btn-primary"
             style={{
-              marginTop: '10px', width: '100%', padding: '16px',
-              fontSize: '16px', fontWeight: 800,
+              marginTop: '10px', width: '100%', padding: '12px',
+              fontSize: '15px', fontWeight: 800,
               boxShadow: '0 8px 20px rgba(99,102,241,0.3)',
               display: 'flex', justifyContent: 'center', alignItems: 'center',
               opacity: submitting ? 0.7 : 1

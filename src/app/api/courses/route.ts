@@ -107,8 +107,17 @@ export async function GET() {
     }).filter(course => {
       if (isManager) return true;
       if (course.isExpired && course.expiresAt) {
-        const expiryTime = new Date(course.expiresAt).getTime()
-        const isPast72Hours = (nowTime - expiryTime) > 72 * 60 * 60 * 1000
+        // 72-hour window starts at the END of the expiry date (11:59 PM IST = UTC+5:30)
+        // So if expiresAt is May 15, students see the grey card all of May 15 and 72 hours after midnight IST
+        const expiryDate = new Date(course.expiresAt)
+        // Set to end of day in IST: add 1 day then subtract 1 second, accounting for IST offset
+        const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000
+        const expiryDateIST = new Date(expiryDate.getTime() + IST_OFFSET_MS)
+        // Set to end of day (23:59:59) in IST
+        expiryDateIST.setUTCHours(23, 59, 59, 999)
+        // Convert back to UTC
+        const endOfExpiryDayUTC = new Date(expiryDateIST.getTime() - IST_OFFSET_MS)
+        const isPast72Hours = (nowTime - endOfExpiryDayUTC.getTime()) > 72 * 60 * 60 * 1000
         if (isPast72Hours) return false
       }
       return true

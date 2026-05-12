@@ -55,10 +55,10 @@ export async function POST(request: NextRequest) {
         name,
         description,
         createdById: session.userId,
-        recordedOriginalPrice: recordedOriginalPrice || undefined,
-        recordedDiscountPrice: recordedDiscountPrice || undefined,
-        liveOriginalPrice: liveOriginalPrice || undefined,
-        liveDiscountPrice: liveDiscountPrice || undefined,
+        recordedOriginalPrice: recordedOriginalPrice ? Number(recordedOriginalPrice) : undefined,
+        recordedDiscountPrice: recordedDiscountPrice ? Number(recordedDiscountPrice) : undefined,
+        liveOriginalPrice: liveOriginalPrice ? Number(liveOriginalPrice) : undefined,
+        liveDiscountPrice: liveDiscountPrice ? Number(liveDiscountPrice) : undefined,
         allowIndividualPurchase: allowIndividualPurchase == null ? true : !!allowIndividualPurchase,
         courses: {
           create: courseIds.map((cid: string) => ({ courseId: cid }))
@@ -68,8 +68,9 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(bundle)
-  } catch (error) {
-    console.error('[bundle-offerings] POST Error:', error)
-    return NextResponse.json({ error: 'Failed to create bundle offering' }, { status: 500 })
+  } catch (error: any) {
+    console.error('[bundle-offerings] POST Error:', error?.message || error)
+    console.error('[bundle-offerings] POST Error Meta:', JSON.stringify(error?.meta || {}))
+    return NextResponse.json({ error: error?.message || 'Failed to create bundle offering' }, { status: 500 })
   }
 }
