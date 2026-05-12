@@ -2,7 +2,7 @@ services:
   - type: web
     name: teaching-llm
     runtime: node
-    buildCommand: rm -rf .next && npm ci && npm run db:migrate:deploy && npm run build
+    buildCommand: rm -rf .next && npm ci && npm run db:push && npm run build
     startCommand: npm start
 
 # ─── Automated Analytics Cron ───────────────────────────────────────
