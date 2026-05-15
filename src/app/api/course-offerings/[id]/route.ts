@@ -13,7 +13,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const { 
       courseId, name, thumbnail, 
       hasRecorded, recordedOriginalPrice, recordedDiscountPrice,
-      hasLive, liveOriginalPrice, liveDiscountPrice 
+      hasLive, liveOriginalPrice, liveDiscountPrice,
+      detailsLink
     } = data
 
     const offering = await prisma.courseOffering.update({
@@ -28,6 +29,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         hasLive: !!hasLive,
         liveOriginalPrice: liveOriginalPrice ? Number(liveOriginalPrice) : null,
         liveDiscountPrice: liveDiscountPrice ? Number(liveDiscountPrice) : null,
+        detailsLink: detailsLink || null,
       }
     })
 

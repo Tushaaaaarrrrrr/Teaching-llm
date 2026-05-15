@@ -177,6 +177,14 @@ async function main() {
 
   console.log('  ✅ BundleOffering tables ready')
 
+  // ─── FIX #7: CourseOffering.detailsLink column ──────────────
+  console.log('[7/8] Adding detailsLink to CourseOffering...')
+  await safeExec(
+    `ALTER TABLE "CourseOffering" ADD COLUMN IF NOT EXISTS "detailsLink" TEXT;`,
+    'CourseOffering.detailsLink'
+  )
+  console.log('  ✅ CourseOffering.detailsLink column ready')
+
   // ─── VERIFICATION ─────────────────────────────────────────
   console.log('[7/7] Verifying fix...')
   try {

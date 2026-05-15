@@ -24,6 +24,8 @@ export default function ExploreCoursesPage() {
   const [showInfoHint, setShowInfoHint] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [editingOffering, setEditingOffering] = useState<any | null>(null)
+  const [editFormData, setEditFormData] = useState<any>({})
+  const [editSaving, setEditSaving] = useState(false)
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -50,6 +52,8 @@ export default function ExploreCoursesPage() {
   const [activeBundle, setActiveBundle] = useState<any | null>(null)
   const [bundleAccessType, setBundleAccessType] = useState<'RECORDED' | 'LIVE'>('RECORDED')
   const [bundleSelectedForPurchase, setBundleSelectedForPurchase] = useState<Record<string, 'RECORDED' | 'LIVE'>>({})
+  const [bundleSelectedCoursesToBuy, setBundleSelectedCoursesToBuy] = useState<string[]>([])
+  const [showBatchComparisonModal, setShowBatchComparisonModal] = useState(false)
 
   // Helper to get enrollment status
   const getEnrollmentStatus = (courseId: string) => {
@@ -365,11 +369,21 @@ export default function ExploreCoursesPage() {
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {bundlePriceRecorded || bundlePriceLive ? (
-                      <button onClick={() => { setActiveBundle(b); setBundleAccessType(bundlePriceRecorded ? 'RECORDED' : 'LIVE'); setShowBundleModal(true) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '800' }}>View / Buy</button>
+                      <button onClick={() => { setActiveBundle(b); setBundleAccessType(bundlePriceRecorded ? 'RECORDED' : 'LIVE'); setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id)); setShowBundleModal(true) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '800' }}>View / Buy</button>
                     ) : (
-                      <button onClick={() => { setActiveBundle(b); setShowBundleModal(true) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: '#f3f4f6', color: '#111827', fontWeight: '800' }}>View</button>
+                      <button onClick={() => { setActiveBundle(b); setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id)); setShowBundleModal(true) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: '#f3f4f6', color: '#111827', fontWeight: '800' }}>View</button>
                     )}
-                    <button onClick={() => { setActiveBundle(b); setShowBundleModal(true) }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fff', border: '1px solid #e6eefc' }}>Choose Courses</button>
+                    <button onClick={() => { setActiveBundle(b); setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id)); setShowBundleModal(true) }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fff', border: '1px solid #e6eefc' }}>Choose Courses</button>
+                    {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
+                      <button onClick={async () => {
+                        if (!confirm(`Delete bundle "${b.name}"? This cannot be undone.`)) return
+                        try {
+                          const res = await fetch(`/api/bundle-offerings/${b.id}`, { method: 'DELETE' })
+                          if (res.ok) window.location.reload()
+                          else { const d = await res.json(); alert(d.error || 'Failed to delete') }
+                        } catch { alert('Failed to delete bundle') }
+                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
+                    )}
                   </div>
                 </div>
               )
@@ -463,7 +477,7 @@ export default function ExploreCoursesPage() {
                   {/* Edit button for managers */}
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
                     <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingOffering(offering) }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingOffering(offering); setEditFormData({ recordedOriginalPrice: offering.recordedOriginalPrice ?? '', recordedDiscountPrice: offering.recordedDiscountPrice ?? '', liveOriginalPrice: offering.liveOriginalPrice ?? '', liveDiscountPrice: offering.liveDiscountPrice ?? '', detailsLink: offering.detailsLink ?? '' }) }}
                       style={{
                         width: '28px', height: '28px', borderRadius: '50%',
                         background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)',
@@ -890,10 +904,18 @@ export default function ExploreCoursesPage() {
               <div style={{
                 padding: '12px 22px', marginTop: '10px',
                 borderTop: '1.5px solid rgba(0,0,0,0.05)',
-                display: 'flex', justifyContent: 'space-between',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 fontSize: '11px', color: '#9999b0', fontWeight: '600',
               }}>
-                <span>� Access Till End Term</span>
+                <span>⏳ Access Till End Term</span>
+                {offering.detailsLink && (
+                  <a href={offering.detailsLink} target="_blank" rel="noopener noreferrer" style={{
+                    fontSize: '11px', fontWeight: '800', color: '#6366f1',
+                    textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px',
+                  }}>
+                    More Details →
+                  </a>
+                )}
               </div>
             </div>
           )
@@ -903,13 +925,29 @@ export default function ExploreCoursesPage() {
       {/* Bundle Choose / Buy Modal */}
       {showBundleModal && activeBundle && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }} onClick={() => { setShowBundleModal(false); setActiveBundle(null) }}>
-          <div style={{ width: '100%', maxWidth: '880px', background: '#fff', borderRadius: '20px', padding: '24px' }} onClick={e => e.stopPropagation()}>
+          <div style={{ width: '100%', maxWidth: '960px', background: '#fff', borderRadius: '20px', padding: '32px' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '900' }}>{activeBundle.name}</h3>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>{activeBundle.courses.length} courses</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '13px', color: '#64748b' }}>{activeBundle.courses.length} courses</span>
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowBatchComparisonModal(true) }}
+                  style={{
+                    width: '28px', height: '28px', borderRadius: '50%',
+                    background: 'rgba(99,102,241,0.12)',
+                    border: '1.5px solid rgba(99,102,241,0.3)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#6366f1', fontSize: '13px', fontWeight: '800',
+                    fontStyle: 'italic',
+                  }}
+                  title="Compare PLUS vs PRO batch"
+                >
+                  i
+                </button>
+              </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '18px' }}>
-              <div style={{ maxHeight: '360px', overflow: 'auto', paddingRight: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
+              <div style={{ maxHeight: '400px', overflow: 'auto', paddingRight: '12px' }}>
                 {activeBundle.courses.map((bc: any) => {
                   const course = bc.course
                   const offering = (activeOfferings as any[]).find(o => o.courseId === course.id)
@@ -917,9 +955,20 @@ export default function ExploreCoursesPage() {
                   const livePrice = offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0
                   return (
                     <div key={course.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: '15px', fontWeight: '800' }}>{course.name}</div>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>{course.teacherName || ''}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <input
+                          type="checkbox"
+                          checked={bundleSelectedCoursesToBuy.includes(course.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setBundleSelectedCoursesToBuy([...bundleSelectedCoursesToBuy, course.id])
+                            else setBundleSelectedCoursesToBuy(bundleSelectedCoursesToBuy.filter(id => id !== course.id))
+                          }}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#6366f1' }}
+                        />
+                        <div>
+                          <div style={{ fontSize: '15px', fontWeight: '800' }}>{course.name}</div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>{course.teacherName || ''}</div>
+                        </div>
                       </div>
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <div style={{ textAlign: 'right' }}>
@@ -942,97 +991,152 @@ export default function ExploreCoursesPage() {
                   )
                 })}
               </div>
-              <div style={{ borderLeft: '1px solid #f1f5f9', paddingLeft: '12px' }}>
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>Bundle Purchase</div>
-                  <div style={{ fontSize: '20px', fontWeight: '900', marginTop: '8px' }}>Buy all at:</div>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                    <button onClick={() => setBundleAccessType('RECORDED')} style={{ padding: '10px', borderRadius: '12px', background: bundleAccessType === 'RECORDED' ? '#6366f1' : '#f3f4f6', color: bundleAccessType === 'RECORDED' ? '#fff' : '#111827', fontWeight: '800' }}>Recorded</button>
-                    <button onClick={() => setBundleAccessType('LIVE')} style={{ padding: '10px', borderRadius: '12px', background: bundleAccessType === 'LIVE' ? '#4f46e5' : '#f3f4f6', color: bundleAccessType === 'LIVE' ? '#fff' : '#111827', fontWeight: '800' }}>Live</button>
-                  </div>
-                </div>
+              <div style={{ borderLeft: '1px solid #f1f5f9', paddingLeft: '24px', display: 'flex', flexDirection: 'column' }}>
+                {(() => {
+                  let totalPrice = 0;
+                  let originalTotalPrice = 0;
+                  const selectedList = bundleSelectedCoursesToBuy.length ? bundleSelectedCoursesToBuy : activeBundle.courses.map((c: any) => c.course.id);
+                  
+                  selectedList.forEach((courseId: string) => {
+                    const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
+                    const selectedType = bundleSelectedForPurchase[courseId] || 'RECORDED';
+                    if (selectedType === 'RECORDED') {
+                      totalPrice += offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0;
+                      originalTotalPrice += offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0;
+                    } else {
+                      totalPrice += offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0;
+                      originalTotalPrice += offering?.liveOriginalPrice ?? offering?.liveDiscountPrice ?? 0;
+                    }
+                  });
 
-                <div style={{ marginTop: '18px' }}>
-                  <button onClick={async () => {
-                    // Buy all flow
-                    try {
-                      setIsProcessing(true)
-                      const res = await fetch(`/api/bundle-offerings/${activeBundle.id}/create-order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buyAll: true, accessType: bundleAccessType }) })
-                      const data = await res.json()
-                      if (!res.ok) { alert(data.error || 'Failed to create order'); setIsProcessing(false); return }
-                      const options = {
-                        key: data.keyId,
-                        amount: data.amount,
-                        currency: data.currency,
-                        name: 'GenZ IItian',
-                        description: `Purchase bundle — ${data.bundleName}`,
-                        order_id: data.razorpayOrderId,
-                        prefill: { name: data.userName || '', email: data.userEmail || '' },
-                        theme: { color: '#6366f1' },
-                        handler: async (response: any) => {
-                          try {
-                            const verifyRes = await fetch('/api/orders/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature }) })
-                            const verifyData = await verifyRes.json()
-                            if (verifyRes.ok) {
-                              setSuccessOrderId(verifyData.orderId || verifyData.orderId || 'SUCCESS')
-                              setPurchasedCourse({ courseName: data.bundleName, accessType: bundleAccessType })
-                              setShowBundleModal(false)
-                            } else {
-                              alert('Verification failed: ' + verifyData.error)
-                            }
-                          } catch (err) { alert('Payment verification failed') }
-                          finally { setIsProcessing(false) }
-                        },
-                        modal: { ondismiss: () => setIsProcessing(false) }
-                      }
-                      setIsProcessing(false)
-                      const rzp = new (window as any).Razorpay(options)
-                      rzp.open()
-                    } catch (err: any) { alert(err.message || 'Something went wrong'); setIsProcessing(false) }
-                  }} style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: '800' }}>Buy All</button>
+                  return (
+                    <>
+                      <div style={{ marginBottom: 'auto' }}>
+                        <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '700', marginBottom: '16px' }}>Order Summary</div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '15px', color: '#334155', fontWeight: '600' }}>Selected Courses</span>
+                          <span style={{ fontSize: '15px', fontWeight: '800' }}>{selectedList.length}</span>
+                        </div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '24px', paddingTop: '16px', borderTop: '1px dashed #cbd5e1' }}>
+                          <span style={{ fontSize: '16px', color: '#0f172a', fontWeight: '800' }}>Total Amount</span>
+                          <div style={{ textAlign: 'right' }}>
+                            {originalTotalPrice > totalPrice && (
+                              <div style={{ fontSize: '14px', color: '#94a3b8', textDecoration: 'line-through', marginBottom: '2px' }}>₹{originalTotalPrice}</div>
+                            )}
+                            <div style={{ fontSize: '28px', fontWeight: '900', color: '#4f46e5', lineHeight: '1' }}>₹{totalPrice}</div>
+                          </div>
+                        </div>
+                      </div>
 
-                  <div style={{ height: '8px' }} />
-                  <button onClick={async () => {
-                    // Buy selected courses flow
-                    try {
-                      const selected = Object.keys(bundleSelectedForPurchase).length ? Object.keys(bundleSelectedForPurchase) : activeBundle.courses.map((c: any) => c.course.id)
-                      if (selected.length === 0) { alert('Select at least one course'); return }
-                      setIsProcessing(true)
-                      const res = await fetch(`/api/bundle-offerings/${activeBundle.id}/create-order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buyAll: false, accessType: 'RECORDED', selectedCourseIds: selected, perCourseAccessTypes: bundleSelectedForPurchase }) })
-                      const data = await res.json()
-                      if (!res.ok) { alert(data.error || 'Failed to create order'); setIsProcessing(false); return }
-                      const options = {
-                        key: data.keyId,
-                        amount: data.amount,
-                        currency: data.currency,
-                        name: 'GenZ IItian',
-                        description: `Purchase from bundle — ${data.bundleName}`,
-                        order_id: data.razorpayOrderId,
-                        prefill: { name: data.userName || '', email: data.userEmail || '' },
-                        theme: { color: '#6366f1' },
-                        handler: async (response: any) => {
+                      <div style={{ marginTop: '32px' }}>
+                        <button onClick={async () => {
                           try {
-                            const verifyRes = await fetch('/api/orders/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature }) })
-                            const verifyData = await verifyRes.json()
-                            if (verifyRes.ok) {
-                              setSuccessOrderId(verifyData.orderId || 'SUCCESS')
-                              setPurchasedCourse({ courseName: data.bundleName, accessType: 'MIXED' })
-                              setShowBundleModal(false)
-                            } else {
-                              alert('Verification failed: ' + verifyData.error)
+                            if (selectedList.length === 0) { alert('Select at least one course'); return }
+                            setIsProcessing(true)
+                            const res = await fetch(`/api/bundle-offerings/${activeBundle.id}/create-order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buyAll: false, accessType: 'RECORDED', selectedCourseIds: selectedList, perCourseAccessTypes: bundleSelectedForPurchase }) })
+                            const data = await res.json()
+                            if (!res.ok) { alert(data.error || 'Failed to create order'); setIsProcessing(false); return }
+                            const options = {
+                              key: data.keyId,
+                              amount: data.amount,
+                              currency: data.currency,
+                              name: 'GenZ IItian',
+                              description: `Purchase courses from bundle — ${data.bundleName}`,
+                              order_id: data.razorpayOrderId,
+                              prefill: { name: data.userName || '', email: data.userEmail || '' },
+                              theme: { color: '#6366f1' },
+                              handler: async (response: any) => {
+                                try {
+                                  const verifyRes = await fetch('/api/orders/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature }) })
+                                  const verifyData = await verifyRes.json()
+                                  if (verifyRes.ok) {
+                                    setSuccessOrderId(verifyData.orderId || 'SUCCESS')
+                                    setPurchasedCourse({ courseName: data.bundleName, accessType: 'MIXED' })
+                                    setShowBundleModal(false)
+                                  } else {
+                                    alert('Verification failed: ' + verifyData.error)
+                                  }
+                                } catch (err) { alert('Payment verification failed') }
+                                finally { setIsProcessing(false) }
+                              },
+                              modal: { ondismiss: () => setIsProcessing(false) }
                             }
-                          } catch (err) { alert('Payment verification failed') }
-                          finally { setIsProcessing(false) }
-                        },
-                        modal: { ondismiss: () => setIsProcessing(false) }
-                      }
-                      setIsProcessing(false)
-                      const rzp = new (window as any).Razorpay(options)
-                      rzp.open()
-                    } catch (err: any) { alert(err.message || 'Something went wrong'); setIsProcessing(false) }
-                  }} style={{ width: '100%', padding: '12px', borderRadius: '12px', background: '#fff', border: '1px solid #e6eefc', color: '#111827', fontWeight: '800' }}>Buy Selected</button>
-                </div>
+                            setIsProcessing(false)
+                            const rzp = new (window as any).Razorpay(options)
+                            rzp.open()
+                          } catch (err: any) { alert(err.message || 'Something went wrong'); setIsProcessing(false) }
+                        }} style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'linear-gradient(135deg, #4f46e5, #6366f1)', color: '#fff', fontWeight: '900', fontSize: '16px', boxShadow: '0 8px 16px rgba(79, 70, 229, 0.25)', border: 'none', cursor: 'pointer' }}>
+                          ENROLL NOW
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Batch Comparison Modal (opened from bundle i button) ── */}
+      {showBatchComparisonModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200,
+          padding: '20px'
+        }} onClick={() => setShowBatchComparisonModal(false)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '750px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
+            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+          }} onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
+              <button onClick={() => setShowBatchComparisonModal(false)} style={{ position: 'absolute', top: '25px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Batch Comparison</h2>
+              <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500' }}>Choose the experience that fits your learning style</p>
+            </div>
+
+            {/* Comparison Table */}
+            <div style={{ padding: '30px 40px' }}>
+              <div style={{ borderRadius: '24px', overflow: 'hidden', border: '1.5px solid #e2e8f0', background: '#fff' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc' }}>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>PLUS ( Recorded )</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO ( Live )</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { f: 'Course Lectures', g: '✅ Full Access', p: '✅ Full Access' },
+                      { f: 'Course Materials', g: '✅ Full Access', p: '✅ Full Access' },
+                      { f: 'Live Classes', g: '❌ No Access', p: '✅ Direct Entry' },
+                      { f: 'Direct Q&A with Teacher', g: '❌ No', p: '✅ Yes (Live)' },
+                      { f: 'Weekly Mentorship', g: '❌ No', p: '✅ Every Sunday' },
+                      { f: 'Priority Support', g: '❌ Standard', p: '✅ 24/7 Priority' },
+                    ].map((row, i) => (
+                      <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#334155', fontWeight: '600' }}>{row.f}</td>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#92400e', textAlign: 'center', background: '#fffdf5' }}>{row.g}</td>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#4338ca', fontWeight: '700', textAlign: 'center', background: '#f5f7ff' }}>{row.p}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={{ padding: '0 40px 40px', textAlign: 'center' }}>
+              <button onClick={() => setShowBatchComparisonModal(false)} style={{ background: '#1e293b', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+                Got it, thanks!
+              </button>
             </div>
           </div>
         </div>
@@ -1649,36 +1753,61 @@ export default function ExploreCoursesPage() {
             </div>
 
             {editingOffering.hasRecorded && (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Original Price</label>
-                    <input type="number" min={1} defaultValue={editingOffering.recordedOriginalPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Discount Price</label>
-                    <input type="number" min={1} defaultValue={editingOffering.recordedDiscountPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
-                  </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Original Price</label>
+                  <input type="number" min={1} value={editFormData.recordedOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, recordedOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
                 </div>
-              </>
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Discount Price</label>
+                  <input type="number" min={1} value={editFormData.recordedDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, recordedDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                </div>
+              </div>
             )}
 
             {editingOffering.hasLive && (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Original Price</label>
-                    <input type="number" min={1} defaultValue={editingOffering.liveOriginalPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Discount Price</label>
-                    <input type="number" min={1} defaultValue={editingOffering.liveDiscountPrice} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
-                  </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Original Price</label>
+                  <input type="number" min={1} value={editFormData.liveOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, liveOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
                 </div>
-              </>
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Discount Price</label>
+                  <input type="number" min={1} value={editFormData.liveDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, liveDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                </div>
+              </div>
             )}
 
+            {/* Details Link (optional) */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Details Link (optional)</label>
+              <input type="url" value={editFormData.detailsLink ?? ''} onChange={e => setEditFormData({...editFormData, detailsLink: e.target.value})} placeholder="https://example.com/course-details" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+              <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>If set, a "More Details" button will appear on the course card for students.</div>
+            </div>
+
             <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={async () => {
+                  if (!confirm('Are you sure you want to DELETE this course offering? This cannot be undone.')) return
+                  try {
+                    const res = await fetch(`/api/course-offerings/${editingOffering.id}`, { method: 'DELETE' })
+                    if (res.ok) {
+                      setEditingOffering(null)
+                      window.location.reload()
+                    } else {
+                      const d = await res.json()
+                      alert(d.error || 'Failed to delete')
+                    }
+                  } catch { alert('Failed to delete offering') }
+                }}
+                style={{
+                  padding: '14px 18px', borderRadius: '12px', border: '2px solid #fecaca',
+                  background: '#fef2f2', color: '#dc2626', fontWeight: '700', fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                🗑️
+              </button>
               <button
                 onClick={() => setEditingOffering(null)}
                 style={{
@@ -1690,15 +1819,44 @@ export default function ExploreCoursesPage() {
                 Cancel
               </button>
               <button
-                onClick={() => alert('Save functionality coming soon!')}
+                disabled={editSaving}
+                onClick={async () => {
+                  try {
+                    setEditSaving(true)
+                    const res = await fetch(`/api/course-offerings/${editingOffering.id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        courseId: editingOffering.courseId,
+                        name: editingOffering.name,
+                        thumbnail: editingOffering.thumbnail,
+                        hasRecorded: editingOffering.hasRecorded,
+                        recordedOriginalPrice: editFormData.recordedOriginalPrice || null,
+                        recordedDiscountPrice: editFormData.recordedDiscountPrice || null,
+                        hasLive: editingOffering.hasLive,
+                        liveOriginalPrice: editFormData.liveOriginalPrice || null,
+                        liveDiscountPrice: editFormData.liveDiscountPrice || null,
+                        detailsLink: editFormData.detailsLink || null,
+                      })
+                    })
+                    if (res.ok) {
+                      setEditingOffering(null)
+                      window.location.reload()
+                    } else {
+                      const d = await res.json()
+                      alert(d.error || 'Failed to save')
+                    }
+                  } catch { alert('Failed to save changes') }
+                  finally { setEditSaving(false) }
+                }}
                 style={{
                   flex: 1, padding: '14px', borderRadius: '12px', border: 'none',
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  background: editSaving ? '#94a3b8' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                   color: '#fff', fontWeight: '700', fontSize: '14px',
-                  cursor: 'pointer',
+                  cursor: editSaving ? 'not-allowed' : 'pointer',
                 }}
               >
-                Save Changes
+                {editSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>

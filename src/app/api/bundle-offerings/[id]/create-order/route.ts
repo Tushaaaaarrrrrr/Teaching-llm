@@ -63,7 +63,7 @@ export async function POST(
     const totalAmount = Math.round(courseEntries.reduce((s, it) => s + (it.price || 0), 0) * 100)
     const order = await prisma.order.create({ data: { userId: session.userId, amount: totalAmount / 100, status: 'PENDING', items: { create: courseEntries.map(it => ({ courseOfferingId: null, courseId: it.courseId === params.id ? it.courseId : it.courseId, accessType: it.accessType, price: it.price })) } }, include: { items: true } })
 
-    const razorpayOrder = await razorpay.orders.create({ amount: totalAmount, currency: 'INR', receipt: order.id, notes: { orderId: order.id, bundleId: params.id, userId: session.userId, userName: session.name, type: 'BUNDLE_PURCHASE' } })
+    const razorpayOrder = await razorpay.orders.create({ amount: totalAmount, currency: 'INR', receipt: order.id, notes: { orderId: order.id, bundleId: params.id, userId: session.userId, userName: session.name || 'Student', type: 'BUNDLE_PURCHASE' } })
 
     await prisma.order.update({ where: { id: order.id }, data: { razorpayOrderId: razorpayOrder.id } })
 

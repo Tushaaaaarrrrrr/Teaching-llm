@@ -893,6 +893,7 @@ model CourseOffering {
   hasLive               Boolean     @default(false)
   liveOriginalPrice     Float?
   liveDiscountPrice     Float?
+  detailsLink           String?
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
   course                Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)

@@ -96,7 +96,7 @@ export async function POST(
         courseOfferingId: offering.id,
         courseId: offering.courseId,
         userId: session.userId,
-        userName: session.name,
+        userName: session.name || 'Student',
         type: 'COURSE_PURCHASE',
       },
     })

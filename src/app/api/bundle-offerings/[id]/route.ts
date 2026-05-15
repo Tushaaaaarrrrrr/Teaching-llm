@@ -1,0 +1,62 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+import { getSession } from '@/lib/auth'
+
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await getSession()
+    if (!session || (session.role !== 'MANAGER' && session.role !== 'SUPER_ADMIN')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const data = await request.json()
+    const { name, description, recordedOriginalPrice, recordedDiscountPrice, liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase, courseIds } = data
+
+    const updateData: any = {}
+    if (name !== undefined) updateData.name = name
+    if (description !== undefined) updateData.description = description
+    if (recordedOriginalPrice !== undefined) updateData.recordedOriginalPrice = recordedOriginalPrice ? Number(recordedOriginalPrice) : null
+    if (recordedDiscountPrice !== undefined) updateData.recordedDiscountPrice = recordedDiscountPrice ? Number(recordedDiscountPrice) : null
+    if (liveOriginalPrice !== undefined) updateData.liveOriginalPrice = liveOriginalPrice ? Number(liveOriginalPrice) : null
+    if (liveDiscountPrice !== undefined) updateData.liveDiscountPrice = liveDiscountPrice ? Number(liveDiscountPrice) : null
+    if (allowIndividualPurchase !== undefined) updateData.allowIndividualPurchase = !!allowIndividualPurchase
+
+    // If courseIds provided, update the course relations
+    if (Array.isArray(courseIds)) {
+      // Delete existing and recreate
+      await prisma.bundleOfferingCourse.deleteMany({ where: { bundleOfferingId: params.id } })
+      await prisma.bundleOfferingCourse.createMany({
+        data: courseIds.map((cid: string) => ({ bundleOfferingId: params.id, courseId: cid }))
+      })
+    }
+
+    const bundle = await prisma.bundleOffering.update({
+      where: { id: params.id },
+      data: updateData,
+      include: { courses: { include: { course: true } } }
+    })
+
+    return NextResponse.json(bundle)
+  } catch (error) {
+    console.error('[bundle-offerings] PUT Error:', error)
+    return NextResponse.json({ error: 'Failed to update bundle offering' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await getSession()
+    if (!session || (session.role !== 'MANAGER' && session.role !== 'SUPER_ADMIN')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    await prisma.bundleOffering.delete({
+      where: { id: params.id }
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('[bundle-offerings] DELETE Error:', error)
+    return NextResponse.json({ error: 'Failed to delete bundle offering' }, { status: 500 })
+  }
+}
