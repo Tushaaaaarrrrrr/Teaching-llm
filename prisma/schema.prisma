@@ -71,6 +71,8 @@ model User {
   upgradeTransactions     UpgradeTransaction[]
   orders                  Order[]
   promptResponses         PromptResponse[]
+  createdCoupons          Coupon[]                     @relation("CouponCreator")
+  couponUsages            CouponUsage[]
 }
 
 model Course {
@@ -166,6 +168,11 @@ model BundleOffering {
   liveOriginalPrice         Float?
   liveDiscountPrice         Float?
   allowIndividualPurchase   Boolean                    @default(true)
+  enableBundleDiscount      Boolean                    @default(false)
+  bundleDiscountType        String?
+  bundleDiscountValue       Float?
+  bundleDiscountApplicability String?
+  requireAllCourses         Boolean                    @default(true)
   createdBy                 User                       @relation(fields: [createdById], references: [id])
   courses                   BundleOfferingCourse[]
 
@@ -909,6 +916,11 @@ model Order {
   razorpayPaymentId String?
   razorpaySignature String?
   amount            Float
+  subtotalAmount    Float?
+  bundleDiscountAmount Float?   @default(0)
+  couponDiscountAmount Float?   @default(0)
+  couponCode        String?
+  couponId          String?
   status            String      @default("PENDING")
   isExternal        Boolean     @default(false)
   createdAt         DateTime    @default(now())
@@ -981,4 +993,54 @@ model PromptResponse {
   @@unique([userId, promptId])
   @@index([userId])
   @@index([promptId])
+}
+
+model Coupon {
+  id                    String        @id @default(cuid())
+  code                  String        @unique
+  discountType          String        // "PERCENTAGE" or "FIXED"
+  discountValue         Float
+  applicability         String        // "GLOBAL", "BUNDLE", "SUBJECT", or "CATEGORY"
+  
+  targetBundleIds       String?       // JSON array or comma separated
+  targetUserEmails      String?       // JSON array or comma separated
+  targetSubjects        String?       // JSON array or comma separated
+  
+  minOrderValue         Float?
+  isFirstPurchaseOnly   Boolean       @default(false)
+  isSingleUsePerUser    Boolean       @default(false)
+  isHidden              Boolean       @default(false)
+  
+  startDate             DateTime?
+  expiresAt             DateTime?
+  maxUses               Int?
+  currentUses           Int           @default(0)
+  totalRevenueGenerated Float         @default(0)
+  
+  isActive              Boolean       @default(true)
+  createdById           String
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  
+  createdBy             User          @relation("CouponCreator", fields: [createdById], references: [id])
+  usages                CouponUsage[]
+
+  @@index([code])
+  @@index([isActive])
+}
+
+model CouponUsage {
+  id        String   @id @default(cuid())
+  couponId  String
+  userId    String
+  orderId   String?  // Reference to the order, optional if used before order completes or external
+  revenue   Float    @default(0) // Revenue generated from this specific usage
+  usedAt    DateTime @default(now())
+  
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([userId])
+  @@index([orderId])
 }

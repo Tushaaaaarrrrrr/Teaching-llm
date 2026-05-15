@@ -201,6 +201,78 @@ async function main() {
     console.error('  ❌ Verification failed:', e.message)
   }
 
+  // ─── FIX #8: Bundle Discounts & Coupons ───────────────────
+  console.log('[8/8] Adding Bundle Discounts & Coupon tables/columns...')
+  
+  // BundleOffering columns
+  await safeExec(`ALTER TABLE "BundleOffering" ADD COLUMN IF NOT EXISTS "enableBundleDiscount" BOOLEAN NOT NULL DEFAULT false;`, 'BundleOffering.enableBundleDiscount')
+  await safeExec(`ALTER TABLE "BundleOffering" ADD COLUMN IF NOT EXISTS "bundleDiscountType" TEXT;`, 'BundleOffering.bundleDiscountType')
+  await safeExec(`ALTER TABLE "BundleOffering" ADD COLUMN IF NOT EXISTS "bundleDiscountValue" DOUBLE PRECISION;`, 'BundleOffering.bundleDiscountValue')
+  await safeExec(`ALTER TABLE "BundleOffering" ADD COLUMN IF NOT EXISTS "bundleDiscountApplicability" TEXT;`, 'BundleOffering.bundleDiscountApplicability')
+  await safeExec(`ALTER TABLE "BundleOffering" ADD COLUMN IF NOT EXISTS "requireAllCourses" BOOLEAN NOT NULL DEFAULT true;`, 'BundleOffering.requireAllCourses')
+  
+  // Order columns
+  await safeExec(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "subtotalAmount" DOUBLE PRECISION;`, 'Order.subtotalAmount')
+  await safeExec(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "bundleDiscountAmount" DOUBLE PRECISION DEFAULT 0;`, 'Order.bundleDiscountAmount')
+  await safeExec(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "couponDiscountAmount" DOUBLE PRECISION DEFAULT 0;`, 'Order.couponDiscountAmount')
+  await safeExec(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "couponCode" TEXT;`, 'Order.couponCode')
+  await safeExec(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "couponId" TEXT;`, 'Order.couponId')
+
+  // Coupon Table
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "Coupon" (
+      "id" TEXT NOT NULL,
+      "code" TEXT NOT NULL,
+      "discountType" TEXT NOT NULL,
+      "discountValue" DOUBLE PRECISION NOT NULL,
+      "applicability" TEXT NOT NULL,
+      "targetBundleIds" TEXT,
+      "targetUserEmails" TEXT,
+      "targetSubjects" TEXT,
+      "minOrderValue" DOUBLE PRECISION,
+      "isFirstPurchaseOnly" BOOLEAN NOT NULL DEFAULT false,
+      "isSingleUsePerUser" BOOLEAN NOT NULL DEFAULT false,
+      "isHidden" BOOLEAN NOT NULL DEFAULT false,
+      "startDate" TIMESTAMP(3),
+      "expiresAt" TIMESTAMP(3),
+      "maxUses" INTEGER,
+      "currentUses" INTEGER NOT NULL DEFAULT 0,
+      "totalRevenueGenerated" DOUBLE PRECISION NOT NULL DEFAULT 0,
+      "isActive" BOOLEAN NOT NULL DEFAULT true,
+      "createdById" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Coupon_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "Coupon_createdById_fkey" FOREIGN KEY ("createdById")
+        REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `, 'Coupon table')
+  await safeExec(`CREATE UNIQUE INDEX IF NOT EXISTS "Coupon_code_key" ON "Coupon"("code");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "Coupon_code_idx" ON "Coupon"("code");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "Coupon_isActive_idx" ON "Coupon"("isActive");`, 'idx')
+
+  // CouponUsage Table
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "CouponUsage" (
+      "id" TEXT NOT NULL,
+      "couponId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "orderId" TEXT,
+      "revenue" DOUBLE PRECISION NOT NULL DEFAULT 0,
+      "usedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "CouponUsage_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "CouponUsage_couponId_fkey" FOREIGN KEY ("couponId")
+        REFERENCES "Coupon"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "CouponUsage_userId_fkey" FOREIGN KEY ("userId")
+        REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `, 'CouponUsage table')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "CouponUsage_couponId_idx" ON "CouponUsage"("couponId");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "CouponUsage_userId_idx" ON "CouponUsage"("userId");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "CouponUsage_orderId_idx" ON "CouponUsage"("orderId");`, 'idx')
+
+  console.log('  ✅ Bundle Discounts & Coupons schema ready')
+
   console.log('\n╔═══════════════════════════════════════════════════╗')
   console.log('║   ✅ SCHEMA SYNC COMPLETE                        ║')
   console.log('║   Restart the app: pm2 restart all               ║')

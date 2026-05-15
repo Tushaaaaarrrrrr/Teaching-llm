@@ -32,7 +32,7 @@ export async function POST(
         // Fallback to summing individual prices
         for (const bc of bundle.courses) {
           // Find course offering for this course
-          const offering = await prisma.courseOffering.findFirst({ where: { courseId: bc.course.id } })
+          const offering = await prisma.courseOffering.findFirst({ where: { courseId: bc.course.id }, orderBy: { createdAt: 'desc' } })
           const price = accessType === 'RECORDED' ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0) : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0)
           courseEntries.push({ courseId: bc.course.id, accessType, price })
         }
@@ -52,7 +52,7 @@ export async function POST(
       const sel = Array.isArray(selectedCourseIds) && selectedCourseIds.length ? selectedCourseIds : []
       if (sel.length === 0) return NextResponse.json({ error: 'No courses selected' }, { status: 400 })
       for (const cid of sel) {
-        const offering = await prisma.courseOffering.findFirst({ where: { courseId: cid } })
+        const offering = await prisma.courseOffering.findFirst({ where: { courseId: cid }, orderBy: { createdAt: 'desc' } })
         const perType = perCourseAccessTypes && perCourseAccessTypes[cid] ? perCourseAccessTypes[cid] : accessType
         const price = perType === 'RECORDED' ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0) : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0)
         courseEntries.push({ courseId: cid, accessType: perType, price })

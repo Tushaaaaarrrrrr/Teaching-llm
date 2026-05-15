@@ -403,7 +403,14 @@ export default function ExploreCoursesPage() {
       )}
 
       <div className="grid-3">
-        {activeOfferings.map((offering: any) => {
+        {[...activeOfferings].sort((a: any, b: any) => {
+          const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
+          const aEnroll = getEnrollmentStatus(a.courseId)
+          const bEnroll = getEnrollmentStatus(b.courseId)
+          const aFull = (!isManager && (aEnroll === 'LIVE' || (aEnroll === 'RECORDED' && !a.hasLive))) ? 1 : 0
+          const bFull = (!isManager && (bEnroll === 'LIVE' || (bEnroll === 'RECORDED' && !b.hasLive))) ? 1 : 0
+          return aFull - bFull
+        }).map((offering: any) => {
           const recPrice = Math.max(Number(offering.recordedDiscountPrice || 0), 1)
           const recOriginal = Math.max(Number(offering.recordedOriginalPrice || 0), recPrice)
           const livePrice = Math.max(Number(offering.liveDiscountPrice || 0), 1)
@@ -925,7 +932,7 @@ export default function ExploreCoursesPage() {
       {/* Bundle Choose / Buy Modal */}
       {showBundleModal && activeBundle && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }} onClick={() => { setShowBundleModal(false); setActiveBundle(null) }}>
-          <div style={{ width: '100%', maxWidth: '960px', background: '#fff', borderRadius: '20px', padding: '32px' }} onClick={e => e.stopPropagation()}>
+          <div style={{ width: '100%', maxWidth: '1024px', background: '#fff', borderRadius: '24px', padding: '40px' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '900' }}>{activeBundle.name}</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1012,20 +1019,33 @@ export default function ExploreCoursesPage() {
                   return (
                     <>
                       <div style={{ marginBottom: 'auto' }}>
-                        <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '700', marginBottom: '16px' }}>Order Summary</div>
+                        <div style={{ fontSize: '18px', color: '#64748b', fontWeight: '700', marginBottom: '20px' }}>Order Summary</div>
                         
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                          <span style={{ fontSize: '15px', color: '#334155', fontWeight: '600' }}>Selected Courses</span>
-                          <span style={{ fontSize: '15px', fontWeight: '800' }}>{selectedList.length}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                          <span style={{ fontSize: '16px', color: '#334155', fontWeight: '600' }}>Selected Courses</span>
+                          <span style={{ fontSize: '16px', fontWeight: '800' }}>{selectedList.length}</span>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                          <span style={{ fontSize: '16px', color: '#334155', fontWeight: '600' }}>Amount Breakdown</span>
+                          <span style={{ fontSize: '16px', fontWeight: '800', color: '#6366f1' }}>
+                            {selectedList.map((courseId: string) => {
+                               const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
+                               const selectedType = bundleSelectedForPurchase[courseId] || 'RECORDED';
+                               return selectedType === 'RECORDED' 
+                                 ? offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0
+                                 : offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0;
+                             }).join(' + ')}
+                          </span>
                         </div>
                         
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '24px', paddingTop: '16px', borderTop: '1px dashed #cbd5e1' }}>
-                          <span style={{ fontSize: '16px', color: '#0f172a', fontWeight: '800' }}>Total Amount</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '30px', paddingTop: '20px', borderTop: '2px dashed #cbd5e1' }}>
+                          <span style={{ fontSize: '20px', color: '#0f172a', fontWeight: '800' }}>Total Amount</span>
                           <div style={{ textAlign: 'right' }}>
                             {originalTotalPrice > totalPrice && (
-                              <div style={{ fontSize: '14px', color: '#94a3b8', textDecoration: 'line-through', marginBottom: '2px' }}>₹{originalTotalPrice}</div>
+                              <div style={{ fontSize: '16px', color: '#94a3b8', textDecoration: 'line-through', marginBottom: '4px' }}>₹{originalTotalPrice}</div>
                             )}
-                            <div style={{ fontSize: '28px', fontWeight: '900', color: '#4f46e5', lineHeight: '1' }}>₹{totalPrice}</div>
+                            <div style={{ fontSize: '36px', fontWeight: '900', color: '#4f46e5', lineHeight: '1' }}>₹{totalPrice}</div>
                           </div>
                         </div>
                       </div>
