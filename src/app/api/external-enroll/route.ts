@@ -163,16 +163,6 @@ export async function POST(request: NextRequest) {
         ? 'MALE'
         : null
 
-    const normalizedEmail = email.toLowerCase().trim()
-    const trimmedName = name.trim()
-
-    // Normalize gender — accept any casing, fall back to null
-    const normalizedGender: 'FEMALE' | 'MALE' | null =
-      typeof gender === 'string' && gender.toUpperCase() === 'FEMALE'
-        ? 'FEMALE'
-        : typeof gender === 'string' && gender.toUpperCase() === 'MALE'
-        ? 'MALE'
-        : null
 
     // Normalize phone — treat "N/A" or empty strings as null
     const normalizedPhone = typeof phone === 'string' && 
