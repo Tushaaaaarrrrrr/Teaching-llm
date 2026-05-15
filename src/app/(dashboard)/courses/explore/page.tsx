@@ -54,6 +54,10 @@ export default function ExploreCoursesPage() {
   const [bundleSelectedForPurchase, setBundleSelectedForPurchase] = useState<Record<string, 'RECORDED' | 'LIVE'>>({})
   const [bundleSelectedCoursesToBuy, setBundleSelectedCoursesToBuy] = useState<string[]>([])
   const [showBatchComparisonModal, setShowBatchComparisonModal] = useState(false)
+  
+  const [editingBundle, setEditingBundle] = useState<any>(null)
+  const [editBundleData, setEditBundleData] = useState<any>({})
+  const [editBundleSaving, setEditBundleSaving] = useState(false)
 
   // Helper to get enrollment status
   const getEnrollmentStatus = (courseId: string) => {
@@ -373,16 +377,18 @@ export default function ExploreCoursesPage() {
                     ) : (
                       <button onClick={() => { setActiveBundle(b); setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id)); setShowBundleModal(true) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: '#f3f4f6', color: '#111827', fontWeight: '800' }}>View</button>
                     )}
-                    <button onClick={() => { setActiveBundle(b); setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id)); setShowBundleModal(true) }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fff', border: '1px solid #e6eefc' }}>Choose Courses</button>
                     {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
-                      <button onClick={async () => {
-                        if (!confirm(`Delete bundle "${b.name}"? This cannot be undone.`)) return
-                        try {
-                          const res = await fetch(`/api/bundle-offerings/${b.id}`, { method: 'DELETE' })
-                          if (res.ok) window.location.reload()
-                          else { const d = await res.json(); alert(d.error || 'Failed to delete') }
-                        } catch { alert('Failed to delete bundle') }
-                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
+                      <>
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingBundle(b); setEditBundleData({ name: b.name, description: b.description || '', recordedOriginalPrice: b.recordedOriginalPrice ?? '', recordedDiscountPrice: b.recordedDiscountPrice ?? '', liveOriginalPrice: b.liveOriginalPrice ?? '', liveDiscountPrice: b.liveDiscountPrice ?? '', courseIds: b.courses.map((c: any) => c.course.id) }) }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '800', fontSize: '13px' }}>Edit</button>
+                        <button onClick={async () => {
+                          if (!confirm(`Delete bundle "${b.name}"? This cannot be undone.`)) return
+                          try {
+                            const res = await fetch(`/api/bundle-offerings/${b.id}`, { method: 'DELETE' })
+                            if (res.ok) window.location.reload()
+                            else { const d = await res.json(); alert(d.error || 'Failed to delete') }
+                          } catch { alert('Failed to delete bundle') }
+                        }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -1877,6 +1883,122 @@ export default function ExploreCoursesPage() {
                 }}
               >
                 {editSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Bundle Modal */}
+      {editingBundle && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px'
+        }} onClick={() => setEditingBundle(null)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '600px',
+            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px',
+            animation: 'modalSlideUp 0.3s ease-out',
+            maxHeight: '90vh', overflowY: 'auto'
+          }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#1e1e3a', marginBottom: '8px' }}>Edit Bundle</h2>
+            <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px' }}>Update pricing, name, and selected courses for this bundle.</p>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Bundle Name</label>
+              <input type="text" value={editBundleData.name ?? ''} onChange={e => setEditBundleData({...editBundleData, name: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Description</label>
+              <input type="text" value={editBundleData.description ?? ''} onChange={e => setEditBundleData({...editBundleData, description: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Original</label>
+                <input type="number" min={1} value={editBundleData.recordedOriginalPrice ?? ''} onChange={e => setEditBundleData({...editBundleData, recordedOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Discount</label>
+                <input type="number" min={1} value={editBundleData.recordedDiscountPrice ?? ''} onChange={e => setEditBundleData({...editBundleData, recordedDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Original</label>
+                <input type="number" min={1} value={editBundleData.liveOriginalPrice ?? ''} onChange={e => setEditBundleData({...editBundleData, liveOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Discount</label>
+                <input type="number" min={1} value={editBundleData.liveDiscountPrice ?? ''} onChange={e => setEditBundleData({...editBundleData, liveDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Select Courses</label>
+              <div style={{ maxHeight: '160px', overflow: 'auto', padding: '10px', borderRadius: '8px', border: '1px solid #e0e7ff', background: '#f8fafc' }}>
+                {(courses || []).map((c: any) => (
+                  <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={editBundleData.courseIds?.includes(c.id) || false}
+                      onChange={(e) => {
+                        const current = editBundleData.courseIds || []
+                        if (e.target.checked) setEditBundleData({ ...editBundleData, courseIds: [...current, c.id] })
+                        else setEditBundleData({ ...editBundleData, courseIds: current.filter((id: string) => id !== c.id) })
+                      }}
+                      style={{ width: '16px', height: '16px', accentColor: '#6366f1' }}
+                    />
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>{c.name}</div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setEditingBundle(null)}
+                style={{
+                  flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff',
+                  background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                disabled={editBundleSaving}
+                onClick={async () => {
+                  try {
+                    setEditBundleSaving(true)
+                    const res = await fetch(`/api/bundle-offerings/${editingBundle.id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(editBundleData)
+                    })
+                    if (res.ok) {
+                      setEditingBundle(null)
+                      window.location.reload()
+                    } else {
+                      const d = await res.json()
+                      alert(d.error || 'Failed to save')
+                    }
+                  } catch { alert('Failed to save changes') }
+                  finally { setEditBundleSaving(false) }
+                }}
+                style={{
+                  flex: 1, padding: '14px', borderRadius: '12px', border: 'none',
+                  background: editBundleSaving ? '#94a3b8' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#fff', fontWeight: '700', fontSize: '14px',
+                  cursor: editBundleSaving ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {editBundleSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>
