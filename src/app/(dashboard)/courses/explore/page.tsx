@@ -1765,12 +1765,21 @@ export default function ExploreCoursesPage() {
                         
                         <div style={{ marginBottom: '20px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
                           {isFixed ? (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', padding: '12px', background: '#f8faff', borderRadius: '12px', border: '1.5px solid #eef2ff' }}>
-                              <div style={{ flex: 1, paddingRight: '12px' }}>
-                                <div style={{ fontSize: '14px', color: '#1e293b', fontWeight: '900' }}>{activeBundle.name} Package</div>
-                                <div style={{ fontSize: '11px', color: '#6366f1', fontWeight: '800', textTransform: 'uppercase' }}>{effectiveGlobalType === 'LIVE' ? 'Full Live Pro Access' : 'Full Recorded Plus Access'}</div>
+                            <div style={{ padding: '12px', background: '#f8faff', borderRadius: '12px', border: '1.5px solid #eef2ff' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid #eef2ff', paddingBottom: '8px' }}>
+                                <div style={{ flex: 1, paddingRight: '12px' }}>
+                                  <div style={{ fontSize: '14px', color: '#1e293b', fontWeight: '900' }}>{activeBundle.name} Package</div>
+                                  <div style={{ fontSize: '10px', color: '#6366f1', fontWeight: '800', textTransform: 'uppercase' }}>{effectiveGlobalType === 'LIVE' ? 'Full Live Pro Access' : 'Full Recorded Plus Access'}</div>
+                                </div>
+                                <span style={{ fontSize: '15px', fontWeight: '1000', color: '#1e293b' }}>₹{totalPrice}</span>
                               </div>
-                              <span style={{ fontSize: '14px', fontWeight: '1000', color: '#1e293b' }}>₹{totalPrice}</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                {activeBundle.courses.map((bc: any) => (
+                                  <div key={bc.course.id} style={{ fontSize: '12px', color: '#64748b', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ color: '#10b981' }}>✓</span> {bc.course.name}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           ) : (
                             selectedList.map((courseId: string) => {
