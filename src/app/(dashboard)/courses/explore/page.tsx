@@ -2840,33 +2840,35 @@ export default function ExploreCoursesPage() {
             )}
 
             {editingOffering.hasLive && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                <div>
-                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Original Price</label>
-                  <input type="number" min={1} value={editFormData.liveOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, liveOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Discount Price</label>
-                  <input type="number" min={1} value={editFormData.liveDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, liveDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
-                </div>
-              </div>
-              <div style={{ marginBottom: '20px', padding: '16px', borderRadius: '16px', background: '#fef2f2', border: '2px solid #fecaca' }}>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#dc2626', marginBottom: '12px' }}>🏆 Champion Batch - Elite</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Real Price (₹)</label>
-                    <input type="number" min={1} value={editFormData.championOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, championOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Original Price</label>
+                    <input type="number" min={1} value={editFormData.liveOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, liveOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Discount Price (₹)</label>
-                    <input type="number" min={1} value={editFormData.championDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, championDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Discount Price</label>
+                    <input type="number" min={1} value={editFormData.liveDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, liveDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Champion Subtitle</label>
-                  <input type="text" value={editFormData.championSubtitle ?? ''} onChange={e => setEditFormData({...editFormData, championSubtitle: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} placeholder="e.g. Includes Unlimited Support..." />
+                <div style={{ marginBottom: '20px', padding: '16px', borderRadius: '16px', background: '#fef2f2', border: '2px solid #fecaca' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '800', color: '#dc2626', marginBottom: '12px' }}>🏆 Champion Batch - Elite</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Real Price (₹)</label>
+                      <input type="number" min={1} value={editFormData.championOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, championOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Discount Price (₹)</label>
+                      <input type="number" min={1} value={editFormData.championDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, championDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Champion Subtitle</label>
+                    <input type="text" value={editFormData.championSubtitle ?? ''} onChange={e => setEditFormData({...editFormData, championSubtitle: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} placeholder="e.g. Includes Unlimited Support..." />
+                  </div>
                 </div>
-              </div>
+              </>
             )}
 
             {/* Details Link (optional) */}

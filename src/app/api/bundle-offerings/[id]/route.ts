@@ -10,6 +10,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const data = await request.json()
+    const { 
       name, description, recordedOriginalPrice, recordedDiscountPrice, 
       liveOriginalPrice, liveDiscountPrice,
       championOriginalPrice, championDiscountPrice, championSubtitle,
