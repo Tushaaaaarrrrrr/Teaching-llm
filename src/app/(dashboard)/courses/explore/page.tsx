@@ -56,6 +56,11 @@ export default function ExploreCoursesPage() {
   const [bundleTierPrices, setBundleTierPrices] = useState<Record<number, { recordedOriginal?: string, recordedDiscount?: string, liveOriginal?: string, liveDiscount?: string }>>({})
   const [bundleStartingPrice, setBundleStartingPrice] = useState('')
   const [bundleDescription, setBundleDescription] = useState('')
+  const [bundleEnableBundleDiscount, setBundleEnableBundleDiscount] = useState(false)
+  const [bundleDiscountType, setBundleDiscountType] = useState('PERCENTAGE')
+  const [bundleDiscountValue, setBundleDiscountValue] = useState('')
+  const [bundleDiscountApplicability, setBundleDiscountApplicability] = useState('BOTH')
+  const [bundleRequireAllCourses, setBundleRequireAllCourses] = useState(true)
   const [infoModalOffering, setInfoModalOffering] = useState<any | null>(null)
   // Bundle purchase UI states
   const [showBundleModal, setShowBundleModal] = useState(false)
@@ -3198,6 +3203,50 @@ export default function ExploreCoursesPage() {
                 </div>
               </div>
             )}
+
+            {/* Bundle Discount Configuration */}
+            <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '16px', background: '#fffbeb', border: '1.5px solid #fef3c7' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: bundleEnableBundleDiscount ? '16px' : '0' }}>
+                <input type="checkbox" checked={bundleEnableBundleDiscount} onChange={e => setBundleEnableBundleDiscount(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#f59e0b' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#92400e' }}>🏷️ Enable Bundle Discount</div>
+                  <div style={{ fontSize: '12px', color: '#b45309' }}>Extra discount applied on top of course prices</div>
+                </div>
+              </label>
+              {bundleEnableBundleDiscount && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#92400e', display: 'block', marginBottom: '4px' }}>Discount Type</label>
+                      <select value={bundleDiscountType} onChange={e => setBundleDiscountType(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fde68a', fontSize: '13px' }}>
+                        <option value="PERCENTAGE">Percentage (%)</option>
+                        <option value="FIXED">Fixed Amount (₹)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#92400e', display: 'block', marginBottom: '4px' }}>Discount Value</label>
+                      <input type="number" min={0} value={bundleDiscountValue} onChange={e => setBundleDiscountValue(e.target.value)} placeholder={bundleDiscountType === 'FIXED' ? '₹ Amount' : '% Off'} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fde68a', fontSize: '13px', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#92400e', display: 'block', marginBottom: '4px' }}>Applies To</label>
+                      <select value={bundleDiscountApplicability} onChange={e => setBundleDiscountApplicability(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fde68a', fontSize: '13px' }}>
+                        <option value="BOTH">Both (Recorded + Live)</option>
+                        <option value="RECORDED">Recorded Only</option>
+                        <option value="LIVE">Live Only</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', paddingTop: '18px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={bundleRequireAllCourses} onChange={e => setBundleRequireAllCourses(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#f59e0b' }} />
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e' }}>Only when all courses selected</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div style={{ marginBottom: '24px', padding: '14px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e0e7ff' }}>
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '16px' }}>
