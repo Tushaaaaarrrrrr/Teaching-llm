@@ -75,6 +75,12 @@ export default function ExploreCoursesPage() {
   const [mentorshipBookingDate, setMentorshipBookingDate] = useState('')
   const [mentorshipBookingTime, setMentorshipBookingTime] = useState('')
 
+  // Mentorship Slots Management
+  const [showManageSlotsModal, setShowManageSlotsModal] = useState<any>(null)
+  const [manageSlotsDate, setManageSlotsDate] = useState('')
+  const [manageSlotsTime, setManageSlotsTime] = useState('')
+  const [editingSlots, setEditingSlots] = useState<{date: string, time: string}[]>([])
+
   // Helper to get enrollment status
   const getEnrollmentStatus = (courseId: string) => {
     const coursesArray = Array.isArray(courses) ? courses : (courses as any)?.courses || []
@@ -485,18 +491,27 @@ export default function ExploreCoursesPage() {
                   <div style={{ fontWeight: '800', color: '#f59e0b' }}>₹{m.pricePerSlot} / {m.slotDurationMinutes} mins</div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => { setShowMentorshipBookingModal(m) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff', fontWeight: '800' }}>
+                  <button onClick={() => { setShowMentorshipBookingModal(m); setMentorshipBookingDate(''); setMentorshipBookingTime('') }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff', fontWeight: '800' }}>
                     Book Slot
                   </button>
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
-                    <button onClick={async () => {
-                      if (!confirm(`Delete mentorship "${m.mentorName}"?`)) return
-                      try {
-                        const res = await fetch(`/api/store/mentorships/${m.id}`, { method: 'DELETE' })
-                        if (res.ok) window.location.reload()
-                        else alert('Failed to delete')
-                      } catch { alert('Failed to delete') }
-                    }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
+                    <>
+                      <button onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setShowManageSlotsModal(m); 
+                        setEditingSlots(JSON.parse(m.availableSlots || '[]'));
+                        setManageSlotsDate('');
+                        setManageSlotsTime('');
+                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '800', fontSize: '13px' }}>Slots</button>
+                      <button onClick={async () => {
+                        if (!confirm(`Delete mentorship "${m.mentorName}"?`)) return
+                        try {
+                          const res = await fetch(`/api/store/mentorships/${m.id}`, { method: 'DELETE' })
+                          if (res.ok) window.location.reload()
+                          else alert('Failed to delete')
+                        } catch { alert('Failed to delete') }
+                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
+                    </>
                   )}
                 </div>
               </div>
@@ -2540,12 +2555,25 @@ export default function ExploreCoursesPage() {
 
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: '6px', color: '#334155' }}>Select Date</label>
-              <input type="date" value={mentorshipBookingDate} onChange={e => setMentorshipBookingDate(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+              <select value={mentorshipBookingDate} onChange={e => { setMentorshipBookingDate(e.target.value); setMentorshipBookingTime('') }} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', background: '#fff' }}>
+                <option value="">-- Choose a Date --</option>
+                {Array.from(new Set(JSON.parse(showMentorshipBookingModal.availableSlots || '[]').map((s: any) => s.date))).sort().map((d: any) => (
+                  <option key={d} value={d}>{new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</option>
+                ))}
+              </select>
             </div>
 
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: '6px', color: '#334155' }}>Select Time</label>
-              <input type="time" value={mentorshipBookingTime} onChange={e => setMentorshipBookingTime(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+              <select value={mentorshipBookingTime} onChange={e => setMentorshipBookingTime(e.target.value)} disabled={!mentorshipBookingDate} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', background: !mentorshipBookingDate ? '#f1f5f9' : '#fff' }}>
+                <option value="">-- Choose a Time Slot --</option>
+                {JSON.parse(showMentorshipBookingModal.availableSlots || '[]').filter((s: any) => s.date === mentorshipBookingDate).sort((a: any, b: any) => a.time.localeCompare(b.time)).map((s: any) => {
+                  const booked = showMentorshipBookingModal.bookings?.some((b: any) => b.slotDate === s.date && b.slotTime === s.time && b.status === 'PAID')
+                  return (
+                    <option key={s.time} value={s.time} disabled={booked}>{s.time} {booked ? '(Booked)' : ''}</option>
+                  )
+                })}
+              </select>
             </div>
 
             <button 
@@ -2603,6 +2631,79 @@ export default function ExploreCoursesPage() {
               }} 
               style={{ width: '100%', padding: '14px', background: isProcessing ? '#94a3b8' : 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer' }}>
               {isProcessing ? 'Processing...' : `Proceed to Pay ₹${showMentorshipBookingModal.pricePerSlot}`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MANAGE SLOTS MODAL */}
+      {showManageSlotsModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowManageSlotsModal(null)}>
+          <div style={{ background: '#fff', borderRadius: '24px', padding: '32px', width: '100%', maxWidth: '480px', animation: 'modalSlideUp 0.3s ease-out', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b' }}>Manage Time Slots</h3>
+              <button onClick={() => setShowManageSlotsModal(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#64748b' }}>✕</button>
+            </div>
+            <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px' }}>Mentorship with {showManageSlotsModal.mentorName} ({showManageSlotsModal.slotDuration} mins)</p>
+
+            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Add New Slot</h4>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>Date</label>
+                  <input type="date" value={manageSlotsDate} onChange={e => setManageSlotsDate(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>Time</label>
+                  <input type="time" value={manageSlotsTime} onChange={e => setManageSlotsTime(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                </div>
+                <button onClick={() => {
+                  if (!manageSlotsDate || !manageSlotsTime) return;
+                  if (editingSlots.some(s => s.date === manageSlotsDate && s.time === manageSlotsTime)) return;
+                  setEditingSlots([...editingSlots, { date: manageSlotsDate, time: manageSlotsTime }]);
+                  setManageSlotsTime('');
+                }} style={{ padding: '10px 16px', background: '#3b82f6', color: '#fff', borderRadius: '8px', fontWeight: '700', border: 'none' }}>Add</button>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Available Slots</h4>
+              {editingSlots.length === 0 ? <p style={{ fontSize: '13px', color: '#64748b' }}>No slots added yet.</p> : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {editingSlots.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)).map((slot, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '600' }}>
+                        {new Date(slot.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at {slot.time}
+                      </div>
+                      <button onClick={() => {
+                        setEditingSlots(editingSlots.filter((_, i) => i !== idx))
+                      }} style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '14px' }}>Remove</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button 
+              disabled={isProcessing}
+              onClick={async () => {
+                setIsProcessing(true)
+                try {
+                  const res = await fetch(`/api/store/mentorships/${showManageSlotsModal.id}/slots`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slots: editingSlots })
+                  })
+                  if (!res.ok) throw new Error('Failed to update slots')
+                  setShowManageSlotsModal(null)
+                  window.location.reload()
+                } catch (e: any) {
+                  alert(e.message || 'Error updating slots')
+                } finally {
+                  setIsProcessing(false)
+                }
+              }} 
+              style={{ width: '100%', padding: '14px', background: '#1e293b', color: 'white', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer' }}>
+              {isProcessing ? 'Saving...' : 'Save Slots'}
             </button>
           </div>
         </div>

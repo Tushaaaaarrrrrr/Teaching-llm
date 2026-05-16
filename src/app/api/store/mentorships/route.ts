@@ -38,7 +38,8 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const mentorships = await prisma.mentorshipOffering.findMany({
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: { bookings: true }
     })
     return NextResponse.json({ mentorships })
   } catch (error: any) {
