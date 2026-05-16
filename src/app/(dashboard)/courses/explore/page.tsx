@@ -1663,7 +1663,7 @@ export default function ExploreCoursesPage() {
                     <div style={{ padding: '12px 18px', borderRadius: '16px', background: '#eff6ff', border: '1px solid #bfdbfe', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <span style={{ fontSize: '20px' }}>🔒</span>
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#1e40af' }}>Fixed Bundle Package</div>
+                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#1e40af' }}>Fixed Course Bundle</div>
                         <div style={{ fontSize: '11px', color: '#3b82f6', fontWeight: '600' }}>This course set must be purchased as a complete package. Class type applies to all subjects.</div>
                       </div>
                     </div>
