@@ -1845,10 +1845,12 @@ export default function ExploreCoursesPage() {
                   )
                 })()}
               </div>
-            )
-          })()}
-        </div>
-      )}
+            </div>
+          </div>
+        )
+      })()}
+    </div>
+  )}
       {/* ── Batch Comparison Modal (opened from bundle i button) ── */}
       {showBatchComparisonModal && (
         <div style={{
