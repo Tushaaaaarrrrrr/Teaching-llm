@@ -2795,7 +2795,7 @@ export default function ExploreCoursesPage() {
                   {(() => {
                     let priceData = {};
                     try { priceData = JSON.parse(editBundleData.coursePrices || '{}'); } catch(e) {}
-                    const mappings = priceData.individualMapping || {};
+                    const mappings = (priceData as any).individualMapping || {};
                     
                     return editBundleData.courseIds.map((id: string) => {
                       const course = (courses || []).find((c: any) => c.id === id);
