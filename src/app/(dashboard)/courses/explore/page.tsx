@@ -68,7 +68,9 @@ export default function ExploreCoursesPage() {
   const [showCreateDropdown, setShowCreateDropdown] = useState(false)
   const [showCreateBundleModal, setShowCreateBundleModal] = useState(false)
   const [showCreateNoteModal, setShowCreateNoteModal] = useState(false)
+  const [editingNote, setEditingNote] = useState<any>(null)
   const [showCreateMentorshipModal, setShowCreateMentorshipModal] = useState(false)
+  const [editingMentorship, setEditingMentorship] = useState<any>(null)
 
   // Mentorship Booking
   const [showMentorshipBookingModal, setShowMentorshipBookingModal] = useState<any>(null)
@@ -243,6 +245,56 @@ export default function ExploreCoursesPage() {
       alert(err.message)
       setIsProcessing(false)
       setPurchasing(null)
+    }
+  }
+
+  const handleNotePurchase = async (note: any) => {
+    setIsProcessing(true)
+    try {
+      const res = await fetch(`/api/store/notes/${note.id}/create-order`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      if (data.isFree) {
+        alert('Note accessed successfully! You can find it in Free Resources -> Purchased Materials')
+        window.open(note.files?.[0]?.fileUrl, '_blank')
+        setIsProcessing(false)
+        return
+      }
+
+      const options = {
+        key: data.key,
+        amount: data.amount,
+        currency: 'INR',
+        name: 'GenZ IITian',
+        description: `Note Purchase: ${note.title}`,
+        order_id: data.razorpayOrderId,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch(`/api/store/notes/${note.id}/verify-payment`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              })
+            })
+            if (verifyRes.ok) {
+              alert('Purchase successful! You have 30 days of access. View it in Free Resources -> Purchased Materials')
+              window.open(note.files?.[0]?.fileUrl, '_blank')
+              window.location.reload()
+            } else { alert('Payment verification failed') }
+          } catch { alert('Payment verification failed') }
+          finally { setIsProcessing(false) }
+        },
+        modal: { ondismiss: () => setIsProcessing(false) }
+      }
+      setIsProcessing(false)
+      const rzp = new (window as any).Razorpay(options)
+      rzp.open()
+    } catch (err: any) {
+      alert(err.message || 'Error processing')
+      setIsProcessing(false)
     }
   }
 
@@ -462,14 +514,31 @@ export default function ExploreCoursesPage() {
                     {n.price > 0 ? 'Buy / Access' : 'Access Notes'}
                   </button>
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
-                    <button onClick={async () => {
-                      if (!confirm(`Delete note "${n.title}"?`)) return
-                      try {
-                        const res = await fetch(`/api/store/notes/${n.id}`, { method: 'DELETE' })
-                        if (res.ok) window.location.reload()
-                        else alert('Failed to delete')
-                      } catch { alert('Failed to delete') }
-                    }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
+                    <>
+                      <button onClick={(e) => {
+                        e.stopPropagation()
+                        setEditingNote(n)
+                        setShowCreateNoteModal(true)
+                        setTimeout(() => {
+                          const titleEl = document.getElementById('noteTitleInput') as HTMLInputElement
+                          const descEl = document.getElementById('noteDescInput') as HTMLTextAreaElement
+                          const linkEl = document.getElementById('noteLinkInput') as HTMLInputElement
+                          const priceEl = document.getElementById('notePriceInput') as HTMLInputElement
+                          if (titleEl) titleEl.value = n.title
+                          if (descEl) descEl.value = n.description || ''
+                          if (linkEl) linkEl.value = n.files?.[0]?.fileUrl || ''
+                          if (priceEl) priceEl.value = n.price
+                        }, 100)
+                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '800', fontSize: '13px' }}>Edit</button>
+                      <button onClick={async () => {
+                        if (!confirm(`Delete note "${n.title}"?`)) return
+                        try {
+                          const res = await fetch(`/api/store/notes/${n.id}`, { method: 'DELETE' })
+                          if (res.ok) window.location.reload()
+                          else alert('Failed to delete')
+                        } catch { alert('Failed to delete') }
+                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
+                    </>
                   )}
                 </div>
               </div>
@@ -496,6 +565,21 @@ export default function ExploreCoursesPage() {
                   </button>
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
                     <>
+                      <button onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setEditingMentorship(m)
+                        setShowCreateMentorshipModal(true)
+                        setTimeout(() => {
+                          const mentorEl = document.getElementById('mentorNameInput') as HTMLInputElement
+                          const descEl = document.getElementById('mentorDescInput') as HTMLTextAreaElement
+                          const priceEl = document.getElementById('mentorPriceInput') as HTMLInputElement
+                          const durationEl = document.getElementById('mentorDurationInput') as HTMLInputElement
+                          if (mentorEl) mentorEl.value = m.mentorName
+                          if (descEl) descEl.value = m.description || ''
+                          if (priceEl) priceEl.value = m.pricePerSlot
+                          if (durationEl) durationEl.value = m.slotDurationMinutes
+                        }, 100)
+                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '800', fontSize: '13px' }}>Edit</button>
                       <button onClick={(e) => { 
                         e.stopPropagation(); 
                         setShowManageSlotsModal(m); 
@@ -2396,13 +2480,13 @@ export default function ExploreCoursesPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
               <div>
                 <h2 style={{ fontSize: '28px', fontWeight: '900', color: '#1e1e3a', marginBottom: '8px', letterSpacing: '-0.02em' }}>
-                  Add Notes 📝
+                  {editingNote ? 'Edit Notes 📝' : 'Add Notes 📝'}
                 </h2>
                 <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500', lineHeight: '1.5' }}>
                   Upload notes or provide a link for students to access.
                 </p>
               </div>
-              <button onClick={() => setShowCreateNoteModal(false)} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
+              <button onClick={() => { setShowCreateNoteModal(false); setEditingNote(null) }} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
                 ✕
               </button>
             </div>
@@ -2430,7 +2514,7 @@ export default function ExploreCoursesPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => setShowCreateNoteModal(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff', background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => { setShowCreateNoteModal(false); setEditingNote(null) }} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff', background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
               <button
                 onClick={async () => {
                   const title = (document.getElementById('noteTitleInput') as HTMLInputElement).value
@@ -2441,18 +2525,20 @@ export default function ExploreCoursesPage() {
 
                   setCreating(true)
                   try {
-                    const res = await fetch('/api/store/notes', {
-                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    const method = editingNote ? 'PUT' : 'POST'
+                    const url = editingNote ? `/api/store/notes/${editingNote.id}` : '/api/store/notes'
+                    const res = await fetch(url, {
+                      method, headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ title, description: desc, fileUrl: link, price: Number(price) || 0 })
                     })
                     if (res.ok) { window.location.reload() }
-                    else { alert('Failed to add notes') }
-                  } catch { alert('Error adding notes') }
+                    else { alert(editingNote ? 'Failed to update notes' : 'Failed to add notes') }
+                  } catch { alert('Error saving notes') }
                   finally { setCreating(false) }
                 }}
                 style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}
               >
-                Create Notes
+                {editingNote ? 'Save Changes' : 'Create Notes'}
               </button>
             </div>
           </div>
@@ -2476,35 +2562,35 @@ export default function ExploreCoursesPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
               <div>
                 <h2 style={{ fontSize: '28px', fontWeight: '900', color: '#1e1e3a', marginBottom: '8px', letterSpacing: '-0.02em' }}>
-                  Add Mentorship 🤝
+                  {editingMentorship ? 'Edit Mentorship 🤝' : 'Create Mentorship 🤝'}
                 </h2>
                 <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500', lineHeight: '1.5' }}>
                   Set up 1-on-1 mentorship slots for students to book.
                 </p>
               </div>
-              <button onClick={() => setShowCreateMentorshipModal(false)} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
+              <button onClick={() => { setShowCreateMentorshipModal(false); setEditingMentorship(null) }} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
                 ✕
               </button>
             </div>
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Mentor Name</label>
-              <input id="mentorNameInput" placeholder="E.g., John Doe" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+              <input id="mentorNameInput" defaultValue={editingMentorship?.mentorName || ''} placeholder="E.g., John Doe" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
             </div>
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Description</label>
-              <textarea id="mentorDescInput" rows={3} placeholder="What will this mentorship cover?" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', resize: 'vertical' }} />
+              <textarea id="mentorDescInput" defaultValue={editingMentorship?.description || ''} rows={3} placeholder="What will this mentorship cover?" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', resize: 'vertical' }} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '28px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Price Per Slot (₹)</label>
-                <input id="mentorPriceInput" type="number" min={1} placeholder="E.g., 500" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+                <input id="mentorPriceInput" defaultValue={editingMentorship?.pricePerSlot || ''} type="number" min={1} placeholder="E.g., 500" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Slot Duration (min)</label>
-                <select id="mentorDurationInput" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', backgroundColor: '#fff' }}>
+                <select id="mentorDurationInput" defaultValue={editingMentorship?.slotDuration || '30'} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', backgroundColor: '#fff' }}>
                   <option value="15">15 Minutes</option>
                   <option value="30">30 Minutes</option>
                   <option value="45">45 Minutes</option>
@@ -2514,29 +2600,31 @@ export default function ExploreCoursesPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => setShowCreateMentorshipModal(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff', background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => { setShowCreateMentorshipModal(false); setEditingMentorship(null) }} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff', background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
               <button
                 onClick={async () => {
-                  const name = (document.getElementById('mentorNameInput') as HTMLInputElement).value
+                  const mentorName = (document.getElementById('mentorNameInput') as HTMLInputElement).value
                   const desc = (document.getElementById('mentorDescInput') as HTMLTextAreaElement).value
                   const price = (document.getElementById('mentorPriceInput') as HTMLInputElement).value
                   const duration = (document.getElementById('mentorDurationInput') as HTMLSelectElement).value
-                  if (!name || !price) { alert('Name and Price are required'); return }
+                  if (!mentorName || !price || !duration) { alert('Name, Price, and Duration are required'); return }
 
                   setCreating(true)
                   try {
-                    const res = await fetch('/api/store/mentorships', {
-                      method: 'POST', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ mentorName: name, description: desc, pricePerSlot: Number(price), slotDuration: Number(duration) })
+                    const method = editingMentorship ? 'PUT' : 'POST'
+                    const url = editingMentorship ? `/api/store/mentorships/${editingMentorship.id}` : '/api/store/mentorships'
+                    const res = await fetch(url, {
+                      method, headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ mentorName, description: desc, pricePerSlot: Number(price), slotDuration: Number(duration) })
                     })
                     if (res.ok) { window.location.reload() }
-                    else { alert('Failed to add mentorship') }
-                  } catch { alert('Error adding mentorship') }
+                    else { alert(editingMentorship ? 'Failed to update mentorship' : 'Failed to add mentorship') }
+                  } catch { alert('Error saving mentorship') }
                   finally { setCreating(false) }
                 }}
                 style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}
               >
-                Create Mentorship
+                {editingMentorship ? 'Save Changes' : 'Create Mentorship'}
               </button>
             </div>
           </div>

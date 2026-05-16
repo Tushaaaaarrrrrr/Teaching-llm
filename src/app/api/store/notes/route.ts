@@ -48,7 +48,8 @@ export async function GET(req: Request) {
     const notes = await prisma.storeNote.findMany({
       include: {
         files: true,
-        createdBy: { select: { id: true, name: true, email: true } }
+        createdBy: { select: { id: true, name: true, email: true } },
+        accesses: true
       },
       orderBy: { createdAt: 'desc' }
     })
