@@ -67,7 +67,7 @@ export default function ExploreCoursesPage() {
   const [activeBundle, setActiveBundle] = useState<any | null>(null)
   const [bundleAccessType, setBundleAccessType] = useState<'RECORDED' | 'LIVE'>('RECORDED')
   const [bundleSelectedForPurchase, setBundleSelectedForPurchase] = useState<Record<string, 'RECORDED' | 'LIVE'>>({})
-  const [bundleGlobalAccessType, setBundleGlobalAccessType] = useState<'RECORDED' | 'LIVE'>('RECORDED')
+  const [bundleGlobalAccessType, setBundleGlobalAccessType] = useState<'RECORDED' | 'LIVE'>('LIVE')
   const [bundleSelectedCoursesToBuy, setBundleSelectedCoursesToBuy] = useState<string[]>([])
   const [showBatchComparisonModal, setShowBatchComparisonModal] = useState(false)
   
@@ -1810,61 +1810,80 @@ export default function ExploreCoursesPage() {
                   return (
                     <>
                       <div style={{ marginBottom: 'auto', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                        <div style={{ fontSize: '18px', color: '#0f172a', fontWeight: '900', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px' }}>Detailed Breakdown</div>
+                        <div style={{ fontSize: '18px', color: '#0f172a', fontWeight: '900', marginBottom: '12px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px' }}>Detailed Breakdown</div>
                         
-                        {/* For non-fixed bundles: per-course breakdown */}
-                        <div style={{ marginBottom: '20px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
-                          {!isFixed && selectedList.map((courseId: string) => {
-                            const bc = activeBundle.courses.find((c: any) => c.course.id === courseId);
-                            const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
-                            const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
-                            
-                            const bPriceData = activeBundle.coursePrices ? JSON.parse(activeBundle.coursePrices) : {};
-                            const bundleMappings = bPriceData.individualMapping || {};
-                            const bundleCustomPrice = bundleMappings[courseId];
-                            const tierForCount2 = bPriceData[selectedList.length];
-
-                            const price = selectedType === 'RECORDED' 
-                              ? Number(bundleCustomPrice?.recorded || tierForCount2?.recordedDiscount || tierForCount2?.recordedOriginal || offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0)
-                              : Number(bundleCustomPrice?.live || tierForCount2?.liveDiscount || tierForCount2?.liveOriginal || offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
-                            
-                            return (
-                              <div key={courseId} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                <div style={{ flex: 1, paddingRight: '12px' }}>
-                                  <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '800' }}>{bc?.course.name}</div>
-                                  <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700' }}>{selectedType === 'LIVE' ? 'LIVE PRO' : 'RECORDED PLUS'}</div>
-                                </div>
-                                <span style={{ fontSize: '13px', fontWeight: '900', color: '#1e293b' }}>₹{price}</span>
-                              </div>
-                            )
-                          })}
-                        </div>
-
-                        {/* Subtotal removed to save vertical space */}
-
-                        {bundleDiscountAmt > 0 && (() => {
-                          let discountApplicability = 'BOTH';
-                          try {
-                            const pd = JSON.parse(activeBundle.coursePrices || '{}');
-                            if (pd.bundleDiscountApplicability) discountApplicability = pd.bundleDiscountApplicability;
-                          } catch(e) {}
-                          const applicabilityLabel = discountApplicability === 'LIVE' ? 'Live Pro Only' : discountApplicability === 'RECORDED' ? 'Recorded Plus Only' : 'Live & Recorded';
-                          return (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', padding: '10px 14px', borderRadius: '12px', background: '#f0fdf4', border: '1px solid #dcfce7' }}>
-                              <div>
-                                <div style={{ fontSize: '13px', color: '#166534', fontWeight: '900' }}>🏷️ Bundle Discount</div>
-                                <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: '700', marginTop: '2px' }}>Applies to: {applicabilityLabel}</div>
-                              </div>
-                              <span style={{ fontSize: '13px', fontWeight: '950', color: '#16a34a' }}>-₹{bundleDiscountAmt}</span>
-                            </div>
-                          );
-                        })()}
-
-                        {couponApplied && couponDiscountAmt > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', padding: '10px 14px', borderRadius: '12px', background: '#eff6ff', border: '1px solid #dbeafe' }}>
-                            <span style={{ fontSize: '13px', color: '#1e40af', fontWeight: '900' }}>Coupon: {couponApplied.code}</span>
-                            <span style={{ fontSize: '13px', fontWeight: '950', color: '#2563eb' }}>-₹{couponDiscountAmt}</span>
+                        {!isFixed && selectedList.length === 0 ? (
+                          <div style={{ padding: '32px 0', textAlign: 'center', color: '#94a3b8' }}>
+                            <div style={{ fontSize: '24px', marginBottom: '8px' }}>👈</div>
+                            <div style={{ fontSize: '13px', fontWeight: '800' }}>Please select at least one course</div>
+                            <div style={{ fontSize: '11px', marginTop: '4px' }}>to see your price breakdown</div>
                           </div>
+                        ) : (
+                          <>
+                            {/* For non-fixed bundles: per-course breakdown */}
+                            <div style={{ marginBottom: '20px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                              {!isFixed && selectedList.map((courseId: string) => {
+                                const bc = activeBundle.courses.find((c: any) => c.course.id === courseId);
+                                const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
+                                const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
+                                
+                                const bPriceData = activeBundle.coursePrices ? JSON.parse(activeBundle.coursePrices) : {};
+                                const bundleMappings = bPriceData.individualMapping || {};
+                                const bundleCustomPrice = bundleMappings[courseId];
+                                const tierForCount2 = bPriceData[selectedList.length];
+
+                                const price = selectedType === 'RECORDED' 
+                                  ? Number(bundleCustomPrice?.recorded || tierForCount2?.recordedDiscount || tierForCount2?.recordedOriginal || offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0)
+                                  : Number(bundleCustomPrice?.live || tierForCount2?.liveDiscount || tierForCount2?.liveOriginal || offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
+                                
+                                return (
+                                  <div key={courseId} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                    <div style={{ flex: 1, paddingRight: '12px' }}>
+                                      <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '800' }}>{bc?.course.name}</div>
+                                      <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700' }}>{selectedType === 'LIVE' ? 'LIVE PRO' : 'RECORDED PLUS'}</div>
+                                    </div>
+                                    <span style={{ fontSize: '13px', fontWeight: '900', color: '#1e293b' }}>₹{price}</span>
+                                  </div>
+                                )
+                              })}
+                              {isFixed && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                  <div style={{ flex: 1, paddingRight: '12px' }}>
+                                    <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '800' }}>{activeBundle.title}</div>
+                                    <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700' }}>{effectiveGlobalType === 'LIVE' ? 'LIVE PRO' : 'RECORDED PLUS'}</div>
+                                  </div>
+                                  <span style={{ fontSize: '13px', fontWeight: '900', color: '#1e293b' }}>₹{totalPrice}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Subtotal removed to save vertical space */}
+
+                            {bundleDiscountAmt > 0 && (() => {
+                              let discountApplicability = 'BOTH';
+                              try {
+                                const pd = JSON.parse(activeBundle.coursePrices || '{}');
+                                if (pd.bundleDiscountApplicability) discountApplicability = pd.bundleDiscountApplicability;
+                              } catch(e) {}
+                              const applicabilityLabel = discountApplicability === 'LIVE' ? 'Live Pro Only' : discountApplicability === 'RECORDED' ? 'Recorded Plus Only' : 'Live & Recorded';
+                              return (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', padding: '10px 14px', borderRadius: '12px', background: '#f0fdf4', border: '1px solid #dcfce7' }}>
+                                  <div>
+                                    <div style={{ fontSize: '13px', color: '#166534', fontWeight: '900' }}>🏷️ Bundle Discount</div>
+                                    <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: '700', marginTop: '2px' }}>Applies to: {applicabilityLabel}</div>
+                                  </div>
+                                  <span style={{ fontSize: '13px', fontWeight: '950', color: '#16a34a' }}>-₹{bundleDiscountAmt}</span>
+                                </div>
+                              );
+                            })()}
+
+                            {couponApplied && couponDiscountAmt > 0 && (
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', padding: '10px 14px', borderRadius: '12px', background: '#eff6ff', border: '1px solid #dbeafe' }}>
+                                <span style={{ fontSize: '13px', color: '#1e40af', fontWeight: '900' }}>Coupon: {couponApplied.code}</span>
+                                <span style={{ fontSize: '13px', fontWeight: '950', color: '#2563eb' }}>-₹{couponDiscountAmt}</span>
+                              </div>
+                            )}
+                          </>
                         )}
 
                         {!isAllEnrolled && (
@@ -1913,18 +1932,18 @@ export default function ExploreCoursesPage() {
                           </div>
                         )}
                         
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '32px', paddingTop: '24px', borderTop: '3px solid #f1f5f9' }}>
-                          <span style={{ fontSize: '18px', color: '#1e293b', fontWeight: '950' }}>Total Payable</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '16px', paddingTop: '16px', borderTop: '3px solid #f1f5f9' }}>
+                          <span style={{ fontSize: '16px', color: '#1e293b', fontWeight: '950' }}>Total Payable</span>
                           <div style={{ textAlign: 'right' }}>
                             {(originalTotalPrice > finalTotal || bundleDiscountAmt > 0 || couponDiscountAmt > 0) && (
-                              <div style={{ fontSize: '15px', color: '#94a3b8', textDecoration: 'line-through', marginBottom: '4px', fontWeight: '800' }}>₹{originalTotalPrice > totalPrice ? originalTotalPrice : totalPrice}</div>
+                              <div style={{ fontSize: '13px', color: '#94a3b8', textDecoration: 'line-through', marginBottom: '2px', fontWeight: '800' }}>₹{originalTotalPrice > totalPrice ? originalTotalPrice : totalPrice}</div>
                             )}
-                            <div style={{ fontSize: '42px', fontWeight: '1000', color: '#6366f1', lineHeight: '0.9', letterSpacing: '-2px' }}>₹{isAllEnrolled ? 0 : finalTotal}</div>
+                            <div style={{ fontSize: '32px', fontWeight: '1000', color: '#6366f1', lineHeight: '1', letterSpacing: '-1px' }}>₹{isAllEnrolled ? 0 : finalTotal}</div>
                           </div>
                         </div>
                       </div>
 
-                      <div style={{ marginTop: '32px' }}>
+                      <div style={{ marginTop: '16px' }}>
                         <button 
                           disabled={isProcessing || isAllEnrolled || selectedList.length === 0}
                           onClick={async () => {
