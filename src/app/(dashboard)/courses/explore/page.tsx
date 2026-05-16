@@ -51,6 +51,7 @@ export default function ExploreCoursesPage() {
   const [bundleLiveOriginalPrice, setBundleLiveOriginalPrice] = useState('')
   const [bundleLiveDiscountPrice, setBundleLiveDiscountPrice] = useState('')
   const [bundleForceClassType, setBundleForceClassType] = useState<string | null>(null)
+  const [bundleIndividualMapping, setBundleIndividualMapping] = useState<Record<string, { recorded?: string; live?: string }>>({})
   const [bundleAllowIndividualPurchase, setBundleAllowIndividualPurchase] = useState(true)
   const [bundleTierPrices, setBundleTierPrices] = useState<Record<number, { recordedOriginal?: string, recordedDiscount?: string, liveOriginal?: string, liveDiscount?: string }>>({})
   const [bundleStartingPrice, setBundleStartingPrice] = useState('')
@@ -1516,8 +1517,14 @@ export default function ExploreCoursesPage() {
                   {activeBundle.courses.map((bc: any) => {
                     const course = bc.course
                     const offering = (activeOfferings as any[]).find(o => o.courseId === course.id)
-                    const recPrice = offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0
-                    const livePrice = offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0
+                    
+                    let bPriceData = {};
+                    try { bPriceData = JSON.parse(activeBundle.coursePrices || '{}'); } catch(e) {}
+                    const bundleMappings = (bPriceData as any).individualMapping || {};
+                    const bundleCustomPrice = bundleMappings[course.id];
+
+                    const recPrice = bundleCustomPrice?.recorded || offering?.recordedDiscountPrice || offering?.recordedOriginalPrice || 0
+                    const livePrice = bundleCustomPrice?.live || offering?.liveDiscountPrice || offering?.liveOriginalPrice || 0
                     const selectedType = bundleSelectedForPurchase[course.id] || (activeBundle.forceClassType || bundleGlobalAccessType) || 'RECORDED'
                     
                     return (
@@ -1629,7 +1636,7 @@ export default function ExploreCoursesPage() {
                         {activeBundle.allowIndividualPurchase === false 
                           ? `Applied when you enroll in all ${activeBundle.courses.length} subjects. (Class type required given already by manager)` 
                           : activeBundle.requireAllCourses 
-                            ? `Applied when you enroll in all ${activeBundle.courses.length} subjects.` 
+                            ? `Applied when you enroll in all ${activeBundle.courses.length} subjects. (Which class type as per selection)` 
                             : "Special discount for curated bundles."}
                       </div>
                     </div>
@@ -1645,40 +1652,36 @@ export default function ExploreCoursesPage() {
                     </div>
                   )}
 
-                  {(() => {
-                    if ((activeBundle.allowIndividualPurchase === false || selectedList.length === activeBundle.courses.length) && !activeBundle.forceClassType) {
-                      return (
-                        <div style={{ padding: '16px', borderRadius: '16px', background: '#fff', border: '1.5px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                          <div>
-                            <div style={{ fontSize: '14px', fontWeight: '900', color: '#1e293b' }}>Apply Class Type to All</div>
-                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Quickly set all subjects in this bundle</div>
-                          </div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button 
-                              onClick={() => {
-                                setBundleGlobalAccessType('RECORDED')
-                                const newSelections = { ...bundleSelectedForPurchase }
-                                activeBundle.courses.forEach((c: any) => newSelections[c.course.id] = 'RECORDED')
-                                setBundleSelectedForPurchase(newSelections)
-                                if (couponApplied?.code?.includes('LIVE')) setCouponApplied(null)
-                              }}
-                              style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e2e8f0', fontSize: '11px', fontWeight: '800', background: bundleGlobalAccessType === 'RECORDED' ? '#1e293b' : '#fff', color: bundleGlobalAccessType === 'RECORDED' ? '#fff' : '#64748b', cursor: 'pointer' }}
-                            >Recorded</button>
-                            <button 
-                              onClick={() => {
-                                setBundleGlobalAccessType('LIVE')
-                                const newSelections = { ...bundleSelectedForPurchase }
-                                activeBundle.courses.forEach((c: any) => newSelections[c.course.id] = 'LIVE')
-                                setBundleSelectedForPurchase(newSelections)
-                              }}
-                              style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e2e8f0', fontSize: '11px', fontWeight: '800', background: bundleGlobalAccessType === 'LIVE' ? '#6366f1' : '#fff', color: bundleGlobalAccessType === 'LIVE' ? '#fff' : '#64748b', cursor: 'pointer' }}
-                            >Live Pro</button>
-                          </div>
-                        </div>
-                      )
-                    }
-                    return null;
-                  })()}
+                  {/* Bulk Toggle - ONLY show for FIXED bundles. For non-fixed, users must choose individually. */}
+                  {activeBundle.allowIndividualPurchase === false && !activeBundle.forceClassType && (
+                    <div style={{ padding: '16px', borderRadius: '16px', background: '#fff', border: '1.5px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#1e293b' }}>Apply Class Type to All</div>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Quickly set all subjects in this bundle</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          onClick={() => {
+                            setBundleGlobalAccessType('RECORDED')
+                            const newSelections = { ...bundleSelectedForPurchase }
+                            activeBundle.courses.forEach((c: any) => newSelections[c.course.id] = 'RECORDED')
+                            setBundleSelectedForPurchase(newSelections)
+                            if (couponApplied?.code?.includes('LIVE')) setCouponApplied(null)
+                          }}
+                          style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e2e8f0', fontSize: '11px', fontWeight: '800', background: bundleGlobalAccessType === 'RECORDED' ? '#1e293b' : '#fff', color: bundleGlobalAccessType === 'RECORDED' ? '#fff' : '#64748b', cursor: 'pointer' }}
+                        >Recorded</button>
+                        <button 
+                          onClick={() => {
+                            setBundleGlobalAccessType('LIVE')
+                            const newSelections = { ...bundleSelectedForPurchase }
+                            activeBundle.courses.forEach((c: any) => newSelections[c.course.id] = 'LIVE')
+                            setBundleSelectedForPurchase(newSelections)
+                          }}
+                          style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e2e8f0', fontSize: '11px', fontWeight: '800', background: bundleGlobalAccessType === 'LIVE' ? '#6366f1' : '#fff', color: bundleGlobalAccessType === 'LIVE' ? '#fff' : '#64748b', cursor: 'pointer' }}
+                        >Live Pro</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1720,12 +1723,18 @@ export default function ExploreCoursesPage() {
                       selectedList.forEach((courseId: string) => {
                         const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
                         const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
+                        
+                        const mappings = tierPrices.individualMapping || {};
+                        const custom = mappings[courseId];
+
                         if (selectedType === 'RECORDED') {
-                          totalPrice += offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0;
-                          originalTotalPrice += offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0;
+                          const p = Number(custom?.recorded || (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0));
+                          totalPrice += p;
+                          originalTotalPrice += p;
                         } else {
-                          totalPrice += offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0;
-                          originalTotalPrice += offering?.liveOriginalPrice ?? offering?.liveDiscountPrice ?? 0;
+                          const p = Number(custom?.live || (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0));
+                          totalPrice += p;
+                          originalTotalPrice += p;
                         }
                       });
                     }
@@ -1785,9 +1794,14 @@ export default function ExploreCoursesPage() {
                               const bc = activeBundle.courses.find((c: any) => c.course.id === courseId);
                               const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
                               const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
+                              
+                              const bPriceData = activeBundle.coursePrices ? JSON.parse(activeBundle.coursePrices) : {};
+                              const bundleMappings = bPriceData.individualMapping || {};
+                              const bundleCustomPrice = bundleMappings[courseId];
+
                               const price = selectedType === 'RECORDED' 
-                                ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0)
-                                : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
+                                ? Number(bundleCustomPrice?.recorded || (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0))
+                                : Number(bundleCustomPrice?.live || (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0));
                               
                               return (
                                 <div key={courseId} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
@@ -2765,6 +2779,65 @@ export default function ExploreCoursesPage() {
               </div>
             </div>
 
+            {/* Subject Specific Pricing - ONLY for non-fixed bundles */}
+            {editBundleData.allowIndividualPurchase !== false && (editBundleData.courseIds?.length || 0) > 0 && (
+              <div style={{ marginBottom: '24px', padding: '20px', borderRadius: '20px', background: '#f0f9ff', border: '1.5px solid #bae6fd' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <span style={{ fontSize: '20px' }}>💰</span>
+                  <label style={{ fontSize: '14px', fontWeight: '900', color: '#0369a1', textTransform: 'uppercase' }}>Subject Specific Pricing</label>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {(() => {
+                    let priceData = {};
+                    try { priceData = JSON.parse(editBundleData.coursePrices || '{}'); } catch(e) {}
+                    const mappings = priceData.individualMapping || {};
+                    
+                    return editBundleData.courseIds.map((id: string) => {
+                      const course = (courses || []).find((c: any) => c.id === id);
+                      if (!course) return null;
+                      const mapping = mappings[id] || {};
+                      
+                      return (
+                        <div key={id} style={{ background: '#fff', padding: '14px', borderRadius: '12px', border: '1px solid #e0f2fe' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '10px' }}>{course.name}</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div>
+                              <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>Recorded Price (₹)</div>
+                              <input 
+                                type="number" 
+                                value={mapping.recorded || ''} 
+                                onChange={e => {
+                                  const newMappings = { ...mappings, [id]: { ...mapping, recorded: e.target.value } };
+                                  const newData = { ...priceData, individualMapping: newMappings };
+                                  setEditBundleData({ ...editBundleData, coursePrices: JSON.stringify(newData) });
+                                }}
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }} 
+                                placeholder="e.g. 1000"
+                              />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>Live Price (₹)</div>
+                              <input 
+                                type="number" 
+                                value={mapping.live || ''} 
+                                onChange={e => {
+                                  const newMappings = { ...mappings, [id]: { ...mapping, live: e.target.value } };
+                                  const newData = { ...priceData, individualMapping: newMappings };
+                                  setEditBundleData({ ...editBundleData, coursePrices: JSON.stringify(newData) });
+                                }}
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }} 
+                                placeholder="e.g. 2000"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    });
+                  })()}
+                </div>
+              </div>
+            )}
+
             {/* Fixed Bundle Toggle */}
             <div style={{ marginBottom: '16px', padding: '14px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e0e7ff' }}>
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
@@ -3043,6 +3116,51 @@ export default function ExploreCoursesPage() {
               </div>
             </div>
 
+            {/* Subject Specific Pricing - ONLY for non-fixed bundles */}
+            {bundleAllowIndividualPurchase !== false && bundleSelectedCourses.length > 0 && (
+              <div style={{ marginBottom: '24px', padding: '20px', borderRadius: '20px', background: '#f0f9ff', border: '1.5px solid #bae6fd' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <span style={{ fontSize: '20px' }}>💰</span>
+                  <label style={{ fontSize: '14px', fontWeight: '900', color: '#0369a1', textTransform: 'uppercase' }}>Subject Specific Pricing</label>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {bundleSelectedCourses.map((id: string) => {
+                    const course = (courses || []).find((c: any) => c.id === id);
+                    if (!course) return null;
+                    const mapping = bundleIndividualMapping[id] || {};
+                    
+                    return (
+                      <div key={id} style={{ background: '#fff', padding: '14px', borderRadius: '12px', border: '1px solid #e0f2fe' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '10px' }}>{course.name}</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                          <div>
+                            <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>Recorded Price (₹)</div>
+                            <input 
+                              type="number" 
+                              value={mapping.recorded || ''} 
+                              onChange={e => setBundleIndividualMapping({ ...bundleIndividualMapping, [id]: { ...mapping, recorded: e.target.value } })}
+                              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }} 
+                              placeholder="e.g. 1000"
+                            />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>Live Price (₹)</div>
+                            <input 
+                              type="number" 
+                              value={mapping.live || ''} 
+                              onChange={e => setBundleIndividualMapping({ ...bundleIndividualMapping, [id]: { ...mapping, live: e.target.value } })}
+                              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }} 
+                              placeholder="e.g. 2000"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* TIERED PRICING (MODAL DYNAMIC FIELDS) */}
             {bundleSelectedCourses.length > 0 && (
               <div style={{ marginBottom: '24px' }}>
@@ -3119,6 +3237,10 @@ export default function ExploreCoursesPage() {
                   if (!bundleName || bundleSelectedCourses.length === 0) { alert('Bundle requires a name and at least one course.'); return }
                   setCreating(true)
                   try {
+                    const combinedCoursePrices = { 
+                      ...bundleTierPrices,
+                      individualMapping: bundleIndividualMapping
+                    };
                     const res = await fetch('/api/bundle-offerings', {
                       method: 'POST', headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -3128,8 +3250,13 @@ export default function ExploreCoursesPage() {
                         liveOriginalPrice: bundleTierPrices[bundleSelectedCourses.length]?.liveOriginal ? Number(bundleTierPrices[bundleSelectedCourses.length].liveOriginal) : (bundleLiveOriginalPrice ? Number(bundleLiveOriginalPrice) : undefined),
                         liveDiscountPrice: bundleTierPrices[bundleSelectedCourses.length]?.liveDiscount ? Number(bundleTierPrices[bundleSelectedCourses.length].liveDiscount) : (bundleLiveDiscountPrice ? Number(bundleLiveDiscountPrice) : undefined),
                         allowIndividualPurchase: !!bundleAllowIndividualPurchase,
+                        enableBundleDiscount: bundleEnableBundleDiscount,
+                        bundleDiscountType: bundleDiscountType,
+                        bundleDiscountValue: bundleDiscountValue,
+                        bundleDiscountApplicability: bundleDiscountApplicability,
+                        requireAllCourses: bundleRequireAllCourses,
                         forceClassType: bundleForceClassType || null,
-                        coursePrices: JSON.stringify(bundleTierPrices),
+                        coursePrices: JSON.stringify(combinedCoursePrices),
                         startingPrice: bundleStartingPrice ? Number(bundleStartingPrice) : undefined,
                       })
                     })
