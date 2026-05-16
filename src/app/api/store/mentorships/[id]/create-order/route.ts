@@ -73,8 +73,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (totalAmount === 0) {
       // Handle free mentorship booking for all slots
       const bookings = await Promise.all(slotTimes.map(slotTime => 
-        prisma.mentorshipBooking.create({
-          data: {
+        prisma.mentorshipBooking.upsert({
+          where: {
+            mentorshipId_slotDate_slotTime: {
+              mentorshipId: mentorship.id,
+              slotDate,
+              slotTime
+            }
+          },
+          update: {
+            userId: user.id,
+            amount: 0,
+            status: 'PAID'
+          },
+          create: {
             mentorshipId: mentorship.id,
             userId: user.id,
             slotDate,
@@ -98,8 +110,21 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     // Create pending bookings for all slots
     const bookings = await Promise.all(slotTimes.map(slotTime => 
-      prisma.mentorshipBooking.create({
-        data: {
+      prisma.mentorshipBooking.upsert({
+        where: {
+          mentorshipId_slotDate_slotTime: {
+            mentorshipId: mentorship.id,
+            slotDate,
+            slotTime
+          }
+        },
+        update: {
+          userId: user.id,
+          amount: pricePerSlot,
+          status: 'PENDING',
+          razorpayOrderId: order.id
+        },
+        create: {
           mentorshipId: mentorship.id,
           userId: user.id,
           slotDate,

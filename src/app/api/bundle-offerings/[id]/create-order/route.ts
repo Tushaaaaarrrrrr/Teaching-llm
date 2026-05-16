@@ -29,35 +29,46 @@ export async function POST(
 
     // Determine which courses to charge for
     let courseEntries: Array<{ courseId: string; accessType: string; price: number }> = []
+    const tierPrices = bundle.coursePrices ? JSON.parse(bundle.coursePrices) : {}
+    const isFixed = bundle.allowIndividualPurchase === false
+    const individualMapping = tierPrices.individualMapping || {}
+    const hasIndividualMapping = Object.keys(individualMapping).length > 0
 
-    if (buyAll) {
-      // If buyAll is true, we still respect perCourseAccessTypes for individual subjects if provided,
-      // otherwise we fallback to the global accessType.
-      for (const bc of bundle.courses) {
-        const offering = await prisma.courseOffering.findFirst({ where: { courseId: bc.course.id }, orderBy: { createdAt: 'desc' } })
-        const perType = perCourseAccessTypes && perCourseAccessTypes[bc.course.id] ? perCourseAccessTypes[bc.course.id] : accessType
-        const price = perType === 'RECORDED' ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0) : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0)
-        courseEntries.push({ courseId: bc.course.id, accessType: perType, price })
-      }
-      
-      // Override with bundle base price if applicable (all same type and buyAll)
-      const allSameType = courseEntries.every(e => e.accessType === courseEntries[0].accessType)
-      const globalBundlePrice = courseEntries.length > 0 ? (courseEntries[0].accessType === 'RECORDED' ? bundle.recordedDiscountPrice ?? bundle.recordedOriginalPrice : bundle.liveDiscountPrice ?? bundle.liveOriginalPrice) : null
-      
-      if (allSameType && globalBundlePrice != null) {
-        const count = courseEntries.length
-        const pricePerCourse = Number(globalBundlePrice) / count
-        courseEntries = courseEntries.map(e => ({ ...e, price: pricePerCourse }))
-      }
-    } else {
-      const sel = Array.isArray(selectedCourseIds) && selectedCourseIds.length ? selectedCourseIds : []
-      if (sel.length === 0) return NextResponse.json({ error: 'No courses selected' }, { status: 400 })
-      for (const cid of sel) {
+    const selectedList = buyAll ? bundle.courses.map(bc => bc.course.id) : (Array.isArray(selectedCourseIds) && selectedCourseIds.length ? selectedCourseIds : [])
+    if (selectedList.length === 0) return NextResponse.json({ error: 'No courses selected' }, { status: 400 })
+
+    const count = selectedList.length
+    const tier = tierPrices[count]
+
+    for (const cid of selectedList) {
+      const perType = perCourseAccessTypes && perCourseAccessTypes[cid] ? perCourseAccessTypes[cid] : accessType
+      let price = 0
+
+      if (isFixed) {
+        // Fixed bundle: use global bundle price fields, distributed across courses
+        const bundlePrice = perType === 'RECORDED'
+          ? bundle.recordedDiscountPrice ?? bundle.recordedOriginalPrice
+          : bundle.liveDiscountPrice ?? bundle.liveOriginalPrice
+        price = (Number(bundlePrice) || 0) / count
+      } else if (hasIndividualMapping && individualMapping[cid]) {
+        // Non-fixed with subject-specific pricing
+        const custom = individualMapping[cid]
+        price = perType === 'RECORDED' ? Number(custom.recorded || 0) : Number(custom.live || 0)
+      } else if (tier) {
+        // Tiered pricing (tier[count] = bundle total for N courses)
+        const tierVal = perType === 'RECORDED'
+          ? (tier.recordedDiscount || tier.recordedOriginal || 0)
+          : (tier.liveDiscount || tier.liveOriginal || 0)
+        price = Number(tierVal) / count
+      } else {
+        // Fallback: sum individual offering prices
         const offering = await prisma.courseOffering.findFirst({ where: { courseId: cid }, orderBy: { createdAt: 'desc' } })
-        const perType = perCourseAccessTypes && perCourseAccessTypes[cid] ? perCourseAccessTypes[cid] : accessType
-        const price = perType === 'RECORDED' ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0) : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0)
-        courseEntries.push({ courseId: cid, accessType: perType, price })
+        price = perType === 'RECORDED' 
+          ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0) 
+          : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0)
       }
+
+      courseEntries.push({ courseId: cid, accessType: perType, price })
     }
 
     // ── Calculate subtotal ──

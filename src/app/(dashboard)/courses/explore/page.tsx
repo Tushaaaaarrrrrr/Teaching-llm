@@ -1531,13 +1531,18 @@ export default function ExploreCoursesPage() {
                 >
                   <X size={20} />
                 </button>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '900' }}>{activeBundle.name}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', paddingRight: '48px' }}>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#1e293b' }}>{activeBundle.name}</h3>
+                {activeBundle.description && (
+                  <p style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', fontWeight: '500', maxWidth: '80%' }}>{activeBundle.description}</p>
+                )}
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowBatchComparisonModal(true) }}
                   style={{
-                    padding: '6px 12px', borderRadius: '10px',
+                    padding: '8px 16px', borderRadius: '12px',
                     background: 'rgba(99,102,241,0.08)',
                     border: '1.5px solid rgba(99,102,241,0.2)', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: '6px',
