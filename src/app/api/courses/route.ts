@@ -94,8 +94,8 @@ export async function GET() {
       const { topics, ...rest } = course
       return {
         ...rest,
-        isExpired: isCourseExpired(course),
-        isEffectivelyDisabled: isCourseEffectivelyDisabled(course),
+        isExpired: isManager ? false : isCourseExpired(course),
+        isEffectivelyDisabled: isManager ? false : isCourseEffectivelyDisabled(course),
         enrollmentType: course.isDemo ? 'DEMO' : course.isFree ? 'FREE' : (enrollmentTypeMap.get(course.id) || 'LIVE'),
         _count: {
           ...course._count,

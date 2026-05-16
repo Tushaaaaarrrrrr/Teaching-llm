@@ -231,10 +231,14 @@ export async function POST(
 
       // Enroll user in courses
       for (const entry of courseEntries) {
+        const isChampion = entry.accessType === 'CHAMPION';
+        const enrollmentType = isChampion ? 'LIVE' : entry.accessType;
+        const packageName = isChampion ? 'CHAMPION' : null;
+
         await prisma.enrollment.upsert({
           where: { userId_courseId: { userId: session.userId, courseId: entry.courseId } },
-          update: { type: entry.accessType as any },
-          create: { userId: session.userId, courseId: entry.courseId, type: entry.accessType as any }
+          update: { type: enrollmentType as any, packageName },
+          create: { userId: session.userId, courseId: entry.courseId, type: enrollmentType as any, packageName }
         })
       }
 

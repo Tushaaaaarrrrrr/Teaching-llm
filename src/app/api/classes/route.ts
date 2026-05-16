@@ -36,6 +36,7 @@ export async function GET() {
         icon: true,
         isDisabled: true,
         isCommunityActive: true,
+        expiresAt: true,
         lastMessageAt: true,
         _count: {
           select: {
@@ -55,6 +56,8 @@ export async function GET() {
     })
     const readMap = new Map(readStates.map(r => [r.courseId, r.lastReadAt.getTime()]))
 
+    const isManager = isManagerOrSuperAdmin(session.role)
+
     const formattedCourses = courses.map((course: any) => {
         const lastMsgTime = course.lastMessageAt ? course.lastMessageAt.getTime() : 0;
         const lastReadTime = readMap.get(course.id) || 0;
@@ -62,8 +65,8 @@ export async function GET() {
 
         return {
           ...course,
-          isExpired: isCourseExpired(course),
-          isEffectivelyDisabled: isCourseEffectivelyDisabled(course),
+          isExpired: isManager ? false : isCourseExpired(course),
+          isEffectivelyDisabled: isManager ? false : isCourseEffectivelyDisabled(course),
           hasUnread,
         }
       })
