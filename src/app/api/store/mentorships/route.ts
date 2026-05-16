@@ -1,3 +1,5 @@
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
 
 export async function POST(req: Request) {
