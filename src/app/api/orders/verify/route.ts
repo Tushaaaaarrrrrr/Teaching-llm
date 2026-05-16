@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import crypto from 'crypto'
+import { logActivity, MODULE, ACTION } from '@/lib/activity-log'
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +41,21 @@ export async function POST(request: NextRequest) {
         }
       } else {
         await prisma.enrollment.create({ data: { userId: session.userId, courseId: item.courseId, type: item.accessType as 'RECORDED' | 'LIVE' } })
-        // Optionally queue google group sync
+        
+        // Log individual enrollment
+        logActivity({
+          userId: session.userId,
+          userName: session.name || session.email || 'User',
+          userRole: session.role,
+          actionType: ACTION.PURCHASE_COMPLETED,
+          actionDescription: `Enrolled in course through order: ${item.courseId} (${item.accessType})`,
+          moduleName: MODULE.STORE,
+          targetId: item.courseId,
+          metadata: {
+            orderId: order.id,
+            accessType: item.accessType
+          }
+        })
       }
     }
 

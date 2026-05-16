@@ -1475,20 +1475,17 @@ export default function ExploreCoursesPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '900' }}>{activeBundle.name}</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '13px', color: '#64748b' }}>{activeBundle.courses.length} courses</span>
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowBatchComparisonModal(true) }}
                   style={{
-                    width: '28px', height: '28px', borderRadius: '50%',
-                    background: 'rgba(99,102,241,0.12)',
-                    border: '1.5px solid rgba(99,102,241,0.3)', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#6366f1', fontSize: '13px', fontWeight: '800',
-                    fontStyle: 'italic',
+                    padding: '6px 12px', borderRadius: '10px',
+                    background: 'rgba(99,102,241,0.08)',
+                    border: '1.5px solid rgba(99,102,241,0.2)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    color: '#6366f1', fontSize: '13px', fontWeight: '800'
                   }}
-                  title="Compare PLUS vs PRO"
                 >
-                  ?
+                  click me to see difference >
                 </button>
               </div>
             </div>
@@ -1531,7 +1528,7 @@ export default function ExploreCoursesPage() {
                             )
                           })()}
                         </div>
-                        {(!activeBundle.allowIndividualPurchase || activeBundle.coursePrices) ? (
+                        {((activeBundle.allowIndividualPurchase === false || activeBundle.coursePrices) && activeBundle.courses.length === selectedList.length) ? (
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                              <span style={{ fontSize: '13px', color: '#6366f1', fontWeight: '800', background: 'rgba(99,102,241,0.08)', padding: '4px 10px', borderRadius: '8px' }}>✨ Included in Bundle</span>
                           </div>
@@ -1550,8 +1547,7 @@ export default function ExploreCoursesPage() {
                                   <div style={{ fontSize: '11px', color: '#94a3b8' }}>Live</div>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                  <label style={{ fontSize: '12px', color: '#334155', fontWeight: '700' }}>Choose</label>
-                                  <select value={bundleSelectedForPurchase[course.id] || 'RECORDED'} onChange={e => setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: e.target.value as 'RECORDED' | 'LIVE' })} style={{ padding: '6px 8px', borderRadius: '8px' }}>
+                                  <select value={bundleSelectedForPurchase[course.id] || 'RECORDED'} onChange={e => setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: e.target.value as 'RECORDED' | 'LIVE' })} style={{ padding: '4px 8px', borderRadius: '8px', border: '1.5px solid #e2e8f0', fontSize: '12px', fontWeight: '700' }}>
                                     <option value="RECORDED">Recorded</option>
                                     <option value="LIVE">Live</option>
                                   </select>
@@ -1575,7 +1571,7 @@ export default function ExploreCoursesPage() {
                       </div>
                       <div style={{ fontSize: '12px', color: '#b45309', marginTop: '4px', fontWeight: '600' }}>
                         {activeBundle.requireAllCourses 
-                          ? "This discount is automatically applied when you enroll in all courses in this term." 
+                          ? `This discount is automatically applied when you enroll in all courses (as ${activeBundle.bundleDiscountApplicability === 'BOTH' ? 'Live or Recorded' : activeBundle.bundleDiscountApplicability === 'LIVE' ? 'Live PRO' : 'Recorded PLUS'}) in this term.` 
                           : "Save more by enrolling in this curated course bundle."}
                       </div>
                     </div>
@@ -1644,30 +1640,19 @@ export default function ExploreCoursesPage() {
                     }
                   } else {
                     // Fallback to existing bundle prices or sum
-                    if (isFixed || selectedList.length === activeBundle.courses.length) {
+                    const isBuyingAll = selectedList.length === activeBundle.courses.length;
+                    const useBundleBasePrice = (isFixed || isBuyingAll) && (effectiveAccessType === 'RECORDED' ? activeBundle.recordedOriginalPrice != null : activeBundle.liveOriginalPrice != null);
+
+                    if (useBundleBasePrice) {
                       const bundlePrice = effectiveAccessType === 'RECORDED' ? activeBundle.recordedDiscountPrice ?? activeBundle.recordedOriginalPrice : activeBundle.liveDiscountPrice ?? activeBundle.liveOriginalPrice;
                       const bundleOriginal = effectiveAccessType === 'RECORDED' ? activeBundle.recordedOriginalPrice ?? activeBundle.recordedDiscountPrice : activeBundle.liveOriginalPrice ?? activeBundle.liveDiscountPrice;
                       
-                      if (bundlePrice != null) {
-                        totalPrice = bundlePrice;
-                        originalTotalPrice = bundleOriginal || bundlePrice;
-                      } else {
-                        selectedList.forEach((courseId: string) => {
-                          const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
-                          const selectedType = isFixed ? effectiveAccessType : (bundleSelectedForPurchase[courseId] || 'RECORDED');
-                          if (selectedType === 'RECORDED') {
-                            totalPrice += offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0;
-                            originalTotalPrice += offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0;
-                          } else {
-                            totalPrice += offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0;
-                            originalTotalPrice += offering?.liveOriginalPrice ?? offering?.liveDiscountPrice ?? 0;
-                          }
-                        });
-                      }
+                      totalPrice = bundlePrice || 0;
+                      originalTotalPrice = bundleOriginal || totalPrice;
                     } else {
                       selectedList.forEach((courseId: string) => {
                         const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
-                        const selectedType = bundleSelectedForPurchase[courseId] || 'RECORDED';
+                        const selectedType = bundleSelectedForPurchase[courseId] || effectiveAccessType || 'RECORDED';
                         if (selectedType === 'RECORDED') {
                           totalPrice += offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0;
                           originalTotalPrice += offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0;
@@ -1709,7 +1694,20 @@ export default function ExploreCoursesPage() {
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px' }}>
                           <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '700' }}>Selected Courses</span>
-                          <span style={{ fontSize: '14px', fontWeight: '900', color: '#1e293b' }}>{selectedList.length}</span>
+                          <span style={{ fontSize: '12px', fontWeight: '800', color: '#1e293b' }}>
+                            {(() => {
+                              const prices: number[] = [];
+                              selectedList.forEach((courseId: string) => {
+                                const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
+                                const selectedType = bundleSelectedForPurchase[courseId] || (activeBundle.forceClassType || bundleGlobalAccessType) || 'RECORDED';
+                                const price = selectedType === 'RECORDED' 
+                                  ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0)
+                                  : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
+                                if (price > 0) prices.push(price);
+                              });
+                              return prices.length > 0 ? prices.join(' + ') : selectedList.length;
+                            })()}
+                          </span>
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px' }}>
@@ -1815,17 +1813,21 @@ export default function ExploreCoursesPage() {
                             padding: '18px', 
                             borderRadius: '16px', 
                             background: isAllEnrolled ? '#e2e8f0' : 'linear-gradient(135deg, #4f46e5, #6366f1)', 
-                            color: isAllEnrolled ? '#94a3b8' : '#fff', 
+                            color: '#fff', 
                             fontWeight: '950', 
                             fontSize: '16px', 
                             boxShadow: isAllEnrolled ? 'none' : '0 12px 24px rgba(79, 70, 229, 0.3)', 
                             border: 'none', 
                             cursor: (isProcessing || isAllEnrolled) ? 'not-allowed' : 'pointer',
                             textTransform: 'uppercase',
-                            letterSpacing: '0.05em'
+                            letterSpacing: '0.05em',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            transform: 'scale(1)'
                           }}
+                          onMouseOver={(e) => { if (!isProcessing && !isAllEnrolled) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 15px 30px rgba(79, 70, 229, 0.4)'; } }}
+                          onMouseOut={(e) => { if (!isProcessing && !isAllEnrolled) { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 12px 24px rgba(79, 70, 229, 0.3)'; } }}
                         >
-                          {isProcessing ? 'Processing...' : (isAllEnrolled ? 'ALREADY ENROLLED' : (finalTotal === 0 ? 'ENROLL FREE 🎉' : `ENROLL NOW — ₹${finalTotal}`))}
+                          {isProcessing ? 'Processing...' : (isAllEnrolled ? 'ALREADY ENROLLED' : (finalTotal === 0 ? 'ENROLL FREE 🎉' : 'ENROLL NOW'))}
                         </button>
                         {isAllEnrolled && (
                           <div style={{ textAlign: 'center', fontSize: '11px', color: '#64748b', fontWeight: '700', marginTop: '12px' }}>
@@ -3212,20 +3214,20 @@ export default function ExploreCoursesPage() {
       {/* MENTORSHIP BOOKING MODAL */}
       {showMentorshipBookingModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowMentorshipBookingModal(null)}>
-          <div style={{ background: '#fff', borderRadius: '32px', padding: '32px', width: '100%', maxWidth: '550px', animation: 'modalSlideUp 0.3s ease-out', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }} onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowMentorshipBookingModal(null)} style={{ position: 'absolute', top: '30px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          <div style={{ background: '#fff', borderRadius: '32px', padding: '24px', width: '95%', maxWidth: '480px', animation: 'modalSlideUp 0.3s ease-out', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }} onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowMentorshipBookingModal(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             
-            <div style={{ marginBottom: '32px' }}>
-              <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#1e293b', marginBottom: '8px' }}>Book Session with {showMentorshipBookingModal.mentorName}</h3>
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                <span style={{ fontSize: '14px', color: '#64748b', background: '#f1f5f9', padding: '6px 12px', borderRadius: '8px', fontWeight: '700' }}>⏱️ {showMentorshipBookingModal.slotDuration} mins per slot</span>
-                <span style={{ fontSize: '14px', color: '#b45309', background: '#fef3c7', padding: '6px 12px', borderRadius: '8px', fontWeight: '700' }}>💰 ₹{showMentorshipBookingModal.pricePerSlot} / slot</span>
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#1e293b', marginBottom: '8px' }}>Book Session with {showMentorshipBookingModal.mentorName}</h3>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', color: '#64748b', background: '#f1f5f9', padding: '5px 10px', borderRadius: '8px', fontWeight: '700' }}>⏱️ {showMentorshipBookingModal.slotDuration} mins / slot</span>
+                <span style={{ fontSize: '12px', color: '#b45309', background: '#fef3c7', padding: '5px 10px', borderRadius: '8px', fontWeight: '700' }}>💰 ₹{showMentorshipBookingModal.pricePerSlot} / slot</span>
               </div>
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '800', marginBottom: '12px', color: '#1e293b' }}>1. Select Date</label>
-              <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '10px' }}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', marginBottom: '10px', color: '#1e293b' }}>1. Select Date</label>
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
                 {Array.from(new Set(JSON.parse(showMentorshipBookingModal.availableSlots || '[]').map((s: any) => s.date))).sort().map((d: any) => {
                   const isSelected = mentorshipBookingDate === d;
                   return (
@@ -3233,9 +3235,9 @@ export default function ExploreCoursesPage() {
                       key={d}
                       onClick={() => { setMentorshipBookingDate(d); setMentorshipBookingTimes([]) }}
                       style={{
-                        padding: '12px 20px', borderRadius: '16px', border: isSelected ? '2px solid #f59e0b' : '2px solid #e2e8f0',
+                        padding: '10px 16px', borderRadius: '12px', border: isSelected ? '2px solid #f59e0b' : '2px solid #e2e8f0',
                         background: isSelected ? '#fffbeb' : '#fff', color: isSelected ? '#92400e' : '#64748b',
-                        fontWeight: '800', fontSize: '14px', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
+                        fontWeight: '800', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
                       }}
                     >
                       {new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -3245,16 +3247,16 @@ export default function ExploreCoursesPage() {
               </div>
             </div>
 
-            <div style={{ marginBottom: '32px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '800', marginBottom: '12px', color: '#1e293b' }}>
-                2. Choose Time Slots <span style={{ fontWeight: '500', color: '#64748b', fontSize: '12px' }}>(Select multiple if needed)</span>
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', marginBottom: '10px', color: '#1e293b' }}>
+                2. Choose Time Slots <span style={{ fontWeight: '500', color: '#64748b', fontSize: '11px' }}>(Multi-select)</span>
               </label>
               {!mentorshipBookingDate ? (
-                <div style={{ padding: '40px', background: '#f8fafc', borderRadius: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '14px', fontWeight: '600', border: '2px dashed #e2e8f0' }}>
+                <div style={{ padding: '24px', background: '#f8fafc', borderRadius: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '13px', fontWeight: '600', border: '2px dashed #e2e8f0' }}>
                   Please select a date first
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
                   {(() => {
                     const now = new Date();
                     const slots = JSON.parse(showMentorshipBookingModal.availableSlots || '[]')
@@ -3287,16 +3289,16 @@ export default function ExploreCoursesPage() {
                             else setMentorshipBookingTimes([...mentorshipBookingTimes, s.time])
                           }}
                           style={{
-                            padding: '14px', borderRadius: '16px', border: isSelected ? '2px solid #f59e0b' : '2px solid #e2e8f0',
+                            padding: '10px', borderRadius: '14px', border: isSelected ? '2px solid #f59e0b' : '2px solid #e2e8f0',
                             background: isSelected ? '#fffbeb' : (disabled ? '#f1f5f9' : '#fff'),
                             color: isSelected ? '#92400e' : (disabled ? '#cbd5e1' : '#334155'),
-                            fontWeight: '800', fontSize: '13px', cursor: disabled ? 'not-allowed' : 'pointer',
+                            fontWeight: '800', fontSize: '12.5px', cursor: disabled ? 'not-allowed' : 'pointer',
                             transition: 'all 0.2s', position: 'relative'
                           }}
                         >
                           {timeInterval}
-                          {booked && <div style={{ fontSize: '9px', color: '#ef4444', marginTop: '4px' }}>ALREADY BOOKED</div>}
-                          {isPast && !booked && <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '4px' }}>PAST TIME</div>}
+                          {booked && <div style={{ fontSize: '8px', color: '#ef4444', marginTop: '2px' }}>BOOKED</div>}
+                          {isPast && !booked && <div style={{ fontSize: '8px', color: '#94a3b8', marginTop: '2px' }}>PAST</div>}
                         </button>
                       )
                     });
@@ -3305,33 +3307,33 @@ export default function ExploreCoursesPage() {
               )}
             </div>
 
-            <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '24px', border: '1.5px solid #e2e8f0' }}>
+            <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '24px', border: '1.5px solid #e2e8f0' }}>
               {/* Mentorship Note */}
-              <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(54,54,232,0.05)', borderRadius: '16px', border: '1px solid rgba(54,54,232,0.1)', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '18px' }}>📧</span>
-                <p style={{ fontSize: '12.5px', color: '#4b5563', margin: 0, lineHeight: '1.5', fontWeight: '600' }}>
-                  <strong>Note:</strong> A Google Meet invite will be sent to your email after payment. Please check your inbox. You can also access it in the <span style={{ color: '#3636e8' }}>"Live Sessions"</span> tab or your Calendar.
+              <div style={{ marginBottom: '12px', padding: '10px 14px', background: 'rgba(54,54,232,0.05)', borderRadius: '14px', border: '1px solid rgba(54,54,232,0.1)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '16px' }}>📧</span>
+                <p style={{ fontSize: '11.5px', color: '#4b5563', margin: 0, lineHeight: '1.4', fontWeight: '600' }}>
+                  <strong>Note:</strong> A Google Meet invite will be sent to your email after payment. Access it in the <span style={{ color: '#3636e8' }}>"Live Sessions"</span> tab or Calendar.
                 </p>
               </div>
 
               {/* STUDENT QUESTION FIELD */}
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Topics / Questions for Mentor (Optional)</label>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#64748b', marginBottom: '6px', textTransform: 'uppercase' }}>Questions for Mentor (Optional)</label>
                 <textarea 
                   id="userQuestionInput"
-                  placeholder="What would you like to discuss? e.g. JEE Main Strategy, Specific Maths doubt, etc."
-                  style={{ width: '100%', padding: '16px', borderRadius: '16px', border: '2px solid #e2e8f0', fontSize: '14px', color: '#1e293b', minHeight: '80px', resize: 'vertical' }}
+                  placeholder="e.g. JEE Main Strategy, specific doubts, etc."
+                  style={{ width: '100%', padding: '12px', borderRadius: '14px', border: '2px solid #e2e8f0', fontSize: '13px', color: '#1e293b', minHeight: '60px', resize: 'vertical' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>Total Selected</div>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>{mentorshipBookingTimes.length} slots for {mentorshipBookingDate ? new Date(mentorshipBookingDate).toLocaleDateString() : '...'}</div>
+                  <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b' }}>Total Selected</div>
+                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>{mentorshipBookingTimes.length} slots for {mentorshipBookingDate ? new Date(mentorshipBookingDate).toLocaleDateString() : '...'}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>Total Amount</div>
-                  <div style={{ fontSize: '28px', fontWeight: '900', color: '#f59e0b' }}>₹{mentorshipBookingTimes.length * showMentorshipBookingModal.pricePerSlot}</div>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Total Amount</div>
+                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#f59e0b' }}>₹{mentorshipBookingTimes.length * showMentorshipBookingModal.pricePerSlot}</div>
                 </div>
               </div>
 

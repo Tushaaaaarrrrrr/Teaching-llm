@@ -18,6 +18,7 @@ export const MODULE = {
   PROFILE: 'Profile',
   FAQ: 'FAQ',
   ENROLLMENT: 'Enrollment',
+  STORE: 'Store',
 } as const
 
 export const ACTION = {
@@ -82,6 +83,7 @@ export const ACTION = {
   EXTERNAL_ENROLLMENT: 'EXTERNAL_ENROLLMENT',
   FREE_ENROLLMENT: 'FREE_ENROLLMENT',
   FREE_UNENROLLMENT: 'FREE_UNENROLLMENT',
+  PURCHASE_COMPLETED: 'PURCHASE_COMPLETED',
 } as const
 
 interface LogActivityParams {

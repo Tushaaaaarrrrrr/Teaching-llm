@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import crypto from 'crypto'
 import { getSession } from '@/lib/auth'
+import { logActivity, MODULE, ACTION } from '@/lib/activity-log'
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -65,9 +66,25 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return currentBookings
     })
 
-    // Trigger confirmation email for each booking
+    // Trigger confirmation email and log activity for each booking
     const { sendEmailNotification } = require('@/lib/email-service')
+    const { user: userSession } = session as any;
     for (const booking of result) {
+      logActivity({
+        userId: userSession.id,
+        userName: userSession.name || userSession.email || 'User',
+        userRole: userSession.role,
+        actionType: ACTION.PURCHASE_COMPLETED,
+        actionDescription: `Booked mentorship session with ${booking.mentorship.mentorName} for ${booking.slotDate} at ${booking.slotTime}`,
+        moduleName: MODULE.STORE,
+        targetId: booking.id,
+        metadata: {
+          itemType: 'MENTORSHIP',
+          amount: booking.amount,
+          razorpayPaymentId: razorpay_payment_id
+        }
+      })
+
       await sendEmailNotification('mentorship_confirmed', {
         userEmail: booking.user.email,
         userName: booking.user.name,

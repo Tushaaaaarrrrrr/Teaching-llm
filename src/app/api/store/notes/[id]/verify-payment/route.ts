@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import crypto from 'crypto'
 import { getSession } from '@/lib/auth'
+import { logActivity, MODULE, ACTION } from '@/lib/activity-log'
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -32,11 +33,29 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     // Create Note Access record after successful payment
-    await prisma.storeNoteAccess.create({
+    const access = await prisma.storeNoteAccess.create({
       data: {
         noteId: params.id,
         userId: user.id,
         orderId: razorpay_payment_id
+      },
+      include: { note: true }
+    })
+
+    // Log the purchase
+    logActivity({
+      userId: user.id,
+      userName: user.name || user.email || 'User',
+      userRole: user.role,
+      actionType: ACTION.PURCHASE_COMPLETED,
+      actionDescription: `Purchased study note: ${access.note.title} for ₹${access.note.price}`,
+      moduleName: MODULE.STORE,
+      targetId: access.id,
+      metadata: {
+        itemType: 'STUDY_NOTE',
+        itemId: params.id,
+        amount: access.note.price,
+        razorpayPaymentId: razorpay_payment_id
       }
     })
 
