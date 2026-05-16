@@ -33,9 +33,6 @@ export async function logCourseDataDiagnostics(params: {
     const lectureCount = await tableCount('Lecture')
     const materialCount = await tableCount('Material')
     const courseOfferingCount = await tableCount('CourseOffering')
-    const legacyCourseCatalogCount = await tableCount('course_catalog')
-    const legacyCoursesCount = await tableCount('courses')
-    const legacyWebsiteOrdersCount = await tableCount('website_orders')
 
     const recentClasses = await prisma.course.findMany({
       select: {
@@ -57,9 +54,6 @@ export async function logCourseDataDiagnostics(params: {
       lectureCount,
       materialCount,
       courseOfferingCount,
-      legacyCourseCatalogCount,
-      legacyCoursesCount,
-      legacyWebsiteOrdersCount,
       recentClasses,
       note: 'LMS courses are stored in the physical "Class" table. "courses" and "course_catalog" are legacy/store catalog tables and are not LMS course content.',
     }))
