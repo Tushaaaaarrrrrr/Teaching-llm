@@ -1785,9 +1785,12 @@ export default function ExploreCoursesPage() {
                     const allSelected = selectedList.length === activeBundle.courses.length;
                     const meetsRequireAll = !activeBundle.requireAllCourses || allSelected;
                     
-                    const liveCount = Object.values(bundleSelectedForPurchase).filter(v => v === 'LIVE').length;
-                    const dominantType = liveCount >= selectedList.length / 2 ? 'LIVE' : 'RECORDED';
-                    const accessOk = applicability === 'BOTH' || applicability === dominantType;
+                    let accessOk = true;
+                    if (applicability === 'LIVE') {
+                      accessOk = selectedList.every((id: string) => (bundleSelectedForPurchase[id] || effectiveGlobalType || 'RECORDED') === 'LIVE');
+                    } else if (applicability === 'RECORDED') {
+                      accessOk = selectedList.every((id: string) => (bundleSelectedForPurchase[id] || effectiveGlobalType || 'RECORDED') === 'RECORDED');
+                    }
                     
                     if (accessOk && meetsRequireAll) {
                       if (activeBundle.bundleDiscountType === 'PERCENTAGE') {
@@ -1806,7 +1809,7 @@ export default function ExploreCoursesPage() {
 
                   return (
                     <>
-                      <div style={{ marginBottom: 'auto' }}>
+                      <div style={{ marginBottom: 'auto', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                         <div style={{ fontSize: '18px', color: '#0f172a', fontWeight: '900', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px' }}>Detailed Breakdown</div>
                         
                         {/* For non-fixed bundles: per-course breakdown */}
@@ -1837,10 +1840,7 @@ export default function ExploreCoursesPage() {
                           })}
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', paddingTop: '14px', borderTop: '1.5px solid #f8fafc' }}>
-                          <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '800' }}>Subtotal</span>
-                          <span style={{ fontSize: '15px', fontWeight: '900', color: '#1e293b' }}>₹{totalPrice}</span>
-                        </div>
+                        {/* Subtotal removed to save vertical space */}
 
                         {bundleDiscountAmt > 0 && (() => {
                           let discountApplicability = 'BOTH';
