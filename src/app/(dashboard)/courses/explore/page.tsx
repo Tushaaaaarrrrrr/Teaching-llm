@@ -1638,23 +1638,26 @@ export default function ExploreCoursesPage() {
 
                 {/* Left Bottom Info Area */}
                 <div style={{ background: '#f8fafc', borderRadius: '20px', padding: '20px', border: '1.5px solid #f1f5f9' }}>
-                  {activeBundle.enableBundleDiscount && activeBundle.bundleDiscountValue && (
-                    <div style={{ padding: '14px 18px', borderRadius: '16px', background: 'linear-gradient(135deg, #fef3c7, #fde68a)', marginBottom: '16px', border: '1px solid #f59e0b' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '18px' }}>🏷️</span>
-                        <span style={{ fontSize: '14px', fontWeight: '900', color: '#92400e' }}>
-                          {activeBundle.bundleDiscountType === 'PERCENTAGE' ? `Bundle Offer: ${activeBundle.bundleDiscountValue}% OFF` : `Bundle Offer: ₹${activeBundle.bundleDiscountValue} OFF`}
-                        </span>
+                  {activeBundle.enableBundleDiscount && activeBundle.bundleDiscountValue && (() => {
+                    const applicability = activeBundle.bundleDiscountApplicability || 'BOTH';
+                    const applicabilityLabel = applicability === 'LIVE' ? 'Live Pro Only' : applicability === 'RECORDED' ? 'Recorded Plus Only' : 'Live & Recorded';
+                    const requiresAll = activeBundle.requireAllCourses !== false;
+                    return (
+                      <div style={{ padding: '14px 18px', borderRadius: '16px', background: 'linear-gradient(135deg, #fef3c7, #fde68a)', marginBottom: '16px', border: '1px solid #f59e0b' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '18px' }}>🏷️</span>
+                          <span style={{ fontSize: '14px', fontWeight: '900', color: '#92400e' }}>
+                            {activeBundle.bundleDiscountType === 'PERCENTAGE' ? `Bundle Offer: ${activeBundle.bundleDiscountValue}% OFF` : `Bundle Offer: ₹${activeBundle.bundleDiscountValue} OFF`}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#b45309', fontWeight: '600', paddingLeft: '28px' }}>
+                          {requiresAll
+                            ? `Applied when you enroll in all ${activeBundle.courses.length} subjects. Applies to: ${applicabilityLabel}`
+                            : `Discount applied on selected subjects. Applies to: ${applicabilityLabel}`}
+                        </div>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#b45309', fontWeight: '600', paddingLeft: '28px' }}>
-                        {activeBundle.allowIndividualPurchase === false 
-                          ? `Applied when you enroll in all ${activeBundle.courses.length} subjects. (Class type required given already by manager)` 
-                          : activeBundle.requireAllCourses 
-                            ? `Applied when you enroll in all ${activeBundle.courses.length} subjects. (Which class type as per selection)` 
-                            : "Special discount for curated bundles."}
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {activeBundle.allowIndividualPurchase === false && (
                     <div style={{ padding: '12px 18px', borderRadius: '16px', background: '#eff6ff', border: '1px solid #bfdbfe', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1665,8 +1668,6 @@ export default function ExploreCoursesPage() {
                       </div>
                     </div>
                   )}
-
-                  {/* Apply Class Type to All - HIDDEN for non-fixed bundles, users choose per subject */}
                 </div>
               </div>
 
