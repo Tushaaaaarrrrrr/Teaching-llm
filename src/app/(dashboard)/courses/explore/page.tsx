@@ -87,6 +87,7 @@ export default function ExploreCoursesPage() {
   const [mentorshipBookingTimes, setMentorshipBookingTimes] = useState<string[]>([])
 
   // Mentorship Slots Management
+  const [showManageSlotsModal, setShowManageSlotsModal] = useState<any>(null)
   const [showManageBookingsModal, setShowManageBookingsModal] = useState<any>(null)
   const [allBookingsData, setAllBookingsData] = useState<any[]>([])
   const [loadingAllBookings, setLoadingAllBookings] = useState(false)
