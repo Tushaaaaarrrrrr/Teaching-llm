@@ -506,9 +506,26 @@ export default function ExploreCoursesPage() {
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {bundlePriceRecorded || bundlePriceLive ? (
-                      <button onClick={() => { setActiveBundle(b); setBundleAccessType(bundlePriceRecorded ? 'RECORDED' : 'LIVE'); setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id)); setShowBundleModal(true) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '800' }}>View / Buy</button>
+                      <button onClick={() => { 
+                        setActiveBundle(b); 
+                        setBundleAccessType(bundlePriceRecorded ? 'RECORDED' : 'LIVE'); 
+                        setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id).filter((id: string) => {
+                          if (b.allowIndividualPurchase === false) return true;
+                          const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
+                          return isManager || getEnrollmentStatus(id) === null;
+                        })); 
+                        setShowBundleModal(true) 
+                      }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '800' }}>View / Buy</button>
                     ) : (
-                      <button onClick={() => { setActiveBundle(b); setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id)); setShowBundleModal(true) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: '#f3f4f6', color: '#111827', fontWeight: '800' }}>View</button>
+                      <button onClick={() => { 
+                        setActiveBundle(b); 
+                        setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id).filter((id: string) => {
+                          if (b.allowIndividualPurchase === false) return true;
+                          const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
+                          return isManager || getEnrollmentStatus(id) === null;
+                        })); 
+                        setShowBundleModal(true) 
+                      }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: '#f3f4f6', color: '#111827', fontWeight: '800' }}>View</button>
                     )}
                     {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
                       <>
@@ -1209,21 +1226,33 @@ export default function ExploreCoursesPage() {
                   return (
                     <div key={course.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <input
-                          type="checkbox"
-                          checked={bundleSelectedCoursesToBuy.includes(course.id)}
-                          disabled={activeBundle.allowIndividualPurchase === false}
-                          onChange={(e) => {
-                            if (activeBundle.allowIndividualPurchase === false) return
-                            if (e.target.checked) setBundleSelectedCoursesToBuy([...bundleSelectedCoursesToBuy, course.id])
-                            else setBundleSelectedCoursesToBuy(bundleSelectedCoursesToBuy.filter(id => id !== course.id))
-                          }}
-                          style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#6366f1' }}
-                        />
-                        <div>
-                          <div style={{ fontSize: '15px', fontWeight: '800' }}>{course.name}</div>
-                          <div style={{ fontSize: '12px', color: '#64748b' }}>{course.teacherName || ''}</div>
-                        </div>
+                        {(() => {
+                          const enrollmentType = getEnrollmentStatus(course.id);
+                          const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
+                          const isEnrolled = !isManager && enrollmentType !== null;
+                          return (
+                            <>
+                              <input
+                                type="checkbox"
+                                checked={isEnrolled ? true : bundleSelectedCoursesToBuy.includes(course.id)}
+                                disabled={isEnrolled || activeBundle.allowIndividualPurchase === false}
+                                onChange={(e) => {
+                                  if (activeBundle.allowIndividualPurchase === false || isEnrolled) return
+                                  if (e.target.checked) setBundleSelectedCoursesToBuy([...bundleSelectedCoursesToBuy, course.id])
+                                  else setBundleSelectedCoursesToBuy(bundleSelectedCoursesToBuy.filter(id => id !== course.id))
+                                }}
+                                style={{ width: '18px', height: '18px', cursor: isEnrolled ? 'not-allowed' : 'pointer', accentColor: isEnrolled ? '#10b981' : '#6366f1', opacity: isEnrolled ? 0.6 : 1 }}
+                              />
+                              <div>
+                                <div style={{ fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  {course.name}
+                                  {isEnrolled && <span style={{ fontSize: '10px', background: '#d1fae5', color: '#059669', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: '800' }}>Enrolled</span>}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#64748b' }}>{course.teacherName || ''}</div>
+                              </div>
+                            </>
+                          )
+                        })()}
                       </div>
                       {!activeBundle.allowIndividualPurchase ? (
                         <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -1231,21 +1260,27 @@ export default function ExploreCoursesPage() {
                         </div>
                       ) : (
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '13px', fontWeight: '800' }}>₹{recPrice}</div>
-                            <div style={{ fontSize: '11px', color: '#94a3b8' }}>Recorded</div>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '13px', fontWeight: '800', color: '#4f46e5' }}>₹{livePrice}</div>
-                            <div style={{ fontSize: '11px', color: '#94a3b8' }}>Live</div>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <label style={{ fontSize: '12px', color: '#334155', fontWeight: '700' }}>Choose</label>
-                            <select value={bundleSelectedForPurchase[course.id] || 'RECORDED'} onChange={e => setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: e.target.value as 'RECORDED' | 'LIVE' })} style={{ padding: '6px 8px', borderRadius: '8px' }}>
-                              <option value="RECORDED">Recorded</option>
-                              <option value="LIVE">Live</option>
-                            </select>
-                          </div>
+                          {getEnrollmentStatus(course.id) && userData?.user?.role !== 'MANAGER' && userData?.role !== 'MANAGER' ? (
+                             <div style={{ fontSize: '13px', color: '#059669', fontWeight: '700' }}>✅ Already Purchased</div>
+                          ) : (
+                            <>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '13px', fontWeight: '800' }}>₹{recPrice}</div>
+                                <div style={{ fontSize: '11px', color: '#94a3b8' }}>Recorded</div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '13px', fontWeight: '800', color: '#4f46e5' }}>₹{livePrice}</div>
+                                <div style={{ fontSize: '11px', color: '#94a3b8' }}>Live</div>
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '12px', color: '#334155', fontWeight: '700' }}>Choose</label>
+                                <select value={bundleSelectedForPurchase[course.id] || 'RECORDED'} onChange={e => setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: e.target.value as 'RECORDED' | 'LIVE' })} style={{ padding: '6px 8px', borderRadius: '8px' }}>
+                                  <option value="RECORDED">Recorded</option>
+                                  <option value="LIVE">Live</option>
+                                </select>
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
