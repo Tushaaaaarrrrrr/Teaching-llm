@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import Razorpay from 'razorpay'
-import { getServerSession } from 'next-auth'
+import { getSession } from '@/lib/auth'
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
@@ -10,13 +10,13 @@ const razorpay = new Razorpay({
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession()
-    if (!session?.user?.email) {
+    const session = await getSession()
+    if (!session?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: { email: session.email }
     })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 

@@ -38,7 +38,7 @@ export default function PurchasedMaterialsPage() {
                   </div>
                   <div>
                     <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0, color: '#1e293b' }}>{m.title}</h3>
-                    <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px', fontWeight: '600', color: daysLeft <= 5 ? '#dc2626' : '#16a34a' }}>{daysLeft} days left</div>
+                    <div style={{ fontSize: '13px', marginTop: '2px', fontWeight: '600', color: daysLeft <= 5 ? '#dc2626' : '#16a34a' }}>{daysLeft} days left</div>
                   </div>
                 </div>
                 {m.description && <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px', lineHeight: '1.5' }}>{m.description}</p>}

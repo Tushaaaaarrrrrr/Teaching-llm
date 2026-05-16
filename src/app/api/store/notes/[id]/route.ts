@@ -59,7 +59,13 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       if (existingFile) {
         await prisma.storeNoteFile.update({ where: { id: existingFile.id }, data: { fileUrl } })
       } else {
-        await prisma.storeNoteFile.create({ data: { noteId: id, fileUrl } })
+        await prisma.storeNoteFile.create({ 
+          data: { 
+            noteId: id, 
+            fileUrl,
+            title: updated.title // Use the updated note title
+          } 
+        })
       }
     }
 
