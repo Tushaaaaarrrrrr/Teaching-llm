@@ -1485,7 +1485,7 @@ export default function ExploreCoursesPage() {
                     color: '#6366f1', fontSize: '13px', fontWeight: '800'
                   }}
                 >
-                  click me to see difference >
+                  click me to see difference {'>'}
                 </button>
               </div>
             </div>
