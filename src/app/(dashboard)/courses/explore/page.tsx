@@ -1528,9 +1528,12 @@ export default function ExploreCoursesPage() {
                     const bundleMappings = (bPriceData as any).individualMapping || {};
                     const bundleCustomPrice = bundleMappings[course.id];
 
-                    const recPrice = bundleCustomPrice?.recorded || offering?.recordedDiscountPrice || offering?.recordedOriginalPrice || 0
-                    const livePrice = bundleCustomPrice?.live || offering?.liveDiscountPrice || offering?.liveOriginalPrice || 0
-                    const selectedType = bundleSelectedForPurchase[course.id] || (activeBundle.forceClassType || bundleGlobalAccessType) || 'RECORDED'
+                    const currentCount = bundleSelectedCoursesToBuy.length || activeBundle.courses.length;
+                    const tierForCount = (bPriceData as any)[currentCount];
+
+                    const recPrice = Number(bundleCustomPrice?.recorded || tierForCount?.recordedDiscount || tierForCount?.recordedOriginal || offering?.recordedDiscountPrice || offering?.recordedOriginalPrice || 0);
+                    const livePrice = Number(bundleCustomPrice?.live || tierForCount?.liveDiscount || tierForCount?.liveOriginal || offering?.liveDiscountPrice || offering?.liveOriginalPrice || 0);
+                    const selectedType = bundleSelectedForPurchase[course.id] || (activeBundle.forceClassType || bundleGlobalAccessType) || 'RECORDED';
                     
                     return (
                       <div key={course.id} style={{ 
@@ -1592,12 +1595,18 @@ export default function ExploreCoursesPage() {
                               </div>
                             ) : (
                               <>
-                                <div style={{ textAlign: 'right' }}>
-                                  <div style={{ fontSize: '14px', fontWeight: '900', color: selectedType === 'LIVE' ? '#4f46e5' : '#1e293b' }}>
-                                    ₹{selectedType === 'LIVE' ? livePrice : recPrice}
-                                  </div>
-                                  <div style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>
-                                    {selectedType === 'LIVE' ? 'Live Pro' : 'Recorded Plus'}
+                                {/* Dual price display: show both Recorded + Live prices */}
+                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                    <div style={{ textAlign: 'center' }}>
+                                      <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase' }}>Recorded</div>
+                                      <div style={{ fontSize: '14px', fontWeight: '900', color: selectedType === 'RECORDED' ? '#1e293b' : '#94a3b8' }}>₹{recPrice}</div>
+                                    </div>
+                                    <div style={{ fontSize: '10px', color: '#cbd5e1' }}>|</div>
+                                    <div style={{ textAlign: 'center' }}>
+                                      <div style={{ fontSize: '11px', color: '#6366f1', fontWeight: '700', textTransform: 'uppercase' }}>Live Pro</div>
+                                      <div style={{ fontSize: '14px', fontWeight: '900', color: selectedType === 'LIVE' ? '#4f46e5' : '#94a3b8' }}>₹{livePrice}</div>
+                                    </div>
                                   </div>
                                 </div>
                                 
@@ -1657,36 +1666,7 @@ export default function ExploreCoursesPage() {
                     </div>
                   )}
 
-                  {/* Bulk Toggle - ONLY show for FIXED bundles. For non-fixed, users must choose individually. */}
-                  {activeBundle.allowIndividualPurchase === false && !activeBundle.forceClassType && (
-                    <div style={{ padding: '16px', borderRadius: '16px', background: '#fff', border: '1.5px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#1e293b' }}>Apply Class Type to All</div>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Quickly set all subjects in this bundle</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button 
-                          onClick={() => {
-                            setBundleGlobalAccessType('RECORDED')
-                            const newSelections = { ...bundleSelectedForPurchase }
-                            activeBundle.courses.forEach((c: any) => newSelections[c.course.id] = 'RECORDED')
-                            setBundleSelectedForPurchase(newSelections)
-                            if (couponApplied?.code?.includes('LIVE')) setCouponApplied(null)
-                          }}
-                          style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e2e8f0', fontSize: '11px', fontWeight: '800', background: bundleGlobalAccessType === 'RECORDED' ? '#1e293b' : '#fff', color: bundleGlobalAccessType === 'RECORDED' ? '#fff' : '#64748b', cursor: 'pointer' }}
-                        >Recorded</button>
-                        <button 
-                          onClick={() => {
-                            setBundleGlobalAccessType('LIVE')
-                            const newSelections = { ...bundleSelectedForPurchase }
-                            activeBundle.courses.forEach((c: any) => newSelections[c.course.id] = 'LIVE')
-                            setBundleSelectedForPurchase(newSelections)
-                          }}
-                          style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e2e8f0', fontSize: '11px', fontWeight: '800', background: bundleGlobalAccessType === 'LIVE' ? '#6366f1' : '#fff', color: bundleGlobalAccessType === 'LIVE' ? '#fff' : '#64748b', cursor: 'pointer' }}
-                        >Live Pro</button>
-                      </div>
-                    </div>
-                  )}
+                  {/* Apply Class Type to All - HIDDEN for non-fixed bundles, users choose per subject */}
                 </div>
               </div>
 
@@ -2720,8 +2700,8 @@ export default function ExploreCoursesPage() {
               <input type="text" value={editBundleData.description ?? ''} onChange={e => setEditBundleData({...editBundleData, description: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
             </div>
 
-            {/* EDIT TIERED PRICING */}
-            {(editBundleData.courseIds?.length || 0) > 0 && (
+            {/* EDIT TIERED PRICING - only shown for fixed bundles as legacy fallback */}
+            {(editBundleData.courseIds?.length || 0) > 0 && editBundleData.allowIndividualPurchase === false && (
               <div style={{ marginBottom: '24px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '12px' }}>
                   Pricing Tiers (Max 6)
