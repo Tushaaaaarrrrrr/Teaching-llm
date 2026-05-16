@@ -1761,7 +1761,11 @@ export default function ExploreCoursesPage() {
                   // Calculate bundle discount
                   let bundleDiscountAmt = 0;
                   if (activeBundle.enableBundleDiscount && activeBundle.bundleDiscountValue) {
-                    const applicability = activeBundle.bundleDiscountApplicability || 'BOTH';
+                    let applicability = activeBundle.bundleDiscountApplicability || 'BOTH';
+                    try {
+                      const pd = JSON.parse(activeBundle.coursePrices || '{}');
+                      if (pd.bundleDiscountApplicability) applicability = pd.bundleDiscountApplicability;
+                    } catch(e) {}
                     const allSelected = selectedList.length === activeBundle.courses.length;
                     const meetsRequireAll = !activeBundle.requireAllCourses || allSelected;
                     
