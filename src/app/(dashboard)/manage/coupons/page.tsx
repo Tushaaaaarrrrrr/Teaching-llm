@@ -67,11 +67,7 @@ export default function CouponManagementPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div>
-          <h1 style={{ fontSize: '28px', fontWeight: '900', color: '#1e1e3a', marginBottom: '4px' }}>🏷️ Coupon Management</h1>
-          <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Create and manage discount coupons for the store</p>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '24px' }}>
         <button onClick={() => { resetForm(); setEditingCoupon(null); setShowCreate(true) }} style={{ padding: '10px 20px', borderRadius: '12px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontWeight: '700', fontSize: '14px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
           + Create Coupon
         </button>

@@ -131,10 +131,15 @@ export async function POST(request: NextRequest) {
     }
     const payload = JSON.parse(payloadBuffer as string)
     
-    const { title, description, courseId, expiresAt, startDate, durationMinutes, examType, questions } = payload
+    const { title, description, courseId, testSeriesId, expiresAt, startDate, durationMinutes, examType, questions } = payload
+    
+    // Make sure we have either a course or a test series
+    if (!courseId && !testSeriesId) {
+      return NextResponse.json({ error: 'Exam must belong to either a course or a test series' }, { status: 400 })
+    }
 
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-    if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
+    if (courseId && accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
       return NextResponse.json({ error: 'You do not have access to create exams for this course' }, { status: 403 })
     }
 
@@ -148,8 +153,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Validation
-    if (!title || !courseId || !durationMinutes) {
-      return NextResponse.json({ error: 'Missing required exam details (title, course, or duration)' }, { status: 400 })
+    if (!title || (!courseId && !testSeriesId) || !durationMinutes) {
+      return NextResponse.json({ error: 'Missing required exam details (title, target, or duration)' }, { status: 400 })
     }
 
     if (title.length > 200) {
@@ -179,12 +184,22 @@ export async function POST(request: NextRequest) {
     }
 
     const exam = await prisma.$transaction(async (tx) => {
-      // Fetch course to get subject
-      const course = await tx.course.findUnique({
-        where: { id: courseId },
-        select: { subject: true }
-      })
-      const subject = course?.subject || 'General'
+      let subject = 'General'
+      if (courseId) {
+        // Fetch course to get subject
+        const course = await tx.course.findUnique({
+          where: { id: courseId },
+          select: { subject: true }
+        })
+        subject = course?.subject || 'General'
+      } else if (testSeriesId) {
+        // Use test series title or generic subject
+        const ts = await (tx as any).testSeries.findUnique({
+          where: { id: testSeriesId },
+          select: { title: true }
+        })
+        subject = ts?.title || 'Test Series'
+      }
 
       // 1. Create QuestionBank entries only if questions are provided
       const questionData = questions && Array.isArray(questions) ? await Promise.all(questions.map(async (q: any, index: number) => {
@@ -234,7 +249,8 @@ export async function POST(request: NextRequest) {
           externalId: randomUUID(),
           title: sanitizedTitle,
           description: sanitizedDescription,
-          courseId,
+          courseId: courseId || null,
+          testSeriesId: testSeriesId || null,
           expiresAt: computedExpiresAt,
           startDate: computedStartDate,
           durationMinutes: parseInt(durationMinutes),
@@ -250,21 +266,40 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      // Notify enrolled students about the new exam
-      const enrollments = await tx.enrollment.findMany({
-        where: { courseId },
-        select: { userId: true }
-      })
-
-      if (enrollments.length > 0) {
-        await tx.notification.createMany({
-          data: enrollments.map(e => ({
-            userId: e.userId,
-            title: 'New Exam Created',
-            content: `A new exam "${sanitizedTitle}" has been added to your course. Check it in the Exams tab.`,
-            type: 'INFO',
-          }))
+      // Notify enrolled students about the new exam if it's for a course
+      if (courseId) {
+        const enrollments = await tx.enrollment.findMany({
+          where: { courseId },
+          select: { userId: true }
         })
+
+        if (enrollments.length > 0) {
+          await tx.notification.createMany({
+            data: enrollments.map(e => ({
+              userId: e.userId,
+              title: 'New Exam Created',
+              content: `A new exam "${sanitizedTitle}" has been added to your course. Check it in the Exams tab.`,
+              type: 'INFO',
+            }))
+          })
+        }
+      } else if (testSeriesId) {
+        // Notify test series subscribers
+        const accesses = await (tx as any).testSeriesAccess.findMany({
+          where: { testSeriesId, expiresAt: { gt: new Date() } },
+          select: { userId: true }
+        })
+
+        if (accesses.length > 0) {
+          await tx.notification.createMany({
+            data: accesses.map((a: any) => ({
+              userId: a.userId,
+              title: 'New Exam in Test Series',
+              content: `A new exam "${sanitizedTitle}" has been added to your Test Series. Check it now!`,
+              type: 'INFO',
+            }))
+          })
+        }
       }
 
       return exam

@@ -96,11 +96,7 @@ export default function PromptsAdminPage() {
 
   return (
     <div className="page-container fade-in">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '30px' }}>
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a', marginBottom: '4px' }}>User Prompts & Surveys</h1>
-          <p style={{ color: '#6b6b8a', fontSize: '14px' }}>Create full-page blockers to ask users questions or drive actions.</p>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '30px' }}>
         <button 
           onClick={() => isCreating ? cancelCreate() : setIsCreating(true)}
           className="btn btn-primary"

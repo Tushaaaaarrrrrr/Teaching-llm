@@ -133,7 +133,7 @@ export async function PATCH(
     }
 
     const payload = await request.json()
-    const { title, description, courseId, expiresAt, startDate, durationMinutes, isPublished, questions } = payload
+    const { title, description, courseId, testSeriesId, expiresAt, startDate, durationMinutes, isPublished, questions } = payload
 
     const existingExam = await prisma.exam.findUnique({
       where: { id: params.id },
@@ -148,7 +148,7 @@ export async function PATCH(
 
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
     if (accessibleCourseIds !== null) {
-      if (!accessibleCourseIds.includes(existingExam.courseId)) {
+      if (existingExam.courseId && !accessibleCourseIds.includes(existingExam.courseId)) {
         return NextResponse.json({ error: 'Unauthorized access to this exam' }, { status: 403 })
       }
       if (courseId && !accessibleCourseIds.includes(courseId)) {
@@ -160,6 +160,7 @@ export async function PATCH(
       title,
       description,
       courseId,
+      testSeriesId,
       expiresAt,
       startDate,
       durationMinutes,
@@ -209,7 +210,8 @@ export async function PATCH(
         data: {
           title,
           description,
-          courseId,
+          courseId: courseId !== undefined ? courseId : undefined,
+          testSeriesId: testSeriesId !== undefined ? testSeriesId : undefined,
           expiresAt: nextExpiresAt ?? undefined,
           startDate: nextStartDate,
           durationMinutes: parsedDurationMinutes,
@@ -272,7 +274,7 @@ export async function DELETE(
     }
 
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-    if (accessibleCourseIds !== null && !accessibleCourseIds.includes(existingExam.courseId)) {
+    if (accessibleCourseIds !== null && existingExam.courseId && !accessibleCourseIds.includes(existingExam.courseId)) {
       return NextResponse.json({ error: 'Unauthorized access to this exam' }, { status: 403 })
     }
 

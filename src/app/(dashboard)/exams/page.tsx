@@ -183,8 +183,10 @@ export default function ExamsPage() {
                   )}
                   {isManager && (
                     <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      <button onClick={() => router.push(`/exams/test-series/${ts.id}`)}
+                        style={{ flex: 1, padding: '8px', borderRadius: '10px', background: '#3636e812', border: '1px solid #3636e825', color: '#3636e8', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>⚙️ Manage</button>
                       <button onClick={async () => { if (!confirm(`Delete "${ts.title}"?`)) return; await fetch(`/api/test-series/${ts.id}`, { method: 'DELETE' }); mutateTS() }}
-                        style={{ padding: '6px 12px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>🗑️ Delete</button>
+                        style={{ padding: '8px 12px', borderRadius: '10px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>🗑️</button>
                     </div>
                   )}
                 </div>
