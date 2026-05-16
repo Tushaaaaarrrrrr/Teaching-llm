@@ -310,9 +310,13 @@ export default function ExploreCoursesPage() {
               })
             })
             if (verifyRes.ok) {
-              alert('Purchase successful! You have 30 days of access. View it in Free Resources -> Purchased Materials')
-              window.open(note.files?.[0]?.fileUrl, '_blank')
-              window.location.reload()
+              setSuccessOrderId(response.razorpay_order_id);
+              setPurchasedCourse({ 
+                courseName: note.title, 
+                courseTier: '30-Day Access',
+                type: 'note' 
+              });
+              setTimeout(() => { window.open(note.files?.[0]?.fileUrl, '_blank') }, 1500);
             } else { alert('Payment verification failed') }
           } catch { alert('Payment verification failed') }
           finally { setIsProcessing(false) }
@@ -515,7 +519,7 @@ export default function ExploreCoursesPage() {
       {/* Bundle offerings section */}
       {storeView === 'courses' && activeBundles.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a', margin: '6px 0 12px' }}>Bundles</h2>
+          <div style={{ marginTop: '12px' }} />
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
             {activeBundles.map((b: any) => {
               const bundlePriceRecorded = b.recordedDiscountPrice ?? b.recordedOriginalPrice
@@ -662,7 +666,7 @@ export default function ExploreCoursesPage() {
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={() => { n.price > 0 ? handleNotePurchase(n) : window.open(n.files?.[0]?.fileUrl, '_blank') }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: '800' }}>
-                    {n.price > 0 ? 'Buy / Access' : 'Access Notes'}
+                    {n.price > 0 ? 'Get Now' : 'Access Notes'}
                   </button>
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
                     <>
@@ -2057,7 +2061,7 @@ export default function ExploreCoursesPage() {
                           onMouseEnter={(e) => { if (!isProcessing && !isAllEnrolled && selectedList.length > 0) e.currentTarget.style.transform = 'translateY(-4px)' }}
                           onMouseLeave={(e) => { if (!isProcessing && !isAllEnrolled && selectedList.length > 0) e.currentTarget.style.transform = 'translateY(0)' }}
                         >
-                          {isProcessing ? 'Processing Order...' : (isAllEnrolled ? 'ALREADY ENROLLED' : (selectedList.length === 0 ? 'SELECT SUBJECTS' : (finalTotal === 0 ? 'ENROLL FREE 🎉' : 'ENROLL NOW')))}
+                          {isProcessing ? 'Processing Order...' : (isAllEnrolled ? 'ALREADY ENROLLED' : (selectedList.length === 0 ? 'SELECT SUBJECTS' : (finalTotal === 0 ? 'GET FOR FREE 🎉' : 'GET NOW')))}
                         </button>
                         {isAllEnrolled && (
                           <div style={{ textAlign: 'center', fontSize: '11px', color: '#94a3b8', fontWeight: '800', marginTop: '16px' }}>
@@ -2520,64 +2524,35 @@ export default function ExploreCoursesPage() {
             </button>
             <div style={{ fontSize: '64px', marginBottom: '24px' }}>🎉</div>
             <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#1e293b', marginBottom: '16px' }}>
-              Purchase Successful!
+              Payment Successful!
             </h2>
-
-            {/* Course Details */}
-            {purchasedCourse && (
-              <div style={{
-                background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
-                borderRadius: '20px', padding: '20px', marginBottom: '24px',
-                border: '2px solid #bbf7d0'
-              }}>
-                <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>
-                  {purchasedCourse.type === 'test-series' ? 'Test Series Purchased' : 'Course Purchased'}
-                </div>
-                <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#15803d', marginBottom: '6px' }}>
-                  {purchasedCourse.courseName}
-                </h3>
-                <div style={{ fontSize: '13px', color: '#4ade80', fontWeight: '700', marginBottom: '0' }}>
-                  {purchasedCourse.courseTier}
-                </div>
-              </div>
-            )}
-
-            {/* Order ID */}
-            {successOrderId && successOrderId !== 'FREE-ENROLLMENT' && successOrderId !== 'SUCCESS' && successOrderId !== 'TS-SUCCESS' && successOrderId !== 'TS-FREE' && (
-              <div style={{ background: '#f3f4f6', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #d1d5db' }}>
-                <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Order ID (sent to your email)
-                </div>
-                <div style={{ fontSize: '15px', fontWeight: '800', color: '#374151', fontFamily: 'monospace', letterSpacing: '1px' }}>
-                  {successOrderId}
-                </div>
-              </div>
-            )}
-
-            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
-              A confirmation email with your order details has been sent to your registered email address. You can now access your course!
+            <p style={{ fontSize: '16px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
+              {purchasedCourse?.type === 'mentorship' 
+                ? "Your mentorship session is confirmed! A Google Meet invite has been sent to your email. You can also join from the 'Live Sessions' tab." 
+                : "Your access has been activated! You can start learning immediately. A confirmation email has been sent to your inbox."}
             </p>
 
-            <button
-              onClick={() => { setSuccessOrderId(null); router.push(purchasedCourse?.type === 'test-series' ? '/exams' : '/courses') }}
-              style={{
-                width: '100%', padding: '18px', borderRadius: '18px', border: 'none',
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                color: 'white', fontWeight: '800', fontSize: '16px', cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = '0 8px 16px rgba(99, 102, 241, 0.4)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)'
-              }}
-            >
-              {purchasedCourse?.type === 'test-series' ? 'Go to Exams →' : 'Start Learning! 🚀'}
-            </button>
+            <div style={{ background: '#f8fafc', borderRadius: '24px', padding: '24px', marginBottom: '32px', border: '1.5px solid #f1f5f9' }}>
+              <div style={{ fontSize: '12px', color: '#6366f1', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Recommended Next Step</div>
+              <p style={{ fontSize: '15px', color: '#475569', fontWeight: '600', lineHeight: '1.5', margin: 0 }}>
+                While we prepare your content, explore our <strong>Free Resources</strong> section for extra study materials!
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button 
+                onClick={() => { setSuccessOrderId(null); router.push(purchasedCourse?.type === 'mentorship' ? '/courses?view=mentorship' : (purchasedCourse?.type === 'test-series' ? '/exams' : '/courses')) }}
+                style={{ width: '100%', padding: '16px', borderRadius: '16px', background: '#1e293b', color: '#fff', fontWeight: '800', border: 'none', cursor: 'pointer', transition: 'all 0.2s', fontSize: '16px' }}
+              >
+                {purchasedCourse?.type === 'mentorship' ? 'View My Bookings' : (purchasedCourse?.type === 'test-series' ? 'Go to Exams' : 'Start Learning Now')}
+              </button>
+              <button 
+                onClick={() => { setSuccessOrderId(null); router.push('/dashboard?view=free') }}
+                style={{ width: '100%', padding: '16px', borderRadius: '16px', background: '#fff', color: '#64748b', fontWeight: '800', border: '2px solid #f1f5f9', cursor: 'pointer', transition: 'all 0.2s', fontSize: '16px' }}
+              >
+                Visit Free Resources
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -3837,10 +3812,17 @@ export default function ExploreCoursesPage() {
                           })
                           if (verifyRes.ok) {
                             setShowMentorshipBookingModal(null)
-                            alert('Mentorship Booking Confirmed!')
-                            window.location.reload()
-                          } else { alert('Payment verification failed') }
-                        } catch { alert('Payment verification failed') }
+                            setSuccessOrderId(response.razorpay_order_id);
+                            setPurchasedCourse({ 
+                              courseName: `Mentorship with ${showMentorshipBookingModal.mentorName}`, 
+                              courseTier: `${mentorshipBookingTimes.length} Slot(s)`,
+                              type: 'mentorship' 
+                            });
+                          } else { 
+                            const errData = await verifyRes.json();
+                            alert(errData.error || 'Payment verification failed'); 
+                          }
+                        } catch (err: any) { alert(err.message || 'Payment verification failed') }
                         finally { setIsProcessing(false) }
                       },
                       modal: { ondismiss: () => setIsProcessing(false) }
