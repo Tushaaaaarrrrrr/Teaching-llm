@@ -3587,6 +3587,8 @@ export default function ExploreCoursesPage() {
                 else alert('Failed')
               } catch { alert('Error') }
             }} style={{ width: '100%', padding: '16px', borderRadius: '16px', background: '#1e293b', color: '#fff', fontWeight: '800', border: 'none', cursor: 'pointer' }}>Create Booking</button>
+          </div>
+        </div>
       )}
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
