@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import crypto from 'crypto'
 import { getSession } from '@/lib/auth'
+import { sendEmailNotification } from '@/lib/email-service'
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -27,7 +28,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     const access = await (prisma as any).testSeriesAccess.findUnique({
-      where: { id: accessId }
+      where: { id: accessId },
+      include: { 
+        testSeries: true,
+        user: { select: { email: true, name: true } }
+      }
     })
 
     if (!access) {
@@ -40,6 +45,17 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       data: {
         razorpayPaymentId: razorpay_payment_id,
       }
+    })
+    
+    // Trigger purchase confirmation email
+    await sendEmailNotification('purchase', {
+      userEmail: access.user.email,
+      userName: access.user.name,
+      orderId: razorpay_payment_id,
+      itemName: access.testSeries.title,
+      amount: access.testSeries.price,
+      date: new Date().toLocaleDateString(),
+      dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/exams/test-series`
     })
 
     return NextResponse.json({ success: true })

@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 import crypto from 'crypto'
+import { sendEmailNotification } from '@/lib/email-service'
 
 export async function POST(
   request: NextRequest,
@@ -146,30 +147,20 @@ export async function POST(
       targetId: courseId,
     })
 
-    // Send email via Google Apps Script webhook
+    // Send email via unified email service
     try {
-      const webhookUrl = process.env.UPGRADE_EMAIL_WEBHOOK_URL
-      if (webhookUrl) {
-        const accessTierLabel = accessType === 'LIVE' ? 'Live + Recorded (Pro)' : 'Recorded (General)'
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: session.name,
-            email: session.email,
-            orderId: order.id,
-            courseName: course.name,
-            offeringName: offeringDetails.offeringName,
-            accessType: accessType,
-            accessTier: accessTierLabel,
-            hasRecorded: offeringDetails.hasRecorded,
-            hasLive: offeringDetails.hasLive,
-            amount: order.amount,
-            date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
-            emailType: 'COURSE_PURCHASE',
-          }),
-        })
-      }
+      const accessTierLabel = accessType === 'LIVE' ? 'Live + Recorded (Pro)' : 'Recorded (General)'
+      await sendEmailNotification('purchase', {
+        userEmail: session.email,
+        userName: session.name,
+        orderId: order.id,
+        itemName: course.name,
+        offeringName: offeringDetails.offeringName,
+        accessType: accessType,
+        accessTier: accessTierLabel,
+        amount: order.amount,
+        date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+      })
     } catch (emailErr) {
       console.error('Failed to send purchase email:', emailErr)
     }

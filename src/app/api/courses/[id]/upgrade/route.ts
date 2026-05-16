@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import crypto from 'crypto'
+import { sendEmailNotification } from '@/lib/email-service'
 
 export async function POST(
   request: NextRequest,
@@ -109,23 +110,16 @@ export async function POST(
       targetId: courseId,
     })
 
-    // Send upgrade email via Google Apps Script webhook
+    // Send upgrade email via unified email service
     try {
-      const webhookUrl = process.env.UPGRADE_EMAIL_WEBHOOK_URL
-      if (webhookUrl) {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: session.name,
-            email: session.email,
-            orderId: transaction.orderId,
-            courseName: course.name,
-            amount: course.liveUpgradePrice,
-            date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
-          }),
-        })
-      }
+      await sendEmailNotification('upgrade', {
+        userEmail: session.email,
+        userName: session.name,
+        orderId: transaction.orderId,
+        courseName: course.name,
+        amount: course.liveUpgradePrice,
+        date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+      })
     } catch (emailErr) {
       console.error('Failed to send upgrade email:', emailErr)
       // Don't fail the upgrade if email fails

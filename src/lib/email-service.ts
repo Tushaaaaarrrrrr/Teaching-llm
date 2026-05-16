@@ -1,7 +1,7 @@
 /**
  * Utility to trigger Google App Script webhooks for email notifications.
  */
-export async function sendEmailNotification(type: 'mentorship_confirmed' | 'meet_invite' | 'purchase', data: any) {
+export async function sendEmailNotification(type: 'mentorship_confirmed' | 'meet_invite' | 'purchase' | 'upgrade', data: any) {
   const url = process.env.APP_SCRIPT_URL;
   
   if (!url) {

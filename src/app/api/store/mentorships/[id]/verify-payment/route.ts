@@ -91,6 +91,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         mentorName: booking.mentorship.mentorName,
         slotDate: booking.slotDate,
         slotTime: booking.slotTime,
+        instruction: 'Please be available at the scheduled time.',
+        note: 'A Google Meet invite will be shared with you soon. Please wait for it.',
         dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/courses/explore?view=mentorship`
       })
     }

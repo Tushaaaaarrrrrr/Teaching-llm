@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import crypto from 'crypto'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
+import { sendEmailNotification } from '@/lib/email-service'
 
 // Webhook signature verification
 function verifyWebhookSignature(body: string, signature: string): boolean {
@@ -153,23 +154,16 @@ export async function POST(request: NextRequest) {
           targetId: courseId,
         })
 
-        // Send email webhook
+        // Send email via unified email service
         try {
-          const webhookUrl = process.env.UPGRADE_EMAIL_WEBHOOK_URL
-          if (webhookUrl) {
-            await fetch(webhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                name: order.user.name,
-                email: order.user.email,
-                orderId: order.id,
-                courseName: orderItem.course.name,
-                amount: order.amount,
-                date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
-              }),
-            })
-          }
+          await sendEmailNotification('purchase', {
+            userName: order.user.name,
+            userEmail: order.user.email,
+            orderId: order.id,
+            itemName: orderItem.course.name,
+            amount: order.amount,
+            date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+          })
         } catch (emailErr) {
           console.error('Failed to send purchase email:', emailErr)
         }
@@ -220,23 +214,16 @@ export async function POST(request: NextRequest) {
           targetId: courseId,
         })
 
-        // Send email webhook
+        // Send email via unified email service
         try {
-          const webhookUrl = process.env.UPGRADE_EMAIL_WEBHOOK_URL
-          if (webhookUrl) {
-            await fetch(webhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                name: upgradeTransaction.user.name,
-                email: upgradeTransaction.user.email,
-                orderId: upgradeTransaction.orderId,
-                courseName: upgradeTransaction.course.name,
-                amount: upgradeTransaction.amount,
-                date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
-              }),
-            })
-          }
+          await sendEmailNotification('upgrade', {
+            userName: upgradeTransaction.user.name,
+            userEmail: upgradeTransaction.user.email,
+            orderId: upgradeTransaction.orderId,
+            courseName: upgradeTransaction.course.name,
+            amount: upgradeTransaction.amount,
+            date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+          })
         } catch (emailErr) {
           console.error('Failed to send upgrade email:', emailErr)
         }

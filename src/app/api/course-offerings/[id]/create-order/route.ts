@@ -58,13 +58,10 @@ export async function POST(
     })
 
     if (existingEnrollment) {
-      // If they want LIVE and currently have RECORDED, they should use the upgrade flow, or we can handle it here?
-      // Better to tell them they are already enrolled for now, as upgrades are handled elsewhere, but this is a purchase.
-      if (existingEnrollment.type === 'LIVE' || accessType === 'RECORDED') {
-        return NextResponse.json({ error: 'You are already enrolled in this course.' }, { status: 400 })
-      } else {
-        return NextResponse.json({ error: 'You already have recorded access. Use the UPGRADE button on your course card to get LIVE access.' }, { status: 400 })
+      if (existingEnrollment.type === 'LIVE') {
+        return NextResponse.json({ error: 'You are already enrolled in the LIVE batch of this course.' }, { status: 400 })
       }
+      // If they have RECORDED and are buying something, let it proceed (it will be an upgrade)
     }
 
     const amountInPaise = Math.round(price * 100)

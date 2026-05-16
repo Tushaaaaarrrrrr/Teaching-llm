@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import crypto from 'crypto'
 import { getSession } from '@/lib/auth'
 import { logActivity, MODULE, ACTION } from '@/lib/activity-log'
+import { sendEmailNotification } from '@/lib/email-service'
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -57,6 +58,17 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         amount: access.note.price,
         razorpayPaymentId: razorpay_payment_id
       }
+    })
+    
+    // Trigger purchase confirmation email
+    await sendEmailNotification('purchase', {
+      userEmail: user.email,
+      userName: user.name,
+      orderId: razorpay_payment_id,
+      itemName: access.note.title,
+      amount: access.note.price,
+      date: new Date().toLocaleDateString(),
+      dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/purchased`
     })
 
     return NextResponse.json({ success: true })
