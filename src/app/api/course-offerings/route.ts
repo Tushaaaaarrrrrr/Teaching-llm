@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
 
     const data = await request.json()
     const { 
+      courseId, classId, name, thumbnail,
       hasRecorded, recordedOriginalPrice, recordedDiscountPrice,
       hasLive, liveOriginalPrice, liveDiscountPrice,
       championOriginalPrice, championDiscountPrice, championSubtitle

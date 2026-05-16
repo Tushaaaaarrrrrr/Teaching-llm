@@ -58,9 +58,9 @@ export default function ExploreCoursesPage() {
   const [bundleChampionDiscountPrice, setBundleChampionDiscountPrice] = useState('')
   const [bundleChampionSubtitle, setBundleChampionSubtitle] = useState('')
   const [bundleForceClassType, setBundleForceClassType] = useState<string | null>(null)
-  const [bundleIndividualMapping, setBundleIndividualMapping] = useState<Record<string, { recorded?: string; live?: string }>>({})
+  const [bundleIndividualMapping, setBundleIndividualMapping] = useState<Record<string, { recorded?: string; live?: string; champion?: string }>>({})
   const [bundleAllowIndividualPurchase, setBundleAllowIndividualPurchase] = useState(true)
-  const [bundleTierPrices, setBundleTierPrices] = useState<Record<number, { recordedOriginal?: string, recordedDiscount?: string, liveOriginal?: string, liveDiscount?: string }>>({})
+  const [bundleTierPrices, setBundleTierPrices] = useState<Record<number, { recordedOriginal?: string, recordedDiscount?: string, liveOriginal?: string, liveDiscount?: string, championOriginal?: string, championDiscount?: string }>>({})
   const [bundleStartingPrice, setBundleStartingPrice] = useState('')
   const [bundleStartingFromText, setBundleStartingFromText] = useState('Courses start from')
   const [bundleBannerText, setBundleBannerText] = useState('Class starts from 1 June 2026')
@@ -626,6 +626,9 @@ export default function ExploreCoursesPage() {
                             recordedDiscountPrice: b.recordedDiscountPrice ?? '', 
                             liveOriginalPrice: b.liveOriginalPrice ?? '', 
                             liveDiscountPrice: b.liveDiscountPrice ?? '', 
+                            championOriginalPrice: b.championOriginalPrice ?? '',
+                            championDiscountPrice: b.championDiscountPrice ?? '',
+                            championSubtitle: b.championSubtitle ?? '',
                             courseIds: b.courses.map((c: any) => c.course.id), 
                             allowIndividualPurchase: b.allowIndividualPurchase ?? true, 
                             enableBundleDiscount: b.enableBundleDiscount ?? false, 
@@ -1083,7 +1086,7 @@ export default function ExploreCoursesPage() {
                   {/* Edit button for managers */}
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
                     <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingOffering(offering); setEditFormData({ recordedOriginalPrice: offering.recordedOriginalPrice ?? '', recordedDiscountPrice: offering.recordedDiscountPrice ?? '', liveOriginalPrice: offering.liveOriginalPrice ?? '', liveDiscountPrice: offering.liveDiscountPrice ?? '', detailsLink: offering.detailsLink ?? '' }) }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingOffering(offering); setEditFormData({ recordedOriginalPrice: offering.recordedOriginalPrice ?? '', recordedDiscountPrice: offering.recordedDiscountPrice ?? '', liveOriginalPrice: offering.liveOriginalPrice ?? '', liveDiscountPrice: offering.liveDiscountPrice ?? '', championOriginalPrice: offering.championOriginalPrice ?? '', championDiscountPrice: offering.championDiscountPrice ?? '', championSubtitle: offering.championSubtitle ?? '', detailsLink: offering.detailsLink ?? '' }) }}
                       style={{
                         width: '28px', height: '28px', borderRadius: '50%',
                         background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)',
