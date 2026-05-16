@@ -1826,12 +1826,23 @@ export default function ExploreCoursesPage() {
                           <span style={{ fontSize: '15px', fontWeight: '900', color: '#1e293b' }}>₹{totalPrice}</span>
                         </div>
 
-                        {bundleDiscountAmt > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', padding: '10px 14px', borderRadius: '12px', background: '#f0fdf4', border: '1px solid #dcfce7' }}>
-                            <span style={{ fontSize: '13px', color: '#166534', fontWeight: '900' }}>Bundle Discount</span>
-                            <span style={{ fontSize: '13px', fontWeight: '950', color: '#16a34a' }}>-₹{bundleDiscountAmt}</span>
-                          </div>
-                        )}
+                        {bundleDiscountAmt > 0 && (() => {
+                          let discountApplicability = 'BOTH';
+                          try {
+                            const pd = JSON.parse(activeBundle.coursePrices || '{}');
+                            if (pd.bundleDiscountApplicability) discountApplicability = pd.bundleDiscountApplicability;
+                          } catch(e) {}
+                          const applicabilityLabel = discountApplicability === 'LIVE' ? 'Live Pro Only' : discountApplicability === 'RECORDED' ? 'Recorded Plus Only' : 'Live & Recorded';
+                          return (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', padding: '10px 14px', borderRadius: '12px', background: '#f0fdf4', border: '1px solid #dcfce7' }}>
+                              <div>
+                                <div style={{ fontSize: '13px', color: '#166534', fontWeight: '900' }}>🏷️ Bundle Discount</div>
+                                <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: '700', marginTop: '2px' }}>Applies to: {applicabilityLabel}</div>
+                              </div>
+                              <span style={{ fontSize: '13px', fontWeight: '950', color: '#16a34a' }}>-₹{bundleDiscountAmt}</span>
+                            </div>
+                          );
+                        })()}
 
                         {couponApplied && couponDiscountAmt > 0 && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', padding: '10px 14px', borderRadius: '12px', background: '#eff6ff', border: '1px solid #dbeafe' }}>
@@ -2763,6 +2774,22 @@ export default function ExploreCoursesPage() {
               </div>
             )}
 
+            {/* 1. Fixed Bundle Toggle - NOW AT TOP */}
+            <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '16px', background: '#f0f4ff', border: '1.5px solid #dbeafe' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: '900', color: '#1e293b' }}>🔒 Fixed Bundle</div>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Users must buy all courses together (No individual selection)</div>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={editBundleData.allowIndividualPurchase === false} 
+                  onChange={e => setEditBundleData({ ...editBundleData, allowIndividualPurchase: !e.target.checked })} 
+                  style={{ width: '22px', height: '22px', accentColor: '#6366f1' }} 
+                />
+              </label>
+            </div>
+
             <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Select Courses</label>
               <div style={{ maxHeight: '160px', overflow: 'auto', padding: '10px', borderRadius: '8px', border: '1px solid #e0e7ff', background: '#f8fafc' }}>
@@ -2784,8 +2811,40 @@ export default function ExploreCoursesPage() {
               </div>
             </div>
 
-            {/* Subject Specific Pricing - ONLY for non-fixed bundles */}
-            {editBundleData.allowIndividualPurchase !== false && (editBundleData.courseIds?.length || 0) > 0 && (
+            {/* 2. Bundle Pricing Section */}
+            {editBundleData.allowIndividualPurchase === false ? (
+              // FIXED BUNDLE PRICING - SHOW ONLY GLOBAL PRICES
+              <div style={{ marginBottom: '24px', padding: '20px', borderRadius: '20px', background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <span style={{ fontSize: '20px' }}>🏷️</span>
+                  <label style={{ fontSize: '14px', fontWeight: '900', color: '#166534', textTransform: 'uppercase' }}>Bundle Prices (Fixed Package)</label>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#15803d', marginBottom: '4px' }}>Bundle Recorded Price (₹)</div>
+                    <input 
+                      type="number" 
+                      value={editBundleData.recordedDiscountPrice ?? ''} 
+                      onChange={e => setEditBundleData({ ...editBundleData, recordedDiscountPrice: e.target.value, recordedOriginalPrice: e.target.value })} 
+                      style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #86efac', fontSize: '14px', fontWeight: '700' }} 
+                      placeholder="e.g. 4000"
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#15803d', marginBottom: '4px' }}>Bundle Live Price (₹)</div>
+                    <input 
+                      type="number" 
+                      value={editBundleData.liveDiscountPrice ?? ''} 
+                      onChange={e => setEditBundleData({ ...editBundleData, liveDiscountPrice: e.target.value, liveOriginalPrice: e.target.value })} 
+                      style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #86efac', fontSize: '14px', fontWeight: '700' }} 
+                      placeholder="e.g. 5500"
+                    />
+                  </div>
+                </div>
+                <p style={{ fontSize: '10px', color: '#16a34a', marginTop: '10px', fontWeight: '600' }}>* This price will be applied to the entire bundle when users buy all subjects.</p>
+              </div>
+            ) : (
+              // NON-FIXED PRICING - SHOW INDIVIDUAL SUBJECT PRICES
               <div style={{ marginBottom: '24px', padding: '20px', borderRadius: '20px', background: '#f0f9ff', border: '1.5px solid #bae6fd' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                   <span style={{ fontSize: '20px' }}>💰</span>
@@ -2797,7 +2856,7 @@ export default function ExploreCoursesPage() {
                     try { priceData = JSON.parse(editBundleData.coursePrices || '{}'); } catch(e) {}
                     const mappings = (priceData as any).individualMapping || {};
                     
-                    return editBundleData.courseIds.map((id: string) => {
+                    return (editBundleData.courseIds || []).map((id: string) => {
                       const course = (courses || []).find((c: any) => c.id === id);
                       if (!course) return null;
                       const mapping = mappings[id] || {};
@@ -2842,17 +2901,6 @@ export default function ExploreCoursesPage() {
                 </div>
               </div>
             )}
-
-            {/* Fixed Bundle Toggle */}
-            <div style={{ marginBottom: '16px', padding: '14px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e0e7ff' }}>
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>🔒 Fixed Bundle</div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Users must buy all courses together (no individual selection)</div>
-                </div>
-                <input type="checkbox" checked={editBundleData.allowIndividualPurchase === false} onChange={e => setEditBundleData({ ...editBundleData, allowIndividualPurchase: !e.target.checked })} style={{ width: '18px', height: '18px', accentColor: '#6366f1' }} />
-              </label>
-            </div>
 
             {/* Force Class Type Configuration */}
             {editBundleData.allowIndividualPurchase === false && (
@@ -3101,6 +3149,22 @@ export default function ExploreCoursesPage() {
               <input type="number" value={bundleStartingPrice} onChange={e => setBundleStartingPrice(e.target.value)} placeholder="E.g., 499" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
             </div>
 
+            {/* Fixed Bundle Toggle - AT TOP */}
+            <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '16px', background: '#f0f4ff', border: '1.5px solid #dbeafe' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: '900', color: '#1e293b' }}>🔒 Fixed Bundle</div>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Users must buy all courses together (No individual selection)</div>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={!bundleAllowIndividualPurchase} 
+                  onChange={e => setBundleAllowIndividualPurchase(!e.target.checked)} 
+                  style={{ width: '22px', height: '22px', accentColor: '#6366f1' }} 
+                />
+              </label>
+            </div>
+
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Select Courses</label>
               <div style={{ maxHeight: '160px', overflow: 'auto', padding: '12px', borderRadius: '10px', border: '1.5px solid #eef2ff', background: '#f8fafc' }}>
@@ -3121,87 +3185,70 @@ export default function ExploreCoursesPage() {
               </div>
             </div>
 
-            {/* Subject Specific Pricing - ONLY for non-fixed bundles */}
-            {bundleAllowIndividualPurchase !== false && bundleSelectedCourses.length > 0 && (
-              <div style={{ marginBottom: '24px', padding: '20px', borderRadius: '20px', background: '#f0f9ff', border: '1.5px solid #bae6fd' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <span style={{ fontSize: '20px' }}>💰</span>
-                  <label style={{ fontSize: '14px', fontWeight: '900', color: '#0369a1', textTransform: 'uppercase' }}>Subject Specific Pricing</label>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {bundleSelectedCourses.map((id: string) => {
-                    const course = (courses || []).find((c: any) => c.id === id);
-                    if (!course) return null;
-                    const mapping = bundleIndividualMapping[id] || {};
-                    
-                    return (
-                      <div key={id} style={{ background: '#fff', padding: '14px', borderRadius: '12px', border: '1px solid #e0f2fe' }}>
-                        <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '10px' }}>{course.name}</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                          <div>
-                            <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>Recorded Price (₹)</div>
-                            <input 
-                              type="number" 
-                              value={mapping.recorded || ''} 
-                              onChange={e => setBundleIndividualMapping({ ...bundleIndividualMapping, [id]: { ...mapping, recorded: e.target.value } })}
-                              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }} 
-                              placeholder="e.g. 1000"
-                            />
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>Live Price (₹)</div>
-                            <input 
-                              type="number" 
-                              value={mapping.live || ''} 
-                              onChange={e => setBundleIndividualMapping({ ...bundleIndividualMapping, [id]: { ...mapping, live: e.target.value } })}
-                              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }} 
-                              placeholder="e.g. 2000"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* TIERED PRICING (MODAL DYNAMIC FIELDS) */}
+            {/* Pricing Section - Conditional on Bundle Type */}
             {bundleSelectedCourses.length > 0 && (
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '12px' }}>
-                  Pricing Tiers (Max 6)
-                </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {Array.from({ length: Math.min(6, bundleSelectedCourses.length) }).map((_, idx) => {
-                    const count = idx + 1;
-                    return (
-                      <div key={count} style={{ background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1.5px solid #eef2ff' }}>
-                        <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ background: '#6366f1', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>{count}</span>
-                          Price for {count} {count === 1 ? 'Course' : 'Courses'}
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>Recorded (Original / Discount)</div>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              <input type="number" min={1} placeholder="Orig" value={bundleTierPrices[count]?.recordedOriginal || ''} onChange={e => setBundleTierPrices({...bundleTierPrices, [count]: {...bundleTierPrices[count], recordedOriginal: e.target.value}})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
-                              <input type="number" min={1} placeholder="Disc" value={bundleTierPrices[count]?.recordedDiscount || ''} onChange={e => setBundleTierPrices({...bundleTierPrices, [count]: {...bundleTierPrices[count], recordedDiscount: e.target.value}})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>Live (Original / Discount)</div>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              <input type="number" min={1} placeholder="Orig" value={bundleTierPrices[count]?.liveOriginal || ''} onChange={e => setBundleTierPrices({...bundleTierPrices, [count]: {...bundleTierPrices[count], liveOriginal: e.target.value}})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
-                              <input type="number" min={1} placeholder="Disc" value={bundleTierPrices[count]?.liveDiscount || ''} onChange={e => setBundleTierPrices({...bundleTierPrices, [count]: {...bundleTierPrices[count], liveDiscount: e.target.value}})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+              !bundleAllowIndividualPurchase ? (
+                // FIXED BUNDLE — just two price inputs
+                <div style={{ marginBottom: '24px', padding: '20px', borderRadius: '20px', background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <span style={{ fontSize: '20px' }}>🏷️</span>
+                    <label style={{ fontSize: '14px', fontWeight: '900', color: '#166534', textTransform: 'uppercase' }}>Bundle Prices (Fixed Package)</label>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#15803d', marginBottom: '4px' }}>Bundle Recorded Price (₹)</div>
+                      <input 
+                        type="number" 
+                        value={bundleRecordedDiscountPrice} 
+                        onChange={e => { setBundleRecordedDiscountPrice(e.target.value); setBundleRecordedOriginalPrice(e.target.value); }} 
+                        style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #86efac', fontSize: '14px', fontWeight: '700' }} 
+                        placeholder="e.g. 4000"
+                      />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#15803d', marginBottom: '4px' }}>Bundle Live Price (₹)</div>
+                      <input 
+                        type="number" 
+                        value={bundleLiveDiscountPrice} 
+                        onChange={e => { setBundleLiveDiscountPrice(e.target.value); setBundleLiveOriginalPrice(e.target.value); }} 
+                        style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #86efac', fontSize: '14px', fontWeight: '700' }} 
+                        placeholder="e.g. 5500"
+                      />
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '10px', color: '#16a34a', marginTop: '10px', fontWeight: '600' }}>* This price applies to the entire set of courses in this bundle.</p>
                 </div>
-              </div>
+              ) : (
+                // NON-FIXED — subject specific pricing per course
+                <div style={{ marginBottom: '24px', padding: '20px', borderRadius: '20px', background: '#f0f9ff', border: '1.5px solid #bae6fd' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <span style={{ fontSize: '20px' }}>💰</span>
+                    <label style={{ fontSize: '14px', fontWeight: '900', color: '#0369a1', textTransform: 'uppercase' }}>Subject Specific Pricing</label>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {bundleSelectedCourses.map((id: string) => {
+                      const course = (courses || []).find((c: any) => c.id === id);
+                      if (!course) return null;
+                      const mapping = bundleIndividualMapping[id] || {};
+                      return (
+                        <div key={id} style={{ background: '#fff', padding: '14px', borderRadius: '12px', border: '1px solid #e0f2fe' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '10px' }}>{course.name}</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div>
+                              <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>Recorded Price (₹)</div>
+                              <input type="number" value={mapping.recorded || ''} onChange={e => setBundleIndividualMapping({ ...bundleIndividualMapping, [id]: { ...mapping, recorded: e.target.value } })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }} placeholder="e.g. 1000" />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>Live Price (₹)</div>
+                              <input type="number" value={mapping.live || ''} onChange={e => setBundleIndividualMapping({ ...bundleIndividualMapping, [id]: { ...mapping, live: e.target.value } })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }} placeholder="e.g. 2000" />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
             )}
 
             {/* Bundle Discount Configuration */}
