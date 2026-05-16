@@ -549,6 +549,24 @@ export default function ExploreCoursesPage() {
                     <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '500', lineHeight: '1.5', minHeight: '40px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                       {b.description || `Special curated bundle with ${b.courses.length} premium courses.`}
                     </div>
+                    {/* Included Courses Tags */}
+                    {b.courses && b.courses.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '12px' }}>
+                        {b.courses.map((c: any) => (
+                          <span key={c.course.id} style={{ 
+                            fontSize: '11px', 
+                            fontWeight: '700', 
+                            color: '#475569', 
+                            background: '#f1f5f9', 
+                            padding: '4px 8px', 
+                            borderRadius: '6px',
+                            border: '1px solid #e2e8f0'
+                          }}>
+                            {c.course.name || c.course.subject || 'Course'}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ background: '#f8fafc', borderRadius: '20px', padding: '16px', border: '1px solid #eef2ff' }}>
