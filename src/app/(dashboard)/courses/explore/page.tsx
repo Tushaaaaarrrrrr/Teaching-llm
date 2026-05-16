@@ -1567,7 +1567,6 @@ export default function ExploreCoursesPage() {
                                       {course.name}
                                       {isEnrolled && <span style={{ marginLeft: '8px', fontSize: '10px', background: '#d1fae5', color: '#059669', padding: '2px 8px', borderRadius: '6px', textTransform: 'uppercase', fontWeight: '900' }}>Purchased</span>}
                                     </div>
-                                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>{course.teacherName || 'Expert Faculty'}</div>
                                   </div>
                                 </>
                               )
