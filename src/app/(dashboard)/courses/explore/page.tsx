@@ -1507,7 +1507,7 @@ export default function ExploreCoursesPage() {
                     </div>
                   )}
 
-                  {/* Champion Option - Elite */}
+                  {/* Champion Option */}
                   {offering.championDiscountPrice > 0 && !isLiveEnrolled && (
                     <div 
                       style={{
@@ -1529,19 +1529,19 @@ export default function ExploreCoursesPage() {
                         e.currentTarget.style.borderColor = '#fca5a5'
                       }}
                     >
-                      {/* ELITE Badge */}
+                      {/* CHAMPION Badge */}
                       <div style={{
                         position: 'absolute', top: '10px', right: '12px',
                         padding: '3px 10px', borderRadius: '20px',
                         background: '#dc2626', color: '#fff',
                         fontSize: '9px', fontWeight: '900', letterSpacing: '0.08em',
                       }}>
-                        ELITE
+                        CHAMPION
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <div>
                           <div style={{ fontSize: '10px', fontWeight: '800', color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                            🏆 Champion Elite - {offering.championSubtitle || 'Premium Wrapper'}
+                            🏆 Champion - {offering.championSubtitle || 'Premium Wrapper'}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.championDiscountPrice}</span>
@@ -1564,7 +1564,7 @@ export default function ExploreCoursesPage() {
                           transition: 'all 0.2s',
                         }}
                       >
-                        {purchasing === `${offering.id}-CHAMPION` ? 'Processing...' : '💎 Buy Champion Elite Batch'}
+                        {purchasing === `${offering.id}-CHAMPION` ? 'Processing...' : '💎 Buy Champion Batch'}
                       </button>
                     </div>
                   )}
@@ -1825,7 +1825,7 @@ export default function ExploreCoursesPage() {
                           >
                             <option value="RECORDED">Recorded Plus</option>
                             <option value="LIVE">Live Pro</option>
-                            {activeBundle.championDiscountPrice > 0 && <option value="CHAMPION">Champion Elite</option>}
+                            {activeBundle.championDiscountPrice > 0 && <option value="CHAMPION">Champion</option>}
                           </select>
                         </div>
                       )}
@@ -2400,7 +2400,7 @@ export default function ExploreCoursesPage() {
 
                 <div style={{ background: '#fef2f2', padding: '20px', borderRadius: '18px', marginBottom: '24px', border: '2px solid #fecaca' }}>
                   <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#dc2626', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    🏆 Champion Batch - Elite
+                    🏆 Champion Batch
                   </h4>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                     <div>
@@ -2855,7 +2855,7 @@ export default function ExploreCoursesPage() {
                   </div>
                 </div>
                 <div style={{ marginBottom: '20px', padding: '16px', borderRadius: '16px', background: '#fef2f2', border: '2px solid #fecaca' }}>
-                  <div style={{ fontSize: '13px', fontWeight: '800', color: '#dc2626', marginBottom: '12px' }}>🏆 Champion Batch - Elite</div>
+                  <div style={{ fontSize: '13px', fontWeight: '800', color: '#dc2626', marginBottom: '12px' }}>🏆 Champion Batch</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Real Price (₹)</label>
