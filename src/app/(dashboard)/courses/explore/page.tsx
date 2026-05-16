@@ -1842,10 +1842,10 @@ export default function ExploreCoursesPage() {
                         )}
                       </div>
                     </>
-                  );
+                  )
                 })()}
               </div>
-            );
+            )
           })()}
         </div>
       )}
