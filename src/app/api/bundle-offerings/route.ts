@@ -41,7 +41,8 @@ export async function POST(request: NextRequest) {
     const { 
       name, description, courseIds, 
       recordedOriginalPrice, recordedDiscountPrice, liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase, forceClassType,
-      enableBundleDiscount, bundleDiscountType, bundleDiscountValue, bundleDiscountApplicability, requireAllCourses
+      enableBundleDiscount, bundleDiscountType, bundleDiscountValue, bundleDiscountApplicability, requireAllCourses,
+      coursePrices, startingPrice
     } = data
 
     if (!name || !Array.isArray(courseIds) || courseIds.length === 0) {
@@ -70,6 +71,8 @@ export async function POST(request: NextRequest) {
         bundleDiscountValue: bundleDiscountValue ? Number(bundleDiscountValue) : null,
         bundleDiscountApplicability: bundleDiscountApplicability || null,
         requireAllCourses: requireAllCourses == null ? true : !!requireAllCourses,
+        coursePrices: coursePrices || '[]',
+        startingPrice: startingPrice ? Number(startingPrice) : null,
         courses: {
           create: courseIds.map((cid: string) => ({ courseId: cid }))
         }

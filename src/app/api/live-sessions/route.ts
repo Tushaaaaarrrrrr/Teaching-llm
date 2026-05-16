@@ -15,9 +15,43 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const sessions = await getTodaySessionSnapshots(session)
 
+    // Fetch today's mentorship bookings for this user
+    const { startOfDay, endOfDay } = require('@/lib/date-utils').getISTDayBoundaries()
+    const todayStr = startOfDay.toISOString().split('T')[0]
+    
+    const mentorshipBookings = await prisma.mentorshipBooking.findMany({
+      where: {
+        userId: session.userId,
+        status: 'PAID',
+        slotDate: todayStr
+      },
+      include: {
+        mentorship: {
+          select: {
+            mentorName: true,
+          }
+        }
+      }
+    })
+
+    const mentorshipSessions = mentorshipBookings.map(b => ({
+      id: `mentorship-${b.id}`,
+      title: `Mentorship: ${b.mentorship.mentorName}`,
+      description: `1-on-1 Session with ${b.mentorship.mentorName}`,
+      startTime: new Date(`${b.slotDate}T${b.slotTime}:00`).toISOString(),
+      endTime: new Date(new Date(`${b.slotDate}T${b.slotTime}:00`).getTime() + 30 * 60000).toISOString(), // Default 30m if unknown
+      meetLink: b.meetLink,
+      type: 'mentorship',
+      status: 'scheduled', // status will be recalculated by frontend
+      course: { name: '1-on-1 Mentorship', color: '#f59e0b', teacherName: b.mentorship.mentorName },
+      instructor: { name: b.mentorship.mentorName }
+    }))
+
+    const allSessions = [...sessions, ...mentorshipSessions]
+
     const filtered = !status
-      ? sessions
-      : sessions.filter((item) => {
+      ? allSessions
+      : allSessions.filter((item) => {
           if (status === 'live') return item.status === 'live'
           if (status === 'scheduled') return item.status === 'upcoming' || item.status === 'rescheduled'
           if (status === 'completed') return item.status === 'completed' || item.status === 'cancelled'

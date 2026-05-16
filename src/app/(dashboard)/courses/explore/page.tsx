@@ -17,6 +17,8 @@ export default function ExploreCoursesPage() {
   const { data: storeNotesData } = useSWR('/api/store/notes', fetcher, { revalidateOnFocus: false })
   const { data: mentorshipsData } = useSWR('/api/store/mentorships', fetcher, { revalidateOnFocus: false })
   const { data: testSeriesData } = useSWR('/api/test-series', fetcher, { revalidateOnFocus: false })
+  const { data: myMentorshipsData } = useSWR('/api/store/mentorships/my-bookings', fetcher, { revalidateOnFocus: true })
+  const { data: staffData } = useSWR('/api/users/staff', fetcher, { revalidateOnFocus: false })
   const { data: courses } = useSWR('/api/courses', fetcher, { revalidateOnFocus: false })
   const [purchasing, setPurchasing] = useState<string | null>(null)
   const [successOrderId, setSuccessOrderId] = useState<string | null>(null)
@@ -50,6 +52,9 @@ export default function ExploreCoursesPage() {
   const [bundleLiveDiscountPrice, setBundleLiveDiscountPrice] = useState('')
   const [bundleForceClassType, setBundleForceClassType] = useState<string | null>(null)
   const [bundleAllowIndividualPurchase, setBundleAllowIndividualPurchase] = useState(true)
+  const [bundleTierPrices, setBundleTierPrices] = useState<Record<number, { recordedOriginal?: string, recordedDiscount?: string, liveOriginal?: string, liveDiscount?: string }>>({})
+  const [bundleStartingPrice, setBundleStartingPrice] = useState('')
+  const [bundleDescription, setBundleDescription] = useState('')
   const [infoModalOffering, setInfoModalOffering] = useState<any | null>(null)
   // Bundle purchase UI states
   const [showBundleModal, setShowBundleModal] = useState(false)
@@ -82,7 +87,13 @@ export default function ExploreCoursesPage() {
   const [mentorshipBookingTimes, setMentorshipBookingTimes] = useState<string[]>([])
 
   // Mentorship Slots Management
-  const [showManageSlotsModal, setShowManageSlotsModal] = useState<any>(null)
+  const [showManageBookingsModal, setShowManageBookingsModal] = useState<any>(null)
+  const [allBookingsData, setAllBookingsData] = useState<any[]>([])
+  const [loadingAllBookings, setLoadingAllBookings] = useState(false)
+  const [editingBookingLink, setEditingBookingLink] = useState<string | null>(null)
+  const [showManualBookingModal, setShowManualBookingModal] = useState(false)
+  const [allStudentsData, setAllStudentsData] = useState<any[]>([])
+  const [loadingAllStudents, setLoadingAllStudents] = useState(false)
   const [manageSlotsDate, setManageSlotsDate] = useState('')
   const [manageSlotsTime, setManageSlotsTime] = useState('')
   const [editingSlots, setEditingSlots] = useState<{date: string, time: string}[]>([])
@@ -499,39 +510,81 @@ export default function ExploreCoursesPage() {
               const bundlePriceRecorded = b.recordedDiscountPrice ?? b.recordedOriginalPrice
               const bundlePriceLive = b.liveDiscountPrice ?? b.liveOriginalPrice
               return (
-                <div key={b.id} style={{ minWidth: '320px', background: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' }}>
-                  <div style={{ fontSize: '16px', fontWeight: '900', marginBottom: '6px' }}>{b.name}</div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px' }}>{b.description || `${b.courses.length} courses`}</div>
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
-                    {bundlePriceRecorded ? <div style={{ fontWeight: '800', color: '#1e293b' }}>Recorded: ₹{bundlePriceRecorded}</div> : null}
-                    {bundlePriceLive ? <div style={{ fontWeight: '800', color: '#4f46e5' }}>Live: ₹{bundlePriceLive}</div> : null}
+                <div key={b.id} style={{ 
+                  minWidth: '320px', 
+                  maxWidth: '350px',
+                  background: '#fff', 
+                  borderRadius: '24px', 
+                  padding: '22px', 
+                  boxShadow: '0 10px 40px rgba(15,23,42,0.08)',
+                  border: '1px solid #f1f5f9',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                  transition: 'transform 0.3s ease',
+                  cursor: 'default'
+                }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(99,102,241,0.08)', padding: '4px 10px', borderRadius: '20px' }}>Bundle</div>
+                      <div style={{ fontSize: '12px', fontWeight: '800', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        ✨ {b.courses.length} Courses
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '20px', fontWeight: '900', color: '#1e293b', marginBottom: '8px' }}>{b.name}</div>
+                    <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '500', lineHeight: '1.5', minHeight: '40px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      {b.description || `Special curated bundle with ${b.courses.length} premium courses.`}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {bundlePriceRecorded || bundlePriceLive ? (
-                      <button onClick={() => { 
-                        setActiveBundle(b); 
-                        setBundleAccessType(bundlePriceRecorded ? 'RECORDED' : 'LIVE'); 
-                        setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id).filter((id: string) => {
-                          if (b.allowIndividualPurchase === false) return true;
-                          const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
-                          return isManager || getEnrollmentStatus(id) === null;
-                        })); 
-                        setShowBundleModal(true) 
-                      }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '800' }}>View / Buy</button>
-                    ) : (
-                      <button onClick={() => { 
-                        setActiveBundle(b); 
-                        setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id).filter((id: string) => {
-                          if (b.allowIndividualPurchase === false) return true;
-                          const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
-                          return isManager || getEnrollmentStatus(id) === null;
-                        })); 
-                        setShowBundleModal(true) 
-                      }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: '#f3f4f6', color: '#111827', fontWeight: '800' }}>View</button>
-                    )}
+
+                  <div style={{ background: '#f8fafc', borderRadius: '20px', padding: '16px', border: '1px solid #eef2ff' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>📅 Class starts from 1 June 2026</div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', marginBottom: '4px' }}>Courses start from</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>₹</span>
+                      <span style={{ fontSize: '28px', fontWeight: '950', color: '#1e293b', letterSpacing: '-0.02em' }}>{b.startingPrice || (bundlePriceLive || bundlePriceRecorded || 0)}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button onClick={() => { 
+                      setActiveBundle(b); 
+                      setBundleAccessType(bundlePriceRecorded ? 'RECORDED' : 'LIVE'); 
+                      setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id).filter((id: string) => {
+                        if (b.allowIndividualPurchase === false) return true;
+                        const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
+                        return isManager || getEnrollmentStatus(id) === null;
+                      })); 
+                      setShowBundleModal(true) 
+                    }} style={{ flex: 1, padding: '14px', borderRadius: '14px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '900', fontSize: '15px', border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(99,102,241,0.25)' }}>View / Buy</button>
+                    
                     {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
-                      <>
-                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingBundle(b); setEditBundleData({ name: b.name, description: b.description || '', recordedOriginalPrice: b.recordedOriginalPrice ?? '', recordedDiscountPrice: b.recordedDiscountPrice ?? '', liveOriginalPrice: b.liveOriginalPrice ?? '', liveDiscountPrice: b.liveDiscountPrice ?? '', courseIds: b.courses.map((c: any) => c.course.id), allowIndividualPurchase: b.allowIndividualPurchase ?? true, enableBundleDiscount: b.enableBundleDiscount ?? false, bundleDiscountType: b.bundleDiscountType ?? 'PERCENTAGE', bundleDiscountValue: b.bundleDiscountValue ?? '', bundleDiscountApplicability: b.bundleDiscountApplicability ?? 'BOTH', requireAllCourses: b.requireAllCourses ?? true }) }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '800', fontSize: '13px' }}>Edit</button>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button onClick={(e) => { 
+                          e.preventDefault(); 
+                          e.stopPropagation(); 
+                          setEditingBundle(b); 
+                          setEditBundleData({ 
+                            name: b.name, 
+                            description: b.description || '', 
+                            recordedOriginalPrice: b.recordedOriginalPrice ?? '', 
+                            recordedDiscountPrice: b.recordedDiscountPrice ?? '', 
+                            liveOriginalPrice: b.liveOriginalPrice ?? '', 
+                            liveDiscountPrice: b.liveDiscountPrice ?? '', 
+                            courseIds: b.courses.map((c: any) => c.course.id), 
+                            allowIndividualPurchase: b.allowIndividualPurchase ?? true, 
+                            enableBundleDiscount: b.enableBundleDiscount ?? false, 
+                            bundleDiscountType: b.bundleDiscountType ?? 'PERCENTAGE', 
+                            bundleDiscountValue: b.bundleDiscountValue ?? '', 
+                            bundleDiscountApplicability: b.bundleDiscountApplicability ?? 'BOTH', 
+                            requireAllCourses: b.requireAllCourses ?? true,
+                            coursePrices: b.coursePrices || '[]',
+                            startingPrice: b.startingPrice ?? ''
+                          }) 
+                        }} style={{ width: '44px', height: '44px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>📝</button>
                         <button onClick={async () => {
                           if (!confirm(`Delete bundle "${b.name}"? This cannot be undone.`)) return
                           try {
@@ -539,8 +592,8 @@ export default function ExploreCoursesPage() {
                             if (res.ok) window.location.reload()
                             else { const d = await res.json(); alert(d.error || 'Failed to delete') }
                           } catch { alert('Failed to delete bundle') }
-                        }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
-                      </>
+                        }} style={{ width: '44px', height: '44px', borderRadius: '14px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>🗑️</button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -602,22 +655,94 @@ export default function ExploreCoursesPage() {
 
       {/* Mentorship offerings section */}
       {storeView === 'mentorship' && mentorshipsData?.mentorships?.length > 0 && (
-        <div style={{ marginBottom: '18px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a', margin: '6px 0 12px' }}>1-on-1 Mentorship</h2>
-          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
-            {mentorshipsData.mentorships.map((m: any) => (
-              <div key={m.id} style={{ minWidth: '320px', background: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' }}>
-                <div style={{ fontSize: '16px', fontWeight: '900', marginBottom: '6px' }}>{m.mentorName}</div>
-                {m.description && <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px' }}>{m.description}</div>}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
-                  <div style={{ fontWeight: '800', color: '#f59e0b' }}>₹{m.pricePerSlot} / {m.slotDurationMinutes} mins</div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => { setShowMentorshipBookingModal(m); setMentorshipBookingDate(''); setMentorshipBookingTimes([]) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff', fontWeight: '800' }}>
-                    Book Slot
+        <div style={{ marginBottom: '48px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#1e1e3a', margin: 0 }}>1-on-1 Mentorship</h2>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
+                  <button 
+                    onClick={async () => {
+                      setShowManualBookingModal(true)
+                      setLoadingAllStudents(true)
+                      try {
+                        const res = await fetch('/api/users/students')
+                        const data = await res.json()
+                        setAllStudentsData(data.students || [])
+                      } catch { alert('Failed to fetch students') }
+                      finally { setLoadingAllStudents(false) }
+                    }}
+                    style={{ padding: '8px 16px', borderRadius: '50px', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
+                  >
+                    ➕ Manual Book
                   </button>
+                )}
+                <button 
+                  onClick={async () => {
+                  setShowManageBookingsModal(true)
+                  setLoadingAllBookings(true)
+                  try {
+                    const res = await fetch('/api/store/mentorships/all-bookings')
+                    const data = await res.json()
+                    setAllBookingsData(data.bookings || [])
+                  } catch { alert('Failed to fetch bookings') }
+                  finally { setLoadingAllBookings(false) }
+                }}
+                style={{ padding: '8px 16px', borderRadius: '50px', background: '#3636e8', color: '#fff', border: 'none', fontWeight: '700', fontSize: '13px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(54,54,232,0.2)' }}
+              >
+                📋 View All Bookings
+              </button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '20px', paddingRight: '20px' }}>
+            {mentorshipsData.mentorships.map((m: any) => (
+              <div key={m.id} style={{ 
+                minWidth: '380px', 
+                background: '#fff', 
+                borderRadius: '24px', 
+                padding: '28px', 
+                boxShadow: '0 10px 40px rgba(15,23,42,0.06)',
+                border: '1px solid #f1f5f9',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px',
+                transition: 'transform 0.3s ease',
+                position: 'relative'
+              }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-6px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#fff', fontWeight: '900', boxShadow: '0 8px 16px rgba(245,158,11,0.2)' }}>
+                    {m.mentorName[0]}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '20px', fontWeight: '900', color: '#1e293b' }}>{m.mentorName}</div>
+                    <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '600' }}>IIT Mentorship Specialist</div>
+                  </div>
+                </div>
+
+                <div style={{ minHeight: '48px' }}>
+                  <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', margin: 0 }}>{m.description || 'Experienced mentor ready to guide you through your JEE/NEET journey and beyond.'}</p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fffbeb', padding: '14px 20px', borderRadius: '16px', border: '1px solid #fef3c7' }}>
+                  <div style={{ fontSize: '18px' }}>💰</div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Starting From</div>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#92400e' }}>₹{m.pricePerSlot} <span style={{ fontSize: '13px', fontWeight: '600', opacity: 0.8 }}>/ {m.slotDurationMinutes} mins session</span></div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: 'auto' }}>
+                  <button 
+                    onClick={() => { setShowMentorshipBookingModal(m); setMentorshipBookingDate(''); setMentorshipBookingTimes([]) }} 
+                    style={{ flex: 1, padding: '14px', borderRadius: '16px', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff', fontWeight: '800', border: 'none', cursor: 'pointer', fontSize: '15px', boxShadow: '0 8px 20px rgba(217,119,6,0.2)' }}
+                  >
+                    Book a Slot
+                  </button>
+                  
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
-                    <>
+                    <div style={{ display: 'flex', gap: '8px' }}>
                       <button onClick={(e) => { 
                         e.stopPropagation(); 
                         setEditingMentorship(m)
@@ -632,28 +757,96 @@ export default function ExploreCoursesPage() {
                           if (priceEl) priceEl.value = m.pricePerSlot
                           if (durationEl) durationEl.value = m.slotDurationMinutes
                         }, 100)
-                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '800', fontSize: '13px' }}>Edit</button>
+                      }} style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>⚙️</button>
                       <button onClick={(e) => { 
                         e.stopPropagation(); 
                         setShowManageSlotsModal(m); 
                         setEditingSlots(JSON.parse(m.availableSlots || '[]'));
                         setManageSlotsDate('');
                         setManageSlotsTime('');
-                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '800', fontSize: '13px' }}>Slots</button>
-                      <button onClick={async () => {
+                      }} style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>📅</button>
+                      <button onClick={async (e) => {
+                        e.stopPropagation();
                         if (!confirm(`Delete mentorship "${m.mentorName}"?`)) return
                         try {
                           const res = await fetch(`/api/store/mentorships/${m.id}`, { method: 'DELETE' })
                           if (res.ok) window.location.reload()
                           else alert('Failed to delete')
                         } catch { alert('Failed to delete') }
-                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
-                    </>
+                      }} style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>🗑️</button>
+                    </div>
                   )}
                 </div>
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* MY BOOKINGS SECTION */}
+      {storeView === 'mentorship' && myMentorshipsData?.bookings?.length > 0 && (
+        <div style={{ marginBottom: '48px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#1e1e3a', marginBottom: '20px' }}>Your Booked Sessions</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+            {myMentorshipsData.bookings.map((booking: any) => {
+              const isPast = new Date(`${booking.slotDate}T${booking.slotTime}`) < new Date();
+              const isToday = booking.slotDate === new Date().toISOString().split('T')[0];
+              
+              return (
+                <div key={booking.id} style={{ 
+                  background: isPast ? '#f8fafc' : '#fff', 
+                  borderRadius: '20px', 
+                  padding: '20px', 
+                  boxShadow: isPast ? 'none' : '0 10px 30px rgba(0,0,0,0.04)',
+                  border: isPast ? '1px solid #e2e8f0' : '2px solid #f59e0b',
+                  opacity: isPast ? 0.7 : 1,
+                  filter: isPast ? 'grayscale(0.5)' : 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontSize: '16px', fontWeight: '900', color: '#1e293b' }}>{booking.mentorship?.mentorName}</div>
+                      <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>{booking.mentorship?.slotDuration} mins Session</div>
+                    </div>
+                    {isToday && !isPast && <span style={{ padding: '4px 10px', borderRadius: '50px', background: '#10b981', color: '#fff', fontSize: '10px', fontWeight: '800' }}>TODAY</span>}
+                    {isPast && <span style={{ padding: '4px 10px', borderRadius: '50px', background: '#94a3b8', color: '#fff', fontSize: '10px', fontWeight: '800' }}>COMPLETED</span>}
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '12px', background: isPast ? '#f1f5f9' : '#fffbeb', padding: '12px', borderRadius: '12px' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>Date</div>
+                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>{new Date(booking.slotDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>Time</div>
+                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>{booking.slotTime} IST</div>
+                    </div>
+                  </div>
+
+                  {!isPast && (
+                    <div style={{ marginTop: '4px' }}>
+                      {booking.meetLink ? (
+                        <a href={booking.meetLink} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', padding: '12px', borderRadius: '12px', background: '#3636e8', color: '#fff', fontWeight: '800', textDecoration: 'none', fontSize: '14px' }}>
+                          Join Meeting →
+                        </a>
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '12px', borderRadius: '12px', background: '#f1f5f9', color: '#64748b', fontWeight: '700', fontSize: '13px', border: '1.5px dashed #cbd5e1' }}>
+                          Link will be added soon
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {myMentorshipsData.bookings.length > 5 && (
+             <div style={{ marginTop: '16px', fontSize: '13px', color: '#64748b', fontWeight: '600', fontStyle: 'italic' }}>
+               Completed sessions are displayed above in grey.
+             </div>
+          )}
         </div>
       )}
 
@@ -1331,9 +1524,9 @@ export default function ExploreCoursesPage() {
                             )
                           })()}
                         </div>
-                        {!activeBundle.allowIndividualPurchase ? (
+                        {(!activeBundle.allowIndividualPurchase || activeBundle.coursePrices) ? (
                           <div style={{ display: 'flex', alignItems: 'center' }}>
-                             <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>Included in bundle</span>
+                             <span style={{ fontSize: '13px', color: '#6366f1', fontWeight: '800', background: 'rgba(99,102,241,0.08)', padding: '4px 10px', borderRadius: '8px' }}>✨ Included in Bundle</span>
                           </div>
                         ) : (
                           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -1430,17 +1623,44 @@ export default function ExploreCoursesPage() {
                   const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
                   const isAllEnrolled = !isManager && selectedList.length > 0 && selectedList.every(id => getEnrollmentStatus(id) !== null);
 
-                  if (isFixed || selectedList.length === activeBundle.courses.length) {
-                    const bundlePrice = effectiveAccessType === 'RECORDED' ? activeBundle.recordedDiscountPrice ?? activeBundle.recordedOriginalPrice : activeBundle.liveDiscountPrice ?? activeBundle.liveOriginalPrice;
-                    const bundleOriginal = effectiveAccessType === 'RECORDED' ? activeBundle.recordedOriginalPrice ?? activeBundle.recordedDiscountPrice : activeBundle.liveOriginalPrice ?? activeBundle.liveDiscountPrice;
-                    
-                    if (bundlePrice != null) {
-                      totalPrice = bundlePrice;
-                      originalTotalPrice = bundleOriginal || bundlePrice;
+                  const tierPrices = activeBundle.coursePrices ? JSON.parse(activeBundle.coursePrices) : {};
+                  const count = selectedList.length;
+                  const tier = tierPrices[count];
+
+                  if (tier) {
+                    if (effectiveAccessType === 'RECORDED') {
+                      totalPrice = Number(tier.recordedDiscount) || Number(tier.recordedOriginal) || 0;
+                      originalTotalPrice = Number(tier.recordedOriginal) || totalPrice;
+                    } else {
+                      totalPrice = Number(tier.liveDiscount) || Number(tier.liveOriginal) || 0;
+                      originalTotalPrice = Number(tier.liveOriginal) || totalPrice;
+                    }
+                  } else {
+                    // Fallback to existing bundle prices or sum
+                    if (isFixed || selectedList.length === activeBundle.courses.length) {
+                      const bundlePrice = effectiveAccessType === 'RECORDED' ? activeBundle.recordedDiscountPrice ?? activeBundle.recordedOriginalPrice : activeBundle.liveDiscountPrice ?? activeBundle.liveOriginalPrice;
+                      const bundleOriginal = effectiveAccessType === 'RECORDED' ? activeBundle.recordedOriginalPrice ?? activeBundle.recordedDiscountPrice : activeBundle.liveOriginalPrice ?? activeBundle.liveDiscountPrice;
+                      
+                      if (bundlePrice != null) {
+                        totalPrice = bundlePrice;
+                        originalTotalPrice = bundleOriginal || bundlePrice;
+                      } else {
+                        selectedList.forEach((courseId: string) => {
+                          const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
+                          const selectedType = isFixed ? effectiveAccessType : (bundleSelectedForPurchase[courseId] || 'RECORDED');
+                          if (selectedType === 'RECORDED') {
+                            totalPrice += offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0;
+                            originalTotalPrice += offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0;
+                          } else {
+                            totalPrice += offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0;
+                            originalTotalPrice += offering?.liveOriginalPrice ?? offering?.liveDiscountPrice ?? 0;
+                          }
+                        });
+                      }
                     } else {
                       selectedList.forEach((courseId: string) => {
                         const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
-                        const selectedType = isFixed ? effectiveAccessType : (bundleSelectedForPurchase[courseId] || 'RECORDED');
+                        const selectedType = bundleSelectedForPurchase[courseId] || 'RECORDED';
                         if (selectedType === 'RECORDED') {
                           totalPrice += offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0;
                           originalTotalPrice += offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0;
@@ -1450,18 +1670,6 @@ export default function ExploreCoursesPage() {
                         }
                       });
                     }
-                  } else {
-                    selectedList.forEach((courseId: string) => {
-                      const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
-                      const selectedType = bundleSelectedForPurchase[courseId] || 'RECORDED';
-                      if (selectedType === 'RECORDED') {
-                        totalPrice += offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0;
-                        originalTotalPrice += offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0;
-                      } else {
-                        totalPrice += offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0;
-                        originalTotalPrice += offering?.liveOriginalPrice ?? offering?.liveDiscountPrice ?? 0;
-                      }
-                    });
                   }
 
                   // Calculate bundle discount
@@ -1550,9 +1758,6 @@ export default function ExploreCoursesPage() {
                             <div style={{ fontSize: '36px', fontWeight: '950', color: '#4f46e5', lineHeight: '1', letterSpacing: '-1px' }}>₹{isAllEnrolled ? 0 : finalTotal}</div>
                           </div>
                         </div>
-                        {totalSavings > 0 && !isAllEnrolled && (
-                          <div style={{ textAlign: 'right', fontSize: '14px', color: '#16a34a', fontWeight: '800', marginTop: '8px' }}>Total Savings: ₹{totalSavings} ✨</div>
-                        )}
                       </div>
 
                       <div style={{ marginTop: '28px' }}>
@@ -1711,212 +1916,203 @@ export default function ExploreCoursesPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
               <div>
-                {/* Course Selection */}
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '8px' }}>
-                Select Course *
-              </label>
-              <select
-                value={selectedCourse}
-                onChange={(e) => setSelectedCourse(e.target.value)}
-                style={{
-                  width: '100%', padding: '12px 14px', borderRadius: '12px', border: '2px solid #e0e7ff',
-                  fontSize: '14px', fontWeight: '600', color: '#1e1e3a', 
-                  background: '#f8f9fc', cursor: 'pointer'
-                }}
-              >
-                <option value="">Choose a course...</option>
-                {courses?.map((course: any) => {
-                  const isExisting = activeOfferings?.some((o: any) => o.courseId === course.id);
-                  return (
-                    <option key={course.id} value={course.id} disabled={isExisting}>
-                      {course.name} {isExisting ? '(Already in store)' : ''}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '8px' }}>
+                    Select Course *
+                  </label>
+                  <select
+                    value={selectedCourse}
+                    onChange={(e) => setSelectedCourse(e.target.value)}
+                    style={{
+                      width: '100%', padding: '12px 14px', borderRadius: '12px', border: '2px solid #e0e7ff',
+                      fontSize: '14px', fontWeight: '600', color: '#1e1e3a', 
+                      background: '#f8f9fc', cursor: 'pointer'
+                    }}
+                  >
+                    <option value="">Choose a course...</option>
+                    {courses?.map((course: any) => {
+                      const isExisting = activeOfferings?.some((o: any) => o.courseId === course.id);
+                      return (
+                        <option key={course.id} value={course.id} disabled={isExisting}>
+                          {course.name} {isExisting ? '(Already in store)' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
 
-            {/* Display Selected Course Info */}
-            {selectedCourse && courses && (
-              (() => {
-                const selected = courses.find((c: any) => c.id === selectedCourse)
-                return selected ? (
-                  <div style={{
-                    background: `linear-gradient(135deg, ${selected.color || '#6366f1'}15, ${selected.color || '#6366f1'}08)`,
-                    border: `2px solid ${selected.color || '#6366f1'}40`,
-                    padding: '20px',
-                    borderRadius: '16px',
-                    marginBottom: '24px'
-                  }}>
-                    <h3 style={{
-                      fontSize: '28px', fontWeight: '900', color: '#1e1e3a', marginBottom: '4px',
-                      lineHeight: '1.2'
-                    }}>
-                      {selected.name}
-                    </h3>
-                    {selected.subject && (
-                      <p style={{
-                        fontSize: '14px', color: '#9999b0', fontWeight: '600', marginBottom: '0'
+                {selectedCourse && courses && (
+                  (() => {
+                    const selected = courses.find((c: any) => c.id === selectedCourse)
+                    return selected ? (
+                      <div style={{
+                        background: `linear-gradient(135deg, ${selected.color || '#6366f1'}15, ${selected.color || '#6366f1'}08)`,
+                        border: `2px solid ${selected.color || '#6366f1'}40`,
+                        padding: '20px',
+                        borderRadius: '16px',
+                        marginBottom: '24px'
                       }}>
-                        {selected.subject}
-                      </p>
-                    )}
+                        <h3 style={{
+                          fontSize: '28px', fontWeight: '900', color: '#1e1e3a', marginBottom: '4px',
+                          lineHeight: '1.2'
+                        }}>
+                          {selected.name}
+                        </h3>
+                        {selected.subject && (
+                          <p style={{
+                            fontSize: '14px', color: '#9999b0', fontWeight: '600', marginBottom: '0'
+                          }}>
+                            {selected.subject}
+                          </p>
+                        )}
+                      </div>
+                    ) : null
+                  })()
+                )}
+
+                <div style={{ background: '#f8f9fc', padding: '20px', borderRadius: '18px', marginBottom: '24px', border: '2px solid #e0e7ff' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#1e1e3a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    📹 Recording Batch - Plus
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
+                        Real Price (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={recordedOriginalPrice}
+                        onChange={(e) => setRecordedOriginalPrice(e.target.value)}
+                        placeholder="0"
+                        style={{
+                          width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                          fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
+                        Discount Price (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={recordedDiscountPrice}
+                        onChange={(e) => setRecordedDiscountPrice(e.target.value)}
+                        placeholder="0"
+                        style={{
+                          width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                          fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
+                        }}
+                      />
+                    </div>
                   </div>
-                ) : null
-              })()
-            )}
+                </div>
 
-            {/* Recording Batch Pricing */}
-            <div style={{ background: '#f8f9fc', padding: '20px', borderRadius: '18px', marginBottom: '24px', border: '2px solid #e0e7ff' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#1e1e3a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                📹 Recording Batch - Plus
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
-                    Real Price (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={recordedOriginalPrice}
-                    onChange={(e) => setRecordedOriginalPrice(e.target.value)}
-                    placeholder="0"
-                    style={{
-                      width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
-                      fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
-                    }}
-                  />
+                <div style={{ background: '#f0f3ff', padding: '20px', borderRadius: '18px', marginBottom: '24px', border: '2px solid #c7d2fe' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#4f46e5', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    🔴 Live Batch - Pro
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
+                        Real Price (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={liveOriginalPrice}
+                        onChange={(e) => setLiveOriginalPrice(e.target.value)}
+                        placeholder="0"
+                        style={{
+                          width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                          fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
+                        Discount Price (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={liveDiscountPrice}
+                        onChange={(e) => setLiveDiscountPrice(e.target.value)}
+                        placeholder="0"
+                        style={{
+                          width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                          fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
-                    Discount Price (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={recordedDiscountPrice}
-                    onChange={(e) => setRecordedDiscountPrice(e.target.value)}
-                    placeholder="0"
-                    style={{
-                      width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
-                      fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Live Batch Pricing */}
-            <div style={{ background: '#f0f3ff', padding: '20px', borderRadius: '18px', marginBottom: '24px', border: '2px solid #c7d2fe' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#4f46e5', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                🔴 Live Batch - Pro
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
-                    Real Price (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={liveOriginalPrice}
-                    onChange={(e) => setLiveOriginalPrice(e.target.value)}
-                    placeholder="0"
-                    style={{
-                      width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
-                      fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
-                    Discount Price (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={liveDiscountPrice}
-                    onChange={(e) => setLiveDiscountPrice(e.target.value)}
-                    placeholder="0"
-                    style={{
-                      width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
-                      fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
 
               </div>
 
               <div>
-                {/* Tags */}
                 <div style={{ marginBottom: '24px' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#1e1e3a', marginBottom: '8px' }}>
-                Tags / Badges
-              </label>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                {tags.map((tag, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      background: '#6366f1', color: '#fff', padding: '6px 12px', borderRadius: '20px',
-                      fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px'
-                    }}
-                  >
-                    {tag}
+                    Tags / Badges
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                    {tags.map((tag, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          background: '#6366f1', color: '#fff', padding: '6px 12px', borderRadius: '20px',
+                          fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px'
+                        }}
+                      >
+                        {tag}
+                        <button
+                          onClick={() => setTags(tags.filter((_, i) => i !== idx))}
+                          style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '16px' }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && tagInput.trim()) {
+                          setTags([...tags, tagInput.trim()])
+                          setTagInput('')
+                        }
+                      }}
+                      placeholder="e.g., Bestseller, 50% OFF (press Enter)"
+                      style={{
+                        flex: 1, padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                        fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#f8f9fc'
+                      }}
+                    />
                     <button
-                      onClick={() => setTags(tags.filter((_, i) => i !== idx))}
-                      style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '16px' }}
+                      onClick={() => {
+                        if (tagInput.trim()) {
+                          setTags([...tags, tagInput.trim()])
+                          setTagInput('')
+                        }
+                      }}
+                      style={{
+                        padding: '10px 16px', borderRadius: '10px', border: 'none',
+                        background: '#6366f1', color: '#fff', fontWeight: '700',
+                        cursor: 'pointer', fontSize: '12px'
+                      }}
                     >
-                      ×
+                      Add
                     </button>
                   </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && tagInput.trim()) {
-                      setTags([...tags, tagInput.trim()])
-                      setTagInput('')
-                    }
-                  }}
-                  placeholder="e.g., Bestseller, 50% OFF (press Enter)"
-                  style={{
-                    flex: 1, padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
-                    fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#f8f9fc'
-                  }}
-                />
-                <button
-                  onClick={() => {
-                    if (tagInput.trim()) {
-                      setTags([...tags, tagInput.trim()])
-                      setTagInput('')
-                    }
-                  }}
-                  style={{
-                    padding: '10px 16px', borderRadius: '10px', border: 'none',
-                    background: '#6366f1', color: '#fff', fontWeight: '700',
-                    cursor: 'pointer', fontSize: '12px'
-                  }}
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-            
-
-
+                </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
               <button
                 onClick={() => setShowCreateModal(false)}
@@ -2361,27 +2557,59 @@ export default function ExploreCoursesPage() {
               <input type="text" value={editBundleData.description ?? ''} onChange={e => setEditBundleData({...editBundleData, description: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Original</label>
-                <input type="number" min={1} value={editBundleData.recordedOriginalPrice ?? ''} onChange={e => setEditBundleData({...editBundleData, recordedOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+            {/* EDIT TIERED PRICING */}
+            {(editBundleData.courseIds?.length || 0) > 0 && (
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '12px' }}>
+                  Pricing Tiers (Max 6)
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {(() => {
+                    const savedTiers = JSON.parse(editBundleData.coursePrices || '{}');
+                    return Array.from({ length: Math.min(6, editBundleData.courseIds.length) }).map((_, idx) => {
+                      const count = idx + 1;
+                      const tier = savedTiers[count] || {};
+                      return (
+                        <div key={count} style={{ background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1.5px solid #eef2ff' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ background: '#6366f1', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>{count}</span>
+                            Price for {count} {count === 1 ? 'Course' : 'Courses'}
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>Recorded (Original / Discount)</div>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <input type="number" min={1} placeholder="Orig" value={tier.recordedOriginal || ''} onChange={e => {
+                                  const newTiers = { ...savedTiers, [count]: { ...tier, recordedOriginal: e.target.value } };
+                                  setEditBundleData({ ...editBundleData, coursePrices: JSON.stringify(newTiers) });
+                                }} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
+                                <input type="number" min={1} placeholder="Disc" value={tier.recordedDiscount || ''} onChange={e => {
+                                  const newTiers = { ...savedTiers, [count]: { ...tier, recordedDiscount: e.target.value } };
+                                  setEditBundleData({ ...editBundleData, coursePrices: JSON.stringify(newTiers) });
+                                }} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>Live (Original / Discount)</div>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <input type="number" min={1} placeholder="Orig" value={tier.liveOriginal || ''} onChange={e => {
+                                  const newTiers = { ...savedTiers, [count]: { ...tier, liveOriginal: e.target.value } };
+                                  setEditBundleData({ ...editBundleData, coursePrices: JSON.stringify(newTiers) });
+                                }} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
+                                <input type="number" min={1} placeholder="Disc" value={tier.liveDiscount || ''} onChange={e => {
+                                  const newTiers = { ...savedTiers, [count]: { ...tier, liveDiscount: e.target.value } };
+                                  setEditBundleData({ ...editBundleData, coursePrices: JSON.stringify(newTiers) });
+                                }} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    });
+                  })()}
+                </div>
               </div>
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Discount</label>
-                <input type="number" min={1} value={editBundleData.recordedDiscountPrice ?? ''} onChange={e => setEditBundleData({...editBundleData, recordedDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Original</label>
-                <input type="number" min={1} value={editBundleData.liveOriginalPrice ?? ''} onChange={e => setEditBundleData({...editBundleData, liveOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Discount</label>
-                <input type="number" min={1} value={editBundleData.liveDiscountPrice ?? ''} onChange={e => setEditBundleData({...editBundleData, liveDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
-              </div>
-            </div>
+            )}
 
             <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Select Courses</label>
@@ -2653,6 +2881,16 @@ export default function ExploreCoursesPage() {
             </div>
 
             <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Bundle Description</label>
+              <textarea value={bundleDescription} onChange={e => setBundleDescription(e.target.value)} placeholder="Tell students what's included in this bundle..." rows={3} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', resize: 'vertical' }} />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Courses Start From (₹)</label>
+              <input type="number" value={bundleStartingPrice} onChange={e => setBundleStartingPrice(e.target.value)} placeholder="E.g., 499" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Select Courses</label>
               <div style={{ maxHeight: '160px', overflow: 'auto', padding: '12px', borderRadius: '10px', border: '1.5px solid #eef2ff', background: '#f8fafc' }}>
                 {(courses || []).map((c: any) => (
@@ -2672,18 +2910,43 @@ export default function ExploreCoursesPage() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-              <div style={{ background: '#fbfbff', padding: '16px', borderRadius: '12px', border: '1px solid #eef2ff' }}>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Recorded Price</div>
-                <input type="number" min={1} placeholder="Original (₹)" value={bundleRecordedOriginalPrice} onChange={e => setBundleRecordedOriginalPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc', marginBottom: '8px' }} />
-                <input type="number" min={1} placeholder="Discount (₹)" value={bundleRecordedDiscountPrice} onChange={e => setBundleRecordedDiscountPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
+            {/* TIERED PRICING (MODAL DYNAMIC FIELDS) */}
+            {bundleSelectedCourses.length > 0 && (
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '12px' }}>
+                  Pricing Tiers (Max 6)
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {Array.from({ length: Math.min(6, bundleSelectedCourses.length) }).map((_, idx) => {
+                    const count = idx + 1;
+                    return (
+                      <div key={count} style={{ background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1.5px solid #eef2ff' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ background: '#6366f1', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>{count}</span>
+                          Price for {count} {count === 1 ? 'Course' : 'Courses'}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>Recorded (Original / Discount)</div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <input type="number" min={1} placeholder="Orig" value={bundleTierPrices[count]?.recordedOriginal || ''} onChange={e => setBundleTierPrices({...bundleTierPrices, [count]: {...bundleTierPrices[count], recordedOriginal: e.target.value}})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
+                              <input type="number" min={1} placeholder="Disc" value={bundleTierPrices[count]?.recordedDiscount || ''} onChange={e => setBundleTierPrices({...bundleTierPrices, [count]: {...bundleTierPrices[count], recordedDiscount: e.target.value}})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>Live (Original / Discount)</div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <input type="number" min={1} placeholder="Orig" value={bundleTierPrices[count]?.liveOriginal || ''} onChange={e => setBundleTierPrices({...bundleTierPrices, [count]: {...bundleTierPrices[count], liveOriginal: e.target.value}})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
+                              <input type="number" min={1} placeholder="Disc" value={bundleTierPrices[count]?.liveDiscount || ''} onChange={e => setBundleTierPrices({...bundleTierPrices, [count]: {...bundleTierPrices[count], liveDiscount: e.target.value}})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-              <div style={{ background: '#fbfbff', padding: '16px', borderRadius: '12px', border: '1px solid #eef2ff' }}>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Live Price</div>
-                <input type="number" min={1} placeholder="Original (₹)" value={bundleLiveOriginalPrice} onChange={e => setBundleLiveOriginalPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc', marginBottom: '8px' }} />
-                <input type="number" min={1} placeholder="Discount (₹)" value={bundleLiveDiscountPrice} onChange={e => setBundleLiveDiscountPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
-              </div>
-            </div>
+            )}
 
             <div style={{ marginBottom: '24px', padding: '14px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e0e7ff' }}>
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '16px' }}>
@@ -2726,13 +2989,15 @@ export default function ExploreCoursesPage() {
                     const res = await fetch('/api/bundle-offerings', {
                       method: 'POST', headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
-                        name: bundleName, description: '', courseIds: bundleSelectedCourses,
-                        recordedOriginalPrice: bundleRecordedOriginalPrice ? Number(bundleRecordedOriginalPrice) : undefined,
-                        recordedDiscountPrice: bundleRecordedDiscountPrice ? Number(bundleRecordedDiscountPrice) : undefined,
-                        liveOriginalPrice: bundleLiveOriginalPrice ? Number(bundleLiveOriginalPrice) : undefined,
-                        liveDiscountPrice: bundleLiveDiscountPrice ? Number(bundleLiveDiscountPrice) : undefined,
+                        name: bundleName, description: bundleDescription, courseIds: bundleSelectedCourses,
+                        recordedOriginalPrice: bundleTierPrices[bundleSelectedCourses.length]?.recordedOriginal ? Number(bundleTierPrices[bundleSelectedCourses.length].recordedOriginal) : (bundleRecordedOriginalPrice ? Number(bundleRecordedOriginalPrice) : undefined),
+                        recordedDiscountPrice: bundleTierPrices[bundleSelectedCourses.length]?.recordedDiscount ? Number(bundleTierPrices[bundleSelectedCourses.length].recordedDiscount) : (bundleRecordedDiscountPrice ? Number(bundleRecordedDiscountPrice) : undefined),
+                        liveOriginalPrice: bundleTierPrices[bundleSelectedCourses.length]?.liveOriginal ? Number(bundleTierPrices[bundleSelectedCourses.length].liveOriginal) : (bundleLiveOriginalPrice ? Number(bundleLiveOriginalPrice) : undefined),
+                        liveDiscountPrice: bundleTierPrices[bundleSelectedCourses.length]?.liveDiscount ? Number(bundleTierPrices[bundleSelectedCourses.length].liveDiscount) : (bundleLiveDiscountPrice ? Number(bundleLiveDiscountPrice) : undefined),
                         allowIndividualPurchase: !!bundleAllowIndividualPurchase,
                         forceClassType: bundleForceClassType || null,
+                        coursePrices: JSON.stringify(bundleTierPrices),
+                        startingPrice: bundleStartingPrice ? Number(bundleStartingPrice) : undefined,
                       })
                     })
                     if (res.ok) {
@@ -2861,9 +3126,20 @@ export default function ExploreCoursesPage() {
               </button>
             </div>
 
+            {/* MENTOR SELECTION */}
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Mentor Name</label>
-              <input id="mentorNameInput" defaultValue={editingMentorship?.mentorName || ''} placeholder="E.g., John Doe" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Assign Mentor (Staff)</label>
+              <select id="mentorIdInput" defaultValue={editingMentorship?.mentorId || ''} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', background: '#fff' }}>
+                <option value="">Select a Mentor...</option>
+                {staffData?.staff?.map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Mentor Display Name</label>
+              <input id="mentorNameInput" defaultValue={editingMentorship?.mentorName || ''} placeholder="E.g., John Doe (IIT Delhi)" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
             </div>
 
             <div style={{ marginBottom: '20px' }}>
@@ -2891,6 +3167,7 @@ export default function ExploreCoursesPage() {
               <button onClick={() => { setShowCreateMentorshipModal(false); setEditingMentorship(null) }} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff', background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
               <button
                 onClick={async () => {
+                  const mentorId = (document.getElementById('mentorIdInput') as HTMLSelectElement).value
                   const mentorName = (document.getElementById('mentorNameInput') as HTMLInputElement).value
                   const desc = (document.getElementById('mentorDescInput') as HTMLTextAreaElement).value
                   const price = (document.getElementById('mentorPriceInput') as HTMLInputElement).value
@@ -2903,7 +3180,7 @@ export default function ExploreCoursesPage() {
                     const url = editingMentorship ? `/api/store/mentorships/${editingMentorship.id}` : '/api/store/mentorships'
                     const res = await fetch(url, {
                       method, headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ mentorName, description: desc, pricePerSlot: Number(price), slotDuration: Number(duration) })
+                      body: JSON.stringify({ mentorId, mentorName, description: desc, pricePerSlot: Number(price), slotDuration: Number(duration) })
                     })
                     if (res.ok) { window.location.reload() }
                     else { alert(editingMentorship ? 'Failed to update mentorship' : 'Failed to add mentorship') }
@@ -3016,6 +3293,24 @@ export default function ExploreCoursesPage() {
             </div>
 
             <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '24px', border: '1.5px solid #e2e8f0' }}>
+              {/* Mentorship Note */}
+              <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(54,54,232,0.05)', borderRadius: '16px', border: '1px solid rgba(54,54,232,0.1)', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '18px' }}>💡</span>
+                <p style={{ fontSize: '12.5px', color: '#4b5563', margin: 0, lineHeight: '1.5', fontWeight: '600' }}>
+                  <strong>Note:</strong> Google Meet links are generated after payment. Access your session in the <span style={{ color: '#3636e8' }}>"Live Sessions"</span> tab.
+                </p>
+              </div>
+
+              {/* STUDENT QUESTION FIELD */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Topics / Questions for Mentor (Optional)</label>
+                <textarea 
+                  id="userQuestionInput"
+                  placeholder="What would you like to discuss? e.g. JEE Main Strategy, Specific Maths doubt, etc."
+                  style={{ width: '100%', padding: '16px', borderRadius: '16px', border: '2px solid #e2e8f0', fontSize: '14px', color: '#1e293b', minHeight: '80px', resize: 'vertical' }}
+                />
+              </div>
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>Total Selected</div>
@@ -3169,6 +3464,129 @@ export default function ExploreCoursesPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* MANAGE ALL BOOKINGS MODAL (Manager Only) */}
+      {showManageBookingsModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }} onClick={() => setShowManageBookingsModal(null)}>
+          <div style={{ background: '#fff', borderRadius: '32px', padding: '40px', width: '100%', maxWidth: '900px', maxHeight: '85vh', overflow: 'auto', animation: 'modalSlideUp 0.3s ease-out', position: 'relative' }} onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowManageBookingsModal(null)} style={{ position: 'absolute', top: '30px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            
+            <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#1e293b', marginBottom: '24px' }}>All Mentorship Bookings</h3>
+
+            {loadingAllBookings ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Loading bookings...</div>
+            ) : allBookingsData.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b', background: '#f8fafc', borderRadius: '20px' }}>No bookings found.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 2fr', gap: '12px', padding: '0 16px', fontSize: '12px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>
+                  <span>Student / Mentor</span>
+                  <span>Date</span>
+                  <span>Time</span>
+                  <span>Status</span>
+                  <span>Actions / Meeting Link</span>
+                </div>
+                {allBookingsData.map((b: any) => (
+                  <div key={b.id} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 2fr', gap: '12px', padding: '16px', background: '#f8fafc', borderRadius: '20px', alignItems: 'center', border: '1px solid #e2e8f0' }}>
+                    <div>
+                      <div style={{ fontWeight: '800', fontSize: '14px', color: '#1e293b' }}>{b.user?.name || 'Unknown'}</div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>Mentor: {b.mentorship?.mentorName}</div>
+                      {b.userQuestion && <div style={{ fontSize: '11px', color: '#3636e8', fontWeight: '600', marginTop: '4px' }}>Q: {b.userQuestion}</div>}
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '700' }}>{b.slotDate}</div>
+                    <div style={{ fontSize: '13px', fontWeight: '700' }}>{b.slotTime}</div>
+                    <div>
+                      <span style={{ padding: '4px 10px', borderRadius: '50px', background: b.status === 'PAID' ? '#d1fae5' : '#fef2f2', color: b.status === 'PAID' ? '#059669' : '#dc2626', fontSize: '11px', fontWeight: '800' }}>{b.status}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      {editingBookingLink === b.id ? (
+                        <div style={{ display: 'flex', gap: '6px', flex: 1 }}>
+                          <input id={`link-input-${b.id}`} defaultValue={b.meetLink || ''} placeholder="Meet Link" style={{ flex: 1, padding: '8px 12px', borderRadius: '10px', border: '1.5px solid #3636e8', fontSize: '13px' }} />
+                          <button onClick={async () => {
+                            const link = (document.getElementById(`link-input-${b.id}`) as HTMLInputElement)?.value;
+                            try {
+                              const res = await fetch(`/api/store/mentorships/bookings/${b.id}`, {
+                                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ meetLink: link })
+                              })
+                              if (res.ok) {
+                                setAllBookingsData(allBookingsData.map(item => item.id === b.id ? { ...item, meetLink: link } : item))
+                                setEditingBookingLink(null)
+                              } else alert('Failed to update')
+                            } catch { alert('Error updating') }
+                          }} style={{ padding: '8px 12px', borderRadius: '10px', background: '#3636e8', color: '#fff', border: 'none', fontWeight: '700', fontSize: '12px' }}>Save</button>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ flex: 1, fontSize: '12px', color: b.meetLink ? '#3636e8' : '#94a3b8', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.meetLink || 'No link'}</div>
+                          <button onClick={() => setEditingBookingLink(b.id)} style={{ padding: '6px 12px', borderRadius: '8px', background: '#fff', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700', fontSize: '11px' }}>Edit</button>
+                          {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
+                            <button onClick={async () => {
+                              if (!confirm('Cancel this booking?')) return
+                              try {
+                                const res = await fetch(`/api/store/mentorships/bookings/${b.id}`, { method: 'DELETE' })
+                                if (res.ok) setAllBookingsData(allBookingsData.filter(item => item.id !== b.id))
+                                else alert('Failed')
+                              } catch { alert('Error') }
+                            }} style={{ padding: '6px 12px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '700', fontSize: '11px' }}>Cancel</button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MANUAL BOOKING MODAL (Manager Only) */}
+      {showManualBookingModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }} onClick={() => setShowManualBookingModal(false)}>
+          <div style={{ background: '#fff', borderRadius: '32px', padding: '40px', width: '100%', maxWidth: '500px', animation: 'modalSlideUp 0.3s ease-out', position: 'relative' }} onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowManualBookingModal(false)} style={{ position: 'absolute', top: '30px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#1e293b', marginBottom: '24px' }}>Manual Booking</h3>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Select Student</label>
+              <select id="manualStudentInput" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9' }}>
+                <option value="">Choose student...</option>
+                {allStudentsData.map((s: any) => <option key={s.id} value={s.id}>{s.name} ({s.email})</option>)}
+              </select>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Select Mentorship Offering</label>
+              <select id="manualMentorshipInput" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9' }}>
+                <option value="">Choose mentorship...</option>
+                {mentorshipsData?.mentorships?.map((m: any) => <option key={m.id} value={m.id}>{m.mentorName}</option>)}
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Date</label>
+                <input id="manualDateInput" type="date" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Time (HH:MM)</label>
+                <input id="manualTimeInput" type="time" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9' }} />
+              </div>
+            </div>
+            <button onClick={async () => {
+              const studentId = (document.getElementById('manualStudentInput') as HTMLSelectElement).value;
+              const mentorshipId = (document.getElementById('manualMentorshipInput') as HTMLSelectElement).value;
+              const date = (document.getElementById('manualDateInput') as HTMLInputElement).value;
+              const time = (document.getElementById('manualTimeInput') as HTMLInputElement).value;
+              if (!studentId || !mentorshipId || !date || !time) return alert('All fields required')
+              try {
+                const res = await fetch('/api/store/mentorships/manual-book', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ studentId, mentorshipId, date, time })
+                })
+                if (res.ok) { alert('Success!'); setShowManualBookingModal(false); window.location.reload() }
+                else alert('Failed')
+              } catch { alert('Error') }
+            }} style={{ width: '100%', padding: '16px', borderRadius: '16px', background: '#1e293b', color: '#fff', fontWeight: '800', border: 'none', cursor: 'pointer' }}>Create Booking</button>
       )}
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />

@@ -1,21 +1,17 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { getSession, isAdminOrManager } from '@/lib/auth'
 
 export async function POST(req: Request) {
   try {
+    const session = await getSession()
+    if (!session || !isAdminOrManager(session.role)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const data = await req.json()
-    const { mentorName, description, pricePerSlot, slotDuration } = data
+    const { mentorName, description, pricePerSlot, slotDuration, mentorId } = data
 
     if (!mentorName || !pricePerSlot) {
       return NextResponse.json({ error: 'Mentor name and price are required' }, { status: 400 })
-    }
-
-    const manager = await prisma.user.findFirst({
-      where: { role: 'MANAGER' }
-    })
-
-    if (!manager) {
-      return NextResponse.json({ error: 'No manager found to assign as creator' }, { status: 500 })
     }
 
     const mentorship = await prisma.mentorshipOffering.create({
@@ -24,7 +20,8 @@ export async function POST(req: Request) {
         description,
         pricePerSlot: Number(pricePerSlot),
         slotDuration: Number(slotDuration),
-        createdById: manager.id,
+        mentorId: mentorId || null,
+        createdById: session.userId,
       }
     })
 
@@ -39,7 +36,10 @@ export async function GET(req: Request) {
   try {
     const mentorships = await prisma.mentorshipOffering.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { bookings: true }
+      include: { 
+        bookings: true,
+        mentor: { select: { id: true, name: true, email: true, role: true } }
+      }
     })
     return NextResponse.json({ mentorships })
   } catch (error: any) {

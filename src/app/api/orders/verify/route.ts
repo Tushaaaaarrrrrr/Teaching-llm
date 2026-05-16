@@ -46,6 +46,21 @@ export async function POST(request: NextRequest) {
 
     await prisma.order.update({ where: { id: order.id }, data: { razorpayPaymentId, razorpaySignature, status: 'SUCCESS' } })
 
+    // Trigger purchase confirmation email
+    const { sendEmailNotification } = require('@/lib/email-service')
+    // Get item names for the email
+    const itemNames = order.items.map(i => i.courseId).join(', ') // Simplified for now
+    
+    await sendEmailNotification('purchase', {
+      userEmail: session.email,
+      userName: session.name,
+      orderId: order.id,
+      itemName: itemNames,
+      amount: order.amount,
+      date: new Date().toLocaleDateString(),
+      dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/courses/explore`
+    })
+
     // Track coupon usage if a coupon was applied
     if (order.couponId && order.couponCode) {
       try {

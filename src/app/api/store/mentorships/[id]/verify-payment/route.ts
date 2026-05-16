@@ -27,6 +27,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     // Update all bookings linked to this order
+    const bookings = await prisma.mentorshipBooking.findMany({
+      where: { razorpayOrderId: razorpay_order_id },
+      include: {
+        user: { select: { email: true, name: true } },
+        mentorship: { select: { mentorName: true } }
+      }
+    })
+
     await prisma.mentorshipBooking.updateMany({
       where: { razorpayOrderId: razorpay_order_id },
       data: {
@@ -34,6 +42,19 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         orderId: razorpay_payment_id
       }
     })
+
+    // Trigger confirmation email for each booking
+    const { sendEmailNotification } = require('@/lib/email-service')
+    for (const booking of bookings) {
+      await sendEmailNotification('mentorship_confirmed', {
+        userEmail: booking.user.email,
+        userName: booking.user.name,
+        mentorName: booking.mentorship.mentorName,
+        slotDate: booking.slotDate,
+        slotTime: booking.slotTime,
+        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/courses/explore?view=mentorship`
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

@@ -76,6 +76,7 @@ model User {
   createdNotes            StoreNote[]                  @relation("NoteCreator")
   noteAccesses            StoreNoteAccess[]
   createdMentorships      MentorshipOffering[]         @relation("MentorshipCreator")
+  mentorshipsAsMentor     MentorshipOffering[]         @relation("MentorAssignment")
   mentorshipBookings      MentorshipBooking[]
   createdTestSeries       TestSeries[]                 @relation("TestSeriesCreator")
   testSeriesAccesses      TestSeriesAccess[]
@@ -180,6 +181,8 @@ model BundleOffering {
   bundleDiscountApplicability String?
   requireAllCourses         Boolean                    @default(true)
   forceClassType            String?
+  coursePrices              String?                    @default("[]")
+  startingPrice             Float?
   createdBy                 User                       @relation(fields: [createdById], references: [id])
   courses                   BundleOfferingCourse[]
 
@@ -1117,10 +1120,12 @@ model MentorshipOffering {
   isActive        Boolean              @default(true)
   // JSON: array of date+time slots: [{"date":"2024-06-01","time":"10:00"},...]
   availableSlots  String               @default("[]")
+  mentorId        String?
   createdById     String
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
 
+  mentor          User?                @relation("MentorAssignment", fields: [mentorId], references: [id])
   createdBy       User                 @relation("MentorshipCreator", fields: [createdById], references: [id])
   bookings        MentorshipBooking[]
 
@@ -1138,6 +1143,8 @@ model MentorshipBooking {
   razorpayOrderId     String?
   orderId             String?
   userNote            String?
+  userQuestion        String?            // What the student wants to discuss
+  meetLink            String?            // The link for the session
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
