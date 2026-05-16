@@ -1471,7 +1471,10 @@ export default function ExploreCoursesPage() {
       {/* Bundle Choose / Buy Modal */}
       {showBundleModal && activeBundle && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }} onClick={() => { setShowBundleModal(false); setActiveBundle(null) }}>
-          <div style={{ width: '100%', maxWidth: '1024px', background: '#fff', borderRadius: '24px', padding: '40px' }} onClick={e => e.stopPropagation()}>
+          {(() => {
+            const selectedList = bundleSelectedCoursesToBuy.length ? bundleSelectedCoursesToBuy : activeBundle.courses.map((c: any) => c.course.id);
+            return (
+              <div style={{ width: '100%', maxWidth: '1024px', background: '#fff', borderRadius: '24px', padding: '40px' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '900' }}>{activeBundle.name}</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1595,7 +1598,6 @@ export default function ExploreCoursesPage() {
 
                   {/* Global Bundle Class Type Choice Moved Here */}
                   {(() => {
-                    const selectedList = bundleSelectedCoursesToBuy.length ? bundleSelectedCoursesToBuy : activeBundle.courses.map((c: any) => c.course.id);
                     if ((activeBundle.allowIndividualPurchase === false || selectedList.length === activeBundle.courses.length) && !activeBundle.forceClassType) {
                       return (
                         <div style={{ padding: '16px', borderRadius: '12px', background: '#fff', border: '1.5px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1623,7 +1625,6 @@ export default function ExploreCoursesPage() {
                 {(() => {
                   let totalPrice = 0;
                   let originalTotalPrice = 0;
-                  const selectedList = bundleSelectedCoursesToBuy.length ? bundleSelectedCoursesToBuy : activeBundle.courses.map((c: any) => c.course.id);
                   const isFixed = activeBundle.allowIndividualPurchase === false;
                   const effectiveAccessType = activeBundle.forceClassType || bundleGlobalAccessType;
                   
@@ -1844,8 +1845,8 @@ export default function ExploreCoursesPage() {
                   );
                 })()}
               </div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       )}
       {/* ── Batch Comparison Modal (opened from bundle i button) ── */}
