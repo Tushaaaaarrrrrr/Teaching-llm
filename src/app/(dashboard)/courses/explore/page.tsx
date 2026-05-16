@@ -69,6 +69,12 @@ export default function ExploreCoursesPage() {
   const [showCreateBundleModal, setShowCreateBundleModal] = useState(false)
   const [showCreateNoteModal, setShowCreateNoteModal] = useState(false)
   const [showCreateMentorshipModal, setShowCreateMentorshipModal] = useState(false)
+
+  // Mentorship Booking
+  const [showMentorshipBookingModal, setShowMentorshipBookingModal] = useState<any>(null)
+  const [mentorshipBookingDate, setMentorshipBookingDate] = useState('')
+  const [mentorshipBookingTime, setMentorshipBookingTime] = useState('')
+
   // Helper to get enrollment status
   const getEnrollmentStatus = (courseId: string) => {
     const coursesArray = Array.isArray(courses) ? courses : (courses as any)?.courses || []
@@ -479,7 +485,7 @@ export default function ExploreCoursesPage() {
                   <div style={{ fontWeight: '800', color: '#f59e0b' }}>₹{m.pricePerSlot} / {m.slotDurationMinutes} mins</div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => { alert('Mentorship booking flow coming soon!') }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff', fontWeight: '800' }}>
+                  <button onClick={() => { setShowMentorshipBookingModal(m) }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff', fontWeight: '800' }}>
                     Book Slot
                   </button>
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
@@ -2518,6 +2524,86 @@ export default function ExploreCoursesPage() {
                 Create Mentorship
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MENTORSHIP BOOKING MODAL */}
+      {showMentorshipBookingModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowMentorshipBookingModal(null)}>
+          <div style={{ background: '#fff', borderRadius: '24px', padding: '32px', width: '100%', maxWidth: '400px', animation: 'modalSlideUp 0.3s ease-out' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b' }}>Book Session with {showMentorshipBookingModal.mentorName}</h3>
+              <button onClick={() => setShowMentorshipBookingModal(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#64748b' }}>✕</button>
+            </div>
+            <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px' }}>Duration: {showMentorshipBookingModal.slotDuration} mins | Price: ₹{showMentorshipBookingModal.pricePerSlot}</p>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: '6px', color: '#334155' }}>Select Date</label>
+              <input type="date" value={mentorshipBookingDate} onChange={e => setMentorshipBookingDate(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: '6px', color: '#334155' }}>Select Time</label>
+              <input type="time" value={mentorshipBookingTime} onChange={e => setMentorshipBookingTime(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+            </div>
+
+            <button 
+              disabled={isProcessing}
+              onClick={async () => {
+                if (!mentorshipBookingDate || !mentorshipBookingTime) { alert('Please select both date and time.'); return }
+                setIsProcessing(true)
+                try {
+                  const res = await fetch(`/api/store/mentorships/${showMentorshipBookingModal.id}/create-order`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slotDate: mentorshipBookingDate, slotTime: mentorshipBookingTime })
+                  })
+                  const data = await res.json()
+                  if (!res.ok) throw new Error(data.error)
+                  if (data.isFree) {
+                    setShowMentorshipBookingModal(null)
+                    alert('Booking confirmed!')
+                    setIsProcessing(false)
+                    return
+                  }
+                  const options = {
+                    key: data.key,
+                    amount: data.amount,
+                    currency: 'INR',
+                    name: 'GenZ IITian',
+                    description: `Mentorship Booking`,
+                    order_id: data.razorpayOrderId,
+                    handler: async function (response: any) {
+                      try {
+                        const verifyRes = await fetch(`/api/store/mentorships/${showMentorshipBookingModal.id}/verify-payment`, {
+                          method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            bookingId: data.bookingId
+                          })
+                        })
+                        if (verifyRes.ok) {
+                          setShowMentorshipBookingModal(null)
+                          alert('Mentorship Booking Confirmed!')
+                        } else { alert('Payment verification failed') }
+                      } catch { alert('Payment verification failed') }
+                      finally { setIsProcessing(false) }
+                    },
+                    modal: { ondismiss: () => setIsProcessing(false) }
+                  }
+                  setIsProcessing(false)
+                  const rzp = new (window as any).Razorpay(options)
+                  rzp.open()
+                } catch (e: any) {
+                  setIsProcessing(false)
+                  alert(e.message || 'Error processing')
+                }
+              }} 
+              style={{ width: '100%', padding: '14px', background: isProcessing ? '#94a3b8' : 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer' }}>
+              {isProcessing ? 'Processing...' : `Proceed to Pay ₹${showMentorshipBookingModal.pricePerSlot}`}
+            </button>
           </div>
         </div>
       )}
