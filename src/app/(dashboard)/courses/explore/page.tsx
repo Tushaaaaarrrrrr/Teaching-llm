@@ -1491,6 +1491,11 @@ export default function ExploreCoursesPage() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {activeBundle.allowIndividualPurchase !== false && (
+                  <div style={{ marginBottom: '12px', fontSize: '13px', color: '#64748b', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '16px' }}>📝</span> Please choose course and class type
+                  </div>
+                )}
                 <div style={{ maxHeight: '380px', overflow: 'auto', paddingRight: '12px', marginBottom: '20px' }}>
                   {activeBundle.courses.map((bc: any) => {
                     const course = bc.course
