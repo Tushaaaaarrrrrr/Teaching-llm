@@ -1740,22 +1740,29 @@ export default function ExploreCoursesPage() {
                                 </div>
                                 
                                 {!getEnrollmentStatus(course.id) || userData?.user?.role === 'MANAGER' ? (
-                                  <select 
-                                    value={selectedType} 
-                                    onChange={e => {
-                                      const newType = e.target.value as 'RECORDED' | 'LIVE'
-                                      setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: newType })
-                                      if (couponApplied?.code?.includes('LIVE') && newType === 'RECORDED') {
-                                        setCouponApplied(null)
-                                        setCouponError('Live-only coupon removed (requires all subjects to be Live).')
-                                      }
-                                    }} 
-                                    style={{ padding: '6px 12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '12px', fontWeight: '700', cursor: 'pointer', outline: 'none' }}
-                                  >
-                                    <option value="RECORDED">Recorded</option>
-                                    <option value="LIVE">Live</option>
-                                    {offering?.championDiscountPrice > 0 && <option value="CHAMPION">Champion</option>}
-                                  </select>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                                    <select 
+                                      value={selectedType} 
+                                      onChange={e => {
+                                        const newType = e.target.value as 'RECORDED' | 'LIVE' | 'CHAMPION'
+                                        setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: newType })
+                                        if (couponApplied?.code?.includes('LIVE') && newType === 'RECORDED') {
+                                          setCouponApplied(null)
+                                          setCouponError('Live-only coupon removed (requires all subjects to be Live).')
+                                        }
+                                      }} 
+                                      style={{ padding: '6px 12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '12px', fontWeight: '700', cursor: 'pointer', outline: 'none' }}
+                                    >
+                                      <option value="RECORDED">Recorded</option>
+                                      <option value="LIVE">Live</option>
+                                      {offering?.championDiscountPrice > 0 && <option value="CHAMPION">Champion</option>}
+                                    </select>
+                                    {selectedType === 'CHAMPION' && offering?.championSubtitle && (
+                                      <div style={{ padding: '4px 8px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#dc2626', fontSize: '10px', fontWeight: '700', maxWidth: '140px', textAlign: 'right' }}>
+                                        {offering.championSubtitle}
+                                      </div>
+                                    )}
+                                  </div>
                                 ) : null}
                               </>
                             )}
@@ -1816,17 +1823,24 @@ export default function ExploreCoursesPage() {
                       </div>
                       
                       {!activeBundle.forceClassType && (
-                        <div style={{ background: '#fff', borderRadius: '10px', padding: '10px', border: '1px solid #dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e40af' }}>Select Class Type</span>
-                          <select 
-                            value={bundleGlobalAccessType} 
-                            onChange={e => setBundleGlobalAccessType(e.target.value as 'RECORDED' | 'LIVE')} 
-                            style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #bfdbfe', fontSize: '13px', fontWeight: '700', cursor: 'pointer', outline: 'none', color: '#1e3a8a' }}
-                          >
-                            <option value="RECORDED">Recorded Plus</option>
-                            <option value="LIVE">Live Pro</option>
-                            {activeBundle.championDiscountPrice > 0 && <option value="CHAMPION">Champion</option>}
-                          </select>
+                        <div style={{ background: '#fff', borderRadius: '10px', padding: '10px', border: '1px solid #dbeafe', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e40af' }}>Select Class Type</span>
+                            <select 
+                              value={bundleGlobalAccessType} 
+                              onChange={e => setBundleGlobalAccessType(e.target.value as 'RECORDED' | 'LIVE' | 'CHAMPION')} 
+                              style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #bfdbfe', fontSize: '13px', fontWeight: '700', cursor: 'pointer', outline: 'none', color: '#1e3a8a' }}
+                            >
+                              <option value="RECORDED">Recorded Plus</option>
+                              <option value="LIVE">Live Pro</option>
+                              {activeBundle.championDiscountPrice > 0 && <option value="CHAMPION">Champion</option>}
+                            </select>
+                          </div>
+                          {bundleGlobalAccessType === 'CHAMPION' && activeBundle.championSubtitle && (
+                            <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#dc2626', fontSize: '12px', fontWeight: '700' }}>
+                              ⭐ {activeBundle.championSubtitle}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
