@@ -282,8 +282,14 @@ export async function POST(
       userName: session.name,
       userEmail: session.email
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('[bundle create-order] Error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const debugMsg = error?.message || 'Unknown error'
+    const debugMeta = error?.meta ? JSON.stringify(error.meta) : ''
+    const debugCode = error?.code || ''
+    return NextResponse.json({ 
+      error: 'Internal server error', 
+      debug: `${debugCode}: ${debugMsg} ${debugMeta}`.trim()
+    }, { status: 500 })
   }
 }
