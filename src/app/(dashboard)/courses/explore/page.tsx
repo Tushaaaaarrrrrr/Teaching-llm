@@ -3074,6 +3074,10 @@ export default function ExploreCoursesPage() {
                       placeholder="e.g. 4000"
                     />
                   </div>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#15803d', marginBottom: '4px' }}>Bundle Live Price (₹)</div>
+                    <input 
+                      type="number" 
                       value={editBundleData.liveDiscountPrice ?? ''} 
                       onChange={e => setEditBundleData({ ...editBundleData, liveDiscountPrice: e.target.value, liveOriginalPrice: e.target.value })} 
                       style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #86efac', fontSize: '14px', fontWeight: '700' }} 
