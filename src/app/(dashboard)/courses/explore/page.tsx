@@ -1678,12 +1678,28 @@ export default function ExploreCoursesPage() {
                   })()}
 
                   {activeBundle.allowIndividualPurchase === false && (
-                    <div style={{ padding: '12px 18px', borderRadius: '16px', background: '#eff6ff', border: '1px solid #bfdbfe', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontSize: '20px' }}>🔒</span>
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#1e40af' }}>Fixed Course Bundle</div>
-                        <div style={{ fontSize: '11px', color: '#3b82f6', fontWeight: '600' }}>This course set must be purchased as a complete package. Class type applies to all subjects.</div>
+                    <div style={{ padding: '12px 18px', borderRadius: '16px', background: '#eff6ff', border: '1px solid #bfdbfe', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '20px' }}>🔒</span>
+                        <div>
+                          <div style={{ fontSize: '14px', fontWeight: '900', color: '#1e40af' }}>Fixed Course Bundle</div>
+                          <div style={{ fontSize: '11px', color: '#3b82f6', fontWeight: '600' }}>This course set must be purchased as a complete package. Class type applies to all subjects.</div>
+                        </div>
                       </div>
+                      
+                      {!activeBundle.forceClassType && (
+                        <div style={{ background: '#fff', borderRadius: '10px', padding: '10px', border: '1px solid #dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e40af' }}>Select Class Type</span>
+                          <select 
+                            value={bundleGlobalAccessType} 
+                            onChange={e => setBundleGlobalAccessType(e.target.value as 'RECORDED' | 'LIVE')} 
+                            style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #bfdbfe', fontSize: '13px', fontWeight: '700', cursor: 'pointer', outline: 'none', color: '#1e3a8a' }}
+                          >
+                            <option value="RECORDED">Recorded Plus</option>
+                            <option value="LIVE">Live Pro</option>
+                          </select>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2720,59 +2736,6 @@ export default function ExploreCoursesPage() {
               <input type="text" value={editBundleData.description ?? ''} onChange={e => setEditBundleData({...editBundleData, description: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
             </div>
 
-            {/* EDIT TIERED PRICING - only shown for fixed bundles as legacy fallback */}
-            {(editBundleData.courseIds?.length || 0) > 0 && editBundleData.allowIndividualPurchase === false && (
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '12px' }}>
-                  Pricing Tiers (Max 6)
-                </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {(() => {
-                    const savedTiers = JSON.parse(editBundleData.coursePrices || '{}');
-                    return Array.from({ length: Math.min(6, editBundleData.courseIds.length) }).map((_, idx) => {
-                      const count = idx + 1;
-                      const tier = savedTiers[count] || {};
-                      return (
-                        <div key={count} style={{ background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1.5px solid #eef2ff' }}>
-                          <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ background: '#6366f1', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>{count}</span>
-                            Price for {count} {count === 1 ? 'Course' : 'Courses'}
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>Recorded (Original / Discount)</div>
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                <input type="number" min={1} placeholder="Orig" value={tier.recordedOriginal || ''} onChange={e => {
-                                  const newTiers = { ...savedTiers, [count]: { ...tier, recordedOriginal: e.target.value } };
-                                  setEditBundleData({ ...editBundleData, coursePrices: JSON.stringify(newTiers) });
-                                }} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
-                                <input type="number" min={1} placeholder="Disc" value={tier.recordedDiscount || ''} onChange={e => {
-                                  const newTiers = { ...savedTiers, [count]: { ...tier, recordedDiscount: e.target.value } };
-                                  setEditBundleData({ ...editBundleData, coursePrices: JSON.stringify(newTiers) });
-                                }} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
-                              </div>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>Live (Original / Discount)</div>
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                <input type="number" min={1} placeholder="Orig" value={tier.liveOriginal || ''} onChange={e => {
-                                  const newTiers = { ...savedTiers, [count]: { ...tier, liveOriginal: e.target.value } };
-                                  setEditBundleData({ ...editBundleData, coursePrices: JSON.stringify(newTiers) });
-                                }} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
-                                <input type="number" min={1} placeholder="Disc" value={tier.liveDiscount || ''} onChange={e => {
-                                  const newTiers = { ...savedTiers, [count]: { ...tier, liveDiscount: e.target.value } };
-                                  setEditBundleData({ ...editBundleData, coursePrices: JSON.stringify(newTiers) });
-                                }} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    });
-                  })()}
-                </div>
-              </div>
-            )}
 
             {/* 1. Fixed Bundle Toggle - NOW AT TOP */}
             <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '16px', background: '#f0f4ff', border: '1.5px solid #dbeafe' }}>
