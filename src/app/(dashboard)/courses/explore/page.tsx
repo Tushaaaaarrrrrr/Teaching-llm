@@ -1514,8 +1514,10 @@ export default function ExploreCoursesPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px', flex: 1, overflow: 'hidden', minHeight: 0 }}>
               <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 {activeBundle.allowIndividualPurchase !== false && (
-                  <div style={{ marginBottom: '12px', fontSize: '13px', color: '#64748b', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '16px' }}>📝</span> Please choose course and class type
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', alignItems: 'center', gap: '16px', padding: '0 6px 10px 6px', marginBottom: '4px', borderBottom: '1.5px solid #f1f5f9' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Course</div>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center', minWidth: '160px' }}>Prices</div>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center', minWidth: '110px' }}>Class Type</div>
                   </div>
                 )}
                 <div style={{ maxHeight: '420px', overflow: 'auto', paddingRight: '12px', marginBottom: '20px' }}>
@@ -1683,44 +1685,58 @@ export default function ExploreCoursesPage() {
 
                   const tierPrices = activeBundle.coursePrices ? JSON.parse(activeBundle.coursePrices) : {};
                   const count = selectedList.length;
-                  const tier = tierPrices[count];
-
                   const effectiveGlobalType = activeBundle.forceClassType || bundleGlobalAccessType;
+                  const individualMapping = tierPrices.individualMapping || {};
+                  const hasIndividualMapping = Object.keys(individualMapping).length > 0;
 
-                  if (tier) {
-                    if (effectiveGlobalType === 'RECORDED') {
-                      totalPrice = Number(tier.recordedDiscount) || Number(tier.recordedOriginal) || 0;
-                      originalTotalPrice = Number(tier.recordedOriginal) || totalPrice;
-                    } else {
-                      totalPrice = Number(tier.liveDiscount) || Number(tier.liveOriginal) || 0;
-                      originalTotalPrice = Number(tier.liveOriginal) || totalPrice;
-                    }
+                  if (isFixed) {
+                    // Fixed bundle: use global bundle price fields
+                    const bundlePrice = effectiveGlobalType === 'RECORDED'
+                      ? activeBundle.recordedDiscountPrice ?? activeBundle.recordedOriginalPrice
+                      : activeBundle.liveDiscountPrice ?? activeBundle.liveOriginalPrice;
+                    const bundleOriginal = effectiveGlobalType === 'RECORDED'
+                      ? activeBundle.recordedOriginalPrice ?? activeBundle.recordedDiscountPrice
+                      : activeBundle.liveOriginalPrice ?? activeBundle.liveDiscountPrice;
+                    totalPrice = Number(bundlePrice) || 0;
+                    originalTotalPrice = Number(bundleOriginal) || totalPrice;
+                  } else if (hasIndividualMapping) {
+                    // Non-fixed with subject-specific pricing: sum individual course prices
+                    selectedList.forEach((courseId: string) => {
+                      const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
+                      const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
+                      const custom = individualMapping[courseId];
+                      if (selectedType === 'RECORDED') {
+                        const p = Number(custom?.recorded || offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0);
+                        totalPrice += p;
+                        originalTotalPrice += p;
+                      } else {
+                        const p = Number(custom?.live || offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
+                        totalPrice += p;
+                        originalTotalPrice += p;
+                      }
+                    });
                   } else {
-                    const isBuyingAll = selectedList.length === activeBundle.courses.length;
-                    const useBundleBasePrice = (isFixed || isBuyingAll) && (effectiveGlobalType === 'RECORDED' ? activeBundle.recordedOriginalPrice != null : activeBundle.liveOriginalPrice != null);
-
-                    if (useBundleBasePrice) {
-                      const bundlePrice = effectiveGlobalType === 'RECORDED' ? activeBundle.recordedDiscountPrice ?? activeBundle.recordedOriginalPrice : activeBundle.liveDiscountPrice ?? activeBundle.liveOriginalPrice;
-                      const bundleOriginal = effectiveGlobalType === 'RECORDED' ? activeBundle.recordedOriginalPrice ?? activeBundle.recordedDiscountPrice : activeBundle.liveOriginalPrice ?? activeBundle.liveDiscountPrice;
-                      
-                      totalPrice = bundlePrice || 0;
-                      originalTotalPrice = bundleOriginal || totalPrice;
+                    // Fallback: use tiered pricing (tier[count] = bundle total for N courses)
+                    const tier = tierPrices[count];
+                    if (tier) {
+                      if (effectiveGlobalType === 'RECORDED') {
+                        totalPrice = Number(tier.recordedDiscount) || Number(tier.recordedOriginal) || 0;
+                        originalTotalPrice = Number(tier.recordedOriginal) || totalPrice;
+                      } else {
+                        totalPrice = Number(tier.liveDiscount) || Number(tier.liveOriginal) || 0;
+                        originalTotalPrice = Number(tier.liveOriginal) || totalPrice;
+                      }
                     } else {
+                      // Last resort: sum offering prices
                       selectedList.forEach((courseId: string) => {
                         const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
                         const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
-                        
-                        const mappings = tierPrices.individualMapping || {};
-                        const custom = mappings[courseId];
-
                         if (selectedType === 'RECORDED') {
-                          const p = Number(custom?.recorded || (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0));
-                          totalPrice += p;
-                          originalTotalPrice += p;
+                          totalPrice += Number(offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0);
+                          originalTotalPrice += Number(offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0);
                         } else {
-                          const p = Number(custom?.live || (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0));
-                          totalPrice += p;
-                          originalTotalPrice += p;
+                          totalPrice += Number(offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
+                          originalTotalPrice += Number(offering?.liveOriginalPrice ?? offering?.liveDiscountPrice ?? 0);
                         }
                       });
                     }
