@@ -216,6 +216,15 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   }
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading assessment...</div>
+  if (!exam || !exam.questions || exam.questions.length === 0) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <h2 style={{ color: '#ef4444' }}>Error Loading Assessment</h2>
+        <p>The assessment details could not be loaded. Please try again later.</p>
+        <button onClick={() => router.push('/exams')} style={{ marginTop: '20px', padding: '10px 20px', borderRadius: '50px', background: '#3636e8', color: '#fff', border: 'none', cursor: 'pointer' }}>Go Back</button>
+      </div>
+    )
+  }
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)

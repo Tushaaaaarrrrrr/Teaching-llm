@@ -933,7 +933,12 @@ export default function ExploreCoursesPage() {
                             const res = await fetch(`/api/test-series/${ts.id}/create-order`, { method: 'POST' })
                             const data = await res.json()
                             if (!res.ok) { alert(data.error || 'Failed'); setPurchasing(null); return }
-                            if (data.isFree) { alert('Access granted! Go to Exams tab.'); window.location.reload(); return }
+                            if (data.isFree) {
+                              setSuccessOrderId('TS-FREE');
+                              setPurchasedCourse({ courseName: ts.title, courseTier: 'Test Series Package', type: 'test-series' });
+                              setPurchasing(null);
+                              return;
+                            }
                             const options = {
                               key: data.key, amount: data.amount, currency: data.currency,
                               name: 'GenZ IItian', description: `Purchase: ${data.testSeriesName}`,
@@ -943,7 +948,10 @@ export default function ExploreCoursesPage() {
                               handler: async (response: any) => {
                                 try {
                                   const vRes = await fetch(`/api/test-series/${ts.id}/verify-payment`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature, accessId: data.accessId }) })
-                                  if (vRes.ok) { alert('Payment successful! Go to Exams tab to start.'); window.location.reload() }
+                                  if (vRes.ok) {
+                                    setSuccessOrderId('TS-SUCCESS');
+                                    setPurchasedCourse({ courseName: data.testSeriesName, courseTier: 'Test Series Package', type: 'test-series' });
+                                  }
                                   else alert('Verification failed')
                                 } catch { alert('Payment verification failed') }
                                 finally { setPurchasing(null) }
@@ -2465,7 +2473,7 @@ export default function ExploreCoursesPage() {
           background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
           padding: '20px'
-        }} onClick={() => { setSuccessOrderId(null); router.push('/courses') }}>
+        }} onClick={() => { setSuccessOrderId(null); router.push(purchasedCourse?.type === 'test-series' ? '/exams' : '/courses') }}>
           <div style={{
             background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '480px',
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
@@ -2485,7 +2493,7 @@ export default function ExploreCoursesPage() {
                 border: '2px solid #bbf7d0'
               }}>
                 <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>
-                  Course Purchased
+                  {purchasedCourse.type === 'test-series' ? 'Test Series Purchased' : 'Course Purchased'}
                 </div>
                 <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#15803d', marginBottom: '6px' }}>
                   {purchasedCourse.courseName}
@@ -2497,7 +2505,7 @@ export default function ExploreCoursesPage() {
             )}
 
             {/* Order ID */}
-            {successOrderId && successOrderId !== 'FREE-ENROLLMENT' && successOrderId !== 'SUCCESS' && (
+            {successOrderId && successOrderId !== 'FREE-ENROLLMENT' && successOrderId !== 'SUCCESS' && successOrderId !== 'TS-SUCCESS' && successOrderId !== 'TS-FREE' && (
               <div style={{ background: '#f3f4f6', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #d1d5db' }}>
                 <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700', textTransform: 'uppercase', marginBottom: '6px' }}>
                   Order ID (sent to your email)
@@ -2513,11 +2521,11 @@ export default function ExploreCoursesPage() {
             </p>
 
             <button
-              onClick={() => { setSuccessOrderId(null); router.push('/courses') }}
+              onClick={() => { setSuccessOrderId(null); router.push(purchasedCourse?.type === 'test-series' ? '/exams' : '/courses') }}
               style={{
-                width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+                width: '100%', padding: '18px', borderRadius: '18px', border: 'none',
                 background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+                color: 'white', fontWeight: '800', fontSize: '16px', cursor: 'pointer',
                 boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
                 transition: 'all 0.2s'
               }}
@@ -2530,7 +2538,7 @@ export default function ExploreCoursesPage() {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)'
               }}
             >
-              Go to My Courses 🚀
+              {purchasedCourse?.type === 'test-series' ? 'Go to Exams →' : 'Start Learning! 🚀'}
             </button>
           </div>
         </div>

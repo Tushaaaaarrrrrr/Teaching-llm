@@ -49,6 +49,7 @@ export default function ExamsPage() {
   const userRole = meData?.user?.role || meData?.role || ''
   const isManager = userRole === 'MANAGER' || userRole === 'ADMIN'
   const testSeriesList = tsData?.testSeries || []
+  const visibleTestSeries = testSeriesList.filter((ts: any) => isManager || ts.myAccess)
   const courses = Array.isArray(coursesData) ? coursesData : []
 
   // Split exams
@@ -145,13 +146,13 @@ export default function ExamsPage() {
       </div>
 
       {/* Test Series Section */}
-      {testSeriesList.length > 0 && (
+      {visibleTestSeries.length > 0 && (
         <section style={{ marginBottom: '48px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#f59e0b', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }} />📝 Test Series
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-            {testSeriesList.map((ts: any) => {
+            {visibleTestSeries.map((ts: any) => {
               const hasAccess = ts.myAccess || isManager
               const isExpiredAccess = ts.myAccess && new Date(ts.myAccess.expiresAt) < new Date()
               const myExams = tsExams.filter(e => e.testSeriesId === ts.id)
@@ -175,7 +176,7 @@ export default function ExamsPage() {
                       {myExams.slice(0, 3).map(e => (
                         <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
                           <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>{e.title}</span>
-                          <button onClick={() => router.push(`/exams/${e.id}`)} style={{ padding: '4px 12px', borderRadius: '50px', background: '#3636e8', color: '#fff', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>Start</button>
+                          <button onClick={() => router.push(`/exams/${e.id}`)} style={{ padding: '8px 20px', borderRadius: '50px', background: '#3636e8', color: '#fff', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 10px rgba(54,54,232,0.2)' }}>Start</button>
                         </div>
                       ))}
                       {myExams.length > 3 && <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: 600, marginTop: '4px' }}>+{myExams.length - 3} more exams</div>}
@@ -214,7 +215,7 @@ export default function ExamsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>{expiredExams.map(renderExamCard)}</div>
         </section>
       )}
-      {exams.length === 0 && testSeriesList.length === 0 && (
+      {exams.length === 0 && visibleTestSeries.length === 0 && (
         <div style={{ ...neu, textAlign: 'center', padding: '64px' }}>
           <div style={{ fontSize: '16px', color: '#6b6b8a', marginBottom: '8px', fontWeight: 700 }}>No exams found</div>
           <p style={{ fontSize: '14px', color: '#9999b0' }}>{isManager ? 'Start by creating an exam or a test series.' : 'You have no active exams at the moment.'}</p>

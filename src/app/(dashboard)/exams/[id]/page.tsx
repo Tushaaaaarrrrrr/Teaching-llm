@@ -537,7 +537,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
          {/* Evaluation Overlay */}
          {evaluatingAttempt && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }} onClick={() => setEvaluatingAttempt(null)}>
-               <div className="modal" style={{ maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+               <div className="modal" style={{ maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '32px' }} onClick={e => e.stopPropagation()}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
                      <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a' }}>Evaluate Submission</h2>
                      <button onClick={() => setEvaluatingAttempt(null)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
@@ -610,9 +610,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                        disabled={q.type === 'MCQ' || q.type === 'TRUE_FALSE'}
                                        value={evalData.marks}
                                        onChange={(e) => setEvaluations({...evaluations, [resp.id]: {...evalData, marks: parseFloat(e.target.value) || 0}})}
+                                       className="form-input"
                                        style={{ 
-                                         width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #c5c7cf',
-                                         background: (q.type === 'MCQ' || q.type === 'TRUE_FALSE') ? '#f3f4f6' : '#fff',
                                          fontWeight: 700, color: '#1e1e3a',
                                          cursor: (q.type === 'MCQ' || q.type === 'TRUE_FALSE') ? 'not-allowed' : 'text'
                                        }} 
@@ -625,7 +624,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                       value={evalData.feedback}
                                       onChange={(e) => setEvaluations({...evaluations, [resp.id]: {...evalData, feedback: e.target.value}})}
                                       placeholder="Note for student..."
-                                      style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #c5c7cf' }} 
+                                      className="form-input"
                                     />
                                  </div>
                               </div>
@@ -649,7 +648,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                   value={bonusMarks}
                                   onChange={(e) => setBonusMarks(parseFloat(e.target.value) || 0)}
                                   placeholder="0"
-                                  style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '2px solid #3636e820', fontWeight: 800, background: '#3636e805' }}
+                                  className="form-input"
+                                  style={{ fontWeight: 800 }}
                                 />
                             </div>
                          </div>
@@ -658,11 +658,12 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                             <div style={{ flex: 1 }}>
                                <label style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a', textTransform: 'uppercase' }}>Instructor Overall Remarks</label>
                                <textarea 
+                                  className="form-input"
                                   value={examFeedback}
                                   onChange={(e) => setExamFeedback(e.target.value)}
                                   rows={2} 
                                   placeholder="Final summary for student..."
-                                  style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #c5c7cf', marginTop: '6px', fontSize: '14px' }}
+                                  style={{ marginTop: '6px', fontSize: '14px' }}
                                />
                             </div>
                             <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -691,18 +692,18 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
          {showExamEditor && (
            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }} onClick={() => setShowExamEditor(false)}>
-             <div className="modal" style={{ maxWidth: '700px', width: '100%' }} onClick={e => e.stopPropagation()}>
+             <div className="modal" style={{ maxWidth: '700px', width: '100%', padding: '32px' }} onClick={e => e.stopPropagation()}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>Edit Exam</h2>
                  <button onClick={() => setShowExamEditor(false)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
                </div>
                <div style={{ display: 'grid', gap: '16px' }}>
-                 <input value={examForm.title} onChange={(e) => setExamForm({ ...examForm, title: e.target.value })} placeholder="Exam title" style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
-                 <textarea value={examForm.description} onChange={(e) => setExamForm({ ...examForm, description: e.target.value })} placeholder="Description" rows={3} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', resize: 'vertical' }} />
+                 <input className="form-input" value={examForm.title} onChange={(e) => setExamForm({ ...examForm, title: e.target.value })} placeholder="Exam title" />
+                 <textarea className="form-input" value={examForm.description} onChange={(e) => setExamForm({ ...examForm, description: e.target.value })} placeholder="Description" rows={3} style={{ resize: 'vertical' }} />
                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 160px', gap: '16px' }}>
-                   <input type="datetime-local" value={examForm.startDate} onChange={(e) => setExamForm({ ...examForm, startDate: e.target.value })} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
-                   <input type="datetime-local" value={examForm.expiresAt} onChange={(e) => setExamForm({ ...examForm, expiresAt: e.target.value })} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
-                   <input type="number" min="1" value={examForm.durationMinutes} onChange={(e) => setExamForm({ ...examForm, durationMinutes: e.target.value })} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
+                   <input className="form-input" type="datetime-local" value={examForm.startDate} onChange={(e) => setExamForm({ ...examForm, startDate: e.target.value })} />
+                   <input className="form-input" type="datetime-local" value={examForm.expiresAt} onChange={(e) => setExamForm({ ...examForm, expiresAt: e.target.value })} />
+                   <input className="form-input" type="number" min="1" value={examForm.durationMinutes} onChange={(e) => setExamForm({ ...examForm, durationMinutes: e.target.value })} />
                  </div>
                  <button onClick={saveExamDetails} disabled={savingExam} style={{ padding: '14px 18px', borderRadius: '50px', border: 'none', background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
                    {savingExam ? 'Saving...' : 'Save Exam Changes'}
@@ -714,18 +715,18 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
          {showQuestionEditor && (
            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }} onClick={() => { setShowQuestionEditor(false); setEditingQuestionIndex(null) }}>
-             <div className="modal" style={{ maxWidth: '760px', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+             <div className="modal" style={{ maxWidth: '760px', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '32px' }} onClick={e => e.stopPropagation()}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>{editingQuestionIndex === null ? 'Add Question' : 'Edit Question'}</h2>
                  <button onClick={() => { setShowQuestionEditor(false); setEditingQuestionIndex(null) }} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
                </div>
                <div style={{ display: 'grid', gap: '16px' }}>
-                 <select value={questionForm.type} onChange={(e) => setQuestionForm({
+                 <select className="form-input" value={questionForm.type} onChange={(e) => setQuestionForm({
                    ...questionForm,
                    type: e.target.value,
                    options: e.target.value === 'TRUE_FALSE' ? ['True', 'False'] : ['', ''],
                    correctAnswer: ''
-                 })} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }}>
+                 })}>
                    <option value="MCQ">Multiple Choice</option>
                    <option value="TRUE_FALSE">True / False</option>
                    <option value="SUBJECTIVE">Subjective</option>
@@ -735,6 +736,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                      <label style={{ fontSize: '13px', fontWeight: 800, color: '#6b6b8a', display: 'none' }}>Question Text</label>
                    </div>
                    <textarea 
+                     className="form-input"
                      value={questionForm.text.split('```')[0].trim()} 
                      onChange={(e) => {
                        const newText = e.target.value;
@@ -748,7 +750,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                      }} 
                      placeholder="Question text" 
                      rows={4} 
-                     style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', resize: 'vertical' }} 
+                     style={{ resize: 'vertical', minHeight: '100px' }} 
                    />
                    {questionForm.text.includes('```') && (
                      <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.6)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
@@ -814,9 +816,10 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                            onChange={() => setQuestionForm({ ...questionForm, correctAnswer: option })}
                          />
                          {questionForm.type === 'TRUE_FALSE' ? (
-                           <div style={{ padding: '12px 14px', borderRadius: '12px', background: '#fff', flex: 1 }}>{option}</div>
+                           <div className="form-input" style={{ flex: 1, cursor: 'default' }}>{option}</div>
                          ) : (
                            <input
+                             className="form-input"
                              value={option}
                              onChange={(e) => {
                                const nextOptions = [...questionForm.options]
@@ -824,7 +827,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                setQuestionForm({ ...questionForm, options: nextOptions })
                              }}
                              placeholder={`Option ${index + 1}`}
-                             style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', flex: 1 }}
+                             style={{ flex: 1 }}
                            />
                          )}
                        </div>
@@ -837,10 +840,10 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                    </div>
                  )}
                  {questionForm.type === 'SUBJECTIVE' && (
-                   <textarea value={questionForm.correctAnswer} onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })} placeholder="Reference answer / keywords" rows={3} style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff', resize: 'vertical' }} />
+                   <textarea className="form-input" value={questionForm.correctAnswer} onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })} placeholder="Reference answer / keywords" rows={3} style={{ resize: 'vertical' }} />
                  )}
-                 <input value={questionForm.explanation} onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })} placeholder="Explanation (optional)" style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
-                 <input type="number" min="1" value={questionForm.marks} onChange={(e) => setQuestionForm({ ...questionForm, marks: parseInt(e.target.value, 10) || 1 })} placeholder="Marks" style={{ padding: '12px 14px', borderRadius: '12px', border: 'none', background: '#fff' }} />
+                 <input className="form-input" value={questionForm.explanation} onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })} placeholder="Explanation (optional)" />
+                 <input className="form-input" type="number" min="1" value={questionForm.marks} onChange={(e) => setQuestionForm({ ...questionForm, marks: parseInt(e.target.value, 10) || 1 })} placeholder="Marks" />
                  <button onClick={handleSaveQuestion} disabled={savingQuestions} style={{ padding: '14px 18px', borderRadius: '50px', border: 'none', background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
                    {savingQuestions ? 'Saving...' : 'Save Question'}
                  </button>

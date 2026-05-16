@@ -17,7 +17,14 @@ export async function POST(
 
     const exam = await prisma.exam.findUnique({
       where: { id },
-      include: { course: { select: { id: true } } }
+      select: {
+        id: true,
+        courseId: true,
+        testSeriesId: true,
+        isPublished: true,
+        expiresAt: true,
+        examType: true,
+      }
     })
 
     if (!exam) {
@@ -32,12 +39,30 @@ export async function POST(
       return NextResponse.json({ error: 'Exam has expired' }, { status: 403 })
     }
 
-    // Check enrollment
-    const enrollment = await prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId: session.userId, courseId: exam.courseId } }
-    })
-    if (!enrollment && session.role === 'STUDENT') {
-      return NextResponse.json({ error: 'Not enrolled in this course' }, { status: 401 })
+    // Check access
+    if (session.role === 'STUDENT') {
+      if (exam.courseId) {
+        const enrollment = await prisma.enrollment.findUnique({
+          where: { userId_courseId: { userId: session.userId, courseId: exam.courseId } }
+        })
+        if (!enrollment) {
+          return NextResponse.json({ error: 'Not enrolled in this course' }, { status: 403 })
+        }
+      } else if (exam.testSeriesId) {
+        const tsAccess = await (prisma as any).testSeriesAccess.findFirst({
+          where: { 
+            userId: session.userId, 
+            testSeriesId: exam.testSeriesId,
+            expiresAt: { gt: new Date() }
+          }
+        })
+        if (!tsAccess) {
+          return NextResponse.json({ error: 'You do not have access to this test series' }, { status: 403 })
+        }
+      } else {
+        // Standalone exam with no course or test series? Usually shouldn't happen for students
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
     }
 
     // Start or resume attempt
