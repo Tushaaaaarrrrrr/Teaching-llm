@@ -2922,14 +2922,12 @@ export default function ExploreCoursesPage() {
                     const res = await fetch(`/api/course-offerings/${editingOffering.id}`, {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
+                        body: JSON.stringify({
                         courseId: editingOffering.courseId,
                         name: editingOffering.name,
                         thumbnail: editingOffering.thumbnail,
-                        hasRecorded: editingOffering.hasRecorded,
                         recordedOriginalPrice: editFormData.recordedOriginalPrice || null,
                         recordedDiscountPrice: editFormData.recordedDiscountPrice || null,
-                        hasLive: editingOffering.hasLive,
                         liveOriginalPrice: editFormData.liveOriginalPrice || null,
                         liveDiscountPrice: editFormData.liveDiscountPrice || null,
                         championOriginalPrice: editFormData.championOriginalPrice || null,
