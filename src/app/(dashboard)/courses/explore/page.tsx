@@ -1535,11 +1535,12 @@ export default function ExploreCoursesPage() {
                               const enrollmentType = getEnrollmentStatus(course.id);
                               const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
                               const isEnrolled = !isManager && enrollmentType !== null;
+                              const isFixed = activeBundle.allowIndividualPurchase === false;
                               return (
                                 <>
                                   <div 
                                     onClick={() => {
-                                      if (activeBundle.allowIndividualPurchase === false || isEnrolled) return
+                                      if (isFixed || isEnrolled) return
                                       if (bundleSelectedCoursesToBuy.includes(course.id)) {
                                         setBundleSelectedCoursesToBuy(bundleSelectedCoursesToBuy.filter(id => id !== course.id))
                                       } else {
@@ -1552,8 +1553,9 @@ export default function ExploreCoursesPage() {
                                       border: `2px solid ${bundleSelectedCoursesToBuy.includes(course.id) ? '#6366f1' : '#cbd5e1'}`,
                                       background: bundleSelectedCoursesToBuy.includes(course.id) ? '#6366f1' : 'transparent',
                                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                      cursor: isEnrolled ? 'not-allowed' : 'pointer',
-                                      transition: 'all 0.2s ease'
+                                      cursor: (isFixed || isEnrolled) ? 'not-allowed' : 'pointer',
+                                      transition: 'all 0.2s ease',
+                                      opacity: isFixed ? 0.7 : 1
                                     }}
                                   >
                                     {bundleSelectedCoursesToBuy.includes(course.id) && (
@@ -1573,33 +1575,40 @@ export default function ExploreCoursesPage() {
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                            <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '14px', fontWeight: '900', color: selectedType === 'LIVE' ? '#4f46e5' : '#1e293b' }}>
-                                ₹{selectedType === 'LIVE' ? livePrice : recPrice}
+                            {!activeBundle.allowIndividualPurchase ? (
+                              <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', background: 'rgba(99,102,241,0.06)', padding: '6px 12px', borderRadius: '8px', textTransform: 'uppercase' }}>
+                                ✨ Part of Package
                               </div>
-                              <div style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>
-                                {selectedType === 'LIVE' ? 'Live Pro' : 'Recorded Plus'}
-                              </div>
-                            </div>
-                            
-                            {!getEnrollmentStatus(course.id) || userData?.user?.role === 'MANAGER' ? (
-                              <select 
-                                value={selectedType} 
-                                onChange={e => {
-                                  const newType = e.target.value as 'RECORDED' | 'LIVE'
-                                  setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: newType })
-                                  // Auto-remove coupon if it was a LIVE coupon and we just switched to recorded
-                                  if (couponApplied?.code?.includes('LIVE') && newType === 'RECORDED') {
-                                    setCouponApplied(null)
-                                    setCouponError('Live-only coupon removed (requires all subjects to be Live).')
-                                  }
-                                }} 
-                                style={{ padding: '6px 12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '12px', fontWeight: '700', cursor: 'pointer', outline: 'none' }}
-                              >
-                                <option value="RECORDED">Recorded</option>
-                                <option value="LIVE">Live</option>
-                              </select>
-                            ) : null}
+                            ) : (
+                              <>
+                                <div style={{ textAlign: 'right' }}>
+                                  <div style={{ fontSize: '14px', fontWeight: '900', color: selectedType === 'LIVE' ? '#4f46e5' : '#1e293b' }}>
+                                    ₹{selectedType === 'LIVE' ? livePrice : recPrice}
+                                  </div>
+                                  <div style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>
+                                    {selectedType === 'LIVE' ? 'Live Pro' : 'Recorded Plus'}
+                                  </div>
+                                </div>
+                                
+                                {!getEnrollmentStatus(course.id) || userData?.user?.role === 'MANAGER' ? (
+                                  <select 
+                                    value={selectedType} 
+                                    onChange={e => {
+                                      const newType = e.target.value as 'RECORDED' | 'LIVE'
+                                      setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: newType })
+                                      if (couponApplied?.code?.includes('LIVE') && newType === 'RECORDED') {
+                                        setCouponApplied(null)
+                                        setCouponError('Live-only coupon removed (requires all subjects to be Live).')
+                                      }
+                                    }} 
+                                    style={{ padding: '6px 12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '12px', fontWeight: '700', cursor: 'pointer', outline: 'none' }}
+                                  >
+                                    <option value="RECORDED">Recorded</option>
+                                    <option value="LIVE">Live</option>
+                                  </select>
+                                ) : null}
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1618,9 +1627,11 @@ export default function ExploreCoursesPage() {
                         </span>
                       </div>
                       <div style={{ fontSize: '12px', color: '#b45309', fontWeight: '600', paddingLeft: '28px' }}>
-                        {activeBundle.requireAllCourses 
-                          ? `Applied when you enroll in all ${activeBundle.courses.length} subjects.` 
-                          : "Special discount for curated bundles."}
+                        {activeBundle.allowIndividualPurchase === false 
+                          ? `Applied when you enroll in all ${activeBundle.courses.length} subjects. (Class type required given already by manager)` 
+                          : activeBundle.requireAllCourses 
+                            ? `Applied when you enroll in all ${activeBundle.courses.length} subjects.` 
+                            : "Special discount for curated bundles."}
                       </div>
                     </div>
                   )}
@@ -1629,8 +1640,8 @@ export default function ExploreCoursesPage() {
                     <div style={{ padding: '12px 18px', borderRadius: '16px', background: '#eff6ff', border: '1px solid #bfdbfe', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <span style={{ fontSize: '20px' }}>🔒</span>
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#1e40af' }}>Full Bundle Access</div>
-                        <div style={{ fontSize: '11px', color: '#3b82f6', fontWeight: '600' }}>This course set must be purchased as a complete package.</div>
+                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#1e40af' }}>Fixed Bundle Package</div>
+                        <div style={{ fontSize: '11px', color: '#3b82f6', fontWeight: '600' }}>This course set must be purchased as a complete package. Class type applies to all subjects.</div>
                       </div>
                     </div>
                   )}
@@ -1753,24 +1764,34 @@ export default function ExploreCoursesPage() {
                         <div style={{ fontSize: '18px', color: '#0f172a', fontWeight: '900', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px' }}>Detailed Breakdown</div>
                         
                         <div style={{ marginBottom: '20px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
-                          {selectedList.map((courseId: string) => {
-                            const bc = activeBundle.courses.find((c: any) => c.course.id === courseId);
-                            const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
-                            const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
-                            const price = selectedType === 'RECORDED' 
-                              ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0)
-                              : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
-                            
-                            return (
-                              <div key={courseId} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                <div style={{ flex: 1, paddingRight: '12px' }}>
-                                  <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '800' }}>{bc?.course.name}</div>
-                                  <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700' }}>{selectedType === 'LIVE' ? 'LIVE PRO' : 'RECORDED PLUS'}</div>
-                                </div>
-                                <span style={{ fontSize: '13px', fontWeight: '900', color: '#1e293b' }}>₹{price}</span>
+                          {isFixed ? (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', padding: '12px', background: '#f8faff', borderRadius: '12px', border: '1.5px solid #eef2ff' }}>
+                              <div style={{ flex: 1, paddingRight: '12px' }}>
+                                <div style={{ fontSize: '14px', color: '#1e293b', fontWeight: '900' }}>{activeBundle.name} Package</div>
+                                <div style={{ fontSize: '11px', color: '#6366f1', fontWeight: '800', textTransform: 'uppercase' }}>{effectiveGlobalType === 'LIVE' ? 'Full Live Pro Access' : 'Full Recorded Plus Access'}</div>
                               </div>
-                            )
-                          })}
+                              <span style={{ fontSize: '14px', fontWeight: '1000', color: '#1e293b' }}>₹{totalPrice}</span>
+                            </div>
+                          ) : (
+                            selectedList.map((courseId: string) => {
+                              const bc = activeBundle.courses.find((c: any) => c.course.id === courseId);
+                              const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
+                              const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
+                              const price = selectedType === 'RECORDED' 
+                                ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0)
+                                : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
+                              
+                              return (
+                                <div key={courseId} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                  <div style={{ flex: 1, paddingRight: '12px' }}>
+                                    <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '800' }}>{bc?.course.name}</div>
+                                    <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700' }}>{selectedType === 'LIVE' ? 'LIVE PRO' : 'RECORDED PLUS'}</div>
+                                  </div>
+                                  <span style={{ fontSize: '13px', fontWeight: '900', color: '#1e293b' }}>₹{price}</span>
+                                </div>
+                              )
+                            })
+                          )}
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', paddingTop: '14px', borderTop: '1.5px solid #f8fafc' }}>
