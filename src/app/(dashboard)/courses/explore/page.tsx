@@ -1641,9 +1641,27 @@ export default function ExploreCoursesPage() {
                 {/* Left Bottom Info Area */}
                 <div style={{ background: '#f8fafc', borderRadius: '20px', padding: '20px', border: '1.5px solid #f1f5f9' }}>
                   {activeBundle.enableBundleDiscount && activeBundle.bundleDiscountValue && (() => {
-                    const applicability = activeBundle.bundleDiscountApplicability || 'BOTH';
-                    const applicabilityLabel = applicability === 'LIVE' ? 'Live Pro Only' : applicability === 'RECORDED' ? 'Recorded Plus Only' : 'Live & Recorded';
+                    // Read from coursePrices JSON first (that's where it's stored), fallback to direct field
+                    let applicability = activeBundle.bundleDiscountApplicability || 'BOTH';
+                    try {
+                      const pd = JSON.parse(activeBundle.coursePrices || '{}');
+                      if (pd.bundleDiscountApplicability) applicability = pd.bundleDiscountApplicability;
+                    } catch(e) {}
+
                     const requiresAll = activeBundle.requireAllCourses !== false;
+                    const n = activeBundle.courses.length;
+
+                    let subtitle = '';
+                    if (requiresAll) {
+                      if (applicability === 'LIVE') subtitle = `Enroll all ${n} subjects in Live Pro to unlock this discount.`;
+                      else if (applicability === 'RECORDED') subtitle = `Enroll all ${n} subjects in Recorded Plus to unlock this discount.`;
+                      else subtitle = `Enroll all ${n} subjects (any class type) to unlock this discount.`;
+                    } else {
+                      if (applicability === 'LIVE') subtitle = `Applies to Live Pro selections.`;
+                      else if (applicability === 'RECORDED') subtitle = `Applies to Recorded Plus selections.`;
+                      else subtitle = `Applies to any class type.`;
+                    }
+
                     return (
                       <div style={{ padding: '14px 18px', borderRadius: '16px', background: 'linear-gradient(135deg, #fef3c7, #fde68a)', marginBottom: '16px', border: '1px solid #f59e0b' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
@@ -1653,9 +1671,7 @@ export default function ExploreCoursesPage() {
                           </span>
                         </div>
                         <div style={{ fontSize: '12px', color: '#b45309', fontWeight: '600', paddingLeft: '28px' }}>
-                          {requiresAll
-                            ? `Applied when you enroll in all ${activeBundle.courses.length} subjects. Applies to: ${applicabilityLabel}`
-                            : `Discount applied on selected subjects. Applies to: ${applicabilityLabel}`}
+                          {subtitle}
                         </div>
                       </div>
                     );
