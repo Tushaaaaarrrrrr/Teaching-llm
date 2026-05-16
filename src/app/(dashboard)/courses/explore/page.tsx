@@ -47,6 +47,7 @@ export default function ExploreCoursesPage() {
   const [bundleRecordedDiscountPrice, setBundleRecordedDiscountPrice] = useState('')
   const [bundleLiveOriginalPrice, setBundleLiveOriginalPrice] = useState('')
   const [bundleLiveDiscountPrice, setBundleLiveDiscountPrice] = useState('')
+  const [bundleForceClassType, setBundleForceClassType] = useState<string | null>(null)
   const [bundleAllowIndividualPurchase, setBundleAllowIndividualPurchase] = useState(true)
   const [infoModalOffering, setInfoModalOffering] = useState<any | null>(null)
   // Bundle purchase UI states
@@ -54,6 +55,7 @@ export default function ExploreCoursesPage() {
   const [activeBundle, setActiveBundle] = useState<any | null>(null)
   const [bundleAccessType, setBundleAccessType] = useState<'RECORDED' | 'LIVE'>('RECORDED')
   const [bundleSelectedForPurchase, setBundleSelectedForPurchase] = useState<Record<string, 'RECORDED' | 'LIVE'>>({})
+  const [bundleGlobalAccessType, setBundleGlobalAccessType] = useState<'RECORDED' | 'LIVE'>('RECORDED')
   const [bundleSelectedCoursesToBuy, setBundleSelectedCoursesToBuy] = useState<string[]>([])
   const [showBatchComparisonModal, setShowBatchComparisonModal] = useState(false)
   
@@ -65,6 +67,7 @@ export default function ExploreCoursesPage() {
   const [couponError, setCouponError] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
 
+  const [storeView, setStoreView] = useState<null | 'courses' | 'notes' | 'mentorship'>(null)
   const [showCreateDropdown, setShowCreateDropdown] = useState(false)
   const [showCreateBundleModal, setShowCreateBundleModal] = useState(false)
   const [showCreateNoteModal, setShowCreateNoteModal] = useState(false)
@@ -454,8 +457,39 @@ export default function ExploreCoursesPage() {
 
       <div className="page-container fade-in">
 
+      {/* STORE CATEGORY CARDS */}
+      {!storeView && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+          {[
+            { key: 'courses' as const, title: 'Courses', subtitle: `${(offerings || []).length + (bundleOfferings || []).length} available`, emoji: '📚', gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)', shadow: 'rgba(99,102,241,0.3)' },
+            { key: 'notes' as const, title: 'Premium Notes', subtitle: `${storeNotesData?.notes?.length || 0} notes`, emoji: '📝', gradient: 'linear-gradient(135deg, #10b981, #059669)', shadow: 'rgba(16,185,129,0.3)' },
+            { key: 'mentorship' as const, title: 'Book a Call with Mentor', subtitle: `${mentorshipsData?.mentorships?.length || 0} mentors`, emoji: '🤝', gradient: 'linear-gradient(135deg, #f59e0b, #d97706)', shadow: 'rgba(245,158,11,0.3)' },
+          ].map(card => (
+            <div key={card.key} onClick={() => setStoreView(card.key)} style={{ background: '#fff', borderRadius: '24px', padding: '32px', cursor: 'pointer', boxShadow: '0 10px 30px rgba(15,23,42,0.06)', transition: 'all 0.3s ease', position: 'relative', overflow: 'hidden' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = `0 20px 40px ${card.shadow}` }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(15,23,42,0.06)' }}
+            >
+              <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: card.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', marginBottom: '20px', boxShadow: `0 8px 20px ${card.shadow}` }}>{card.emoji}</div>
+              <h3 style={{ fontSize: '22px', fontWeight: '900', color: '#1e293b', marginBottom: '6px' }}>{card.title}</h3>
+              <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '600', marginBottom: '16px' }}>{card.subtitle}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6366f1', fontSize: '13px', fontWeight: '700' }}>
+                Explore <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* BACK BUTTON when inside a view */}
+      {storeView && (
+        <button onClick={() => setStoreView(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', color: '#64748b', fontSize: '14px', fontWeight: '700', cursor: 'pointer', marginBottom: '20px', padding: '8px 0' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back to Store
+        </button>
+      )}
+
       {/* Bundle offerings section */}
-      {activeBundles.length > 0 && (
+      {storeView === 'courses' && activeBundles.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a', margin: '6px 0 12px' }}>Bundles</h2>
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
@@ -498,7 +532,7 @@ export default function ExploreCoursesPage() {
       )}
 
       {/* Notes section */}
-      {storeNotesData?.notes?.length > 0 && (
+      {storeView === 'notes' && storeNotesData?.notes?.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a', margin: '6px 0 12px' }}>Study Notes</h2>
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
@@ -510,7 +544,7 @@ export default function ExploreCoursesPage() {
                   <div style={{ fontWeight: '800', color: n.price > 0 ? '#1e293b' : '#10b981' }}>{n.price > 0 ? `₹${n.price}` : 'Free'}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => { window.open(n.files?.[0]?.fileUrl, '_blank') }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: '800' }}>
+                  <button onClick={() => { n.price > 0 ? handleNotePurchase(n) : window.open(n.files?.[0]?.fileUrl, '_blank') }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: '800' }}>
                     {n.price > 0 ? 'Buy / Access' : 'Access Notes'}
                   </button>
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
@@ -548,7 +582,7 @@ export default function ExploreCoursesPage() {
       )}
 
       {/* Mentorship offerings section */}
-      {mentorshipsData?.mentorships?.length > 0 && (
+      {storeView === 'mentorship' && mentorshipsData?.mentorships?.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a', margin: '6px 0 12px' }}>1-on-1 Mentorship</h2>
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
@@ -604,7 +638,7 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
-      {activeOfferings.length === 0 && (
+      {storeView === 'courses' && activeOfferings.length === 0 && (
         <div className="empty-state" style={{ padding: '60px 20px' }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="1.5">
             <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" /><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
@@ -614,7 +648,7 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
-      <div className="grid-3">
+      {storeView === 'courses' && <div className="grid-3">
         {[...activeOfferings].sort((a: any, b: any) => {
           const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
           const aEnroll = getEnrollmentStatus(a.courseId)
@@ -1139,7 +1173,7 @@ export default function ExploreCoursesPage() {
             </div>
           )
         })}
-      </div>
+      </div>}
 
       {/* Bundle Choose / Buy Modal */}
       {showBundleModal && activeBundle && (
@@ -1191,23 +1225,29 @@ export default function ExploreCoursesPage() {
                           <div style={{ fontSize: '12px', color: '#64748b' }}>{course.teacherName || ''}</div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '13px', fontWeight: '800' }}>₹{recPrice}</div>
-                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>Recorded</div>
+                      {!activeBundle.allowIndividualPurchase ? (
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                           <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>Included in bundle</span>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '13px', fontWeight: '800', color: '#4f46e5' }}>₹{livePrice}</div>
-                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>Live</div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '800' }}>₹{recPrice}</div>
+                            <div style={{ fontSize: '11px', color: '#94a3b8' }}>Recorded</div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '800', color: '#4f46e5' }}>₹{livePrice}</div>
+                            <div style={{ fontSize: '11px', color: '#94a3b8' }}>Live</div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <label style={{ fontSize: '12px', color: '#334155', fontWeight: '700' }}>Choose</label>
+                            <select value={bundleSelectedForPurchase[course.id] || 'RECORDED'} onChange={e => setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: e.target.value as 'RECORDED' | 'LIVE' })} style={{ padding: '6px 8px', borderRadius: '8px' }}>
+                              <option value="RECORDED">Recorded</option>
+                              <option value="LIVE">Live</option>
+                            </select>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <label style={{ fontSize: '12px', color: '#334155', fontWeight: '700' }}>Choose</label>
-                          <select value={bundleSelectedForPurchase[course.id] || 'RECORDED'} onChange={e => setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: e.target.value as 'RECORDED' | 'LIVE' })} style={{ padding: '6px 8px', borderRadius: '8px' }}>
-                            <option value="RECORDED">Recorded</option>
-                            <option value="LIVE">Live</option>
-                          </select>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   )
                 })}
@@ -1217,18 +1257,42 @@ export default function ExploreCoursesPage() {
                   let totalPrice = 0;
                   let originalTotalPrice = 0;
                   const selectedList = bundleSelectedCoursesToBuy.length ? bundleSelectedCoursesToBuy : activeBundle.courses.map((c: any) => c.course.id);
-                  
-                  selectedList.forEach((courseId: string) => {
-                    const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
-                    const selectedType = bundleSelectedForPurchase[courseId] || 'RECORDED';
-                    if (selectedType === 'RECORDED') {
-                      totalPrice += offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0;
-                      originalTotalPrice += offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0;
+                  const isFixed = activeBundle.allowIndividualPurchase === false;
+                  const effectiveAccessType = activeBundle.forceClassType || bundleGlobalAccessType;
+
+                  if (isFixed || selectedList.length === activeBundle.courses.length) {
+                    const bundlePrice = effectiveAccessType === 'RECORDED' ? activeBundle.recordedDiscountPrice ?? activeBundle.recordedOriginalPrice : activeBundle.liveDiscountPrice ?? activeBundle.liveOriginalPrice;
+                    const bundleOriginal = effectiveAccessType === 'RECORDED' ? activeBundle.recordedOriginalPrice ?? activeBundle.recordedDiscountPrice : activeBundle.liveOriginalPrice ?? activeBundle.liveDiscountPrice;
+                    
+                    if (bundlePrice != null) {
+                      totalPrice = bundlePrice;
+                      originalTotalPrice = bundleOriginal || bundlePrice;
                     } else {
-                      totalPrice += offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0;
-                      originalTotalPrice += offering?.liveOriginalPrice ?? offering?.liveDiscountPrice ?? 0;
+                      selectedList.forEach((courseId: string) => {
+                        const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
+                        const selectedType = isFixed ? effectiveAccessType : (bundleSelectedForPurchase[courseId] || 'RECORDED');
+                        if (selectedType === 'RECORDED') {
+                          totalPrice += offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0;
+                          originalTotalPrice += offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0;
+                        } else {
+                          totalPrice += offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0;
+                          originalTotalPrice += offering?.liveOriginalPrice ?? offering?.liveDiscountPrice ?? 0;
+                        }
+                      });
                     }
-                  });
+                  } else {
+                    selectedList.forEach((courseId: string) => {
+                      const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
+                      const selectedType = bundleSelectedForPurchase[courseId] || 'RECORDED';
+                      if (selectedType === 'RECORDED') {
+                        totalPrice += offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0;
+                        originalTotalPrice += offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0;
+                      } else {
+                        totalPrice += offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0;
+                        originalTotalPrice += offering?.liveOriginalPrice ?? offering?.liveDiscountPrice ?? 0;
+                      }
+                    });
+                  }
 
                   // Calculate bundle discount
                   let bundleDiscountAmt = 0;
@@ -1275,6 +1339,21 @@ export default function ExploreCoursesPage() {
                         {activeBundle.allowIndividualPurchase === false && (
                           <div style={{ padding: '8px 12px', borderRadius: '8px', background: '#eff6ff', border: '1px solid #bfdbfe', marginBottom: '14px', fontSize: '12px', fontWeight: '600', color: '#1e40af' }}>
                             🔒 This is a fixed bundle — all courses are included.
+                          </div>
+                        )}
+
+                        {/* Global Bundle Class Type Choice */}
+                        {(activeBundle.allowIndividualPurchase === false || selectedList.length === activeBundle.courses.length) && !activeBundle.forceClassType && (
+                          <div style={{ marginBottom: '16px', padding: '12px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '700', color: '#334155' }}>Choose Class Type for Bundle</div>
+                            <select 
+                              value={bundleGlobalAccessType} 
+                              onChange={e => setBundleGlobalAccessType(e.target.value as 'RECORDED' | 'LIVE')}
+                              style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '13px', fontWeight: '600' }}
+                            >
+                              <option value="RECORDED">Recorded Classes</option>
+                              <option value="LIVE">Live Classes</option>
+                            </select>
                           </div>
                         )}
 
@@ -1344,7 +1423,7 @@ export default function ExploreCoursesPage() {
                           try {
                             if (selectedList.length === 0) { alert('Select at least one course'); return }
                             setIsProcessing(true)
-                            const res = await fetch(`/api/bundle-offerings/${activeBundle.id}/create-order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buyAll: selectedList.length === activeBundle.courses.length, accessType: 'RECORDED', selectedCourseIds: selectedList, perCourseAccessTypes: bundleSelectedForPurchase, couponCode: couponApplied?.code || null }) })
+                            const res = await fetch(`/api/bundle-offerings/${activeBundle.id}/create-order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buyAll: selectedList.length === activeBundle.courses.length, accessType: effectiveAccessType, selectedCourseIds: selectedList, perCourseAccessTypes: bundleSelectedForPurchase, couponCode: couponApplied?.code || null }) })
                             const data = await res.json()
                             if (!res.ok) { alert(data.error || 'Failed to create order'); setIsProcessing(false); return }
                             if (data.freeCheckout) {
@@ -2169,6 +2248,27 @@ export default function ExploreCoursesPage() {
               </label>
             </div>
 
+            {/* Force Class Type Configuration */}
+            {editBundleData.allowIndividualPurchase === false && (
+              <div style={{ marginBottom: '16px', padding: '14px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e0e7ff' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>🎯 Force Class Type</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Force users to buy a specific class type (Live or Recorded)</div>
+                  </div>
+                </div>
+                <select 
+                  value={editBundleData.forceClassType || ''} 
+                  onChange={e => setEditBundleData({ ...editBundleData, forceClassType: e.target.value === '' ? null : e.target.value })}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: '600' }}
+                >
+                  <option value="">Let user choose (Live or Recorded)</option>
+                  <option value="RECORDED">Force Recorded Classes</option>
+                  <option value="LIVE">Force Live Classes</option>
+                </select>
+              </div>
+            )}
+
             {/* Bundle Discount Configuration */}
             <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '12px', background: '#fefce8', border: '1px solid #fde68a' }}>
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: editBundleData.enableBundleDiscount ? '14px' : 0 }}>
@@ -2419,13 +2519,33 @@ export default function ExploreCoursesPage() {
             </div>
 
             <div style={{ marginBottom: '24px', padding: '14px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e0e7ff' }}>
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '16px' }}>
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>🔒 Fixed Bundle</div>
                   <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Users must buy all courses together</div>
                 </div>
                 <input type="checkbox" checked={!bundleAllowIndividualPurchase} onChange={e => setBundleAllowIndividualPurchase(!e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#6366f1' }} />
               </label>
+
+              {!bundleAllowIndividualPurchase && (
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>🎯 Force Class Type</div>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Force users to buy a specific class type (Live or Recorded)</div>
+                    </div>
+                  </div>
+                  <select 
+                    value={bundleForceClassType || ''} 
+                    onChange={e => setBundleForceClassType(e.target.value === '' ? null : e.target.value)}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: '600' }}
+                  >
+                    <option value="">Let user choose (Live or Recorded)</option>
+                    <option value="RECORDED">Force Recorded Classes</option>
+                    <option value="LIVE">Force Live Classes</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -2445,6 +2565,7 @@ export default function ExploreCoursesPage() {
                         liveOriginalPrice: bundleLiveOriginalPrice ? Number(bundleLiveOriginalPrice) : undefined,
                         liveDiscountPrice: bundleLiveDiscountPrice ? Number(bundleLiveDiscountPrice) : undefined,
                         allowIndividualPurchase: !!bundleAllowIndividualPurchase,
+                        forceClassType: bundleForceClassType || null,
                       })
                     })
                     if (res.ok) {

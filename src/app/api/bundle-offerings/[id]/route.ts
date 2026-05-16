@@ -12,7 +12,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const data = await request.json()
     const { 
       name, description, recordedOriginalPrice, recordedDiscountPrice, 
-      liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase, courseIds,
+      liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase, forceClassType, courseIds,
       enableBundleDiscount, bundleDiscountType, bundleDiscountValue, bundleDiscountApplicability, requireAllCourses
     } = data
 
@@ -24,6 +24,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (liveOriginalPrice !== undefined) updateData.liveOriginalPrice = liveOriginalPrice ? Number(liveOriginalPrice) : null
     if (liveDiscountPrice !== undefined) updateData.liveDiscountPrice = liveDiscountPrice ? Number(liveDiscountPrice) : null
     if (allowIndividualPurchase !== undefined) updateData.allowIndividualPurchase = !!allowIndividualPurchase
+    if (forceClassType !== undefined) updateData.forceClassType = forceClassType || null
     if (enableBundleDiscount !== undefined) updateData.enableBundleDiscount = !!enableBundleDiscount
     if (bundleDiscountType !== undefined) updateData.bundleDiscountType = bundleDiscountType
     if (bundleDiscountValue !== undefined) updateData.bundleDiscountValue = bundleDiscountValue ? Number(bundleDiscountValue) : null

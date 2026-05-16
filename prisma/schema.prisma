@@ -177,6 +177,7 @@ model BundleOffering {
   bundleDiscountValue       Float?
   bundleDiscountApplicability String?
   requireAllCourses         Boolean                    @default(true)
+  forceClassType            String?
   createdBy                 User                       @relation(fields: [createdById], references: [id])
   courses                   BundleOfferingCourse[]
 

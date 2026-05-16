@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const data = await request.json()
     const { 
       name, description, courseIds, 
-      recordedOriginalPrice, recordedDiscountPrice, liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase,
+      recordedOriginalPrice, recordedDiscountPrice, liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase, forceClassType,
       enableBundleDiscount, bundleDiscountType, bundleDiscountValue, bundleDiscountApplicability, requireAllCourses
     } = data
 
@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
         liveOriginalPrice: liveOriginalPrice ? Number(liveOriginalPrice) : undefined,
         liveDiscountPrice: liveDiscountPrice ? Number(liveDiscountPrice) : undefined,
         allowIndividualPurchase: allowIndividualPurchase == null ? true : !!allowIndividualPurchase,
+        forceClassType: forceClassType || null,
         enableBundleDiscount: !!enableBundleDiscount,
         bundleDiscountType: bundleDiscountType || null,
         bundleDiscountValue: bundleDiscountValue ? Number(bundleDiscountValue) : null,
