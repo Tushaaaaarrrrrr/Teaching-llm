@@ -218,6 +218,18 @@ async function main() {
   await safeExec(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "couponCode" TEXT;`, 'Order.couponCode')
   await safeExec(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "couponId" TEXT;`, 'Order.couponId')
 
+  // Champion Wrapper Fields
+  await safeExec(`ALTER TABLE "BundleOffering" ADD COLUMN IF NOT EXISTS "championOriginalPrice" DOUBLE PRECISION;`, 'BundleOffering.championOriginalPrice')
+  await safeExec(`ALTER TABLE "BundleOffering" ADD COLUMN IF NOT EXISTS "championDiscountPrice" DOUBLE PRECISION;`, 'BundleOffering.championDiscountPrice')
+  await safeExec(`ALTER TABLE "BundleOffering" ADD COLUMN IF NOT EXISTS "championSubtitle" TEXT;`, 'BundleOffering.championSubtitle')
+
+  await safeExec(`ALTER TABLE "CourseOffering" ADD COLUMN IF NOT EXISTS "championOriginalPrice" DOUBLE PRECISION;`, 'CourseOffering.championOriginalPrice')
+  await safeExec(`ALTER TABLE "CourseOffering" ADD COLUMN IF NOT EXISTS "championDiscountPrice" DOUBLE PRECISION;`, 'CourseOffering.championDiscountPrice')
+  await safeExec(`ALTER TABLE "CourseOffering" ADD COLUMN IF NOT EXISTS "championSubtitle" TEXT;`, 'CourseOffering.championSubtitle')
+
+  // Enrollment Package Tracking
+  await safeExec(`ALTER TABLE "Enrollment" ADD COLUMN IF NOT EXISTS "packageName" TEXT;`, 'Enrollment.packageName')
+
   // Coupon Table
   await safeExec(`
     CREATE TABLE IF NOT EXISTS "Coupon" (

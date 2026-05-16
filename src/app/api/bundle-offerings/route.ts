@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json()
-    const { 
-      name, description, courseIds, 
-      recordedOriginalPrice, recordedDiscountPrice, liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase, forceClassType,
+      recordedOriginalPrice, recordedDiscountPrice, liveOriginalPrice, liveDiscountPrice, 
+      championOriginalPrice, championDiscountPrice, championSubtitle,
+      allowIndividualPurchase, forceClassType,
       enableBundleDiscount, bundleDiscountType, bundleDiscountValue, bundleDiscountApplicability, requireAllCourses,
       coursePrices, startingPrice, startingFromText, bannerText, courseHeadline
     } = data
@@ -64,6 +64,10 @@ export async function POST(request: NextRequest) {
         recordedDiscountPrice: recordedDiscountPrice ? Number(recordedDiscountPrice) : undefined,
         liveOriginalPrice: liveOriginalPrice ? Number(liveOriginalPrice) : undefined,
         liveDiscountPrice: liveDiscountPrice ? Number(liveDiscountPrice) : undefined,
+        championOriginalPrice: championOriginalPrice ? Number(championOriginalPrice) : undefined,
+        championDiscountPrice: championDiscountPrice ? Number(championDiscountPrice) : undefined,
+        championSubtitle: championSubtitle || null,
+        coursePrices: coursePrices || "[]",
         allowIndividualPurchase: allowIndividualPurchase == null ? true : !!allowIndividualPurchase,
         forceClassType: forceClassType || null,
         enableBundleDiscount: !!enableBundleDiscount,

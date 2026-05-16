@@ -34,13 +34,35 @@ export async function POST(request: NextRequest) {
       const maybeBundle = await prisma.bundleOffering.findUnique({ where: { id: item.courseId } })
       if (maybeBundle) continue
 
+      const isChampion = item.accessType === 'CHAMPION'
+      const enrollType = isChampion ? 'LIVE' : (item.accessType as 'RECORDED' | 'LIVE')
+      const packageName = isChampion ? 'CHAMPION' : null
+
       const existing = await prisma.enrollment.findUnique({ where: { userId_courseId: { userId: session.userId, courseId: item.courseId } } })
       if (existing) {
-        if (existing.type !== item.accessType && item.accessType === 'LIVE') {
-          await prisma.enrollment.update({ where: { id: existing.id }, data: { type: 'LIVE' } })
+        if (existing.type !== enrollType && enrollType === 'LIVE') {
+          await prisma.enrollment.update({ 
+            where: { id: existing.id }, 
+            data: { 
+              type: 'LIVE',
+              packageName: packageName || existing.packageName
+            } 
+          })
+        } else if (isChampion && existing.packageName !== 'CHAMPION') {
+           await prisma.enrollment.update({ 
+            where: { id: existing.id }, 
+            data: { packageName: 'CHAMPION' } 
+          })
         }
       } else {
-        await prisma.enrollment.create({ data: { userId: session.userId, courseId: item.courseId, type: item.accessType as 'RECORDED' | 'LIVE' } })
+        await prisma.enrollment.create({ 
+          data: { 
+            userId: session.userId, 
+            courseId: item.courseId, 
+            type: enrollType,
+            packageName: packageName
+          } 
+        })
         
         // Log individual enrollment
         logActivity({
@@ -53,7 +75,8 @@ export async function POST(request: NextRequest) {
           targetId: item.courseId,
           metadata: {
             orderId: order.id,
-            accessType: item.accessType
+            accessType: item.accessType,
+            packageName: packageName
           }
         })
       }

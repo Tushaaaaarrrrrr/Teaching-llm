@@ -10,9 +10,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const data = await request.json()
-    const { 
       name, description, recordedOriginalPrice, recordedDiscountPrice, 
-      liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase, forceClassType, courseIds,
+      liveOriginalPrice, liveDiscountPrice,
+      championOriginalPrice, championDiscountPrice, championSubtitle,
+      allowIndividualPurchase, forceClassType, courseIds,
       enableBundleDiscount, bundleDiscountType, bundleDiscountValue, bundleDiscountApplicability, requireAllCourses,
       coursePrices, startingPrice, startingFromText, bannerText, courseHeadline
     } = data
@@ -24,6 +25,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (recordedDiscountPrice !== undefined) updateData.recordedDiscountPrice = recordedDiscountPrice ? Number(recordedDiscountPrice) : null
     if (liveOriginalPrice !== undefined) updateData.liveOriginalPrice = liveOriginalPrice ? Number(liveOriginalPrice) : null
     if (liveDiscountPrice !== undefined) updateData.liveDiscountPrice = liveDiscountPrice ? Number(liveDiscountPrice) : null
+    if (championOriginalPrice !== undefined) updateData.championOriginalPrice = championOriginalPrice ? Number(championOriginalPrice) : null
+    if (championDiscountPrice !== undefined) updateData.championDiscountPrice = championDiscountPrice ? Number(championDiscountPrice) : null
+    if (championSubtitle !== undefined) updateData.championSubtitle = championSubtitle || null
     if (allowIndividualPurchase !== undefined) updateData.allowIndividualPurchase = !!allowIndividualPurchase
     if (forceClassType !== undefined) updateData.forceClassType = forceClassType || null
     if (enableBundleDiscount !== undefined) updateData.enableBundleDiscount = !!enableBundleDiscount

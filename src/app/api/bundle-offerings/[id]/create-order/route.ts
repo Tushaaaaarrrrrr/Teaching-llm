@@ -14,10 +14,10 @@ export async function POST(
     const razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID!, key_secret: process.env.RAZORPAY_KEY_SECRET! })
 
     const body = await request.json()
-    // body: { buyAll: boolean, accessType: 'RECORDED'|'LIVE', selectedCourseIds?: string[], perCourseAccessTypes?: Record<string,string>, couponCode?: string }
+    // body: { buyAll: boolean, accessType: 'RECORDED'|'LIVE'|'CHAMPION', selectedCourseIds?: string[], perCourseAccessTypes?: Record<string,string>, couponCode?: string }
     const { buyAll, accessType, selectedCourseIds, perCourseAccessTypes, couponCode } = body
 
-    if (!['RECORDED', 'LIVE'].includes(accessType)) return NextResponse.json({ error: 'Invalid access type' }, { status: 400 })
+    if (!['RECORDED', 'LIVE', 'CHAMPION'].includes(accessType)) return NextResponse.json({ error: 'Invalid access type' }, { status: 400 })
 
     const bundle = await prisma.bundleOffering.findUnique({ where: { id: params.id }, include: { courses: { include: { course: true } } } })
     if (!bundle) return NextResponse.json({ error: 'Bundle not found' }, { status: 404 })
@@ -48,24 +48,38 @@ export async function POST(
         // Fixed bundle: use global bundle price fields, distributed across courses
         const bundlePrice = perType === 'RECORDED'
           ? bundle.recordedDiscountPrice ?? bundle.recordedOriginalPrice
-          : bundle.liveDiscountPrice ?? bundle.liveOriginalPrice
+          : perType === 'CHAMPION'
+            ? bundle.championDiscountPrice ?? bundle.championOriginalPrice ?? bundle.liveDiscountPrice ?? bundle.liveOriginalPrice
+            : bundle.liveDiscountPrice ?? bundle.liveOriginalPrice
         price = (Number(bundlePrice) || 0) / count
       } else if (hasIndividualMapping && individualMapping[cid]) {
         // Non-fixed with subject-specific pricing
         const custom = individualMapping[cid]
-        price = perType === 'RECORDED' ? Number(custom.recorded || 0) : Number(custom.live || 0)
+        if (perType === 'RECORDED') {
+          price = Number(custom.recorded || 0)
+        } else if (perType === 'CHAMPION') {
+          price = Number(custom.champion || custom.live || 0)
+        } else {
+          price = Number(custom.live || 0)
+        }
       } else if (tier) {
         // Tiered pricing (tier[count] = bundle total for N courses)
         const tierVal = perType === 'RECORDED'
           ? (tier.recordedDiscount || tier.recordedOriginal || 0)
-          : (tier.liveDiscount || tier.liveOriginal || 0)
+          : perType === 'CHAMPION'
+            ? (tier.championDiscount || tier.championOriginal || tier.liveDiscount || tier.liveOriginal || 0)
+            : (tier.liveDiscount || tier.liveOriginal || 0)
         price = Number(tierVal) / count
       } else {
         // Fallback: sum individual offering prices
         const offering = await prisma.courseOffering.findFirst({ where: { courseId: cid }, orderBy: { createdAt: 'desc' } })
-        price = perType === 'RECORDED' 
-          ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0) 
-          : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0)
+        if (perType === 'RECORDED') {
+          price = offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0
+        } else if (perType === 'CHAMPION') {
+          price = offering?.championDiscountPrice ?? offering?.championOriginalPrice ?? offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0
+        } else {
+          price = offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0
+        }
       }
 
       courseEntries.push({ courseId: cid, accessType: perType, price })

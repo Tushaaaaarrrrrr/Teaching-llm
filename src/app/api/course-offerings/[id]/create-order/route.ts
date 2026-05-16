@@ -21,7 +21,7 @@ export async function POST(
     const body = await request.json()
     const { accessType } = body // 'RECORDED' or 'LIVE'
 
-    if (!['RECORDED', 'LIVE'].includes(accessType)) {
+    if (!['RECORDED', 'LIVE', 'CHAMPION'].includes(accessType)) {
       return NextResponse.json({ error: 'Invalid access type' }, { status: 400 })
     }
 
@@ -40,6 +40,11 @@ export async function POST(
         return NextResponse.json({ error: 'Recorded access is not available' }, { status: 400 })
       }
       price = offering.recordedDiscountPrice
+    } else if (accessType === 'CHAMPION') {
+      price = offering.championDiscountPrice ?? offering.championOriginalPrice ?? offering.liveDiscountPrice ?? 0
+      if (price === 0) {
+         return NextResponse.json({ error: 'Champion access is not available' }, { status: 400 })
+      }
     } else {
       if (!offering.hasLive || offering.liveDiscountPrice == null) {
         return NextResponse.json({ error: 'Live access is not available' }, { status: 400 })

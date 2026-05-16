@@ -40,6 +40,9 @@ export default function ExploreCoursesPage() {
   const [recordedDiscountPrice, setRecordedDiscountPrice] = useState('')
   const [liveOriginalPrice, setLiveOriginalPrice] = useState('')
   const [liveDiscountPrice, setLiveDiscountPrice] = useState('')
+  const [championOriginalPrice, setChampionOriginalPrice] = useState('')
+  const [championDiscountPrice, setChampionDiscountPrice] = useState('')
+  const [championSubtitle, setChampionSubtitle] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [creating, setCreating] = useState(false)
@@ -51,6 +54,9 @@ export default function ExploreCoursesPage() {
   const [bundleRecordedDiscountPrice, setBundleRecordedDiscountPrice] = useState('')
   const [bundleLiveOriginalPrice, setBundleLiveOriginalPrice] = useState('')
   const [bundleLiveDiscountPrice, setBundleLiveDiscountPrice] = useState('')
+  const [bundleChampionOriginalPrice, setBundleChampionOriginalPrice] = useState('')
+  const [bundleChampionDiscountPrice, setBundleChampionDiscountPrice] = useState('')
+  const [bundleChampionSubtitle, setBundleChampionSubtitle] = useState('')
   const [bundleForceClassType, setBundleForceClassType] = useState<string | null>(null)
   const [bundleIndividualMapping, setBundleIndividualMapping] = useState<Record<string, { recorded?: string; live?: string }>>({})
   const [bundleAllowIndividualPurchase, setBundleAllowIndividualPurchase] = useState(true)
@@ -192,7 +198,7 @@ export default function ExploreCoursesPage() {
     }
   }
 
-  const handlePurchase = async (offeringId: string, accessType: 'RECORDED' | 'LIVE') => {
+  const handlePurchase = async (offeringId: string, accessType: 'RECORDED' | 'LIVE' | 'CHAMPION') => {
     setIsProcessing(true)
     setPurchasing(`${offeringId}-${accessType}`)
     try {
@@ -1497,6 +1503,68 @@ export default function ExploreCoursesPage() {
                       </button>
                     </div>
                   )}
+
+                  {/* Champion Option - Elite */}
+                  {offering.championDiscountPrice > 0 && !isLiveEnrolled && (
+                    <div 
+                      style={{
+                        padding: '14px 16px', borderRadius: '18px',
+                        background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+                        border: '1.5px solid #fca5a5',
+                        position: 'relative', overflow: 'hidden',
+                        transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        marginTop: '12px'
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'scale(1.02)'
+                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(220, 38, 38, 0.15)'
+                        e.currentTarget.style.borderColor = '#ef4444'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'scale(1)'
+                        e.currentTarget.style.boxShadow = 'none'
+                        e.currentTarget.style.borderColor = '#fca5a5'
+                      }}
+                    >
+                      {/* ELITE Badge */}
+                      <div style={{
+                        position: 'absolute', top: '10px', right: '12px',
+                        padding: '3px 10px', borderRadius: '20px',
+                        background: '#dc2626', color: '#fff',
+                        fontSize: '9px', fontWeight: '900', letterSpacing: '0.08em',
+                      }}>
+                        ELITE
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <div>
+                          <div style={{ fontSize: '10px', fontWeight: '800', color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                            🏆 Champion Elite - {offering.championSubtitle || 'Premium Wrapper'}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a' }}>₹{offering.championDiscountPrice}</span>
+                            {offering.championOriginalPrice > offering.championDiscountPrice && (
+                              <span style={{ fontSize: '13px', color: '#9999b0', textDecoration: 'line-through' }}>₹{offering.championOriginalPrice}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handlePurchase(offering.id, 'CHAMPION')}
+                        disabled={!!purchasing}
+                        style={{
+                          width: '100%', padding: '11px', borderRadius: '50px',
+                          border: 'none', background: '#dc2626',
+                          color: '#fff', fontSize: '13px', fontWeight: '800',
+                          cursor: purchasing ? 'not-allowed' : 'pointer',
+                          opacity: purchasing ? 0.5 : 1,
+                          boxShadow: '0 8px 16px rgba(220,38,38,0.35)',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        {purchasing === `${offering.id}-CHAMPION` ? 'Processing...' : '💎 Buy Champion Elite Batch'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1656,6 +1724,15 @@ export default function ExploreCoursesPage() {
                                       <div style={{ fontSize: '11px', color: '#6366f1', fontWeight: '700', textTransform: 'uppercase' }}>Live Pro</div>
                                       <div style={{ fontSize: '14px', fontWeight: '900', color: selectedType === 'LIVE' ? '#4f46e5' : '#94a3b8' }}>₹{livePrice}</div>
                                     </div>
+                                    {offering?.championDiscountPrice > 0 && (
+                                      <>
+                                        <div style={{ fontSize: '10px', color: '#cbd5e1' }}>|</div>
+                                        <div style={{ textAlign: 'center' }}>
+                                          <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: '700', textTransform: 'uppercase' }}>Champ</div>
+                                          <div style={{ fontSize: '14px', fontWeight: '900', color: selectedType === 'CHAMPION' ? '#dc2626' : '#94a3b8' }}>₹{offering.championDiscountPrice}</div>
+                                        </div>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                                 
@@ -1674,6 +1751,7 @@ export default function ExploreCoursesPage() {
                                   >
                                     <option value="RECORDED">Recorded</option>
                                     <option value="LIVE">Live</option>
+                                    {offering?.championDiscountPrice > 0 && <option value="CHAMPION">Champion</option>}
                                   </select>
                                 ) : null}
                               </>
@@ -1744,6 +1822,7 @@ export default function ExploreCoursesPage() {
                           >
                             <option value="RECORDED">Recorded Plus</option>
                             <option value="LIVE">Live Pro</option>
+                            {activeBundle.championDiscountPrice > 0 && <option value="CHAMPION">Champion Elite</option>}
                           </select>
                         </div>
                       )}
@@ -1772,10 +1851,14 @@ export default function ExploreCoursesPage() {
                     // Fixed bundle: use global bundle price fields
                     const bundlePrice = effectiveGlobalType === 'RECORDED'
                       ? activeBundle.recordedDiscountPrice ?? activeBundle.recordedOriginalPrice
-                      : activeBundle.liveDiscountPrice ?? activeBundle.liveOriginalPrice;
+                      : effectiveGlobalType === 'CHAMPION'
+                        ? activeBundle.championDiscountPrice ?? activeBundle.championOriginalPrice ?? activeBundle.liveDiscountPrice ?? activeBundle.liveOriginalPrice
+                        : activeBundle.liveDiscountPrice ?? activeBundle.liveOriginalPrice;
                     const bundleOriginal = effectiveGlobalType === 'RECORDED'
                       ? activeBundle.recordedOriginalPrice ?? activeBundle.recordedDiscountPrice
-                      : activeBundle.liveOriginalPrice ?? activeBundle.liveDiscountPrice;
+                      : effectiveGlobalType === 'CHAMPION'
+                        ? activeBundle.championOriginalPrice ?? activeBundle.championDiscountPrice ?? activeBundle.liveOriginalPrice
+                        : activeBundle.liveOriginalPrice ?? activeBundle.liveDiscountPrice;
                     totalPrice = Number(bundlePrice) || 0;
                     originalTotalPrice = Number(bundleOriginal) || totalPrice;
                   } else if (hasIndividualMapping) {
@@ -1786,6 +1869,10 @@ export default function ExploreCoursesPage() {
                       const custom = individualMapping[courseId];
                       if (selectedType === 'RECORDED') {
                         const p = Number(custom?.recorded || offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0);
+                        totalPrice += p;
+                        originalTotalPrice += p;
+                      } else if (selectedType === 'CHAMPION') {
+                        const p = Number(custom?.champion || offering?.championDiscountPrice ?? offering?.championOriginalPrice ?? offering?.liveDiscountPrice ?? 0);
                         totalPrice += p;
                         originalTotalPrice += p;
                       } else {
@@ -1801,6 +1888,9 @@ export default function ExploreCoursesPage() {
                       if (effectiveGlobalType === 'RECORDED') {
                         totalPrice = Number(tier.recordedDiscount) || Number(tier.recordedOriginal) || 0;
                         originalTotalPrice = Number(tier.recordedOriginal) || totalPrice;
+                      } else if (effectiveGlobalType === 'CHAMPION') {
+                        totalPrice = Number(tier.championDiscount) || Number(tier.championOriginal) || Number(tier.liveDiscount) || Number(tier.liveOriginal) || 0;
+                        originalTotalPrice = Number(tier.championOriginal) || Number(tier.liveOriginal) || totalPrice;
                       } else {
                         totalPrice = Number(tier.liveDiscount) || Number(tier.liveOriginal) || 0;
                         originalTotalPrice = Number(tier.liveOriginal) || totalPrice;
@@ -1813,6 +1903,9 @@ export default function ExploreCoursesPage() {
                         if (selectedType === 'RECORDED') {
                           totalPrice += Number(offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0);
                           originalTotalPrice += Number(offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0);
+                        } else if (selectedType === 'CHAMPION') {
+                          totalPrice += Number(offering?.championDiscountPrice ?? offering?.championOriginalPrice ?? offering?.liveDiscountPrice ?? 0);
+                          originalTotalPrice += Number(offering?.championOriginalPrice ?? offering?.liveOriginalPrice ?? 0);
                         } else {
                           totalPrice += Number(offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
                           originalTotalPrice += Number(offering?.liveOriginalPrice ?? offering?.liveDiscountPrice ?? 0);
@@ -2302,6 +2395,61 @@ export default function ExploreCoursesPage() {
                   </div>
                 </div>
 
+                <div style={{ background: '#fef2f2', padding: '20px', borderRadius: '18px', marginBottom: '24px', border: '2px solid #fecaca' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#dc2626', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    🏆 Champion Batch - Elite
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
+                        Real Price (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={championOriginalPrice}
+                        onChange={(e) => setChampionOriginalPrice(e.target.value)}
+                        placeholder="0"
+                        style={{
+                          width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                          fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
+                        Discount Price (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={championDiscountPrice}
+                        onChange={(e) => setChampionDiscountPrice(e.target.value)}
+                        placeholder="0"
+                        style={{
+                          width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                          fontSize: '14px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>
+                      Champion Subtitle (e.g. Includes Unlimited Support)
+                    </label>
+                    <input
+                      type="text"
+                      value={championSubtitle}
+                      onChange={(e) => setChampionSubtitle(e.target.value)}
+                      placeholder="Special words for Champion tier..."
+                      style={{
+                        width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #c5c7cf',
+                        fontSize: '13px', fontWeight: '600', color: '#1e1e3a', background: '#ffffff'
+                      }}
+                    />
+                  </div>
+                </div>
+
               </div>
 
               <div>
@@ -2390,12 +2538,14 @@ export default function ExploreCoursesPage() {
                   const recordedDiscount = Math.max(parseInt(recordedDiscountPrice || '0', 10) || 0, 0)
                   const liveOriginal = Math.max(parseInt(liveOriginalPrice || '0', 10) || 0, 0)
                   const liveDiscount = Math.max(parseInt(liveDiscountPrice || '0', 10) || 0, 0)
+                  const championOriginal = Math.max(parseInt(championOriginalPrice || '0', 10) || 0, 0)
+                  const championDiscount = Math.max(parseInt(championDiscountPrice || '0', 10) || 0, 0)
 
-                  if (!recordedOriginal && !liveOriginal) {
-                    alert('Please enter at least one price (recording or live)')
+                  if (!recordedOriginal && !liveOriginal && !championOriginal) {
+                    alert('Please enter at least one price (recording, live, or champion)')
                     return
                   }
-                  if ((recordedOriginal && recordedOriginal < 1) || (recordedDiscount && recordedDiscount < 1) || (liveOriginal && liveOriginal < 1) || (liveDiscount && liveDiscount < 1)) {
+                  if ((recordedOriginal && recordedOriginal < 1) || (recordedDiscount && recordedDiscount < 1) || (liveOriginal && liveOriginal < 1) || (liveDiscount && liveDiscount < 1) || (championOriginal && championOriginal < 1) || (championDiscount && championDiscount < 1)) {
                     alert('Price cannot be less than 1')
                     return
                   }
@@ -2410,9 +2560,13 @@ export default function ExploreCoursesPage() {
                         recordedDiscountPrice: recordedDiscount,
                         liveOriginalPrice: liveOriginal,
                         liveDiscountPrice: liveDiscount,
+                        championOriginalPrice: championOriginal,
+                        championDiscountPrice: championDiscount,
+                        championSubtitle: championSubtitle,
                         tags: tags,
                         hasRecorded: recordedOriginal > 0 || recordedDiscount > 0,
                         hasLive: liveOriginal > 0 || liveDiscount > 0,
+                        hasChampion: championOriginal > 0 || championDiscount > 0,
                       }),
                     })
                     if (res.ok) {
@@ -2423,6 +2577,9 @@ export default function ExploreCoursesPage() {
                       setRecordedDiscountPrice('')
                       setLiveOriginalPrice('')
                       setLiveDiscountPrice('')
+                      setChampionOriginalPrice('')
+                      setChampionDiscountPrice('')
+                      setChampionSubtitle('')
                       setTags([])
                       // reset bundle form
                       setCreateBundle(false)
@@ -2693,6 +2850,23 @@ export default function ExploreCoursesPage() {
                   <input type="number" min={1} value={editFormData.liveDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, liveDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
                 </div>
               </div>
+              <div style={{ marginBottom: '20px', padding: '16px', borderRadius: '16px', background: '#fef2f2', border: '2px solid #fecaca' }}>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#dc2626', marginBottom: '12px' }}>🏆 Champion Batch - Elite</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Real Price (₹)</label>
+                    <input type="number" min={1} value={editFormData.championOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, championOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Discount Price (₹)</label>
+                    <input type="number" min={1} value={editFormData.championDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, championDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Champion Subtitle</label>
+                  <input type="text" value={editFormData.championSubtitle ?? ''} onChange={e => setEditFormData({...editFormData, championSubtitle: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} placeholder="e.g. Includes Unlimited Support..." />
+                </div>
+              </div>
             )}
 
             {/* Details Link (optional) */}
@@ -2753,7 +2927,12 @@ export default function ExploreCoursesPage() {
                         hasLive: editingOffering.hasLive,
                         liveOriginalPrice: editFormData.liveOriginalPrice || null,
                         liveDiscountPrice: editFormData.liveDiscountPrice || null,
+                        championOriginalPrice: editFormData.championOriginalPrice || null,
+                        championDiscountPrice: editFormData.championDiscountPrice || null,
+                        championSubtitle: editFormData.championSubtitle || null,
                         detailsLink: editFormData.detailsLink || null,
+                        hasRecorded: (editFormData.recordedOriginalPrice > 0 || editFormData.recordedDiscountPrice > 0),
+                        hasLive: (editFormData.liveOriginalPrice > 0 || editFormData.liveDiscountPrice > 0)
                       })
                     })
                     if (res.ok) {
@@ -2893,17 +3072,33 @@ export default function ExploreCoursesPage() {
                       placeholder="e.g. 4000"
                     />
                   </div>
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#15803d', marginBottom: '4px' }}>Bundle Live Price (₹)</div>
-                    <input 
-                      type="number" 
                       value={editBundleData.liveDiscountPrice ?? ''} 
                       onChange={e => setEditBundleData({ ...editBundleData, liveDiscountPrice: e.target.value, liveOriginalPrice: e.target.value })} 
                       style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #86efac', fontSize: '14px', fontWeight: '700' }} 
                       placeholder="e.g. 5500"
                     />
                   </div>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#b91c1c', marginBottom: '4px' }}>Bundle Champion Price (₹)</div>
+                    <input 
+                      type="number" 
+                      value={editBundleData.championDiscountPrice ?? ''} 
+                      onChange={e => setEditBundleData({ ...editBundleData, championDiscountPrice: e.target.value, championOriginalPrice: e.target.value })} 
+                      style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #fca5a5', fontSize: '14px', fontWeight: '700' }} 
+                      placeholder="e.g. 7500"
+                    />
+                  </div>
                 </div>
+                <div style={{ marginTop: '12px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#166534', marginBottom: '4px' }}>Champion Subtitle</div>
+                    <input 
+                      type="text" 
+                      value={editBundleData.championSubtitle ?? ''} 
+                      onChange={e => setEditBundleData({ ...editBundleData, championSubtitle: e.target.value })} 
+                      style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #86efac', fontSize: '13px' }} 
+                      placeholder="e.g. Includes Unlimited Support..."
+                    />
+                  </div>
                 <p style={{ fontSize: '10px', color: '#16a34a', marginTop: '10px', fontWeight: '600' }}>* This price will be applied to the entire bundle when users buy all subjects.</p>
               </div>
             ) : (
@@ -2956,9 +3151,23 @@ export default function ExploreCoursesPage() {
                                 placeholder="e.g. 2000"
                               />
                             </div>
+                            <div>
+                              <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>Champ Price (₹)</div>
+                              <input 
+                                type="number" 
+                                value={mapping.champion || ''} 
+                                onChange={e => {
+                                  const newMappings = { ...mappings, [id]: { ...mapping, champion: e.target.value } };
+                                  const newData = { ...priceData, individualMapping: newMappings };
+                                  setEditBundleData({ ...editBundleData, coursePrices: JSON.stringify(newData) });
+                                }}
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }} 
+                                placeholder="e.g. 3000"
+                              />
+                            </div>
                           </div>
                         </div>
-                      )
+                      );
                     });
                   })()}
                 </div>
@@ -3300,6 +3509,26 @@ export default function ExploreCoursesPage() {
                         placeholder="e.g. 5500"
                       />
                     </div>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#b91c1c', marginBottom: '4px' }}>Bundle Champion Price (₹)</div>
+                      <input 
+                        type="number" 
+                        value={bundleChampionDiscountPrice} 
+                        onChange={e => { setBundleChampionDiscountPrice(e.target.value); setBundleChampionOriginalPrice(e.target.value); }} 
+                        style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #fca5a5', fontSize: '14px', fontWeight: '700' }} 
+                        placeholder="e.g. 7500"
+                      />
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#166534', marginBottom: '4px' }}>Champion Subtitle</div>
+                    <input 
+                      type="text" 
+                      value={bundleChampionSubtitle} 
+                      onChange={e => setBundleChampionSubtitle(e.target.value)} 
+                      style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #86efac', fontSize: '13px' }} 
+                      placeholder="e.g. Includes Unlimited Support..."
+                    />
                   </div>
                   <p style={{ fontSize: '10px', color: '#16a34a', marginTop: '10px', fontWeight: '600' }}>* This price applies to the entire set of courses in this bundle.</p>
                 </div>
@@ -3326,6 +3555,10 @@ export default function ExploreCoursesPage() {
                             <div>
                               <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>Live Price (₹)</div>
                               <input type="number" value={mapping.live || ''} onChange={e => setBundleIndividualMapping({ ...bundleIndividualMapping, [id]: { ...mapping, live: e.target.value } })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }} placeholder="e.g. 2000" />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>Champ Price (₹)</div>
+                              <input type="number" value={mapping.champion || ''} onChange={e => setBundleIndividualMapping({ ...bundleIndividualMapping, [id]: { ...mapping, champion: e.target.value } })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }} placeholder="e.g. 3000" />
                             </div>
                           </div>
                         </div>
@@ -3430,6 +3663,9 @@ export default function ExploreCoursesPage() {
                         recordedDiscountPrice: bundleTierPrices[bundleSelectedCourses.length]?.recordedDiscount ? Number(bundleTierPrices[bundleSelectedCourses.length].recordedDiscount) : (bundleRecordedDiscountPrice ? Number(bundleRecordedDiscountPrice) : undefined),
                         liveOriginalPrice: bundleTierPrices[bundleSelectedCourses.length]?.liveOriginal ? Number(bundleTierPrices[bundleSelectedCourses.length].liveOriginal) : (bundleLiveOriginalPrice ? Number(bundleLiveOriginalPrice) : undefined),
                         liveDiscountPrice: bundleTierPrices[bundleSelectedCourses.length]?.liveDiscount ? Number(bundleTierPrices[bundleSelectedCourses.length].liveDiscount) : (bundleLiveDiscountPrice ? Number(bundleLiveDiscountPrice) : undefined),
+                        championOriginalPrice: bundleTierPrices[bundleSelectedCourses.length]?.championOriginal ? Number(bundleTierPrices[bundleSelectedCourses.length].championOriginal) : (bundleChampionOriginalPrice ? Number(bundleChampionOriginalPrice) : undefined),
+                        championDiscountPrice: bundleTierPrices[bundleSelectedCourses.length]?.championDiscount ? Number(bundleTierPrices[bundleSelectedCourses.length].championDiscount) : (bundleChampionDiscountPrice ? Number(bundleChampionDiscountPrice) : undefined),
+                        championSubtitle: bundleChampionSubtitle,
                         allowIndividualPurchase: !!bundleAllowIndividualPurchase,
                         enableBundleDiscount: bundleEnableBundleDiscount,
                         bundleDiscountType: bundleDiscountType,

@@ -11,9 +11,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const data = await request.json()
     const { 
-      courseId, name, thumbnail, 
-      hasRecorded, recordedOriginalPrice, recordedDiscountPrice,
       hasLive, liveOriginalPrice, liveDiscountPrice,
+      championOriginalPrice, championDiscountPrice, championSubtitle,
       detailsLink
     } = data
 
@@ -29,6 +28,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         hasLive: !!hasLive,
         liveOriginalPrice: liveOriginalPrice ? Number(liveOriginalPrice) : null,
         liveDiscountPrice: liveDiscountPrice ? Number(liveDiscountPrice) : null,
+        championOriginalPrice: championOriginalPrice ? Number(championOriginalPrice) : null,
+        championDiscountPrice: championDiscountPrice ? Number(championDiscountPrice) : null,
+        championSubtitle: championSubtitle || null,
         detailsLink: detailsLink || null,
       }
     })

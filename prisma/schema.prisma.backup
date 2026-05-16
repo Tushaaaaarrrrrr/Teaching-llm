@@ -134,7 +134,6 @@ model Enrollment {
   isFreeEnrollment Boolean        @default(false)
   type             EnrollmentType @default(LIVE)
   createdAt        DateTime       @default(now())
-  packageName      String?
   course           Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -176,9 +175,6 @@ model BundleOffering {
   requireAllCourses           Boolean                @default(true)
   forceClassType              String?
   coursePrices                String?                @default("[]")
-  championOriginalPrice       Float?
-  championDiscountPrice       Float?
-  championSubtitle            String?
   startingPrice               Float?
   bannerText                  String?                @default("Class starts from 1 June 2026")
   startingFromText            String?                @default("Courses start from")
@@ -755,7 +751,6 @@ model Feedback {
   recommendScore Int
   comment        String?
   createdAt      DateTime @default(now())
-  packageName    String?
   course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   student        User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
@@ -911,9 +906,6 @@ model CourseOffering {
   hasLive               Boolean     @default(false)
   liveOriginalPrice     Float?
   liveDiscountPrice     Float?
-  championOriginalPrice Float?
-  championDiscountPrice Float?
-  championSubtitle      String?
   detailsLink           String?
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
