@@ -31,23 +31,23 @@ export async function POST(
     let courseEntries: Array<{ courseId: string; accessType: string; price: number }> = []
 
     if (buyAll) {
-      const bundlePrice = accessType === 'RECORDED' ? bundle.recordedDiscountPrice ?? bundle.recordedOriginalPrice : bundle.liveDiscountPrice ?? bundle.liveOriginalPrice
-      if (bundlePrice == null) {
-        for (const bc of bundle.courses) {
-          const offering = await prisma.courseOffering.findFirst({ where: { courseId: bc.course.id }, orderBy: { createdAt: 'desc' } })
-          const price = accessType === 'RECORDED' ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0) : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0)
-          courseEntries.push({ courseId: bc.course.id, accessType, price })
-        }
-      } else {
-        let first = true
-        for (const bc of bundle.courses) {
-          if (first) {
-            courseEntries.push({ courseId: bc.course.id, accessType, price: Number(bundlePrice) })
-            first = false
-          } else {
-            courseEntries.push({ courseId: bc.course.id, accessType, price: 0 })
-          }
-        }
+      // If buyAll is true, we still respect perCourseAccessTypes for individual subjects if provided,
+      // otherwise we fallback to the global accessType.
+      for (const bc of bundle.courses) {
+        const offering = await prisma.courseOffering.findFirst({ where: { courseId: bc.course.id }, orderBy: { createdAt: 'desc' } })
+        const perType = perCourseAccessTypes && perCourseAccessTypes[bc.course.id] ? perCourseAccessTypes[bc.course.id] : accessType
+        const price = perType === 'RECORDED' ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0) : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0)
+        courseEntries.push({ courseId: bc.course.id, accessType: perType, price })
+      }
+      
+      // Override with bundle base price if applicable (all same type and buyAll)
+      const allSameType = courseEntries.every(e => e.accessType === courseEntries[0].accessType)
+      const globalBundlePrice = courseEntries.length > 0 ? (courseEntries[0].accessType === 'RECORDED' ? bundle.recordedDiscountPrice ?? bundle.recordedOriginalPrice : bundle.liveDiscountPrice ?? bundle.liveOriginalPrice) : null
+      
+      if (allSameType && globalBundlePrice != null) {
+        const count = courseEntries.length
+        const pricePerCourse = Number(globalBundlePrice) / count
+        courseEntries = courseEntries.map(e => ({ ...e, price: pricePerCourse }))
       }
     } else {
       const sel = Array.isArray(selectedCourseIds) && selectedCourseIds.length ? selectedCourseIds : []
@@ -68,9 +68,13 @@ export async function POST(
     if (bundle.enableBundleDiscount && bundle.bundleDiscountValue) {
       // Check applicability
       const applicability = bundle.bundleDiscountApplicability || 'BOTH'
-      const accessMatchesApplicability = applicability === 'BOTH' ||
-        (applicability === 'RECORDED' && accessType === 'RECORDED') ||
-        (applicability === 'LIVE' && accessType === 'LIVE')
+      
+      // For mixed bundles, we check if the "dominant" type matches or if it's BOTH
+      const liveCount = courseEntries.filter(e => e.accessType === 'LIVE').length
+      const recordedCount = courseEntries.filter(e => e.accessType === 'RECORDED').length
+      const dominantType = liveCount >= recordedCount ? 'LIVE' : 'RECORDED'
+
+      const accessMatchesApplicability = applicability === 'BOTH' || applicability === dominantType
 
       // Check requireAllCourses
       const allCoursesSelected = buyAll || (courseEntries.length === bundle.courses.length)
@@ -97,6 +101,15 @@ export async function POST(
       const coupon = await prisma.coupon.findUnique({ where: { code: couponCode.toUpperCase() } })
 
       if (coupon && coupon.isActive) {
+        // CRITICAL: Live Bundle Coupon Validation
+        // If the coupon code contains "LIVE", all selected courses MUST be "LIVE"
+        const isLiveCoupon = coupon.code.includes('LIVE')
+        const allLive = courseEntries.every(e => e.accessType === 'LIVE')
+        
+        if (isLiveCoupon && !allLive) {
+          return NextResponse.json({ error: 'This LIVE coupon requires all subjects in the bundle to be set to LIVE.' }, { status: 400 })
+        }
+
         // Validate dates
         const now = new Date()
         const startOk = !coupon.startDate || now >= new Date(coupon.startDate)

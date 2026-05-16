@@ -7,13 +7,23 @@ export async function POST(request: NextRequest) {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { code, bundleOfferingId, subtotal } = await request.json()
+    const { code, bundleOfferingId, subtotal, perCourseAccessTypes } = await request.json()
 
     if (!code) return NextResponse.json({ error: 'Coupon code is required' }, { status: 400 })
 
     const coupon = await prisma.coupon.findUnique({ where: { code: code.toUpperCase() } })
 
     if (!coupon) return NextResponse.json({ error: 'Invalid coupon code' }, { status: 404 })
+
+    // CRITICAL: Live Bundle Coupon Validation
+    // If the coupon code contains "LIVE", we check if perCourseAccessTypes are all "LIVE"
+    if (coupon.code.includes('LIVE') && perCourseAccessTypes) {
+      const accessTypes = Object.values(perCourseAccessTypes)
+      const allLive = accessTypes.every(type => type === 'LIVE')
+      if (accessTypes.length > 0 && !allLive) {
+        return NextResponse.json({ error: 'This LIVE coupon requires all subjects in the bundle to be set to LIVE.' }, { status: 400 })
+      }
+    }
 
     // Check active
     if (!coupon.isActive) return NextResponse.json({ error: 'This coupon is no longer active' }, { status: 400 })

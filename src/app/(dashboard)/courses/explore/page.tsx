@@ -557,12 +557,25 @@ export default function ExploreCoursesPage() {
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <button onClick={() => { 
                       setActiveBundle(b); 
-                      setBundleAccessType(bundlePriceRecorded ? 'RECORDED' : 'LIVE'); 
+                      const defaultType = b.forceClassType || (bundlePriceRecorded ? 'RECORDED' : 'LIVE');
+                      setBundleAccessType(defaultType);
+                      setBundleGlobalAccessType(defaultType);
+                      
+                      // Initialize per-course access types
+                      const initialSelections: Record<string, 'RECORDED' | 'LIVE'> = {};
+                      b.courses.forEach((bc: any) => {
+                        initialSelections[bc.course.id] = defaultType;
+                      });
+                      setBundleSelectedForPurchase(initialSelections);
+
                       setBundleSelectedCoursesToBuy(b.courses.map((c: any) => c.course.id).filter((id: string) => {
                         if (b.allowIndividualPurchase === false) return true;
                         const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
                         return isManager || getEnrollmentStatus(id) === null;
                       })); 
+                      setCouponApplied(null);
+                      setCouponCode('');
+                      setCouponError('');
                       setShowBundleModal(true) 
                     }} style={{ flex: 1, padding: '14px', borderRadius: '14px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '900', fontSize: '15px', border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(99,102,241,0.25)' }}>View / Buy</button>
                     
@@ -1499,120 +1512,158 @@ export default function ExploreCoursesPage() {
                     <span style={{ fontSize: '16px' }}>📝</span> Please choose course and class type
                   </div>
                 )}
-                <div style={{ maxHeight: '380px', overflow: 'auto', paddingRight: '12px', marginBottom: '20px' }}>
+                <div style={{ maxHeight: '420px', overflow: 'auto', paddingRight: '12px', marginBottom: '20px' }}>
                   {activeBundle.courses.map((bc: any) => {
                     const course = bc.course
                     const offering = (activeOfferings as any[]).find(o => o.courseId === course.id)
                     const recPrice = offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0
                     const livePrice = offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0
+                    const selectedType = bundleSelectedForPurchase[course.id] || (activeBundle.forceClassType || bundleGlobalAccessType) || 'RECORDED'
+                    
                     return (
-                      <div key={course.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          {(() => {
-                            const enrollmentType = getEnrollmentStatus(course.id);
-                            const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
-                            const isEnrolled = !isManager && enrollmentType !== null;
-                            return (
-                              <>
-                                <input
-                                  type="checkbox"
-                                  checked={isEnrolled ? true : bundleSelectedCoursesToBuy.includes(course.id)}
-                                  disabled={isEnrolled || activeBundle.allowIndividualPurchase === false}
-                                  onChange={(e) => {
-                                    if (activeBundle.allowIndividualPurchase === false || isEnrolled) return
-                                    if (e.target.checked) setBundleSelectedCoursesToBuy([...bundleSelectedCoursesToBuy, course.id])
-                                    else setBundleSelectedCoursesToBuy(bundleSelectedCoursesToBuy.filter(id => id !== course.id))
-                                  }}
-                                  style={{ width: '18px', height: '18px', cursor: isEnrolled ? 'not-allowed' : 'pointer', accentColor: isEnrolled ? '#10b981' : '#6366f1', opacity: isEnrolled ? 0.6 : 1 }}
-                                />
-                                <div>
-                                  <div style={{ fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    {course.name}
-                                    {isEnrolled && <span style={{ fontSize: '10px', background: '#d1fae5', color: '#059669', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: '800' }}>Enrolled</span>}
+                      <div key={course.id} style={{ 
+                        padding: '16px', 
+                        borderRadius: '16px', 
+                        border: '1.5px solid #f1f5f9', 
+                        marginBottom: '12px',
+                        background: bundleSelectedCoursesToBuy.includes(course.id) ? '#f8faff' : '#fff',
+                        transition: 'all 0.2s ease'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            {(() => {
+                              const enrollmentType = getEnrollmentStatus(course.id);
+                              const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
+                              const isEnrolled = !isManager && enrollmentType !== null;
+                              return (
+                                <>
+                                  <div 
+                                    onClick={() => {
+                                      if (activeBundle.allowIndividualPurchase === false || isEnrolled) return
+                                      if (bundleSelectedCoursesToBuy.includes(course.id)) {
+                                        setBundleSelectedCoursesToBuy(bundleSelectedCoursesToBuy.filter(id => id !== course.id))
+                                      } else {
+                                        setBundleSelectedCoursesToBuy([...bundleSelectedCoursesToBuy, course.id])
+                                      }
+                                    }}
+                                    style={{ 
+                                      width: '24px', height: '24px', 
+                                      borderRadius: '8px', 
+                                      border: `2px solid ${bundleSelectedCoursesToBuy.includes(course.id) ? '#6366f1' : '#cbd5e1'}`,
+                                      background: bundleSelectedCoursesToBuy.includes(course.id) ? '#6366f1' : 'transparent',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      cursor: isEnrolled ? 'not-allowed' : 'pointer',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                  >
+                                    {bundleSelectedCoursesToBuy.includes(course.id) && (
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    )}
                                   </div>
-                                  <div style={{ fontSize: '12px', color: '#64748b' }}>{course.teacherName || ''}</div>
-                                </div>
-                              </>
-                            )
-                          })()}
+                                  <div>
+                                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e293b' }}>
+                                      {course.name}
+                                      {isEnrolled && <span style={{ marginLeft: '8px', fontSize: '10px', background: '#d1fae5', color: '#059669', padding: '2px 8px', borderRadius: '6px', textTransform: 'uppercase', fontWeight: '900' }}>Purchased</span>}
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>{course.teacherName || 'Expert Faculty'}</div>
+                                  </div>
+                                </>
+                              )
+                            })()}
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '14px', fontWeight: '900', color: selectedType === 'LIVE' ? '#4f46e5' : '#1e293b' }}>
+                                ₹{selectedType === 'LIVE' ? livePrice : recPrice}
+                              </div>
+                              <div style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>
+                                {selectedType === 'LIVE' ? 'Live Pro' : 'Recorded Plus'}
+                              </div>
+                            </div>
+                            
+                            {!getEnrollmentStatus(course.id) || userData?.user?.role === 'MANAGER' ? (
+                              <select 
+                                value={selectedType} 
+                                onChange={e => {
+                                  const newType = e.target.value as 'RECORDED' | 'LIVE'
+                                  setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: newType })
+                                  // Auto-remove coupon if it was a LIVE coupon and we just switched to recorded
+                                  if (couponApplied?.code?.includes('LIVE') && newType === 'RECORDED') {
+                                    setCouponApplied(null)
+                                    setCouponError('Live-only coupon removed (requires all subjects to be Live).')
+                                  }
+                                }} 
+                                style={{ padding: '6px 12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '12px', fontWeight: '700', cursor: 'pointer', outline: 'none' }}
+                              >
+                                <option value="RECORDED">Recorded</option>
+                                <option value="LIVE">Live</option>
+                              </select>
+                            ) : null}
+                          </div>
                         </div>
-                        {((activeBundle.allowIndividualPurchase === false || activeBundle.coursePrices) && activeBundle.courses.length === selectedList.length) ? (
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
-                             <span style={{ fontSize: '13px', color: '#6366f1', fontWeight: '800', background: 'rgba(99,102,241,0.08)', padding: '4px 10px', borderRadius: '8px' }}>✨ Included in Bundle</span>
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                            {getEnrollmentStatus(course.id) && userData?.user?.role !== 'MANAGER' && userData?.role !== 'MANAGER' ? (
-                               <div style={{ fontSize: '13px', color: '#059669', fontWeight: '700' }}>✅ Already Purchased</div>
-                            ) : (
-                              <>
-                                <div style={{ textAlign: 'right' }}>
-                                  <div style={{ fontSize: '13px', fontWeight: '800' }}>₹{recPrice}</div>
-                                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>Recorded</div>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                  <div style={{ fontSize: '13px', fontWeight: '800', color: '#4f46e5' }}>₹{livePrice}</div>
-                                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>Live</div>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                  <select value={bundleSelectedForPurchase[course.id] || 'RECORDED'} onChange={e => setBundleSelectedForPurchase({ ...bundleSelectedForPurchase, [course.id]: e.target.value as 'RECORDED' | 'LIVE' })} style={{ padding: '4px 8px', borderRadius: '8px', border: '1.5px solid #e2e8f0', fontSize: '12px', fontWeight: '700' }}>
-                                    <option value="RECORDED">Recorded</option>
-                                    <option value="LIVE">Live</option>
-                                  </select>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )}
                       </div>
                     )
                   })}
                 </div>
 
                 {/* Left Bottom Info Area */}
-                <div style={{ background: '#f8fafc', borderRadius: '16px', padding: '20px', border: '1.5px solid #f1f5f9' }}>
-                  {/* Bundle Discount Banner Moved Here */}
+                <div style={{ background: '#f8fafc', borderRadius: '20px', padding: '20px', border: '1.5px solid #f1f5f9' }}>
                   {activeBundle.enableBundleDiscount && activeBundle.bundleDiscountValue && (
-                    <div style={{ padding: '12px 16px', borderRadius: '12px', background: 'linear-gradient(135deg, #fef3c7, #fde68a)', marginBottom: '16px', border: '1px solid #f59e0b' }}>
-                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#92400e' }}>
-                        🏷️ {activeBundle.bundleDiscountType === 'PERCENTAGE' ? `Special ${activeBundle.bundleDiscountValue}% OFF` : `Special ₹${activeBundle.bundleDiscountValue} OFF`} applied!
+                    <div style={{ padding: '14px 18px', borderRadius: '16px', background: 'linear-gradient(135deg, #fef3c7, #fde68a)', marginBottom: '16px', border: '1px solid #f59e0b' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '18px' }}>🏷️</span>
+                        <span style={{ fontSize: '14px', fontWeight: '900', color: '#92400e' }}>
+                          {activeBundle.bundleDiscountType === 'PERCENTAGE' ? `Bundle Offer: ${activeBundle.bundleDiscountValue}% OFF` : `Bundle Offer: ₹${activeBundle.bundleDiscountValue} OFF`}
+                        </span>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#b45309', marginTop: '4px', fontWeight: '600' }}>
+                      <div style={{ fontSize: '12px', color: '#b45309', fontWeight: '600', paddingLeft: '28px' }}>
                         {activeBundle.requireAllCourses 
-                          ? `This discount is automatically applied when you enroll in all courses (as ${activeBundle.bundleDiscountApplicability === 'BOTH' ? 'Live or Recorded' : activeBundle.bundleDiscountApplicability === 'LIVE' ? 'Live PRO' : 'Recorded PLUS'}) in this term.` 
-                          : "Save more by enrolling in this curated course bundle."}
+                          ? `Applied when you enroll in all ${activeBundle.courses.length} subjects.` 
+                          : "Special discount for curated bundles."}
                       </div>
                     </div>
                   )}
 
-                  {/* Fixed bundle notice Moved Here */}
                   {activeBundle.allowIndividualPurchase === false && (
-                    <div style={{ padding: '12px 16px', borderRadius: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ fontSize: '20px' }}>🔒</div>
+                    <div style={{ padding: '12px 18px', borderRadius: '16px', background: '#eff6ff', border: '1px solid #bfdbfe', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '20px' }}>🔒</span>
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: '800', color: '#1e40af' }}>Fixed Bundle Terms</div>
-                        <div style={{ fontSize: '12px', color: '#3b82f6', fontWeight: '600' }}>This is a fixed term bundle. Individual course removal is not available for this configuration.</div>
+                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#1e40af' }}>Full Bundle Access</div>
+                        <div style={{ fontSize: '11px', color: '#3b82f6', fontWeight: '600' }}>This course set must be purchased as a complete package.</div>
                       </div>
                     </div>
                   )}
 
-                  {/* Global Bundle Class Type Choice Moved Here */}
                   {(() => {
                     if ((activeBundle.allowIndividualPurchase === false || selectedList.length === activeBundle.courses.length) && !activeBundle.forceClassType) {
                       return (
-                        <div style={{ padding: '16px', borderRadius: '12px', background: '#fff', border: '1.5px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ padding: '16px', borderRadius: '16px', background: '#fff', border: '1.5px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
                           <div>
-                            <div style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>Bundle Class Preference</div>
-                            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Apply to all courses in this bundle</div>
+                            <div style={{ fontSize: '14px', fontWeight: '900', color: '#1e293b' }}>Apply Class Type to All</div>
+                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Quickly set all subjects in this bundle</div>
                           </div>
-                          <select 
-                            value={bundleGlobalAccessType} 
-                            onChange={e => setBundleGlobalAccessType(e.target.value as 'RECORDED' | 'LIVE')}
-                            style={{ padding: '10px 14px', borderRadius: '10px', border: '2px solid #cbd5e1', fontSize: '14px', fontWeight: '700', outline: 'none', cursor: 'pointer' }}
-                          >
-                            <option value="RECORDED">Recorded PLUS</option>
-                            <option value="LIVE">Live PRO</option>
-                          </select>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button 
+                              onClick={() => {
+                                setBundleGlobalAccessType('RECORDED')
+                                const newSelections = { ...bundleSelectedForPurchase }
+                                activeBundle.courses.forEach((c: any) => newSelections[c.course.id] = 'RECORDED')
+                                setBundleSelectedForPurchase(newSelections)
+                                if (couponApplied?.code?.includes('LIVE')) setCouponApplied(null)
+                              }}
+                              style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e2e8f0', fontSize: '11px', fontWeight: '800', background: bundleGlobalAccessType === 'RECORDED' ? '#1e293b' : '#fff', color: bundleGlobalAccessType === 'RECORDED' ? '#fff' : '#64748b', cursor: 'pointer' }}
+                            >Recorded</button>
+                            <button 
+                              onClick={() => {
+                                setBundleGlobalAccessType('LIVE')
+                                const newSelections = { ...bundleSelectedForPurchase }
+                                activeBundle.courses.forEach((c: any) => newSelections[c.course.id] = 'LIVE')
+                                setBundleSelectedForPurchase(newSelections)
+                              }}
+                              style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e2e8f0', fontSize: '11px', fontWeight: '800', background: bundleGlobalAccessType === 'LIVE' ? '#6366f1' : '#fff', color: bundleGlobalAccessType === 'LIVE' ? '#fff' : '#64748b', cursor: 'pointer' }}
+                            >Live Pro</button>
+                          </div>
                         </div>
                       )
                     }
@@ -1626,7 +1677,6 @@ export default function ExploreCoursesPage() {
                   let totalPrice = 0;
                   let originalTotalPrice = 0;
                   const isFixed = activeBundle.allowIndividualPurchase === false;
-                  const effectiveAccessType = activeBundle.forceClassType || bundleGlobalAccessType;
                   
                   // Check if ALL selected courses are already enrolled
                   const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER';
@@ -1636,8 +1686,10 @@ export default function ExploreCoursesPage() {
                   const count = selectedList.length;
                   const tier = tierPrices[count];
 
+                  const effectiveGlobalType = activeBundle.forceClassType || bundleGlobalAccessType;
+
                   if (tier) {
-                    if (effectiveAccessType === 'RECORDED') {
+                    if (effectiveGlobalType === 'RECORDED') {
                       totalPrice = Number(tier.recordedDiscount) || Number(tier.recordedOriginal) || 0;
                       originalTotalPrice = Number(tier.recordedOriginal) || totalPrice;
                     } else {
@@ -1645,20 +1697,19 @@ export default function ExploreCoursesPage() {
                       originalTotalPrice = Number(tier.liveOriginal) || totalPrice;
                     }
                   } else {
-                    // Fallback to existing bundle prices or sum
                     const isBuyingAll = selectedList.length === activeBundle.courses.length;
-                    const useBundleBasePrice = (isFixed || isBuyingAll) && (effectiveAccessType === 'RECORDED' ? activeBundle.recordedOriginalPrice != null : activeBundle.liveOriginalPrice != null);
+                    const useBundleBasePrice = (isFixed || isBuyingAll) && (effectiveGlobalType === 'RECORDED' ? activeBundle.recordedOriginalPrice != null : activeBundle.liveOriginalPrice != null);
 
                     if (useBundleBasePrice) {
-                      const bundlePrice = effectiveAccessType === 'RECORDED' ? activeBundle.recordedDiscountPrice ?? activeBundle.recordedOriginalPrice : activeBundle.liveDiscountPrice ?? activeBundle.liveOriginalPrice;
-                      const bundleOriginal = effectiveAccessType === 'RECORDED' ? activeBundle.recordedOriginalPrice ?? activeBundle.recordedDiscountPrice : activeBundle.liveOriginalPrice ?? activeBundle.liveDiscountPrice;
+                      const bundlePrice = effectiveGlobalType === 'RECORDED' ? activeBundle.recordedDiscountPrice ?? activeBundle.recordedOriginalPrice : activeBundle.liveDiscountPrice ?? activeBundle.liveOriginalPrice;
+                      const bundleOriginal = effectiveGlobalType === 'RECORDED' ? activeBundle.recordedOriginalPrice ?? activeBundle.recordedDiscountPrice : activeBundle.liveOriginalPrice ?? activeBundle.liveDiscountPrice;
                       
                       totalPrice = bundlePrice || 0;
                       originalTotalPrice = bundleOriginal || totalPrice;
                     } else {
                       selectedList.forEach((courseId: string) => {
                         const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
-                        const selectedType = bundleSelectedForPurchase[courseId] || effectiveAccessType || 'RECORDED';
+                        const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
                         if (selectedType === 'RECORDED') {
                           totalPrice += offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0;
                           originalTotalPrice += offering?.recordedOriginalPrice ?? offering?.recordedDiscountPrice ?? 0;
@@ -1676,8 +1727,11 @@ export default function ExploreCoursesPage() {
                     const applicability = activeBundle.bundleDiscountApplicability || 'BOTH';
                     const allSelected = selectedList.length === activeBundle.courses.length;
                     const meetsRequireAll = !activeBundle.requireAllCourses || allSelected;
-                    const dominantType = Object.values(bundleSelectedForPurchase).filter(v => v === 'LIVE').length > selectedList.length / 2 ? 'LIVE' : 'RECORDED';
+                    
+                    const liveCount = Object.values(bundleSelectedForPurchase).filter(v => v === 'LIVE').length;
+                    const dominantType = liveCount >= selectedList.length / 2 ? 'LIVE' : 'RECORDED';
                     const accessOk = applicability === 'BOTH' || applicability === dominantType;
+                    
                     if (accessOk && meetsRequireAll) {
                       if (activeBundle.bundleDiscountType === 'PERCENTAGE') {
                         bundleDiscountAmt = Math.round((totalPrice * activeBundle.bundleDiscountValue) / 100);
@@ -1696,89 +1750,123 @@ export default function ExploreCoursesPage() {
                   return (
                     <>
                       <div style={{ marginBottom: 'auto' }}>
-                        <div style={{ fontSize: '18px', color: '#0f172a', fontWeight: '800', marginBottom: '20px', borderBottom: '1.5px solid #f1f5f9', paddingBottom: '10px' }}>Order Summary</div>
+                        <div style={{ fontSize: '18px', color: '#0f172a', fontWeight: '900', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px' }}>Detailed Breakdown</div>
                         
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px' }}>
-                          <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '700' }}>Selected Courses</span>
-                          <span style={{ fontSize: '12px', fontWeight: '800', color: '#1e293b' }}>
-                            {(() => {
-                              const prices: number[] = [];
-                              selectedList.forEach((courseId: string) => {
-                                const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
-                                const selectedType = bundleSelectedForPurchase[courseId] || (activeBundle.forceClassType || bundleGlobalAccessType) || 'RECORDED';
-                                const price = selectedType === 'RECORDED' 
-                                  ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0)
-                                  : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
-                                if (price > 0) prices.push(price);
-                              });
-                              return prices.length > 0 ? prices.join(' + ') : selectedList.length;
-                            })()}
-                          </span>
+                        <div style={{ marginBottom: '20px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                          {selectedList.map((courseId: string) => {
+                            const bc = activeBundle.courses.find((c: any) => c.course.id === courseId);
+                            const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
+                            const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
+                            const price = selectedType === 'RECORDED' 
+                              ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0)
+                              : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
+                            
+                            return (
+                              <div key={courseId} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                <div style={{ flex: 1, paddingRight: '12px' }}>
+                                  <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '800' }}>{bc?.course.name}</div>
+                                  <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700' }}>{selectedType === 'LIVE' ? 'LIVE PRO' : 'RECORDED PLUS'}</div>
+                                </div>
+                                <span style={{ fontSize: '13px', fontWeight: '900', color: '#1e293b' }}>₹{price}</span>
+                              </div>
+                            )
+                          })}
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px' }}>
-                          <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '700' }}>Subtotal</span>
-                          <span style={{ fontSize: '14px', fontWeight: '900', color: '#1e293b' }}>₹{totalPrice}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', paddingTop: '14px', borderTop: '1.5px solid #f8fafc' }}>
+                          <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '800' }}>Subtotal</span>
+                          <span style={{ fontSize: '15px', fontWeight: '900', color: '#1e293b' }}>₹{totalPrice}</span>
                         </div>
 
                         {bundleDiscountAmt > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', padding: '8px 12px', borderRadius: '10px', background: '#f0fdf4' }}>
-                            <span style={{ fontSize: '13px', color: '#166534', fontWeight: '800' }}>Bundle Discount</span>
-                            <span style={{ fontSize: '13px', fontWeight: '900', color: '#16a34a' }}>-₹{bundleDiscountAmt}</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', padding: '10px 14px', borderRadius: '12px', background: '#f0fdf4', border: '1px solid #dcfce7' }}>
+                            <span style={{ fontSize: '13px', color: '#166534', fontWeight: '900' }}>Bundle Discount</span>
+                            <span style={{ fontSize: '13px', fontWeight: '950', color: '#16a34a' }}>-₹{bundleDiscountAmt}</span>
                           </div>
                         )}
 
                         {couponApplied && couponDiscountAmt > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', padding: '8px 12px', borderRadius: '10px', background: '#eff6ff' }}>
-                            <span style={{ fontSize: '13px', color: '#1e40af', fontWeight: '800' }}>Coupon ({couponApplied.code})</span>
-                            <span style={{ fontSize: '13px', fontWeight: '900', color: '#2563eb' }}>-₹{couponDiscountAmt}</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', padding: '10px 14px', borderRadius: '12px', background: '#eff6ff', border: '1px solid #dbeafe' }}>
+                            <span style={{ fontSize: '13px', color: '#1e40af', fontWeight: '900' }}>Coupon: {couponApplied.code}</span>
+                            <span style={{ fontSize: '13px', fontWeight: '950', color: '#2563eb' }}>-₹{couponDiscountAmt}</span>
                           </div>
                         )}
 
-                        {/* Coupon Input */}
                         {!isAllEnrolled && (
-                          <div style={{ marginTop: '20px', marginBottom: '10px' }}>
-                            <div style={{ fontSize: '12px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Apply Coupon</div>
+                          <div style={{ marginTop: '24px', marginBottom: '16px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: '900', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Apply Coupon</div>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                              <input type="text" value={couponCode} onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError('') }} placeholder="COUPON CODE" style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '2px solid #e0e7ff', fontSize: '13px', fontWeight: '800', letterSpacing: '0.05em', outline: 'none' }} disabled={!!couponApplied} />
+                              <input 
+                                type="text" 
+                                value={couponCode} 
+                                onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError('') }} 
+                                placeholder="ENTER CODE" 
+                                style={{ flex: 1, padding: '12px 16px', borderRadius: '12px', border: '2.5px solid #f1f5f9', fontSize: '14px', fontWeight: '900', outline: 'none', transition: 'border-color 0.2s' }} 
+                                onFocus={e => e.currentTarget.style.borderColor = '#6366f1'}
+                                onBlur={e => e.currentTarget.style.borderColor = '#f1f5f9'}
+                                disabled={!!couponApplied} 
+                              />
                               {couponApplied ? (
-                                <button onClick={() => { setCouponApplied(null); setCouponCode(''); setCouponError('') }} style={{ padding: '10px 16px', borderRadius: '10px', background: '#fef2f2', border: '1.5px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '12px', cursor: 'pointer' }}>✕</button>
+                                <button onClick={() => { setCouponApplied(null); setCouponCode(''); setCouponError('') }} style={{ padding: '12px 18px', borderRadius: '12px', background: '#fee2e2', border: 'none', color: '#ef4444', fontWeight: '900', cursor: 'pointer' }}>✕</button>
                               ) : (
-                                <button disabled={!couponCode || couponLoading} onClick={async () => {
-                                  setCouponLoading(true); setCouponError('')
-                                  try {
-                                    const res = await fetch('/api/store/coupons/validate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: couponCode, bundleOfferingId: activeBundle.id, subtotal: afterBundleDiscount }) })
-                                    const data = await res.json()
-                                    if (res.ok && data.valid) { setCouponApplied(data) }
-                                    else { setCouponError(data.error || 'Invalid coupon') }
-                                  } catch { setCouponError('Failed to validate') }
-                                  finally { setCouponLoading(false) }
-                                }} style={{ padding: '10px 16px', borderRadius: '10px', background: couponCode ? '#6366f1' : '#e2e8f0', color: couponCode ? '#fff' : '#94a3b8', fontWeight: '800', fontSize: '12px', cursor: couponCode ? 'pointer' : 'not-allowed', border: 'none' }}>{couponLoading ? '...' : 'APPLY'}</button>
+                                <button 
+                                  disabled={!couponCode || couponLoading} 
+                                  onClick={async () => {
+                                    setCouponLoading(true); setCouponError('')
+                                    try {
+                                      const res = await fetch('/api/store/coupons/validate', { 
+                                        method: 'POST', 
+                                        headers: { 'Content-Type': 'application/json' }, 
+                                        body: JSON.stringify({ 
+                                          code: couponCode, 
+                                          bundleOfferingId: activeBundle.id, 
+                                          subtotal: afterBundleDiscount,
+                                          perCourseAccessTypes: bundleSelectedForPurchase 
+                                        }) 
+                                      })
+                                      const data = await res.json()
+                                      if (res.ok && data.valid) { setCouponApplied(data) }
+                                      else { setCouponError(data.error || 'Invalid coupon') }
+                                    } catch { setCouponError('Failed to validate') }
+                                    finally { setCouponLoading(false) }
+                                  }} 
+                                  style={{ padding: '12px 20px', borderRadius: '12px', background: couponCode ? '#1e293b' : '#f1f5f9', color: couponCode ? '#fff' : '#94a3b8', fontWeight: '900', cursor: couponCode ? 'pointer' : 'not-allowed', border: 'none' }}
+                                >{couponLoading ? '...' : 'APPLY'}</button>
                               )}
                             </div>
-                            {couponError && <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: '700', marginTop: '6px' }}>⚠️ {couponError}</div>}
+                            {couponError && <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: '800', marginTop: '8px', padding: '4px 8px', background: '#fef2f2', borderRadius: '6px' }}>{couponError}</div>}
                           </div>
                         )}
                         
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '24px', paddingTop: '20px', borderTop: '2px dashed #e2e8f0' }}>
-                          <span style={{ fontSize: '18px', color: '#0f172a', fontWeight: '900' }}>Total Payable</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '32px', paddingTop: '24px', borderTop: '3px solid #f1f5f9' }}>
+                          <span style={{ fontSize: '18px', color: '#1e293b', fontWeight: '950' }}>Total Payable</span>
                           <div style={{ textAlign: 'right' }}>
                             {(originalTotalPrice > finalTotal || bundleDiscountAmt > 0 || couponDiscountAmt > 0) && (
-                              <div style={{ fontSize: '14px', color: '#94a3b8', textDecoration: 'line-through', marginBottom: '2px', fontWeight: '700' }}>₹{originalTotalPrice > totalPrice ? originalTotalPrice : totalPrice}</div>
+                              <div style={{ fontSize: '15px', color: '#94a3b8', textDecoration: 'line-through', marginBottom: '4px', fontWeight: '800' }}>₹{originalTotalPrice > totalPrice ? originalTotalPrice : totalPrice}</div>
                             )}
-                            <div style={{ fontSize: '36px', fontWeight: '950', color: '#4f46e5', lineHeight: '1', letterSpacing: '-1px' }}>₹{isAllEnrolled ? 0 : finalTotal}</div>
+                            <div style={{ fontSize: '42px', fontWeight: '1000', color: '#6366f1', lineHeight: '0.9', letterSpacing: '-2px' }}>₹{isAllEnrolled ? 0 : finalTotal}</div>
                           </div>
                         </div>
                       </div>
 
-                      <div style={{ marginTop: '28px' }}>
+                      <div style={{ marginTop: '32px' }}>
                         <button 
-                          disabled={isProcessing || isAllEnrolled}
+                          disabled={isProcessing || isAllEnrolled || selectedList.length === 0}
                           onClick={async () => {
                             try {
                               if (selectedList.length === 0) { alert('Select at least one course'); return }
                               setIsProcessing(true)
-                              const res = await fetch(`/api/bundle-offerings/${activeBundle.id}/create-order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buyAll: selectedList.length === activeBundle.courses.length, accessType: effectiveAccessType, selectedCourseIds: selectedList, perCourseAccessTypes: bundleSelectedForPurchase, couponCode: couponApplied?.code || null }) })
+                              const res = await fetch(`/api/bundle-offerings/${activeBundle.id}/create-order`, { 
+                                method: 'POST', 
+                                headers: { 'Content-Type': 'application/json' }, 
+                                body: JSON.stringify({ 
+                                  buyAll: selectedList.length === activeBundle.courses.length, 
+                                  accessType: effectiveGlobalType, 
+                                  selectedCourseIds: selectedList, 
+                                  perCourseAccessTypes: bundleSelectedForPurchase, 
+                                  couponCode: couponApplied?.code || null 
+                                }) 
+                              })
                               const data = await res.json()
                               if (!res.ok) { alert(data.error || 'Failed to create order'); setIsProcessing(false); return }
                               if (data.freeCheckout) {
@@ -1791,7 +1879,7 @@ export default function ExploreCoursesPage() {
                                 name: 'GenZ IItian',
                                 description: `Purchase courses from bundle — ${data.bundleName}`,
                                 order_id: data.razorpayOrderId,
-                                prefill: { name: data.userName || '', email: data.userEmail || '' },
+                                prefill: { name: userData?.user?.name || '', email: userData?.user?.email || '' },
                                 theme: { color: '#6366f1' },
                                 handler: async (response: any) => {
                                   try {
@@ -1816,28 +1904,27 @@ export default function ExploreCoursesPage() {
                           }} 
                           style={{ 
                             width: '100%', 
-                            padding: '18px', 
-                            borderRadius: '16px', 
-                            background: isAllEnrolled ? '#e2e8f0' : 'linear-gradient(135deg, #4f46e5, #6366f1)', 
-                            color: '#fff', 
-                            fontWeight: '950', 
-                            fontSize: '16px', 
-                            boxShadow: isAllEnrolled ? 'none' : '0 12px 24px rgba(79, 70, 229, 0.3)', 
+                            padding: '20px', 
+                            borderRadius: '18px', 
+                            background: (isAllEnrolled || selectedList.length === 0) ? '#f1f5f9' : 'linear-gradient(135deg, #6366f1, #4f46e5)', 
+                            color: (isAllEnrolled || selectedList.length === 0) ? '#94a3b8' : '#fff', 
+                            fontWeight: '1000', 
+                            fontSize: '17px', 
+                            boxShadow: (isAllEnrolled || selectedList.length === 0) ? 'none' : '0 15px 30px rgba(99, 102, 241, 0.35)', 
                             border: 'none', 
-                            cursor: (isProcessing || isAllEnrolled) ? 'not-allowed' : 'pointer',
+                            cursor: (isProcessing || isAllEnrolled || selectedList.length === 0) ? 'not-allowed' : 'pointer',
                             textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            transform: 'scale(1)'
+                            letterSpacing: '0.1em',
+                            transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                           }}
-                          onMouseOver={(e) => { if (!isProcessing && !isAllEnrolled) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 15px 30px rgba(79, 70, 229, 0.4)'; } }}
-                          onMouseOut={(e) => { if (!isProcessing && !isAllEnrolled) { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 12px 24px rgba(79, 70, 229, 0.3)'; } }}
+                          onMouseEnter={(e) => { if (!isProcessing && !isAllEnrolled && selectedList.length > 0) e.currentTarget.style.transform = 'translateY(-4px)' }}
+                          onMouseLeave={(e) => { if (!isProcessing && !isAllEnrolled && selectedList.length > 0) e.currentTarget.style.transform = 'translateY(0)' }}
                         >
-                          {isProcessing ? 'Processing...' : (isAllEnrolled ? 'ALREADY ENROLLED' : (finalTotal === 0 ? 'ENROLL FREE 🎉' : 'ENROLL NOW'))}
+                          {isProcessing ? 'Processing Order...' : (isAllEnrolled ? 'ALREADY ENROLLED' : (selectedList.length === 0 ? 'SELECT SUBJECTS' : (finalTotal === 0 ? 'ENROLL FREE 🎉' : 'ENROLL NOW')))}
                         </button>
                         {isAllEnrolled && (
-                          <div style={{ textAlign: 'center', fontSize: '11px', color: '#64748b', fontWeight: '700', marginTop: '12px' }}>
-                            You already own all selected courses in this bundle.
+                          <div style={{ textAlign: 'center', fontSize: '11px', color: '#94a3b8', fontWeight: '800', marginTop: '16px' }}>
+                            All selected subjects are already in your account.
                           </div>
                         )}
                       </div>
