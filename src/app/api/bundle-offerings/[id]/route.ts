@@ -14,7 +14,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       name, description, recordedOriginalPrice, recordedDiscountPrice, 
       liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase, forceClassType, courseIds,
       enableBundleDiscount, bundleDiscountType, bundleDiscountValue, bundleDiscountApplicability, requireAllCourses,
-      coursePrices, startingPrice
+      coursePrices, startingPrice, startingFromText, bannerText, courseHeadline
     } = data
 
     const updateData: any = {}
@@ -33,6 +33,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (requireAllCourses !== undefined) updateData.requireAllCourses = !!requireAllCourses
     if (coursePrices !== undefined) updateData.coursePrices = coursePrices || '[]'
     if (startingPrice !== undefined) updateData.startingPrice = startingPrice ? Number(startingPrice) : null
+    if (startingFromText !== undefined) updateData.startingFromText = startingFromText
+    if (bannerText !== undefined) updateData.bannerText = bannerText
+    if (courseHeadline !== undefined) updateData.courseHeadline = courseHeadline
 
     // If courseIds provided, update the course relations
     if (Array.isArray(courseIds)) {

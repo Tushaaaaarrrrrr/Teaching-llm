@@ -60,20 +60,20 @@ export default function FreeResourcesPage() {
 
   return (
     <div className="page-container fade-in">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '32px', maxWidth: '1000px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', width: '100%' }}>
         {cards.map(card => (
           <Link key={card.href} href={card.href} style={{ textDecoration: 'none' }}>
             <div className="card" style={{
-              padding: '48px 32px',
+              padding: '32px 24px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               textAlign: 'center',
-              gap: '24px',
+              gap: '20px',
               cursor: 'pointer',
               transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-              minHeight: '320px',
-              borderRadius: '40px',
+              minHeight: '280px',
+              borderRadius: '32px',
               position: 'relative',
               overflow: 'hidden'
             }}
@@ -88,27 +88,27 @@ export default function FreeResourcesPage() {
             >
               {/* Icon Section */}
               <div style={{
-                width: '100px', height: '100px', borderRadius: '32px',
+                width: '80px', height: '80px', borderRadius: '24px',
                 background: card.gradient,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#fff', flexShrink: 0,
-                boxShadow: `0 12px 30px ${card.color}40`,
-                marginBottom: '8px'
+                boxShadow: `0 10px 25px ${card.color}40`,
+                marginBottom: '4px'
               }}>
                 {card.icon}
               </div>
 
               {/* Text Content */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px' }}>
                   {card.title}
                 </h2>
                 <p style={{ 
-                  fontSize: '15.5px', 
+                  fontSize: '14.5px', 
                   color: '#6b6b8a', 
                   margin: 0, 
-                  lineHeight: '1.6',
-                  maxWidth: '280px' 
+                  lineHeight: '1.5',
+                  maxWidth: '240px' 
                 }}>
                   {card.description}
                 </p>

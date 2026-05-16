@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Script from 'next/script'
 import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
+import { BookOpen, FileText, Users, ClipboardList, Trash2, Pencil, Sparkles, IndianRupee, Calendar, Plus, ExternalLink, HelpCircle, ChevronRight, X, Info, ArrowLeft } from 'lucide-react'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -55,6 +56,9 @@ export default function ExploreCoursesPage() {
   const [bundleAllowIndividualPurchase, setBundleAllowIndividualPurchase] = useState(true)
   const [bundleTierPrices, setBundleTierPrices] = useState<Record<number, { recordedOriginal?: string, recordedDiscount?: string, liveOriginal?: string, liveDiscount?: string }>>({})
   const [bundleStartingPrice, setBundleStartingPrice] = useState('')
+  const [bundleStartingFromText, setBundleStartingFromText] = useState('Courses start from')
+  const [bundleBannerText, setBundleBannerText] = useState('Class starts from 1 June 2026')
+  const [bundleCourseHeadline, setBundleCourseHeadline] = useState('Included Courses')
   const [bundleDescription, setBundleDescription] = useState('')
   const [bundleEnableBundleDiscount, setBundleEnableBundleDiscount] = useState(false)
   const [bundleDiscountType, setBundleDiscountType] = useState('PERCENTAGE')
@@ -408,9 +412,7 @@ export default function ExploreCoursesPage() {
               e.currentTarget.style.transform = 'translateY(0)'
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
+            <HelpCircle size={16} strokeWidth={2.5} />
             Facing any issue? Get Support
           </a>
 
@@ -437,9 +439,7 @@ export default function ExploreCoursesPage() {
                   whiteSpace: 'nowrap'
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
+                <Plus size={16} strokeWidth={2.5} />
                 Create
               </button>
               {showCreateDropdown && (
@@ -484,20 +484,20 @@ export default function ExploreCoursesPage() {
       {!storeView && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
           {[
-            { key: 'courses' as const, title: 'Courses', subtitle: `${(offerings || []).length + (bundleOfferings || []).length} available`, emoji: '📚', gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)', shadow: 'rgba(99,102,241,0.3)' },
-            { key: 'notes' as const, title: 'Premium Notes', subtitle: `${storeNotesData?.notes?.length || 0} notes`, emoji: '📝', gradient: 'linear-gradient(135deg, #10b981, #059669)', shadow: 'rgba(16,185,129,0.3)' },
-            { key: 'mentorship' as const, title: 'Book a Call with Mentor', subtitle: `${mentorshipsData?.mentorships?.length || 0} mentors`, emoji: '🤝', gradient: 'linear-gradient(135deg, #f59e0b, #d97706)', shadow: 'rgba(245,158,11,0.3)' },
-            { key: 'testSeries' as const, title: 'Test Series', subtitle: `${testSeriesData?.testSeries?.length || 0} available`, emoji: '📋', gradient: 'linear-gradient(135deg, #ec4899, #be185d)', shadow: 'rgba(236,72,153,0.3)' },
+            { key: 'courses' as const, title: 'Courses', subtitle: `${(offerings || []).length + (bundleOfferings || []).length} available`, icon: <BookOpen size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #4f46e5, #0ea5e9)', shadow: 'rgba(79, 70, 229, 0.25)' },
+            { key: 'notes' as const, title: 'Premium Notes', subtitle: `${storeNotesData?.notes?.length || 0} notes`, icon: <FileText size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #0d9488, #10b981)', shadow: 'rgba(13, 148, 136, 0.25)' },
+            { key: 'mentorship' as const, title: 'Book a Call with Mentor', subtitle: `${mentorshipsData?.mentorships?.length || 0} mentors`, icon: <Users size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #f97316, #f59e0b)', shadow: 'rgba(249, 115, 22, 0.25)' },
+            { key: 'testSeries' as const, title: 'Test Series', subtitle: `${testSeriesData?.testSeries?.length || 0} available`, icon: <ClipboardList size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #db2777, #9333ea)', shadow: 'rgba(219, 39, 119, 0.25)' },
           ].map(card => (
             <div key={card.key} onClick={() => setStoreView(card.key)} style={{ background: '#fff', borderRadius: '24px', padding: '32px', cursor: 'pointer', boxShadow: '0 10px 30px rgba(15,23,42,0.06)', transition: 'all 0.3s ease', position: 'relative', overflow: 'hidden' }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = `0 20px 40px ${card.shadow}` }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(15,23,42,0.06)' }}
             >
-              <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: card.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', marginBottom: '20px', boxShadow: `0 8px 20px ${card.shadow}` }}>{card.emoji}</div>
+              <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: card.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', boxShadow: `0 8px 20px ${card.shadow}` }}>{card.icon}</div>
               <h3 style={{ fontSize: '22px', fontWeight: '900', color: '#1e293b', marginBottom: '6px' }}>{card.title}</h3>
               <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '600', marginBottom: '16px' }}>{card.subtitle}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6366f1', fontSize: '13px', fontWeight: '700' }}>
-                Explore <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                Explore <ChevronRight size={16} strokeWidth={3} />
               </div>
             </div>
           ))}
@@ -507,7 +507,7 @@ export default function ExploreCoursesPage() {
       {/* BACK BUTTON when inside a view */}
       {storeView && (
         <button onClick={() => setStoreView(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', color: '#64748b', fontSize: '14px', fontWeight: '700', cursor: 'pointer', marginBottom: '20px', padding: '8px 0' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <ArrowLeft size={20} />
           Back to Store
         </button>
       )}
@@ -541,9 +541,7 @@ export default function ExploreCoursesPage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                       <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(99,102,241,0.08)', padding: '4px 10px', borderRadius: '20px' }}>Bundle</div>
-                      <div style={{ fontSize: '12px', fontWeight: '800', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        ✨ {b.courses.length} Courses
-                      </div>
+                        <Sparkles size={14} /> {b.courses.length} Courses
                     </div>
                     <div style={{ fontSize: '20px', fontWeight: '900', color: '#1e293b', marginBottom: '8px' }}>{b.name}</div>
                     <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '500', lineHeight: '1.5', minHeight: '40px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
@@ -570,8 +568,10 @@ export default function ExploreCoursesPage() {
                   </div>
 
                   <div style={{ background: '#f8fafc', borderRadius: '20px', padding: '16px', border: '1px solid #eef2ff' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>📅 Class starts from 1 June 2026</div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', marginBottom: '4px' }}>Courses start from</div>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Calendar size={12} /> {b.bannerText || 'Class starts from 1 June 2026'}
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', marginBottom: '4px' }}>{b.startingFromText || 'Courses start from'}</div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                       <span style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>₹</span>
                       <span style={{ fontSize: '28px', fontWeight: '950', color: '#1e293b', letterSpacing: '-0.02em' }}>{b.startingPrice || (bundlePriceLive || bundlePriceRecorded || 0)}</span>
@@ -624,9 +624,12 @@ export default function ExploreCoursesPage() {
                             bundleDiscountApplicability: b.bundleDiscountApplicability ?? 'BOTH', 
                             requireAllCourses: b.requireAllCourses ?? true,
                             coursePrices: b.coursePrices || '[]',
-                            startingPrice: b.startingPrice ?? ''
+                            startingPrice: b.startingPrice ?? '',
+                            startingFromText: b.startingFromText ?? 'Courses start from',
+                            bannerText: b.bannerText ?? 'Class starts from 1 June 2026',
+                            courseHeadline: b.courseHeadline ?? 'Included Courses'
                           }) 
-                        }} style={{ width: '44px', height: '44px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>📝</button>
+                        }} style={{ width: '44px', height: '44px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Pencil size={18} /></button>
                         <button onClick={async () => {
                           if (!confirm(`Delete bundle "${b.name}"? This cannot be undone.`)) return
                           try {
@@ -634,7 +637,7 @@ export default function ExploreCoursesPage() {
                             if (res.ok) window.location.reload()
                             else { const d = await res.json(); alert(d.error || 'Failed to delete') }
                           } catch { alert('Failed to delete bundle') }
-                        }} style={{ width: '44px', height: '44px', borderRadius: '14px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>🗑️</button>
+                        }} style={{ width: '44px', height: '44px', borderRadius: '14px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Trash2 size={18} /></button>
                       </div>
                     )}
                   </div>
@@ -685,7 +688,7 @@ export default function ExploreCoursesPage() {
                           if (res.ok) window.location.reload()
                           else alert('Failed to delete')
                         } catch { alert('Failed to delete') }
-                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
+                      }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={16} /></button>
                     </>
                   )}
                 </div>
@@ -715,7 +718,7 @@ export default function ExploreCoursesPage() {
                     }}
                     style={{ padding: '8px 16px', borderRadius: '50px', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
                   >
-                    ➕ Manual Book
+                    <Plus size={14} /> Manual Book
                   </button>
                 )}
                 <button 
@@ -768,7 +771,9 @@ export default function ExploreCoursesPage() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fffbeb', padding: '14px 20px', borderRadius: '16px', border: '1px solid #fef3c7' }}>
-                  <div style={{ fontSize: '18px' }}>💰</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: '#fef3c7' }}>
+                    <IndianRupee size={18} color="#92400e" />
+                  </div>
                   <div>
                     <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Starting From</div>
                     <div style={{ fontSize: '18px', fontWeight: '900', color: '#92400e' }}>₹{m.pricePerSlot} <span style={{ fontSize: '13px', fontWeight: '600', opacity: 0.8 }}>/ {m.slotDurationMinutes} mins session</span></div>
@@ -1519,7 +1524,13 @@ export default function ExploreCoursesPage() {
           {(() => {
             const selectedList = bundleSelectedCoursesToBuy.length ? bundleSelectedCoursesToBuy : activeBundle.courses.map((c: any) => c.course.id);
             return (
-              <div style={{ width: '100%', maxWidth: '1024px', height: '86vh', background: '#fff', borderRadius: '24px', padding: '40px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+              <div style={{ width: '100%', maxWidth: '1024px', height: '86vh', background: '#fff', borderRadius: '24px', padding: '40px', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                <button 
+                  onClick={() => { setShowBundleModal(false); setActiveBundle(null) }}
+                  style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s', zIndex: 10 }}
+                >
+                  <X size={20} />
+                </button>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '900' }}>{activeBundle.name}</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1541,7 +1552,7 @@ export default function ExploreCoursesPage() {
               <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 {activeBundle.allowIndividualPurchase !== false && (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', alignItems: 'center', gap: '16px', padding: '0 6px 10px 6px', marginBottom: '4px', borderBottom: '1.5px solid #f1f5f9' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Course</div>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{activeBundle.courseHeadline || 'Course'}</div>
                     <div style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center', minWidth: '160px' }}>Prices</div>
                     <div style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center', minWidth: '110px' }}>Class Type</div>
                   </div>
@@ -1610,6 +1621,7 @@ export default function ExploreCoursesPage() {
                                       {course.name}
                                       {isEnrolled && <span style={{ marginLeft: '8px', fontSize: '10px', background: '#d1fae5', color: '#059669', padding: '2px 8px', borderRadius: '6px', textTransform: 'uppercase', fontWeight: '900' }}>Purchased</span>}
                                     </div>
+                                    {course.description && <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', marginTop: '2px', maxWidth: '400px' }}>{course.description}</div>}
                                   </div>
                                 </>
                               )
@@ -2074,7 +2086,7 @@ export default function ExploreCoursesPage() {
             {/* Header */}
             <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
               <button onClick={() => setShowBatchComparisonModal(false)} style={{ position: 'absolute', top: '25px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <X size={20} />
               </button>
               <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Batch Comparison</h2>
               <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500' }}>Choose the experience that fits your learning style</p>
@@ -2132,8 +2144,15 @@ export default function ExploreCoursesPage() {
             background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '960px',
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px',
-            animation: 'modalSlideUp 0.3s ease-out'
+            animation: 'modalSlideUp 0.3s ease-out',
+            position: 'relative'
           }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowCreateModal(false)}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              <X size={20} />
+            </button>
             <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#1e1e3a', marginBottom: '24px' }}>
               Add Course to Store
             </h2>
@@ -2443,8 +2462,15 @@ export default function ExploreCoursesPage() {
           <div style={{
             background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-            padding: '40px', textAlign: 'center'
+            padding: '40px', textAlign: 'center',
+            position: 'relative'
           }}>
+            <button 
+              onClick={() => setVerifyingPayment(false)}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              <X size={20} />
+            </button>
             <div style={{
               width: '64px', height: '64px', borderRadius: '50%',
               background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
@@ -2478,8 +2504,15 @@ export default function ExploreCoursesPage() {
             background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '480px',
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px', textAlign: 'center',
-            animation: 'modalSlideUp 0.3s ease-out'
+            animation: 'modalSlideUp 0.3s ease-out',
+            position: 'relative'
           }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => { setSuccessOrderId(null); router.push(purchasedCourse?.type === 'test-series' ? '/exams' : '/courses') }}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              <X size={20} />
+            </button>
             <div style={{ fontSize: '64px', marginBottom: '24px' }}>🎉</div>
             <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#1e293b', marginBottom: '16px' }}>
               Purchase Successful!
@@ -2556,8 +2589,15 @@ export default function ExploreCoursesPage() {
             background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '480px',
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px', textAlign: 'center',
-            animation: 'modalSlideUp 0.3s ease-out'
+            animation: 'modalSlideUp 0.3s ease-out',
+            position: 'relative'
           }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => { setUpgradeSuccessOrderId(null); router.push('/courses') }}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              <X size={20} />
+            </button>
             <div style={{ fontSize: '64px', marginBottom: '24px' }}>⚡</div>
             <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#1e293b', marginBottom: '16px' }}>
               Upgraded to PRO!
@@ -2631,8 +2671,15 @@ export default function ExploreCoursesPage() {
             background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '600px',
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px',
-            animation: 'modalSlideUp 0.3s ease-out'
+            animation: 'modalSlideUp 0.3s ease-out',
+            position: 'relative'
           }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setEditingOffering(null)}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              <X size={20} />
+            </button>
             <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#1e1e3a', marginBottom: '24px' }}>
               Edit Course Offering
             </h2>
@@ -2766,8 +2813,15 @@ export default function ExploreCoursesPage() {
             boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px',
             animation: 'modalSlideUp 0.3s ease-out',
-            maxHeight: '90vh', overflowY: 'auto'
+            maxHeight: '90vh', overflowY: 'auto',
+            position: 'relative'
           }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setEditingBundle(null)}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              <X size={20} />
+            </button>
             <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#1e1e3a', marginBottom: '8px' }}>Edit Bundle</h2>
             <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px' }}>Update pricing, name, and selected courses for this bundle.</p>
 
@@ -2779,6 +2833,27 @@ export default function ExploreCoursesPage() {
             <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Description</label>
               <input type="text" value={editBundleData.description ?? ''} onChange={e => setEditBundleData({...editBundleData, description: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+
+            <div style={{ marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Banner Text</label>
+                <input type="text" value={editBundleData.bannerText ?? ''} onChange={e => setEditBundleData({...editBundleData, bannerText: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Starting From Text</label>
+                <input type="text" value={editBundleData.startingFromText ?? ''} onChange={e => setEditBundleData({...editBundleData, startingFromText: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Course Section Headline</label>
+              <input type="text" value={editBundleData.courseHeadline ?? ''} onChange={e => setEditBundleData({...editBundleData, courseHeadline: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '700', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Starting Price (₹)</label>
+              <input type="number" value={editBundleData.startingPrice ?? ''} onChange={e => setEditBundleData({...editBundleData, startingPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '14px', boxSizing: 'border-box' }} />
             </div>
 
 
@@ -3036,7 +3111,7 @@ export default function ExploreCoursesPage() {
             {/* Header */}
             <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
               <button onClick={() => setInfoModalOffering(null)} style={{ position: 'absolute', top: '25px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <X size={20} />
               </button>
               <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Access Comparison</h2>
               <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500' }}>Choose the access type that suits your learning needs</p>
@@ -3101,8 +3176,14 @@ export default function ExploreCoursesPage() {
           <div style={{
             background: 'white', padding: '40px', borderRadius: '32px',
             textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-            width: '320px'
+            width: '320px', position: 'relative'
           }}>
+            <button 
+              onClick={() => setIsProcessing(false)}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              <X size={18} />
+            </button>
             <div className="spinner" style={{
               width: '40px', height: '40px', border: '4px solid #f3f3f3',
               borderTop: '4px solid #6366f1', borderRadius: '50%',
@@ -3138,7 +3219,7 @@ export default function ExploreCoursesPage() {
                 </p>
               </div>
               <button onClick={() => setShowCreateBundleModal(false)} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
-                ✕
+                <X size={20} />
               </button>
             </div>
 
@@ -3154,7 +3235,23 @@ export default function ExploreCoursesPage() {
 
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Courses Start From (₹)</label>
-              <input type="number" value={bundleStartingPrice} onChange={e => setBundleStartingPrice(e.target.value)} placeholder="E.g., 499" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+              <input type="number" value={bundleStartingPrice} onChange={e => setBundleStartingPrice(e.target.value)} placeholder="E.g., 499" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5 solid #dbeafe', fontSize: '14px' }} />
+            </div>
+
+            <div style={{ marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Banner Text</label>
+                <input value={bundleBannerText} onChange={e => setBundleBannerText(e.target.value)} placeholder="Class starts from..." style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Starting From Text</label>
+                <input value={bundleStartingFromText} onChange={e => setBundleStartingFromText(e.target.value)} placeholder="Courses start from..." style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Course Section Headline</label>
+              <input value={bundleCourseHeadline} onChange={e => setBundleCourseHeadline(e.target.value)} placeholder="Included Courses" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
             </div>
 
             {/* Fixed Bundle Toggle - AT TOP */}
@@ -3362,6 +3459,9 @@ export default function ExploreCoursesPage() {
                         forceClassType: bundleForceClassType || null,
                         coursePrices: JSON.stringify(combinedCoursePrices),
                         startingPrice: bundleStartingPrice ? Number(bundleStartingPrice) : undefined,
+                        startingFromText: bundleStartingFromText,
+                        bannerText: bundleBannerText,
+                        courseHeadline: bundleCourseHeadline
                       })
                     })
                     if (res.ok) {
@@ -3404,7 +3504,7 @@ export default function ExploreCoursesPage() {
                 </p>
               </div>
               <button onClick={() => { setShowCreateNoteModal(false); setEditingNote(null) }} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
-                ✕
+                <X size={20} />
               </button>
             </div>
 
@@ -3486,7 +3586,7 @@ export default function ExploreCoursesPage() {
                 </p>
               </div>
               <button onClick={() => { setShowCreateMentorshipModal(false); setEditingMentorship(null) }} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
-                ✕
+                <X size={20} />
               </button>
             </div>
 
@@ -3570,7 +3670,9 @@ export default function ExploreCoursesPage() {
       {showMentorshipBookingModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowMentorshipBookingModal(null)}>
           <div style={{ background: '#fff', borderRadius: '32px', padding: '24px', width: '95%', maxWidth: '480px', animation: 'modalSlideUp 0.3s ease-out', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }} onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowMentorshipBookingModal(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            <button onClick={() => setShowMentorshipBookingModal(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <X size={18} />
+            </button>
             
             <div style={{ marginBottom: '24px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#1e293b', marginBottom: '8px' }}>Book Session with {showMentorshipBookingModal.mentorName}</h3>
@@ -3769,7 +3871,9 @@ export default function ExploreCoursesPage() {
           <div style={{ background: '#fff', borderRadius: '24px', padding: '32px', width: '100%', maxWidth: '480px', animation: 'modalSlideUp 0.3s ease-out', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b' }}>Manage Time Slots</h3>
-              <button onClick={() => setShowManageSlotsModal(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#64748b' }}>✕</button>
+              <button onClick={() => setShowManageSlotsModal(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#64748b' }}>
+                <X size={20} />
+              </button>
             </div>
             <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px' }}>Mentorship with {showManageSlotsModal.mentorName} ({showManageSlotsModal.slotDuration} mins)</p>
 
@@ -3840,7 +3944,9 @@ export default function ExploreCoursesPage() {
       {showManageBookingsModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }} onClick={() => setShowManageBookingsModal(null)}>
           <div style={{ background: '#fff', borderRadius: '32px', padding: '40px', width: '100%', maxWidth: '900px', maxHeight: '85vh', overflow: 'auto', animation: 'modalSlideUp 0.3s ease-out', position: 'relative' }} onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowManageBookingsModal(null)} style={{ position: 'absolute', top: '30px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            <button onClick={() => setShowManageBookingsModal(null)} style={{ position: 'absolute', top: '30px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <X size={20} />
+            </button>
             
             <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#1e293b', marginBottom: '16px' }}>All Mentorship Bookings</h3>
             
@@ -3932,7 +4038,9 @@ export default function ExploreCoursesPage() {
       {showManualBookingModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }} onClick={() => { setShowManualBookingModal(false); setStudentSearchQuery(''); }}>
           <div style={{ background: '#fff', borderRadius: '32px', padding: '40px', width: '100%', maxWidth: '500px', animation: 'modalSlideUp 0.3s ease-out', position: 'relative' }} onClick={e => e.stopPropagation()}>
-            <button onClick={() => { setShowManualBookingModal(false); setStudentSearchQuery(''); }} style={{ position: 'absolute', top: '30px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            <button onClick={() => { setShowManualBookingModal(false); setStudentSearchQuery(''); }} style={{ position: 'absolute', top: '30px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <X size={20} />
+            </button>
             <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#1e293b', marginBottom: '24px' }}>Manual Booking</h3>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Select Student</label>

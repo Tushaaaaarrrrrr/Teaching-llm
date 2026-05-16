@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const bundles = await prisma.bundleOffering.findMany({
       include: {
         createdBy: { select: { id: true, name: true } },
-        courses: { include: { course: { select: { id: true, name: true, color: true, icon: true, teacherName: true, isDisabled: true } } } }
+        courses: { include: { course: { select: { id: true, name: true, color: true, icon: true, teacherName: true, isDisabled: true, description: true } } } }
       },
       orderBy: { createdAt: 'desc' }
     })
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       name, description, courseIds, 
       recordedOriginalPrice, recordedDiscountPrice, liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase, forceClassType,
       enableBundleDiscount, bundleDiscountType, bundleDiscountValue, bundleDiscountApplicability, requireAllCourses,
-      coursePrices, startingPrice
+      coursePrices, startingPrice, startingFromText, bannerText, courseHeadline
     } = data
 
     if (!name || !Array.isArray(courseIds) || courseIds.length === 0) {
@@ -71,8 +71,10 @@ export async function POST(request: NextRequest) {
         bundleDiscountValue: bundleDiscountValue ? Number(bundleDiscountValue) : null,
         bundleDiscountApplicability: bundleDiscountApplicability || null,
         requireAllCourses: requireAllCourses == null ? true : !!requireAllCourses,
-        coursePrices: coursePrices || '[]',
         startingPrice: startingPrice ? Number(startingPrice) : null,
+        startingFromText: startingFromText || "Courses start from",
+        bannerText: bannerText || "Class starts from 1 June 2026",
+        courseHeadline: courseHeadline || "Included Courses",
         courses: {
           create: courseIds.map((cid: string) => ({ courseId: cid }))
         }

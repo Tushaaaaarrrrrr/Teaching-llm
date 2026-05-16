@@ -183,6 +183,9 @@ model BundleOffering {
   forceClassType            String?
   coursePrices              String?                    @default("[]")
   startingPrice             Float?
+  startingFromText          String?                    @default("Courses start from")
+  bannerText                String?                    @default("Class starts from 1 June 2026")
+  courseHeadline            String?                    @default("Included Courses")
   createdBy                 User                       @relation(fields: [createdById], references: [id])
   courses                   BundleOfferingCourse[]
 
