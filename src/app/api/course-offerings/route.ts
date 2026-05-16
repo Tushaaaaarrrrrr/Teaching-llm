@@ -72,6 +72,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Selected course was not found' }, { status: 404 })
     }
 
+    // Prevent duplicate offerings for the same course
+    const existing = await prisma.courseOffering.findFirst({
+      where: { courseId: resolvedCourseId }
+    })
+
+    if (existing) {
+      return NextResponse.json({ error: 'This course is already in the store.' }, { status: 400 })
+    }
+
     const offering = await prisma.courseOffering.create({
       data: {
         courseId: resolvedCourseId,

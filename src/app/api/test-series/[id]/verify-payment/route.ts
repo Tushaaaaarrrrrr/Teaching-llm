@@ -10,9 +10,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = await req.json()
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, accessId } = await req.json()
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !accessId) {
       return NextResponse.json({ error: 'Missing payment details' }, { status: 400 })
     }
 
@@ -26,12 +26,19 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     }
 
-    // Update all bookings linked to this order
-    await prisma.mentorshipBooking.updateMany({
-      where: { razorpayOrderId: razorpay_order_id },
+    const access = await (prisma as any).testSeriesAccess.findUnique({
+      where: { id: accessId }
+    })
+
+    if (!access) {
+      return NextResponse.json({ error: 'Access record not found' }, { status: 404 })
+    }
+
+    // Update access with payment details
+    await (prisma as any).testSeriesAccess.update({
+      where: { id: accessId },
       data: {
-        status: 'PAID',
-        orderId: razorpay_payment_id
+        razorpayPaymentId: razorpay_payment_id,
       }
     })
 

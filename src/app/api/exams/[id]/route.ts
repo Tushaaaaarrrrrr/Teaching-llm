@@ -32,11 +32,21 @@ export async function GET(
         return NextResponse.json({ error: 'Exam not found or not available' }, { status: 404 })
       }
 
-      // Check if student belongs to the course
-      const enrollment = await prisma.enrollment.findUnique({
-        where: { userId_courseId: { userId: session.userId, courseId: exam.courseId } }
-      })
-      if (!enrollment) {
+      // Check if student belongs to the course OR has test series access
+      let hasAccess = false
+      if (exam.courseId) {
+        const enrollment = await prisma.enrollment.findUnique({
+          where: { userId_courseId: { userId: session.userId, courseId: exam.courseId } }
+        })
+        hasAccess = !!enrollment
+      }
+      if (!hasAccess && (exam as any).testSeriesId) {
+        const tsAccess = await (prisma as any).testSeriesAccess.findUnique({
+          where: { testSeriesId_userId: { testSeriesId: (exam as any).testSeriesId, userId: session.userId } }
+        })
+        hasAccess = !!tsAccess && new Date(tsAccess.expiresAt) > new Date()
+      }
+      if (!hasAccess) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 

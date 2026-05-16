@@ -77,6 +77,8 @@ model User {
   noteAccesses            StoreNoteAccess[]
   createdMentorships      MentorshipOffering[]         @relation("MentorshipCreator")
   mentorshipBookings      MentorshipBooking[]
+  createdTestSeries       TestSeries[]                 @relation("TestSeriesCreator")
+  testSeriesAccesses      TestSeriesAccess[]
 }
 
 model Course {
@@ -418,7 +420,8 @@ model Exam {
   externalId      String?        @unique
   title           String
   description     String?
-  courseId        String         @map("classId")
+  courseId        String?        @map("classId")
+  testSeriesId    String?
   expiresAt       DateTime
   durationMinutes Int
   isPublished     Boolean        @default(false)
@@ -427,11 +430,13 @@ model Exam {
   updatedAt       DateTime       @updatedAt
   startDate       DateTime?
   examType        String         @default("FINAL_TEST")
-  course          Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course          Course?        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  testSeries      TestSeries?    @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
   attempts        ExamAttempt[]
   questions       ExamQuestion[]
 
   @@index([courseId])
+  @@index([testSeriesId])
   @@index([externalId])
 }
 
@@ -1142,4 +1147,43 @@ model MentorshipBooking {
   @@unique([mentorshipId, slotDate, slotTime])
   @@index([userId])
   @@index([mentorshipId])
+}
+
+// ─── Store: Test Series ──────────────────────────────────────────────────────
+
+model TestSeries {
+  id            String             @id @default(cuid())
+  title         String
+  description   String?
+  price         Float              @default(0)
+  originalPrice Float?
+  validityDays  Int                @default(365)
+  isActive      Boolean            @default(true)
+  createdById   String
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  createdBy     User               @relation("TestSeriesCreator", fields: [createdById], references: [id])
+  exams         Exam[]
+  accesses      TestSeriesAccess[]
+
+  @@index([isActive])
+  @@index([createdById])
+}
+
+model TestSeriesAccess {
+  id             String     @id @default(cuid())
+  testSeriesId   String
+  userId         String
+  orderId        String?
+  razorpayPaymentId String?
+  amount         Float      @default(0)
+  expiresAt      DateTime
+  createdAt      DateTime   @default(now())
+
+  testSeries     TestSeries @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([testSeriesId, userId])
+  @@index([userId])
 }

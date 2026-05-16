@@ -3,13 +3,13 @@ import { prisma } from '@/lib/db'
 import Razorpay from 'razorpay'
 import { getSession } from '@/lib/auth'
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-})
-
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    })
+
     const session = await getSession()
     if (!session?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

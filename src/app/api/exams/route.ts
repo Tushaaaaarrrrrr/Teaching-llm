@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get('courseId')
+    const testSeriesId = searchParams.get('testSeriesId')
 
     let where: any = {}
 
@@ -34,18 +35,38 @@ export async function GET(request: NextRequest) {
         } as any,
       })) as any
       const enrolledCourseIds = user?.enrollments.map((e: any) => e.course.id) || []
-      
-      where = {
-        courseId: { in: enrolledCourseIds },
-        isPublished: true,
-      }
 
-      if (courseId) {
-        if (enrolledCourseIds.includes(courseId)) {
-          where.courseId = courseId
+      // Also get test series the student has access to
+      const testSeriesAccesses = await (prisma as any).testSeriesAccess.findMany({
+        where: {
+          userId: session.userId,
+          expiresAt: { gt: new Date() } // Only non-expired access
+        },
+        select: { testSeriesId: true }
+      })
+      const accessedTestSeriesIds = testSeriesAccesses.map((a: any) => a.testSeriesId)
+
+      if (testSeriesId) {
+        // Fetching exams for a specific test series
+        if (accessedTestSeriesIds.includes(testSeriesId)) {
+          where = { testSeriesId, isPublished: true }
         } else {
-          // Student not enrolled in this specific course
-          where.courseId = 'none' 
+          where = { testSeriesId: 'none' }
+        }
+      } else if (courseId) {
+        if (enrolledCourseIds.includes(courseId)) {
+          where = { courseId, isPublished: true }
+        } else {
+          where = { courseId: 'none' }
+        }
+      } else {
+        // Show all accessible exams (course + test series)
+        where = {
+          isPublished: true,
+          OR: [
+            { courseId: { in: enrolledCourseIds } },
+            ...(accessedTestSeriesIds.length > 0 ? [{ testSeriesId: { in: accessedTestSeriesIds } }] : [])
+          ]
         }
       }
     } else if (session.role === 'ADMIN') {
@@ -57,20 +78,33 @@ export async function GET(request: NextRequest) {
       const subjects = admin?.enrollments.map((e: any) => e.course.subject).filter(Boolean) as string[]
       
       where = {
-        course: { subject: { in: subjects } }
+        OR: [
+          { course: { subject: { in: subjects } } },
+          { testSeriesId: { not: null } }
+        ]
       }
 
       if (courseId) {
+        where = { courseId }
+      }
+      if (testSeriesId) {
+        where = { testSeriesId }
+      }
+    } else {
+      // Manager sees everything
+      if (courseId) {
         where.courseId = courseId
       }
-    } else if (courseId) {
-      where.courseId = courseId
+      if (testSeriesId) {
+        where.testSeriesId = testSeriesId
+      }
     }
 
     const exams = await (prisma as any).exam.findMany({
       where,
       include: {
         course: { select: { name: true, color: true } },
+        testSeries: { select: { id: true, title: true } },
         _count: { select: { questions: true } }
       },
       orderBy: { createdAt: 'desc' }

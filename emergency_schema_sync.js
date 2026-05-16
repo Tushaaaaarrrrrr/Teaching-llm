@@ -371,6 +371,57 @@ async function main() {
 
   console.log('  ✅ Store Notes & Mentorship tables ready')
 
+  // ─── FIX #10: Test Series ─────────────────────────────────
+  console.log('[10/10] Adding Test Series tables...')
+
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "TestSeries" (
+      "id" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "description" TEXT,
+      "price" DOUBLE PRECISION NOT NULL DEFAULT 0,
+      "originalPrice" DOUBLE PRECISION,
+      "validityDays" INTEGER NOT NULL DEFAULT 365,
+      "isActive" BOOLEAN NOT NULL DEFAULT true,
+      "createdById" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "TestSeries_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "TestSeries_createdById_fkey" FOREIGN KEY ("createdById")
+        REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `, 'TestSeries')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "TestSeries_isActive_idx" ON "TestSeries"("isActive");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "TestSeries_createdById_idx" ON "TestSeries"("createdById");`, 'idx')
+
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "TestSeriesAccess" (
+      "id" TEXT NOT NULL,
+      "testSeriesId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "orderId" TEXT,
+      "razorpayPaymentId" TEXT,
+      "amount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+      "expiresAt" TIMESTAMP(3) NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "TestSeriesAccess_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "TestSeriesAccess_testSeriesId_fkey" FOREIGN KEY ("testSeriesId")
+        REFERENCES "TestSeries"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "TestSeriesAccess_userId_fkey" FOREIGN KEY ("userId")
+        REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `, 'TestSeriesAccess')
+  await safeExec(`CREATE UNIQUE INDEX IF NOT EXISTS "TestSeriesAccess_testSeriesId_userId_key" ON "TestSeriesAccess"("testSeriesId", "userId");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "TestSeriesAccess_userId_idx" ON "TestSeriesAccess"("userId");`, 'idx')
+
+  // Add testSeriesId column to Exam table
+  await safeExec(`ALTER TABLE "Exam" ALTER COLUMN "classId" DROP NOT NULL;`, 'Exam.classId nullable')
+  await safeExec(`ALTER TABLE "Exam" ADD COLUMN IF NOT EXISTS "testSeriesId" TEXT;`, 'Exam.testSeriesId')
+  await safeExec(`ALTER TABLE "Exam" ADD CONSTRAINT "Exam_testSeriesId_fkey" FOREIGN KEY ("testSeriesId") REFERENCES "TestSeries"("id") ON DELETE CASCADE ON UPDATE CASCADE;`, 'Exam.testSeriesId fkey')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "Exam_testSeriesId_idx" ON "Exam"("testSeriesId");`, 'idx')
+
+  console.log('  ✅ Test Series tables ready')
+
   console.log('\n╔═══════════════════════════════════════════════════╗')
   console.log('║   ✅ SCHEMA SYNC COMPLETE                        ║')
   console.log('║   Restart the app: pm2 restart all               ║')
