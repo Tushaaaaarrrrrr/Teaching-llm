@@ -76,8 +76,8 @@ export default function ExploreCoursesPage() {
   const [showBundleModal, setShowBundleModal] = useState(false)
   const [activeBundle, setActiveBundle] = useState<any | null>(null)
   const [bundleAccessType, setBundleAccessType] = useState<'RECORDED' | 'LIVE'>('RECORDED')
-  const [bundleSelectedForPurchase, setBundleSelectedForPurchase] = useState<Record<string, 'RECORDED' | 'LIVE'>>({})
-  const [bundleGlobalAccessType, setBundleGlobalAccessType] = useState<'RECORDED' | 'LIVE'>('LIVE')
+  const [bundleSelectedForPurchase, setBundleSelectedForPurchase] = useState<Record<string, 'RECORDED' | 'LIVE' | 'CHAMPION'>>({})
+  const [bundleGlobalAccessType, setBundleGlobalAccessType] = useState<'RECORDED' | 'LIVE' | 'CHAMPION'>('LIVE')
   const [bundleSelectedCoursesToBuy, setBundleSelectedCoursesToBuy] = useState<string[]>([])
   const [showBatchComparisonModal, setShowBatchComparisonModal] = useState(false)
   
