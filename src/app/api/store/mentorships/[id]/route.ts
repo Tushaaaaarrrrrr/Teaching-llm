@@ -31,7 +31,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { mentorName, description, pricePerSlot, slotDuration, mentorId } = await req.json()
+    const { mentorName, mentorTitle, description, pricePerSlot, slotDuration, mentorId } = await req.json()
 
     // Fetch existing
     const existing = await prisma.mentorshipOffering.findUnique({ where: { id } })
@@ -49,6 +49,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       where: { id },
       data: {
         mentorName,
+        mentorTitle: mentorTitle !== undefined ? mentorTitle : existing.mentorTitle,
         description,
         pricePerSlot: Number(pricePerSlot),
         slotDuration: Number(slotDuration),

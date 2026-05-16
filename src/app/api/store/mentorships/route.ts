@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     }
 
     const data = await req.json()
-    const { mentorName, description, pricePerSlot, slotDuration, mentorId } = data
+    const { mentorName, mentorTitle, description, pricePerSlot, slotDuration, mentorId } = data
 
     if (!mentorName || !pricePerSlot) {
       return NextResponse.json({ error: 'Mentor name and price are required' }, { status: 400 })
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
     const mentorship = await prisma.mentorshipOffering.create({
       data: {
         mentorName,
+        mentorTitle: mentorTitle || "IIT Mentorship Specialist",
         description,
         pricePerSlot: Number(pricePerSlot),
         slotDuration: Number(slotDuration),

@@ -98,6 +98,10 @@ export default function ExploreCoursesPage() {
   const [manageSlotsDate, setManageSlotsDate] = useState('')
   const [manageSlotsTime, setManageSlotsTime] = useState('')
   const [editingSlots, setEditingSlots] = useState<{date: string, time: string}[]>([])
+  const [studentSearchQuery, setStudentSearchQuery] = useState('')
+  const [bookingSearchQuery, setBookingSearchQuery] = useState('')
+  const [manualAvailableSlots, setManualAvailableSlots] = useState<any[]>([])
+  const [loadingManualSlots, setLoadingManualSlots] = useState(false)
 
   // Helper to get enrollment status
   const getEnrollmentStatus = (courseId: string) => {
@@ -718,7 +722,7 @@ export default function ExploreCoursesPage() {
                   </div>
                   <div>
                     <div style={{ fontSize: '20px', fontWeight: '900', color: '#1e293b' }}>{m.mentorName}</div>
-                    <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '600' }}>IIT Mentorship Specialist</div>
+                    <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '600' }}>{m.mentorTitle || 'IIT Mentorship Specialist'}</div>
                   </div>
                 </div>
 
@@ -750,10 +754,12 @@ export default function ExploreCoursesPage() {
                         setShowCreateMentorshipModal(true)
                         setTimeout(() => {
                           const mentorEl = document.getElementById('mentorNameInput') as HTMLInputElement
+                          const titleEl = document.getElementById('mentorTitleInput') as HTMLInputElement
                           const descEl = document.getElementById('mentorDescInput') as HTMLTextAreaElement
                           const priceEl = document.getElementById('mentorPriceInput') as HTMLInputElement
                           const durationEl = document.getElementById('mentorDurationInput') as HTMLInputElement
                           if (mentorEl) mentorEl.value = m.mentorName
+                          if (titleEl) titleEl.value = m.mentorTitle || 'IIT Mentorship Specialist'
                           if (descEl) descEl.value = m.description || ''
                           if (priceEl) priceEl.value = m.pricePerSlot
                           if (durationEl) durationEl.value = m.slotDurationMinutes
@@ -2114,7 +2120,7 @@ export default function ExploreCoursesPage() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={() => setShowCreateModal(false)}
                 style={{
@@ -3132,7 +3138,7 @@ export default function ExploreCoursesPage() {
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Assign Mentor (Staff)</label>
               <select id="mentorIdInput" defaultValue={editingMentorship?.mentorId || ''} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', background: '#fff' }}>
                 <option value="">Select a Mentor...</option>
-                {staffData?.staff?.map((s: any) => (
+                {staffData?.staff?.filter((s: any) => s.role === 'ADMIN' || s.role === 'MANAGER').map((s: any) => (
                   <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
                 ))}
               </select>
@@ -3140,7 +3146,12 @@ export default function ExploreCoursesPage() {
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Mentor Display Name</label>
-              <input id="mentorNameInput" defaultValue={editingMentorship?.mentorName || ''} placeholder="E.g., John Doe (IIT Delhi)" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+              <input id="mentorNameInput" defaultValue={editingMentorship?.mentorName || ''} placeholder="E.g., John Doe" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Mentor Title / Tagline</label>
+              <input id="mentorTitleInput" defaultValue={editingMentorship?.mentorTitle || 'IIT Mentorship Specialist'} placeholder="E.g., IIT Mentorship Specialist" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
             </div>
 
             <div style={{ marginBottom: '20px' }}>
@@ -3170,6 +3181,7 @@ export default function ExploreCoursesPage() {
                 onClick={async () => {
                   const mentorId = (document.getElementById('mentorIdInput') as HTMLSelectElement).value
                   const mentorName = (document.getElementById('mentorNameInput') as HTMLInputElement).value
+                  const mentorTitle = (document.getElementById('mentorTitleInput') as HTMLInputElement).value
                   const desc = (document.getElementById('mentorDescInput') as HTMLTextAreaElement).value
                   const price = (document.getElementById('mentorPriceInput') as HTMLInputElement).value
                   const duration = (document.getElementById('mentorDurationInput') as HTMLSelectElement).value
@@ -3181,7 +3193,7 @@ export default function ExploreCoursesPage() {
                     const url = editingMentorship ? `/api/store/mentorships/${editingMentorship.id}` : '/api/store/mentorships'
                     const res = await fetch(url, {
                       method, headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ mentorId, mentorName, description: desc, pricePerSlot: Number(price), slotDuration: Number(duration) })
+                      body: JSON.stringify({ mentorId, mentorName, mentorTitle, description: desc, pricePerSlot: Number(price), slotDuration: Number(duration) })
                     })
                     if (res.ok) { window.location.reload() }
                     else { alert(editingMentorship ? 'Failed to update mentorship' : 'Failed to add mentorship') }
@@ -3200,7 +3212,7 @@ export default function ExploreCoursesPage() {
       {/* MENTORSHIP BOOKING MODAL */}
       {showMentorshipBookingModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowMentorshipBookingModal(null)}>
-          <div style={{ background: '#fff', borderRadius: '32px', padding: '40px', width: '100%', maxWidth: '650px', animation: 'modalSlideUp 0.3s ease-out', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }} onClick={e => e.stopPropagation()}>
+          <div style={{ background: '#fff', borderRadius: '32px', padding: '32px', width: '100%', maxWidth: '550px', animation: 'modalSlideUp 0.3s ease-out', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }} onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowMentorshipBookingModal(null)} style={{ position: 'absolute', top: '30px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             
             <div style={{ marginBottom: '32px' }}>
@@ -3296,9 +3308,9 @@ export default function ExploreCoursesPage() {
             <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '24px', border: '1.5px solid #e2e8f0' }}>
               {/* Mentorship Note */}
               <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(54,54,232,0.05)', borderRadius: '16px', border: '1px solid rgba(54,54,232,0.1)', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '18px' }}>💡</span>
+                <span style={{ fontSize: '18px' }}>📧</span>
                 <p style={{ fontSize: '12.5px', color: '#4b5563', margin: 0, lineHeight: '1.5', fontWeight: '600' }}>
-                  <strong>Note:</strong> Google Meet links are generated after payment. Access your session in the <span style={{ color: '#3636e8' }}>"Live Sessions"</span> tab.
+                  <strong>Note:</strong> A Google Meet invite will be sent to your email after payment. Please check your inbox. You can also access it in the <span style={{ color: '#3636e8' }}>"Live Sessions"</span> tab or your Calendar.
                 </p>
               </div>
 
@@ -3473,7 +3485,17 @@ export default function ExploreCoursesPage() {
           <div style={{ background: '#fff', borderRadius: '32px', padding: '40px', width: '100%', maxWidth: '900px', maxHeight: '85vh', overflow: 'auto', animation: 'modalSlideUp 0.3s ease-out', position: 'relative' }} onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowManageBookingsModal(null)} style={{ position: 'absolute', top: '30px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             
-            <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#1e293b', marginBottom: '24px' }}>All Mentorship Bookings</h3>
+            <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#1e293b', marginBottom: '16px' }}>All Mentorship Bookings</h3>
+            
+            <div style={{ marginBottom: '24px' }}>
+              <input 
+                type="text" 
+                placeholder="Filter by student, mentor, or date (YYYY-MM-DD)..." 
+                value={bookingSearchQuery}
+                onChange={(e) => setBookingSearchQuery(e.target.value)}
+                style={{ width: '100%', padding: '14px 20px', borderRadius: '18px', border: '1.5px solid #e2e8f0', fontSize: '14px', outline: 'none', background: '#fcfcfd' }}
+              />
+            </div>
 
             {loadingAllBookings ? (
               <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Loading bookings...</div>
@@ -3488,55 +3510,61 @@ export default function ExploreCoursesPage() {
                   <span>Status</span>
                   <span>Actions / Meeting Link</span>
                 </div>
-                {allBookingsData.map((b: any) => (
-                  <div key={b.id} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 2fr', gap: '12px', padding: '16px', background: '#f8fafc', borderRadius: '20px', alignItems: 'center', border: '1px solid #e2e8f0' }}>
-                    <div>
-                      <div style={{ fontWeight: '800', fontSize: '14px', color: '#1e293b' }}>{b.user?.name || 'Unknown'}</div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>Mentor: {b.mentorship?.mentorName}</div>
-                      {b.userQuestion && <div style={{ fontSize: '11px', color: '#3636e8', fontWeight: '600', marginTop: '4px' }}>Q: {b.userQuestion}</div>}
-                    </div>
-                    <div style={{ fontSize: '13px', fontWeight: '700' }}>{b.slotDate}</div>
-                    <div style={{ fontSize: '13px', fontWeight: '700' }}>{b.slotTime}</div>
-                    <div>
-                      <span style={{ padding: '4px 10px', borderRadius: '50px', background: b.status === 'PAID' ? '#d1fae5' : '#fef2f2', color: b.status === 'PAID' ? '#059669' : '#dc2626', fontSize: '11px', fontWeight: '800' }}>{b.status}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      {editingBookingLink === b.id ? (
-                        <div style={{ display: 'flex', gap: '6px', flex: 1 }}>
-                          <input id={`link-input-${b.id}`} defaultValue={b.meetLink || ''} placeholder="Meet Link" style={{ flex: 1, padding: '8px 12px', borderRadius: '10px', border: '1.5px solid #3636e8', fontSize: '13px' }} />
-                          <button onClick={async () => {
-                            const link = (document.getElementById(`link-input-${b.id}`) as HTMLInputElement)?.value;
-                            try {
-                              const res = await fetch(`/api/store/mentorships/bookings/${b.id}`, {
-                                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ meetLink: link })
-                              })
-                              if (res.ok) {
-                                setAllBookingsData(allBookingsData.map(item => item.id === b.id ? { ...item, meetLink: link } : item))
-                                setEditingBookingLink(null)
-                              } else alert('Failed to update')
-                            } catch { alert('Error updating') }
-                          }} style={{ padding: '8px 12px', borderRadius: '10px', background: '#3636e8', color: '#fff', border: 'none', fontWeight: '700', fontSize: '12px' }}>Save</button>
-                        </div>
-                      ) : (
-                        <>
-                          <div style={{ flex: 1, fontSize: '12px', color: b.meetLink ? '#3636e8' : '#94a3b8', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.meetLink || 'No link'}</div>
-                          <button onClick={() => setEditingBookingLink(b.id)} style={{ padding: '6px 12px', borderRadius: '8px', background: '#fff', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700', fontSize: '11px' }}>Edit</button>
-                          {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
+                {allBookingsData
+                  .filter(b => 
+                    b.user?.name?.toLowerCase().includes(bookingSearchQuery.toLowerCase()) || 
+                    b.mentorship?.mentorName?.toLowerCase().includes(bookingSearchQuery.toLowerCase()) ||
+                    b.slotDate?.includes(bookingSearchQuery)
+                  )
+                  .map((b: any) => (
+                    <div key={b.id} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 2fr', gap: '12px', padding: '16px', background: '#f8fafc', borderRadius: '20px', alignItems: 'center', border: '1px solid #e2e8f0' }}>
+                      <div>
+                        <div style={{ fontWeight: '800', fontSize: '14px', color: '#1e293b' }}>{b.user?.name || 'Unknown'}</div>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>Mentor: {b.mentorship?.mentorName}</div>
+                        {b.userQuestion && <div style={{ fontSize: '11px', color: '#3636e8', fontWeight: '600', marginTop: '4px' }}>Q: {b.userQuestion}</div>}
+                      </div>
+                      <div style={{ fontSize: '13px', fontWeight: '700' }}>{b.slotDate}</div>
+                      <div style={{ fontSize: '13px', fontWeight: '700' }}>{b.slotTime}</div>
+                      <div>
+                        <span style={{ padding: '4px 10px', borderRadius: '50px', background: b.status === 'PAID' ? '#d1fae5' : '#fef2f2', color: b.status === 'PAID' ? '#059669' : '#dc2626', fontSize: '11px', fontWeight: '800' }}>{b.status}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {editingBookingLink === b.id ? (
+                          <div style={{ display: 'flex', gap: '6px', flex: 1 }}>
+                            <input id={`link-input-${b.id}`} defaultValue={b.meetLink || ''} placeholder="Meet Link" style={{ flex: 1, padding: '8px 12px', borderRadius: '10px', border: '1.5px solid #3636e8', fontSize: '13px' }} />
                             <button onClick={async () => {
-                              if (!confirm('Cancel this booking?')) return
+                              const link = (document.getElementById(`link-input-${b.id}`) as HTMLInputElement)?.value;
                               try {
-                                const res = await fetch(`/api/store/mentorships/bookings/${b.id}`, { method: 'DELETE' })
-                                if (res.ok) setAllBookingsData(allBookingsData.filter(item => item.id !== b.id))
-                                else alert('Failed')
-                              } catch { alert('Error') }
-                            }} style={{ padding: '6px 12px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '700', fontSize: '11px' }}>Cancel</button>
-                          )}
-                        </>
-                      )}
+                                const res = await fetch(`/api/store/mentorships/bookings/${b.id}`, {
+                                  method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ meetLink: link })
+                                })
+                                if (res.ok) {
+                                  setAllBookingsData(allBookingsData.map(item => item.id === b.id ? { ...item, meetLink: link } : item))
+                                  setEditingBookingLink(null)
+                                } else alert('Failed to update')
+                              } catch { alert('Error updating') }
+                            }} style={{ padding: '8px 12px', borderRadius: '10px', background: '#3636e8', color: '#fff', border: 'none', fontWeight: '700', fontSize: '12px' }}>Save</button>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ flex: 1, fontSize: '12px', color: b.meetLink ? '#3636e8' : '#94a3b8', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.meetLink || 'No link'}</div>
+                            <button onClick={() => setEditingBookingLink(b.id)} style={{ padding: '6px 12px', borderRadius: '8px', background: '#fff', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700', fontSize: '11px' }}>Edit</button>
+                            {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
+                              <button onClick={async () => {
+                                if (!confirm('Cancel this booking?')) return
+                                try {
+                                  const res = await fetch(`/api/store/mentorships/bookings/${b.id}`, { method: 'DELETE' })
+                                  if (res.ok) setAllBookingsData(allBookingsData.filter(item => item.id !== b.id))
+                                  else alert('Failed')
+                                } catch { alert('Error') }
+                              }} style={{ padding: '6px 12px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '700', fontSize: '11px' }}>Cancel</button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>
@@ -3545,24 +3573,65 @@ export default function ExploreCoursesPage() {
 
       {/* MANUAL BOOKING MODAL (Manager Only) */}
       {showManualBookingModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }} onClick={() => setShowManualBookingModal(false)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }} onClick={() => { setShowManualBookingModal(false); setStudentSearchQuery(''); }}>
           <div style={{ background: '#fff', borderRadius: '32px', padding: '40px', width: '100%', maxWidth: '500px', animation: 'modalSlideUp 0.3s ease-out', position: 'relative' }} onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowManualBookingModal(false)} style={{ position: 'absolute', top: '30px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            <button onClick={() => { setShowManualBookingModal(false); setStudentSearchQuery(''); }} style={{ position: 'absolute', top: '30px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#1e293b', marginBottom: '24px' }}>Manual Booking</h3>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Select Student</label>
-              <select id="manualStudentInput" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9' }}>
-                <option value="">Choose student...</option>
-                {allStudentsData.map((s: any) => <option key={s.id} value={s.id}>{s.name} ({s.email})</option>)}
+              <input 
+                type="text" 
+                placeholder="Search by name or email..." 
+                value={studentSearchQuery}
+                onChange={(e) => setStudentSearchQuery(e.target.value)}
+                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '2px solid #f1f5f9', marginBottom: '10px', fontSize: '14px', outline: 'none' }}
+              />
+              <select id="manualStudentInput" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', background: '#fff', fontSize: '14px' }}>
+                <option value="">{studentSearchQuery ? 'Matching students...' : 'Choose student...'}</option>
+                {allStudentsData
+                  .filter(s => 
+                    s.name.toLowerCase().includes(studentSearchQuery.toLowerCase()) || 
+                    s.email.toLowerCase().includes(studentSearchQuery.toLowerCase())
+                  )
+                  .map((s: any) => <option key={s.id} value={s.id}>{s.name} ({s.email})</option>)}
               </select>
+              {studentSearchQuery && allStudentsData.filter(s => s.name.toLowerCase().includes(studentSearchQuery.toLowerCase()) || s.email.toLowerCase().includes(studentSearchQuery.toLowerCase())).length === 0 && (
+                <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '4px', fontWeight: '600' }}>No students found matching "{studentSearchQuery}"</div>
+              )}
             </div>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Select Mentorship Offering</label>
-              <select id="manualMentorshipInput" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9' }}>
+              <select id="manualMentorshipInput" onChange={async (e) => {
+                const mid = e.target.value;
+                if (!mid) { setManualAvailableSlots([]); return; }
+                setLoadingManualSlots(true);
+                try {
+                  const res = await fetch(`/api/store/mentorships/${mid}/slots`);
+                  const data = await res.json();
+                  setManualAvailableSlots(data.slots || []);
+                } catch { alert('Error fetching slots'); }
+                finally { setLoadingManualSlots(false); }
+              }} style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9' }}>
                 <option value="">Choose mentorship...</option>
                 {mentorshipsData?.mentorships?.map((m: any) => <option key={m.id} value={m.id}>{m.mentorName}</option>)}
               </select>
             </div>
+
+            {manualAvailableSlots.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#3636e8', marginBottom: '8px', textTransform: 'uppercase' }}>Pick an Existing Slot</label>
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
+                  {manualAvailableSlots.map((s, idx) => (
+                    <button key={idx} onClick={() => {
+                      (document.getElementById('manualDateInput') as HTMLInputElement).value = s.date;
+                      (document.getElementById('manualTimeInput') as HTMLInputElement).value = s.time;
+                    }} style={{ padding: '8px 12px', borderRadius: '10px', background: '#eef2ff', border: '1.5px solid #dbeafe', fontSize: '12px', fontWeight: '700', color: '#3636e8', whiteSpace: 'nowrap', cursor: 'pointer' }}>
+                      {s.date} {s.time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
               <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Date</label>

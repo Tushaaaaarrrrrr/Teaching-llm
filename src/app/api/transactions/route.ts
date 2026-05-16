@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       where.createdAt = dateFilter
     }
 
-    const [upgradeTransactions, upgradeRevenue, orders, orderRevenue] = await Promise.all([
+    const [upgradeTransactions, upgradeRevenue, orders, orderRevenue, mentorships, mentorshipRevenue, testSeries, testRevenue, notes] = await Promise.all([
       prisma.upgradeTransaction.findMany({
         where,
         include: {
@@ -100,6 +100,37 @@ export async function GET(request: NextRequest) {
         _sum: { amount: true },
         _count: true,
       }),
+      prisma.mentorshipBooking.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true, mobileNumber: true } },
+          mentorship: { select: { mentorName: true } }
+        }
+      }),
+      prisma.mentorshipBooking.aggregate({
+        where: { ...where, status: 'PAID' },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      prisma.testSeriesAccess.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true, mobileNumber: true } },
+          testSeries: { select: { title: true } }
+        }
+      }),
+      prisma.testSeriesAccess.aggregate({
+        where,
+        _sum: { amount: true },
+        _count: true,
+      }),
+      prisma.storeNoteAccess.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true, mobileNumber: true } },
+          note: { select: { title: true, price: true } }
+        }
+      })
     ])
 
     const transactions = [
@@ -129,14 +160,44 @@ export async function GET(request: NextRequest) {
           accessType: firstItem?.accessType,
           user: o.user
         }
-      })
+      }),
+      ...mentorships.map(m => ({
+        id: m.id,
+        orderId: m.razorpayOrderId || m.id,
+        amount: m.amount,
+        status: m.status === 'PAID' ? 'SUCCESS' : m.status,
+        createdAt: m.createdAt,
+        type: 'MENTORSHIP',
+        course: { id: '', name: `Mentorship: ${m.mentorship.mentorName}`, subject: 'Mentorship' },
+        user: m.user
+      })),
+      ...testSeries.map(ts => ({
+        id: ts.id,
+        orderId: ts.razorpayPaymentId || ts.id,
+        amount: ts.amount,
+        status: 'SUCCESS',
+        createdAt: ts.createdAt,
+        type: 'TEST_SERIES',
+        course: { id: '', name: `Test Series: ${ts.testSeries.title}`, subject: 'Test Series' },
+        user: ts.user
+      })),
+      ...notes.map(n => ({
+        id: n.id,
+        orderId: n.orderId || n.id,
+        amount: n.note.price,
+        status: 'SUCCESS',
+        createdAt: n.createdAt,
+        type: 'STUDY_NOTE',
+        course: { id: '', name: `Study Note: ${n.note.title}`, subject: 'Study Notes' },
+        user: n.user
+      }))
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
     return NextResponse.json({
       transactions,
       summary: {
-        totalRevenue: (upgradeRevenue._sum.amount || 0) + (orderRevenue._sum.amount || 0),
-        totalSuccessful: upgradeRevenue._count + orderRevenue._count,
+        totalRevenue: (upgradeRevenue._sum.amount || 0) + (orderRevenue._sum.amount || 0) + (mentorshipRevenue._sum.amount || 0) + (testRevenue._sum.amount || 0) + notes.reduce((acc, n) => acc + n.note.price, 0),
+        totalSuccessful: upgradeRevenue._count + orderRevenue._count + mentorshipRevenue._count + testRevenue._count + notes.length,
         totalRecords: transactions.length,
       },
     })

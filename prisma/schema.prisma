@@ -1113,6 +1113,7 @@ model StoreNoteAccess {
 model MentorshipOffering {
   id              String               @id @default(cuid())
   mentorName      String
+  mentorTitle     String?              @default("IIT Mentorship Specialist")
   description     String?
   avatarUrl       String?
   pricePerSlot    Float

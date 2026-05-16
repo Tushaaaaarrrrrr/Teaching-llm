@@ -30,6 +30,24 @@ export async function GET() {
       orderBy: { createdAt: 'desc' }
     })
 
+    const mentorships = await prisma.mentorshipBooking.findMany({
+      where: { userId: session.userId, status: 'PAID' },
+      include: { mentorship: { select: { mentorName: true } } },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    const testSeries = await prisma.testSeriesAccess.findMany({
+      where: { userId: session.userId },
+      include: { testSeries: { select: { title: true } } },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    const notes = await prisma.storeNoteAccess.findMany({
+      where: { userId: session.userId },
+      include: { note: { select: { title: true, price: true } } },
+      orderBy: { createdAt: 'desc' }
+    })
+
     const transactions = [
       ...upgrades.map(u => ({
         id: u.id,
@@ -67,7 +85,37 @@ export async function GET() {
             accessType: item.accessType
           }))
         }
-      })
+      }),
+      ...mentorships.map(m => ({
+        id: m.id,
+        orderId: m.razorpayOrderId || m.id,
+        paymentId: m.orderId,
+        amount: m.amount,
+        status: 'SUCCESS',
+        createdAt: m.createdAt,
+        type: 'MENTORSHIP',
+        courses: [{ id: '', name: `Mentorship: ${m.mentorship.mentorName}`, subject: 'Mentorship', accessType: 'LIVE' }]
+      })),
+      ...testSeries.map(ts => ({
+        id: ts.id,
+        orderId: ts.razorpayPaymentId || ts.id,
+        paymentId: ts.razorpayPaymentId,
+        amount: ts.amount,
+        status: 'SUCCESS',
+        createdAt: ts.createdAt,
+        type: 'TEST_SERIES',
+        courses: [{ id: '', name: `Test Series: ${ts.testSeries.title}`, subject: 'Test Series', accessType: 'RECORDED' }]
+      })),
+      ...notes.map(n => ({
+        id: n.id,
+        orderId: n.orderId || n.id,
+        paymentId: n.orderId,
+        amount: n.note.price,
+        status: 'SUCCESS',
+        createdAt: n.createdAt,
+        type: 'STUDY_NOTE',
+        courses: [{ id: '', name: `Study Note: ${n.note.title}`, subject: 'Study Notes', accessType: 'RECORDED' }]
+      }))
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
     return NextResponse.json({ transactions })

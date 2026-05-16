@@ -64,6 +64,37 @@ export async function GET(request: NextRequest) {
       orderBy: { startTime: 'asc' },
     })
 
+    // FETCH MENTORSHIP BOOKINGS
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mentorshipWhere: Record<string, any> = { status: 'PAID' }
+    if (month) {
+      const [y, m] = month.split('-').map(Number)
+      const startStr = `${y}-${String(m).padStart(2, '0')}-01`
+      const lastDay = new Date(y, m, 0).getDate()
+      const endStr = `${y}-${String(m).padStart(2, '0')}-${lastDay}`
+      mentorshipWhere.slotDate = { gte: startStr, lte: endStr }
+    }
+
+    if (session.role === 'STUDENT') {
+      mentorshipWhere.userId = session.userId
+    } else if (session.role === 'INSTRUCTOR') {
+      // Find mentorships where this instructor is the mentor
+      const mentorOfferings = await prisma.mentorshipOffering.findMany({
+        where: { mentorId: session.userId },
+        select: { id: true }
+      })
+      mentorshipWhere.mentorshipId = { in: mentorOfferings.map(o => o.id) }
+    }
+    // Managers see all mentorship bookings
+
+    const mentorshipBookings = await prisma.mentorshipBooking.findMany({
+      where: mentorshipWhere,
+      include: {
+        user: { select: { name: true } },
+        mentorship: { select: { mentorName: true, slotDuration: true } }
+      }
+    })
+
     // Map events with computed status and meetLink security
     const mapped = events.map(ev => {
       const status = getEventStatus(ev.startTime, ev.endTime, ev.status)
@@ -99,7 +130,29 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(mapped)
+    const mappedMentorships = mentorshipBookings.map(b => {
+      const start = new Date(`${b.slotDate}T${b.slotTime}:00`)
+      const duration = b.mentorship?.slotDuration || 30
+      const end = new Date(start.getTime() + duration * 60000)
+      
+      return {
+        id: b.id,
+        title: `Mentorship: ${b.mentorship?.mentorName}${session.role === 'MANAGER' ? ` with ${b.user?.name}` : ''}`,
+        description: `Mentorship session with ${b.mentorship?.mentorName}`,
+        startTime: start.toISOString(),
+        date: b.slotDate,
+        time: b.slotTime,
+        endTime: formatIST(end, { hour: '2-digit', minute: '2-digit', hour12: false }),
+        meetLink: b.meetLink,
+        type: 'event', // Using event type for consistent coloring
+        status: 'SCHEDULED',
+        courseId: null,
+        isGlobal: false,
+        createdAt: b.createdAt.toISOString(),
+      }
+    })
+
+    return NextResponse.json([...mapped, ...mappedMentorships])
   } catch (error) {
     console.error('Error fetching course events:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -26,26 +26,48 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     }
 
-    // Update all bookings linked to this order
-    const bookings = await prisma.mentorshipBooking.findMany({
-      where: { razorpayOrderId: razorpay_order_id },
-      include: {
-        user: { select: { email: true, name: true } },
-        mentorship: { select: { mentorName: true } }
-      }
-    })
+    // Update all bookings linked to this order with a transaction to ensure integrity
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Fetch current bookings
+      const currentBookings = await tx.mentorshipBooking.findMany({
+        where: { razorpayOrderId: razorpay_order_id },
+        include: {
+          user: { select: { email: true, name: true } },
+          mentorship: { select: { mentorName: true } }
+        }
+      })
 
-    await prisma.mentorshipBooking.updateMany({
-      where: { razorpayOrderId: razorpay_order_id },
-      data: {
-        status: 'PAID',
-        orderId: razorpay_payment_id
+      // 2. Double check for any conflicting PAID bookings
+      for (const b of currentBookings) {
+        const conflict = await tx.mentorshipBooking.findFirst({
+          where: {
+            id: { not: b.id },
+            mentorshipId: b.mentorshipId,
+            slotDate: b.slotDate,
+            slotTime: b.slotTime,
+            status: 'PAID'
+          }
+        })
+        if (conflict) {
+          throw new Error(`Slot ${b.slotDate} ${b.slotTime} was just booked by someone else.`)
+        }
       }
+
+      // 3. Mark as PAID
+      await tx.mentorshipBooking.updateMany({
+        where: { razorpayOrderId: razorpay_order_id },
+        data: {
+          status: 'PAID',
+          orderId: razorpay_payment_id
+        }
+      })
+
+      return currentBookings
     })
 
     // Trigger confirmation email for each booking
     const { sendEmailNotification } = require('@/lib/email-service')
-    for (const booking of bookings) {
+    for (const booking of result) {
       await sendEmailNotification('mentorship_confirmed', {
         userEmail: booking.user.email,
         userName: booking.user.name,

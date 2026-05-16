@@ -33,19 +33,37 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ error: 'Mentorship offering not found' }, { status: 404 })
     }
 
-    // Check for past reservations and existing bookings
+    // Check for past reservations and existing bookings (Queue/Lock System)
     const now = new Date()
+    const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000)
+
     for (const slotTime of slotTimes) {
       const slotDateTime = new Date(`${slotDate}T${slotTime}:00`)
       if (slotDateTime < now) {
         return NextResponse.json({ error: `Slot at ${slotTime} is in the past` }, { status: 400 })
       }
 
-      const existingBooking = await prisma.mentorshipBooking.findFirst({
-        where: { mentorshipId: mentorship.id, slotDate, slotTime, status: 'PAID' }
+      const conflict = await prisma.mentorshipBooking.findFirst({
+        where: { 
+          mentorshipId: mentorship.id, 
+          slotDate, 
+          slotTime, 
+          OR: [
+            { status: 'PAID' },
+            { 
+              status: 'PENDING', 
+              createdAt: { gte: fiveMinsAgo } 
+            }
+          ]
+        }
       })
-      if (existingBooking) {
-        return NextResponse.json({ error: `Slot at ${slotTime} is already booked.` }, { status: 400 })
+
+      if (conflict) {
+        // If it's the SAME user having a pending booking, we let them proceed (they might be retrying)
+        if (conflict.userId === user.id && conflict.status === 'PENDING') {
+          continue; 
+        }
+        return NextResponse.json({ error: `Slot at ${slotTime} is temporarily held or already booked.` }, { status: 400 })
       }
     }
 
