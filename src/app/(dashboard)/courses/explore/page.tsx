@@ -1493,7 +1493,7 @@ export default function ExploreCoursesPage() {
           {(() => {
             const selectedList = bundleSelectedCoursesToBuy.length ? bundleSelectedCoursesToBuy : activeBundle.courses.map((c: any) => c.course.id);
             return (
-              <div style={{ width: '100%', maxWidth: '1024px', background: '#fff', borderRadius: '24px', padding: '40px' }} onClick={e => e.stopPropagation()}>
+              <div style={{ width: '100%', maxWidth: '1024px', height: '86vh', background: '#fff', borderRadius: '24px', padding: '40px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '900' }}>{activeBundle.name}</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1511,8 +1511,8 @@ export default function ExploreCoursesPage() {
                 </button>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px', flex: 1, overflow: 'hidden', minHeight: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 {activeBundle.allowIndividualPurchase !== false && (
                   <div style={{ marginBottom: '12px', fontSize: '13px', color: '#64748b', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '16px' }}>📝</span> Please choose course and class type
@@ -1757,49 +1757,32 @@ export default function ExploreCoursesPage() {
                       <div style={{ marginBottom: 'auto' }}>
                         <div style={{ fontSize: '18px', color: '#0f172a', fontWeight: '900', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px' }}>Detailed Breakdown</div>
                         
+                        {/* For non-fixed bundles: per-course breakdown */}
                         <div style={{ marginBottom: '20px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
-                          {isFixed ? (
-                            <div style={{ padding: '12px', background: '#f8faff', borderRadius: '12px', border: '1.5px solid #eef2ff' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid #eef2ff', paddingBottom: '8px' }}>
-                                <div style={{ flex: 1, paddingRight: '12px' }}>
-                                  <div style={{ fontSize: '14px', color: '#1e293b', fontWeight: '900' }}>{activeBundle.name} Package</div>
-                                  <div style={{ fontSize: '10px', color: '#6366f1', fontWeight: '800', textTransform: 'uppercase' }}>{effectiveGlobalType === 'LIVE' ? 'Full Live Pro Access' : 'Full Recorded Plus Access'}</div>
-                                </div>
-                                <span style={{ fontSize: '15px', fontWeight: '1000', color: '#1e293b' }}>₹{totalPrice}</span>
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                {activeBundle.courses.map((bc: any) => (
-                                  <div key={bc.course.id} style={{ fontSize: '12px', color: '#64748b', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ color: '#10b981' }}>✓</span> {bc.course.name}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ) : (
-                            selectedList.map((courseId: string) => {
-                              const bc = activeBundle.courses.find((c: any) => c.course.id === courseId);
-                              const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
-                              const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
-                              
-                              const bPriceData = activeBundle.coursePrices ? JSON.parse(activeBundle.coursePrices) : {};
-                              const bundleMappings = bPriceData.individualMapping || {};
-                              const bundleCustomPrice = bundleMappings[courseId];
+                          {!isFixed && selectedList.map((courseId: string) => {
+                            const bc = activeBundle.courses.find((c: any) => c.course.id === courseId);
+                            const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
+                            const selectedType = bundleSelectedForPurchase[courseId] || effectiveGlobalType || 'RECORDED';
+                            
+                            const bPriceData = activeBundle.coursePrices ? JSON.parse(activeBundle.coursePrices) : {};
+                            const bundleMappings = bPriceData.individualMapping || {};
+                            const bundleCustomPrice = bundleMappings[courseId];
+                            const tierForCount2 = bPriceData[selectedList.length];
 
-                              const price = selectedType === 'RECORDED' 
-                                ? Number(bundleCustomPrice?.recorded || (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0))
-                                : Number(bundleCustomPrice?.live || (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0));
-                              
-                              return (
-                                <div key={courseId} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                  <div style={{ flex: 1, paddingRight: '12px' }}>
-                                    <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '800' }}>{bc?.course.name}</div>
-                                    <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700' }}>{selectedType === 'LIVE' ? 'LIVE PRO' : 'RECORDED PLUS'}</div>
-                                  </div>
-                                  <span style={{ fontSize: '13px', fontWeight: '900', color: '#1e293b' }}>₹{price}</span>
+                            const price = selectedType === 'RECORDED' 
+                              ? Number(bundleCustomPrice?.recorded || tierForCount2?.recordedDiscount || tierForCount2?.recordedOriginal || offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0)
+                              : Number(bundleCustomPrice?.live || tierForCount2?.liveDiscount || tierForCount2?.liveOriginal || offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0);
+                            
+                            return (
+                              <div key={courseId} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                <div style={{ flex: 1, paddingRight: '12px' }}>
+                                  <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '800' }}>{bc?.course.name}</div>
+                                  <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700' }}>{selectedType === 'LIVE' ? 'LIVE PRO' : 'RECORDED PLUS'}</div>
                                 </div>
-                              )
-                            })
-                          )}
+                                <span style={{ fontSize: '13px', fontWeight: '900', color: '#1e293b' }}>₹{price}</span>
+                              </div>
+                            )
+                          })}
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', paddingTop: '14px', borderTop: '1.5px solid #f8fafc' }}>
