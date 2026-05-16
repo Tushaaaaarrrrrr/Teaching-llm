@@ -140,7 +140,7 @@ export default function ExamsPage() {
   return (
     <div style={{ padding: '24px 32px 48px' }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '32px', gap: '12px' }}>
-        {isManager && <button onClick={() => setShowCreateTSModal(true)} style={{ ...neuBtn, background: '#f59e0b', boxShadow: '4px 4px 10px rgba(245,158,11,0.35), -2px -2px 6px rgba(255,255,255,0.7)' }}>+ Test Series</button>}
+        {isManager && <button onClick={() => router.push('/exams/test-series/create')} style={{ ...neuBtn, background: '#f59e0b', boxShadow: '4px 4px 10px rgba(245,158,11,0.35), -2px -2px 6px rgba(255,255,255,0.7)' }}>+ Test Series</button>}
         {isManager && <button onClick={() => router.push('/exams/create')} style={neuBtn}>Create New Exam</button>}
       </div>
 
