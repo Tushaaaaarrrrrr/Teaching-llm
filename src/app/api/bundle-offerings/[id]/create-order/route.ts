@@ -14,30 +14,31 @@ export async function POST(
     const razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID!, key_secret: process.env.RAZORPAY_KEY_SECRET! })
 
     const body = await request.json()
-    // body: { buyAll: boolean, accessType: 'RECORDED'|'LIVE', selectedCourseIds?: string[] , perCourseAccessTypes?: Record<string,string> }
-    const { buyAll, accessType, selectedCourseIds, perCourseAccessTypes } = body
+    // body: { buyAll: boolean, accessType: 'RECORDED'|'LIVE', selectedCourseIds?: string[], perCourseAccessTypes?: Record<string,string>, couponCode?: string }
+    const { buyAll, accessType, selectedCourseIds, perCourseAccessTypes, couponCode } = body
 
     if (!['RECORDED', 'LIVE'].includes(accessType)) return NextResponse.json({ error: 'Invalid access type' }, { status: 400 })
 
     const bundle = await prisma.bundleOffering.findUnique({ where: { id: params.id }, include: { courses: { include: { course: true } } } })
     if (!bundle) return NextResponse.json({ error: 'Bundle not found' }, { status: 404 })
 
+    // Fixed bundle check: if individual purchase not allowed, must buy all
+    if (!bundle.allowIndividualPurchase && !buyAll) {
+      return NextResponse.json({ error: 'This is a fixed bundle. You must purchase all courses together.' }, { status: 400 })
+    }
+
     // Determine which courses to charge for
     let courseEntries: Array<{ courseId: string; accessType: string; price: number }> = []
 
     if (buyAll) {
-      // If bundle has a bundle price for the selected access type, create a single item with bundle price but still create per-course items for enrollments
       const bundlePrice = accessType === 'RECORDED' ? bundle.recordedDiscountPrice ?? bundle.recordedOriginalPrice : bundle.liveDiscountPrice ?? bundle.liveOriginalPrice
       if (bundlePrice == null) {
-        // Fallback to summing individual prices
         for (const bc of bundle.courses) {
-          // Find course offering for this course
           const offering = await prisma.courseOffering.findFirst({ where: { courseId: bc.course.id }, orderBy: { createdAt: 'desc' } })
           const price = accessType === 'RECORDED' ? (offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0) : (offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0)
           courseEntries.push({ courseId: bc.course.id, accessType, price })
         }
       } else {
-        // Use bundle price - assign the bundle price to the first course in the bundle and mark others as 0
         let first = true
         for (const bc of bundle.courses) {
           if (first) {
@@ -59,15 +60,187 @@ export async function POST(
       }
     }
 
-    // Create pending order
-    const totalAmount = Math.round(courseEntries.reduce((s, it) => s + (it.price || 0), 0) * 100)
-    const order = await prisma.order.create({ data: { userId: session.userId, amount: totalAmount / 100, status: 'PENDING', items: { create: courseEntries.map(it => ({ courseOfferingId: null, courseId: it.courseId === params.id ? it.courseId : it.courseId, accessType: it.accessType, price: it.price })) } }, include: { items: true } })
+    // ── Calculate subtotal ──
+    const subtotal = courseEntries.reduce((s, it) => s + (it.price || 0), 0)
 
-    const razorpayOrder = await razorpay.orders.create({ amount: totalAmount, currency: 'INR', receipt: order.id, notes: { orderId: order.id, bundleId: params.id, userId: session.userId, userName: session.name || 'Student', type: 'BUNDLE_PURCHASE' } })
+    // ── Apply bundle discount (first priority) ──
+    let bundleDiscountAmount = 0
+    if (bundle.enableBundleDiscount && bundle.bundleDiscountValue) {
+      // Check applicability
+      const applicability = bundle.bundleDiscountApplicability || 'BOTH'
+      const accessMatchesApplicability = applicability === 'BOTH' ||
+        (applicability === 'RECORDED' && accessType === 'RECORDED') ||
+        (applicability === 'LIVE' && accessType === 'LIVE')
+
+      // Check requireAllCourses
+      const allCoursesSelected = buyAll || (courseEntries.length === bundle.courses.length)
+      const meetsRequireAll = !bundle.requireAllCourses || allCoursesSelected
+
+      if (accessMatchesApplicability && meetsRequireAll) {
+        if (bundle.bundleDiscountType === 'PERCENTAGE') {
+          bundleDiscountAmount = Math.round((subtotal * bundle.bundleDiscountValue) / 100)
+        } else if (bundle.bundleDiscountType === 'FIXED') {
+          bundleDiscountAmount = bundle.bundleDiscountValue
+        }
+        bundleDiscountAmount = Math.min(bundleDiscountAmount, subtotal)
+      }
+    }
+
+    const afterBundleDiscount = subtotal - bundleDiscountAmount
+
+    // ── Apply coupon discount (second priority) ──
+    let couponDiscountAmount = 0
+    let appliedCouponId: string | null = null
+    let appliedCouponCode: string | null = null
+
+    if (couponCode) {
+      const coupon = await prisma.coupon.findUnique({ where: { code: couponCode.toUpperCase() } })
+
+      if (coupon && coupon.isActive) {
+        // Validate dates
+        const now = new Date()
+        const startOk = !coupon.startDate || now >= new Date(coupon.startDate)
+        const expiryOk = !coupon.expiresAt || now <= new Date(coupon.expiresAt)
+        const usageOk = coupon.maxUses == null || coupon.currentUses < coupon.maxUses
+
+        // Single use per user check
+        let singleUseOk = true
+        if (coupon.isSingleUsePerUser) {
+          const existing = await prisma.couponUsage.findFirst({ where: { couponId: coupon.id, userId: session.userId } })
+          if (existing) singleUseOk = false
+        }
+
+        // First purchase only check
+        let firstPurchaseOk = true
+        if (coupon.isFirstPurchaseOnly) {
+          const existing = await prisma.order.findFirst({ where: { userId: session.userId, status: 'PAID' } })
+          if (existing) firstPurchaseOk = false
+        }
+
+        // User email check
+        let emailOk = true
+        if (coupon.targetUserEmails) {
+          try {
+            const emails: string[] = JSON.parse(coupon.targetUserEmails)
+            if (emails.length > 0 && !emails.includes(session.email)) emailOk = false
+          } catch { /* skip */ }
+        }
+
+        // Bundle targeting check
+        let bundleOk = true
+        if (coupon.applicability === 'BUNDLE' && coupon.targetBundleIds) {
+          try {
+            const bundleIds: string[] = JSON.parse(coupon.targetBundleIds)
+            if (bundleIds.length > 0 && !bundleIds.includes(params.id)) bundleOk = false
+          } catch { /* skip */ }
+        }
+
+        // Min order value (checked against afterBundleDiscount)
+        const minValueOk = coupon.minOrderValue == null || afterBundleDiscount >= coupon.minOrderValue
+
+        if (startOk && expiryOk && usageOk && singleUseOk && firstPurchaseOk && emailOk && bundleOk && minValueOk) {
+          if (coupon.discountType === 'PERCENTAGE') {
+            couponDiscountAmount = Math.round((afterBundleDiscount * coupon.discountValue) / 100)
+          } else if (coupon.discountType === 'FIXED') {
+            couponDiscountAmount = coupon.discountValue
+          }
+          couponDiscountAmount = Math.min(couponDiscountAmount, afterBundleDiscount)
+          appliedCouponId = coupon.id
+          appliedCouponCode = coupon.code
+        }
+      }
+    }
+
+    // ── Final amount ──
+    const finalAmount = Math.max(0, afterBundleDiscount - couponDiscountAmount)
+    const totalAmountPaise = Math.round(finalAmount * 100)
+
+    // Create pending order with discount tracking
+    const order = await prisma.order.create({
+      data: {
+        userId: session.userId,
+        amount: finalAmount,
+        subtotalAmount: subtotal,
+        bundleDiscountAmount,
+        couponDiscountAmount,
+        couponCode: appliedCouponCode,
+        couponId: appliedCouponId,
+        status: 'PENDING',
+        items: {
+          create: courseEntries.map(it => ({
+            courseOfferingId: null,
+            courseId: it.courseId,
+            accessType: it.accessType,
+            price: it.price
+          }))
+        }
+      },
+      include: { items: true }
+    })
+
+    // If total is 0 (free via discounts), mark as paid directly
+    if (totalAmountPaise === 0) {
+      // Record coupon usage
+      if (appliedCouponId) {
+        await prisma.$transaction([
+          prisma.coupon.update({ where: { id: appliedCouponId }, data: { currentUses: { increment: 1 } } }),
+          prisma.couponUsage.create({ data: { couponId: appliedCouponId, userId: session.userId, orderId: order.id, revenue: 0 } }),
+          prisma.order.update({ where: { id: order.id }, data: { status: 'PAID' } })
+        ])
+      } else {
+        await prisma.order.update({ where: { id: order.id }, data: { status: 'PAID' } })
+      }
+
+      // Enroll user in courses
+      for (const entry of courseEntries) {
+        await prisma.enrollment.upsert({
+          where: { userId_courseId: { userId: session.userId, courseId: entry.courseId } },
+          update: { type: entry.accessType as any },
+          create: { userId: session.userId, courseId: entry.courseId, type: entry.accessType as any }
+        })
+      }
+
+      return NextResponse.json({
+        orderId: order.id,
+        freeCheckout: true,
+        amount: 0,
+        subtotal,
+        bundleDiscountAmount,
+        couponDiscountAmount,
+        bundleName: bundle.name
+      })
+    }
+
+    const razorpayOrder = await razorpay.orders.create({
+      amount: totalAmountPaise,
+      currency: 'INR',
+      receipt: order.id,
+      notes: {
+        orderId: order.id,
+        bundleId: params.id,
+        userId: session.userId,
+        userName: session.name || 'Student',
+        type: 'BUNDLE_PURCHASE',
+        couponCode: appliedCouponCode || '',
+        couponId: appliedCouponId || ''
+      }
+    })
 
     await prisma.order.update({ where: { id: order.id }, data: { razorpayOrderId: razorpayOrder.id } })
 
-    return NextResponse.json({ orderId: order.id, razorpayOrderId: razorpayOrder.id, amount: totalAmount, currency: 'INR', keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, bundleName: bundle.name, userName: session.name, userEmail: session.email })
+    return NextResponse.json({
+      orderId: order.id,
+      razorpayOrderId: razorpayOrder.id,
+      amount: totalAmountPaise,
+      subtotal,
+      bundleDiscountAmount,
+      couponDiscountAmount,
+      currency: 'INR',
+      keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      bundleName: bundle.name,
+      userName: session.name,
+      userEmail: session.email
+    })
   } catch (error) {
     console.error('[bundle create-order] Error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

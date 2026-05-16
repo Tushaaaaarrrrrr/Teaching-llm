@@ -10,7 +10,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const data = await request.json()
-    const { name, description, recordedOriginalPrice, recordedDiscountPrice, liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase, courseIds } = data
+    const { 
+      name, description, recordedOriginalPrice, recordedDiscountPrice, 
+      liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase, courseIds,
+      enableBundleDiscount, bundleDiscountType, bundleDiscountValue, bundleDiscountApplicability, requireAllCourses
+    } = data
 
     const updateData: any = {}
     if (name !== undefined) updateData.name = name
@@ -20,6 +24,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (liveOriginalPrice !== undefined) updateData.liveOriginalPrice = liveOriginalPrice ? Number(liveOriginalPrice) : null
     if (liveDiscountPrice !== undefined) updateData.liveDiscountPrice = liveDiscountPrice ? Number(liveDiscountPrice) : null
     if (allowIndividualPurchase !== undefined) updateData.allowIndividualPurchase = !!allowIndividualPurchase
+    if (enableBundleDiscount !== undefined) updateData.enableBundleDiscount = !!enableBundleDiscount
+    if (bundleDiscountType !== undefined) updateData.bundleDiscountType = bundleDiscountType
+    if (bundleDiscountValue !== undefined) updateData.bundleDiscountValue = bundleDiscountValue ? Number(bundleDiscountValue) : null
+    if (bundleDiscountApplicability !== undefined) updateData.bundleDiscountApplicability = bundleDiscountApplicability
+    if (requireAllCourses !== undefined) updateData.requireAllCourses = !!requireAllCourses
 
     // If courseIds provided, update the course relations
     if (Array.isArray(courseIds)) {

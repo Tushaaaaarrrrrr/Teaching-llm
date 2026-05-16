@@ -73,6 +73,10 @@ model User {
   promptResponses         PromptResponse[]
   createdCoupons          Coupon[]                     @relation("CouponCreator")
   couponUsages            CouponUsage[]
+  createdNotes            StoreNote[]                  @relation("NoteCreator")
+  noteAccesses            StoreNoteAccess[]
+  createdMentorships      MentorshipOffering[]         @relation("MentorshipCreator")
+  mentorshipBookings      MentorshipBooking[]
 }
 
 model Course {
@@ -1043,4 +1047,98 @@ model CouponUsage {
   @@index([couponId])
   @@index([userId])
   @@index([orderId])
+}
+
+// ─── Store: Notes ──────────────────────────────────────────────────────────
+
+model StoreNote {
+  id            String          @id @default(cuid())
+  title         String
+  description   String?
+  price         Float           @default(0) // 0 = free
+  originalPrice Float?
+  thumbnailUrl  String?
+  isActive      Boolean         @default(true)
+  createdById   String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  createdBy     User            @relation("NoteCreator", fields: [createdById], references: [id])
+  files         StoreNoteFile[]
+  accesses      StoreNoteAccess[]
+
+  @@index([isActive])
+  @@index([createdById])
+}
+
+model StoreNoteFile {
+  id          String    @id @default(cuid())
+  noteId      String
+  title       String
+  fileUrl     String    // direct URL or Google Drive link
+  fileType    String    @default("LINK") // "LINK", "PDF"
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  note        StoreNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([noteId])
+}
+
+model StoreNoteAccess {
+  id        String    @id @default(cuid())
+  noteId    String
+  userId    String
+  orderId   String?
+  createdAt DateTime  @default(now())
+
+  note      StoreNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, userId])
+  @@index([userId])
+}
+
+// ─── Store: Mentorship ────────────────────────────────────────────────────
+
+model MentorshipOffering {
+  id              String               @id @default(cuid())
+  mentorName      String
+  description     String?
+  avatarUrl       String?
+  pricePerSlot    Float
+  slotDuration    Int                  @default(15) // minutes
+  isActive        Boolean              @default(true)
+  // JSON: array of date+time slots: [{"date":"2024-06-01","time":"10:00"},...]
+  availableSlots  String               @default("[]")
+  createdById     String
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  createdBy       User                 @relation("MentorshipCreator", fields: [createdById], references: [id])
+  bookings        MentorshipBooking[]
+
+  @@index([isActive])
+}
+
+model MentorshipBooking {
+  id                  String             @id @default(cuid())
+  mentorshipId        String
+  userId              String
+  slotDate            String             // "2024-06-01"
+  slotTime            String             // "10:00"
+  amount              Float
+  status              String             @default("PENDING") // PENDING, PAID, CANCELLED
+  razorpayOrderId     String?
+  orderId             String?
+  userNote            String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  mentorship          MentorshipOffering @relation(fields: [mentorshipId], references: [id], onDelete: Cascade)
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mentorshipId, slotDate, slotTime])
+  @@index([userId])
+  @@index([mentorshipId])
 }

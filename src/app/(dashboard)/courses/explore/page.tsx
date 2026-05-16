@@ -14,6 +14,8 @@ export default function ExploreCoursesPage() {
     revalidateOnFocus: false,
   })
   const { data: bundleOfferings } = useSWR('/api/bundle-offerings', fetcher, { revalidateOnFocus: false })
+  const { data: storeNotesData } = useSWR('/api/store/notes', fetcher, { revalidateOnFocus: false })
+  const { data: mentorshipsData } = useSWR('/api/store/mentorships', fetcher, { revalidateOnFocus: false })
   const { data: courses } = useSWR('/api/courses', fetcher, { revalidateOnFocus: false })
   const [purchasing, setPurchasing] = useState<string | null>(null)
   const [successOrderId, setSuccessOrderId] = useState<string | null>(null)
@@ -58,7 +60,15 @@ export default function ExploreCoursesPage() {
   const [editingBundle, setEditingBundle] = useState<any>(null)
   const [editBundleData, setEditBundleData] = useState<any>({})
   const [editBundleSaving, setEditBundleSaving] = useState(false)
+  const [couponCode, setCouponCode] = useState('')
+  const [couponApplied, setCouponApplied] = useState<any>(null)
+  const [couponError, setCouponError] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
 
+  const [showCreateDropdown, setShowCreateDropdown] = useState(false)
+  const [showCreateBundleModal, setShowCreateBundleModal] = useState(false)
+  const [showCreateNoteModal, setShowCreateNoteModal] = useState(false)
+  const [showCreateMentorshipModal, setShowCreateMentorshipModal] = useState(false)
   // Helper to get enrollment status
   const getEnrollmentStatus = (courseId: string) => {
     const coursesArray = Array.isArray(courses) ? courses : (courses as any)?.courses || []
@@ -315,40 +325,65 @@ export default function ExploreCoursesPage() {
           </a>
 
           {userData?.user?.role === 'MANAGER' && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              style={{
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                color: 'white',
-                padding: '10px 18px',
-                borderRadius: '12px',
-                border: 'none',
-                fontSize: '13px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
-                transition: 'all 0.2s ease',
-                flexShrink: 0,
-                whiteSpace: 'nowrap'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-1px)'
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(99, 102, 241, 0.4)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)'
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Add Course
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowCreateDropdown(!showCreateDropdown)}
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: 'white',
+                  padding: '10px 18px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Create
+              </button>
+              {showCreateDropdown && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                  background: '#fff', borderRadius: '12px', padding: '8px',
+                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                  zIndex: 100, minWidth: '160px',
+                  display: 'flex', flexDirection: 'column', gap: '4px'
+                }}>
+                  {[
+                    { label: '📚 Course', action: () => { setShowCreateModal(true); setShowCreateDropdown(false) } },
+                    { label: '📦 Bundle', action: () => { setShowCreateBundleModal(true); setShowCreateDropdown(false) } },
+                    { label: '📝 Notes', action: () => { setShowCreateNoteModal(true); setShowCreateDropdown(false) } },
+                    { label: '🤝 Mentorship', action: () => { setShowCreateMentorshipModal(true); setShowCreateDropdown(false) } }
+                  ].map((item, i) => (
+                    <button
+                      key={i}
+                      onClick={item.action}
+                      style={{
+                        padding: '10px 12px', background: 'transparent', border: 'none',
+                        borderRadius: '8px', textAlign: 'left', fontSize: '13px',
+                        fontWeight: '600', color: '#1e293b', cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -379,7 +414,7 @@ export default function ExploreCoursesPage() {
                     )}
                     {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
                       <>
-                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingBundle(b); setEditBundleData({ name: b.name, description: b.description || '', recordedOriginalPrice: b.recordedOriginalPrice ?? '', recordedDiscountPrice: b.recordedDiscountPrice ?? '', liveOriginalPrice: b.liveOriginalPrice ?? '', liveDiscountPrice: b.liveDiscountPrice ?? '', courseIds: b.courses.map((c: any) => c.course.id) }) }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '800', fontSize: '13px' }}>Edit</button>
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingBundle(b); setEditBundleData({ name: b.name, description: b.description || '', recordedOriginalPrice: b.recordedOriginalPrice ?? '', recordedDiscountPrice: b.recordedDiscountPrice ?? '', liveOriginalPrice: b.liveOriginalPrice ?? '', liveDiscountPrice: b.liveDiscountPrice ?? '', courseIds: b.courses.map((c: any) => c.course.id), allowIndividualPurchase: b.allowIndividualPurchase ?? true, enableBundleDiscount: b.enableBundleDiscount ?? false, bundleDiscountType: b.bundleDiscountType ?? 'PERCENTAGE', bundleDiscountValue: b.bundleDiscountValue ?? '', bundleDiscountApplicability: b.bundleDiscountApplicability ?? 'BOTH', requireAllCourses: b.requireAllCourses ?? true }) }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '800', fontSize: '13px' }}>Edit</button>
                         <button onClick={async () => {
                           if (!confirm(`Delete bundle "${b.name}"? This cannot be undone.`)) return
                           try {
@@ -394,6 +429,72 @@ export default function ExploreCoursesPage() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Notes section */}
+      {storeNotesData?.notes?.length > 0 && (
+        <div style={{ marginBottom: '18px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a', margin: '6px 0 12px' }}>Study Notes</h2>
+          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+            {storeNotesData.notes.map((n: any) => (
+              <div key={n.id} style={{ minWidth: '320px', background: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' }}>
+                <div style={{ fontSize: '16px', fontWeight: '900', marginBottom: '6px' }}>{n.title}</div>
+                {n.description && <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px' }}>{n.description}</div>}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
+                  <div style={{ fontWeight: '800', color: n.price > 0 ? '#1e293b' : '#10b981' }}>{n.price > 0 ? `₹${n.price}` : 'Free'}</div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => { window.open(n.files?.[0]?.fileUrl, '_blank') }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: '800' }}>
+                    {n.price > 0 ? 'Buy / Access' : 'Access Notes'}
+                  </button>
+                  {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
+                    <button onClick={async () => {
+                      if (!confirm(`Delete note "${n.title}"?`)) return
+                      try {
+                        const res = await fetch(`/api/store/notes/${n.id}`, { method: 'DELETE' })
+                        if (res.ok) window.location.reload()
+                        else alert('Failed to delete')
+                      } catch { alert('Failed to delete') }
+                    }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mentorship offerings section */}
+      {mentorshipsData?.mentorships?.length > 0 && (
+        <div style={{ marginBottom: '18px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a', margin: '6px 0 12px' }}>1-on-1 Mentorship</h2>
+          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+            {mentorshipsData.mentorships.map((m: any) => (
+              <div key={m.id} style={{ minWidth: '320px', background: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' }}>
+                <div style={{ fontSize: '16px', fontWeight: '900', marginBottom: '6px' }}>{m.mentorName}</div>
+                {m.description && <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px' }}>{m.description}</div>}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
+                  <div style={{ fontWeight: '800', color: '#f59e0b' }}>₹{m.pricePerSlot} / {m.slotDurationMinutes} mins</div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => { alert('Mentorship booking flow coming soon!') }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff', fontWeight: '800' }}>
+                    Book Slot
+                  </button>
+                  {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
+                    <button onClick={async () => {
+                      if (!confirm(`Delete mentorship "${m.mentorName}"?`)) return
+                      try {
+                        const res = await fetch(`/api/store/mentorships/${m.id}`, { method: 'DELETE' })
+                        if (res.ok) window.location.reload()
+                        else alert('Failed to delete')
+                      } catch { alert('Failed to delete') }
+                    }} style={{ padding: '10px 12px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '800', fontSize: '13px' }}>🗑️</button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -972,7 +1073,9 @@ export default function ExploreCoursesPage() {
                         <input
                           type="checkbox"
                           checked={bundleSelectedCoursesToBuy.includes(course.id)}
+                          disabled={activeBundle.allowIndividualPurchase === false}
                           onChange={(e) => {
+                            if (activeBundle.allowIndividualPurchase === false) return
                             if (e.target.checked) setBundleSelectedCoursesToBuy([...bundleSelectedCoursesToBuy, course.id])
                             else setBundleSelectedCoursesToBuy(bundleSelectedCoursesToBuy.filter(id => id !== course.id))
                           }}
@@ -1022,48 +1125,126 @@ export default function ExploreCoursesPage() {
                     }
                   });
 
+                  // Calculate bundle discount
+                  let bundleDiscountAmt = 0;
+                  if (activeBundle.enableBundleDiscount && activeBundle.bundleDiscountValue) {
+                    const applicability = activeBundle.bundleDiscountApplicability || 'BOTH';
+                    const allSelected = selectedList.length === activeBundle.courses.length;
+                    const meetsRequireAll = !activeBundle.requireAllCourses || allSelected;
+                    // Check if access type matches applicability (simplified: check dominant type)
+                    const dominantType = Object.values(bundleSelectedForPurchase).filter(v => v === 'LIVE').length > selectedList.length / 2 ? 'LIVE' : 'RECORDED';
+                    const accessOk = applicability === 'BOTH' || applicability === dominantType;
+                    if (accessOk && meetsRequireAll) {
+                      if (activeBundle.bundleDiscountType === 'PERCENTAGE') {
+                        bundleDiscountAmt = Math.round((totalPrice * activeBundle.bundleDiscountValue) / 100);
+                      } else {
+                        bundleDiscountAmt = activeBundle.bundleDiscountValue;
+                      }
+                      bundleDiscountAmt = Math.min(bundleDiscountAmt, totalPrice);
+                    }
+                  }
+
+                  const afterBundleDiscount = totalPrice - bundleDiscountAmt;
+                  const couponDiscountAmt = couponApplied ? Math.min(couponApplied.discountAmount || 0, afterBundleDiscount) : 0;
+                  const finalTotal = Math.max(0, afterBundleDiscount - couponDiscountAmt);
+                  const totalSavings = bundleDiscountAmt + couponDiscountAmt + (originalTotalPrice > totalPrice ? originalTotalPrice - totalPrice : 0);
+
                   return (
                     <>
                       <div style={{ marginBottom: 'auto' }}>
                         <div style={{ fontSize: '18px', color: '#64748b', fontWeight: '700', marginBottom: '20px' }}>Order Summary</div>
                         
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                          <span style={{ fontSize: '16px', color: '#334155', fontWeight: '600' }}>Selected Courses</span>
-                          <span style={{ fontSize: '16px', fontWeight: '800' }}>{selectedList.length}</span>
+                        {/* Bundle Discount Banner */}
+                        {activeBundle.enableBundleDiscount && activeBundle.bundleDiscountValue && (
+                          <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'linear-gradient(135deg, #fef3c7, #fde68a)', marginBottom: '16px', border: '1px solid #f59e0b' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '800', color: '#92400e' }}>
+                              🏷️ {activeBundle.bundleDiscountType === 'PERCENTAGE' ? `Get ${activeBundle.bundleDiscountValue}% off` : `Get ₹${activeBundle.bundleDiscountValue} off`} on {activeBundle.requireAllCourses ? 'complete bundle purchase' : 'this bundle'}!
+                            </div>
+                            {activeBundle.requireAllCourses && selectedList.length < activeBundle.courses.length && (
+                              <div style={{ fontSize: '11px', color: '#b45309', marginTop: '4px' }}>Select all courses to unlock this discount</div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Fixed bundle notice */}
+                        {activeBundle.allowIndividualPurchase === false && (
+                          <div style={{ padding: '8px 12px', borderRadius: '8px', background: '#eff6ff', border: '1px solid #bfdbfe', marginBottom: '14px', fontSize: '12px', fontWeight: '600', color: '#1e40af' }}>
+                            🔒 This is a fixed bundle — all courses are included.
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '14px', color: '#334155', fontWeight: '600' }}>Selected Courses</span>
+                          <span style={{ fontSize: '14px', fontWeight: '800' }}>{selectedList.length}</span>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                          <span style={{ fontSize: '16px', color: '#334155', fontWeight: '600' }}>Amount Breakdown</span>
-                          <span style={{ fontSize: '16px', fontWeight: '800', color: '#6366f1' }}>
-                            {selectedList.map((courseId: string) => {
-                               const offering = (activeOfferings as any[]).find(o => o.courseId === courseId);
-                               const selectedType = bundleSelectedForPurchase[courseId] || 'RECORDED';
-                               return selectedType === 'RECORDED' 
-                                 ? offering?.recordedDiscountPrice ?? offering?.recordedOriginalPrice ?? 0
-                                 : offering?.liveDiscountPrice ?? offering?.liveOriginalPrice ?? 0;
-                             }).join(' + ')}
-                          </span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '14px', color: '#334155', fontWeight: '600' }}>Subtotal</span>
+                          <span style={{ fontSize: '14px', fontWeight: '800' }}>₹{totalPrice}</span>
+                        </div>
+
+                        {bundleDiscountAmt > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', padding: '6px 10px', borderRadius: '8px', background: '#f0fdf4' }}>
+                            <span style={{ fontSize: '13px', color: '#166534', fontWeight: '700' }}>✅ Bundle Discount Applied</span>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#16a34a' }}>-₹{bundleDiscountAmt}</span>
+                          </div>
+                        )}
+
+                        {couponApplied && couponDiscountAmt > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', padding: '6px 10px', borderRadius: '8px', background: '#eff6ff' }}>
+                            <span style={{ fontSize: '13px', color: '#1e40af', fontWeight: '700' }}>✅ Coupon Applied ({couponApplied.code})</span>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#2563eb' }}>-₹{couponDiscountAmt}</span>
+                          </div>
+                        )}
+
+                        {/* Coupon Input */}
+                        <div style={{ marginTop: '14px', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Have a coupon code?</div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <input type="text" value={couponCode} onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError('') }} placeholder="Enter code" style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e0e7ff', fontSize: '13px', fontWeight: '700', letterSpacing: '0.05em' }} disabled={!!couponApplied} />
+                            {couponApplied ? (
+                              <button onClick={() => { setCouponApplied(null); setCouponCode(''); setCouponError('') }} style={{ padding: '8px 14px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>Remove</button>
+                            ) : (
+                              <button disabled={!couponCode || couponLoading} onClick={async () => {
+                                setCouponLoading(true); setCouponError('')
+                                try {
+                                  const res = await fetch('/api/store/coupons/validate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: couponCode, bundleOfferingId: activeBundle.id, subtotal: afterBundleDiscount }) })
+                                  const data = await res.json()
+                                  if (res.ok && data.valid) { setCouponApplied(data) }
+                                  else { setCouponError(data.error || 'Invalid coupon') }
+                                } catch { setCouponError('Failed to validate coupon') }
+                                finally { setCouponLoading(false) }
+                              }} style={{ padding: '8px 14px', borderRadius: '8px', background: couponCode ? '#6366f1' : '#e2e8f0', color: couponCode ? '#fff' : '#94a3b8', fontWeight: '700', fontSize: '12px', cursor: couponCode ? 'pointer' : 'not-allowed', border: 'none' }}>{couponLoading ? '...' : 'Apply'}</button>
+                            )}
+                          </div>
+                          {couponError && <div style={{ fontSize: '12px', color: '#dc2626', fontWeight: '600', marginTop: '4px' }}>{couponError}</div>}
                         </div>
                         
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '30px', paddingTop: '20px', borderTop: '2px dashed #cbd5e1' }}>
-                          <span style={{ fontSize: '20px', color: '#0f172a', fontWeight: '800' }}>Total Amount</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '20px', paddingTop: '16px', borderTop: '2px dashed #cbd5e1' }}>
+                          <span style={{ fontSize: '18px', color: '#0f172a', fontWeight: '800' }}>Total Payable</span>
                           <div style={{ textAlign: 'right' }}>
-                            {originalTotalPrice > totalPrice && (
-                              <div style={{ fontSize: '16px', color: '#94a3b8', textDecoration: 'line-through', marginBottom: '4px' }}>₹{originalTotalPrice}</div>
+                            {(originalTotalPrice > finalTotal || bundleDiscountAmt > 0 || couponDiscountAmt > 0) && (
+                              <div style={{ fontSize: '14px', color: '#94a3b8', textDecoration: 'line-through', marginBottom: '2px' }}>₹{originalTotalPrice > totalPrice ? originalTotalPrice : totalPrice}</div>
                             )}
-                            <div style={{ fontSize: '36px', fontWeight: '900', color: '#4f46e5', lineHeight: '1' }}>₹{totalPrice}</div>
+                            <div style={{ fontSize: '32px', fontWeight: '900', color: '#4f46e5', lineHeight: '1' }}>₹{finalTotal}</div>
                           </div>
                         </div>
+                        {totalSavings > 0 && (
+                          <div style={{ textAlign: 'right', fontSize: '13px', color: '#16a34a', fontWeight: '700', marginTop: '4px' }}>You save ₹{totalSavings}! 🎉</div>
+                        )}
                       </div>
 
-                      <div style={{ marginTop: '32px' }}>
+                      <div style={{ marginTop: '24px' }}>
                         <button onClick={async () => {
                           try {
                             if (selectedList.length === 0) { alert('Select at least one course'); return }
                             setIsProcessing(true)
-                            const res = await fetch(`/api/bundle-offerings/${activeBundle.id}/create-order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buyAll: false, accessType: 'RECORDED', selectedCourseIds: selectedList, perCourseAccessTypes: bundleSelectedForPurchase }) })
+                            const res = await fetch(`/api/bundle-offerings/${activeBundle.id}/create-order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buyAll: selectedList.length === activeBundle.courses.length, accessType: 'RECORDED', selectedCourseIds: selectedList, perCourseAccessTypes: bundleSelectedForPurchase, couponCode: couponApplied?.code || null }) })
                             const data = await res.json()
                             if (!res.ok) { alert(data.error || 'Failed to create order'); setIsProcessing(false); return }
+                            if (data.freeCheckout) {
+                              setSuccessOrderId(data.orderId || 'FREE'); setPurchasedCourse({ courseName: data.bundleName, accessType: 'MIXED' }); setShowBundleModal(false); setIsProcessing(false); return
+                            }
                             const options = {
                               key: data.keyId,
                               amount: data.amount,
@@ -1094,7 +1275,7 @@ export default function ExploreCoursesPage() {
                             rzp.open()
                           } catch (err: any) { alert(err.message || 'Something went wrong'); setIsProcessing(false) }
                         }} style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'linear-gradient(135deg, #4f46e5, #6366f1)', color: '#fff', fontWeight: '900', fontSize: '16px', boxShadow: '0 8px 16px rgba(79, 70, 229, 0.25)', border: 'none', cursor: 'pointer' }}>
-                          ENROLL NOW
+                          {finalTotal === 0 ? 'ENROLL FREE 🎉' : `ENROLL NOW — ₹${finalTotal}`}
                         </button>
                       </div>
                     </>
@@ -1383,60 +1564,7 @@ export default function ExploreCoursesPage() {
               </div>
             </div>
             
-            {/* Recommended Bundle Section */}
-            <div style={{ marginBottom: '20px', padding: '14px', borderRadius: '12px', border: '1px dashed #e6eefc', background: '#fbfdff' }}>
-              <label style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
-                <input type="checkbox" checked={createBundle} onChange={(e) => setCreateBundle(e.target.checked)} />
-                <span style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>Also create a Recommended Bundle</span>
-              </label>
 
-              {createBundle && (
-                <div>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Bundle Name</label>
-                    <input value={bundleName} onChange={e => setBundleName(e.target.value)} placeholder="E.g., Level 1: Foundations" style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #dbeafe' }} />
-                  </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Select Recommended Courses</label>
-                    <div style={{ maxHeight: '160px', overflow: 'auto', padding: '10px', borderRadius: '8px', border: '1px solid #eef2ff', background: '#fff' }}>
-                      {(courses || []).map((c: any) => (
-                        <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0' }}>
-                          <input
-                            type="checkbox"
-                            checked={bundleSelectedCourses.includes(c.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) setBundleSelectedCourses([...bundleSelectedCourses, c.id])
-                              else setBundleSelectedCourses(bundleSelectedCourses.filter(id => id !== c.id))
-                            }}
-                          />
-                          <div style={{ fontSize: '14px', fontWeight: '700' }}>{c.name}</div>
-                        </label>
-                      ))}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>Tip: Select all to get all at the bundle price below.</div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                    <div style={{ background: '#fbfbff', padding: '12px', borderRadius: '10px', border: '1px solid #eef2ff' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Bundle - Recorded Price</div>
-                      <input type="number" min={1} placeholder="Original (₹)" value={bundleRecordedOriginalPrice} onChange={e => setBundleRecordedOriginalPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc', marginBottom: '8px' }} />
-                      <input type="number" min={1} placeholder="Discount (₹)" value={bundleRecordedDiscountPrice} onChange={e => setBundleRecordedDiscountPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc' }} />
-                    </div>
-                    <div style={{ background: '#fbfbff', padding: '12px', borderRadius: '10px', border: '1px solid #eef2ff' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Bundle - Live Price</div>
-                      <input type="number" min={1} placeholder="Original (₹)" value={bundleLiveOriginalPrice} onChange={e => setBundleLiveOriginalPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc', marginBottom: '8px' }} />
-                      <input type="number" min={1} placeholder="Discount (₹)" value={bundleLiveDiscountPrice} onChange={e => setBundleLiveDiscountPrice(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e6eefc' }} />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input type="checkbox" checked={bundleAllowIndividualPurchase} onChange={e => setBundleAllowIndividualPurchase(e.target.checked)} />
-                    <div style={{ fontSize: '13px', color: '#334155', fontWeight: '700' }}>Allow users to buy individual courses from this bundle</div>
-                  </div>
-                </div>
-              )}
-            </div>
 
               </div>
             </div>
@@ -1489,42 +1617,7 @@ export default function ExploreCoursesPage() {
                       }),
                     })
                     if (res.ok) {
-                      // If manager requested creating a recommended bundle, create it too
-                      if (createBundle) {
-                        try {
-                          // Ensure selectedCourse is included
-                          const coursesForBundle = Array.from(new Set([...(bundleSelectedCourses || []), selectedCourse]))
-                          if (!bundleName || coursesForBundle.length === 0) {
-                            alert('Bundle requires a name and at least one course. Bundle was not created.')
-                          } else {
-                            const bundleRes = await fetch('/api/bundle-offerings', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                name: bundleName,
-                                description: '',
-                                courseIds: coursesForBundle,
-                                recordedOriginalPrice: bundleRecordedOriginalPrice ? Number(bundleRecordedOriginalPrice) : undefined,
-                                recordedDiscountPrice: bundleRecordedDiscountPrice ? Number(bundleRecordedDiscountPrice) : undefined,
-                                liveOriginalPrice: bundleLiveOriginalPrice ? Number(bundleLiveOriginalPrice) : undefined,
-                                liveDiscountPrice: bundleLiveDiscountPrice ? Number(bundleLiveDiscountPrice) : undefined,
-                                allowIndividualPurchase: !!bundleAllowIndividualPurchase,
-                              }),
-                            })
-                            if (!bundleRes.ok) {
-                              const data = await bundleRes.json().catch(() => ({}))
-                              alert('Course added but failed to create bundle: ' + (data.error || 'Unknown error'))
-                            } else {
-                              alert('Course and recommended bundle created successfully!')
-                            }
-                          }
-                        } catch (bundleErr: any) {
-                          console.error('Bundle create error', bundleErr)
-                          alert('Course added but failed to create bundle: ' + (bundleErr?.message || 'Unknown'))
-                        }
-                      } else {
-                        alert('Course added to store successfully!')
-                      }
+                      alert('Course added to store successfully!')
                       setShowCreateModal(false)
                       setSelectedCourse('')
                       setRecordedOriginalPrice('')
@@ -1960,6 +2053,61 @@ export default function ExploreCoursesPage() {
               </div>
             </div>
 
+            {/* Fixed Bundle Toggle */}
+            <div style={{ marginBottom: '16px', padding: '14px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e0e7ff' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>🔒 Fixed Bundle</div>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Users must buy all courses together (no individual selection)</div>
+                </div>
+                <input type="checkbox" checked={editBundleData.allowIndividualPurchase === false} onChange={e => setEditBundleData({ ...editBundleData, allowIndividualPurchase: !e.target.checked })} style={{ width: '18px', height: '18px', accentColor: '#6366f1' }} />
+              </label>
+            </div>
+
+            {/* Bundle Discount Configuration */}
+            <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '12px', background: '#fefce8', border: '1px solid #fde68a' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: editBundleData.enableBundleDiscount ? '14px' : 0 }}>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#92400e' }}>🏷️ Bundle Discount</div>
+                  <div style={{ fontSize: '12px', color: '#a16207', marginTop: '2px' }}>Apply a discount when users buy from this bundle</div>
+                </div>
+                <input type="checkbox" checked={!!editBundleData.enableBundleDiscount} onChange={e => setEditBundleData({ ...editBundleData, enableBundleDiscount: e.target.checked })} style={{ width: '18px', height: '18px', accentColor: '#f59e0b' }} />
+              </label>
+              {editBundleData.enableBundleDiscount && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#92400e', display: 'block', marginBottom: '4px' }}>Discount Type</label>
+                      <select value={editBundleData.bundleDiscountType || 'PERCENTAGE'} onChange={e => setEditBundleData({ ...editBundleData, bundleDiscountType: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fde68a', fontSize: '13px' }}>
+                        <option value="PERCENTAGE">Percentage (%)</option>
+                        <option value="FIXED">Fixed Amount (₹)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#92400e', display: 'block', marginBottom: '4px' }}>Discount Value</label>
+                      <input type="number" min={0} value={editBundleData.bundleDiscountValue ?? ''} onChange={e => setEditBundleData({ ...editBundleData, bundleDiscountValue: e.target.value })} placeholder={editBundleData.bundleDiscountType === 'FIXED' ? '₹ Amount' : '% Off'} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fde68a', fontSize: '13px', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#92400e', display: 'block', marginBottom: '4px' }}>Applies To</label>
+                      <select value={editBundleData.bundleDiscountApplicability || 'BOTH'} onChange={e => setEditBundleData({ ...editBundleData, bundleDiscountApplicability: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fde68a', fontSize: '13px' }}>
+                        <option value="BOTH">Both (Recorded + Live)</option>
+                        <option value="RECORDED">Recorded Only</option>
+                        <option value="LIVE">Live Only</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', paddingTop: '18px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={editBundleData.requireAllCourses !== false} onChange={e => setEditBundleData({ ...editBundleData, requireAllCourses: e.target.checked })} style={{ width: '16px', height: '16px', accentColor: '#f59e0b' }} />
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e' }}>Only when all courses selected</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={() => setEditingBundle(null)}
@@ -2095,6 +2243,281 @@ export default function ExploreCoursesPage() {
             }} />
             <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Processing...</h3>
             <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Please wait while we set up your course access.</p>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE BUNDLE MODAL */}
+      {showCreateBundleModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          padding: '20px'
+        }} onClick={() => setShowCreateBundleModal(false)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '600px',
+            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', maxHeight: '90vh', overflowY: 'auto',
+            animation: 'modalSlideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+              <div>
+                <h2 style={{ fontSize: '28px', fontWeight: '900', color: '#1e1e3a', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+                  Create Bundle 📦
+                </h2>
+                <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500', lineHeight: '1.5' }}>
+                  Group multiple courses into a single package.
+                </p>
+              </div>
+              <button onClick={() => setShowCreateBundleModal(false)} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
+                ✕
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Bundle Name</label>
+              <input value={bundleName} onChange={e => setBundleName(e.target.value)} placeholder="E.g., Complete Developer Bootcamp" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Select Courses</label>
+              <div style={{ maxHeight: '160px', overflow: 'auto', padding: '12px', borderRadius: '10px', border: '1.5px solid #eef2ff', background: '#f8fafc' }}>
+                {(courses || []).map((c: any) => (
+                  <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={bundleSelectedCourses.includes(c.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) setBundleSelectedCourses([...bundleSelectedCourses, c.id])
+                        else setBundleSelectedCourses(bundleSelectedCourses.filter(id => id !== c.id))
+                      }}
+                      style={{ width: '16px', height: '16px', accentColor: '#6366f1' }}
+                    />
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>{c.name}</div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ background: '#fbfbff', padding: '16px', borderRadius: '12px', border: '1px solid #eef2ff' }}>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Recorded Price</div>
+                <input type="number" min={1} placeholder="Original (₹)" value={bundleRecordedOriginalPrice} onChange={e => setBundleRecordedOriginalPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc', marginBottom: '8px' }} />
+                <input type="number" min={1} placeholder="Discount (₹)" value={bundleRecordedDiscountPrice} onChange={e => setBundleRecordedDiscountPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
+              </div>
+              <div style={{ background: '#fbfbff', padding: '16px', borderRadius: '12px', border: '1px solid #eef2ff' }}>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Live Price</div>
+                <input type="number" min={1} placeholder="Original (₹)" value={bundleLiveOriginalPrice} onChange={e => setBundleLiveOriginalPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc', marginBottom: '8px' }} />
+                <input type="number" min={1} placeholder="Discount (₹)" value={bundleLiveDiscountPrice} onChange={e => setBundleLiveDiscountPrice(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #e6eefc' }} />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px', padding: '14px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e0e7ff' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>🔒 Fixed Bundle</div>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Users must buy all courses together</div>
+                </div>
+                <input type="checkbox" checked={!bundleAllowIndividualPurchase} onChange={e => setBundleAllowIndividualPurchase(!e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#6366f1' }} />
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => setShowCreateBundleModal(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff', background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+              <button
+                disabled={creating}
+                onClick={async () => {
+                  if (!bundleName || bundleSelectedCourses.length === 0) { alert('Bundle requires a name and at least one course.'); return }
+                  setCreating(true)
+                  try {
+                    const res = await fetch('/api/bundle-offerings', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: bundleName, description: '', courseIds: bundleSelectedCourses,
+                        recordedOriginalPrice: bundleRecordedOriginalPrice ? Number(bundleRecordedOriginalPrice) : undefined,
+                        recordedDiscountPrice: bundleRecordedDiscountPrice ? Number(bundleRecordedDiscountPrice) : undefined,
+                        liveOriginalPrice: bundleLiveOriginalPrice ? Number(bundleLiveOriginalPrice) : undefined,
+                        liveDiscountPrice: bundleLiveDiscountPrice ? Number(bundleLiveDiscountPrice) : undefined,
+                        allowIndividualPurchase: !!bundleAllowIndividualPurchase,
+                      })
+                    })
+                    if (res.ok) {
+                      setShowCreateBundleModal(false)
+                      window.location.reload()
+                    } else { alert('Failed to create bundle') }
+                  } catch { alert('Error creating bundle') }
+                  finally { setCreating(false) }
+                }}
+                style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: creating ? '#94a3b8' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: creating ? 'not-allowed' : 'pointer' }}
+              >
+                {creating ? 'Creating...' : 'Create Bundle'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE NOTE MODAL */}
+      {showCreateNoteModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          padding: '20px'
+        }} onClick={() => setShowCreateNoteModal(false)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '500px',
+            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', maxHeight: '90vh', overflowY: 'auto',
+            animation: 'modalSlideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+              <div>
+                <h2 style={{ fontSize: '28px', fontWeight: '900', color: '#1e1e3a', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+                  Add Notes 📝
+                </h2>
+                <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500', lineHeight: '1.5' }}>
+                  Upload notes or provide a link for students to access.
+                </p>
+              </div>
+              <button onClick={() => setShowCreateNoteModal(false)} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
+                ✕
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Note Title</label>
+              <input id="noteTitleInput" placeholder="E.g., Physics Chapter 1 Notes" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Description (Optional)</label>
+              <textarea id="noteDescInput" rows={3} placeholder="Brief description of these notes..." style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', resize: 'vertical' }} />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Link (Google Drive, Notion, etc.)</label>
+              <input id="noteLinkInput" type="url" placeholder="https://..." style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '28px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Price (₹)</label>
+                <input id="notePriceInput" type="number" min={0} placeholder="0 for Free" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => setShowCreateNoteModal(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff', background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+              <button
+                onClick={async () => {
+                  const title = (document.getElementById('noteTitleInput') as HTMLInputElement).value
+                  const desc = (document.getElementById('noteDescInput') as HTMLTextAreaElement).value
+                  const link = (document.getElementById('noteLinkInput') as HTMLInputElement).value
+                  const price = (document.getElementById('notePriceInput') as HTMLInputElement).value
+                  if (!title || !link) { alert('Title and Link are required'); return }
+
+                  setCreating(true)
+                  try {
+                    const res = await fetch('/api/store/notes', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ title, description: desc, fileUrl: link, price: Number(price) || 0 })
+                    })
+                    if (res.ok) { window.location.reload() }
+                    else { alert('Failed to add notes') }
+                  } catch { alert('Error adding notes') }
+                  finally { setCreating(false) }
+                }}
+                style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}
+              >
+                Create Notes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE MENTORSHIP MODAL */}
+      {showCreateMentorshipModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          padding: '20px'
+        }} onClick={() => setShowCreateMentorshipModal(false)}>
+          <div style={{
+            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '500px',
+            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', maxHeight: '90vh', overflowY: 'auto',
+            animation: 'modalSlideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+              <div>
+                <h2 style={{ fontSize: '28px', fontWeight: '900', color: '#1e1e3a', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+                  Add Mentorship 🤝
+                </h2>
+                <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500', lineHeight: '1.5' }}>
+                  Set up 1-on-1 mentorship slots for students to book.
+                </p>
+              </div>
+              <button onClick={() => setShowCreateMentorshipModal(false)} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
+                ✕
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Mentor Name</label>
+              <input id="mentorNameInput" placeholder="E.g., John Doe" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Description</label>
+              <textarea id="mentorDescInput" rows={3} placeholder="What will this mentorship cover?" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', resize: 'vertical' }} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '28px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Price Per Slot (₹)</label>
+                <input id="mentorPriceInput" type="number" min={1} placeholder="E.g., 500" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#6b6b8a', marginBottom: '6px' }}>Slot Duration (min)</label>
+                <select id="mentorDurationInput" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', backgroundColor: '#fff' }}>
+                  <option value="15">15 Minutes</option>
+                  <option value="30">30 Minutes</option>
+                  <option value="45">45 Minutes</option>
+                  <option value="60">60 Minutes</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => setShowCreateMentorshipModal(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff', background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+              <button
+                onClick={async () => {
+                  const name = (document.getElementById('mentorNameInput') as HTMLInputElement).value
+                  const desc = (document.getElementById('mentorDescInput') as HTMLTextAreaElement).value
+                  const price = (document.getElementById('mentorPriceInput') as HTMLInputElement).value
+                  const duration = (document.getElementById('mentorDurationInput') as HTMLSelectElement).value
+                  if (!name || !price) { alert('Name and Price are required'); return }
+
+                  setCreating(true)
+                  try {
+                    const res = await fetch('/api/store/mentorships', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ mentorName: name, description: desc, pricePerSlot: Number(price), slotDuration: Number(duration) })
+                    })
+                    if (res.ok) { window.location.reload() }
+                    else { alert('Failed to add mentorship') }
+                  } catch { alert('Error adding mentorship') }
+                  finally { setCreating(false) }
+                }}
+                style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}
+              >
+                Create Mentorship
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -46,6 +46,31 @@ export async function POST(request: NextRequest) {
 
     await prisma.order.update({ where: { id: order.id }, data: { razorpayPaymentId, razorpaySignature, status: 'SUCCESS' } })
 
+    // Track coupon usage if a coupon was applied
+    if (order.couponId && order.couponCode) {
+      try {
+        await prisma.$transaction([
+          prisma.coupon.update({
+            where: { id: order.couponId },
+            data: {
+              currentUses: { increment: 1 },
+              totalRevenueGenerated: { increment: order.amount }
+            }
+          }),
+          prisma.couponUsage.create({
+            data: {
+              couponId: order.couponId,
+              userId: session.userId,
+              orderId: order.id,
+              revenue: order.amount
+            }
+          })
+        ])
+      } catch (couponError) {
+        console.error('[orders/verify] Coupon usage tracking failed (non-critical):', couponError)
+      }
+    }
+
     return NextResponse.json({ message: 'Successfully purchased', orderId: order.id })
   } catch (error) {
     console.error('Error verifying bundle/order purchase:', error)

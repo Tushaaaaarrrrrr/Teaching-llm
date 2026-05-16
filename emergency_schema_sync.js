@@ -273,12 +273,116 @@ async function main() {
 
   console.log('  ✅ Bundle Discounts & Coupons schema ready')
 
+  // ─── FIX #9: Store Notes & Mentorship ─────────────────────
+  console.log('[9/9] Adding Store Notes & Mentorship tables...')
+  
+  // Store Notes
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "StoreNote" (
+      "id" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "description" TEXT,
+      "price" DOUBLE PRECISION NOT NULL DEFAULT 0,
+      "originalPrice" DOUBLE PRECISION,
+      "thumbnailUrl" TEXT,
+      "isActive" BOOLEAN NOT NULL DEFAULT true,
+      "createdById" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL,
+      CONSTRAINT "StoreNote_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "StoreNote_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `, 'StoreNote')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "StoreNote_isActive_idx" ON "StoreNote"("isActive");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "StoreNote_createdById_idx" ON "StoreNote"("createdById");`, 'idx')
+
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "StoreNoteFile" (
+      "id" TEXT NOT NULL,
+      "noteId" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "fileUrl" TEXT NOT NULL,
+      "fileType" TEXT NOT NULL DEFAULT 'LINK',
+      "sortOrder" INTEGER NOT NULL DEFAULT 0,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "StoreNoteFile_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "StoreNoteFile_noteId_fkey" FOREIGN KEY ("noteId") REFERENCES "StoreNote"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `, 'StoreNoteFile')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "StoreNoteFile_noteId_idx" ON "StoreNoteFile"("noteId");`, 'idx')
+
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "StoreNoteAccess" (
+      "id" TEXT NOT NULL,
+      "noteId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "orderId" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "StoreNoteAccess_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "StoreNoteAccess_noteId_fkey" FOREIGN KEY ("noteId") REFERENCES "StoreNote"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "StoreNoteAccess_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `, 'StoreNoteAccess')
+  await safeExec(`CREATE UNIQUE INDEX IF NOT EXISTS "StoreNoteAccess_noteId_userId_key" ON "StoreNoteAccess"("noteId", "userId");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "StoreNoteAccess_userId_idx" ON "StoreNoteAccess"("userId");`, 'idx')
+
+  // Mentorship
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "MentorshipOffering" (
+      "id" TEXT NOT NULL,
+      "mentorName" TEXT NOT NULL,
+      "description" TEXT,
+      "avatarUrl" TEXT,
+      "pricePerSlot" DOUBLE PRECISION NOT NULL,
+      "slotDuration" INTEGER NOT NULL DEFAULT 15,
+      "isActive" BOOLEAN NOT NULL DEFAULT true,
+      "availableSlots" TEXT NOT NULL DEFAULT '[]',
+      "createdById" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL,
+      CONSTRAINT "MentorshipOffering_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "MentorshipOffering_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `, 'MentorshipOffering')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "MentorshipOffering_isActive_idx" ON "MentorshipOffering"("isActive");`, 'idx')
+
+  await safeExec(`
+    CREATE TABLE IF NOT EXISTS "MentorshipBooking" (
+      "id" TEXT NOT NULL,
+      "mentorshipId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "slotDate" TEXT NOT NULL,
+      "slotTime" TEXT NOT NULL,
+      "amount" DOUBLE PRECISION NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'PENDING',
+      "razorpayOrderId" TEXT,
+      "orderId" TEXT,
+      "userNote" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL,
+      CONSTRAINT "MentorshipBooking_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "MentorshipBooking_mentorshipId_fkey" FOREIGN KEY ("mentorshipId") REFERENCES "MentorshipOffering"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "MentorshipBooking_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `, 'MentorshipBooking')
+  await safeExec(`CREATE UNIQUE INDEX IF NOT EXISTS "MentorshipBooking_mentorshipId_slotDate_slotTime_key" ON "MentorshipBooking"("mentorshipId", "slotDate", "slotTime");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "MentorshipBooking_userId_idx" ON "MentorshipBooking"("userId");`, 'idx')
+  await safeExec(`CREATE INDEX IF NOT EXISTS "MentorshipBooking_mentorshipId_idx" ON "MentorshipBooking"("mentorshipId");`, 'idx')
+
+  console.log('  ✅ Store Notes & Mentorship tables ready')
+
   console.log('\n╔═══════════════════════════════════════════════════╗')
   console.log('║   ✅ SCHEMA SYNC COMPLETE                        ║')
   console.log('║   Restart the app: pm2 restart all               ║')
-  console.log('╚═══════════════════════════════════════════════════╝')
+  console.log('╚═══════════════════════════════════════════════════╝\n')
+
 }
 
 main()
-  .catch(e => { console.error('❌ MIGRATION FAILED:', e); process.exit(1) })
-  .finally(() => prisma.$disconnect())
+  .catch((e) => {
+    console.error('Fatal error:', e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

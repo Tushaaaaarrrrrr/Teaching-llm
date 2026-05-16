@@ -34,6 +34,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/manage/prompts': { title: '', subtitle: '' },
   '/manage/prompts/[id]/responses': { title: '', subtitle: '' },
   '/manage/updates': { title: 'Update System', subtitle: 'Manage greetings, updates, and user messages' },
+  '/manage/coupons': { title: 'Coupon Management', subtitle: 'Create and manage discount coupons' },
   '/admin':      { title: 'User Management',   subtitle: 'Manage platform accounts and permissions' },
   '/profile':    { title: 'My Profile',         subtitle: 'View and edit your personal information' },
   '/settings':   { title: 'Settings',          subtitle: 'Manage passwords, appearance, and notifications' },

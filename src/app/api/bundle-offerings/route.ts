@@ -38,7 +38,11 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json()
-    const { name, description, courseIds, recordedOriginalPrice, recordedDiscountPrice, liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase } = data
+    const { 
+      name, description, courseIds, 
+      recordedOriginalPrice, recordedDiscountPrice, liveOriginalPrice, liveDiscountPrice, allowIndividualPurchase,
+      enableBundleDiscount, bundleDiscountType, bundleDiscountValue, bundleDiscountApplicability, requireAllCourses
+    } = data
 
     if (!name || !Array.isArray(courseIds) || courseIds.length === 0) {
       return NextResponse.json({ error: 'Bundle name and at least one course are required' }, { status: 400 })
@@ -60,6 +64,11 @@ export async function POST(request: NextRequest) {
         liveOriginalPrice: liveOriginalPrice ? Number(liveOriginalPrice) : undefined,
         liveDiscountPrice: liveDiscountPrice ? Number(liveDiscountPrice) : undefined,
         allowIndividualPurchase: allowIndividualPurchase == null ? true : !!allowIndividualPurchase,
+        enableBundleDiscount: !!enableBundleDiscount,
+        bundleDiscountType: bundleDiscountType || null,
+        bundleDiscountValue: bundleDiscountValue ? Number(bundleDiscountValue) : null,
+        bundleDiscountApplicability: bundleDiscountApplicability || null,
+        requireAllCourses: requireAllCourses == null ? true : !!requireAllCourses,
         courses: {
           create: courseIds.map((cid: string) => ({ courseId: cid }))
         }

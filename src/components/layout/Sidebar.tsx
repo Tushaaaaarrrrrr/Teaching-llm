@@ -245,6 +245,18 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/manage/coupons',
+    label: 'Coupons',
+    roles: ['MANAGER'],
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 12V8H6a2 2 0 01-2-2c0-1.1.9-2 2-2h12v4"/>
+        <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/>
+        <path d="M18 12a2 2 0 000 4h4v-4z"/>
+      </svg>
+    ),
+  },
+  {
     href: '/admin',
     label: 'User Admin',
     roles: ['MANAGER', 'SUPER_ADMIN'],
@@ -403,7 +415,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           const isActive = pathname === item.href ||
             (item.href !== '/dashboard' && item.href !== '/courses/explore' && pathname.startsWith(item.href) && 
              (pathname[item.href.length] === '/' || pathname[item.href.length] === undefined) && !pathname.startsWith('/courses/explore') &&
-             !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates'))))
+             !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates') || pathname.startsWith('/manage/coupons'))))
 
           // Add Section Headers
           const showGeneralHeader = idx === 0
