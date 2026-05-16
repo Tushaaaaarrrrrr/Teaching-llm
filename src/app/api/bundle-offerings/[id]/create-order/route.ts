@@ -206,7 +206,6 @@ export async function POST(
         status: 'PENDING',
         items: {
           create: courseEntries.map(it => ({
-            courseOfferingId: null,
             courseId: it.courseId,
             accessType: it.accessType,
             price: it.price
