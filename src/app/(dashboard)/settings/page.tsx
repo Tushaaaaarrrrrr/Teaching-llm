@@ -148,7 +148,7 @@ export default function SettingsPage() {
 
 
         {/* ── Notifications + Preferences (side by side) ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        <div className="responsive-two-column-grid">
 
           {/* ── Notifications ── */}
           <div className="card" style={{ padding: '28px', display: 'flex', flexDirection: 'column' }}>

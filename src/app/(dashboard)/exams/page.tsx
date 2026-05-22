@@ -139,8 +139,8 @@ export default function ExamsPage() {
   if (loading) return <div style={{ padding: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}><div style={{ color: '#9999b0', fontSize: '15px' }}>Loading exams...</div></div>
 
   return (
-    <div style={{ padding: '24px 32px 48px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '32px', gap: '12px' }}>
+    <div className="page-container fade-in">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '32px', gap: '12px', flexWrap: 'wrap' }}>
         {isManager && <button onClick={() => router.push('/exams/test-series/create')} style={{ ...neuBtn, background: '#f59e0b', boxShadow: '4px 4px 10px rgba(245,158,11,0.35), -2px -2px 6px rgba(255,255,255,0.7)' }}>+ Test Series</button>}
         {isManager && <button onClick={() => router.push('/exams/create')} style={neuBtn}>Create New Exam</button>}
       </div>
@@ -151,7 +151,7 @@ export default function ExamsPage() {
           <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#f59e0b', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }} />📝 Test Series
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '24px', marginBottom: '24px' }}>
             {visibleTestSeries.map((ts: any) => {
               const hasAccess = ts.myAccess || isManager
               const isExpiredAccess = ts.myAccess && new Date(ts.myAccess.expiresAt) < new Date()

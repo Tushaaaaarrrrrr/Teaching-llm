@@ -40,6 +40,19 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Mobile responsiveness states
+  const [isMobile, setIsMobile] = useState(false)
+  const [showMobileNavigator, setShowMobileNavigator] = useState(false)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
   
   // Timer State
   const [isPaused, setIsPaused] = useState(false)
@@ -280,6 +293,442 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center'
+  }
+
+  if (isMobile) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f0f2f8' }}>
+        
+        {/* Sticky Mobile Header */}
+        <header style={{
+          position: 'sticky',
+          top: 0,
+          background: '#f0f2f8',
+          borderBottom: '1px solid #cfd6e1',
+          padding: '12px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          zIndex: 90,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+          {/* Progress */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '10px', fontWeight: 800, color: '#3636e8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Progress
+            </span>
+            <span style={{ fontSize: '15px', fontWeight: 900, color: '#1e1e3a' }}>
+              Q{currentIdx + 1} of {exam?.questions.length}
+            </span>
+          </div>
+
+          {/* Compact Timer Badge */}
+          <div style={{
+            background: '#fff',
+            padding: '6px 14px',
+            borderRadius: '50px',
+            boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <div ref={timeTextRef} style={{ fontSize: '15px', fontWeight: 900, color: '#3636e8', fontVariantNumeric: 'tabular-nums' }}>
+              --:--
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setShowMobileNavigator(true)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '12px',
+                border: 'none',
+                background: '#fff',
+                color: '#1e1e3a',
+                fontSize: '12px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1e1e3a" strokeWidth="2.5">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+              </svg>
+              Grid
+            </button>
+            <button
+              onClick={() => setShowConfirmModal(true)}
+              disabled={submitting}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '12px',
+                border: 'none',
+                background: '#ef4444',
+                color: '#fff',
+                fontSize: '12px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: '0 4px 10px rgba(239,68,68,0.2)'
+              }}
+            >
+              {submitting ? '...' : 'Finish'}
+            </button>
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main style={{
+          flex: 1,
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          overflowY: 'auto'
+        }}>
+          <div style={{ width: '100%' }}>
+            <div style={{
+              borderRadius: '20px', background: '#f0f2f8',
+              boxShadow: '6px 6px 12px #cfd6e1, -6px -6px 12px #ffffff',
+              padding: '20px',
+            }}>
+              
+              {/* Question Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ 
+                      fontSize: '9px', fontWeight: 900, letterSpacing: '0.05em',
+                      background: '#3636e815', color: '#3636e8', padding: '4px 8px', borderRadius: '50px' 
+                  }}>
+                    QUESTION {currentIdx + 1}
+                  </span>
+                  <span style={{ 
+                      fontSize: '9px', fontWeight: 900, letterSpacing: '0.05em',
+                      background: '#1e1e3a10', color: '#1e1e3a', padding: '4px 8px', borderRadius: '50px' 
+                  }}>
+                    {currentQuestion?.type.replace('_', ' ')}
+                  </span>
+                  {isSaving && (
+                    <span style={{ 
+                        fontSize: '9px', fontWeight: 800, color: '#10b981', 
+                        display: 'flex', alignItems: 'center', gap: '3px'
+                    }}>
+                      <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10b981', animation: 'pulse 1.5s infinite' }} />
+                      Saved
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b6b8a' }}>{currentQuestion?.marks} Marks</span>
+              </div>
+
+              {/* Question Text */}
+              <div style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', lineHeight: '1.4', marginBottom: '24px' }}>
+                <RichTextDisplay text={currentQuestion?.text} />
+              </div>
+
+              {/* Options */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
+                {(currentQuestion?.type === 'MCQ' || currentQuestion?.type === 'MSQ' || currentQuestion?.type === 'TRUE_FALSE') ? (
+                  (() => {
+                    let opts: string[] = []
+                    try {
+                      let parsed = JSON.parse(currentQuestion.options || '[]')
+                      if (typeof parsed === 'string') parsed = JSON.parse(parsed)
+                      opts = Array.isArray(parsed) ? parsed : []
+                    } catch { opts = [] }
+                    
+                    if (currentQuestion.type === 'TRUE_FALSE') opts = ['True', 'False']
+                    
+                    const isMSQ = currentQuestion.type === 'MSQ'
+                    let currentSelection: string[] = []
+                    if (isMSQ) {
+                      try {
+                        currentSelection = JSON.parse(answers[currentQuestion.id] || '[]')
+                        if (!Array.isArray(currentSelection)) currentSelection = []
+                      } catch {
+                        currentSelection = []
+                      }
+                    }
+
+                    return opts.filter(opt => typeof opt === 'string' && opt.trim()).map((opt: string) => {
+                      const isSelected = isMSQ 
+                        ? currentSelection.includes(opt)
+                        : answers[currentQuestion.id] === opt
+
+                      return (
+                        <button
+                          key={opt}
+                          onClick={() => {
+                            if (isMSQ) {
+                              let newSelection = [...currentSelection]
+                              if (newSelection.includes(opt)) {
+                                newSelection = newSelection.filter(s => s !== opt)
+                              } else {
+                                newSelection.push(opt)
+                              }
+                              saveAnswer(currentQuestion.id, JSON.stringify(newSelection), true)
+                            } else {
+                              saveAnswer(currentQuestion.id, opt, true)
+                            }
+                          }}
+                          style={{
+                            padding: '14px 16px', borderRadius: '16px', border: 'none',
+                            textAlign: 'left', fontSize: '14px', fontWeight: 600,
+                            background: isSelected ? '#3636e8' : '#fff',
+                            color: isSelected ? '#fff' : '#1e1e3a',
+                            boxShadow: isSelected 
+                              ? 'inset 3px 3px 6px rgba(0,0,0,0.2)' 
+                              : '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff',
+                            cursor: 'pointer', transition: 'all 0.2s',
+                            display: 'flex', alignItems: 'center', gap: '12px'
+                          }}
+                        >
+                          <div style={{ 
+                            width: '18px', height: '18px', borderRadius: isMSQ ? '4px' : '50%', 
+                            border: `2px solid ${isSelected ? '#fff' : '#cfd6e1'}`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            {isSelected && (
+                              isMSQ ? (
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              ) : (
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#fff' }} />
+                              )
+                            )}
+                          </div>
+                          <div style={{ flex: 1 }}><RichTextDisplay text={opt} /></div>
+                        </button>
+                      )
+                    })
+                  })()
+                ) : currentQuestion?.type === 'NAT' ? (
+                  <div style={{ padding: '2px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Your Numerical Answer:</label>
+                    <input 
+                      type="number"
+                      step="any"
+                      value={answers[currentQuestion.id] || ''}
+                      onChange={e => saveAnswer(currentQuestion.id, e.target.value)}
+                      placeholder="Enter numerical response..."
+                      style={{
+                        width: '100%', padding: '16px', borderRadius: '16px', border: 'none',
+                        background: '#f0f2f8', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px #ffffff',
+                        fontSize: '16px', fontWeight: 700, outline: 'none', color: '#1e1e3a',
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <textarea
+                    value={answers[currentQuestion.id] || ''}
+                    onChange={e => saveAnswer(currentQuestion.id, e.target.value)}
+                    placeholder="Type your detailed answer here..."
+                    rows={6}
+                    style={{
+                      width: '100%', padding: '16px', borderRadius: '16px', border: 'none',
+                      background: '#f0f2f8', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px #ffffff',
+                      fontSize: '14px', lineHeight: '1.6', outline: 'none', color: '#1e1e3a',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Mobile Prev/Next Controls */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid #cfd6e1' }}>
+                <button
+                  disabled={currentIdx === 0}
+                  onClick={() => handleNavigate(currentIdx - 1)}
+                  style={{ 
+                    padding: '10px 20px', borderRadius: '50px', border: 'none', 
+                    background: '#fff', color: '#1e1e3a', fontWeight: 800, fontSize: '12px',
+                    cursor: currentIdx === 0 ? 'default' : 'pointer',
+                    opacity: currentIdx === 0 ? 0.5 : 1,
+                    boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff'
+                  }}
+                >
+                  ← Prev
+                </button>
+                
+                {currentIdx === (exam?.questions.length || 0) - 1 ? (
+                  <button 
+                    onClick={() => setShowConfirmModal(true)}
+                    style={{ 
+                      padding: '10px 24px', borderRadius: '50px', border: 'none', 
+                      background: '#ef4444', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer',
+                      boxShadow: '0 4px 10px rgba(239,68,68,0.2)'
+                    }}
+                  >
+                    Submit Exam
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => handleNavigate(currentIdx + 1)}
+                    style={{ 
+                      padding: '10px 24px', borderRadius: '50px', border: 'none', 
+                      background: '#3636e8', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer',
+                      boxShadow: '0 4px 10px rgba(54,54,232,0.2)'
+                    }}
+                  >
+                    Next →
+                  </button>
+                )}
+              </div>
+
+            </div>
+
+            <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '11px', color: '#9999b0', fontWeight: 600 }}>
+              Auto-saved in real-time. Do not reload the page.
+            </div>
+
+          </div>
+        </main>
+
+        {/* FLOATING QUESTION NAVIGATOR DRAWER */}
+        {showMobileNavigator && (
+          <>
+            {/* Backdrop */}
+            <div 
+              onClick={() => setShowMobileNavigator(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(15, 15, 25, 0.4)',
+                backdropFilter: 'blur(4px)',
+                zIndex: 998,
+                transition: 'opacity 0.3s ease'
+              }}
+            />
+            
+            {/* Bottom Drawer */}
+            <div style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: '#f0f2f8',
+              borderTopLeftRadius: '28px',
+              borderTopRightRadius: '28px',
+              boxShadow: '0 -8px 30px rgba(0, 0, 0, 0.15)',
+              zIndex: 999,
+              padding: '24px 20px 32px 20px',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              animation: 'slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}>
+              {/* Drawer Handle Indicator */}
+              <div style={{
+                width: '40px',
+                height: '4px',
+                borderRadius: '2px',
+                background: '#cfd6e1',
+                alignSelf: 'center',
+                marginBottom: '16px'
+              }} />
+
+              {/* Title Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: '#1e1e3a' }}>
+                  Question Navigator
+                </span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#6b6b8a' }}>
+                  {answeredCount}/{exam?.questions.length} Answered
+                </span>
+              </div>
+
+              {/* Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '20px' }}>
+                {exam?.questions.map((q, i) => {
+                  const isCurrent = currentIdx === i
+                  const isAnswered = !!answers[q.id]
+                  const isVisited = visitedIndices.has(i)
+                  
+                  let bgColor = '#fff'
+                  let textColor = '#1e1e3a'
+                  let shadow = '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
+
+                  if (isCurrent) {
+                    bgColor = '#3636e8'
+                    textColor = '#fff'
+                    shadow = 'inset 2px 2px 5px rgba(0,0,0,0.2)'
+                  } else if (isAnswered) {
+                    bgColor = '#10b981'
+                    textColor = '#fff'
+                  } else if (!isVisited) {
+                    bgColor = '#e0e0e0'
+                    textColor = '#999'
+                    shadow = 'none'
+                  }
+
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => {
+                        handleNavigate(i)
+                        setShowMobileNavigator(false)
+                      }}
+                      style={{
+                        aspectRatio: '1', borderRadius: '12px', border: 'none',
+                        background: bgColor, color: textColor,
+                        fontSize: '14px', fontWeight: 800, cursor: 'pointer',
+                        boxShadow: shadow, transition: 'all 0.2s',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
+                    >
+                      {i + 1}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Close Drawer Button */}
+              <button 
+                onClick={() => setShowMobileNavigator(false)}
+                style={{
+                  padding: '14px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  background: '#1e1e3a',
+                  color: '#fff',
+                  fontSize: '14px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'center',
+                  boxShadow: '0 6px 15px rgba(30,30,58,0.2)'
+                }}
+              >
+                Close Navigator
+              </button>
+
+            </div>
+          </>
+        )}
+
+        {/* Confirmation Modal */}
+        {exam && (
+          <ExamConfirmationModal
+            open={showConfirmModal}
+            onConfirm={handleSubmit}
+            onCancel={() => setShowConfirmModal(false)}
+            totalQuestions={exam.questions.length}
+            answeredCount={answeredCount}
+            submitting={submitting}
+          />
+        )}
+
+      </div>
+    )
   }
 
   return (

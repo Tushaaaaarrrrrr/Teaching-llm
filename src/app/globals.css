@@ -618,6 +618,128 @@ tr:hover td {
    Responsive Layout & Sidebar Drawer Styles
    ========================================================================== */
 
+/* General Responsive Utilities */
+.responsive-two-column-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .responsive-two-column-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* Dashboard Stats Cards */
+.dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+.stat-card {
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+}
+
+.stat-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-card-label {
+  font-size: 11px;
+  color: #9999b0;
+  font-weight: 700;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-card-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1e1e3a;
+  line-height: 1.1;
+}
+
+@media (max-width: 768px) {
+  .stat-card {
+    padding: 14px 16px !important;
+    gap: 12px !important;
+    border-radius: 16px !important;
+  }
+  
+  .stat-card-icon {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 11px !important;
+  }
+  
+  .stat-card-icon svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .stat-card-label {
+    font-size: 9.5px !important;
+    letter-spacing: 0.04em !important;
+  }
+
+  .stat-card-value {
+    font-size: 20px !important;
+  }
+}
+
+/* Responsive Support Page */
+.responsive-support-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .responsive-support-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+
 .dashboard-layout {
   display: flex;
   min-height: 100vh;
