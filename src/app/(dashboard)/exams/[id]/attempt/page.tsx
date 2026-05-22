@@ -34,6 +34,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true)
   const [currentIdx, setCurrentIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const answersRef = useRef<Record<string, string>>({})
   const [visitedIndices, setVisitedIndices] = useState<Set<number>>(new Set([0]))
   const [submitting, setSubmitting] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
@@ -72,6 +73,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
         initialAnswers[r.questionId] = r.answer
       })
       setAnswers(initialAnswers)
+      answersRef.current = initialAnswers
 
       const startedAt = new Date(attemptData.startedAt).getTime()
       const durationMs = examData.durationMinutes * 60 * 1000
@@ -127,7 +129,11 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
         // Auto-submit when time is up in BOTH modes if it hits zero, but mostly critical for FINAL
         submittingRef.current = true
         setSubmitting(true)
-        fetch(`/api/exams/${params.id}/submit`, { method: 'POST' }).then(res => {
+        fetch(`/api/exams/${params.id}/submit`, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers: answersRef.current })
+        }).then(res => {
           if (res.ok) router.push(`/exams/${params.id}/result`)
         }).catch(err => console.error(err))
         return
@@ -150,7 +156,11 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
   const saveAnswer = async (questionId: string, answer: string, immediate: boolean = false) => {
     // Update local state immediately for snappy UI
-    setAnswers(prev => ({ ...prev, [questionId]: answer }))
+    setAnswers(prev => {
+      const next = { ...prev, [questionId]: answer }
+      answersRef.current = next
+      return next
+    })
     
     // Clear any pending save
     if (saveTimeoutRef.current) {
@@ -200,7 +210,11 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
     submittingRef.current = true
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/exams/${params.id}/submit`, { method: 'POST' })
+      const res = await fetch(`/api/exams/${params.id}/submit`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers })
+      })
       if (res.ok) {
         router.push(`/exams/${params.id}/result`)
       } else {

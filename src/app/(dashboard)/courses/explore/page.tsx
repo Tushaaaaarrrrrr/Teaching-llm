@@ -306,6 +306,8 @@ export default function ExploreCoursesPage() {
         description: `Note Purchase: ${note.title}`,
         order_id: data.razorpayOrderId,
         handler: async function (response: any) {
+          setIsProcessing(true)
+          setVerifyingPayment(true)
           try {
             const verifyRes = await fetch(`/api/store/notes/${note.id}/verify-payment`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -325,7 +327,10 @@ export default function ExploreCoursesPage() {
               setTimeout(() => { window.open(note.files?.[0]?.fileUrl, '_blank') }, 1500);
             } else { alert('Payment verification failed') }
           } catch { alert('Payment verification failed') }
-          finally { setIsProcessing(false) }
+          finally { 
+            setIsProcessing(false)
+            setVerifyingPayment(false)
+          }
         },
         modal: { ondismiss: () => setIsProcessing(false) }
       }
@@ -974,6 +979,8 @@ export default function ExploreCoursesPage() {
                               prefill: { name: data.userName || '', email: data.userEmail || '' },
                               theme: { color: '#ec4899' },
                               handler: async (response: any) => {
+                                setIsProcessing(true)
+                                setVerifyingPayment(true)
                                 try {
                                   const vRes = await fetch(`/api/test-series/${ts.id}/verify-payment`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature, accessId: data.accessId }) })
                                   if (vRes.ok) {
@@ -982,7 +989,11 @@ export default function ExploreCoursesPage() {
                                   }
                                   else alert('Verification failed')
                                 } catch { alert('Payment verification failed') }
-                                finally { setPurchasing(null) }
+                                finally { 
+                                  setPurchasing(null)
+                                  setIsProcessing(false)
+                                  setVerifyingPayment(false)
+                                }
                               },
                               modal: { ondismiss: () => setPurchasing(null) }
                             }
@@ -4097,6 +4108,8 @@ export default function ExploreCoursesPage() {
                       description: `Mentorship Booking (${mentorshipBookingTimes.length} slots)`,
                       order_id: data.razorpayOrderId,
                       handler: async function (response: any) {
+                        setIsProcessing(true)
+                        setVerifyingPayment(true)
                         try {
                           const verifyRes = await fetch(`/api/store/mentorships/${showMentorshipBookingModal.id}/verify-payment`, {
                             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -4119,7 +4132,10 @@ export default function ExploreCoursesPage() {
                             alert(errData.error || 'Payment verification failed'); 
                           }
                         } catch (err: any) { alert(err.message || 'Payment verification failed') }
-                        finally { setIsProcessing(false) }
+                        finally { 
+                          setIsProcessing(false)
+                          setVerifyingPayment(false)
+                        }
                       },
                       modal: { ondismiss: () => setIsProcessing(false) }
                     }

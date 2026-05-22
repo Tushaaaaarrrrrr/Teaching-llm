@@ -296,6 +296,26 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const router = useRouter()
   const navRef = useRef<HTMLDivElement>(null)
   const [canScrollMore, setCanScrollMore] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+
+  // Listen for custom toggle events from the mobile header
+  useEffect(() => {
+    const handleToggle = () => setIsOpen(v => !v)
+    const handleClose = () => setIsOpen(false)
+
+    window.addEventListener('toggle-sidebar', handleToggle)
+    window.addEventListener('close-sidebar', handleClose)
+
+    return () => {
+      window.removeEventListener('toggle-sidebar', handleToggle)
+      window.removeEventListener('close-sidebar', handleClose)
+    }
+  }, [])
+
+  // Auto-close sidebar on screen transition (navigation click)
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname])
 
   const { data: userData } = useSWR('/api/auth/me', (url) => fetch(url).then(r => r.json()), {
     revalidateOnFocus: true
@@ -357,20 +377,12 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   }
 
   return (
-    <nav style={{
-      width: '215px',
-      minHeight: '100vh',
-      background: '#e8eaf0',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '28px 16px 24px',
-      flexShrink: 0,
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      bottom: 0,
-      zIndex: 100,
-    }}>
+    <>
+      <div 
+        className={`sidebar-overlay ${isOpen ? 'active' : ''}`} 
+        onClick={() => setIsOpen(false)} 
+      />
+      <nav className={`sidebar-nav ${isOpen ? 'sidebar-open' : ''}`}>
       {/* Logo & Portal Label */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', padding: '4px 8px', marginBottom: '22px' }}>
         <div style={{
@@ -590,5 +602,6 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
       </button>
 
     </nav>
+    </>
   )
 }

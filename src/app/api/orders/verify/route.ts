@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     // Get item names for the email
     const itemNames = order.items.map(i => i.courseId).join(', ') // Simplified for now
     
-    await sendEmailNotification('purchase', {
+    sendEmailNotification('purchase', {
       userEmail: session.email,
       userName: session.name,
       orderId: order.id,
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       amount: order.amount,
       date: new Date().toLocaleDateString(),
       dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/courses/explore`
-    })
+    }).catch(console.error)
 
     // Track coupon usage if a coupon was applied
     if (order.couponId && order.couponCode) {

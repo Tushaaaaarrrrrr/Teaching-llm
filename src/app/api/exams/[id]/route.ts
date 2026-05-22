@@ -51,7 +51,8 @@ export async function GET(
       }
 
       const attempts = await prisma.examAttempt.findMany({
-        where: { examId: params.id, userId: session.userId }
+        where: { examId: params.id, userId: session.userId },
+        include: { responses: true }
       })
 
       const hasSubmitted = attempts.some((a: any) => a.submittedAt !== null)

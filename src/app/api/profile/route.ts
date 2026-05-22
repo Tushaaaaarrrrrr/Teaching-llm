@@ -78,9 +78,9 @@ export async function PUT(request: NextRequest) {
     const { name, firstName, lastName, mobileNumber, gender, age, state } = await request.json()
 
     const data: any = {}
-    if (name) data.name = name
-    if (firstName) data.firstName = firstName
-    if (lastName) data.lastName = lastName
+    if (name !== undefined) data.name = name
+    if (firstName !== undefined) data.firstName = firstName
+    if (lastName !== undefined) data.lastName = lastName
     if (mobileNumber !== undefined) data.mobileNumber = mobileNumber
     if (age !== undefined) data.age = age ? parseInt(age, 10) : null
     if (state !== undefined) data.state = state
@@ -112,10 +112,10 @@ export async function PUT(request: NextRequest) {
     }
 
     // Ensure name is updated if firstName/lastName provided
-    if (!name && (firstName || lastName)) {
+    if (name === undefined && (firstName !== undefined || lastName !== undefined)) {
         const current = await prisma.user.findUnique({ where: { id: session.userId }, select: { firstName: true, lastName: true } })
-        const fn = firstName || current?.firstName || ''
-        const ln = lastName || current?.lastName || ''
+        const fn = firstName !== undefined ? firstName : (current?.firstName || '')
+        const ln = lastName !== undefined ? lastName : (current?.lastName || '')
         data.name = `${fn} ${ln}`.trim()
     }
 

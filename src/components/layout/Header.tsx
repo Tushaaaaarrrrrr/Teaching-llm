@@ -210,8 +210,22 @@ export default function Header({ userName, userRole }: HeaderProps) {
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
       transition: 'height 0.3s ease',
-    }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+    }} className="dashboard-header">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }} className="header-left-section">
+        {/* Hamburger Menu Toggle Button on Mobile */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))}
+          className="sidebar-toggle-btn"
+          title="Toggle Navigation Menu"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+          </svg>
+        </button>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} className="header-titles">
         {matchedKey === '/dashboard' ? (
           <>
             <h1 style={{ 
@@ -261,6 +275,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </>
         )}
       </div>
+    </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
 

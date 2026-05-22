@@ -184,7 +184,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            name: `${formData.firstName} ${formData.lastName}`.trim() || formData.name,
+            name: formData.name,
             firstName: formData.firstName,
             lastName: formData.lastName,
             mobileNumber: formData.mobileNumber,
@@ -353,11 +353,11 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                   <div>
                     <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>First Name</label>
-                    <input style={neuInset} value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+                    <input style={neuInset} value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value, name: `${e.target.value} ${formData.lastName}`.trim()})} />
                   </div>
                   <div>
                     <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Last Name</label>
-                    <input style={neuInset} value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+                    <input style={neuInset} value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value, name: `${formData.firstName} ${e.target.value}`.trim()})} />
                   </div>
                 </div>
 

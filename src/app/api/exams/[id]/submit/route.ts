@@ -37,6 +37,20 @@ export async function POST(
       return NextResponse.json({ error: 'No active attempt found to submit' }, { status: 400 })
     }
 
+    let payload: any = {}
+    try { payload = await request.json() } catch (e) {}
+    
+    if (payload.answers && typeof payload.answers === 'object') {
+      const promises = Object.entries(payload.answers).map(([qId, ans]) => 
+        prisma.examResponse.upsert({
+          where: { attemptId_questionId: { attemptId: attempt.id, questionId: qId } },
+          update: { answer: ans as string },
+          create: { attemptId: attempt.id, questionId: qId, answer: ans as string }
+        })
+      )
+      await Promise.all(promises)
+    }
+
     // Final grading for auto-gradable questions (MCQ, etc.)
     const responses = await prisma.examResponse.findMany({
       where: { attemptId: attempt.id }

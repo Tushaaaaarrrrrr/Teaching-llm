@@ -85,7 +85,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         }
       })
 
-      await sendEmailNotification('mentorship_confirmed', {
+      sendEmailNotification('mentorship_confirmed', {
         userEmail: booking.user.email,
         userName: booking.user.name,
         mentorName: booking.mentorship.mentorName,
@@ -94,7 +94,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         instruction: 'Please be available at the scheduled time.',
         note: 'A Google Meet invite will be shared with you soon. Please wait for it.',
         dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/courses/explore?view=mentorship`
-      })
+      }).catch(console.error)
     }
 
     return NextResponse.json({ success: true })

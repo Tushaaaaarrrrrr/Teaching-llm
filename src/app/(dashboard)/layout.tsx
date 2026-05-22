@@ -36,21 +36,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#e8eaf0' }}>
+    <div className="dashboard-layout">
       <Sidebar
         userRole={session.role}
         userName={session.name}
         userEmail={session.email}
       />
-      <div style={{
-        flex: 1,
-        marginLeft: '215px',
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        maxWidth: 'calc(100vw - 215px)',
-        overflow: 'hidden',
-      }}>
+      <div className="dashboard-main-container">
         <Header userName={session.name} userRole={session.role} />
         <main style={{ flex: 1, overflow: 'auto' }}>
           {children}

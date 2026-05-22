@@ -53,3 +53,7 @@ codebase-tree.json
 
 # Weird artifacts
 --version
+
+# Local agent scratch files
+scratch/
+

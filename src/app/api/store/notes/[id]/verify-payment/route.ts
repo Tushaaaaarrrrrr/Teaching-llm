@@ -61,7 +61,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     })
     
     // Trigger purchase confirmation email
-    await sendEmailNotification('purchase', {
+    sendEmailNotification('purchase', {
       userEmail: user.email,
       userName: user.name,
       orderId: razorpay_payment_id,
@@ -69,7 +69,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       amount: access.note.price,
       date: new Date().toLocaleDateString(),
       dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/purchased`
-    })
+    }).catch(console.error)
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
