@@ -529,13 +529,15 @@ export default function CourseDetailPage() {
                     topic.content.map((item) => (
                       <div
                         key={item.id}
+                        className="lecture-row"
                         style={{
                           display: 'flex', alignItems: 'center', gap: '14px',
                           padding: '12px 20px',
-                          borderRadius: '50px',
+                          borderRadius: '24px',
                           background: '#e8eaf0',
                           boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
                           transition: 'box-shadow 0.2s',
+                          flexWrap: 'wrap',
                         }}
                       >
                         {/* Lecture icon */}
@@ -576,7 +578,7 @@ export default function CourseDetailPage() {
                         </div>
 
                         {/* Action Buttons Group */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginLeft: 'auto' }}>
+                        <div className="lecture-row-actions" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginLeft: 'auto', gap: '6px', flexWrap: 'wrap' }}>
                           {/* Progress actions for students */}
                           {role === 'STUDENT' && (
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginRight: '6px', paddingRight: '12px', borderRight: '1px solid #d8dae3' }}>

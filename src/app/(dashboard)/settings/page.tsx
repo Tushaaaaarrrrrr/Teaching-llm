@@ -34,6 +34,13 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 export default function SettingsPage() {
   const router = useRouter()
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
+  useEffect(() => {
+    setIsMobile(window.innerWidth <= 768)
+    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
 
   // Notification preferences (UI state — backend integration ready when needed)
@@ -114,14 +121,14 @@ export default function SettingsPage() {
 
   const insetRow: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '14px 18px', borderRadius: '14px', background: '#e8eaf0',
+    padding: isMobile ? '12px 14px' : '14px 18px', borderRadius: '14px', background: '#e8eaf0',
     boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
-    gap: '16px',
+    gap: '12px',
   }
 
 
   return (
-    <div className="page-container fade-in">
+    <div className="page-container fade-in" style={{ padding: isMobile ? '12px' : '20px' }}>
       <div style={{ maxWidth: '960px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
         {/* ── Back ── */}
@@ -151,7 +158,7 @@ export default function SettingsPage() {
         <div className="responsive-two-column-grid">
 
           {/* ── Notifications ── */}
-          <div className="card" style={{ padding: '28px', display: 'flex', flexDirection: 'column' }}>
+          <div className="card" style={{ padding: isMobile ? '16px' : '28px', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -191,7 +198,7 @@ export default function SettingsPage() {
           </div>
 
           {/* ── Preferences ── */}
-          <div className="card" style={{ padding: '28px', display: 'flex', flexDirection: 'column' }}>
+          <div className="card" style={{ padding: isMobile ? '16px' : '28px', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                 <circle cx="12" cy="12" r="3"/>
@@ -279,7 +286,7 @@ export default function SettingsPage() {
 
         {/* ── Help Card Settings (Manager only) ── */}
         {isManagerUser && (
-          <div className="card" style={{ padding: '28px' }}>
+          <div className="card" style={{ padding: isMobile ? '16px' : '28px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>

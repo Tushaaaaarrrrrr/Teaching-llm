@@ -42,7 +42,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Mobile responsiveness states
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
   const [showMobileNavigator, setShowMobileNavigator] = useState(false)
 
   useEffect(() => {

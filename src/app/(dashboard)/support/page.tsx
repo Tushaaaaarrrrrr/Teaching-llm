@@ -260,6 +260,14 @@ function FaqFormModal({
 
 export default function SupportPage() {
   const { confirm, confirmDialog } = useConfirmDialog()
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
+  useEffect(() => {
+    setIsMobile(window.innerWidth <= 768)
+    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   const [view, setView] = useState<'home' | 'allTickets' | 'chat' | 'chatHistory'>('home')
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [classes, setClasses] = useState<ClassItem[]>([])
@@ -572,13 +580,13 @@ export default function SupportPage() {
   // ══════════════════════════════════════════════════════════════════════════
   if (view === 'home') {
     return (
-      <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', overflowY: 'auto' }}>
+      <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', overflowY: 'auto', padding: isMobile ? '12px' : '20px' }}>
         {confirmDialog}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', marginBottom: '24px', alignItems: 'flex-start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: isMobile ? '16px' : '24px', marginBottom: '24px', alignItems: 'flex-start' }}>
 
-          {/* FAQ Card (Left Side) */}
-          <div style={{ ...card, padding: '28px', display: 'flex', flexDirection: 'column' }}>
+          {/* FAQ Card (Left Side on desktop, last on mobile) */}
+          <div style={{ ...card, padding: isMobile ? '16px' : '28px', display: 'flex', flexDirection: 'column', order: isMobile ? 2 : 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f0f0fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
@@ -637,11 +645,11 @@ export default function SupportPage() {
             </div>
           </div>
 
-          {/* Right Column (Chat + Tickets) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Right Column (Chat + Tickets) — first on mobile */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px', order: isMobile ? 1 : 0 }}>
             
             {/* Live Chat Card */}
-            <div style={{ ...card, padding: '28px', textAlign: 'center' }}>
+            <div style={{ ...card, padding: isMobile ? '16px' : '28px', textAlign: 'center' }}>
               <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f0f0fa', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
@@ -662,7 +670,7 @@ export default function SupportPage() {
             </div>
 
             {/* Raise a Ticket Box (History merged inside) */}
-            <div style={{ width: '100%', borderRadius: '24px', background: '#f7f7ff', border: '1.5px solid #d9dcff', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)', padding: '24px', textAlign: 'left' }}>
+            <div style={{ width: '100%', borderRadius: '24px', background: '#f7f7ff', border: '1.5px solid #d9dcff', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)', padding: isMobile ? '16px' : '24px', textAlign: 'left' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <div>
                   <div style={{ fontSize: '12px', fontWeight: '800', color: '#3636e8', letterSpacing: '0.03em', marginBottom: '4px', textTransform: 'uppercase' }}>
@@ -766,16 +774,16 @@ export default function SupportPage() {
       <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', display: 'flex', flexDirection: 'column' }}>
         {confirmDialog}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <BackButton onClick={() => { setView('home'); setSelected(null) }} />
+          <BackButton onClick={() => { if (isMobile && selected) { setSelected(null) } else { setView('home'); setSelected(null) } }} />
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <span style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600' }}>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</span>
             {(userRole === 'STUDENT' || userRole === 'ADMIN') && <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-sm">+ New Ticket</button>}
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 1.3fr' : '1fr', gap: '20px', flex: 1, minHeight: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : (selected ? '1fr 1.3fr' : '1fr'), gap: '20px', flex: 1, minHeight: 0 }}>
           {/* Ticket list */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto' }}>
+          <div style={{ display: (isMobile && selected) ? 'none' : 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto' }}>
             {tickets.length === 0 ? (
               <div className="empty-state">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
@@ -831,7 +839,7 @@ export default function SupportPage() {
 
           {/* Ticket thread */}
           {selected && (
-            <div style={{ borderRadius: '24px', ...neu, display: 'flex', flexDirection: 'column', overflow: 'hidden', maxHeight: 'calc(100vh - 200px)' }}>
+            <div style={{ borderRadius: '24px', ...neu, display: (isMobile && !selected) ? 'none' : 'flex', flexDirection: 'column', overflow: 'hidden', maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.06)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
@@ -1043,13 +1051,13 @@ export default function SupportPage() {
       <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', display: 'flex', flexDirection: 'column' }}>
         {confirmDialog}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <BackButton onClick={() => { setView('home'); setSelectedHistory(null) }} />
+          <BackButton onClick={() => { if (isMobile && selectedHistory) { setSelectedHistory(null) } else { setView('home'); setSelectedHistory(null) } }} />
           <span style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600' }}>{historyChats.length} transcript{historyChats.length !== 1 ? 's' : ''}</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: selectedHistory ? '320px 1fr' : '1fr', gap: '20px', flex: 1, minHeight: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : (selectedHistory ? '320px 1fr' : '1fr'), gap: '20px', flex: 1, minHeight: 0 }}>
           {/* History list */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
+          <div style={{ display: (isMobile && selectedHistory) ? 'none' : 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
             {historyChats.length === 0 ? (
               <div className="empty-state">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
@@ -1092,7 +1100,7 @@ export default function SupportPage() {
 
           {/* Transcript viewer */}
           {selectedHistory && (
-            <div style={{ borderRadius: '24px', ...neu, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ borderRadius: '24px', ...neu, display: (isMobile && !selectedHistory) ? 'none' : 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontWeight: '800', fontSize: '15px', color: '#1e1e3a' }}>Chat with {selectedHistory.student.name}</div>
@@ -1160,15 +1168,15 @@ export default function SupportPage() {
       `}</style>
       {confirmDialog}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <BackButton onClick={() => { setView('home'); setActiveChatId(null) }} />
+        <BackButton onClick={() => { if (isMobile && activeChatId) { setActiveChatId(null) } else { setView('home'); setActiveChatId(null) } }} />
         {userRole === 'STUDENT' && (
           <button onClick={() => setShowChatStart(true)} className="btn btn-primary btn-sm" style={{ borderRadius: '50px' }}>+ New Chat</button>
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: allChats.length > 0 || userRole !== 'STUDENT' ? '280px 1fr' : '1fr', gap: '20px', flex: 1, minHeight: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : (allChats.length > 0 || userRole !== 'STUDENT' ? '280px 1fr' : '1fr'), gap: '20px', flex: 1, minHeight: 0 }}>
         {/* Chat list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
+        <div style={{ display: (isMobile && activeChatId) ? 'none' : 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
           <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600', marginBottom: '4px' }}>
             {allChats.length} chat{allChats.length !== 1 ? 's' : ''}
           </div>
@@ -1212,7 +1220,7 @@ export default function SupportPage() {
         </div>
 
         {/* Chat window */}
-        <div style={{ borderRadius: '24px', ...neu, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ borderRadius: '24px', ...neu, display: (isMobile && !activeChatId) ? 'none' : 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {!activeChatId ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', gap: '16px' }}>
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

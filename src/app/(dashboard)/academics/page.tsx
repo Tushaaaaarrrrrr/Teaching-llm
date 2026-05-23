@@ -1,0 +1,130 @@
+'use client'
+
+import Link from 'next/link'
+
+interface Section {
+  href: string
+  title: string
+  subtitle: string
+  icon: React.ReactNode
+  gradient: string
+  shadow: string
+}
+
+const SECTIONS: Section[] = [
+  {
+    href: '/calendar',
+    title: 'Calendar',
+    subtitle: 'Schedule, classes & deadlines',
+    gradient: 'linear-gradient(135deg, #4f46e5, #6366f1)',
+    shadow: 'rgba(79, 70, 229, 0.25)',
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/live',
+    title: 'Live Sessions',
+    subtitle: 'Join live classes & recordings',
+    gradient: 'linear-gradient(135deg, #ef4444, #f97316)',
+    shadow: 'rgba(239, 68, 68, 0.25)',
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="23 7 16 12 23 17 23 7"/>
+        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/free-resources',
+    title: 'Free Resources',
+    subtitle: 'Notes, materials & study aids',
+    gradient: 'linear-gradient(135deg, #0d9488, #10b981)',
+    shadow: 'rgba(13, 148, 136, 0.25)',
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/community',
+    title: 'Community',
+    subtitle: 'Chat with peers & instructors',
+    gradient: 'linear-gradient(135deg, #db2777, #9333ea)',
+    shadow: 'rgba(219, 39, 119, 0.25)',
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    ),
+  },
+]
+
+const ChevronRight = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+)
+
+export default function AcademicsPage() {
+  return (
+    <div className="page-container fade-in" style={{ paddingBottom: '24px' }}>
+      <div style={{
+        marginBottom: '18px',
+        padding: '4px 4px',
+      }}>
+        <h1 style={{ fontSize: 'clamp(20px, 5.5vw, 26px)', fontWeight: 900, color: '#1e1e3a', margin: 0, letterSpacing: '-0.02em' }}>
+          Academics
+        </h1>
+        <p style={{ fontSize: '13px', color: '#9999b0', fontWeight: 600, marginTop: '4px' }}>
+          Everything for your learning journey
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {SECTIONS.map(s => (
+          <Link
+            key={s.href}
+            href={s.href}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '16px',
+              padding: '18px 18px',
+              borderRadius: '22px',
+              background: '#ffffff',
+              boxShadow: '6px 6px 16px #c5c7cf, -6px -6px 14px #ffffff',
+              textDecoration: 'none', color: '#1e1e3a',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+            }}
+          >
+            <div style={{
+              width: '52px', height: '52px', borderRadius: '16px', flexShrink: 0,
+              background: s.gradient, color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: `0 8px 18px ${s.shadow}`,
+            }}>
+              {s.icon}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e1e3a', marginBottom: '3px' }}>
+                {s.title}
+              </div>
+              <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {s.subtitle}
+              </div>
+            </div>
+            <ChevronRight />
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}

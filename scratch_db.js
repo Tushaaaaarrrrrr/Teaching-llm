@@ -2,10 +2,10 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 async function main() {
-  await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "enableDetailedLogs" BOOLEAN NOT NULL DEFAULT false;')
-  console.log('Column added successfully')
+  const users = await prisma.user.findMany({
+    where: { email: 'student@teacherai.com' }
+  })
+  console.log('Users found:', users)
 }
 
-main()
-  .catch(e => console.error(e))
-  .finally(() => prisma.$disconnect())
+main().finally(() => prisma.$disconnect())

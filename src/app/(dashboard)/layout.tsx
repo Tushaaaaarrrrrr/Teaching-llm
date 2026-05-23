@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getFullSession } from '@/lib/auth'
 import Sidebar from '@/components/layout/Sidebar'
 import Header from '@/components/layout/Header'
+import MobileBottomNav from '@/components/layout/MobileBottomNav'
 import UpdateOverlay from '@/components/UpdateOverlay'
 import SupportFloatingButton from '@/components/ui/SupportFloatingButton'
 import ProfileSetupBlocker from '@/components/ProfileSetupBlocker'
@@ -48,6 +49,7 @@ export default async function DashboardLayout({
           {children}
         </main>
         <SupportFloatingButton />
+        <MobileBottomNav />
       </div>
       <UpdateOverlay />
       <DynamicPromptBlocker />

@@ -10,6 +10,7 @@ interface NavItem {
   label: string
   icon: React.ReactNode
   roles?: string[]
+  desktopOnly?: boolean
 }
 
 interface SidebarProps {
@@ -129,6 +130,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/exams',
     label: 'Exams',
+    desktopOnly: true,
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -170,6 +172,7 @@ const NAV_ITEMS: NavItem[] = [
     href: '/reports',
     label: 'Analytics & Performance',
     roles: ['MANAGER', 'STUDENT'],
+    desktopOnly: true,
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 20h9"/>
@@ -183,6 +186,7 @@ const NAV_ITEMS: NavItem[] = [
     href: '/feedback',
     label: 'Course Feedback',
     roles: ['STUDENT', 'MANAGER'],
+    desktopOnly: true,
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 20h9"/>
@@ -206,6 +210,7 @@ const NAV_ITEMS: NavItem[] = [
     href: '/transactions',
     label: 'Transactions',
     roles: ['MANAGER', 'SUPER_ADMIN'],
+    desktopOnly: true,
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
@@ -217,6 +222,7 @@ const NAV_ITEMS: NavItem[] = [
     href: '/my-transactions',
     label: 'Transactions',
     roles: ['STUDENT'],
+    desktopOnly: true,
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
@@ -466,7 +472,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           }
 
           return (
-            <div key={item.href}>
+            <div key={item.href} className={item.desktopOnly ? 'desktop-only-nav-item' : undefined}>
               {showGeneralHeader && (
                 <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '10px', paddingLeft: '12px' }}>
                   General

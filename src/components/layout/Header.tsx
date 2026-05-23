@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import useSWR from 'swr'
+import { getDefaultAvatar } from '@/lib/avatar'
 
 interface HeaderProps {
   userName: string
@@ -95,7 +96,8 @@ export default function Header({ userName, userRole }: HeaderProps) {
   // Use SWR data if available, otherwise fall back to props
   const currentUserName = userData?.user?.name || userName
   const currentUserRole = userData?.user?.role || userRole
-  const currentAvatar = userData?.user?.avatar || avatar
+  // Always use the predefined gender-based avatar (custom upload disabled)
+  const currentAvatar = getDefaultAvatar(userData?.user?.gender)
 
   const notifications = Array.isArray(notificationsData) ? notificationsData : []
 
@@ -211,8 +213,8 @@ export default function Header({ userName, userRole }: HeaderProps) {
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
       transition: 'height 0.3s ease',
     }} className="dashboard-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }} className="header-left-section">
-        {/* Hamburger Menu Toggle Button on Mobile */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0, flex: 1 }} className="header-left-section">
+        {/* Hamburger Menu Toggle Button on Mobile (hidden — bottom nav handles navigation) */}
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))}
           className="sidebar-toggle-btn"
@@ -225,26 +227,53 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </svg>
         </button>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} className="header-titles">
+        {/* Mobile-only greeting block (profile avatar + welcome text) */}
+        <a href="/menu" className="mobile-header-greeting" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+          <div style={{
+            width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
+            background: '#ffffff',
+            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden',
+            border: '2px solid #ffffff',
+          }}>
+            <img
+              src={currentAvatar}
+              alt={currentUserName}
+              onError={e => { (e.target as HTMLImageElement).src = '/avatars/default-neutral.png' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          </div>
+          <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#9999b0', letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.1 }}>
+              Welcome to GenZ IITian
+            </span>
+            <span style={{ fontSize: '17px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.2, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'linear-gradient(120deg, #1e1e3a 0%, #3636e8 60%, #8b5cf6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              {firstName}
+            </span>
+          </div>
+        </a>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} className={`header-titles ${matchedKey === '/dashboard' ? 'header-titles-dashboard' : ''}`}>
         {matchedKey === '/dashboard' ? (
           <>
-            <h1 style={{ 
-              fontSize: '56px', 
-              fontWeight: '900', 
-              color: '#1e1e3a', 
-              lineHeight: '1.0', 
-              letterSpacing: '-1.5px', 
-              display: 'flex', 
-              alignItems: 'baseline', 
-              gap: '12px', 
+            <h1 style={{
+              fontSize: '56px',
+              fontWeight: '900',
+              color: '#1e1e3a',
+              lineHeight: '1.0',
+              letterSpacing: '-1.5px',
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '12px',
               flexWrap: 'wrap',
               fontFamily: "'Outfit', 'Nunito', sans-serif"
             }}>
               {mounted ? getGreeting().heading : 'Welcome'},
-              <span style={{ 
-                fontSize: '40px', 
-                fontWeight: '700', 
-                color: '#3636e8', 
+              <span style={{
+                fontSize: '40px',
+                fontWeight: '700',
+                color: '#3636e8',
                 letterSpacing: '-0.8px',
                 opacity: 0.9,
                 fontFamily: "'Outfit', 'Nunito', sans-serif"
@@ -252,11 +281,11 @@ export default function Header({ userName, userRole }: HeaderProps) {
                 {firstName}
               </span>
             </h1>
-            <p style={{ 
-              fontSize: '16.5px', 
-              color: '#6b6b8a', 
-              marginTop: '6px', 
-              fontWeight: '500', 
+            <p style={{
+              fontSize: '16.5px',
+              color: '#6b6b8a',
+              marginTop: '6px',
+              fontWeight: '500',
               letterSpacing: '0.01em',
               maxWidth: '600px',
               lineHeight: '1.5'
@@ -280,7 +309,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
 
         {/* Notification bell */}
-        <div ref={notifRef} style={{ position: 'relative' }}>
+        <div ref={notifRef} className="header-notif" style={{ position: 'relative' }}>
           <button
             style={{ ...neuIconStyle, position: 'relative' }}
             onClick={() => setShowNotif(v => !v)}
@@ -308,7 +337,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
           {showNotif && (
             <div style={{
               position: 'absolute', right: 0, top: 'calc(100% + 10px)',
-              width: '340px', borderRadius: '20px',
+              width: 'min(340px, calc(100vw - 24px))', borderRadius: '20px',
               background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
               zIndex: 200, overflow: 'hidden',
             }}>
@@ -364,7 +393,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
         </div>
 
         {/* User pill with dropdown */}
-        <div ref={userMenuRef} style={{ position: 'relative' }}>
+        <div ref={userMenuRef} className="header-profile" style={{ position: 'relative' }}>
           <div
             style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', cursor: 'pointer', transition: 'box-shadow 0.2s ease' }}
             onClick={() => setShowUserMenu(v => !v)}
@@ -374,17 +403,17 @@ export default function Header({ userName, userRole }: HeaderProps) {
           >
             <div style={{
               width: '32px', height: '32px', borderRadius: '50%',
-              background: currentAvatar ? 'transparent' : '#e8eaf0',
+              background: '#ffffff',
               boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#3636e8', fontSize: '12px', fontWeight: '800',
               overflow: 'hidden',
             }}>
-              {currentAvatar ? (
-                <img src={currentAvatar} alt={currentUserName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                initials
-              )}
+              <img
+                src={currentAvatar}
+                alt={currentUserName}
+                onError={e => { (e.target as HTMLImageElement).src = '/avatars/default-neutral.png' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             </div>
             <div>
               <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1.2' }}>{currentUserName}</div>

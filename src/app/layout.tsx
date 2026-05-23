@@ -3,6 +3,7 @@ import './globals.css'
 import 'katex/dist/katex.min.css'
 import CsrfProvider from '@/components/CsrfProvider'
 import MobileBlocker from '@/components/layout/MobileBlocker'
+import CapacitorBridge from '@/components/CapacitorBridge'
 
 export const metadata: Metadata = {
   title: 'GENz IITIAN',
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <MobileBlocker />
+        <CapacitorBridge />
         <CsrfProvider>{children}</CsrfProvider>
       </body>
     </html>

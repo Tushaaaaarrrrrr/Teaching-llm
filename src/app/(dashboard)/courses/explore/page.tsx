@@ -1,15 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Script from 'next/script'
 import useSWR from 'swr'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { BookOpen, FileText, Users, ClipboardList, Trash2, Pencil, Sparkles, IndianRupee, Calendar, Plus, ExternalLink, HelpCircle, ChevronRight, X, Info, ArrowLeft } from 'lucide-react'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
+const CATEGORY_LABELS: Record<string, string> = {
+  qualifier: 'Qualifier Courses',
+  foundation: 'Foundation Courses',
+  diploma: 'Diploma Courses',
+  notes: 'Notes & PYQs',
+}
+const CATEGORY_TO_VIEW: Record<string, 'courses' | 'notes' | 'mentorship' | 'testSeries'> = {
+  qualifier: 'courses',
+  foundation: 'courses',
+  diploma: 'courses',
+  notes: 'notes',
+}
+
 export default function ExploreCoursesPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const categoryParam = (searchParams?.get('category') || '').toLowerCase()
   const { data: userData } = useSWR('/api/auth/me', fetcher, { revalidateOnFocus: false })
   const { data: offerings, error, isLoading } = useSWR('/api/course-offerings', fetcher, {
     revalidateOnFocus: false,
@@ -90,6 +105,20 @@ export default function ExploreCoursesPage() {
   const [couponLoading, setCouponLoading] = useState(false)
 
   const [storeView, setStoreView] = useState<null | 'courses' | 'notes' | 'mentorship' | 'testSeries'>(null)
+  const [activeCategory, setActiveCategory] = useState<string>('')
+
+  // Sync ?category= URL param into store view + active filter on mount or param change
+  useEffect(() => {
+    if (categoryParam && CATEGORY_TO_VIEW[categoryParam]) {
+      setStoreView(CATEGORY_TO_VIEW[categoryParam])
+      setActiveCategory(categoryParam)
+    }
+  }, [categoryParam])
+
+  function clearCategory() {
+    setActiveCategory('')
+    router.replace('/courses/explore', { scroll: false })
+  }
   const [showCreateDropdown, setShowCreateDropdown] = useState(false)
   const [showCreateBundleModal, setShowCreateBundleModal] = useState(false)
   const [showCreateNoteModal, setShowCreateNoteModal] = useState(false)
@@ -373,23 +402,26 @@ export default function ExploreCoursesPage() {
       {/* Header Banner */}
       <div style={{
         background: 'transparent',
-        padding: '0 32px 16px',
+        padding: '0 clamp(16px, 4vw, 32px) 16px',
         marginBottom: '16px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        gap: '16px',
+        flexWrap: 'wrap',
         marginTop: '0'
       }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: '1 1 240px', minWidth: 0 }}>
           <h1 style={{
-            fontSize: '32px', fontWeight: '900', color: '#1e1e3a',
-            marginTop: 0, marginBottom: '8px', letterSpacing: '-0.02em'
+            fontSize: 'clamp(22px, 5.5vw, 32px)', fontWeight: '900', color: '#1e1e3a',
+            marginTop: 0, marginBottom: '8px', letterSpacing: '-0.02em',
+            lineHeight: 1.15, wordBreak: 'normal', overflowWrap: 'break-word'
           }}>
             GenZ IITian Official Store
           </h1>
           <p style={{
-            fontSize: '15px', color: '#6b6b8a', fontWeight: '500',
-            lineHeight: '1.6', display: 'flex', alignItems: 'center', gap: '8px'
+            fontSize: 'clamp(13px, 3.4vw, 15px)', color: '#6b6b8a', fontWeight: '500',
+            lineHeight: '1.6', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'
           }}>
             You can also buy courses from
             <a href="https://app.genziitian.in/courses" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', backgroundColor: '#6366f1', padding: '4px 12px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', display: 'inline-block', transition: 'all 0.2s', fontSize: '12px' }}>
@@ -398,7 +430,7 @@ export default function ExploreCoursesPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Help Button */}
           <a
             href="/support"
@@ -497,19 +529,19 @@ export default function ExploreCoursesPage() {
 
       {/* STORE CATEGORY CARDS */}
       {!storeView && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: '24px', marginBottom: '32px' }}>
           {[
             { key: 'courses' as const, title: 'Courses', subtitle: `${(offerings || []).length + (bundleOfferings || []).length} available`, icon: <BookOpen size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #4f46e5, #0ea5e9)', shadow: 'rgba(79, 70, 229, 0.25)' },
             { key: 'notes' as const, title: 'Premium Notes', subtitle: `${storeNotesData?.notes?.length || 0} notes`, icon: <FileText size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #0d9488, #10b981)', shadow: 'rgba(13, 148, 136, 0.25)' },
             { key: 'mentorship' as const, title: 'Book a Call with Mentor', subtitle: `${mentorshipsData?.mentorships?.length || 0} mentors`, icon: <Users size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #f97316, #f59e0b)', shadow: 'rgba(249, 115, 22, 0.25)' },
             { key: 'testSeries' as const, title: 'Test Series', subtitle: `${testSeriesData?.testSeries?.length || 0} available`, icon: <ClipboardList size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #db2777, #9333ea)', shadow: 'rgba(219, 39, 119, 0.25)' },
           ].map(card => (
-            <div key={card.key} onClick={() => setStoreView(card.key)} style={{ background: '#fff', borderRadius: '24px', padding: '32px', cursor: 'pointer', boxShadow: '0 10px 30px rgba(15,23,42,0.06)', transition: 'all 0.3s ease', position: 'relative', overflow: 'hidden' }}
+            <div key={card.key} onClick={() => setStoreView(card.key)} style={{ background: '#fff', borderRadius: '24px', padding: 'clamp(20px, 5vw, 32px)', cursor: 'pointer', boxShadow: '0 10px 30px rgba(15,23,42,0.06)', transition: 'all 0.3s ease', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = `0 20px 40px ${card.shadow}` }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(15,23,42,0.06)' }}
             >
               <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: card.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', boxShadow: `0 8px 20px ${card.shadow}` }}>{card.icon}</div>
-              <h3 style={{ fontSize: '22px', fontWeight: '900', color: '#1e293b', marginBottom: '6px' }}>{card.title}</h3>
+              <h3 style={{ fontSize: 'clamp(18px, 4.4vw, 22px)', fontWeight: '900', color: '#1e293b', marginBottom: '6px' }}>{card.title}</h3>
               <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '600', marginBottom: '16px' }}>{card.subtitle}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6366f1', fontSize: '13px', fontWeight: '700' }}>
                 Explore <ChevronRight size={16} strokeWidth={3} />
@@ -525,6 +557,90 @@ export default function ExploreCoursesPage() {
           <ArrowLeft size={20} />
           Back to Store
         </button>
+      )}
+
+      {/* Category filter pill (when arrived via Home category card) */}
+      {activeCategory && CATEGORY_LABELS[activeCategory] && (
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: '10px',
+          padding: '8px 14px 8px 16px',
+          borderRadius: '50px',
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.10), rgba(139,92,246,0.10))',
+          border: '1px solid rgba(99, 102, 241, 0.20)',
+          color: '#4f46e5', fontSize: '12.5px', fontWeight: 800,
+          marginBottom: '14px',
+        }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#6366f1', boxShadow: '0 0 6px #6366f1' }} />
+          Showing: {CATEGORY_LABELS[activeCategory]}
+          <button onClick={clearCategory} aria-label="Clear filter" style={{
+            background: 'rgba(99,102,241,0.15)', border: 'none', borderRadius: '50%',
+            width: '22px', height: '22px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#4f46e5',
+          }}>
+            <X size={12} strokeWidth={3} />
+          </button>
+        </div>
+      )}
+
+      {/* Mobile-only: Stylish "Buy from website" banner when in Courses section */}
+      {storeView === 'courses' && (
+        <a
+          href="https://genziitian.in/courses"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="buy-from-web-banner"
+          style={{
+            display: 'flex', alignItems: 'center', gap: '14px',
+            padding: '16px 18px',
+            borderRadius: '22px',
+            background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #8b5cf6 100%)',
+            color: '#ffffff', textDecoration: 'none',
+            boxShadow: '0 12px 28px rgba(79, 70, 229, 0.35)',
+            marginBottom: '18px',
+            position: 'relative', overflow: 'hidden',
+          }}
+        >
+          {/* Decorative circles */}
+          <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: '-40px', right: '40px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+
+          <div style={{
+            width: '46px', height: '46px', borderRadius: '14px', flexShrink: 0,
+            background: 'rgba(255,255,255,0.18)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: '1.5px solid rgba(255,255,255,0.25)',
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
+          <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'rgba(255,255,255,0.18)', padding: '3px 10px', borderRadius: '50px', marginBottom: '6px' }}>
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} />
+              Recommended
+            </div>
+            <div style={{ fontSize: '14.5px', fontWeight: 900, lineHeight: 1.25 }}>
+              Buy Courses from Here
+            </div>
+            <div style={{ fontSize: '12px', fontWeight: 600, opacity: 0.9, marginTop: '2px' }}>
+              for a smoother checkout experience
+            </div>
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: '36px', height: '36px', borderRadius: '50%',
+            background: 'rgba(255,255,255,0.22)', flexShrink: 0,
+            border: '1px solid rgba(255,255,255,0.25)', position: 'relative',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="7" y1="17" x2="17" y2="7"/>
+              <polyline points="7 7 17 7 17 17"/>
+            </svg>
+          </div>
+        </a>
       )}
 
       {/* Bundle offerings section */}
@@ -864,7 +980,7 @@ export default function ExploreCoursesPage() {
       {storeView === 'mentorship' && myMentorshipsData?.bookings?.length > 0 && (
         <div style={{ marginBottom: '48px' }}>
           <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#1e1e3a', marginBottom: '20px' }}>Your Booked Sessions</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '20px' }}>
             {myMentorshipsData.bookings.map((booking: any) => {
               const isPast = new Date(`${booking.slotDate}T${booking.slotTime}`) < new Date();
               const isToday = booking.slotDate === new Date().toISOString().split('T')[0];
@@ -931,7 +1047,7 @@ export default function ExploreCoursesPage() {
       {storeView === 'testSeries' && testSeriesData?.testSeries?.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#1e1e3a', margin: '6px 0 12px' }}>Test Series</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '16px' }}>
             {testSeriesData.testSeries.map((ts: any) => {
               const hasAccess = ts.myAccess != null
               const isExpiredAccess = hasAccess && new Date(ts.myAccess.expiresAt) < new Date()
@@ -1616,40 +1732,41 @@ export default function ExploreCoursesPage() {
 
       {/* Bundle Choose / Buy Modal */}
       {showBundleModal && activeBundle && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }} onClick={() => { setShowBundleModal(false); setActiveBundle(null) }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '12px' }} onClick={() => { setShowBundleModal(false); setActiveBundle(null) }}>
           {(() => {
             const selectedList = activeBundle.allowIndividualPurchase === false ? activeBundle.courses.map((c: any) => c.course.id) : bundleSelectedCoursesToBuy;
             return (
-              <div style={{ width: '100%', maxWidth: '1024px', height: '86vh', background: '#fff', borderRadius: '24px', padding: '40px', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }} onClick={e => e.stopPropagation()}>
+              <div className="bundle-modal-box" style={{ width: '100%', maxWidth: 'min(1024px, calc(100vw - 24px))', height: 'min(86vh, calc(100vh - 24px))', background: '#fff', borderRadius: 'clamp(16px, 4vw, 24px)', padding: 'clamp(16px, 4vw, 40px)', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }} onClick={e => e.stopPropagation()}>
                 <button 
                   onClick={() => { setShowBundleModal(false); setActiveBundle(null) }}
                   style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s', zIndex: 10 }}
                 >
                   <X size={20} />
                 </button>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', paddingRight: '48px' }}>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#1e293b' }}>{activeBundle.name}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', paddingRight: '48px', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                <h3 style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: '900', color: '#1e293b', wordBreak: 'break-word' }}>{activeBundle.name}</h3>
                 {activeBundle.description && (
-                  <p style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', fontWeight: '500', maxWidth: '80%' }}>{activeBundle.description}</p>
+                  <p style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', fontWeight: '500' }}>{activeBundle.description}</p>
                 )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowBatchComparisonModal(true) }}
                   style={{
-                    padding: '8px 16px', borderRadius: '12px',
+                    padding: '8px 14px', borderRadius: '12px',
                     background: 'rgba(99,102,241,0.08)',
                     border: '1.5px solid rgba(99,102,241,0.2)', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: '6px',
-                    color: '#6366f1', fontSize: '13px', fontWeight: '800'
+                    color: '#6366f1', fontSize: '12px', fontWeight: '800',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  click me to see difference {'>'}
+                  See difference {'>'}
                 </button>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px', flex: 1, overflow: 'hidden', minHeight: 0 }}>
+            <div className="bundle-modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px', flex: 1, overflow: 'hidden', minHeight: 0 }}>
               <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 {activeBundle.allowIndividualPurchase !== false && (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', alignItems: 'center', gap: '16px', padding: '0 6px 10px 6px', marginBottom: '4px', borderBottom: '1.5px solid #f1f5f9' }}>
@@ -3361,19 +3478,20 @@ export default function ExploreCoursesPage() {
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(10px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-          padding: '20px'
+          padding: '12px'
         }} onClick={() => setInfoModalOffering(null)}>
           <div style={{
-            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '750px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
+            background: '#ffffff', borderRadius: 'clamp(16px, 4vw, 32px)', width: '100%', maxWidth: 'min(750px, calc(100vw - 24px))',
+            maxHeight: 'calc(100vh - 24px)', overflowY: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
-              <button onClick={() => setInfoModalOffering(null)} style={{ position: 'absolute', top: '25px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ padding: 'clamp(20px, 5vw, 30px) clamp(20px, 5vw, 40px)', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
+              <button onClick={() => setInfoModalOffering(null)} style={{ position: 'absolute', top: '18px', right: '18px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <X size={20} />
               </button>
-              <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Access Comparison</h2>
+              <h2 style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: '800', color: '#1e293b', marginBottom: '8px', paddingRight: '40px' }}>Access Comparison</h2>
               <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500' }}>Choose the access type that suits your learning needs</p>
             </div>
 

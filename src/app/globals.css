@@ -432,7 +432,7 @@ img {
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.10);
   width: 100%;
-  max-width: 900px;
+  max-width: min(900px, calc(100vw - 32px));
   max-height: 90vh;
   overflow-y: auto;
 }
@@ -508,6 +508,156 @@ tr:hover td {
 @media (max-width: 600px) {
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+
+/* Mobile: hide header notification & profile chip (sign-out lives in sidebar) */
+.mobile-only-notice { display: none; }
+.mobile-bottom-nav { display: none; }
+.calendar-mobile-only { display: none; }
+/* Need Help floating button — hide on mobile; the bottom nav handles support access */
+@media (max-width: 768px) {
+  a.support-btn-float,
+  .support-btn-float { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  .header-profile { display: none !important; }
+  .desktop-only-nav-item { display: none !important; }
+  .calendar-desktop-only { display: none !important; }
+  .calendar-mobile-only { display: block !important; }
+
+  .mobile-bottom-nav {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 80;
+    background: #e8eaf0;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -6px 18px rgba(150, 152, 165, 0.35);
+    border-top: 1px solid rgba(54, 54, 232, 0.06);
+  }
+  .mobile-bottom-tab {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 4px 6px;
+    border-radius: 16px;
+    text-decoration: none;
+    color: #6b6b8a;
+    font-family: inherit;
+    transition: color 0.2s ease, background 0.2s ease;
+    min-height: 56px;
+  }
+  .mobile-bottom-tab .tab-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+  }
+  .mobile-bottom-tab .tab-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  .mobile-bottom-tab.active {
+    color: #3636e8;
+  }
+  .mobile-bottom-tab.active .tab-icon {
+    transform: translateY(-1px);
+  }
+  .mobile-bottom-tab .tab-indicator {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 3px;
+    border-radius: 0 0 4px 4px;
+    background: #3636e8;
+    box-shadow: 0 2px 6px rgba(54, 54, 232, 0.4);
+  }
+  /* Reserve space at bottom of main scroll area so content isn't hidden under the nav */
+  .dashboard-main-container main {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Lecture row on a course page: actions stack below title on mobile so Watch button isn't cut off */
+@media (max-width: 768px) {
+  .lecture-row {
+    padding: 14px 16px !important;
+    border-radius: 20px !important;
+  }
+  .lecture-row > .lecture-row-actions {
+    width: 100% !important;
+    margin-left: 0 !important;
+    justify-content: flex-start !important;
+    border-top: 1px solid #d8dae3;
+    padding-top: 10px;
+    margin-top: 4px;
+  }
+  .lecture-row > .lecture-row-actions > div:first-child {
+    border-right: none !important;
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* Bundle/Checkout modal: stack inner grid on mobile so price column doesn't push content off-screen */
+@media (max-width: 768px) {
+  .bundle-modal-grid {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+  }
+  .bundle-modal-box {
+    height: auto !important;
+    max-height: calc(100vh - 24px) !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* Admin user-row: collapses fixed columns onto next line on phones */
+@media (max-width: 768px) {
+  .admin-user-row {
+    flex-wrap: wrap !important;
+    border-radius: 24px !important;
+    padding: 14px 16px !important;
+    gap: 12px !important;
+  }
+  .admin-user-meta {
+    width: 100% !important;
+    margin-left: 0 !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+  }
+  .admin-user-meta > div {
+    width: auto !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+}
+
+/* Master-detail mobile pattern (chat-transcripts, future two-pane routes) */
+.master-detail-back { display: none; }
+@media (max-width: 768px) {
+  .master-detail-layout {
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+  .master-detail-layout > .master-detail-list {
+    width: 100% !important;
+    flex-shrink: 1 !important;
+  }
+  .master-detail-layout[data-detail-open="true"] > .master-detail-list { display: none !important; }
+  .master-detail-layout:not([data-detail-open="true"]) > .master-detail-pane { display: none !important; }
+  .master-detail-back { display: inline-flex !important; }
 }
 
 /* Mobile Blocker Styles */
@@ -831,7 +981,7 @@ tr:hover td {
   }
 
   .sidebar-toggle-btn {
-    display: flex;
+    display: none !important; /* Hidden — bottom nav + profile avatar handle navigation */
   }
 
   .sidebar-overlay {
@@ -843,26 +993,44 @@ tr:hover td {
     pointer-events: auto;
   }
 
-  /* Responsive Header Tuning */
+  /* Responsive Header Tuning — mobile uses greeting block instead of page titles */
   .dashboard-header {
     padding: 0 16px !important;
-    height: 76px !important; /* Compact header on mobile */
+    height: 76px !important;
   }
 
-  .header-titles h1 {
-    font-size: 20px !important; /* Scale down greeting titles */
-    gap: 6px !important;
+  .header-titles {
+    display: none !important; /* Replaced by .mobile-header-greeting */
   }
 
-  .header-titles h1 span {
-    font-size: 16px !important;
+  .mobile-header-greeting {
+    display: flex !important;
   }
 
-  .header-titles p {
-    font-size: 11px !important;
-    display: none; /* Hide subtitle on very small screens to make space */
+  /* Animated underline accent under the welcome block */
+  .mobile-header-greeting::after {
+    content: '';
+    position: absolute;
+    left: 56px;
+    right: 0;
+    bottom: -10px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, #6366f1 30%, #8b5cf6 70%, transparent);
+    opacity: 0.55;
   }
+  .mobile-header-greeting { position: relative; }
 
+}
+
+/* Hide mobile greeting on desktop */
+.mobile-header-greeting { display: none; }
+
+/* Hide the "Good Night, {name}" greeting on desktop (still shows on mobile via .mobile-header-greeting) */
+@media (min-width: 769px) {
+  .header-titles-dashboard { display: none !important; }
+  /* On dashboard, also collapse header height to match other pages */
+  .dashboard-header[style*='140px'] { height: 96px !important; }
 }
 
 /* Login Page Base Responsive Styles */
@@ -905,8 +1073,19 @@ tr:hover td {
   display: flex;
 }
 
-.mobile-only-footer-links {
+.mobile-only-policies-container {
   display: none !important;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    bottom: calc(100% + 4px);
+  }
+  to {
+    opacity: 1;
+    bottom: calc(100% + 10px);
+  }
 }
 
 .login-right-panel {
@@ -981,21 +1160,6 @@ tr:hover td {
     display: none !important;
   }
 
-  .mobile-only-footer-links {
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-    margin-top: 16px;
-    margin-bottom: 8px;
-    width: 100%;
-  }
-
-  .mobile-only-footer-links button {
-    padding: 6px 12px !important;
-    font-size: 11px !important;
-  }
-
   .login-right-panel {
     padding: 8px 16px 20px;
     margin-bottom: 12px;
@@ -1027,11 +1191,65 @@ tr:hover td {
     border-radius: 14px !important;
   }
 
+  .login-right-footer-container {
+    display: flex !important;
+    gap: 16px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 24px;
+    margin-bottom: 8px;
+    width: 100%;
+  }
+
+  .mobile-only-policies-container {
+    display: block !important;
+  }
+
   .login-contact-developer {
     position: static;
-    margin-top: 16px;
+    margin-top: 0 !important;
     align-self: center;
-    padding: 6px 12px !important;
-    font-size: 11px !important;
+    padding: 8px 16px !important;
+    font-size: 12px !important;
   }
 }
+
+/* Lecture Page Layout */
+.lecture-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 32px;
+}
+
+@media (max-width: 768px) {
+  .lecture-layout-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+}
+
+/* Clean Video Player Wrapper (hides Google Drive video controls top bar) */
+.clean-video-wrapper {
+  position: relative;
+  background: #0f172a;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  margin-bottom: 32px;
+  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+}
+
+.clean-video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.clean-video-wrapper.google-drive iframe {
+  top: 0;
+  height: 100%;
+}
+

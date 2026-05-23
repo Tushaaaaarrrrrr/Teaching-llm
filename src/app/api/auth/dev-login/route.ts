@@ -1,0 +1,53 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+import { signToken, getCookieConfig } from '@/lib/auth'
+
+export async function POST(request: NextRequest) {
+  // Only allow in development mode for safety!
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 })
+  }
+
+  try {
+    const body = await request.json().catch(() => ({}))
+    const targetEmail = body.email || 'lkiitmng2428@gmail.com'
+
+    const user = await prisma.user.findUnique({
+      where: { email: targetEmail }
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: `User with email ${targetEmail} not found` }, { status: 404 })
+    }
+
+    // Increment tokenVersion
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { tokenVersion: { increment: 1 } },
+      select: { tokenVersion: true }
+    })
+
+    const token = signToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role as any,
+      name: user.name,
+      canTerminate: user.canTerminate,
+      canCreateStudents: user.canCreateStudents,
+      tokenVersion: updatedUser.tokenVersion,
+    })
+
+    const { name: cookieName, options } = getCookieConfig()
+    const response = NextResponse.json({
+      success: true,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      token,
+    })
+
+    response.cookies.set(cookieName, token, options)
+    return response
+  } catch (error: any) {
+    console.error('Dev login error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

@@ -74,7 +74,7 @@ export default function TransactionsPage() {
     <div className="page-container fade-in">
       {/* Summary Cards */}
       {data?.summary && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div className="card" style={{ padding: '20px', textAlign: 'center' }}>
             <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>Total Revenue</div>
             <div style={{ fontSize: '28px', fontWeight: '900', color: '#16a34a' }}>₹{data.summary.totalRevenue.toLocaleString('en-IN')}</div>

@@ -3,6 +3,122 @@
 import { useState, Suspense, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
+function PoliciesDropdown({ 
+  links, 
+  align = 'left' 
+}: { 
+  links: Array<{ label: string, icon: string, onClick: () => void }>, 
+  align?: 'left' | 'right' | 'center' 
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  return (
+    <div ref={dropdownRef} className="policies-dropdown-container" style={{ position: 'relative', display: 'inline-block' }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="policies-dropdown-trigger"
+        style={{
+          fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600',
+          padding: '8px 16px', background: '#F3F4F6', borderRadius: '50px', border: 'none', cursor: 'pointer',
+          boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff', transition: 'all 0.2s ease',
+          outline: 'none'
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
+          e.currentTarget.style.color = '#3636e8';
+        }}
+        onMouseOut={(e) => {
+          if (!isOpen) {
+            e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
+            e.currentTarget.style.color = '#9999b0';
+          }
+        }}
+      >
+        <span style={{ fontSize: '14px' }}>⚖️</span>
+        <span>Policies</span>
+        <span style={{ 
+          fontSize: '9px', 
+          transition: 'transform 0.2s ease', 
+          transform: isOpen ? 'rotate(180deg)' : 'none',
+          display: 'inline-block'
+        }}>▼</span>
+      </button>
+
+      {isOpen && (
+        <div 
+          className="policies-dropdown-menu"
+          style={{
+            position: 'absolute',
+            bottom: 'calc(100% + 10px)',
+            left: align === 'left' ? 0 : align === 'right' ? 'auto' : '50%',
+            right: align === 'right' ? 0 : 'auto',
+            transform: align === 'center' ? 'translateX(-50%)' : 'none',
+            background: '#ffffff',
+            borderRadius: '16px',
+            padding: '8px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            zIndex: 999,
+            minWidth: '170px',
+            animation: 'slideUpFade 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
+        >
+          {links.map((link, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                link.onClick();
+                setIsOpen(false);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                width: '100%',
+                padding: '10px 14px',
+                border: 'none',
+                background: 'none',
+                borderRadius: '10px',
+                fontSize: '12.5px',
+                fontWeight: '600',
+                color: '#6b6b8a',
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                fontFamily: 'inherit'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#F3F4F6';
+                e.currentTarget.style.color = '#3636e8';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'none';
+                e.currentTarget.style.color = '#6b6b8a';
+              }}
+            >
+              <span style={{ fontSize: '14px' }}>{link.icon}</span>
+              <span>{link.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -108,27 +224,7 @@ function LoginContent() {
         
         {/* Footer Links */}
         <div className="login-footer-links desktop-only-footer-links">
-          {footerLinksData.map((btn, i) => (
-            <button
-              key={i}
-              onClick={btn.onClick}
-              style={{
-                fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600',
-                padding: '8px 16px', background: '#F3F4F6', borderRadius: '50px', border: 'none', cursor: 'pointer',
-                boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff', transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
-                e.currentTarget.style.color = '#3636e8';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
-                e.currentTarget.style.color = '#9999b0';
-              }}
-            >
-              <span style={{ fontSize: '14px' }}>{btn.icon}</span><span>{btn.label}</span>
-            </button>
-          ))}
+          <PoliciesDropdown links={footerLinksData} align="left" />
         </div>
       </div>
 
@@ -176,59 +272,40 @@ function LoginContent() {
           </a>
         </div>
         
-        {/* Contact Developer Link (Bottom Right) */}
-        <a
-          href="mailto:admin@genziitian.org"
-          className="login-contact-developer"
-          style={{ 
-            fontSize: '12px', 
-            color: '#9999b0', 
-            textDecoration: 'none', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            fontWeight: '600',
-            padding: '8px 16px',
-            background: '#F3F4F6',
-            borderRadius: '50px',
-            boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
-            e.currentTarget.style.color = '#3636e8';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
-            e.currentTarget.style.color = '#9999b0';
-          }}
-        >
-          <span style={{ fontSize: '14px' }}>✉️</span><span>Contact Developer</span>
-        </a>
+        {/* Right Panel Footer (Contact + Mobile Policies) */}
+        <div className="login-right-footer-container">
+          <a
+            href="mailto:admin@genziitian.org"
+            className="login-contact-developer"
+            style={{ 
+              fontSize: '12px', 
+              color: '#9999b0', 
+              textDecoration: 'none', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px', 
+              fontWeight: '600',
+              padding: '8px 16px',
+              background: '#F3F4F6',
+              borderRadius: '50px',
+              boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
+              e.currentTarget.style.color = '#3636e8';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
+              e.currentTarget.style.color = '#9999b0';
+            }}
+          >
+            <span style={{ fontSize: '14px' }}>✉️</span><span>Contact Developer</span>
+          </a>
 
-        {/* Footer Links - Mobile Only */}
-        <div className="mobile-only-footer-links">
-          {footerLinksData.map((btn, i) => (
-            <button
-              key={i}
-              onClick={btn.onClick}
-              style={{
-                fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600',
-                padding: '8px 16px', background: '#F3F4F6', borderRadius: '50px', border: 'none', cursor: 'pointer',
-                boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff', transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
-                e.currentTarget.style.color = '#3636e8';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
-                e.currentTarget.style.color = '#9999b0';
-              }}
-            >
-              <span style={{ fontSize: '14px' }}>{btn.icon}</span><span>{btn.label}</span>
-            </button>
-          ))}
+          <div className="mobile-only-policies-container">
+            <PoliciesDropdown links={footerLinksData} align="right" />
+          </div>
         </div>
       </div>
 
@@ -467,6 +544,116 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
           )}
         </button>
       </div>
+
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <button
+            onClick={async () => {
+              setGLoading(true)
+              setGError('')
+              try {
+                const res = await fetch('/api/auth/dev-login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email: 'lkiitmng2428@gmail.com' }), // Default manager account
+                })
+                const data = await res.json()
+                if (!res.ok) {
+                  setGError(data.error || 'Dev login failed')
+                  return
+                }
+                router.push('/dashboard')
+                router.refresh()
+              } catch {
+                setGError('Something went wrong with dev login.')
+              } finally {
+                setGLoading(false)
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '12px 20px',
+              borderRadius: '50px',
+              border: 'none',
+              background: '#8B5CF6',
+              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.25)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              fontSize: '14px',
+              fontWeight: '700',
+              color: '#ffffff',
+              fontFamily: 'inherit',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.4)'
+              e.currentTarget.style.transform = 'translateY(-1px)'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.25)'
+              e.currentTarget.style.transform = 'none'
+            }}
+          >
+            ⚡ Dev Quick Login (Manager)
+          </button>
+
+          <button
+            onClick={async () => {
+              setGLoading(true)
+              setGError('')
+              try {
+                const res = await fetch('/api/auth/dev-login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email: 'student@teacherai.com' }), // Student account
+                })
+                const data = await res.json()
+                if (!res.ok) {
+                  setGError(data.error || 'Dev login failed')
+                  return
+                }
+                router.push('/dashboard')
+                router.refresh()
+              } catch {
+                setGError('Something went wrong with dev login.')
+              } finally {
+                setGLoading(false)
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '12px 20px',
+              borderRadius: '50px',
+              border: 'none',
+              background: '#10B981',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              fontSize: '14px',
+              fontWeight: '700',
+              color: '#ffffff',
+              fontFamily: 'inherit',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)'
+              e.currentTarget.style.transform = 'translateY(-1px)'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.25)'
+              e.currentTarget.style.transform = 'none'
+            }}
+          >
+            ⚡ Dev Quick Login (Student)
+          </button>
+        </div>
+      )}
 
       <div style={{ marginTop: '16px' }}>
         <p className="login-terms-text">
