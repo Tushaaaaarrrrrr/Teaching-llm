@@ -84,6 +84,14 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [managingCommunity, setManagingCommunity] = useState(false)
+  
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    setIsMobile(window.innerWidth <= 768)
+    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
   const [transcriptOpen, setTranscriptOpen] = useState(false)
   const [transcriptMessages, setTranscriptMessages] = useState<TranscriptMsg[]>([])
   const [loadingTranscript, setLoadingTranscript] = useState(false)
@@ -485,7 +493,7 @@ export default function CommunityPage() {
 
 
   return (
-    <div className="page-container fade-in" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
+    <div className="page-container fade-in" style={isMobile ? { display: 'flex', gap: '0px', height: 'calc(100vh - 90px)', padding: '8px', overflow: 'hidden', position: 'relative' } : { display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
       <style>{`
         .msg-row:hover .msg-actions { opacity: 1 !important; }
       `}</style>
@@ -510,7 +518,7 @@ export default function CommunityPage() {
       ) : null}
 
       {/* Left: Class list */}
-      <div style={{ width: '230px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
+      <div style={{ width: isMobile ? '100%' : '230px', flexShrink: 0, display: (isMobile && selectedClass) ? 'none' : 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
         {/* Groups header */}
         <div style={{ fontSize: '12px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px', padding: '0 4px' }}>
           Communities
@@ -630,7 +638,15 @@ export default function CommunityPage() {
       </div>
 
       {/* Right: Chat area */}
-      <div style={{ flex: 1, borderRadius: '24px', ...neu, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+      <div style={{ 
+        flex: 1, 
+        borderRadius: '24px', 
+        ...neu, 
+        display: (isMobile && !selectedClass) ? 'none' : 'flex', 
+        flexDirection: 'column', 
+        overflow: 'hidden', 
+        minWidth: 0 
+      }}>
         {!selectedClass ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', color: '#9999b0' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -640,6 +656,29 @@ export default function CommunityPage() {
           <>
             {/* Header */}
             <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {isMobile && (
+                <button
+                  onClick={() => setSelectedClass(null)}
+                  style={{
+                    marginRight: '4px',
+                    padding: '8px',
+                    borderRadius: '50%',
+                    background: '#e8eaf0',
+                    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: 'none',
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e1e3a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                  </svg>
+                </button>
+              )}
               <div style={{
                 width: '40px', height: '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px',
                 background: selectedClass.color + '22',

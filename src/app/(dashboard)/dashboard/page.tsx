@@ -37,6 +37,14 @@ export default function DashboardPage() {
   const [activeCard, setActiveCard] = useState(0)
   const [sliding, setSliding] = useState(false)
   const [nowTick, setNowTick] = useState(Date.now())
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth <= 768)
+    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     const intervalId = window.setInterval(() => setNowTick(Date.now()), 30000)
@@ -180,10 +188,10 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="page-container">
-        <div className="grid-4">
+        <div className="dashboard-stats-grid">
           {[1,2,3,4].map(i => (
-            <div key={i} className="card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <div className="skeleton" style={{ height: '48px', width: '48px', borderRadius: '14px' }} />
+            <div key={i} className="stat-card" style={{ background: 'var(--surface)' }}>
+              <div className="skeleton" style={{ height: '48px', width: '48px', borderRadius: '14px', flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
                 <div className="skeleton" style={{ height: '14px', width: '80px', marginBottom: '8px' }} />
                 <div className="skeleton" style={{ height: '28px', width: '48px' }} />
@@ -200,49 +208,96 @@ export default function DashboardPage() {
 
   return (
     <div className="page-container fade-in">
+      <style>{`
+        @media (max-width: 768px) {
+          .dashboard-stats-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+            margin-bottom: 16px !important;
+            margin-top: 16px !important;
+          }
+          .stat-card {
+            padding: 12px 14px !important;
+            gap: 10px !important;
+            border-radius: 16px !important;
+          }
+          .stat-card-icon {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 10px !important;
+          }
+          .stat-card-icon svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .stat-card-label {
+            font-size: 9px !important;
+            letter-spacing: 0.03em !important;
+          }
+          .stat-card-value {
+            font-size: 18px !important;
+          }
+        }
+        @media (max-width: 380px) {
+          .dashboard-stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 8px !important;
+          }
+          .stat-card {
+            padding: 8px 10px !important;
+            gap: 6px !important;
+            border-radius: 12px !important;
+          }
+          .stat-card-icon {
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 8px !important;
+          }
+          .stat-card-icon svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+          .stat-card-value {
+            font-size: 15px !important;
+          }
+        }
+      `}</style>
 
       {/* Stats Grid */}
-      <div className="grid-4" style={{ marginBottom: '24px', marginTop: '24px' }}>
+      <div 
+        className="dashboard-stats-grid" 
+        style={{ 
+          marginBottom: isMobile ? '16px' : '24px', 
+          marginTop: isMobile ? '16px' : '24px',
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: isMobile ? '12px' : '20px'
+        }}
+      >
         {statCards.filter(c => !c.isSupport && c.label !== 'Active Sessions').map((card) => (
-          <div key={card.label} className="card" style={{
-            padding: '22px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '20px',
+          <div key={card.label} className="stat-card" style={{
             background: card.isTimer ? card.bg : undefined,
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '14px',
+            padding: isMobile ? '12px 14px' : '22px 24px',
+            gap: isMobile ? '10px' : '20px',
+            borderRadius: isMobile ? '16px' : '20px',
+          } as React.CSSProperties}>
+            <div className="stat-card-icon" style={{
               background: card.isTimer ? 'rgba(255,255,255,0.4)' : card.bg,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              color: card.color
+              color: card.color,
+              width: isMobile ? '36px' : '48px',
+              height: isMobile ? '36px' : '48px',
+              borderRadius: isMobile ? '10px' : '14px',
             }}>
               {card.icon}
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ 
-                fontSize: '11px', 
-                color: card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(0,0,0,0.5)' : '#9999b0', 
-                fontWeight: '700', 
-                marginBottom: '2px', 
-                textTransform: 'uppercase', 
-                letterSpacing: '0.06em' 
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="stat-card-label" style={{ 
+                color: card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(0,0,0,0.5)' : undefined
               }}>
                 {card.label}
               </div>
-              <div style={{ 
-                fontSize: '26px', 
-                fontWeight: '800', 
-                color: '#1e1e3a', 
-                lineHeight: '1.1' 
-              }}>
+              <div className="stat-card-value">
                 {card.value}
               </div>
             </div>
@@ -280,8 +335,8 @@ export default function DashboardPage() {
       {isManager && (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 2fr)',
-          gap: '20px',
+          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 5fr) minmax(0, 2fr)',
+          gap: isMobile ? '12px' : '20px',
           marginBottom: '24px'
         }}>
           {/* Active Sessions Card (Student UI Style) */}
@@ -528,8 +583,8 @@ export default function DashboardPage() {
           {/* ── Row 1: Active Now + Up Next ── */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '20px',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gap: isMobile ? '12px' : '20px',
             marginBottom: '20px',
             alignItems: 'stretch',
           }}>
@@ -765,40 +820,43 @@ export default function DashboardPage() {
                     <div
                       key={lec.id}
                       style={{
-                        padding: '24px',
-                        borderRadius: '24px',
+                        padding: isMobile ? '16px' : '24px',
+                        borderRadius: isMobile ? '18px' : '24px',
                         background: '#e8eaf0',
-                        boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                        boxShadow: isMobile ? '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '24px',
+                        flexDirection: isMobile ? 'column' : 'row',
+                        alignItems: isMobile ? 'flex-start' : 'center',
+                        gap: isMobile ? '16px' : '24px',
                         width: '100%',
                         transition: 'all 0.2s',
                       }}
                     >
-                      <div style={{
-                        width: '56px', height: '56px', borderRadius: '16px',
-                        background: accent + '15',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0
-                      }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5">
-                          <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
-                        </svg>
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                          {lec.topic?.course?.name || 'Course Lecture'}
-                        </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%' }}>
                         <div style={{
-                          fontSize: '18px', fontWeight: '800', color: '#1e1e3a',
-                          lineHeight: '1.2', marginBottom: '4px',
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                          width: isMobile ? '44px' : '56px', height: isMobile ? '44px' : '56px', borderRadius: isMobile ? '12px' : '16px',
+                          background: accent + '15',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0
                         }}>
-                          {lec.title}
+                          <svg width={isMobile ? '20' : '24'} height={isMobile ? '20' : '24'} viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5">
+                            <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
+                          </svg>
                         </div>
-                        <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '500' }}>
-                          Last viewed on {formatISTDate(recentViewedLecture.updatedAt)}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: isMobile ? '9.5px' : '11px', color: '#9999b0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>
+                            {lec.topic?.course?.name || 'Course Lecture'}
+                          </div>
+                          <div style={{
+                            fontSize: isMobile ? '15px' : '18px', fontWeight: '800', color: '#1e1e3a',
+                            lineHeight: '1.2', marginBottom: '2px',
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                          }}>
+                            {lec.title}
+                          </div>
+                          <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#6b6b8a', fontWeight: '500' }}>
+                            Last viewed on {formatISTDate(recentViewedLecture.updatedAt)}
+                          </div>
                         </div>
                       </div>
                       <Link 
@@ -807,10 +865,12 @@ export default function DashboardPage() {
                         style={{ 
                           background: accent, 
                           boxShadow: `0 8px 16px ${accent}20`,
-                          padding: '12px 28px',
-                          fontSize: '14px',
+                          padding: isMobile ? '10px 20px' : '12px 28px',
+                          fontSize: isMobile ? '13px' : '14px',
                           fontWeight: '800',
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          width: isMobile ? '100%' : 'auto',
+                          justifyContent: 'center'
                         }}
                       >
                         Continue Watching
@@ -835,7 +895,7 @@ export default function DashboardPage() {
                 No upcoming exams or tests
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '10px' : '14px' }}>
                 {dashboardData.upcomingExams.map((exam: any) => {
                   const accent = exam.course?.color || '#6366f1'
                   return (

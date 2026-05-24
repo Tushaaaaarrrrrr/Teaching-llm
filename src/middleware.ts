@@ -19,6 +19,20 @@ const CSRF_EXEMPT_PATHS = [
   '/api/analytics/compute', // analytics cron job — has its own auth via CRON_SECRET
 ]
 
+/**
+ * Extracts session token from cookie or Authorization Bearer header
+ */
+function getSessionToken(request: NextRequest): string | undefined {
+  const cookieVal = request.cookies.get(COOKIE_NAME)?.value
+  if (cookieVal) return cookieVal
+  
+  const authHeader = request.headers.get('Authorization') ?? request.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.substring(7)
+  }
+  return undefined
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const method = request.method
@@ -48,7 +62,7 @@ export async function middleware(request: NextRequest) {
 
   // ─── 2. Rate Limiting for ALL Write Operations ───
   if (pathname.startsWith('/api/') && WRITE_METHODS.includes(method) && !pathname.startsWith('/api/auth/')) {
-    const token = request.cookies.get(COOKIE_NAME)?.value
+    const token = getSessionToken(request)
     // Rate limit by user (via JWT userId) or by IP for unauthenticated requests
     let rateLimitKey = request.ip ?? request.headers.get('x-forwarded-for') ?? '127.0.0.1'
     
@@ -77,14 +91,20 @@ export async function middleware(request: NextRequest) {
     WRITE_METHODS.includes(method) &&
     !CSRF_EXEMPT_PATHS.some(p => pathname.startsWith(p))
   ) {
-    const xRequestedWith = request.headers.get('x-requested-with')
-    // Browsers block cross-origin JavaScript from setting custom headers,
-    // so requiring this header prevents CSRF attacks from other websites
-    if (xRequestedWith !== 'XMLHttpRequest') {
-      return NextResponse.json(
-        { error: 'Forbidden — missing required header' },
-        { status: 403 }
-      )
+    // Only check CSRF if auth is cookie-based. If Bearer token is used in Authorization, it's immune to CSRF.
+    const authHeader = request.headers.get('Authorization') ?? request.headers.get('authorization')
+    const isBearerAuth = authHeader?.startsWith('Bearer ')
+
+    if (!isBearerAuth) {
+      const xRequestedWith = request.headers.get('x-requested-with')
+      // Browsers block cross-origin JavaScript from setting custom headers,
+      // so requiring this header prevents CSRF attacks from other websites
+      if (xRequestedWith !== 'XMLHttpRequest') {
+        return NextResponse.json(
+          { error: 'Forbidden — missing required header' },
+          { status: 403 }
+        )
+      }
     }
   }
 
@@ -103,9 +123,9 @@ export async function middleware(request: NextRequest) {
                        pathname === '/maintenance' ||
                        pathname === '/maintenance-illustration.jpg' ||
                        /\.(.*)$/.test(pathname)
-
+ 
     if (!isEssential) {
-      const token = request.cookies.get(COOKIE_NAME)?.value
+      const token = getSessionToken(request)
       if (token && JWT_SECRET) {
         try {
           const secret = new TextEncoder().encode(JWT_SECRET)
@@ -133,22 +153,28 @@ export async function middleware(request: NextRequest) {
 
   // Root redirect
   if (pathname === '/') {
-    const token = request.cookies.get(COOKIE_NAME)?.value
+    const token = getSessionToken(request)
     if (!token) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Check for auth cookie
-  const token = request.cookies.get(COOKIE_NAME)?.value
+  // Check for auth cookie/header
+  const token = getSessionToken(request)
 
   if (!token) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   if (!JWT_SECRET) {
     console.error('JWT_SECRET is not set — cannot verify tokens')
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -159,23 +185,41 @@ export async function middleware(request: NextRequest) {
 
     // Role-based route protection
     if (pathname.startsWith('/admin') && (payload.role === 'STUDENT' || payload.role === 'INSTRUCTOR')) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     if (pathname.startsWith('/manage') && payload.role === 'STUDENT') {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     if (pathname.startsWith('/chat-transcripts') && payload.role !== 'MANAGER') {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     if (pathname.startsWith('/work-log') && payload.role !== 'MANAGER') {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     // Only managers can access study materials
     if (pathname.startsWith('/materials') && payload.role !== 'MANAGER') {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   } catch (error) {
     console.error('JWT Verification failed in middleware:', error)
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const response = NextResponse.redirect(new URL('/login', request.url))
     response.cookies.delete(COOKIE_NAME)
     return response
