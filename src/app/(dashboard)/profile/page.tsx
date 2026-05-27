@@ -353,7 +353,7 @@ export default function ProfilePage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1 }}>
               {/* Name — editable */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? '10px' : '16px' }}>
                 <div className="form-group">
                   <label className="form-label">First Name</label>
                   <input className="form-input" value={editFirstName} onChange={e => setEditFirstName(e.target.value)} placeholder="First Name" />
@@ -365,7 +365,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Gender + Age — side by side */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? '10px' : '12px' }}>
                 {/* Gender */}
                 <div style={{ ...insetRow, flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
                   <span style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '500' }}>Gender</span>
@@ -515,26 +515,51 @@ export default function ProfilePage() {
         {/* ── Bottom Action Bar ── */}
         <div style={{
           display: 'flex',
-          justifyContent: 'flex-end',
-          gap: '12px',
-          padding: isMobile ? '16px' : '20px 24px',
+          justifyContent: isMobile ? 'stretch' : 'flex-end',
+          alignItems: 'center',
+          gap: '10px',
+          padding: isMobile ? '12px 16px' : '20px 24px',
           borderRadius: isMobile ? '0' : '20px',
           background: '#e8eaf0',
           boxShadow: isMobile ? '0 -6px 18px rgba(150, 152, 165, 0.25)' : '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
-          flexDirection: isMobile ? 'column-reverse' : 'row',
+          flexDirection: 'row',
           ...(isMobile ? {
             position: 'fixed',
             bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
             left: 0,
             right: 0,
             zIndex: 90,
-            borderTop: '1px solid rgba(0,0,0,0.06)'
+            borderTop: '1px solid rgba(0,0,0,0.08)'
           } : {})
         }}>
-          <button onClick={handleDiscard} className="btn btn-ghost" style={{ width: isMobile ? '100%' : 'auto' }}>
-            Discard Changes
+          <button
+            onClick={handleDiscard}
+            className="btn btn-ghost"
+            style={{
+              flex: isMobile ? 1 : 'unset',
+              padding: isMobile ? '11px 10px' : undefined,
+              fontSize: isMobile ? '13px' : undefined,
+              fontWeight: isMobile ? '600' : undefined,
+              borderRadius: isMobile ? '50px' : undefined,
+              border: isMobile ? '1.5px solid rgba(99,102,241,0.25)' : undefined,
+              color: isMobile ? '#6366f1' : undefined,
+              background: isMobile ? 'rgba(99,102,241,0.06)' : undefined,
+            }}
+          >
+            Discard
           </button>
-          <button onClick={handleSaveProfile} disabled={saving} className="btn btn-primary" style={{ width: isMobile ? '100%' : 'auto' }}>
+          <button
+            onClick={handleSaveProfile}
+            disabled={saving}
+            className="btn btn-primary"
+            style={{
+              flex: isMobile ? 1 : 'unset',
+              padding: isMobile ? '11px 10px' : undefined,
+              fontSize: isMobile ? '13px' : undefined,
+              fontWeight: isMobile ? '700' : undefined,
+              borderRadius: isMobile ? '50px' : undefined,
+            }}
+          >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
