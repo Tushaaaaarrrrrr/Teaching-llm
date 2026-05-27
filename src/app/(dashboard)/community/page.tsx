@@ -672,28 +672,6 @@ export default function CommunityPage() {
           <>
             {/* Header */}
             <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', flexWrap: 'wrap' }}>
-              {isMobile && (
-                <button
-                  onClick={() => setSelectedClass(null)}
-                  style={{
-                    padding: '8px',
-                    borderRadius: '50%',
-                    background: '#e8eaf0',
-                    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: 'none',
-                    cursor: 'pointer',
-                    flexShrink: 0
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e1e3a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                  </svg>
-                </button>
-              )}
               <div style={{
                 width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px',
                 background: selectedClass.color + '22',
