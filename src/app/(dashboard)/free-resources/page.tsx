@@ -96,6 +96,44 @@ export default function FreeResourcesPage() {
           .free-resources-grid .free-res-explore {
             font-size: 11px !important;
           }
+          
+          /* Horizontal Rectangle layout for the 3rd card on mobile */
+          .free-resources-grid > a:nth-child(3) {
+            grid-column: span 2 !important;
+          }
+          .free-resources-grid > a:nth-child(3) .free-res-card {
+            display: grid !important;
+            grid-template-columns: auto 1fr !important;
+            grid-template-rows: auto auto !important;
+            text-align: left !important;
+            align-items: center !important;
+            padding: 16px 14px !important;
+            min-height: auto !important;
+            gap: 12px 12px !important;
+          }
+          .free-resources-grid > a:nth-child(3) .free-res-icon {
+            grid-column: 1 !important;
+            grid-row: 1 !important;
+          }
+          .free-resources-grid > a:nth-child(3) .free-res-content {
+            grid-column: 2 !important;
+            grid-row: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+            text-align: left !important;
+          }
+          .free-resources-grid > a:nth-child(3) .free-res-footer {
+            grid-column: 1 / span 2 !important;
+            grid-row: 2 !important;
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            margin-top: 4px !important;
+            gap: 8px !important;
+          }
         }
       `}</style>
       <div className="free-resources-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', width: '100%' }}>
@@ -137,7 +175,7 @@ export default function FreeResourcesPage() {
               </div>
 
               {/* Text Content */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="free-res-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <h2 className="free-res-title" style={{ fontSize: '22px', fontWeight: '900', color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px' }}>
                   {card.title}
                 </h2>
@@ -153,7 +191,7 @@ export default function FreeResourcesPage() {
               </div>
 
               {/* Status Badge */}
-              <div style={{ 
+              <div className="free-res-footer" style={{ 
                 marginTop: 'auto', 
                 display: 'flex', 
                 flexDirection: 'column',
