@@ -505,6 +505,11 @@ tr:hover td {
   .page-container { padding: 16px; }
 }
 
+/* Tighten gap between the mobile dashboard header (greeting block) and page content */
+@media (max-width: 768px) {
+  .page-container { padding-top: 6px; }
+}
+
 @media (max-width: 600px) {
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }

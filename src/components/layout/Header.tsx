@@ -249,10 +249,10 @@ export default function Header({ userName, userRole }: HeaderProps) {
             />
           </div>
           <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#1e1e3a', letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
-              Welcome to Gen-Z IITian
+            <span style={{ fontSize: '15px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.2px' }}>
+              {mounted ? getGreeting().heading : 'Welcome'},
             </span>
-            <span style={{ fontSize: '20px', fontWeight: 700, color: '#3636e8', lineHeight: 1.15, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.4px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+            <span style={{ fontSize: '20px', fontWeight: 700, color: '#3636e8', lineHeight: 1.15, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.4px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
               {firstName}
             </span>
           </div>

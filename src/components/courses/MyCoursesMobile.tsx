@@ -26,7 +26,6 @@ const fetcher = async (url: string) => {
 export default function MyCoursesMobile() {
   const { data: rawCourses } = useSWR('/api/courses', fetcher, { revalidateOnFocus: false })
   const { data: rawProgress } = useSWR('/api/lectures/progress', fetcher, { revalidateOnFocus: false })
-  const { data: dashData } = useSWR('/api/dashboard', fetcher, { revalidateOnFocus: false })
 
   const courses: CourseItem[] = useMemo(() => {
     if (Array.isArray(rawCourses)) return rawCourses
@@ -37,8 +36,6 @@ export default function MyCoursesMobile() {
     if (Array.isArray(rawProgress)) return rawProgress
     return rawProgress?.progress || []
   }, [rawProgress])
-
-  const recentLecture = dashData?.recentViewedLecture
 
   const [search, setSearch] = useState('')
 
@@ -119,21 +116,6 @@ export default function MyCoursesMobile() {
         />
       </div>
 
-      {/* Continue learning */}
-      {recentLecture?.content && (
-        <div style={{ marginBottom: '26px' }}>
-          <div style={{ padding: '0 4px', marginBottom: '12px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 900, color: '#1e1e3a', margin: 0, letterSpacing: '-0.01em' }}>
-              Continue learning
-            </h2>
-            <p style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: 600, marginTop: '2px' }}>
-              Pick up where you left off
-            </p>
-          </div>
-          <ContinueLearningCard lecture={recentLecture} />
-        </div>
-      )}
-
       {/* All courses */}
       <div>
         <div style={{ padding: '0 4px', marginBottom: '12px' }}>
@@ -159,82 +141,7 @@ export default function MyCoursesMobile() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   Continue Learning Card
-   ───────────────────────────────────────────────────────── */
-function ContinueLearningCard({ lecture }: { lecture: any }) {
-  const content = lecture?.content || {}
-  const course = content?.topic?.course
-  const accent = course?.color || '#6366f1'
-  const courseId = content?.topic?.courseId
-  const lectureId = content?.id
-  const title: string = content?.title || 'Lecture'
-  const subject: string | undefined = course?.subject
-  const courseName: string | undefined = course?.name
-  const subtitleParts = [subject, courseName].filter(Boolean) as string[]
-
-  // Position label "LECTURE N OF M" if we can compute it from progress + topics
-  const position = lecture?.position
-  const totalCount = lecture?.totalCount
-  const positionLabel = (position && totalCount)
-    ? `Lecture ${String(position).padStart(2, '0')} of ${totalCount}`
-    : (courseName ? `Lecture · ${courseName}` : 'Continue learning')
-
-  return (
-    <Link
-      href={courseId && lectureId ? `/courses/${courseId}/lectures/${lectureId}` : '#'}
-      style={{
-        display: 'flex', alignItems: 'center', gap: '14px',
-        padding: '16px',
-        borderRadius: '22px',
-        background: '#ffffff',
-        boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
-        border: '1px solid rgba(15, 23, 42, 0.05)',
-        textDecoration: 'none', color: 'inherit',
-        position: 'relative', overflow: 'hidden',
-      }}
-    >
-      <div style={{
-        width: '64px', height: '64px', borderRadius: '18px', flexShrink: 0,
-        background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#ffffff',
-        boxShadow: `0 8px 20px ${accent}40`,
-        position: 'relative',
-      }}>
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
-          <polygon points="5 3 19 12 5 21 5 3" />
-        </svg>
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '10px', fontWeight: 800, color: accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
-          {positionLabel}
-        </div>
-        <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '4px' }}>
-          {title}
-        </div>
-        {subtitleParts.length > 0 && (
-          <div style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: 600, marginBottom: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {subtitleParts.join(' · ')}
-          </div>
-        )}
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: '5px',
-          padding: '7px 14px', borderRadius: '50px',
-          background: `linear-gradient(135deg, ${accent}, ${accent}dd)`,
-          color: '#ffffff',
-          fontSize: '12px', fontWeight: 800,
-          boxShadow: `0 6px 14px ${accent}40`,
-        }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-          Resume
-        </span>
-      </div>
-    </Link>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────
-   Course Card — purple gradient header + progress
+   Course Card — purple gradient header + stat tiles
    ───────────────────────────────────────────────────────── */
 function CourseCard({ course, accessDays, expired }: { course: CourseItem; accessDays: number | null; expired: boolean }) {
   const accent = course.color || '#6366f1'
