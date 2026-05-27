@@ -408,6 +408,37 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
   const [gsiReady, setGsiReady] = useState(false)
   const googleBtnRef = useRef<HTMLDivElement>(null)
 
+  // Tester sign-in (gated by TEST_LOGIN_SECRET env var on the server).
+  const [testerOpen, setTesterOpen] = useState(false)
+  const [testerEmail, setTesterEmail] = useState('')
+  const [testerSecret, setTesterSecret] = useState('')
+  const [testerLoading, setTesterLoading] = useState(false)
+
+  async function handleTesterLogin(e: React.FormEvent) {
+    e.preventDefault()
+    if (!testerEmail || !testerSecret || testerLoading) return
+    setTesterLoading(true)
+    setGError('')
+    try {
+      const res = await fetch('/api/auth/test-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: testerEmail.trim(), secret: testerSecret }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setGError(data.error || 'Tester sign-in failed.')
+        return
+      }
+      router.push('/dashboard')
+      router.refresh()
+    } catch {
+      setGError('Something went wrong with tester sign-in.')
+    } finally {
+      setTesterLoading(false)
+    }
+  }
+
   useEffect(() => {
     const clientId = '990282572765-bn1ls79tuhpa589eiici5r9mr6c98c8h.apps.googleusercontent.com'
 
@@ -550,6 +581,64 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
             </>
           )}
         </button>
+      </div>
+
+      {/* Tester sign-in — enabled when TEST_LOGIN_SECRET is set on the server */}
+      <div style={{ marginTop: '14px' }}>
+        {!testerOpen ? (
+          <button
+            type="button"
+            onClick={() => setTesterOpen(true)}
+            style={{
+              width: '100%', padding: '10px 16px', borderRadius: '50px',
+              border: '1px dashed #cbd5e1', background: 'transparent', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: '12.5px', fontWeight: 700, color: '#6b6b8a',
+            }}
+          >
+            Tester sign-in (email + passcode)
+          </button>
+        ) : (
+          <form onSubmit={handleTesterLogin} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#ffffff', padding: '14px', borderRadius: '18px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+              <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e1e3a', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Tester sign-in</span>
+              <button type="button" onClick={() => setTesterOpen(false)} style={{ background: 'none', border: 'none', color: '#9999b0', cursor: 'pointer', fontSize: '18px', lineHeight: 1, padding: 0 }} aria-label="Close">&times;</button>
+            </div>
+            <input
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="Email"
+              value={testerEmail}
+              onChange={(e) => setTesterEmail(e.target.value)}
+              style={{ width: '100%', padding: '11px 14px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '13.5px', fontFamily: 'inherit', outline: 'none', color: '#1e1e3a' }}
+            />
+            <input
+              type="password"
+              autoComplete="one-time-code"
+              required
+              placeholder="Passcode"
+              value={testerSecret}
+              onChange={(e) => setTesterSecret(e.target.value)}
+              style={{ width: '100%', padding: '11px 14px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '13.5px', fontFamily: 'inherit', outline: 'none', color: '#1e1e3a' }}
+            />
+            <button
+              type="submit"
+              disabled={testerLoading || !testerEmail || !testerSecret}
+              style={{
+                width: '100%', marginTop: '4px',
+                padding: '11px 16px', borderRadius: '50px', border: 'none',
+                background: testerLoading || !testerEmail || !testerSecret ? '#cbd5e1' : '#1e1e3a',
+                color: '#ffffff', fontWeight: 800, fontSize: '13.5px', fontFamily: 'inherit',
+                cursor: testerLoading || !testerEmail || !testerSecret ? 'default' : 'pointer',
+              }}
+            >
+              {testerLoading ? 'Signing in…' : 'Sign in'}
+            </button>
+            <p style={{ margin: 0, fontSize: '10.5px', color: '#9999b0', textAlign: 'center' }}>
+              Temporary tester access. Disabled when the server-side passcode is unset.
+            </p>
+          </form>
+        )}
       </div>
 
       {process.env.NODE_ENV === 'development' && (

@@ -6,8 +6,8 @@ const config: CapacitorConfig = {
   appName: 'Teaching LMS',
   webDir: 'public',
   server: {
-    url: 'http://10.0.2.2:3000',
-    cleartext: true
+    url: 'https://teaching-llm.onrender.com',
+    androidScheme: 'https',
   },
   plugins: {
     SplashScreen: {
