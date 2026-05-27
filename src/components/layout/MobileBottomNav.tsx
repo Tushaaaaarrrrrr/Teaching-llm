@@ -138,9 +138,16 @@ export default function MobileBottomNav() {
       >
         {TABS.map(tab => {
           const active = tab.match(pathname)
+          const isAcademics = tab.label === 'Academics'
           return (
-            <Link key={tab.href} href={tab.href} className={`mobile-bottom-tab ${active ? 'active' : ''}`}>
-              <span className="tab-icon">{tab.icon}</span>
+            <Link 
+              key={tab.href} 
+              href={tab.href} 
+              className={`mobile-bottom-tab ${active ? 'active' : ''} ${isAcademics ? 'academics-action-tab' : ''}`}
+            >
+              <div className="tab-icon-wrapper">
+                <span className="tab-icon">{tab.icon}</span>
+              </div>
               <span className="tab-label">{tab.label}</span>
             </Link>
           )
