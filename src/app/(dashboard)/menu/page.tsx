@@ -175,7 +175,7 @@ export default function MobileMenuPage() {
   ]
 
   return (
-    <div className="page-container fade-in" style={{ paddingBottom: '24px' }}>
+    <div className="page-container fade-in mobile-menu-page" style={{ paddingBottom: '24px' }}>
       {/* User info hero card */}
       <Link href="/profile" style={{
         display: 'flex', alignItems: 'center', gap: '14px',

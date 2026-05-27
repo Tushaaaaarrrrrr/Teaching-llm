@@ -1062,15 +1062,21 @@ tr:hover td {
      Also strip the <main> default padding so the hero kisses the top safely.
      Uses :has() — supported in modern Chromium / WebView ≥ 105 (Capacitor uses current). */
   body:has(.course-detail-mobile-only > .mobile-course-detail),
-  body:has(.lecture-page-mobile) {
+  body:has(.lecture-page-mobile),
+  body:has(.mobile-menu-page),
+  body:has(.mobile-profile-page) {
     /* fallback if :has() is not understood, nothing happens — desktop selectors still apply */
   }
   body:has(.course-detail-mobile-only > .mobile-course-detail) .dashboard-header,
-  body:has(.lecture-page-mobile) .dashboard-header {
+  body:has(.lecture-page-mobile) .dashboard-header,
+  body:has(.mobile-menu-page) .dashboard-header,
+  body:has(.mobile-profile-page) .dashboard-header {
     display: none !important;
   }
   body:has(.course-detail-mobile-only > .mobile-course-detail) main,
-  body:has(.lecture-page-mobile) main {
+  body:has(.lecture-page-mobile) main,
+  body:has(.mobile-menu-page) main,
+  body:has(.mobile-profile-page) main {
     padding-top: 0 !important;
   }
 }

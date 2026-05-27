@@ -265,7 +265,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="page-container fade-in" style={{ padding: isMobile ? '12px' : '20px' }}>
+    <div className="page-container fade-in mobile-profile-page" style={{ padding: isMobile ? '12px' : '20px' }}>
       <div style={{ maxWidth: '960px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
         {/* ── Back ── */}
