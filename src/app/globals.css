@@ -533,7 +533,7 @@ tr:hover td {
 
   .mobile-bottom-nav {
     display: grid !important;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     position: fixed;
     left: 0;
     right: 0;
@@ -1002,6 +1002,10 @@ tr:hover td {
   .dashboard-header {
     padding: 0 16px !important;
     height: 76px !important;
+  }
+
+  .mobile-hidden-header {
+    display: none !important;
   }
 
   .header-titles {

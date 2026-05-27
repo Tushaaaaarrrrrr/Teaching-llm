@@ -370,8 +370,9 @@ export default function SupportPage() {
       setUserRole(role)
       setUserId(d.user?.id || '')
       if (role === 'MANAGER') {
-        fetch('/api/users').then(r => r.json()).then((users: AdminUser[]) => {
-          setAdmins(users.filter(u => u.role === 'ADMIN'))
+        fetch('/api/users/staff').then(r => r.json()).then((d: any) => {
+          const staffList = d.staff || []
+          setAdmins(staffList.filter((u: any) => u.role === 'MANAGER'))
         })
       }
     })
@@ -898,16 +899,7 @@ export default function SupportPage() {
                   </>
                 )}
 
-                {/* Admin can change status on their assigned tickets */}
-                {userRole === 'ADMIN' && selected.assignedTo?.id === userId && (
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
-                    {['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].map(s => (
-                      <button key={s} onClick={() => updateStatus(selected.id, s)} style={{ padding: '4px 10px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '11px', fontWeight: '700', background: selected.status === s ? STATUS_COLORS[s] : '#e8eaf0', color: selected.status === s ? '#fff' : '#9999b0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff' }}>
-                        {s.replace('_', ' ')}
-                      </button>
-                    ))}
-                  </div>
-                )}
+
               </div>
 
               <div style={{ padding: '14px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.05)', background: '#f0f1f5' }}>

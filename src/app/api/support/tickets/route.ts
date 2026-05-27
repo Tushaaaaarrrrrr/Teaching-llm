@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     let where: Record<string, unknown> = {}
 
-    if (session.role === 'STUDENT') {
+    if (session.role === 'STUDENT' || session.role === 'ADMIN') {
       const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
       where = {
         studentId: session.userId,
@@ -34,13 +34,6 @@ export async function GET(request: NextRequest) {
             updatedAt: { gte: fifteenDaysAgo } 
           }
         ]
-      }
-    } else if (session.role === 'ADMIN') {
-      where = {
-        OR: [
-          { assignedToId: session.userId },
-          { studentId: session.userId },
-        ],
       }
     }
     // MANAGER sees everything
