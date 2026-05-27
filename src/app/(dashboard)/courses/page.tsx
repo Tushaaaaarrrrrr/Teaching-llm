@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Script from 'next/script'
 import useSWR, { mutate } from 'swr'
-import MyCoursesMobile from '@/components/courses/MyCoursesMobile'
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -153,11 +152,7 @@ export default function CoursesPage() {
   }
 
   return (
-    <>
-    {/* Mobile redesign */}
-    <div className="my-courses-mobile-only"><MyCoursesMobile /></div>
-    {/* Desktop original layout (hidden on mobile via CSS) */}
-    <div className="page-container fade-in my-courses-desktop-only">
+    <div className="page-container fade-in">
       {error ? (
         <div
           className="card"
@@ -172,9 +167,9 @@ export default function CoursesPage() {
           Failed to load courses. {error.message}
         </div>
       ) : null}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <div className="courses-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
         <p style={{ fontSize: '13px', color: '#9999b0', margin: 0 }}>{courses.length} courses available</p>
-        <div style={{ position: 'relative' }}>
+        <div className="courses-search-wrap" style={{ position: 'relative' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
@@ -183,11 +178,18 @@ export default function CoursesPage() {
             placeholder="Search courses..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="search-input"
+            className="search-input courses-search-input"
             style={{ width: '260px', borderRadius: '50px', paddingLeft: '40px' }}
           />
         </div>
       </div>
+      <style>{`
+        @media (max-width: 600px) {
+          .courses-header-row { margin-bottom: 18px !important; }
+          .courses-search-wrap { width: 100%; }
+          .courses-search-input { width: 100% !important; }
+        }
+      `}</style>
 
       <style>{`
         @keyframes proShine {
@@ -841,6 +843,5 @@ export default function CoursesPage() {
         }
       `}</style>
     </div>
-    </>
   )
 }
