@@ -126,6 +126,13 @@ function LoginContent() {
   const [showRefundPolicy, setShowRefundPolicy] = useState(false)
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const [showTermsConditions, setShowTermsConditions] = useState(false)
+  const [isCapacitor, setIsCapacitor] = useState(false)
+
+  useEffect(() => {
+    const w = window as any
+    const native = !!(w?.Capacitor?.isNativePlatform?.() || w?.Capacitor?.isNative)
+    setIsCapacitor(native)
+  }, [])
 
   const footerLinksData = [
     { label: 'Refund Policy', icon: '💸', onClick: () => setShowRefundPolicy(true) },
@@ -141,6 +148,10 @@ function LoginContent() {
   }
 
   const displayError = queryError ? errorMap[queryError] || `Login error: ${queryError}` : ''
+
+  if (isCapacitor) {
+    return <MobileLoginExperience />
+  }
 
   return (
     <>
@@ -508,7 +519,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
       const { SocialLogin } = await import('@capgo/capacitor-social-login')
       const res = await SocialLogin.login({
         provider: 'google',
-        options: { scopes: ['email', 'profile'] },
+        options: { style: 'standard' },
       })
       const idToken =
         (res as any)?.result?.idToken ||

@@ -277,18 +277,53 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
   const [gError, setGError] = useState('')
   const [gLoading, setGLoading] = useState(false)
   const [gsiReady, setGsiReady] = useState(false)
+  const [isCapacitor, setIsCapacitor] = useState(false)
+  const [nativeReady, setNativeReady] = useState(false)
   const [quickLoading, setQuickLoading] = useState<null | 'MANAGER' | 'STUDENT'>(null)
+  const [studentQuickLoading, setStudentQuickLoading] = useState(false)
   const googleBtnRef = useRef<HTMLDivElement>(null)
 
   const isDev = process.env.NODE_ENV === 'development'
+  const GOOGLE_WEB_CLIENT_ID = '990282572765-bn1ls79tuhpa589eiici5r9mr6c98c8h.apps.googleusercontent.com'
 
+  // Detect Capacitor at mount so we know whether to use native plugin or GSI
   useEffect(() => {
-    const clientId = '990282572765-bn1ls79tuhpa589eiici5r9mr6c98c8h.apps.googleusercontent.com'
+    const w = window as any
+    const native = !!(w?.Capacitor?.isNativePlatform?.() || w?.Capacitor?.isNative)
+    setIsCapacitor(native)
+  }, [])
+
+  // Initialize the native Social Login plugin inside the Capacitor APK
+  useEffect(() => {
+    if (!isCapacitor) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { SocialLogin } = await import('@capgo/capacitor-social-login')
+        await SocialLogin.initialize({
+          google: { webClientId: GOOGLE_WEB_CLIENT_ID },
+        })
+        if (!cancelled) setNativeReady(true)
+      } catch (err) {
+        console.error('Failed to init native Google sign-in', err)
+        if (!cancelled) setGError('Native sign-in is not available. Please try again.')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isCapacitor])
+
+  // Load Google Identity Services (web only)
+  useEffect(() => {
+    if (isCapacitor) return
+
     const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]')
     const onReady = () => {
       if ((window as any).google) {
         try {
-          ;(window as any).google.accounts.id.initialize({ client_id: clientId, callback: handleGoogleResponse })
+          ;(window as any).google.accounts.id.initialize({
+            client_id: GOOGLE_WEB_CLIENT_ID,
+            callback: handleGoogleResponse,
+          })
           setGsiReady(true)
         } catch (e) { console.warn('GSI init failed', e) }
       }
@@ -301,9 +336,12 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
       script.onload = onReady
       document.body.appendChild(script)
     }
-  }, [])
+  }, [isCapacitor])
 
+  // Render the standard GSI button on web only
   useEffect(() => {
+    if (isCapacitor) return
+
     if (gsiReady && googleBtnRef.current && (window as any).google) {
       ;(window as any).google.accounts.id.renderButton(googleBtnRef.current, {
         theme: 'outline',
@@ -314,7 +352,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         text: 'continue_with',
       })
     }
-  }, [gsiReady])
+  }, [gsiReady, isCapacitor])
 
   async function handleGoogleResponse(response: any) {
     setGLoading(true); setGError('')
@@ -330,6 +368,66 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
     } catch {
       setGError('Something went wrong with Google login.')
     } finally { setGLoading(false) }
+  }
+
+  async function handleNativeGoogleSignIn() {
+    setGLoading(true)
+    setGError('')
+    try {
+      const { SocialLogin } = await import('@capgo/capacitor-social-login')
+      const result = await SocialLogin.login({
+        provider: 'google',
+        options: { style: 'standard' }
+      })
+
+      const idToken =
+        (result as any)?.result?.idToken ||
+        (result as any)?.result?.responsePayload?.idToken ||
+        (result as any)?.result?.authentication?.idToken
+
+      if (idToken) {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: idToken }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setGError(data.error || 'Google login failed')
+          return
+        }
+        router.push('/dashboard')
+        router.refresh()
+      } else {
+        setGError('Google login did not return a valid ID token.')
+      }
+    } catch (err: any) {
+      console.error('Native login error:', err)
+      setGError(err.message || 'Something went wrong with native Google login.')
+    } finally {
+      setGLoading(false)
+    }
+  }
+
+  // Backup APK student quick login
+  async function handleStudentQuickLogin() {
+    if (studentQuickLoading) return
+    setStudentQuickLoading(true)
+    setGError('')
+    try {
+      const res = await fetch('/api/auth/student-quick-login', { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setGError(data.error || 'Quick login failed.')
+        return
+      }
+      router.push('/dashboard')
+      router.refresh()
+    } catch {
+      setGError('Something went wrong with quick login.')
+    } finally {
+      setStudentQuickLoading(false)
+    }
   }
 
   // Match the desktop login: hard-coded dev accounts by email
@@ -437,18 +535,105 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           Continue with Google
         </p>
 
-        <div style={{ display: 'flex', justifyContent: 'center', minHeight: '44px' }}>
-          {!gsiReady ? (
-            <div style={{
-              width: '100%', padding: '13px 20px', borderRadius: '50px',
-              background: '#f1f5f9', color: '#94a3b8',
-              fontSize: '13px', fontWeight: 700, textAlign: 'center',
-              border: '1px solid #e2e8f0',
-            }}>
-              Preparing secure sign-in…
-            </div>
+        <div style={{ position: 'relative', minHeight: '44px', display: 'flex', justifyContent: 'center' }}>
+          {!isCapacitor && (
+            <div 
+              ref={googleBtnRef} 
+              style={{ 
+                position: 'absolute', 
+                top: 0, 
+                left: 0, 
+                width: '100%', 
+                height: '100%', 
+                opacity: 0.01, 
+                zIndex: 10,
+                cursor: gsiReady ? 'pointer' : 'default',
+                overflow: 'hidden'
+              }} 
+            />
+          )}
+
+          {isCapacitor ? (
+            !nativeReady ? (
+              <div style={{
+                width: '100%', padding: '13px 20px', borderRadius: '50px',
+                background: '#f1f5f9', color: '#94a3b8',
+                fontSize: '13px', fontWeight: 700, textAlign: 'center',
+                border: '1px solid #e2e8f0',
+              }}>
+                Preparing secure sign-in…
+              </div>
+            ) : (
+              <button
+                onClick={handleNativeGoogleSignIn}
+                disabled={gLoading}
+                style={{
+                  width: '100%',
+                  padding: '13px 20px',
+                  borderRadius: '50px',
+                  border: '1px solid #e2e8f0',
+                  background: '#ffffff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: '#1e1e3a',
+                  fontFamily: 'inherit',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+              </button>
+            )
           ) : (
-            <div ref={googleBtnRef} style={{ width: '100%' }} />
+            !gsiReady ? (
+              <div style={{
+                width: '100%', padding: '13px 20px', borderRadius: '50px',
+                background: '#f1f5f9', color: '#94a3b8',
+                fontSize: '13px', fontWeight: 700, textAlign: 'center',
+                border: '1px solid #e2e8f0',
+              }}>
+                Preparing secure sign-in…
+              </div>
+            ) : (
+              <button
+                disabled={gLoading}
+                style={{
+                  width: '100%',
+                  padding: '13px 20px',
+                  borderRadius: '50px',
+                  border: '1px solid #e2e8f0',
+                  background: '#ffffff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: '#1e1e3a',
+                  fontFamily: 'inherit',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+              </button>
+            )
           )}
         </div>
 
@@ -466,6 +651,43 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           </div>
         )}
       </div>
+
+      {/* APK Quick Login Fallback */}
+      {isCapacitor && (
+        <div style={{ marginBottom: '16px' }}>
+          <button
+            type="button"
+            onClick={handleStudentQuickLogin}
+            disabled={studentQuickLoading}
+            style={{
+              width: '100%',
+              padding: '13px 20px',
+              borderRadius: '50px',
+              border: 'none',
+              background: studentQuickLoading ? '#cbd5e1' : '#1e1e3a',
+              color: '#ffffff',
+              boxShadow: studentQuickLoading ? 'none' : '0 6px 18px rgba(30, 30, 58, 0.20)',
+              cursor: studentQuickLoading ? 'default' : 'pointer',
+              fontFamily: 'inherit',
+              fontSize: '14px',
+              fontWeight: 800,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            }}
+          >
+            {studentQuickLoading ? (
+              <Spinner color="#ffffff" />
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Quick login as Student
+              </>
+            )}
+          </button>
+          <p style={{ margin: '6px 0 0', fontSize: '10.5px', color: '#9999b0', textAlign: 'center', fontWeight: 500 }}>
+            Backup sign-in. Available when the server-side passcode is set.
+          </p>
+        </div>
+      )}
 
       {/* Quick Login (dev only) — matches desktop style: full-width violet + emerald pills */}
       {isDev && (
