@@ -402,8 +402,13 @@ export default function ExploreCoursesPage() {
       <style>{`
         @media (max-width: 768px) {
           .store-header-banner {
-            margin-top: 12px !important;
-            padding-top: 8px !important;
+            margin-top: 0 !important;
+            padding-top: 10px !important;
+            padding-bottom: 12px !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 40 !important;
+            background: #e8eaf0 !important;
           }
           .store-category-grid {
             grid-template-columns: repeat(2, 1fr) !important;
@@ -433,6 +438,13 @@ export default function ExploreCoursesPage() {
           }
           .store-category-grid .store-cat-card .store-cat-explore {
             font-size: 11px !important;
+          }
+          .store-offerings-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+          .store-offerings-grid > div {
+            border-radius: 18px !important;
           }
         }
       `}</style>
@@ -1178,7 +1190,7 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
-      {storeView === 'courses' && <div className="grid-3">
+      {storeView === 'courses' && <div className="grid-3 store-offerings-grid">
         {[...activeOfferings].sort((a: any, b: any) => {
           const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
           const aEnroll = getEnrollmentStatus(a.courseId)
