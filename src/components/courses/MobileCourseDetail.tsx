@@ -3,6 +3,10 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
+import FeedbackModal from '@/components/FeedbackModal'
+
+const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 interface ContentItem {
   id: string
@@ -49,6 +53,11 @@ export default function MobileCourseDetail({
 }: Props) {
   const router = useRouter()
   const [tab, setTab] = useState<TabKey>('curriculum')
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false)
+
+  const { data: submittedFeedbacksRaw, mutate: mutateFeedbacks } = useSWR(role === 'STUDENT' ? '/api/feedback' : null, fetcher)
+  const submittedFeedbacks = Array.isArray(submittedFeedbacksRaw) ? submittedFeedbacksRaw : []
+  const hasFeedback = submittedFeedbacks.some((f: any) => f.courseId === course.id)
 
   const accent = course.color || '#6366f1'
   const totalLectures = course._count?.lectures || topics.reduce((s, t) => s + (t.content?.length || 0), 0)
@@ -206,6 +215,49 @@ export default function MobileCourseDetail({
             </div>
           </div>
         </div>
+
+        {/* Course Feedback Row (matching image 2) */}
+        {role === 'STUDENT' && !hasFeedback && (
+          <div
+            onClick={() => setShowFeedbackModal(true)}
+            style={{
+              background: '#ffffff',
+              borderRadius: '20px',
+              padding: '14px 16px',
+              border: '1px solid rgba(15,23,42,0.05)',
+              boxShadow: '0 12px 28px -12px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              transition: 'transform 0.2s ease',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '12px',
+                background: '#ffeedd',
+                color: '#d97706',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </div>
+              <span style={{ fontSize: '15.5px', fontWeight: '800', color: '#1e1e3a', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+                Course Feedback
+              </span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* ─────────── Tabs ─────────── */}
@@ -262,6 +314,18 @@ export default function MobileCourseDetail({
 
         {tab === 'overview' && <OverviewTab course={course} mentorName={mentorName} totalLectures={totalLectures} />}
       </div>
+
+      {showFeedbackModal && (
+        <FeedbackModal
+          courseId={course.id}
+          courseName={course.name}
+          courseSubject={course.subject || ''}
+          onClose={() => setShowFeedbackModal(false)}
+          onSuccess={() => {
+            mutateFeedbacks()
+          }}
+        />
+      )}
     </div>
   )
 }
