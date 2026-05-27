@@ -401,45 +401,46 @@ function LoginContent() {
   )
 }
 
+const GOOGLE_WEB_CLIENT_ID = '990282572765-bn1ls79tuhpa589eiici5r9mr6c98c8h.apps.googleusercontent.com'
+
 function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: () => void, onPrivacyClick?: () => void }) {
   const router = useRouter()
   const [gLoading, setGLoading] = useState(false)
   const [gError, setGError] = useState('')
   const [gsiReady, setGsiReady] = useState(false)
+  const [isCapacitor, setIsCapacitor] = useState(false)
+  const [nativeReady, setNativeReady] = useState(false)
   const googleBtnRef = useRef<HTMLDivElement>(null)
 
-  // APK-only quick student login. Detect Capacitor at mount; gated server-side by STUDENT_QUICK_LOGIN_EMAIL.
-  const [isCapacitor, setIsCapacitor] = useState(false)
-  const [quickLoading, setQuickLoading] = useState(false)
-
+  // Detect Capacitor at mount so we know whether to use the native plugin or GSI.
   useEffect(() => {
     const w = window as any
     const native = !!(w?.Capacitor?.isNativePlatform?.() || w?.Capacitor?.isNative)
     setIsCapacitor(native)
   }, [])
 
-  async function handleQuickLogin() {
-    if (quickLoading) return
-    setQuickLoading(true)
-    setGError('')
-    try {
-      const res = await fetch('/api/auth/student-quick-login', { method: 'POST' })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setGError(data.error || 'Quick login failed.')
-        return
-      }
-      router.push('/dashboard')
-      router.refresh()
-    } catch {
-      setGError('Something went wrong with quick login.')
-    } finally {
-      setQuickLoading(false)
-    }
-  }
-
+  // Initialize the native Social Login plugin inside the Capacitor APK.
   useEffect(() => {
-    const clientId = '990282572765-bn1ls79tuhpa589eiici5r9mr6c98c8h.apps.googleusercontent.com'
+    if (!isCapacitor) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { SocialLogin } = await import('@capgo/capacitor-social-login')
+        await SocialLogin.initialize({
+          google: { webClientId: GOOGLE_WEB_CLIENT_ID },
+        })
+        if (!cancelled) setNativeReady(true)
+      } catch (err) {
+        console.error('Failed to init native Google sign-in', err)
+        if (!cancelled) setGError('Native sign-in is not available. Please try again.')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isCapacitor])
+
+  // Load Google Identity Services (web only — GSI is blocked inside WebViews).
+  useEffect(() => {
+    if (isCapacitor) return
 
     const script = document.createElement('script')
     script.src = 'https://accounts.google.com/gsi/client'
@@ -448,7 +449,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
     script.onload = () => {
       if ((window as any).google) {
         (window as any).google.accounts.id.initialize({
-          client_id: clientId,
+          client_id: GOOGLE_WEB_CLIENT_ID,
           callback: handleGoogleResponse,
         })
         setGsiReady(true)
@@ -460,10 +461,11 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
       const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]')
       if (existing) existing.remove()
     }
-  }, [])
+  }, [isCapacitor])
 
-  // Render the actual Google button when GSI is ready
+  // Render the GSI button on web only.
   useEffect(() => {
+    if (isCapacitor) return
     if (gsiReady && googleBtnRef.current && (window as any).google) {
       (window as any).google.accounts.id.renderButton(googleBtnRef.current, {
         theme: 'outline',
@@ -473,27 +475,60 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
         shape: 'pill',
       });
     }
-  }, [gsiReady])
+  }, [gsiReady, isCapacitor])
+
+  // Native sign-in handler (Capacitor APK).
+  async function handleNativeGoogleSignIn() {
+    if (gLoading || !nativeReady) return
+    setGLoading(true)
+    setGError('')
+    try {
+      const { SocialLogin } = await import('@capgo/capacitor-social-login')
+      const res = await SocialLogin.login({
+        provider: 'google',
+        options: { scopes: ['email', 'profile'] },
+      })
+      const idToken =
+        (res as any)?.result?.idToken ||
+        (res as any)?.result?.responsePayload?.idToken ||
+        (res as any)?.result?.authentication?.idToken
+      if (!idToken) {
+        setGError('Google did not return an ID token. Please try again.')
+        return
+      }
+      await sendCredentialToServer(idToken)
+    } catch (err: any) {
+      if (err?.code === 'USER_CANCELLED' || err?.message?.includes('cancel')) {
+        // Silent — user backed out
+      } else {
+        console.error(err)
+        setGError(err?.message || 'Google sign-in failed.')
+      }
+    } finally {
+      setGLoading(false)
+    }
+  }
+
+  async function sendCredentialToServer(credential: string) {
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setGError(data.error || 'Google login failed')
+      return
+    }
+    router.push('/dashboard')
+    router.refresh()
+  }
 
   async function handleGoogleResponse(response: any) {
     setGLoading(true)
     setGError('')
     try {
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: response.credential }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setGError(data.error || 'Google login failed')
-        return
-      }
-
-      router.push('/dashboard')
-      router.refresh()
+      await sendCredentialToServer(response.credential)
     } catch {
       setGError('Something went wrong with Google login.')
     } finally {
@@ -515,24 +550,27 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
       </p>
 
       <div style={{ position: 'relative' }}>
-        {/* The invisible Google button container that sits on top of our custom button */}
-        <div 
-          ref={googleBtnRef} 
-          style={{ 
-            position: 'absolute', 
-            top: 0, 
-            left: 0, 
-            width: '100%', 
-            height: '100%', 
-            opacity: 0.01, 
-            zIndex: 10,
-            cursor: gsiReady ? 'pointer' : 'default',
-            overflow: 'hidden'
-          }} 
-        />
-        
+        {/* GSI hidden overlay — web only; the native plugin handles clicks inside Capacitor */}
+        {!isCapacitor && (
+          <div
+            ref={googleBtnRef}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              opacity: 0.01,
+              zIndex: 10,
+              cursor: gsiReady ? 'pointer' : 'default',
+              overflow: 'hidden'
+            }}
+          />
+        )}
+
         <button
-          disabled={!gsiReady || gLoading}
+          onClick={isCapacitor ? handleNativeGoogleSignIn : undefined}
+          disabled={isCapacitor ? (!nativeReady || gLoading) : (!gsiReady || gLoading)}
           style={{
             width: '100%',
             padding: '14px 24px',
@@ -540,7 +578,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
             border: 'none',
             background: '#ffffff',
             boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-            cursor: gsiReady && !gLoading ? 'pointer' : 'default',
+            cursor: (isCapacitor ? nativeReady : gsiReady) && !gLoading ? 'pointer' : 'default',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -550,10 +588,10 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
             color: '#1e1e3a',
             fontFamily: 'inherit',
             transition: 'all 0.2s ease',
-            opacity: gsiReady ? 1 : 0.6,
+            opacity: (isCapacitor ? nativeReady : gsiReady) ? 1 : 0.6,
           }}
           onMouseOver={(e) => {
-            if (gsiReady && !gLoading) {
+            if ((isCapacitor ? nativeReady : gsiReady) && !gLoading) {
               e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.12)'
               e.currentTarget.style.transform = 'translateY(-1px)'
             }
@@ -581,46 +619,6 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
           )}
         </button>
       </div>
-
-      {/* APK quick-login — only visible inside the Capacitor app, gated server-side by STUDENT_QUICK_LOGIN_EMAIL */}
-      {isCapacitor && (
-        <div style={{ marginTop: '14px' }}>
-          <button
-            type="button"
-            onClick={handleQuickLogin}
-            disabled={quickLoading}
-            style={{
-              width: '100%',
-              padding: '14px 24px',
-              borderRadius: '50px',
-              border: 'none',
-              background: quickLoading ? '#cbd5e1' : '#1e1e3a',
-              color: '#ffffff',
-              boxShadow: quickLoading ? 'none' : '0 6px 18px rgba(30,30,58,0.30)',
-              cursor: quickLoading ? 'default' : 'pointer',
-              fontFamily: 'inherit',
-              fontSize: '15px',
-              fontWeight: 800,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-            }}
-          >
-            {quickLoading ? (
-              <>
-                <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/></svg>
-                Signing in…
-              </>
-            ) : (
-              <>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                Quick login as Student
-              </>
-            )}
-          </button>
-          <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#9999b0', textAlign: 'center' }}>
-            One-tap sign-in for the mobile app while Google sign-in is being set up natively.
-          </p>
-        </div>
-      )}
 
       {process.env.NODE_ENV === 'development' && (
         <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>

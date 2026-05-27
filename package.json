@@ -34,6 +34,7 @@
     "@capacitor/screen-orientation": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@capgo/capacitor-social-login": "^8.3.22",
     "@hello-pangea/dnd": "^18.0.1",
     "@prisma/client": "5.22.0",
     "@supabase/supabase-js": "^2.103.0",
