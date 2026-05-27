@@ -1,5 +1,6 @@
 'use client'
 
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -17,7 +18,8 @@ const TABS: Tab[] = [
     match: p => p === '/dashboard',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V9.5z" />
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
       </svg>
     ),
   },
@@ -33,13 +35,13 @@ const TABS: Tab[] = [
     ),
   },
   {
-    href: '/academics',
+    href: '/exams',
     label: 'Academics',
-    match: p => p.startsWith('/academics') || p.startsWith('/calendar') || p.startsWith('/live') || p.startsWith('/free-resources') || p.startsWith('/community'),
+    match: p => p.startsWith('/exams') || p.startsWith('/calendar') || p.startsWith('/live') || p.startsWith('/free-resources') || p.startsWith('/community'),
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+        <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
       </svg>
     ),
   },
@@ -55,9 +57,9 @@ const TABS: Tab[] = [
     ),
   },
   {
-    href: '/menu',
+    href: '/profile',
     label: 'Profile',
-    match: p => p === '/menu' || p.startsWith('/profile'),
+    match: p => p === '/profile' || p === '/menu' || p.startsWith('/profile'),
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -69,16 +71,47 @@ const TABS: Tab[] = [
 
 export default function MobileBottomNav() {
   const pathname = usePathname() || ''
+  const [isVisible, setIsVisible] = useState(true)
+  const [lastScrollTop, setLastScrollTop] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement
+      if (!target || typeof target.scrollTop !== 'number') return
+
+      const currentScrollTop = target.scrollTop
+      
+      // Threshold to prevent flickering on micro-scrolls
+      if (Math.abs(currentScrollTop - lastScrollTop) < 8) return
+
+      if (currentScrollTop < 20) {
+        setIsVisible(true)
+      } else if (currentScrollTop > lastScrollTop) {
+        // Scrolling down -> hide
+        setIsVisible(false)
+      } else {
+        // Scrolling up -> show
+        setIsVisible(true)
+      }
+      setLastScrollTop(currentScrollTop)
+    }
+
+    // Capture scroll events from any element (e.g. <main>)
+    window.addEventListener('scroll', handleScroll, true)
+    return () => window.removeEventListener('scroll', handleScroll, true)
+  }, [lastScrollTop])
 
   return (
-    <nav className="mobile-bottom-nav" aria-label="Primary mobile navigation">
+    <nav 
+      className={`mobile-bottom-nav ${isVisible ? 'visible' : 'hidden'}`} 
+      aria-label="Primary mobile navigation"
+    >
       {TABS.map(tab => {
         const active = tab.match(pathname)
         return (
           <Link key={tab.href} href={tab.href} className={`mobile-bottom-tab ${active ? 'active' : ''}`}>
             <span className="tab-icon">{tab.icon}</span>
             <span className="tab-label">{tab.label}</span>
-            {active && <span className="tab-indicator" />}
           </Link>
         )
       })}
