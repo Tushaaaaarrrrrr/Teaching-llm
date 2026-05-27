@@ -698,46 +698,69 @@ export default function CoursesPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
           padding: '20px'
         }} onClick={() => setInfoModalCourse(null)}>
+          <style dangerouslySetInnerHTML={{ __html: `
+            .batch-cmp-modal { padding: 30px 40px; }
+            .batch-cmp-table-wrap { padding: 30px 40px; }
+            .batch-cmp-footer { padding: 0 40px 40px; }
+            .batch-cmp-th { padding: 14px 16px; font-size: 13px; }
+            .batch-cmp-td { padding: 14px 16px; font-size: 13px; }
+            .batch-cmp-title { font-size: 24px; }
+            .batch-cmp-sub { font-size: 15px; }
+            @media (max-width: 520px) {
+              .batch-cmp-modal { padding: 18px 16px 14px; }
+              .batch-cmp-table-wrap { padding: 12px; }
+              .batch-cmp-footer { padding: 0 12px 16px; }
+              .batch-cmp-th { padding: 8px 8px; font-size: 10px; }
+              .batch-cmp-td { padding: 10px 8px; font-size: 11px; }
+              .batch-cmp-title { font-size: 18px; }
+              .batch-cmp-sub { font-size: 12px; }
+            }
+          `}} />
           <div style={{
-            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '750px',
+            background: '#ffffff', borderRadius: '24px', width: '100%', maxWidth: '750px',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
             animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
-              <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '25px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <div className="batch-cmp-modal" style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
-              <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Batch Comparison</h2>
-              <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500' }}>Choose the experience that fits your learning style</p>
+              <h2 className="batch-cmp-title" style={{ fontWeight: '800', color: '#1e293b', marginBottom: '6px', paddingRight: '40px' }}>Batch Comparison</h2>
+              <p className="batch-cmp-sub" style={{ color: '#64748b', fontWeight: '500', margin: 0 }}>Choose the experience that fits your learning style</p>
             </div>
 
             {/* Comparison Table */}
-            <div style={{ padding: '30px 40px' }}>
-              <div style={{ borderRadius: '24px', overflow: 'hidden', border: '1.5px solid #e2e8f0', background: '#fff' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <div className="batch-cmp-table-wrap">
+              <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1.5px solid #e2e8f0', background: '#fff' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
+                  <colgroup>
+                    <col style={{ width: '38%' }} />
+                    <col style={{ width: '31%' }} />
+                    <col style={{ width: '31%' }} />
+                  </colgroup>
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>
-                        {infoModalCourse?.enrollmentType === 'FREE' || infoModalCourse?.enrollmentType === 'DEMO' ? 'General Batch' : 'PLUS ( Recorded )'}
+                      <th className="batch-cmp-th" style={{ color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Features</th>
+                      <th className="batch-cmp-th" style={{ color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center', wordBreak: 'break-word' }}>
+                        {infoModalCourse?.enrollmentType === 'FREE' || infoModalCourse?.enrollmentType === 'DEMO' ? 'General' : 'PLUS'}
                       </th>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO ( LIVE )</th>
+                      <th className="batch-cmp-th" style={{ color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[
-                      { f: 'Course Lectures', g: '✅ Full Access', p: '✅ Full Access' },
-                      { f: 'Course Materials', g: '✅ Full Access', p: '✅ Full Access' },
-                      { f: 'Live Classes', g: '❌ No Access', p: '✅ Direct Entry' },
-                      { f: 'Direct Q&A with Teacher', g: '❌ No', p: '✅ Yes (Live)' },
-                      { f: 'Weekly Mentorship', g: '❌ No', p: '✅ Every Sunday' },
-                      { f: 'Priority Support', g: '❌ Standard', p: '✅ 24/7 Priority' },
+                      { f: 'Lectures', g: '✅ Full', p: '✅ Full' },
+                      { f: 'Materials', g: '✅ Full', p: '✅ Full' },
+                      { f: 'Live Classes', g: '❌ No', p: '✅ Yes' },
+                      { f: 'Q&A w/ Teacher', g: '❌ No', p: '✅ Live' },
+                      { f: 'Mentorship', g: '❌ No', p: '✅ Weekly' },
+                      { f: 'Support', g: '❌ Basic', p: '✅ Priority' },
                     ].map((row, i) => (
                       <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#334155', fontWeight: '600' }}>{row.f}</td>
-                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#92400e', textAlign: 'center', background: '#fffdf5' }}>{row.g}</td>
-                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#4338ca', fontWeight: '700', textAlign: 'center', background: '#f5f7ff' }}>{row.p}</td>
+                        <td className="batch-cmp-td" style={{ color: '#334155', fontWeight: '600' }}>{row.f}</td>
+                        <td className="batch-cmp-td" style={{ color: '#92400e', textAlign: 'center', background: '#fffdf5' }}>{row.g}</td>
+                        <td className="batch-cmp-td" style={{ color: '#4338ca', fontWeight: '700', textAlign: 'center', background: '#f5f7ff' }}>{row.p}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -745,8 +768,8 @@ export default function CoursesPage() {
               </div>
             </div>
 
-            <div style={{ padding: '0 40px 40px', textAlign: 'center' }}>
-              <button onClick={() => setInfoModalCourse(null)} style={{ background: '#1e293b', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+            <div className="batch-cmp-footer" style={{ textAlign: 'center' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ background: '#1e293b', color: 'white', padding: '12px 32px', borderRadius: '14px', fontSize: '14px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 Got it, thanks!
               </button>
             </div>

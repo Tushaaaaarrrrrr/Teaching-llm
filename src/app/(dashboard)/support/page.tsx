@@ -327,7 +327,7 @@ export default function SupportPage() {
     setClasses((cr.classes || cr || []).map((c: ClassItem) => ({ id: c.id, name: c.name, color: c.color })))
   }, [])
 
-  const loadFaqs = useCallback(() => {
+  const loadFaqs = useCallback(async () => {
     const staticFaqs: Faq[] = [
       { id: '1', question: 'What is the difference between PLUS and PRO Batch?', answer: 'PLUS Batch includes full access to recorded lectures and course materials. PRO Batch includes everything in PLUS, plus direct entry to Live Classes, priority 1:1 doubt support, and interactive Q&A sessions with teachers.', order: 0 },
       { id: '2', question: 'Can I upgrade from PLUS to PRO later?', answer: 'Yes, you can upgrade at any time! Simply visit the course store, find your course, and you will see a discounted "Upgrade to PRO" option that only charges the price difference.', order: 1 },
@@ -350,7 +350,18 @@ export default function SupportPage() {
       { id: '19', question: 'What browsers are recommended?', answer: 'We recommend using the latest versions of Google Chrome, Mozilla Firefox, or Microsoft Edge for the best experience.', order: 18 },
       { id: '20', question: 'How do I report a technical bug?', answer: 'Please raise a "Technical Support" ticket with a screenshot of the error and your device/browser details. Our team will investigate it promptly.', order: 19 }
     ]
-    setFaqs(staticFaqs)
+    try {
+      const res = await fetch('/api/support/faq')
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0) {
+        setFaqs(data)
+      } else {
+        // DB is empty — show static defaults for students, managers see empty state to add their own
+        setFaqs(staticFaqs)
+      }
+    } catch {
+      setFaqs(staticFaqs)
+    }
   }, [])
 
   useEffect(() => {

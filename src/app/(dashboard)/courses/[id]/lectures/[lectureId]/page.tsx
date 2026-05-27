@@ -602,7 +602,8 @@ export default function LecturePage() {
         /* Unified Mobile Layout (Discussion placed after Study Materials) */
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* About this Lecture */}
+            {/* About this Lecture — only show on mobile if description exists */}
+            {content.description && (
             <section style={{ 
               background: 'white', padding: '20px', borderRadius: '20px', 
               boxShadow: '0 4px 12px rgba(0,0,0,0.03)' 
@@ -611,7 +612,7 @@ export default function LecturePage() {
                 About this Lecture
               </h2>
               <div style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
-                {displayedDescription || 'No description provided for this lecture.'}
+                {displayedDescription}
               </div>
               {isLongDescription && (
                 <button 
@@ -630,6 +631,7 @@ export default function LecturePage() {
                 </button>
               )}
             </section>
+            )}
 
             {/* Study Materials */}
             <section style={{ 
