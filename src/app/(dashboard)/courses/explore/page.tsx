@@ -439,13 +439,6 @@ export default function ExploreCoursesPage() {
           .store-category-grid .store-cat-card .store-cat-explore {
             font-size: 11px !important;
           }
-          .store-offerings-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 12px !important;
-          }
-          .store-offerings-grid > div {
-            border-radius: 18px !important;
-          }
         }
       `}</style>
       {/* Header Banner */}
@@ -1190,7 +1183,7 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
-      {storeView === 'courses' && <div className="grid-3 store-offerings-grid">
+      {storeView === 'courses' && <div className="grid-3">
         {[...activeOfferings].sort((a: any, b: any) => {
           const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
           const aEnroll = getEnrollmentStatus(a.courseId)
