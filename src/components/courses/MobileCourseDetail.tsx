@@ -42,7 +42,7 @@ interface Props {
   role: string
 }
 
-type TabKey = 'curriculum' | 'overview' | 'reviews'
+type TabKey = 'curriculum' | 'overview'
 
 export default function MobileCourseDetail({
   course, topics, expandedTopics, toggleTopic, progressMap, updateProgress, role,
@@ -52,8 +52,6 @@ export default function MobileCourseDetail({
 
   const accent = course.color || '#6366f1'
   const totalLectures = course._count?.lectures || topics.reduce((s, t) => s + (t.content?.length || 0), 0)
-  const completedLectures = Object.values(progressMap).filter(s => s === 'COMPLETED').length
-  const pct = totalLectures > 0 ? Math.round((completedLectures / totalLectures) * 100) : 0
 
   const accessDays = useMemo(() => {
     if (!course.expiresAt) return null
@@ -66,28 +64,6 @@ export default function MobileCourseDetail({
     if (!course.expiresAt) return null
     return new Date(course.expiresAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
   }, [course.expiresAt])
-
-  const remainingMinutes = useMemo(() => {
-    const remaining = Math.max(0, totalLectures - completedLectures)
-    // Assume ~14 min per lecture if duration unknown
-    let mins = 0
-    let unknown = 0
-    topics.forEach(t => t.content.forEach(c => {
-      if (progressMap[c.id] === 'COMPLETED') return
-      if (typeof c.durationMinutes === 'number' && c.durationMinutes > 0) mins += c.durationMinutes
-      else unknown += 1
-    }))
-    mins += unknown * 14
-    if (mins <= 0 && remaining > 0) mins = remaining * 14
-    return mins
-  }, [topics, progressMap, totalLectures, completedLectures])
-
-  const remainingLabel = useMemo(() => {
-    const h = Math.floor(remainingMinutes / 60)
-    const m = remainingMinutes % 60
-    if (h <= 0) return `${m}m remaining`
-    return `~${h}h ${m}m remaining`
-  }, [remainingMinutes])
 
   const badge = course.enrollmentType === 'LIVE' ? 'LIVE BATCH'
     : course.enrollmentType === 'RECORDED' ? 'PRO BATCH'
@@ -111,8 +87,8 @@ export default function MobileCourseDetail({
         <div style={{ position: 'absolute', top: '-60px', right: '-40px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: '-50px', left: '-40px', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.10), transparent 70%)', pointerEvents: 'none' }} />
 
-        {/* Top bar — only back button per spec (bookmark + share removed) */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', position: 'relative', marginBottom: '14px' }}>
+        {/* Top bar — back button + bookmark + share */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', marginBottom: '14px' }}>
           <button
             onClick={() => router.push('/courses')}
             aria-label="Back to courses"
@@ -127,6 +103,22 @@ export default function MobileCourseDetail({
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Back to Courses
           </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button aria-label="Save course" style={iconBtn}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            </button>
+            <button
+              aria-label="Share course"
+              onClick={() => {
+                if (typeof navigator !== 'undefined' && (navigator as any).share) {
+                  (navigator as any).share({ title: course.name, url: typeof window !== 'undefined' ? window.location.href : '' }).catch(() => {})
+                }
+              }}
+              style={iconBtn}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </button>
+          </div>
         </div>
 
         {/* Badge */}
@@ -159,18 +151,6 @@ export default function MobileCourseDetail({
           </p>
         )}
 
-        {/* Stats row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px', position: 'relative', flexWrap: 'wrap' }}>
-          <Stat icon="topics" label={`${course._count?.topics || topics.length} topics`} />
-          <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-          <Stat icon="lectures" label={`${totalLectures} lectures`} />
-          {(course._count?.materials || 0) > 0 && (
-            <>
-              <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-              <Stat icon="materials" label={`${course._count?.materials} materials`} />
-            </>
-          )}
-        </div>
       </div>
 
       {/* ─────────── Card stack (overlaps hero) ─────────── */}
@@ -205,15 +185,14 @@ export default function MobileCourseDetail({
           </div>
         )}
 
-        {/* Mentor card (no message button per spec) */}
+        {/* Mentor card */}
         <div style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
-              background: '#ffffff', color: accent,
+              background: `${accent}15`, color: accent,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '15px', fontWeight: 800,
-              boxShadow: 'inset 0 0 0 2px ' + accent + '33',
             }}>
               {mentorName.trim().charAt(0).toUpperCase()}
             </div>
@@ -223,24 +202,6 @@ export default function MobileCourseDetail({
               </div>
               <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {mentorName}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress card with ring */}
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <ProgressRing pct={pct} color={accent} size={60} strokeWidth={6} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
-                Your Progress
-              </div>
-              <div style={{ fontSize: '15px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.25 }}>
-                {completedLectures} of {totalLectures} lectures done
-              </div>
-              <div style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: 600, marginTop: '2px' }}>
-                {remainingLabel}
               </div>
             </div>
           </div>
@@ -257,7 +218,6 @@ export default function MobileCourseDetail({
           {([
             { key: 'curriculum' as TabKey, label: 'Curriculum', count: topics.length },
             { key: 'overview' as TabKey, label: 'Overview' },
-            { key: 'reviews' as TabKey, label: 'Reviews' },
           ]).map(t => {
             const active = tab === t.key
             return (
@@ -301,18 +261,6 @@ export default function MobileCourseDetail({
         )}
 
         {tab === 'overview' && <OverviewTab course={course} mentorName={mentorName} totalLectures={totalLectures} />}
-
-        {tab === 'reviews' && (
-          <div style={{
-            padding: '40px 20px', textAlign: 'center',
-            background: '#ffffff', borderRadius: '20px',
-            border: '1px solid rgba(15,23,42,0.05)',
-            color: '#9999b0', fontSize: '13px',
-          }}>
-            <div style={{ fontWeight: 800, color: '#6b6b8a', marginBottom: '4px' }}>Reviews coming soon</div>
-            <div>Once students start rating this course, you will see their feedback here.</div>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -334,49 +282,6 @@ const cardStyle: React.CSSProperties = {
   boxShadow: '0 12px 28px -12px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
 }
 
-function Stat({ icon, label }: { icon: 'topics' | 'lectures' | 'materials'; label: string }) {
-  const ico = icon === 'topics' ? (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-  ) : icon === 'lectures' ? (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-  ) : (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-  )
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.92)' }}>
-      {ico}
-      {label}
-    </span>
-  )
-}
-
-function ProgressRing({ pct, color, size = 60, strokeWidth = 6 }: { pct: number; color: string; size?: number; strokeWidth?: number }) {
-  const radius = (size - strokeWidth) / 2
-  const circ = 2 * Math.PI * radius
-  const offset = circ - (Math.min(100, Math.max(0, pct)) / 100) * circ
-  return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#e2e8f0" strokeWidth={strokeWidth} fill="none" />
-        <circle
-          cx={size / 2} cy={size / 2} r={radius}
-          stroke={color} strokeWidth={strokeWidth} fill="none"
-          strokeLinecap="round"
-          strokeDasharray={circ}
-          strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-        />
-      </svg>
-      <div style={{
-        position: 'absolute', inset: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '12.5px', fontWeight: 900, color: color, letterSpacing: '-0.02em',
-      }}>
-        {pct}%
-      </div>
-    </div>
-  )
-}
 
 /* ───────── Curriculum Tab ───────── */
 function CurriculumTab({
@@ -409,6 +314,15 @@ function CurriculumTab({
       {topics.map((topic, idx) => {
         const open = expandedTopics.has(topic.id)
         const completed = topic.content.filter(c => progressMap[c.id] === 'COMPLETED').length
+        const totalMinutes = topic.content.reduce((sum, c) => {
+          const d = typeof c.durationMinutes === 'number' && c.durationMinutes > 0 ? c.durationMinutes : 14
+          return sum + d
+        }, 0)
+        const durationLabel = totalMinutes > 0
+          ? (Math.floor(totalMinutes / 60) > 0
+              ? `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`
+              : `${totalMinutes}m`)
+          : null
         return (
           <div key={topic.id} style={{
             background: '#ffffff',
@@ -439,7 +353,7 @@ function CurriculumTab({
                   {topic.title}
                 </div>
                 <div style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: 600, marginTop: '2px' }}>
-                  {completed}/{topic.content.length} lectures
+                  {completed}/{topic.content.length} lectures{durationLabel ? ` · ${durationLabel}` : ''}
                 </div>
               </div>
               <svg

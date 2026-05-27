@@ -144,7 +144,7 @@ export default function MobileMenuPage() {
 
   const socialItems: MenuItem[] = [
     {
-      href: 'https://www.instagram.com/genziitian',
+      href: 'https://www.instagram.com/genz_iitian/',
       label: 'Instagram',
       external: true,
       iconBg: 'linear-gradient(135deg, #f09433, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888)',
@@ -152,25 +152,25 @@ export default function MobileMenuPage() {
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>,
     },
     {
-      href: 'https://www.youtube.com/@genziitian',
+      href: 'https://www.youtube.com/@Gen-ZIITian/videos',
       label: 'YouTube',
       external: true,
       iconBg: 'rgba(255, 0, 0, 0.10)', iconColor: '#ff0000',
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>,
     },
     {
-      href: 'https://t.me/genziitian',
+      href: 'https://www.linkedin.com/company/genz-iitian',
+      label: 'LinkedIn',
+      external: true,
+      iconBg: 'rgba(10, 102, 194, 0.10)', iconColor: '#0a66c2',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.78C.8 0 0 .78 0 1.74v20.52C0 23.22.8 24 1.78 24h20.44C23.2 24 24 23.22 24 22.26V1.74C24 .78 23.2 0 22.22 0z"/></svg>,
+    },
+    {
+      href: 'https://t.me/IIT_madras_Resources',
       label: 'Telegram',
       external: true,
       iconBg: 'rgba(34, 158, 217, 0.10)', iconColor: '#229ed9',
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.022c.242-.213-.054-.334-.373-.121L8.48 13.5l-2.94-.918c-.64-.203-.658-.64.135-.945l11.494-4.435c.538-.196 1.006.128.825.945z"/></svg>,
-    },
-    {
-      href: 'https://twitter.com/genziitian',
-      label: 'Twitter / X',
-      external: true,
-      iconBg: 'rgba(0, 0, 0, 0.08)', iconColor: '#1e1e3a',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
     },
   ]
 

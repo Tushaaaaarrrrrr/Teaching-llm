@@ -1023,17 +1023,24 @@ tr:hover td {
 
 }
 
-/* Hide mobile greeting on desktop */
+/* Hide mobile greeting on desktop — keep without !important so the
+   mobile @media rule (display: flex !important above) wins on phones. */
 .mobile-header-greeting { display: none; }
+@media (min-width: 769px) {
+  .mobile-header-greeting { display: none !important; }
+}
 
 /* My Courses: swap between desktop layout and mobile experience */
 .my-courses-mobile-only { display: none; }
 .course-detail-mobile-only { display: none; }
+.live-sessions-mobile-only { display: none; }
 @media (max-width: 768px) {
   .my-courses-desktop-only { display: none !important; }
   .my-courses-mobile-only { display: block !important; }
   .course-detail-desktop-only { display: none !important; }
   .course-detail-mobile-only { display: block !important; }
+  .live-sessions-desktop-only { display: none !important; }
+  .live-sessions-mobile-only { display: block !important; }
   /* Mobile course detail breaks out of the dashboard container's padding so the purple hero is edge-to-edge.
      Match the page-container's mobile padding (16px) exactly so the hero spans full viewport width,
      and the hero's own 22px internal padding gives content proper breathing room. */
@@ -1070,10 +1077,10 @@ tr:hover td {
   .mobile-only-login { display: block !important; }
 }
 
-/* Hide the "Good Night, {name}" greeting on desktop (still shows on mobile via .mobile-header-greeting) */
-@media (min-width: 769px) {
+/* Desktop shows the time-based greeting headline for dashboard + courses;
+   mobile uses .mobile-header-greeting (avatar + Welcome to GenZ IITian) instead. */
+@media (max-width: 768px) {
   .header-titles-dashboard { display: none !important; }
-  /* On dashboard, also collapse header height to match other pages */
   .dashboard-header[style*='140px'] { height: 96px !important; }
 }
 

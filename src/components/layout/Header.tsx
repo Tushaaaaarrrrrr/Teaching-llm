@@ -107,8 +107,12 @@ export default function Header({ userName, userRole }: HeaderProps) {
   const matchedKey = Object.keys(PAGE_TITLES)
     .sort((a, b) => b.length - a.length)
     .find(key => key === pathname || (key !== '/dashboard' && pathname.startsWith(key)))
-    
+
   const pageInfo = matchedKey ? PAGE_TITLES[matchedKey] : { title: 'Dashboard', subtitle: '' }
+
+  // Pages that get the time-based greeting headline on desktop instead of the page title.
+  const greetingPages = new Set(['/dashboard', '/courses'])
+  const showGreetingHeadline = matchedKey ? greetingPages.has(matchedKey) : false
 
   const getGreeting = () => {
     const hour = new Date().getHours()
@@ -208,7 +212,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   return (
     <header style={{
-      height: pathname === '/dashboard' ? '140px' : '96px', background: '#e8eaf0',
+      height: showGreetingHeadline ? '140px' : '96px', background: '#e8eaf0',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
       transition: 'height 0.3s ease',
@@ -245,17 +249,17 @@ export default function Header({ userName, userRole }: HeaderProps) {
             />
           </div>
           <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#9999b0', letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.1 }}>
-              Welcome to GenZ IITian
+            <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#1e1e3a', letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+              Welcome to Gen-Z IITian
             </span>
-            <span style={{ fontSize: '17px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.2, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'linear-gradient(120deg, #1e1e3a 0%, #3636e8 60%, #8b5cf6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span style={{ fontSize: '20px', fontWeight: 700, color: '#3636e8', lineHeight: 1.15, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.4px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
               {firstName}
             </span>
           </div>
         </a>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} className={`header-titles ${matchedKey === '/dashboard' ? 'header-titles-dashboard' : ''}`}>
-        {matchedKey === '/dashboard' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} className={`header-titles ${showGreetingHeadline ? 'header-titles-dashboard' : ''}`}>
+        {showGreetingHeadline ? (
           <>
             <h1 style={{
               fontSize: '56px',

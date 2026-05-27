@@ -309,6 +309,16 @@ function CalendarPageContent() {
     if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
   }, [mobileSelectedDay])
 
+  // On first mount (and when month/today resolves), force-scroll the day strip to today
+  // so the calendar always opens centered on the current date, even if mobileSelectedDay
+  // happened to already equal today's date and the scroll-on-change effect didn't fire.
+  useEffect(() => {
+    if (!mounted || !todayState) return
+    const el = mobileDayStripRef.current?.querySelector<HTMLElement>(`[data-day="${mobileSelectedDay}"]`)
+    if (el) el.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, todayState, year, month])
+
   if (!mounted || !currentDate) return null
 
   const mobileDayEvents = getEventsForDay(mobileSelectedDay).sort((a, b) => (a.time || '').localeCompare(b.time || ''))

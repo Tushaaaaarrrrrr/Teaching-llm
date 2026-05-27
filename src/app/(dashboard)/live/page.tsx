@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
 import { formatIST, formatISTDate, getEventStatus } from '@/lib/date-utils'
+import LiveSessionsMobile from '@/components/live/LiveSessionsMobile'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -247,7 +248,13 @@ export default function LivePage() {
   }
 
   return (
-    <div className="page-container fade-in">
+    <>
+    {/* Mobile redesign */}
+    <div className="live-sessions-mobile-only">
+      <LiveSessionsMobile sessions={sessions} />
+    </div>
+    {/* Desktop layout */}
+    <div className="page-container fade-in live-sessions-desktop-only">
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
         <p style={{ fontSize: '13px', color: '#9999b0' }}>Today&apos;s Schedule &bull; {today}</p>
@@ -349,5 +356,6 @@ export default function LivePage() {
         }
       `}</style>
     </div>
+    </>
   )
 }

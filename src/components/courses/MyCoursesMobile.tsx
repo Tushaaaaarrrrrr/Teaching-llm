@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 
@@ -23,8 +23,6 @@ const fetcher = async (url: string) => {
   return res.json().catch(() => ({}))
 }
 
-type TabKey = 'active' | 'upcoming' | 'completed'
-
 export default function MyCoursesMobile() {
   const { data: rawCourses } = useSWR('/api/courses', fetcher, { revalidateOnFocus: false })
   const { data: rawProgress } = useSWR('/api/lectures/progress', fetcher, { revalidateOnFocus: false })
@@ -43,59 +41,59 @@ export default function MyCoursesMobile() {
   const recentLecture = dashData?.recentViewedLecture
 
   const [search, setSearch] = useState('')
-  const [tab, setTab] = useState<TabKey>('active')
 
-  // Compute per-course progress and bucket into Active / Upcoming / Completed
+  // Per-course progress and access metadata
   const enriched = useMemo(() => {
-    const completedByCourseId = new Map<string, { done: number; total: number }>()
-    // Without per-content course mapping in progress data, we approximate by raw lecture count.
-    // The progress endpoint returns contentId; the course's total lecture count comes from _count.
     return courses.map(c => {
       const total = c._count?.lectures || 0
-      // Best effort: count "COMPLETED" rows globally is not per-course; show 0 if unknown.
-      // The /api/lectures/progress?courseId=X endpoint scopes correctly; we'll fetch on-demand later if needed.
-      const done = 0
+      const done = 0 // global progress map; per-course breakdown is fetched on detail page
       const pct = total > 0 ? Math.round((done / total) * 100) : 0
       const expires = c.expiresAt ? new Date(c.expiresAt) : null
       const now = new Date()
       const accessDays = expires ? Math.max(0, Math.ceil((expires.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : null
       const expired = expires ? expires.getTime() < now.getTime() : false
-      // Bucket: completed = 100% progress OR expired with some progress
-      // upcoming = starts in the future (we don't have startDate on course; treat as none)
-      // default → active. Upcoming bucket isn't determined yet (no startDate field), so always 'active' or 'completed'
-      const bucket: TabKey = pct >= 100 ? 'completed' : 'active'
-      return { course: c, pct, accessDays, expired, bucket: bucket as TabKey }
+      return { course: c, pct, accessDays, expired }
     })
   }, [courses, allProgress])
 
-  const counts = useMemo(() => {
-    const a = enriched.filter(e => e.bucket === 'active').length
-    const u = enriched.filter(e => e.bucket === 'upcoming').length
-    const c = enriched.filter(e => e.bucket === 'completed').length
-    return { active: a, upcoming: u, completed: c, all: enriched.length }
-  }, [enriched])
-
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return enriched
-      .filter(e => e.bucket === tab)
-      .filter(e => !q || e.course.name.toLowerCase().includes(q) || (e.course.subject || '').toLowerCase().includes(q))
-  }, [enriched, tab, search])
+    return enriched.filter(e => !q || e.course.name.toLowerCase().includes(q) || (e.course.subject || '').toLowerCase().includes(q))
+  }, [enriched, search])
+
+  const enrolledCount = enriched.length
 
   return (
     <div className="page-container fade-in" style={{ paddingBottom: '24px' }}>
-      {/* Title */}
-      <div style={{ marginBottom: '16px', padding: '0 4px' }}>
-        <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#1e1e3a', letterSpacing: '-0.02em', margin: 0 }}>
-          My Courses
-        </h1>
-        <p style={{ fontSize: '12.5px', fontWeight: 600, color: '#9999b0', marginTop: '4px' }}>
-          {counts.active} active · {counts.completed} completed
-        </p>
+      {/* Title row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '16px', padding: '0 4px' }}>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#1e1e3a', letterSpacing: '-0.02em', margin: 0, lineHeight: 1.05 }}>
+            My Courses
+          </h1>
+          <p style={{ fontSize: '12.5px', fontWeight: 600, color: '#9999b0', marginTop: '4px' }}>
+            {enrolledCount} enrolled · pick up where you left off
+          </p>
+        </div>
+        <button
+          aria-label="Filter"
+          style={{
+            width: '40px', height: '40px', borderRadius: '12px',
+            background: '#ffffff', border: 'none', cursor: 'pointer', flexShrink: 0,
+            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e1e3a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6"/>
+            <line x1="7" y1="12" x2="17" y2="12"/>
+            <line x1="10" y1="18" x2="14" y2="18"/>
+          </svg>
+        </button>
       </div>
 
       {/* Search */}
-      <div style={{ position: 'relative', marginBottom: '16px' }}>
+      <div style={{ position: 'relative', marginBottom: '22px' }}>
         <svg
           width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.2"
           style={{ position: 'absolute', top: '50%', left: '16px', transform: 'translateY(-50%)' }}
@@ -121,51 +119,9 @@ export default function MyCoursesMobile() {
         />
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
-        {(['active', 'upcoming', 'completed'] as TabKey[]).map(t => {
-          const active = tab === t
-          const count = counts[t]
-          return (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              style={{
-                flex: '0 0 auto',
-                padding: '10px 18px',
-                borderRadius: '50px',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: '13px',
-                fontWeight: 800,
-                background: active ? '#1e1e3a' : '#ffffff',
-                color: active ? '#ffffff' : '#6b6b8a',
-                boxShadow: active
-                  ? '0 8px 18px rgba(30, 30, 58, 0.30)'
-                  : '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
-                display: 'inline-flex', alignItems: 'center', gap: '8px',
-                transition: 'all 0.2s ease',
-                letterSpacing: '0.01em',
-                textTransform: 'capitalize',
-              }}
-            >
-              {t}
-              <span style={{
-                fontSize: '11px', fontWeight: 800,
-                padding: '2px 7px', borderRadius: '50px',
-                background: active ? 'rgba(255,255,255,0.20)' : 'rgba(99,102,241,0.10)',
-                color: active ? '#ffffff' : '#6366f1',
-                minWidth: '16px', textAlign: 'center',
-              }}>{count}</span>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Continue Learning */}
+      {/* Continue learning */}
       {recentLecture?.content && (
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '26px' }}>
           <div style={{ padding: '0 4px', marginBottom: '12px' }}>
             <h2 style={{ fontSize: '16px', fontWeight: 900, color: '#1e1e3a', margin: 0, letterSpacing: '-0.01em' }}>
               Continue learning
@@ -181,16 +137,19 @@ export default function MyCoursesMobile() {
       {/* All courses */}
       <div>
         <div style={{ padding: '0 4px', marginBottom: '12px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 900, color: '#1e1e3a', margin: 0, letterSpacing: '-0.01em', textTransform: 'capitalize' }}>
-            {tab === 'active' ? 'All courses' : `${tab} courses`}
+          <h2 style={{ fontSize: '16px', fontWeight: 900, color: '#1e1e3a', margin: 0, letterSpacing: '-0.01em' }}>
+            All courses
           </h2>
+          <p style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: 600, marginTop: '2px' }}>
+            {enrolledCount} enrolled course{enrolledCount === 1 ? '' : 's'}
+          </p>
         </div>
         {visible.length === 0 ? (
-          <EmptyState tab={tab} search={search} />
+          <EmptyState search={search} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {visible.map(({ course, pct, accessDays, expired }) => (
-              <CourseCard key={course.id} course={course} pct={pct} accessDays={accessDays} expired={expired} />
+              <CourseCard key={course.id} course={course} accessDays={accessDays} expired={expired} />
             ))}
           </div>
         )}
@@ -209,6 +168,16 @@ function ContinueLearningCard({ lecture }: { lecture: any }) {
   const courseId = content?.topic?.courseId
   const lectureId = content?.id
   const title: string = content?.title || 'Lecture'
+  const subject: string | undefined = course?.subject
+  const courseName: string | undefined = course?.name
+  const subtitleParts = [subject, courseName].filter(Boolean) as string[]
+
+  // Position label "LECTURE N OF M" if we can compute it from progress + topics
+  const position = lecture?.position
+  const totalCount = lecture?.totalCount
+  const positionLabel = (position && totalCount)
+    ? `Lecture ${String(position).padStart(2, '0')} of ${totalCount}`
+    : (courseName ? `Lecture · ${courseName}` : 'Continue learning')
 
   return (
     <Link
@@ -225,26 +194,31 @@ function ContinueLearningCard({ lecture }: { lecture: any }) {
       }}
     >
       <div style={{
-        width: '60px', height: '60px', borderRadius: '16px', flexShrink: 0,
+        width: '64px', height: '64px', borderRadius: '18px', flexShrink: 0,
         background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: '#ffffff',
         boxShadow: `0 8px 20px ${accent}40`,
+        position: 'relative',
       }}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
           <polygon points="5 3 19 12 5 21 5 3" />
         </svg>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '10px', fontWeight: 800, color: accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
-          Lecture · {course?.name || 'Course'}
+          {positionLabel}
         </div>
-        <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '4px' }}>
           {title}
         </div>
-        <div style={{
+        {subtitleParts.length > 0 && (
+          <div style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: 600, marginBottom: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {subtitleParts.join(' · ')}
+          </div>
+        )}
+        <span style={{
           display: 'inline-flex', alignItems: 'center', gap: '5px',
-          marginTop: '10px',
           padding: '7px 14px', borderRadius: '50px',
           background: `linear-gradient(135deg, ${accent}, ${accent}dd)`,
           color: '#ffffff',
@@ -253,19 +227,24 @@ function ContinueLearningCard({ lecture }: { lecture: any }) {
         }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
           Resume
-        </div>
+        </span>
       </div>
     </Link>
   )
 }
 
 /* ─────────────────────────────────────────────────────────
-   Course Card
+   Course Card — purple gradient header + progress
    ───────────────────────────────────────────────────────── */
-function CourseCard({ course, pct, accessDays, expired }: { course: CourseItem; pct: number; accessDays: number | null; expired: boolean }) {
+function CourseCard({ course, accessDays, expired }: { course: CourseItem; accessDays: number | null; expired: boolean }) {
   const accent = course.color || '#6366f1'
   const mentorInitial = (course.teacherName || '?').trim().charAt(0).toUpperCase()
-  const badge = course.enrollmentType === 'LIVE' ? 'LIVE BATCH' : course.enrollmentType === 'RECORDED' ? 'PRO BATCH' : null
+  const enrollmentBadge = course.enrollmentType === 'LIVE' ? 'LIVE BATCH'
+    : course.enrollmentType === 'RECORDED' ? 'PRO BATCH'
+    : course.enrollmentType === 'FREE' ? 'FREE'
+    : course.enrollmentType === 'DEMO' ? 'DEMO'
+    : null
+  const termLabel = course.subject || null
 
   return (
     <Link
@@ -282,39 +261,43 @@ function CourseCard({ course, pct, accessDays, expired }: { course: CourseItem; 
     >
       {/* Gradient header band */}
       <div style={{
-        padding: '18px 18px 16px',
-        background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+        position: 'relative',
+        padding: '18px 18px 20px',
+        background: `linear-gradient(135deg, ${accent} 0%, ${accent}dd 60%, ${accent}aa 100%)`,
         color: '#ffffff',
-        position: 'relative', overflow: 'hidden',
+        overflow: 'hidden',
       }}>
-        <div style={{ position: 'absolute', top: '-50px', right: '-30px', width: '140px', height: '140px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '-50px', right: '-40px', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.16), transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '120px', height: '120px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.08), transparent 70%)', pointerEvents: 'none' }} />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', marginBottom: '10px' }}>
-          {badge && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '12px', position: 'relative' }}>
+          {enrollmentBadge && (
             <span style={{
-              fontSize: '10px', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase',
+              display: 'inline-flex', alignItems: 'center',
+              fontSize: '10px', fontWeight: 800, letterSpacing: '0.10em', textTransform: 'uppercase',
               padding: '4px 10px', borderRadius: '50px',
-              background: 'rgba(255,255,255,0.22)', color: '#ffffff',
-              backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)',
+              background: 'rgba(255,255,255,0.22)',
+              backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.30)',
             }}>
-              {badge}
+              {enrollmentBadge}
             </span>
           )}
-          {course.subject && (
-            <span style={{ fontSize: '10.5px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              {course.subject}
+          {termLabel && (
+            <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.92)', letterSpacing: '0.02em' }}>
+              {termLabel}
             </span>
           )}
         </div>
 
-        <div style={{ fontSize: '18px', fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.02em', position: 'relative' }}>
+        <div style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.01em', position: 'relative' }}>
           {course.name}
         </div>
         {course.description && (
           <div style={{
-            fontSize: '12px', fontWeight: 500, color: 'rgba(255,255,255,0.88)',
-            marginTop: '4px', position: 'relative',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            fontSize: '12.5px', fontWeight: 500, color: 'rgba(255,255,255,0.88)',
+            marginTop: '4px', position: 'relative', lineHeight: 1.45,
+            overflow: 'hidden', textOverflow: 'ellipsis',
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
           }}>
             {course.description}
           </div>
@@ -322,13 +305,11 @@ function CourseCard({ course, pct, accessDays, expired }: { course: CourseItem; 
       </div>
 
       {/* Body */}
-      <div style={{ padding: '14px 18px 16px' }}>
-        {/* Mentor row */}
+      <div style={{ padding: '14px 18px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
           <div style={{
             width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
-            background: `${accent}22`,
-            color: accent,
+            background: `${accent}1F`, color: accent,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '12px', fontWeight: 800,
           }}>
@@ -349,26 +330,38 @@ function CourseCard({ course, pct, accessDays, expired }: { course: CourseItem; 
           </span>
         </div>
 
-        {/* Progress */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Progress</span>
-            <span style={{ fontSize: '14px', fontWeight: 900, color: accent }}>{pct}%</span>
-          </div>
-          <div style={{ height: '8px', borderRadius: '50px', background: '#f1f5f9', overflow: 'hidden', position: 'relative' }}>
-            <div style={{
-              width: `${pct}%`, height: '100%', borderRadius: '50px',
-              background: `linear-gradient(90deg, ${accent}, ${accent}dd)`,
-              transition: 'width 0.5s ease',
-            }} />
-          </div>
+        {/* Stat tiles: Topics · Lectures · Materials */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+          {[
+            { value: course._count?.topics ?? 0,    label: 'Topics' },
+            { value: course._count?.lectures ?? 0,  label: 'Lectures' },
+            { value: course._count?.materials ?? 0, label: 'Materials' },
+          ].map(s => (
+            <div
+              key={s.label}
+              style={{
+                padding: '12px 8px',
+                borderRadius: '16px',
+                background: '#e8eaf0',
+                boxShadow: '5px 5px 12px #c5c7cf, -5px -5px 12px #ffffff',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#1e1e3a', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                {s.value}
+              </div>
+              <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#9999b0', marginTop: '5px', letterSpacing: '0.04em' }}>
+                {s.label}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </Link>
   )
 }
 
-function EmptyState({ tab, search }: { tab: TabKey; search: string }) {
+function EmptyState({ search }: { search: string }) {
   return (
     <div style={{
       padding: '40px 20px', textAlign: 'center',
@@ -380,12 +373,10 @@ function EmptyState({ tab, search }: { tab: TabKey; search: string }) {
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
       </svg>
       <div style={{ fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '4px' }}>
-        {search ? `No ${tab} courses matching "${search}"` : `No ${tab} courses yet`}
+        {search ? `No courses matching "${search}"` : 'No courses enrolled yet'}
       </div>
       <div style={{ fontSize: '12px', color: '#9999b0' }}>
-        {tab === 'active' && !search && 'Enrolled courses will show up here.'}
-        {tab === 'completed' && 'Finished courses will appear here.'}
-        {tab === 'upcoming' && 'Courses starting soon will appear here.'}
+        {search ? 'Try a different keyword.' : 'Enrolled courses will show up here.'}
       </div>
     </div>
   )

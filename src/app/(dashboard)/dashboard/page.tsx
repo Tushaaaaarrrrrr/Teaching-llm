@@ -5,50 +5,8 @@ import Link from 'next/link'
 import useSWR from 'swr'
 import { formatISTDate, getEventStatus } from '@/lib/date-utils'
 import HomeHeroSlider, { HeroSlide } from '@/components/home/HomeHeroSlider'
-import HomeCategoryCards from '@/components/home/HomeCategoryCards'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
-
-interface FeaturedExternalCourse {
-  title: string
-  subtitle?: string
-  badge?: string
-  description: string
-  url: string
-  gradient: string
-  shadow: string
-}
-
-const FEATURED_EXTERNAL_COURSES: FeaturedExternalCourse[] = [
-  {
-    title: "QUALIFIER-MAY'26",
-    badge: 'New Batch',
-    description:
-      'Best live batch for IITM BS Qualifier students with complete Week 1–4 syllabus coverage, daily live classes, practice support, doubt sessions, and UNLIMITED re-attempt support*',
-    url: 'https://genziitian.in/courses/qualifier-may26',
-    gradient: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #8b5cf6 100%)',
-    shadow: 'rgba(79, 70, 229, 0.35)',
-  },
-  {
-    title: 'TERM 1 – LIVE',
-    badge: 'Live',
-    description:
-      'LIVE lectures with no fluff theories — All lecture recordings, premium notes, PYQs, formula sheets',
-    url: 'https://genziitian.in/courses/term-1-live',
-    gradient: 'linear-gradient(135deg, #0d9488 0%, #10b981 60%, #34d399 100%)',
-    shadow: 'rgba(13, 148, 136, 0.35)',
-  },
-  {
-    title: 'TERM 2',
-    subtitle: 'TERM 2 – LIVE',
-    badge: 'Bundle',
-    description:
-      'LIVE lectures with no fluff theories — All lecture recordings, premium notes, PYQs, formula sheets',
-    url: 'https://genziitian.in/courses/term-2-live',
-    gradient: 'linear-gradient(135deg, #db2777 0%, #ec4899 60%, #9333ea 100%)',
-    shadow: 'rgba(219, 39, 119, 0.35)',
-  },
-]
 
 export default function DashboardPage() {
   const { data: dashboardData, error, isLoading: loading, mutate } = useSWR('/api/dashboard', fetcher, {
@@ -85,21 +43,6 @@ export default function DashboardPage() {
   const [sliding, setSliding] = useState(false)
   const [nowTick, setNowTick] = useState(Date.now())
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
-  const [redirectingUrl, setRedirectingUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!redirectingUrl) return
-    const t = setTimeout(() => {
-      try {
-        const w = window.open(redirectingUrl, '_blank', 'noopener,noreferrer')
-        if (!w) window.location.href = redirectingUrl
-      } catch {
-        window.location.href = redirectingUrl
-      }
-      setRedirectingUrl(null)
-    }, 1400)
-    return () => clearTimeout(t)
-  }, [redirectingUrl])
 
   useEffect(() => {
     setIsMobile(window.innerWidth <= 768)
@@ -337,7 +280,7 @@ export default function DashboardPage() {
           gap: isMobile ? '12px' : '20px'
         }}
       >
-        {statCards.filter(c => !c.isSupport && c.label !== 'Active Sessions' && (!isMobile || c.isTimer)).map((card) => {
+        {statCards.filter(c => !c.isSupport && c.label !== 'Active Sessions' && !isMobile).map((card) => {
           const mobileHero = isMobile && card.isTimer
           return (
           <div key={card.label} className="stat-card" style={{
@@ -894,8 +837,7 @@ export default function DashboardPage() {
             />
           )}
 
-          {/* ── Mobile-only: Categories ── */}
-          {isMobile && <HomeCategoryCards />}
+          {/* Categories: temporarily hidden — will be re-enabled later. */}
 
           {/* ── Mobile-only: Upcoming Session (compact) ── */}
           {isMobile && (
@@ -1017,121 +959,6 @@ export default function DashboardPage() {
                   <div style={{ fontSize: '11px', marginTop: '2px' }}>Check back later for live classes</div>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* ── Featured Courses (desktop only — mobile uses slider above) ── */}
-          {!isMobile && (
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '16px', padding: '0 4px', gap: '12px' }}>
-                <div style={{ minWidth: 0 }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1e1e3a', letterSpacing: '-0.02em', margin: 0 }}>
-                    Featured Courses
-                  </h3>
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#9999b0', marginTop: '2px' }}>
-                    Handpicked batches available now
-                  </div>
-                </div>
-                <a href="https://genziitian.in/courses" target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#6366f1', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  View All →
-                </a>
-              </div>
-              <div style={{
-                display: 'flex', gap: '14px',
-                overflowX: 'auto', overflowY: 'hidden',
-                paddingBottom: '12px', paddingLeft: '4px', paddingRight: '4px',
-                scrollSnapType: 'x mandatory',
-                WebkitOverflowScrolling: 'touch',
-              }}>
-                {FEATURED_EXTERNAL_COURSES.map((c) => (
-                  <button
-                    key={c.url}
-                    onClick={() => setRedirectingUrl(c.url)}
-                    style={{
-                      flex: '0 0 auto',
-                      width: 'min(280px, 82vw)',
-                      minHeight: '280px',
-                      scrollSnapAlign: 'start',
-                      textAlign: 'left', cursor: 'pointer',
-                      background: '#ffffff',
-                      border: '1px solid rgba(15, 23, 42, 0.05)',
-                      borderRadius: '20px',
-                      padding: '0',
-                      boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.18), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
-                      display: 'flex', flexDirection: 'column',
-                      overflow: 'hidden',
-                      fontFamily: 'inherit',
-                      transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-                    }}
-                  >
-                    {/* Header band */}
-                    <div style={{
-                      padding: '18px 18px 16px',
-                      background: c.gradient,
-                      color: '#ffffff',
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}>
-                      <div style={{ position: 'absolute', top: '-50px', right: '-30px', width: '140px', height: '140px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%)', pointerEvents: 'none' }} />
-                      <div style={{ position: 'absolute', bottom: '-30px', left: '-30px', width: '100px', height: '100px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.08), transparent 70%)', pointerEvents: 'none' }} />
-                      {c.badge && (
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '5px',
-                          fontSize: '9.5px', fontWeight: 800,
-                          letterSpacing: '0.1em', textTransform: 'uppercase',
-                          padding: '4px 10px', borderRadius: '50px',
-                          background: 'rgba(255,255,255,0.22)', color: '#ffffff',
-                          marginBottom: '10px',
-                          backdropFilter: 'blur(8px)',
-                          border: '1px solid rgba(255,255,255,0.3)',
-                        }}>
-                          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 6px #ffffff' }} />
-                          {c.badge}
-                        </span>
-                      )}
-                      <div style={{ fontSize: '17px', fontWeight: 900, lineHeight: 1.2, letterSpacing: '0.01em', position: 'relative' }}>
-                        {c.title}
-                      </div>
-                      {c.subtitle && (
-                        <div style={{ fontSize: '11.5px', fontWeight: 700, opacity: 0.92, marginTop: '5px', position: 'relative' }}>
-                          {c.subtitle}
-                        </div>
-                      )}
-                    </div>
-                    {/* Body */}
-                    <div style={{ padding: '16px 18px 18px', flex: 1, display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                      <p style={{
-                        fontSize: '12.5px', color: '#475569', lineHeight: 1.55, margin: 0, fontWeight: 500,
-                        display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                      }}>
-                        {c.description}
-                      </p>
-                      <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        gap: '8px', marginTop: 'auto',
-                        paddingTop: '14px',
-                        borderTop: '1px dashed #e2e8f0',
-                      }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-                          genziitian.in
-                        </span>
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '6px',
-                          fontSize: '12px', fontWeight: 800, color: '#ffffff',
-                          padding: '9px 16px', borderRadius: '50px',
-                          background: c.gradient,
-                          boxShadow: `0 6px 14px ${c.shadow}`,
-                          letterSpacing: '0.01em',
-                        }}>
-                          Explore
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
@@ -1416,56 +1243,6 @@ export default function DashboardPage() {
         @keyframes redLivePulse { 0%, 100% { box-shadow: 0 8px 18px rgba(239,68,68,0.40); } 50% { box-shadow: 0 8px 24px rgba(239,68,68,0.65); } }
       `}</style>
 
-      {/* Redirect-to-website overlay */}
-      {redirectingUrl && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, zIndex: 9999,
-            background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '16px',
-            animation: 'redirectFade 0.2s ease-out',
-          }}
-        >
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '24px',
-            padding: '28px 24px',
-            maxWidth: 'min(360px, calc(100vw - 32px))',
-            width: '100%',
-            textAlign: 'center',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)',
-            animation: 'redirectFade 0.32s cubic-bezier(0.16,1,0.3,1)',
-          }}>
-            <div style={{
-              width: '64px', height: '64px', borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 16px', position: 'relative',
-              boxShadow: '0 12px 24px rgba(79, 70, 229, 0.35)',
-            }}>
-              <div style={{
-                position: 'absolute', inset: '-6px', borderRadius: '50%',
-                border: '3px solid transparent',
-                borderTopColor: 'rgba(99,102,241,0.7)',
-                borderRightColor: 'rgba(99,102,241,0.4)',
-                animation: 'redirectSpin 1s linear infinite',
-              }} />
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="2" y1="12" x2="22" y2="12"/>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-              </svg>
-            </div>
-            <div style={{ fontSize: '17px', fontWeight: 900, color: '#1e1e3a', marginBottom: '6px' }}>
-              Redirecting to website
-            </div>
-            <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: 600, lineHeight: 1.5 }}>
-              Opening <strong style={{ color: '#3636e8' }}>genziitian.in</strong> to complete your purchase securely.
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

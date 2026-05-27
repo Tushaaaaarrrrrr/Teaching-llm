@@ -510,6 +510,87 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {/* ── Social (mobile only) ── */}
+          {isMobile && (
+            <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '14px' }}>
+                Social
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[
+                  {
+                    label: 'Instagram',
+                    url: 'https://www.instagram.com/genz_iitian/',
+                    iconBg: 'linear-gradient(135deg, #fdf497 0%, #fd5949 45%, #d6249f 70%, #285AEB 100%)',
+                    iconFg: '#ffffff',
+                    icon: (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                      </svg>
+                    ),
+                  },
+                  {
+                    label: 'YouTube',
+                    url: 'https://www.youtube.com/@Gen-ZIITian/videos',
+                    iconBg: '#ffffff',
+                    iconFg: '#dc2626',
+                    icon: (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 00.5 6.2 31 31 0 000 12a31 31 0 00.5 5.8 3 3 0 002.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 002.1-2.1c.4-1.9.5-3.8.5-5.8a31 31 0 00-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>
+                    ),
+                  },
+                  {
+                    label: 'LinkedIn',
+                    url: 'https://www.linkedin.com/company/genz-iitian',
+                    iconBg: '#0a66c2',
+                    iconFg: '#ffffff',
+                    icon: (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.78C.8 0 0 .78 0 1.74v20.52C0 23.22.8 24 1.78 24h20.44C23.2 24 24 23.22 24 22.26V1.74C24 .78 23.2 0 22.22 0z"/></svg>
+                    ),
+                  },
+                  {
+                    label: 'Telegram',
+                    url: 'https://t.me/IIT_madras_Resources',
+                    iconBg: 'linear-gradient(135deg, #29b6f6, #0288d1)',
+                    iconFg: '#ffffff',
+                    icon: (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.5L2.5 11.5c-1 .4-1 1.7.1 2l4.8 1.5 1.8 5.6c.2.7 1 .9 1.5.4l2.6-2.4 5 3.7c.7.5 1.7.1 1.9-.7l3.3-15.4c.3-1.2-.9-2.2-2-1.7zM9.5 14.5l-.4 4.1 6-7.6-5.6 3.5z"/></svg>
+                    ),
+                  },
+                ].map(s => (
+                  <a
+                    key={s.label}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '14px',
+                      padding: '14px 16px', borderRadius: '18px',
+                      background: '#ffffff',
+                      boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+                      textDecoration: 'none', color: 'inherit',
+                    }}
+                  >
+                    <div style={{
+                      width: '38px', height: '38px', borderRadius: '12px',
+                      background: s.iconBg, color: s.iconFg, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 4px 10px rgba(15, 23, 42, 0.10)',
+                    }}>
+                      {s.icon}
+                    </div>
+                    <span style={{ flex: 1, fontSize: '14px', fontWeight: 800, color: '#1e1e3a' }}>{s.label}</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <line x1="7" y1="17" x2="17" y2="7"/>
+                      <polyline points="7 7 17 7 17 17"/>
+                    </svg>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div> {/* close grid container */}
 
         {/* ── Bottom Action Bar ── */}
