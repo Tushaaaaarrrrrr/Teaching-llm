@@ -24,6 +24,8 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/dashboard':  { title: 'Dashboard',        subtitle: 'Welcome back to your learning hub' },
   '/courses/explore': { title: '',            subtitle: '' },
   '/courses':    { title: 'Courses',          subtitle: 'Manage your enrolled subjects and lectures' },
+  '/academics':  { title: 'Academics',        subtitle: 'Everything for your learning journey' },
+  '/menu':       { title: 'Profile',          subtitle: 'View and edit your personal information' },
   '/live':       { title: 'Live Sessions',     subtitle: "Today's schedule" },
   '/calendar':   { title: 'Calendar',          subtitle: 'Your schedule and upcoming events' },
   '/materials/recordings': { title: 'Recordings',        subtitle: 'Browse lecture recordings' },
@@ -162,6 +164,44 @@ export default function Header({ userName, userRole }: HeaderProps) {
       .catch(() => {})
   }, [])
 
+  // Swipe to go back gesture (Android / iOS style)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    let touchStartX = 0
+    let touchStartY = 0
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0]
+      // Start near the left edge of the screen (e.g., within 45px)
+      if (touch.clientX < 45) {
+        touchStartX = touch.clientX
+        touchStartY = touch.clientY
+      } else {
+        touchStartX = 0
+      }
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (touchStartX === 0) return
+      const touch = e.changedTouches[0]
+      const deltaX = touch.clientX - touchStartX
+      const deltaY = Math.abs(touch.clientY - touchStartY)
+
+      // Swipe to the right significantly (e.g., > 90px) with minimal vertical scroll (< 40px)
+      if (deltaX > 90 && deltaY < 40) {
+        router.back()
+      }
+    }
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true })
+    window.addEventListener('touchend', handleTouchEnd, { passive: true })
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart)
+      window.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [router])
+
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -217,7 +257,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
       transition: 'height 0.3s ease',
-    }} className={`dashboard-header ${!isHomePage ? 'mobile-hidden-header' : ''}`}>
+    }} className="dashboard-header">
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0, flex: 1 }} className="header-left-section">
         {/* Hamburger Menu Toggle Button on Mobile (hidden — bottom nav handles navigation) */}
         <button
@@ -233,31 +273,65 @@ export default function Header({ userName, userRole }: HeaderProps) {
         </button>
 
         {/* Mobile-only greeting block (profile avatar + welcome text) */}
-        <a href="/menu" className="mobile-header-greeting" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
-          <div style={{
-            width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
-            background: '#ffffff',
-            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            overflow: 'hidden',
-            border: '2px solid #ffffff',
-          }}>
-            <img
-              src={currentAvatar}
-              alt={currentUserName}
-              onError={e => { (e.target as HTMLImageElement).src = '/avatars/default-neutral.png' }}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          </div>
-          <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '15px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.2px' }}>
-              {mounted ? getGreeting().heading : 'Welcome'},
+        {isHomePage && (
+          <a href="/menu" className="mobile-header-greeting" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+            <div style={{
+              width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
+              background: '#ffffff',
+              boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+              border: '2px solid #ffffff',
+            }}>
+              <img
+                src={currentAvatar}
+                alt={currentUserName}
+                onError={e => { (e.target as HTMLImageElement).src = '/avatars/default-neutral.png' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+            <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '15px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.2px' }}>
+                {mounted ? getGreeting().heading : 'Welcome'},
+              </span>
+              <span style={{ fontSize: '20px', fontWeight: 700, color: '#3636e8', lineHeight: 1.15, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.4px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+                {firstName}
+              </span>
+            </div>
+          </a>
+        )}
+
+        {/* Mobile-only back button + title (shown on non-home pages) */}
+        {!isHomePage && (
+          <div className="mobile-header-back-title" style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
+            <button
+              onClick={() => router.back()}
+              aria-label="Go back"
+              style={{
+                background: '#ffffff',
+                border: 'none',
+                width: '38px',
+                height: '38px',
+                borderRadius: '50%',
+                boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#1e1e3a',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </button>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.3px' }}>
+              {pageInfo.title || 'Back'}
             </span>
-            <span style={{ fontSize: '20px', fontWeight: 700, color: '#3636e8', lineHeight: 1.15, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.4px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
-              {firstName}
-            </span>
           </div>
-        </a>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} className={`header-titles ${showGreetingHeadline ? 'header-titles-dashboard' : ''}`}>
         {showGreetingHeadline ? (

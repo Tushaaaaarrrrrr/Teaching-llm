@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Script from 'next/script'
 import useSWR, { mutate } from 'swr'
+import FeedbackModal from '@/components/FeedbackModal'
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -44,6 +45,12 @@ export default function CoursesPage() {
   const { data: userData } = useSWR('/api/auth/me', fetcher, { revalidateOnFocus: false })
   const { data: helpCard } = useSWR('/api/support/help-card', fetcher)
   const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
+  const isStudent = userData?.user?.role === 'STUDENT' || userData?.role === 'STUDENT'
+  
+  const { data: feedbacksRaw, mutate: mutateFeedbacks } = useSWR(isStudent ? '/api/feedback' : null, fetcher)
+  const feedbacks = Array.isArray(feedbacksRaw) ? feedbacksRaw : []
+  const [selectedFeedbackCourse, setSelectedFeedbackCourse] = useState<CourseItem | null>(null)
+
   const courses = Array.isArray(data) ? data : (data as any)?.courses || []
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -242,6 +249,14 @@ export default function CoursesPage() {
           .grid-3 h3 {
             margin-bottom: 2px !important;
           }
+
+          .mobile-only-feedback-btn {
+            display: flex !important;
+          }
+        }
+
+        .mobile-only-feedback-btn {
+          display: none !important;
         }
 
         @media (max-width: 600px) {
@@ -548,6 +563,43 @@ export default function CoursesPage() {
                       @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, 5px); } to { opacity: 1; transform: translate(-50%, 0); } }
                     `}} />
                   </div>
+                )}
+
+                {/* Mobile-only Course Feedback option */}
+                {isStudent && !feedbacks.some((f: any) => f.courseId === course.id) && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setSelectedFeedbackCourse(course)
+                    }}
+                    className="mobile-only-feedback-btn"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '50px',
+                      border: 'none',
+                      background: '#ffffff',
+                      color: '#d97706',
+                      fontSize: '12.5px',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      marginTop: '8px',
+                      marginBottom: '10px',
+                      boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                      display: 'none',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      fontFamily: "'Outfit', 'Nunito', sans-serif",
+                    }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                    </svg>
+                    Give Course Feedback
+                  </button>
                 )}
 
                 {/* Stats row */}
@@ -919,6 +971,18 @@ export default function CoursesPage() {
             <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Please wait while we set up your course access.</p>
           </div>
         </div>
+      )}
+
+      {selectedFeedbackCourse && (
+        <FeedbackModal
+          courseId={selectedFeedbackCourse.id}
+          courseName={selectedFeedbackCourse.name}
+          courseSubject={selectedFeedbackCourse.subject || ''}
+          onClose={() => setSelectedFeedbackCourse(null)}
+          onSuccess={() => {
+            mutateFeedbacks()
+          }}
+        />
       )}
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
