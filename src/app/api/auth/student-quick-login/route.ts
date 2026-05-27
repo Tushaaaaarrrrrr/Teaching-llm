@@ -3,30 +3,23 @@ import { prisma } from '@/lib/db'
 import { signToken, getCookieConfig } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
-// Temporary tester sign-in. Gated behind TEST_LOGIN_SECRET env var.
-// Set TEST_LOGIN_SECRET on Render to enable; unset it to disable.
-export async function POST(request: NextRequest) {
-  const expected = process.env.TEST_LOGIN_SECRET
-  if (!expected) {
-    return NextResponse.json({ error: 'Tester sign-in is disabled.' }, { status: 403 })
+// One-tap "Quick login as Student" used by the Capacitor APK, where
+// Google's WebView OAuth is blocked. Signs in as the user whose email is
+// configured in STUDENT_QUICK_LOGIN_EMAIL. Disabled when the env var is
+// unset, so the endpoint is inert on production by default.
+export async function POST(_request: NextRequest) {
+  const targetEmail = process.env.STUDENT_QUICK_LOGIN_EMAIL?.trim().toLowerCase()
+  if (!targetEmail) {
+    return NextResponse.json({ error: 'Quick login is disabled.' }, { status: 403 })
   }
 
   try {
-    const { email, secret } = await request.json().catch(() => ({}))
-
-    if (!email || !secret) {
-      return NextResponse.json({ error: 'Email and passcode are required.' }, { status: 400 })
-    }
-    if (secret !== expected) {
-      return NextResponse.json({ error: 'Invalid passcode.' }, { status: 401 })
-    }
-
-    const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase() } })
+    const user = await prisma.user.findUnique({ where: { email: targetEmail } })
     if (!user) {
-      return NextResponse.json({ error: 'No account exists for that email.' }, { status: 404 })
+      return NextResponse.json({ error: 'Configured quick-login account not found.' }, { status: 404 })
     }
     if (user.isTerminated) {
-      return NextResponse.json({ error: 'Your account has been deactivated.' }, { status: 403 })
+      return NextResponse.json({ error: 'This account has been deactivated.' }, { status: 403 })
     }
 
     const updated = await prisma.user.update({
@@ -59,13 +52,13 @@ export async function POST(request: NextRequest) {
       userRole: user.role,
       securityNumber: user.securityNumber,
       actionType: ACTION.USER_LOGIN,
-      actionDescription: `${user.name} logged in via tester sign-in`,
+      actionDescription: `${user.name} logged in via APK quick-login`,
       moduleName: MODULE.AUTH,
     })
 
     return response
   } catch (error: any) {
-    console.error('Test login error:', error)
+    console.error('Quick login error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
