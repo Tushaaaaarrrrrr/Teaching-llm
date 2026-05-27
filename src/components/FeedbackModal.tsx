@@ -276,9 +276,37 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
           </div>
         </div>
 
-        <style jsx>{`
-          @media (max-width: 480px) {
-            .feedback-star-svg { width: 28px; height: 28px; }
+        <style>{`
+          @media (max-width: 600px) {
+            .feedback-modal-box {
+              padding: 16px 14px !important;
+              border-radius: 20px !important;
+              max-height: calc(100dvh - 24px) !important;
+            }
+            .feedback-modal-box h2 {
+              font-size: 18px !important;
+              margin-bottom: 4px !important;
+            }
+            .feedback-modal-box p {
+              margin-bottom: 16px !important;
+            }
+            .feedback-modal-box .feedback-stars svg {
+              width: 26px !important;
+              height: 26px !important;
+            }
+            .feedback-modal-box textarea {
+              height: 80px !important;
+              padding: 12px !important;
+              border-radius: 14px !important;
+            }
+            .feedback-modal-footer {
+              margin-top: 16px !important;
+              gap: 8px !important;
+            }
+            .feedback-modal-footer button {
+              padding: 11px 14px !important;
+              font-size: 12.5px !important;
+            }
           }
         `}</style>
       </div>

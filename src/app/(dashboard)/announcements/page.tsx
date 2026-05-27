@@ -242,7 +242,38 @@ export default function AnnouncementsPage() {
   }
 
   return (
-    <div style={{ padding: '24px 32px 48px' }}>
+    <div className="announcements-page-container" style={{ padding: '24px 32px 48px' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .announcements-page-container {
+            padding: 14px 12px 24px !important;
+          }
+          .announcement-card {
+            padding: 16px 12px !important;
+            border-radius: 16px !important;
+          }
+          .announcement-card-body {
+            display: grid !important;
+            grid-template-columns: auto 1fr !important;
+            grid-template-rows: auto auto !important;
+            gap: 12px !important;
+          }
+          .announcement-card-body > div:first-child {
+            grid-column: 1 !important;
+            grid-row: 1 !important;
+          }
+          .announcement-card-content {
+            grid-column: 2 !important;
+            grid-row: 1 !important;
+          }
+          .announcement-card-button {
+            grid-column: 1 / span 2 !important;
+            grid-row: 2 !important;
+            width: 100% !important;
+            margin-top: 4px !important;
+          }
+        }
+      `}</style>
 
       {/* ── Top bar: filter tabs + create button ────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
@@ -407,6 +438,7 @@ export default function AnnouncementsPage() {
               <div
                 key={a.id}
                 ref={el => { cardRefs.current[a.id] = el }}
+                className="announcement-card"
                 style={{
                   ...neuCard,
                   padding: '20px 24px',
@@ -414,13 +446,13 @@ export default function AnnouncementsPage() {
                   ...(isHighlight ? { boxShadow: `6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff, 0 0 0 2px ${typeColor}50` } : {}),
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '18px' }}>
+                <div className="announcement-card-body" style={{ display: 'flex', alignItems: 'flex-start', gap: '18px' }}>
 
                   {/* Type icon */}
                   <TypeIcon type={a.type} />
 
                   {/* Content */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="announcement-card-content" style={{ flex: 1, minWidth: 0 }}>
                     {/* Tag row */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
                       <span style={{
@@ -526,6 +558,7 @@ export default function AnnouncementsPage() {
                   {/* Read More / Show Less button */}
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : a.id)}
+                    className="announcement-card-button"
                     style={{
                       flexShrink: 0, alignSelf: 'center',
                       padding: '9px 20px', borderRadius: '50px', border: 'none',
