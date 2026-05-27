@@ -410,7 +410,29 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
   const [gsiReady, setGsiReady] = useState(false)
   const [isCapacitor, setIsCapacitor] = useState(false)
   const [nativeReady, setNativeReady] = useState(false)
+  const [quickLoading, setQuickLoading] = useState(false)
   const googleBtnRef = useRef<HTMLDivElement>(null)
+
+  // Backup APK sign-in for when native Google isn't available. Gated server-side by STUDENT_QUICK_LOGIN_EMAIL.
+  async function handleQuickLogin() {
+    if (quickLoading) return
+    setQuickLoading(true)
+    setGError('')
+    try {
+      const res = await fetch('/api/auth/student-quick-login', { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setGError(data.error || 'Quick login failed.')
+        return
+      }
+      router.push('/dashboard')
+      router.refresh()
+    } catch {
+      setGError('Something went wrong with quick login.')
+    } finally {
+      setQuickLoading(false)
+    }
+  }
 
   // Detect Capacitor at mount so we know whether to use the native plugin or GSI.
   useEffect(() => {
@@ -619,6 +641,46 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
           )}
         </button>
       </div>
+
+      {/* APK quick-login fallback — visible only inside Capacitor, gated server-side by STUDENT_QUICK_LOGIN_EMAIL */}
+      {isCapacitor && (
+        <div style={{ marginTop: '14px' }}>
+          <button
+            type="button"
+            onClick={handleQuickLogin}
+            disabled={quickLoading}
+            style={{
+              width: '100%',
+              padding: '14px 24px',
+              borderRadius: '50px',
+              border: 'none',
+              background: quickLoading ? '#cbd5e1' : '#1e1e3a',
+              color: '#ffffff',
+              boxShadow: quickLoading ? 'none' : '0 6px 18px rgba(30,30,58,0.30)',
+              cursor: quickLoading ? 'default' : 'pointer',
+              fontFamily: 'inherit',
+              fontSize: '15px',
+              fontWeight: 800,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            }}
+          >
+            {quickLoading ? (
+              <>
+                <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/></svg>
+                Signing in…
+              </>
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Quick login as Student
+              </>
+            )}
+          </button>
+          <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#9999b0', textAlign: 'center' }}>
+            Backup sign-in. Available when the server-side passcode is set.
+          </p>
+        </div>
+      )}
 
       {process.env.NODE_ENV === 'development' && (
         <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
