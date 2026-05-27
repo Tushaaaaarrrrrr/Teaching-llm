@@ -526,6 +526,7 @@ tr:hover td {
 }
 
 @media (max-width: 768px) {
+  .dashboard-header.mobile-hide-header { display: none !important; }
   .header-profile { display: none !important; }
   .desktop-only-nav-item { display: none !important; }
   .calendar-desktop-only { display: none !important; }

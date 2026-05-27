@@ -257,7 +257,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
       transition: 'height 0.3s ease',
-    }} className="dashboard-header">
+    }} className={`dashboard-header ${!isHomePage ? 'mobile-hide-header' : ''}`}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0, flex: 1 }} className="header-left-section">
         {/* Hamburger Menu Toggle Button on Mobile (hidden — bottom nav handles navigation) */}
         <button
