@@ -274,7 +274,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
         {/* Mobile-only greeting block (profile avatar + welcome text) */}
         {isHomePage && (
-          <a href="/menu" className="mobile-header-greeting" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+          <a href="/profile" className="mobile-header-greeting" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
             <div style={{
               width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
               background: '#ffffff',
