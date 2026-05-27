@@ -2,6 +2,7 @@
 
 import { useState, Suspense, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import MobileLoginExperience from '@/components/auth/MobileLoginExperience'
 
 function PoliciesDropdown({ 
   links, 
@@ -142,7 +143,12 @@ function LoginContent() {
   const displayError = queryError ? errorMap[queryError] || `Login error: ${queryError}` : ''
 
   return (
-    <div className="login-container">
+    <>
+      {/* Mobile-only experience: 3-slide onboarding + clean dark login */}
+      <div className="mobile-only-login"><MobileLoginExperience /></div>
+
+      {/* Desktop login (hidden on mobile via CSS) */}
+      <div className="login-container desktop-only-login">
       {/* Left Panel - Branding */}
       <div className="login-left-panel">
         {/* Logo & Tagline Centered Layout */}
@@ -391,6 +397,7 @@ function LoginContent() {
       ))}
 
     </div>
+    </>
   )
 }
 

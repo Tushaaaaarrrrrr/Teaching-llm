@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Script from 'next/script'
 import useSWR, { mutate } from 'swr'
+import MyCoursesMobile from '@/components/courses/MyCoursesMobile'
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -152,7 +153,11 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="page-container fade-in">
+    <>
+    {/* Mobile redesign */}
+    <div className="my-courses-mobile-only"><MyCoursesMobile /></div>
+    {/* Desktop original layout (hidden on mobile via CSS) */}
+    <div className="page-container fade-in my-courses-desktop-only">
       {error ? (
         <div
           className="card"
@@ -836,5 +841,6 @@ export default function CoursesPage() {
         }
       `}</style>
     </div>
+    </>
   )
 }

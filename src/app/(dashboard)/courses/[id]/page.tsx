@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Script from 'next/script'
+import MobileCourseDetail from '@/components/courses/MobileCourseDetail'
 
 interface ContentItem {
   id: string
@@ -272,7 +273,21 @@ export default function CourseDetailPage() {
   }
 
   return (
-    <div className="page-container fade-in">
+    <>
+    {/* Mobile redesign */}
+    <div className="course-detail-mobile-only">
+      <MobileCourseDetail
+        course={course as any}
+        topics={topics as any}
+        expandedTopics={expandedTopics}
+        toggleTopic={toggleTopic}
+        progressMap={progressMap}
+        updateProgress={updateProgress}
+        role={role}
+      />
+    </div>
+    {/* Desktop layout */}
+    <div className="page-container fade-in course-detail-desktop-only">
       {/* Course Header Banner */}
       <div className="card" style={{ overflow: 'hidden', marginBottom: '20px' }}>
         <div 
@@ -858,5 +873,6 @@ export default function CourseDetailPage() {
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>
+    </>
   )
 }

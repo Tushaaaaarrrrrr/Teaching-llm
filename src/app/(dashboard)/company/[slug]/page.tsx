@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import useSWR from 'swr'
 import RichTextEditor from '@/components/ui/RichTextEditor'
+import { getDefaultCompanyContent } from '@/lib/companyPagesDefault'
 
 export default function CompanyPage() {
   const params = useParams()
@@ -25,9 +26,10 @@ export default function CompanyPage() {
 
   useEffect(() => {
     if (pageData && !isEditing) {
-      setContent(pageData.content || '')
+      // Use DB content if a manager has saved one, otherwise fall back to bundled default.
+      setContent(pageData.content || getDefaultCompanyContent(slug))
     }
-  }, [pageData, isEditing])
+  }, [pageData, isEditing, slug])
 
   const handleSave = async () => {
     setSaving(true)
@@ -73,9 +75,14 @@ export default function CompanyPage() {
     transition: 'all 0.2s ease',
   }
 
-  if (!pageData) {
+  // If the page-data fetch is still in flight, show a soft loader.
+  // We still proceed to render with the default content as a safety net if the API ever fails.
+  if (!pageData && !getDefaultCompanyContent(slug)) {
      return <div style={{ padding: '32px', textAlign: 'center', color: '#9999b0', fontWeight: 600 }}>Loading {titleText}...</div>
   }
+
+  // If pageData hasn't arrived yet but we have a default for this slug, render the default immediately.
+  const displayContent = content || pageData?.content || getDefaultCompanyContent(slug)
 
   return (
     <div style={{ padding: 'clamp(16px, 4vw, 24px) clamp(16px, 4vw, 32px) 48px', maxWidth: '1000px', margin: '0 auto' }}>
@@ -149,7 +156,7 @@ export default function CompanyPage() {
           <div
             className="custom-page-content"
             style={{ color: '#4a4a68', lineHeight: '1.7', fontSize: 'clamp(14px, 3.6vw, 16px)' }}
-            dangerouslySetInnerHTML={{ __html: content || `<p style="color: #9999b0; font-style: italic; text-align: center; padding: 40px;">No content available for ${titleText}. ${isManager ? 'Click Edit to add something.' : ''}</p>` }}
+            dangerouslySetInnerHTML={{ __html: displayContent || `<p style="color: #9999b0; font-style: italic; text-align: center; padding: 40px;">No content available for ${titleText}. ${isManager ? 'Click Edit to add something.' : ''}</p>` }}
           />
         )}
       </div>

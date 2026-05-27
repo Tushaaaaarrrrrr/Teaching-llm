@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import CustomVideoPlayer, { extractYouTubeId } from '@/components/courses/CustomVideoPlayer'
 import { 
   Play, 
   ChevronLeft, 
@@ -64,6 +65,7 @@ export default function LecturePage() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const commentInputRef = useRef<HTMLTextAreaElement>(null)
   const videoIframeRef = useRef<HTMLIFrameElement>(null)
+  const videoElementRef = useRef<HTMLVideoElement>(null)
   const videoWrapperRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
   const [activeTab, setActiveTab] = useState<'info' | 'qa'>('info')
@@ -91,17 +93,66 @@ export default function LecturePage() {
     }
   }, [])
 
-  async function enterFullscreenLandscape() {
-    const target: any = videoWrapperRef.current || videoIframeRef.current
-    if (!target) return
+  async function requestFs(el: any): Promise<boolean> {
+    if (!el) return false
     try {
-      if (target.requestFullscreen) await target.requestFullscreen()
-      else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen()
-    } catch (e) { console.warn('Fullscreen request failed', e) }
-    try {
-      await (screen.orientation as any)?.lock?.('landscape')
-    } catch (e) { /* orientation lock not supported / not in fullscreen yet */ }
+      if (el.requestFullscreen) { await el.requestFullscreen({ navigationUI: 'hide' } as any); return true }
+      if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); return true }
+      if (el.webkitEnterFullscreen) { el.webkitEnterFullscreen(); return true }   // iOS Safari <video>
+      if (el.mozRequestFullScreen) { el.mozRequestFullScreen(); return true }
+      if (el.msRequestFullscreen) { el.msRequestFullscreen(); return true }
+    } catch (e) { console.warn('Fullscreen attempt failed', e) }
+    return false
   }
+
+  async function enterFullscreenLandscape() {
+    // Open our in-app overlay first (keeps the user inside the app/WebView).
+    // The overlay's <video> autoplays at the current time and then we attempt
+    // the browser fullscreen API on top — but if FS API fails (common in
+    // Capacitor WebView), the overlay alone is the experience.
+    setOverlayOpen(true)
+    try { await (screen.orientation as any)?.lock?.('landscape') } catch {}
+  }
+
+  // Route Drive videos through our proxy so they actually play (and can't be leaked).
+  // YouTube keeps using iframe — embeds work fine and the URL is public-by-design.
+  function isDriveSource(url: string | undefined, source: string | undefined) {
+    if (source === 'GOOGLE_DRIVE') return true
+    if (!url) return false
+    return /drive\.google\.com|docs\.google\.com/i.test(url)
+  }
+  function getProxyStreamUrl(lectureId: string | undefined) {
+    if (!lectureId) return ''
+    return `/api/drive-stream/${lectureId}`
+  }
+
+  // In-app fullscreen overlay (kept inside the WebView; no external browser tab)
+  const [overlayOpen, setOverlayOpen] = useState(false)
+  // If the native <video> can't decode the Drive proxy bytes, fall back to the iframe
+  const [videoErrored, setVideoErrored] = useState(false)
+  // Track the actual HTTP status from the proxy so we can show a useful diagnostic
+  const [streamDiagnostic, setStreamDiagnostic] = useState<string | null>(null)
+
+  // When the native <video> errors, probe the proxy to learn WHY (auth? Drive disabled? not shared?)
+  useEffect(() => {
+    if (!videoErrored || !content?.videoUrl || content?.videoSource !== 'GOOGLE_DRIVE') return
+    let cancelled = false
+    fetch(getProxyStreamUrl(params.lectureId as string), { method: 'HEAD' })
+      .then(async res => {
+        if (cancelled) return
+        if (res.ok) { setStreamDiagnostic(null); return } // probably codec/transient — iframe fallback is fine
+        let msg = `Proxy returned ${res.status}`
+        try {
+          const r2 = await fetch(getProxyStreamUrl(params.lectureId as string))
+          const data = await r2.json().catch(() => null)
+          if (data?.error) msg = data.error
+        } catch {}
+        setStreamDiagnostic(msg)
+      })
+      .catch(() => setStreamDiagnostic('Could not reach the streaming endpoint'))
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoErrored, content?.videoUrl, content?.videoSource])
 
   const fetchData = useCallback(async () => {
     try {
@@ -160,23 +211,50 @@ export default function LecturePage() {
 
   const getEmbedUrl = (url: string | undefined, source: string) => {
     if (!url) return ''
-    
-    if (source === 'YOUTUBE') {
-      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&\s]+)/)
-      if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`
+    const u = url.trim()
+
+    // ── YouTube auto-detection (handles youtu.be, youtube.com/watch, /embed, /shorts, m.youtube.com)
+    const ytPatterns = [
+      /(?:youtu\.be\/)([\w-]+)/,
+      /(?:youtube\.com|youtube-nocookie\.com)\/(?:watch\?v=|embed\/|shorts\/|v\/|live\/)([\w-]+)/,
+      /(?:m\.youtube\.com)\/(?:watch\?v=|embed\/|shorts\/|live\/)([\w-]+)/,
+    ]
+    const isYoutubeUrl = /youtu\.?be/i.test(u)
+    if (source === 'YOUTUBE' || isYoutubeUrl) {
+      for (const re of ytPatterns) {
+        const m = u.match(re)
+        if (m) {
+          // Minimal-chrome YouTube embed:
+          //   youtube-nocookie.com  → no tracking, cleaner UI
+          //   rel=0                 → only same-channel suggestions
+          //   modestbranding=1      → small/no YouTube logo
+          //   iv_load_policy=3      → no annotations
+          //   cc_load_policy=0      → no auto-captions
+          //   playsinline=1         → inline on iOS, not forced FS
+          //   showinfo=0            → hide title (deprecated but honored)
+          //   disablekb=1           → block YouTube keyboard shortcuts
+          //   fs=1                  → fullscreen still allowed
+          //   color=white           → minimal red progress bar
+          const params = new URLSearchParams({
+            rel: '0', modestbranding: '1', iv_load_policy: '3', cc_load_policy: '0',
+            playsinline: '1', showinfo: '0', disablekb: '1', fs: '1',
+          })
+          return `https://www.youtube-nocookie.com/embed/${m[1]}?${params.toString()}`
+        }
+      }
     }
-    
-    if (source === 'GOOGLE_DRIVE') {
-      // Extract file ID from Google Drive URL
-      // Formats: https://drive.google.com/file/d/{ID}/view
-      //          https://drive.google.com/open?id={ID}
-      const fileIdMatch = url.match(/\/d\/([\w-]+)/) || url.match(/[?&]id=([\w-]+)/)
+
+    // ── Google Drive auto-detection
+    // Supports: /file/d/{ID}/view, /file/d/{ID}/preview, ?id={ID}, /uc?id={ID}
+    const isDriveUrl = /drive\.google\.com|docs\.google\.com/i.test(u)
+    if (source === 'GOOGLE_DRIVE' || isDriveUrl) {
+      const fileIdMatch = u.match(/\/d\/([\w-]+)/) || u.match(/[?&]id=([\w-]+)/)
       if (fileIdMatch) {
         return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
       }
     }
-    
-    return url
+
+    return u
   }
 
   const handlePostComment = async (parentId: string | null = null) => {
@@ -320,79 +398,115 @@ export default function LecturePage() {
     : content.description?.substring(0, 250) + '...'
 
   return (
-    <div className="page-container fade-in" style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '60px' }}>
+    <div className={`page-container fade-in ${isMobile ? 'lecture-page-mobile' : ''}`} style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '60px', overflowX: 'visible', overflowY: 'visible' }}>
       {/* Top Header */}
-      <div style={{ marginBottom: isMobile ? '16px' : '24px' }}>
-        <Link href={`/courses/${params.id}`} style={{
-          display: 'inline-flex', alignItems: 'center', gap: '6px',
-          color: '#64748b', fontSize: '14px', textDecoration: 'none', fontWeight: '600', 
-          marginBottom: isMobile ? '10px' : '16px', transition: 'color 0.2s'
-        }}
-        onMouseEnter={e => e.currentTarget.style.color = content.topic.course.color}
-        onMouseLeave={e => e.currentTarget.style.color = '#64748b'}
-        >
-          <ChevronLeft size={18} />
-          Back to {content.topic.course.name}
-        </Link>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <h1 style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: '#1e293b', marginBottom: '4px' }}>{content.title}</h1>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <span style={{ 
-                fontSize: '12px', color: content.topic.course.color, 
-                background: content.topic.course.color + '15', 
-                padding: '4px 10px', borderRadius: '6px', fontWeight: '700' 
-              }}>
-                {content.topic.title}
-              </span>
-              <span style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Clock size={12} />
-                {content.videoSource} Video
-              </span>
+      {isMobile ? (
+        // Mobile: compact top bar like inspiration image 4
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '12px',
+          padding: '14px 6px',
+          marginBottom: '12px',
+        }}>
+          <Link href={`/courses/${params.id}`} aria-label="Back" style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: '36px', height: '36px', borderRadius: '50%',
+            background: '#e8eaf0',
+            boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+            color: '#1e1e3a',
+            textDecoration: 'none', flexShrink: 0,
+          }}>
+            <ChevronLeft size={18} />
+          </Link>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {content.topic.course.name}
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ marginBottom: '24px' }}>
+          <Link href={`/courses/${params.id}`} style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            color: '#64748b', fontSize: '14px', textDecoration: 'none', fontWeight: '600',
+            marginBottom: '16px', transition: 'color 0.2s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = content.topic.course.color}
+          onMouseLeave={e => e.currentTarget.style.color = '#64748b'}
+          >
+            <ChevronLeft size={18} />
+            Back to {content.topic.course.name}
+          </Link>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e293b', marginBottom: '4px' }}>{content.title}</h1>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{
+                  fontSize: '12px', color: content.topic.course.color,
+                  background: content.topic.course.color + '15',
+                  padding: '4px 10px', borderRadius: '6px', fontWeight: '700'
+                }}>
+                  {content.topic.title}
+                </span>
+                <span style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Clock size={12} />
+                  {content.videoSource} Video
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Video Section */}
       {isMobile ? (
-        <div className={`clean-video-wrapper ${content.videoSource === 'GOOGLE_DRIVE' ? 'google-drive' : ''}`} ref={videoWrapperRef} style={{ borderRadius: '16px', marginBottom: '12px', position: 'relative' }}>
+        <>
+        <div
+          ref={videoWrapperRef}
+          onContextMenu={e => e.preventDefault()}
+          className={`lecture-video-wrapper-mobile ${content.videoSource === 'GOOGLE_DRIVE' ? 'google-drive' : ''}`}
+          style={{
+            width: '100%',
+            paddingTop: '56.25%', // 16:9 aspect-ratio fallback (universally supported)
+            aspectRatio: '16 / 9',
+            borderRadius: '16px',
+            marginBottom: '10px',
+            position: 'relative',
+            overflow: 'hidden',
+            background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+            boxShadow: '0 14px 32px -10px rgba(15, 23, 42, 0.40)',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+          }}
+        >
           {content.videoUrl ? (
             <>
-              <iframe
-                ref={videoIframeRef}
-                src={getEmbedUrl(content.videoUrl, content.videoSource)}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                scrolling="no"
-                style={{ overflow: 'hidden' }}
-              />
-              <button
-                onClick={enterFullscreenLandscape}
-                aria-label="Watch fullscreen landscape"
-                style={{
-                  position: 'absolute', bottom: '10px', right: '10px',
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  padding: '8px 14px', borderRadius: '50px',
-                  background: 'rgba(15, 23, 42, 0.78)', color: '#ffffff',
-                  border: 'none', cursor: 'pointer',
-                  fontFamily: 'inherit', fontSize: '12px', fontWeight: 700,
-                  backdropFilter: 'blur(8px)',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
-                  zIndex: 5,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
-                  <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
-                  <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
-                  <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
-                </svg>
-                Fullscreen
-              </button>
+              {isDriveSource(content.videoUrl, content.videoSource) ? (
+                // Drive videos → unified player using HTML5 engine on top of our auth-checked proxy
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+                  <CustomVideoPlayer source={{ type: 'html5', src: getProxyStreamUrl(params.lectureId as string) }} />
+                </div>
+              ) : (content.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content.videoUrl || '')) && extractYouTubeId(content.videoUrl) ? (
+                // YouTube → unified player using IFrame API engine
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+                  <CustomVideoPlayer source={{ type: 'youtube', videoId: extractYouTubeId(content.videoUrl)! }} />
+                </div>
+              ) : (
+                // Other iframe-friendly sources (Vimeo, generic embed)
+                <iframe
+                  ref={videoIframeRef}
+                  src={getEmbedUrl(content.videoUrl, content.videoSource)}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  scrolling="no"
+                  onContextMenu={e => e.preventDefault()}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', overflow: 'hidden', background: '#000' }}
+                />
+              )}
+              {/* CustomVideoPlayer has its own fullscreen + speed + skip; no overlay button needed.
+                  The iframe fallback path uses the embed provider's own fullscreen affordance. */}
             </>
           ) : (
-            <div style={{ 
+            <div style={{
               position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               color: '#64748b', textAlign: 'center', padding: '20px'
@@ -403,21 +517,75 @@ export default function LecturePage() {
             </div>
           )}
         </div>
+
+        {/* Diagnostic when the secure stream is failing — tells you what to fix. Friendly, not alarming, since the iframe-fallback is likely already showing the video. */}
+        {videoErrored && streamDiagnostic && (
+          <details style={{
+            padding: '10px 14px',
+            borderRadius: '14px',
+            background: 'rgba(245, 158, 11, 0.08)',
+            border: '1px solid rgba(245, 158, 11, 0.22)',
+            marginBottom: '12px',
+            fontSize: '12px',
+            color: '#92400e',
+          }}>
+            <summary style={{ cursor: 'pointer', fontWeight: 800, color: '#92400e', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Using fallback player — tap for details
+            </summary>
+            <div style={{ marginTop: '8px', fontSize: '11.5px', fontWeight: 600, lineHeight: 1.6, color: '#7c2d12', wordBreak: 'break-word' }}>
+              {/cannotDownloadFile|download by the user/i.test(streamDiagnostic)
+                ? 'The Drive file has download disabled. In Drive: right-click the file → File information → "Disable options to download, print, and copy" → turn OFF. Then refresh.'
+                : streamDiagnostic}
+            </div>
+          </details>
+        )}
+
+        {/* Mobile lecture meta block — appears UNDER the video like inspiration */}
+        <div style={{ padding: '0 4px', marginBottom: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
+            <span style={{
+              fontSize: '11px', color: content.topic.course.color,
+              background: content.topic.course.color + '18',
+              padding: '4px 10px', borderRadius: '50px', fontWeight: 800,
+              letterSpacing: '0.04em', textTransform: 'uppercase',
+            }}>
+              {content.topic.title}
+            </span>
+          </div>
+          <h1 style={{ fontSize: '22px', fontWeight: 900, color: '#1e1e3a', margin: 0, lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+            {content.title}
+          </h1>
+        </div>
+        </>
       ) : (
-        <div style={{ 
-          background: '#0f172a', borderRadius: '24px', overflow: 'hidden', 
+        <div style={{
+          background: '#0f172a', borderRadius: '24px', overflow: 'hidden',
           boxShadow: '0 20px 40px rgba(0,0,0,0.15)', marginBottom: '32px',
           position: 'relative', paddingTop: '56.25%' // 16:9 Aspect Ratio
         }}>
           {content.videoUrl ? (
-            <iframe
-              src={getEmbedUrl(content.videoUrl, content.videoSource)}
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+            isDriveSource(content.videoUrl, content.videoSource) ? (
+              // Drive → unified player (HTML5 engine over auth-checked proxy)
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+                <CustomVideoPlayer source={{ type: 'html5', src: getProxyStreamUrl(params.lectureId as string) }} />
+              </div>
+            ) : (content.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content.videoUrl || '')) && extractYouTubeId(content.videoUrl) ? (
+              // YouTube → unified player (IFrame API engine)
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+                <CustomVideoPlayer source={{ type: 'youtube', videoId: extractYouTubeId(content.videoUrl)! }} />
+              </div>
+            ) : (
+              <iframe
+                src={getEmbedUrl(content.videoUrl, content.videoSource)}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onContextMenu={e => e.preventDefault()}
+              />
+            )
           ) : (
-            <div style={{ 
+            <div style={{
               position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               color: '#64748b', textAlign: 'center', padding: '20px'
@@ -850,6 +1018,139 @@ export default function LecturePage() {
           </div>
         </div>
       )}
+
+      {/* ───────── In-app fullscreen overlay ─────────
+          Kept inside the WebView (no external browser). Black background,
+          close button, safe-area padding so native controls aren't hidden
+          behind Android status bar or nav bar in landscape. */}
+      {overlayOpen && content?.videoUrl && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            background: '#000',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            paddingLeft: 'env(safe-area-inset-left, 0px)',
+            paddingRight: 'env(safe-area-inset-right, 0px)',
+          }}
+        >
+          <button
+            onClick={async () => {
+              setOverlayOpen(false)
+              try { (screen.orientation as any)?.unlock?.() } catch {}
+            }}
+            aria-label="Close fullscreen"
+            style={{
+              position: 'absolute',
+              top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+              right: 'calc(env(safe-area-inset-right, 0px) + 12px)',
+              width: '40px', height: '40px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.20)',
+              backdropFilter: 'blur(8px)', cursor: 'pointer', color: '#ffffff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 10001,
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}>
+            {isDriveSource(content.videoUrl, content.videoSource) && !videoErrored ? (
+              <video
+                src={getProxyStreamUrl(params.lectureId as string)}
+                controls
+                autoPlay
+                playsInline
+                preload="auto"
+                controlsList="nodownload"
+                onContextMenu={e => e.preventDefault()}
+                onError={() => setVideoErrored(true)}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+              />
+            ) : (
+              <iframe
+                src={getEmbedUrl(content.videoUrl, content.videoSource)}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                allowFullScreen
+                style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
+  )
+}
+
+/**
+ * OPAQUE click-eaters layered over the YouTube iframe that BOTH hide and block
+ * clicks on YouTube branding:
+ *   - top title row + channel name + news-source disclaimer
+ *   - top-left clickable title that links to youtube.com/watch
+ *   - bottom-right "More videos" suggestion pop-up + YouTube wordmark
+ *   - bottom-left "Copy link" chain icon
+ *
+ * Center-top (settings/CC/volume) and center-bottom (play/progress/time/fullscreen)
+ * are LEFT CLEAR so the player remains usable.
+ *
+ * Each mask is solid black (or fades-to-black gradient) — taps land on it and
+ * are eaten via preventDefault, never reaching the iframe's link handlers.
+ */
+function YouTubeChromeMaskers() {
+  const eat = (e: React.MouseEvent | React.TouchEvent) => { e.stopPropagation(); e.preventDefault() }
+  const base: React.CSSProperties = {
+    position: 'absolute', zIndex: 10, pointerEvents: 'auto', cursor: 'default',
+  }
+  return (
+    <>
+      {/* TOP gradient — fades from solid black at the very top to transparent over ~80px.
+          Hides the video title, channel name, and the news-source disclaimer overlay.
+          Right side leaves 150px clear for YouTube's settings/CC/volume icons. */}
+      <div
+        aria-hidden
+        onClick={eat}
+        onTouchStart={eat}
+        style={{
+          ...base,
+          top: 0, left: 0, right: '150px', height: '90px',
+          background: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.92) 55%, rgba(0,0,0,0) 100%)',
+        }}
+      />
+      {/* TOP-RIGHT tiny corner — covers the small "more options / Watch on YouTube" button that sometimes appears here */}
+      <div
+        aria-hidden
+        onClick={eat}
+        onTouchStart={eat}
+        style={{
+          ...base,
+          top: 0, right: 0, width: '40px', height: '38px',
+          background: '#000',
+        }}
+      />
+      {/* BOTTOM-RIGHT solid black — covers "More videos" thumbnail + "YouTube" wordmark.
+          ~32% wide and ~50px tall, positioned at the very bottom so it doesn't cover the progress bar above. */}
+      <div
+        aria-hidden
+        onClick={eat}
+        onTouchStart={eat}
+        style={{
+          ...base,
+          bottom: 0, right: 0, width: '34%', height: '54px',
+          background: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 70%, rgba(0,0,0,0) 100%)',
+        }}
+      />
+      {/* BOTTOM-LEFT — covers the chain-link "Copy link" icon */}
+      <div
+        aria-hidden
+        onClick={eat}
+        onTouchStart={eat}
+        style={{
+          ...base,
+          bottom: 0, left: 0, width: '70px', height: '50px',
+          background: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 70%, rgba(0,0,0,0) 100%)',
+        }}
+      />
+    </>
   )
 }

@@ -1,0 +1,573 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+interface OnboardingSlide {
+  eyebrow: string
+  title: string
+  quote: string
+  accent: string
+  iconBg: string
+}
+
+const SLIDES: OnboardingSlide[] = [
+  {
+    eyebrow: 'Built for IITM BS',
+    title: 'Made for BS Degree Aspirants',
+    quote: '"By IITians who know your syllabus, your pace, and the exam pressure — because we have been through it ourselves."',
+    accent: '#6366f1',
+    iconBg: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  },
+  {
+    eyebrow: 'Live + Recorded',
+    title: 'Master Every Topic, Your Way',
+    quote: '"Structured live classes, on-demand recordings, premium notes, and PYQs — with doubt support that never sleeps."',
+    accent: '#0ea5e9',
+    iconBg: 'linear-gradient(135deg, #0ea5e9, #06b6d4)',
+  },
+  {
+    eyebrow: 'Qualify · Excel · Graduate',
+    title: 'Your Complete BS Companion',
+    quote: '"From Qualifier prep to Term-wise live batches — one focused platform from your first attempt to your final degree."',
+    accent: '#10b981',
+    iconBg: 'linear-gradient(135deg, #10b981, #14b8a6)',
+  },
+]
+
+const ONBOARDING_KEY = 'genz_mobile_onboarded'
+
+export default function MobileLoginExperience() {
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [slideIndex, setSlideIndex] = useState(0)
+  const touchStartX = useRef<number | null>(null)
+
+  useEffect(() => {
+    const seen = typeof window !== 'undefined' && localStorage.getItem(ONBOARDING_KEY) === '1'
+    setShowOnboarding(!seen)
+  }, [])
+
+  function finishOnboarding() {
+    try { localStorage.setItem(ONBOARDING_KEY, '1') } catch {}
+    setShowOnboarding(false)
+  }
+
+  function nextSlide() {
+    if (slideIndex < SLIDES.length - 1) setSlideIndex(i => i + 1)
+    else finishOnboarding()
+  }
+
+  function onTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    if (Math.abs(dx) > 50) {
+      if (dx < 0 && slideIndex < SLIDES.length - 1) setSlideIndex(i => i + 1)
+      else if (dx > 0 && slideIndex > 0) setSlideIndex(i => i - 1)
+    }
+    touchStartX.current = null
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: '#e8eaf0',
+      color: '#1e1e3a',
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden',
+      zIndex: 100,
+    }}>
+      {/* Soft decorative blobs */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{
+          position: 'absolute', top: '-80px', left: '-60px',
+          width: '260px', height: '260px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.18), transparent 70%)',
+          filter: 'blur(20px)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-100px', right: '-80px',
+          width: '320px', height: '320px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(139,92,246,0.14), transparent 70%)',
+          filter: 'blur(24px)',
+        }} />
+      </div>
+
+      {showOnboarding ? (
+        <OnboardingView
+          slides={SLIDES}
+          index={slideIndex}
+          onNext={nextSlide}
+          onSkip={finishOnboarding}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          setSlideIndex={setSlideIndex}
+        />
+      ) : (
+        <LoginView onBackToOnboarding={() => { setSlideIndex(0); setShowOnboarding(true) }} />
+      )}
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────
+   ONBOARDING SLIDES — light neumorphic theme
+   ───────────────────────────────────────────────────────── */
+function OnboardingView({
+  slides, index, onNext, onSkip, onTouchStart, onTouchEnd, setSlideIndex,
+}: {
+  slides: OnboardingSlide[]
+  index: number
+  onNext: () => void
+  onSkip: () => void
+  onTouchStart: (e: React.TouchEvent) => void
+  onTouchEnd: (e: React.TouchEvent) => void
+  setSlideIndex: (i: number) => void
+}) {
+  const slide = slides[index]
+  const isLast = index === slides.length - 1
+
+  return (
+    <div
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      style={{
+        display: 'flex', flexDirection: 'column', flex: 1,
+        padding: 'max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom))',
+        position: 'relative', zIndex: 1,
+      }}
+    >
+      {/* Top bar: page indicator + skip */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', letterSpacing: '0.1em' }}>
+          {String(index + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+        </span>
+        {!isLast && (
+          <button
+            onClick={onSkip}
+            style={{
+              background: '#e8eaf0', border: 'none', cursor: 'pointer',
+              color: '#6b6b8a', fontSize: '12.5px', fontWeight: 700,
+              padding: '8px 16px', borderRadius: '50px',
+              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+            }}
+          >
+            Skip
+          </button>
+        )}
+      </div>
+
+      {/* Center: logo with concentric rings */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', minHeight: '240px' }}>
+        {/* Concentric rings */}
+        {[1, 2, 3].map(r => (
+          <div
+            key={r}
+            style={{
+              position: 'absolute',
+              width: `${140 + r * 60}px`,
+              height: `${140 + r * 60}px`,
+              borderRadius: '50%',
+              border: `1px dashed ${slide.accent}${r === 1 ? '55' : r === 2 ? '33' : '1c'}`,
+              animation: `ringPulse${r} 4s ease-in-out infinite`,
+            }}
+          />
+        ))}
+        <div style={{
+          width: '120px', height: '120px', borderRadius: '50%',
+          background: '#e8eaf0',
+          boxShadow: '12px 12px 30px #c5c7cf, -12px -12px 30px #ffffff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'relative',
+        }}>
+          <div style={{
+            width: '92px', height: '92px', borderRadius: '50%',
+            background: slide.iconBg,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: `0 12px 28px ${slide.accent}55`,
+          }}>
+            <img src="/logo.png" alt="GenZ IITian" style={{ width: '70px', height: '70px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom: card with eyebrow, title, quote, dots, button */}
+      <div
+        key={`slide-${index}`}
+        style={{
+          background: '#ffffff',
+          border: '1px solid rgba(15, 23, 42, 0.05)',
+          borderRadius: '28px',
+          padding: '24px 22px 20px',
+          boxShadow: '0 18px 36px -12px rgba(15, 23, 42, 0.12), 0 6px 12px -4px rgba(15, 23, 42, 0.04)',
+          animation: 'glSlideUp 0.4s cubic-bezier(0.16,1,0.3,1)',
+        }}
+      >
+        <div style={{ fontSize: '11px', fontWeight: 800, color: slide.accent, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '10px' }}>
+          {slide.eyebrow}
+        </div>
+        <h1 style={{
+          fontSize: '22px', fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.02em',
+          color: '#1e1e3a', margin: 0, marginBottom: '12px',
+        }}>
+          {slide.title}
+        </h1>
+        <p style={{
+          fontSize: '13.5px', lineHeight: 1.6, color: '#6b6b8a',
+          margin: 0, fontStyle: 'italic',
+          minHeight: '68px',
+        }}>
+          {slide.quote}
+        </p>
+
+        {/* Dots */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '18px', marginBottom: '18px' }}>
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setSlideIndex(i)}
+              aria-label={`Slide ${i + 1}`}
+              style={{
+                width: i === index ? '22px' : '6px', height: '6px',
+                borderRadius: '50px',
+                background: i === index ? slide.accent : '#cbd5e1',
+                border: 'none', cursor: 'pointer', padding: 0,
+                transition: 'all 0.3s ease',
+              }}
+            />
+          ))}
+        </div>
+
+        {/* CTA */}
+        <button
+          onClick={onNext}
+          style={{
+            width: '100%',
+            padding: '14px',
+            borderRadius: '50px',
+            border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: '14.5px', fontWeight: 800,
+            background: slide.iconBg,
+            color: '#ffffff',
+            boxShadow: `0 10px 24px ${slide.accent}55`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            letterSpacing: '0.01em',
+          }}
+        >
+          {isLast ? 'Get Started' : 'Next'}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+
+      <style jsx>{`
+        @keyframes glSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes ringPulse1 { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.04); } }
+        @keyframes ringPulse2 { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.03); } }
+        @keyframes ringPulse3 { 0%, 100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 0.55; transform: scale(1.02); } }
+      `}</style>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────
+   LOGIN VIEW (after onboarding) — light neumorphic
+   ───────────────────────────────────────────────────────── */
+function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
+  const router = useRouter()
+  const [gError, setGError] = useState('')
+  const [gLoading, setGLoading] = useState(false)
+  const [gsiReady, setGsiReady] = useState(false)
+  const [quickLoading, setQuickLoading] = useState<null | 'MANAGER' | 'STUDENT'>(null)
+  const googleBtnRef = useRef<HTMLDivElement>(null)
+
+  const isDev = process.env.NODE_ENV === 'development'
+
+  useEffect(() => {
+    const clientId = '990282572765-bn1ls79tuhpa589eiici5r9mr6c98c8h.apps.googleusercontent.com'
+    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]')
+    const onReady = () => {
+      if ((window as any).google) {
+        try {
+          ;(window as any).google.accounts.id.initialize({ client_id: clientId, callback: handleGoogleResponse })
+          setGsiReady(true)
+        } catch (e) { console.warn('GSI init failed', e) }
+      }
+    }
+    if (existing) onReady()
+    else {
+      const script = document.createElement('script')
+      script.src = 'https://accounts.google.com/gsi/client'
+      script.async = true; script.defer = true
+      script.onload = onReady
+      document.body.appendChild(script)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (gsiReady && googleBtnRef.current && (window as any).google) {
+      ;(window as any).google.accounts.id.renderButton(googleBtnRef.current, {
+        theme: 'outline',
+        size: 'large',
+        width: googleBtnRef.current.parentElement?.offsetWidth || 312,
+        type: 'standard',
+        shape: 'pill',
+        text: 'continue_with',
+      })
+    }
+  }, [gsiReady])
+
+  async function handleGoogleResponse(response: any) {
+    setGLoading(true); setGError('')
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setGError(data.error || 'Google login failed'); return }
+      router.push('/dashboard'); router.refresh()
+    } catch {
+      setGError('Something went wrong with Google login.')
+    } finally { setGLoading(false) }
+  }
+
+  // Match the desktop login: hard-coded dev accounts by email
+  const DEV_ACCOUNTS = {
+    MANAGER: 'lkiitmng2428@gmail.com',
+    STUDENT: 'student@teacherai.com',
+  } as const
+
+  async function quickLogin(role: 'MANAGER' | 'STUDENT') {
+    setQuickLoading(role); setGError('')
+    try {
+      const res = await fetch('/api/auth/dev-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: DEV_ACCOUNTS[role] }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setGError(data.error || 'Dev login failed'); return }
+      router.push('/dashboard'); router.refresh()
+    } catch {
+      setGError('Something went wrong with dev login.')
+    } finally { setQuickLoading(null) }
+  }
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', flex: 1,
+      padding: 'max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom))',
+      position: 'relative', zIndex: 1,
+      overflowY: 'auto',
+    }}>
+      {/* Top: back to intro */}
+      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <button
+          onClick={onBackToOnboarding}
+          aria-label="Back to intro"
+          style={{
+            background: '#e8eaf0', border: 'none', cursor: 'pointer', color: '#1e1e3a',
+            width: '40px', height: '40px', borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+      </div>
+
+      {/* Logo block */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px', marginBottom: '28px' }}>
+        <div style={{
+          width: '96px', height: '96px', borderRadius: '50%',
+          background: '#e8eaf0',
+          boxShadow: '10px 10px 24px #c5c7cf, -10px -10px 24px #ffffff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: '18px',
+          position: 'relative',
+        }}>
+          <div style={{
+            width: '72px', height: '72px', borderRadius: '50%',
+            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 8px 18px rgba(99,102,241,0.40)',
+          }}>
+            <img src="/logo.png" alt="GenZ IITian" style={{ width: '54px', height: '54px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+          </div>
+        </div>
+        <h1 style={{
+          fontSize: '22px', fontWeight: 900, color: '#1e1e3a', margin: 0, letterSpacing: '-0.02em',
+          textAlign: 'center',
+        }}>
+          Sign In to Your Account
+        </h1>
+        <p style={{
+          fontSize: '13px', color: '#6b6b8a', marginTop: '6px', marginBottom: 0, textAlign: 'center',
+          maxWidth: '300px', lineHeight: 1.5, fontWeight: 500,
+        }}>
+          Access your live classes, recordings, premium notes, and personalized study plan.
+        </p>
+      </div>
+
+      {/* Error */}
+      {gError && (
+        <div style={{
+          background: 'rgba(239,68,68,0.08)', color: '#dc2626',
+          padding: '12px 14px', borderRadius: '14px', fontSize: '13px',
+          marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px',
+          border: '1px solid rgba(239,68,68,0.20)', fontWeight: 600,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {gError}
+        </div>
+      )}
+
+      {/* Google login card */}
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid rgba(15, 23, 42, 0.05)',
+        borderRadius: '22px',
+        padding: '20px 18px',
+        marginBottom: '16px',
+        boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.10)',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <p style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', margin: 0, marginBottom: '12px', textAlign: 'center', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          Continue with Google
+        </p>
+
+        <div style={{ display: 'flex', justifyContent: 'center', minHeight: '44px' }}>
+          {!gsiReady ? (
+            <div style={{
+              width: '100%', padding: '13px 20px', borderRadius: '50px',
+              background: '#f1f5f9', color: '#94a3b8',
+              fontSize: '13px', fontWeight: 700, textAlign: 'center',
+              border: '1px solid #e2e8f0',
+            }}>
+              Preparing secure sign-in…
+            </div>
+          ) : (
+            <div ref={googleBtnRef} style={{ width: '100%' }} />
+          )}
+        </div>
+
+        {gLoading && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(232, 234, 240, 0.85)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: '22px',
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ animation: 'gSpin 0.8s linear infinite' }}>
+              <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
+              <path d="M12 2a10 10 0 0 1 10 10" />
+            </svg>
+          </div>
+        )}
+      </div>
+
+      {/* Quick Login (dev only) — matches desktop style: full-width violet + emerald pills */}
+      {isDev && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+          <button
+            onClick={() => quickLogin('MANAGER')}
+            disabled={!!quickLoading}
+            style={{
+              width: '100%',
+              padding: '13px 20px',
+              borderRadius: '50px',
+              border: 'none',
+              background: '#8B5CF6',
+              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.25)',
+              cursor: quickLoading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              fontSize: '14px',
+              fontWeight: 700,
+              color: '#ffffff',
+              fontFamily: 'inherit',
+              transition: 'all 0.2s ease',
+              opacity: quickLoading && quickLoading !== 'MANAGER' ? 0.6 : 1,
+            }}
+          >
+            {quickLoading === 'MANAGER' ? <Spinner color="#ffffff" /> : '⚡'}
+            Dev Quick Login (Manager)
+          </button>
+
+          <button
+            onClick={() => quickLogin('STUDENT')}
+            disabled={!!quickLoading}
+            style={{
+              width: '100%',
+              padding: '13px 20px',
+              borderRadius: '50px',
+              border: 'none',
+              background: '#10B981',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
+              cursor: quickLoading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              fontSize: '14px',
+              fontWeight: 700,
+              color: '#ffffff',
+              fontFamily: 'inherit',
+              transition: 'all 0.2s ease',
+              opacity: quickLoading && quickLoading !== 'STUDENT' ? 0.6 : 1,
+            }}
+          >
+            {quickLoading === 'STUDENT' ? <Spinner color="#ffffff" /> : '⚡'}
+            Dev Quick Login (Student)
+          </button>
+        </div>
+      )}
+
+      {/* Footer: Explore + policies */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: 'auto', paddingTop: '16px' }}>
+        <a
+          href="https://genziitian.in/courses"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            fontSize: '13px', fontWeight: 700, color: '#4f46e5',
+            textDecoration: 'none',
+            padding: '10px 18px', borderRadius: '50px',
+            background: '#e8eaf0',
+            boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+          }}
+        >
+          Explore Courses
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </a>
+
+        <p style={{ fontSize: '11px', color: '#9999b0', textAlign: 'center', margin: 0, lineHeight: 1.6, fontWeight: 500 }}>
+          By continuing, you agree to our<br />
+          <a href="/company/terms-and-conditions" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 700 }}>Terms</a>
+          {' · '}
+          <a href="/company/privacy-policy" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 700 }}>Privacy</a>
+          {' · '}
+          <a href="/company/refund-policy" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 700 }}>Refund</a>
+        </p>
+      </div>
+
+      <style jsx>{`
+        @keyframes gSpin { to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  )
+}
+
+function Spinner({ color }: { color: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" style={{ animation: 'spin 0.8s linear infinite' }}>
+      <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
+      <path d="M12 2a10 10 0 0 1 10 10" />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </svg>
+  )
+}

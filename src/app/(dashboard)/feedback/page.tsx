@@ -55,8 +55,8 @@ function StudentFeedbackView({ userId }: { userId: string }) {
   if (isLoading) return <div className="page-container animate-pulse" />
 
   return (
-    <div className="page-container fade-in" style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '40px' }}>
+    <div className="page-container fade-in" style={{ maxWidth: '900px', margin: '0 auto', padding: 'clamp(16px, 4vw, 32px)' }}>
+      <div style={{ marginBottom: 'clamp(20px, 5vw, 40px)' }}>
         <button 
           onClick={() => window.history.back()}
           style={{ 
@@ -76,27 +76,29 @@ function StudentFeedbackView({ userId }: { userId: string }) {
         {courses.map(course => {
           const submitted = isAlreadySubmitted(course.id)
           return (
-            <div 
+            <div
               key={course.id}
               style={{
                 background: '#ffffff',
-                borderRadius: '24px',
-                padding: '24px 32px',
+                borderRadius: '20px',
+                padding: 'clamp(16px, 4vw, 24px) clamp(18px, 4vw, 32px)',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: '14px',
+                flexWrap: 'wrap',
                 border: '1px solid #f1f5f9',
               }}
             >
-              <div>
-                <span style={{ 
-                  fontSize: '11px', fontWeight: '800', color: '#9999b0', 
-                  textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' 
+              <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                <span style={{
+                  fontSize: '11px', fontWeight: '800', color: '#9999b0',
+                  textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px'
                 }}>
                   {course.subject}
                 </span>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px' }}>{course.name}</h3>
+                <h3 style={{ fontSize: 'clamp(15px, 4vw, 18px)', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px', overflowWrap: 'break-word' }}>{course.name}</h3>
                 <p style={{ fontSize: '13px', color: submitted ? '#10b981' : '#94a3b8', fontWeight: '600' }}>
                   {submitted ? '✓ Feedback submitted' : 'No feedback given yet'}
                 </p>
@@ -108,13 +110,15 @@ function StudentFeedbackView({ userId }: { userId: string }) {
                   style={{
                     background: '#0a0a0a',
                     color: 'white',
-                    padding: '12px 24px',
+                    padding: '12px 22px',
                     borderRadius: '50px',
                     border: 'none',
                     fontWeight: '700',
-                    fontSize: '14px',
+                    fontSize: '13.5px',
                     cursor: 'pointer',
                     transition: 'transform 0.2s ease',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
                   }}
                   onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
                   onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}

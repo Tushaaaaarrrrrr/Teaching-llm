@@ -10,14 +10,31 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}))
-    const targetEmail = body.email || 'lkiitmng2428@gmail.com'
+    const targetEmail: string | undefined = body.email
+    const targetRole: string | undefined = body.role
 
-    const user = await prisma.user.findUnique({
-      where: { email: targetEmail }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: `User with email ${targetEmail} not found` }, { status: 404 })
+    let user
+    if (targetEmail) {
+      user = await prisma.user.findUnique({ where: { email: targetEmail } })
+      if (!user) {
+        return NextResponse.json({ error: `User with email ${targetEmail} not found` }, { status: 404 })
+      }
+    } else if (targetRole) {
+      // Find any active user with the requested role — useful for quick mobile dev login
+      const normalizedRole = targetRole.toUpperCase()
+      user = await prisma.user.findFirst({
+        where: { role: normalizedRole as any, isTerminated: { not: true } },
+        orderBy: { createdAt: 'desc' },
+      })
+      if (!user) {
+        return NextResponse.json({ error: `No user found with role ${normalizedRole}` }, { status: 404 })
+      }
+    } else {
+      // Legacy default
+      user = await prisma.user.findUnique({ where: { email: 'lkiitmng2428@gmail.com' } })
+      if (!user) {
+        return NextResponse.json({ error: 'Default dev user not found' }, { status: 404 })
+      }
     }
 
     // Increment tokenVersion

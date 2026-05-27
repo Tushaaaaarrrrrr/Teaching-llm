@@ -1026,6 +1026,50 @@ tr:hover td {
 /* Hide mobile greeting on desktop */
 .mobile-header-greeting { display: none; }
 
+/* My Courses: swap between desktop layout and mobile experience */
+.my-courses-mobile-only { display: none; }
+.course-detail-mobile-only { display: none; }
+@media (max-width: 768px) {
+  .my-courses-desktop-only { display: none !important; }
+  .my-courses-mobile-only { display: block !important; }
+  .course-detail-desktop-only { display: none !important; }
+  .course-detail-mobile-only { display: block !important; }
+  /* Mobile course detail breaks out of the dashboard container's padding so the purple hero is edge-to-edge.
+     Match the page-container's mobile padding (16px) exactly so the hero spans full viewport width,
+     and the hero's own 22px internal padding gives content proper breathing room. */
+  .course-detail-mobile-only { margin: -16px -16px 0; }
+  /* The hero's content should never touch the screen edge — enforce a min inline padding here in case
+     the inline style is overridden by inherited rules or the negative margin overshoots */
+  .course-detail-mobile-only .mobile-course-detail > div:first-of-type { padding-left: 22px !important; padding-right: 22px !important; }
+  .course-detail-mobile-only .mobile-course-detail > div:first-of-type > h1,
+  .course-detail-mobile-only .mobile-course-detail > div:first-of-type > p,
+  .course-detail-mobile-only .mobile-course-detail > div:first-of-type > div { margin-left: 0; padding-left: 0; }
+
+  /* When the mobile course detail OR lecture player is on screen, hide the dashboard header
+     (the page's own purple hero / lecture top bar acts as the header instead).
+     Also strip the <main> default padding so the hero kisses the top safely.
+     Uses :has() — supported in modern Chromium / WebView ≥ 105 (Capacitor uses current). */
+  body:has(.course-detail-mobile-only > .mobile-course-detail),
+  body:has(.lecture-page-mobile) {
+    /* fallback if :has() is not understood, nothing happens — desktop selectors still apply */
+  }
+  body:has(.course-detail-mobile-only > .mobile-course-detail) .dashboard-header,
+  body:has(.lecture-page-mobile) .dashboard-header {
+    display: none !important;
+  }
+  body:has(.course-detail-mobile-only > .mobile-course-detail) main,
+  body:has(.lecture-page-mobile) main {
+    padding-top: 0 !important;
+  }
+}
+
+/* Login: swap between desktop layout and mobile experience */
+.mobile-only-login { display: none; }
+@media (max-width: 768px) {
+  .desktop-only-login { display: none !important; }
+  .mobile-only-login { display: block !important; }
+}
+
 /* Hide the "Good Night, {name}" greeting on desktop (still shows on mobile via .mobile-header-greeting) */
 @media (min-width: 769px) {
   .header-titles-dashboard { display: none !important; }

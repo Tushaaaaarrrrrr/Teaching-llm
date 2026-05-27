@@ -80,33 +80,33 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 2000,
-      padding: '20px',
+      padding: 'clamp(12px, 3vw, 20px)',
     }}>
-      <div 
-        className="fade-in"
+      <div
+        className="fade-in feedback-modal-box"
         style={{
           background: '#ffffff',
           width: '100%',
-          maxWidth: '800px',
-          borderRadius: '32px',
-          padding: '40px',
+          maxWidth: 'min(800px, calc(100vw - 24px))',
+          borderRadius: 'clamp(20px, 4vw, 32px)',
+          padding: 'clamp(20px, 5vw, 40px)',
           boxShadow: '0 30px 60px rgba(0,0,0,0.12)',
           position: 'relative',
-          maxHeight: '90vh',
+          maxHeight: 'calc(100vh - 24px)',
           overflowY: 'auto',
         }}
       >
         {/* Close Button */}
-        <button 
+        <button
           onClick={onClose}
           style={{
             position: 'absolute',
-            top: '24px',
-            right: '24px',
+            top: '16px',
+            right: '16px',
             background: '#f8fafc',
             border: 'none',
-            width: '40px',
-            height: '40px',
+            width: '36px',
+            height: '36px',
             borderRadius: '50%',
             cursor: 'pointer',
             color: '#64748b',
@@ -114,32 +114,39 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.2s',
+            zIndex: 5,
           }}
           onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
           onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
 
-        <h2 style={{ fontSize: '26px', fontWeight: '800', color: '#1e1e3a', marginBottom: '8px' }}>
+        <h2 style={{ fontSize: 'clamp(20px, 5.4vw, 26px)', fontWeight: '800', color: '#1e1e3a', marginBottom: '6px', paddingRight: '48px', lineHeight: 1.2 }}>
           Feedback for {courseName}
         </h2>
-        <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '32px' }}>
+        <p style={{ fontSize: 'clamp(13px, 3.4vw, 15px)', color: '#64748b', marginBottom: 'clamp(20px, 5vw, 32px)' }}>
           {courseSubject}
         </p>
 
-        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '32px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px 48px', marginBottom: '32px' }}>
+        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 'clamp(20px, 5vw, 32px)' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))',
+            gap: 'clamp(20px, 5vw, 32px) clamp(24px, 6vw, 48px)',
+            marginBottom: 'clamp(20px, 5vw, 32px)',
+          }}>
             {CATEGORIES.map(cat => (
               <div key={cat.id}>
-                <p style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '12px' }}>{cat.label}</p>
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <p style={{ fontSize: 'clamp(13px, 3.6vw, 15px)', fontWeight: '700', color: '#1e1e3a', marginBottom: '10px' }}>{cat.label}</p>
+                <div className="feedback-stars" style={{ display: 'flex', gap: 'clamp(6px, 2vw, 10px)' }}>
                   {[1, 2, 3, 4, 5].map(star => (
                     <button
                       key={star}
                       onClick={() => handleRate(cat.id, star)}
+                      aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                       style={{
                         background: 'none',
                         border: 'none',
@@ -147,11 +154,12 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
                         padding: 0,
                         color: ratings[cat.id] >= star ? '#fbbf24' : '#e2e8f0',
                         transition: 'transform 0.1s ease',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}
                       onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
                       onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                      <svg width="34" height="34" viewBox="0 0 24 24" fill={ratings[cat.id] >= star ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                      <svg className="feedback-star-svg" width="34" height="34" viewBox="0 0 24 24" fill={ratings[cat.id] >= star ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                       </svg>
                     </button>
@@ -211,35 +219,36 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
           <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '16px', fontWeight: '600' }}>{error}</p>
         )}
 
-        <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
+        <div className="feedback-modal-footer" style={{ display: 'flex', gap: '10px', marginTop: 'clamp(20px, 5vw, 32px)', flexWrap: 'wrap' }}>
           <button
             onClick={() => router.push('/support')}
             style={{
-              flex: 1,
+              flex: '1 1 140px',
               padding: '14px',
               borderRadius: '50px',
               border: 'none',
               background: '#f1f5f9',
               color: '#475569',
               fontWeight: '700',
-              fontSize: '14px',
+              fontSize: '13.5px',
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
             }}
           >
             Need More Help?
           </button>
-          <div style={{ display: 'flex', gap: '12px', flex: 1.5 }}>
+          <div className="feedback-modal-footer-actions" style={{ display: 'flex', gap: '10px', flex: '2 1 220px' }}>
             <button
               onClick={onClose}
               style={{
                 flex: 1,
                 padding: '14px',
                 borderRadius: '50px',
-                border: 'none',
+                border: '1px solid #e2e8f0',
                 background: 'white',
                 color: '#64748b',
                 fontWeight: '700',
-                fontSize: '14px',
+                fontSize: '13.5px',
                 cursor: 'pointer',
               }}
             >
@@ -249,22 +258,29 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
               onClick={handleSubmit}
               disabled={isSubmitting}
               style={{
-                flex: 1.5,
+                flex: 1.6,
                 padding: '14px',
                 borderRadius: '50px',
                 border: 'none',
                 background: '#0a0a0a',
                 color: 'white',
                 fontWeight: '700',
-                fontSize: '14px',
+                fontSize: '13.5px',
                 cursor: 'pointer',
                 opacity: isSubmitting ? 0.7 : 1,
+                whiteSpace: 'nowrap',
               }}
             >
               {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
             </button>
           </div>
         </div>
+
+        <style jsx>{`
+          @media (max-width: 480px) {
+            .feedback-star-svg { width: 28px; height: 28px; }
+          }
+        `}</style>
       </div>
     </div>
   )
