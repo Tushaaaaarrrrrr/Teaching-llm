@@ -57,8 +57,8 @@ const TABS: Tab[] = [
     ),
   },
   {
-    href: '/profile',
-    label: 'Profile',
+    href: '/menu',
+    label: 'Menu',
     match: p => p === '/profile' || p === '/menu' || p.startsWith('/profile'),
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
