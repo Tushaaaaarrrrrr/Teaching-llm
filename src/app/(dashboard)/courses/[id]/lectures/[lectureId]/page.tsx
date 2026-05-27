@@ -599,162 +599,83 @@ export default function LecturePage() {
       )}
 
       {isMobile ? (
-        /* Premium Tabbed Interface for Mobile App WebView */
+        /* Unified Mobile Layout (Discussion placed after Study Materials) */
         <>
-          <div style={{
-            display: 'flex',
-            background: '#e8eaf0',
-            borderRadius: '16px',
-            padding: '4px',
-            marginBottom: '20px',
-            boxShadow: 'inset 2px 2px 5px #c5c7cf, inset -2px -2px 5px #ffffff',
-          }}>
-            <button
-              onClick={() => setActiveTab('info')}
-              style={{
-                flex: 1,
-                padding: '10px 16px',
-                borderRadius: '12px',
-                border: 'none',
-                fontWeight: '700',
-                fontSize: '14px',
-                cursor: 'pointer',
-                background: activeTab === 'info' ? '#ffffff' : 'transparent',
-                color: activeTab === 'info' ? '#3636e8' : '#6b6b8a',
-                boxShadow: activeTab === 'info' ? '2px 2px 6px rgba(0,0,0,0.06)' : 'none',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              Lecture Info
-            </button>
-            <button
-              onClick={() => setActiveTab('qa')}
-              style={{
-                flex: 1,
-                padding: '10px 16px',
-                borderRadius: '12px',
-                border: 'none',
-                fontWeight: '700',
-                fontSize: '14px',
-                cursor: 'pointer',
-                background: activeTab === 'qa' ? '#ffffff' : 'transparent',
-                color: activeTab === 'qa' ? '#3636e8' : '#6b6b8a',
-                boxShadow: activeTab === 'qa' ? '2px 2px 6px rgba(0,0,0,0.06)' : 'none',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              Discussion ({comments.length})
-            </button>
-          </div>
-
-          {activeTab === 'info' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* About this Lecture */}
-              <section style={{ 
-                background: 'white', padding: '20px', borderRadius: '20px', 
-                boxShadow: '0 4px 12px rgba(0,0,0,0.03)' 
-              }}>
-                <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  About this Lecture
-                </h2>
-                <div style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
-                  {displayedDescription || 'No description provided for this lecture.'}
-                </div>
-                {isLongDescription && (
-                  <button 
-                    onClick={() => setShowFullDescription(!showFullDescription)}
-                    style={{ 
-                      background: 'none', border: 'none', color: '#6366f1', fontSize: '13px', 
-                      fontWeight: '700', cursor: 'pointer', marginTop: '10px', padding: '0',
-                      display: 'flex', alignItems: 'center', gap: '4px'
-                    }}
-                  >
-                    {showFullDescription ? (
-                      <>Show Less <ChevronUp size={14} /></>
-                    ) : (
-                      <>Read More <ChevronDown size={14} /></>
-                    )}
-                  </button>
-                )}
-              </section>
-
-              {/* Study Materials */}
-              <section style={{ 
-                background: 'white', padding: '20px', borderRadius: '20px', 
-                boxShadow: '0 4px 12px rgba(0,0,0,0.03)' 
-              }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b', marginBottom: '14px' }}>Study Materials</h3>
-                {content.pptUrl ? (
-                  <div style={{ 
-                    background: '#f8fafc', padding: '14px', borderRadius: '14px', 
-                    border: '1px dashed #cbd5e1', display: 'flex', flexDirection: 'column', gap: '10px'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ 
-                        width: '32px', height: '32px', borderRadius: '8px', background: '#6366f115', 
-                        color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' 
-                      }}>
-                        <Download size={16} />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          Lecture Resources
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>PDF / Presentation / Notes</div>
-                      </div>
-                    </div>
-                    <a 
-                      href={content.pptUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      style={{ 
-                        background: '#6366f1', color: 'white', textDecoration: 'none', textAlign: 'center',
-                        padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
-                      }}
-                    >
-                      Download Material
-                    </a>
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '16px', color: '#94a3b8' }}>
-                    <p style={{ fontSize: '13px' }}>No material available.</p>
-                  </div>
-                )}
-              </section>
-
-              {/* Course Info */}
-              <section style={{ 
-                background: 'white', padding: '20px', borderRadius: '20px', 
-                boxShadow: '0 4px 12px rgba(0,0,0,0.03)' 
-              }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b', marginBottom: '14px' }}>Course Info</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: content.topic.course.color }} />
-                    <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>{content.topic.course.name}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#94a3b8' }} />
-                    <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>{content.topic.title}</span>
-                  </div>
-                </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* About this Lecture */}
+            <section style={{ 
+              background: 'white', padding: '20px', borderRadius: '20px', 
+              boxShadow: '0 4px 12px rgba(0,0,0,0.03)' 
+            }}>
+              <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                About this Lecture
+              </h2>
+              <div style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                {displayedDescription || 'No description provided for this lecture.'}
+              </div>
+              {isLongDescription && (
                 <button 
-                  onClick={() => router.push(`/courses/${params.id}`)}
+                  onClick={() => setShowFullDescription(!showFullDescription)}
                   style={{ 
-                    marginTop: '16px', width: '100%', background: '#f1f5f9', border: 'none', 
-                    padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700', 
-                    color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                    background: 'none', border: 'none', color: '#6366f1', fontSize: '13px', 
+                    fontWeight: '700', cursor: 'pointer', marginTop: '10px', padding: '0',
+                    display: 'flex', alignItems: 'center', gap: '4px'
                   }}
                 >
-                  View Course Syllabus
-                  <ExternalLink size={12} />
+                  {showFullDescription ? (
+                    <>Show Less <ChevronUp size={14} /></>
+                  ) : (
+                    <>Read More <ChevronDown size={14} /></>
+                  )}
                 </button>
-              </section>
-            </div>
-          )}
+              )}
+            </section>
 
-          {activeTab === 'qa' && (
-            /* Discussion Section */
+            {/* Study Materials */}
+            <section style={{ 
+              background: 'white', padding: '20px', borderRadius: '20px', 
+              boxShadow: '0 4px 12px rgba(0,0,0,0.03)' 
+            }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b', marginBottom: '14px' }}>Study Materials</h3>
+              {content.pptUrl ? (
+                <div style={{ 
+                  background: '#f8fafc', padding: '14px', borderRadius: '14px', 
+                  border: '1px dashed #cbd5e1', display: 'flex', flexDirection: 'column', gap: '10px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ 
+                      width: '32px', height: '32px', borderRadius: '8px', background: '#6366f115', 
+                      color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                    }}>
+                      <Download size={16} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        Lecture Resources
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>PDF / Presentation / Notes</div>
+                    </div>
+                  </div>
+                  <a 
+                    href={content.pptUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ 
+                      background: '#6366f1', color: 'white', textDecoration: 'none', textAlign: 'center',
+                      padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
+                    }}
+                  >
+                    Download Material
+                  </a>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '16px', color: '#94a3b8' }}>
+                  <p style={{ fontSize: '13px' }}>No material available.</p>
+                </div>
+              )}
+            </section>
+
+            {/* Discussion Section (Moved directly after Study Materials!) */}
             <section style={{ 
               background: 'white', padding: '20px', borderRadius: '20px', 
               boxShadow: '0 4px 12px rgba(0,0,0,0.03)' 
@@ -827,7 +748,36 @@ export default function LecturePage() {
                 </div>
               )}
             </section>
-          )}
+
+            {/* Course Info */}
+            <section style={{ 
+              background: 'white', padding: '20px', borderRadius: '20px', 
+              boxShadow: '0 4px 12px rgba(0,0,0,0.03)' 
+            }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b', marginBottom: '14px' }}>Course Info</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: content.topic.course.color }} />
+                  <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>{content.topic.course.name}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#94a3b8' }} />
+                  <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>{content.topic.title}</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => router.push(`/courses/${params.id}`)}
+                style={{ 
+                  marginTop: '16px', width: '100%', background: '#f1f5f9', border: 'none', 
+                  padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700', 
+                  color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                }}
+              >
+                View Course Syllabus
+                <ExternalLink size={12} />
+              </button>
+            </section>
+          </div>
         </>
       ) : (
         /* Original Desktop View (Unchanged!) */
