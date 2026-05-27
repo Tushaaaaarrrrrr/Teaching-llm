@@ -650,7 +650,6 @@ tr:hover td {
     z-index: 1;
   }
 }
-}
 
 /* Lecture row on a course page: actions stack below title on mobile so Watch button isn't cut off */
 @media (max-width: 768px) {

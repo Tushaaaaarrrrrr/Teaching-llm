@@ -439,6 +439,47 @@ export default function ExploreCoursesPage() {
           .store-category-grid .store-cat-card .store-cat-explore {
             font-size: 11px !important;
           }
+          
+          /* Responsive Bundle Buy Modal */
+          .bundle-modal-box {
+            padding: 16px 12px !important;
+            height: calc(100dvh - 24px) !important;
+            max-height: calc(100dvh - 24px) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            border-radius: 16px !important;
+          }
+          .bundle-modal-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+            overflow-y: auto !important;
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .bundle-modal-grid > div {
+            width: 100% !important;
+            max-height: none !important;
+            overflow: visible !important;
+          }
+          .bundle-modal-item-body {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+            width: 100% !important;
+          }
+          .bundle-modal-item-body > div:first-child {
+            width: 100% !important;
+          }
+          .bundle-modal-item-body > div:last-child {
+            width: 100% !important;
+            justify-content: flex-start !important;
+            align-items: center !important;
+            gap: 12px !important;
+            margin-top: 4px !important;
+            padding-top: 8px !important;
+            border-top: 1px dashed #e2e8f0 !important;
+          }
         }
       `}</style>
       {/* Header Banner */}
@@ -1835,7 +1876,7 @@ export default function ExploreCoursesPage() {
                     const selectedType = bundleSelectedForPurchase[course.id] || (activeBundle.forceClassType || bundleGlobalAccessType) || 'RECORDED';
                     
                     return (
-                      <div key={course.id} style={{ 
+                      <div key={course.id} className="bundle-modal-item" style={{ 
                         padding: '16px', 
                         borderRadius: '16px', 
                         border: '1.5px solid #f1f5f9', 
@@ -1843,7 +1884,7 @@ export default function ExploreCoursesPage() {
                         background: bundleSelectedCoursesToBuy.includes(course.id) ? '#f8faff' : '#fff',
                         transition: 'all 0.2s ease'
                       }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="bundle-modal-item-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                             {(() => {
                               const enrollmentType = getEnrollmentStatus(course.id);
