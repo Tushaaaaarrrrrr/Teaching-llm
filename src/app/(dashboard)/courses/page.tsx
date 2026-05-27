@@ -200,6 +200,12 @@ export default function CoursesPage() {
           --course-badge-font: 10px;
           --course-card-radius: 28px;
           --course-teacher-margin: 14px;
+          --course-upgrade-padding: 14px 16px;
+          --course-upgrade-font-size: 13px;
+          --course-badge-pos: absolute;
+          --course-badge-left: 12px;
+          --course-upgrade-flex-dir: row;
+          --course-optional-margin: 0;
         }
 
         @media (max-width: 768px) {
@@ -224,6 +230,12 @@ export default function CoursesPage() {
             --course-badge-font: 8px;
             --course-card-radius: 20px;
             --course-teacher-margin: 6px;
+            --course-upgrade-padding: 8px 6px;
+            --course-upgrade-font-size: 9px;
+            --course-badge-pos: relative;
+            --course-badge-left: auto;
+            --course-upgrade-flex-dir: column;
+            --course-optional-margin: 0 0 4px 0;
           }
 
           /* Match compact margins for headers inside the card */
@@ -485,7 +497,6 @@ export default function CoursesPage() {
                         </span>
                       </div>
                     )}
-
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setUpgradeModalCourse(course) }}
                       style={{
@@ -503,6 +514,7 @@ export default function CoursesPage() {
                         transition: 'all 0.25s',
                         letterSpacing: '0.02em',
                         display: 'flex',
+                        flexDirection: 'var(--course-upgrade-flex-dir, row)' as any,
                         alignItems: 'center',
                         justifyContent: 'center',
                         position: 'relative',
@@ -510,13 +522,17 @@ export default function CoursesPage() {
                       }}
                     >
                       <span style={{ 
-                        position: 'absolute', left: '12px',
+                        position: 'var(--course-badge-pos, absolute)' as any,
+                        left: 'var(--course-badge-left, 12px)',
+                        margin: 'var(--course-optional-margin, 0)',
                         fontSize: '8px', background: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '20px', 
                         color: '#fff', letterSpacing: '0.05em', fontWeight: '900', border: '1px solid rgba(255,255,255,0.2)' 
                       }}>
                         OPTIONAL
                       </span>
-                      ⚡ Upgrade to PRO — ₹{course.liveUpgradePrice}
+                      <span>
+                        ⚡ Upgrade to PRO — ₹{course.liveUpgradePrice}
+                      </span>
                       
                       {/* Shine effect overlay */}
                       <div style={{
