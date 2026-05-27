@@ -399,8 +399,45 @@ export default function ExploreCoursesPage() {
 
   return (
     <>
+      <style>{`
+        @media (max-width: 768px) {
+          .store-header-banner {
+            margin-top: 12px !important;
+            padding-top: 8px !important;
+          }
+          .store-category-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+          .store-category-grid .store-cat-card {
+            padding: 18px 14px !important;
+            border-radius: 20px !important;
+          }
+          .store-category-grid .store-cat-card .store-cat-icon {
+            width: 48px !important;
+            height: 48px !important;
+            border-radius: 14px !important;
+            margin-bottom: 12px !important;
+          }
+          .store-category-grid .store-cat-card .store-cat-icon svg {
+            width: 22px !important;
+            height: 22px !important;
+          }
+          .store-category-grid .store-cat-card h3 {
+            font-size: 14px !important;
+            margin-bottom: 4px !important;
+          }
+          .store-category-grid .store-cat-card .store-cat-sub {
+            font-size: 11px !important;
+            margin-bottom: 10px !important;
+          }
+          .store-category-grid .store-cat-card .store-cat-explore {
+            font-size: 11px !important;
+          }
+        }
+      `}</style>
       {/* Header Banner */}
-      <div style={{
+      <div className="store-header-banner" style={{
         background: 'transparent',
         padding: '0 clamp(16px, 4vw, 32px) 16px',
         marginBottom: '16px',
@@ -529,21 +566,21 @@ export default function ExploreCoursesPage() {
 
       {/* STORE CATEGORY CARDS */}
       {!storeView && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: '24px', marginBottom: '32px' }}>
+        <div className="store-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: '24px', marginBottom: '32px' }}>
           {[
             { key: 'courses' as const, title: 'Courses', subtitle: `${(offerings || []).length + (bundleOfferings || []).length} available`, icon: <BookOpen size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #4f46e5, #0ea5e9)', shadow: 'rgba(79, 70, 229, 0.25)' },
             { key: 'notes' as const, title: 'Premium Notes', subtitle: `${storeNotesData?.notes?.length || 0} notes`, icon: <FileText size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #0d9488, #10b981)', shadow: 'rgba(13, 148, 136, 0.25)' },
             { key: 'mentorship' as const, title: 'Book a Call with Mentor', subtitle: `${mentorshipsData?.mentorships?.length || 0} mentors`, icon: <Users size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #f97316, #f59e0b)', shadow: 'rgba(249, 115, 22, 0.25)' },
             { key: 'testSeries' as const, title: 'Test Series', subtitle: `${testSeriesData?.testSeries?.length || 0} available`, icon: <ClipboardList size={28} color="#fff" />, gradient: 'linear-gradient(135deg, #db2777, #9333ea)', shadow: 'rgba(219, 39, 119, 0.25)' },
           ].map(card => (
-            <div key={card.key} onClick={() => setStoreView(card.key)} style={{ background: '#fff', borderRadius: '24px', padding: 'clamp(20px, 5vw, 32px)', cursor: 'pointer', boxShadow: '0 10px 30px rgba(15,23,42,0.06)', transition: 'all 0.3s ease', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}
+            <div key={card.key} className="store-cat-card" onClick={() => setStoreView(card.key)} style={{ background: '#fff', borderRadius: '24px', padding: 'clamp(20px, 5vw, 32px)', cursor: 'pointer', boxShadow: '0 10px 30px rgba(15,23,42,0.06)', transition: 'all 0.3s ease', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = `0 20px 40px ${card.shadow}` }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(15,23,42,0.06)' }}
             >
-              <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: card.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', boxShadow: `0 8px 20px ${card.shadow}` }}>{card.icon}</div>
+              <div className="store-cat-icon" style={{ width: '64px', height: '64px', borderRadius: '20px', background: card.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', boxShadow: `0 8px 20px ${card.shadow}` }}>{card.icon}</div>
               <h3 style={{ fontSize: 'clamp(18px, 4.4vw, 22px)', fontWeight: '900', color: '#1e293b', marginBottom: '6px' }}>{card.title}</h3>
-              <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '600', marginBottom: '16px' }}>{card.subtitle}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6366f1', fontSize: '13px', fontWeight: '700' }}>
+              <p className="store-cat-sub" style={{ fontSize: '14px', color: '#64748b', fontWeight: '600', marginBottom: '16px' }}>{card.subtitle}</p>
+              <div className="store-cat-explore" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6366f1', fontSize: '13px', fontWeight: '700' }}>
                 Explore <ChevronRight size={16} strokeWidth={3} />
               </div>
             </div>
