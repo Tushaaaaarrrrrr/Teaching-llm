@@ -37,7 +37,7 @@ const TABS: Tab[] = [
   {
     href: '/exams',
     label: 'Academics',
-    match: p => p.startsWith('/exams') || p.startsWith('/calendar') || p.startsWith('/live') || p.startsWith('/free-resources') || p.startsWith('/community'),
+    match: p => p.startsWith('/exams') || p.startsWith('/calendar') || p.startsWith('/live') || p.startsWith('/free-resources'),
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -74,47 +74,78 @@ export default function MobileBottomNav() {
   const [isVisible, setIsVisible] = useState(true)
   const [lastScrollTop, setLastScrollTop] = useState(0)
 
+  // Reset visibility on page navigation
   useEffect(() => {
+    setIsVisible(true)
+  }, [pathname])
+
+  // Determine if this route should completely hide the bottom nav
+  const isCommunity = pathname.startsWith('/community')
+  const isLecture = pathname.includes('/lectures/')
+  const isSettingsOrProfile = pathname.startsWith('/settings') || pathname.startsWith('/profile')
+  const shouldHideCompletely = isCommunity || isLecture || isSettingsOrProfile
+
+  useEffect(() => {
+    if (shouldHideCompletely) return
+
     const handleScroll = (e: Event) => {
       const target = e.target as HTMLElement
-      if (!target || typeof target.scrollTop !== 'number') return
+      if (!target) return
 
-      const currentScrollTop = target.scrollTop
+      // Read scroll top from target (e.g. <main>), window, or document element
+      const currentScrollTop = 
+        (typeof target.scrollTop === 'number' ? target.scrollTop : null) ?? 
+        window.pageYOffset ?? 
+        document.documentElement.scrollTop ?? 
+        document.body.scrollTop ?? 
+        0
       
-      // Threshold to prevent flickering on micro-scrolls
-      if (Math.abs(currentScrollTop - lastScrollTop) < 8) return
-
-      if (currentScrollTop < 20) {
+      // If we scroll down even a tiny bit, hide immediately
+      if (currentScrollTop < 10) {
         setIsVisible(true)
       } else if (currentScrollTop > lastScrollTop) {
-        // Scrolling down -> hide
+        // Scrolling down
         setIsVisible(false)
       } else {
-        // Scrolling up -> show
+        // Scrolling up
         setIsVisible(true)
       }
+      
       setLastScrollTop(currentScrollTop)
     }
 
     // Capture scroll events from any element (e.g. <main>)
     window.addEventListener('scroll', handleScroll, true)
     return () => window.removeEventListener('scroll', handleScroll, true)
-  }, [lastScrollTop])
+  }, [lastScrollTop, shouldHideCompletely])
+
+  if (shouldHideCompletely) {
+    return null
+  }
 
   return (
-    <nav 
-      className={`mobile-bottom-nav ${isVisible ? 'visible' : 'hidden'}`} 
-      aria-label="Primary mobile navigation"
-    >
-      {TABS.map(tab => {
-        const active = tab.match(pathname)
-        return (
-          <Link key={tab.href} href={tab.href} className={`mobile-bottom-tab ${active ? 'active' : ''}`}>
-            <span className="tab-icon">{tab.icon}</span>
-            <span className="tab-label">{tab.label}</span>
-          </Link>
-        )
-      })}
-    </nav>
+    <>
+      <style dangerouslySetInnerHTML={{__html: `
+        @media (max-width: 768px) {
+          .dashboard-main-container main {
+            padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+          }
+        }
+      `}} />
+      <nav 
+        className={`mobile-bottom-nav ${isVisible ? 'visible' : 'hidden'}`} 
+        aria-label="Primary mobile navigation"
+      >
+        {TABS.map(tab => {
+          const active = tab.match(pathname)
+          return (
+            <Link key={tab.href} href={tab.href} className={`mobile-bottom-tab ${active ? 'active' : ''}`}>
+              <span className="tab-icon">{tab.icon}</span>
+              <span className="tab-label">{tab.label}</span>
+            </Link>
+          )
+        })}
+      </nav>
+    </>
   )
 }

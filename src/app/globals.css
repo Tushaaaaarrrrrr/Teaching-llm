@@ -605,10 +605,6 @@ tr:hover td {
     font-weight: 800;
     color: #3636e8;
   }
-  /* Reserve space at bottom of main scroll area so content isn't hidden under the nav */
-  .dashboard-main-container main {
-    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
-  }
 }
 
 /* Lecture row on a course page: actions stack below title on mobile so Watch button isn't cut off */
