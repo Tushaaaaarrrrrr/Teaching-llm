@@ -28,12 +28,12 @@ interface CourseItem {
 }
 
 const COURSE_ICONS: Record<string, React.ReactNode> = {
-  BookOpen: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,
-  Brain: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20 14.5 14.5 0 000-20"/><path d="M2 12h20"/></svg>,
-  Globe: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
-  Database: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
-  Monitor: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-  Wifi: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg>,
+  BookOpen: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,
+  Brain: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20 14.5 14.5 0 000-20"/><path d="M2 12h20"/></svg>,
+  Globe: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
+  Database: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+  Monitor: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+  Wifi: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg>,
 }
 
 export default function CoursesPage() {
@@ -184,6 +184,54 @@ export default function CoursesPage() {
         </div>
       </div>
       <style>{`
+        :root {
+          --course-card-padding: 18px 20px 16px;
+          --course-banner-height: 100px;
+          --course-icon-size: 58px;
+          --course-icon-svg-size: 28px;
+          --course-title-size: 16px;
+          --course-desc-display: -webkit-box;
+          --course-teacher-display: flex;
+          --course-stats-padding: 8px 10px;
+          --course-stats-font-size: 15px;
+          --course-stats-label-size: 11px;
+          --course-stats-gap: 10px;
+          --course-badge-padding: 3px 10px;
+          --course-badge-font: 10px;
+          --course-card-radius: 28px;
+          --course-teacher-margin: 14px;
+        }
+
+        @media (max-width: 768px) {
+          .grid-3 {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+          
+          :root {
+            --course-card-padding: 10px 10px 12px;
+            --course-banner-height: 70px;
+            --course-icon-size: 38px;
+            --course-icon-svg-size: 18px;
+            --course-title-size: 13.5px;
+            --course-desc-display: none; /* Hide descriptions to keep card heights small & consistent */
+            --course-teacher-display: none; /* Hide teacher name to save vertical space on mobile cards */
+            --course-stats-padding: 4px 6px;
+            --course-stats-font-size: 12px;
+            --course-stats-label-size: 8px;
+            --course-stats-gap: 6px;
+            --course-badge-padding: 2px 6px;
+            --course-badge-font: 8px;
+            --course-card-radius: 20px;
+            --course-teacher-margin: 6px;
+          }
+
+          /* Match compact margins for headers inside the card */
+          .grid-3 h3 {
+            margin-bottom: 2px !important;
+          }
+        }
+
         @media (max-width: 600px) {
           .courses-header-row { margin-bottom: 18px !important; }
           .courses-search-wrap { width: 100%; }
@@ -228,7 +276,7 @@ export default function CoursesPage() {
             <div
               style={{
                 background: '#e8eaf0',
-                borderRadius: '28px',
+                borderRadius: 'var(--course-card-radius, 28px)',
                 boxShadow: (isLive && !isCourseExpired)
                   ? `8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, 0 0 0 2px ${course.color}40`
                   : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
@@ -280,7 +328,7 @@ export default function CoursesPage() {
               )}
               {/* Gradient Banner */}
               <div style={{
-                height: '100px',
+                height: 'var(--course-banner-height, 100px)',
                 background: isRecorded || isFreeOrDemo ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(135deg, ${course.color}ee, ${course.color}99)`,
                 position: 'relative',
                 overflow: 'hidden',
@@ -291,8 +339,8 @@ export default function CoursesPage() {
                 <div style={{ position: 'absolute', width: '130px', height: '130px', borderRadius: '50%', background: 'rgba(255,255,255,0.12)', top: '-50px', right: '-30px' }} />
                 <div style={{ position: 'absolute', width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', bottom: '-20px', left: '24px' }} />
                 <div style={{
-                  width: '58px',
-                  height: '58px',
+                  width: 'var(--course-icon-size, 58px)',
+                  height: 'var(--course-icon-size, 58px)',
                   borderRadius: '50%',
                   background: 'rgba(255,255,255,0.25)',
                   backdropFilter: 'blur(4px)',
@@ -310,10 +358,10 @@ export default function CoursesPage() {
                 {(isLive || isRecorded || isFreeOrDemo) && (
                   <div style={{
                     position: 'absolute', top: '10px', left: '12px',
-                    padding: '3px 10px', borderRadius: '20px',
+                    padding: 'var(--course-badge-padding, 3px 10px)', borderRadius: '20px',
                     background: isLive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)',
                     backdropFilter: 'blur(8px)',
-                    fontSize: '10px', fontWeight: '800', color: batchBadge.color,
+                    fontSize: 'var(--course-badge-font, 10px)', fontWeight: '800', color: batchBadge.color,
                     letterSpacing: '0.06em',
                   }}>
                     {batchBadge.text}
@@ -354,9 +402,9 @@ export default function CoursesPage() {
               </div>
 
               {/* Card Body */}
-              <div style={{ padding: '18px 20px 16px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div style={{ padding: 'var(--course-card-padding, 18px 20px 16px)', display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <h3 style={{ 
-                  fontSize: '16px', 
+                  fontSize: 'var(--course-title-size, 16px)', 
                   fontWeight: '700', 
                   color: '#1e1e3a', 
                   marginBottom: '4px', 
@@ -392,7 +440,7 @@ export default function CoursesPage() {
                     color: '#6b6b8a',
                     lineHeight: '1.55',
                     marginBottom: '14px',
-                    display: '-webkit-box',
+                    display: 'var(--course-desc-display, -webkit-box)',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
                     overflow: 'hidden',
@@ -403,7 +451,7 @@ export default function CoursesPage() {
 
                 {/* Show teacher for LIVE users and General Batch */}
                 {(!isRecorded || isFreeOrDemo) && course.teacherName && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
+                  <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: 'var(--course-teacher-margin, 14px)' }}>
                     <div style={{
                       width: '24px', height: '24px', borderRadius: '50%',
                       background: course.color + '22',
@@ -423,7 +471,7 @@ export default function CoursesPage() {
                   <div style={{ position: 'relative', marginTop: 'auto' }}>
                     {/* Show teacher only for LIVE users or above upgrade for RECORDED */}
                     {course.teacherName && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                      <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                         <div style={{
                           width: '20px', height: '20px', borderRadius: '50%',
                           background: isRecorded ? '#e5e7eb' : course.color + '22',
@@ -442,12 +490,12 @@ export default function CoursesPage() {
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setUpgradeModalCourse(course) }}
                       style={{
                         width: '100%',
-                        padding: '14px 16px',
+                        padding: 'var(--course-upgrade-padding, 14px 16px)',
                         borderRadius: '50px',
                         border: 'none',
                         background: '#1e1e3a',
                         color: '#fff',
-                        fontSize: '13px',
+                        fontSize: 'var(--course-upgrade-font-size, 13px)',
                         fontWeight: '800',
                         cursor: 'pointer',
                         marginBottom: '4px',
@@ -489,31 +537,31 @@ export default function CoursesPage() {
                 {/* Stats row */}
                 <div style={{
                   display: 'flex',
-                  gap: '10px',
+                  gap: 'var(--course-stats-gap, 10px)',
                   paddingTop: '12px',
                   borderTop: '1.5px solid rgba(0,0,0,0.06)',
                   marginTop: 'auto',
                 }}>
                   <div style={{
-                    flex: 1, padding: '8px 10px', borderRadius: '14px',
+                    flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
                     background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.topics || 0}</div>
-                    <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Topics</div>
+                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.topics || 0}</div>
+                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: '#9999b0', fontWeight: '600' }}>Topics</div>
                   </div>
                   <div style={{
-                    flex: 1, padding: '8px 10px', borderRadius: '14px',
+                    flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
                     background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.lectures || 0}</div>
-                    <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Lectures</div>
+                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.lectures || 0}</div>
+                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: '#9999b0', fontWeight: '600' }}>Lectures</div>
                   </div>
                   <div style={{
-                    flex: 1, padding: '8px 10px', borderRadius: '14px',
+                    flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
                     background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.materials || 0}</div>
-                    <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Materials</div>
+                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.materials || 0}</div>
+                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: '#9999b0', fontWeight: '600' }}>Materials</div>
                   </div>
                 </div>
               </div>
