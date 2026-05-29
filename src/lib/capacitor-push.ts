@@ -57,6 +57,24 @@ export async function registerCapacitorPush(): Promise<boolean> {
     }
 
     // Register with FCM
+    console.log('[CapacitorPush] Creating high importance notification channel for Android...')
+    try {
+      if ((window as any).Capacitor?.getPlatform() === 'android') {
+        await PushNotifications.createChannel({
+          id: 'class_updates',
+          name: 'Class Updates',
+          description: 'High importance alerts for live classes, announcements, and study notes',
+          importance: 5, // 5 = MAX/HIGH importance (forces sound and drop-down banner)
+          sound: 'default',
+          visibility: 1, // 1 = Public
+          vibration: true,
+        })
+        console.log('[CapacitorPush] "class_updates" high importance channel created/verified')
+      }
+    } catch (channelErr) {
+      console.error('[CapacitorPush] Failed to create class_updates notification channel:', channelErr)
+    }
+
     console.log('[CapacitorPush] Calling PushNotifications.register()...')
     await PushNotifications.register()
     console.log('[CapacitorPush] PushNotifications.register() completed successfully')
@@ -98,25 +116,6 @@ export async function registerCapacitorPush(): Promise<boolean> {
     console.log('[CapacitorPush] Registering "registrationError" listener...')
     PushNotifications.addListener('registrationError', (error) => {
       console.error('[CapacitorPush] "registrationError" listener fired. Error details:', JSON.stringify(error))
-    })
-
-    // Handle notification received while app is in foreground
-    console.log('[CapacitorPush] Registering "pushNotificationReceived" listener...')
-    PushNotifications.addListener('pushNotificationReceived', (notification) => {
-      console.log('[CapacitorPush] "pushNotificationReceived" listener fired. Foreground notification:', JSON.stringify(notification))
-    })
-
-    // Handle notification tap (app opened from notification)
-    console.log('[CapacitorPush] Registering "pushNotificationActionPerformed" listener...')
-    PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-      console.log('[CapacitorPush] "pushNotificationActionPerformed" listener fired. Tap action:', JSON.stringify(action))
-      const url = action.notification.data?.url
-      if (url && typeof window !== 'undefined') {
-        console.log('[CapacitorPush] Redirecting user to deep link url:', url)
-        window.location.href = url
-      } else {
-        console.log('[CapacitorPush] No redirect URL found in action notification data')
-      }
     })
 
     return true

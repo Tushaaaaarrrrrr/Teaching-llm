@@ -18,24 +18,39 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    const { userId, token, title, body, url } = await request.json()
+    const { userId, token, title, body, url, imageUrl, ctaText, ctaLink } = await request.json()
 
     const notificationPayload = {
       notification: {
         title: title || '🔔 FCM Native Test',
         body: body || 'FCM notification delivered successfully to your device!',
+        ...(imageUrl ? { image: imageUrl } : {}),
       },
       data: {
-        url: url || '/announcements',
+        url: url || ctaLink || '/announcements',
         tag: 'test-native',
+        ctaText: ctaText || '',
+        ctaLink: ctaLink || '',
+        imageUrl: imageUrl || '',
       },
       android: {
         priority: 'high' as const,
         notification: {
           icon: 'ic_launcher',
           color: '#4F46E5',
-          channelId: 'default',
-          clickAction: 'FCM_PLUGIN_ACTIVITY',
+          channelId: 'class_updates',
+          defaultSound: true,
+          defaultVibrateTimings: true,
+          notificationPriority: 'PRIORITY_MAX' as const,
+          ...(imageUrl ? { image: imageUrl } : {}),
+          ...(ctaText ? {
+            actions: [
+              {
+                action: 'open_cta',
+                title: ctaText,
+              }
+            ]
+          } : {}),
         },
       },
     }

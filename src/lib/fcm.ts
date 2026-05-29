@@ -44,10 +44,21 @@ export async function sendFcmToUsers(userIds: string[], payload: FcmPayload) {
     android: {
       priority: 'high' as const,
       notification: {
-        icon: 'ic_notification',
+        icon: 'ic_launcher',
         color: '#4F46E5',
-        channelId: 'default',
-        clickAction: 'FCM_PLUGIN_ACTIVITY',
+        channelId: 'class_updates',
+        defaultSound: true,
+        defaultVibrateTimings: true,
+        notificationPriority: 'PRIORITY_MAX' as const,
+        ...(payload.imageUrl ? { image: payload.imageUrl } : {}),
+        ...(payload.ctaText ? {
+          actions: [
+            {
+              action: 'open_cta',
+              title: payload.ctaText,
+            }
+          ]
+        } : {}),
       },
     },
   }

@@ -14,11 +14,12 @@ export default function CapacitorBridge() {
       const { Capacitor } = await import('@capacitor/core')
       if (!Capacitor.isNativePlatform()) return
 
-      const [{ App }, { StatusBar, Style }, { SplashScreen }, { Keyboard, KeyboardResize }] = await Promise.all([
+      const [{ App }, { StatusBar, Style }, { SplashScreen }, { Keyboard, KeyboardResize }, { PushNotifications }] = await Promise.all([
         import('@capacitor/app'),
         import('@capacitor/status-bar'),
         import('@capacitor/splash-screen'),
         import('@capacitor/keyboard'),
+        import('@capacitor/push-notifications'),
       ])
 
       const applyStatusBarStyles = async () => {
@@ -57,9 +58,39 @@ export default function CapacitorBridge() {
         }
       })
 
+      // Early global push listeners to capture cold boots & foreground alerts
+      console.log('[CapacitorBridge] Registering persistent PushNotification listeners...')
+      const receivedHandle = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        console.log('[CapacitorBridge] "pushNotificationReceived" listener fired in foreground:', JSON.stringify(notification))
+      })
+
+      const actionHandle = await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+        console.log('[CapacitorBridge] "pushNotificationActionPerformed" listener fired. Action:', JSON.stringify(action))
+        let url = action.notification.data?.url
+        
+        // Handle custom Android CTA button action click
+        if (action.actionId === 'open_cta' && action.notification.data?.ctaLink) {
+          url = action.notification.data.ctaLink
+          console.log('[CapacitorBridge] Custom CTA button clicked. Overriding redirect URL to ctaLink:', url)
+        }
+
+        if (url && typeof window !== 'undefined') {
+          const baseUrl = 'https://teaching-llm.onrender.com'
+          if (url.startsWith(baseUrl)) {
+            url = url.substring(baseUrl.length)
+          }
+          console.log('[CapacitorBridge] Redirecting user to deep link url:', url)
+          window.location.href = url
+        } else {
+          console.log('[CapacitorBridge] No valid redirect URL found in action notification data')
+        }
+      })
+
       cleanup = () => {
         backHandle.remove()
         stateHandle.remove()
+        receivedHandle.remove()
+        actionHandle.remove()
       }
     })().catch(e => console.warn('CapacitorBridge init failed', e))
 
