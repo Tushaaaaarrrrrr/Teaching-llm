@@ -103,3 +103,19 @@ export async function unregisterCapacitorPush(): Promise<void> {
     console.error('Capacitor push unregistration failed:', err)
   }
 }
+
+/**
+ * Check FCM push notifications permission state.
+ */
+export async function checkCapacitorPermission(): Promise<'granted' | 'denied' | 'prompt'> {
+  if (!isCapacitorNative()) return 'denied'
+  try {
+    const { PushNotifications } = await import('@capacitor/push-notifications')
+    const permStatus = await PushNotifications.checkPermissions()
+    return permStatus.receive
+  } catch (err) {
+    console.error('Failed to check Capacitor permission:', err)
+    return 'denied'
+  }
+}
+

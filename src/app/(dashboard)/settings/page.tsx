@@ -47,6 +47,22 @@ export default function SettingsPage() {
   const [notifEmail, setNotifEmail] = useState(true)
   const { isSupported, isSubscribed, subscribe, unsubscribe } = usePushNotifications()
 
+  const [isNativeApp, setIsNativeApp] = useState(false)
+  const [nativeSubscribed, setNativeSubscribed] = useState(false)
+
+  useEffect(() => {
+    const checkNativeStatus = async () => {
+      const { isCapacitorNative, checkCapacitorPermission } = await import('@/lib/capacitor-push')
+      if (isCapacitorNative()) {
+        setIsNativeApp(true)
+        const perm = await checkCapacitorPermission()
+        const storedPref = localStorage.getItem('push_enabled')
+        setNativeSubscribed(perm === 'granted' && storedPref !== 'false')
+      }
+    }
+    checkNativeStatus()
+  }, [])
+
   // Theme preference
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
 
@@ -178,21 +194,49 @@ export default function SettingsPage() {
                   <Toggle checked={notifEmail} onChange={setNotifEmail} />
                 </div>
 
-                {/* Push Notification Toggle */}
-                {isSupported && (
+                {/* Push Notification Toggle (Web vs Native) */}
+                {isNativeApp ? (
                   <div style={insetRow}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>Browser Push Alerts</div>
-                      <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Get live alerts even when the site is closed</div>
+                      <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>App Push Notifications</div>
+                      <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Get live alerts directly on your device</div>
                     </div>
                     <Toggle 
-                      checked={isSubscribed} 
+                      checked={nativeSubscribed} 
                       onChange={async (v) => {
-                        if (v) await subscribe()
-                        else await unsubscribe()
+                        const { registerCapacitorPush, unregisterCapacitorPush } = await import('@/lib/capacitor-push')
+                        if (v) {
+                          const success = await registerCapacitorPush()
+                          if (success) {
+                            setNativeSubscribed(true)
+                            localStorage.setItem('push_enabled', 'true')
+                          } else {
+                            alert('Could not enable push notifications. Please check your system notification settings.')
+                          }
+                        } else {
+                          await unregisterCapacitorPush()
+                          setNativeSubscribed(false)
+                          localStorage.setItem('push_enabled', 'false')
+                        }
                       }} 
                     />
                   </div>
+                ) : (
+                  isSupported && (
+                    <div style={insetRow}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>Browser Push Alerts</div>
+                        <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Get live alerts even when the site is closed</div>
+                      </div>
+                      <Toggle 
+                        checked={isSubscribed} 
+                        onChange={async (v) => {
+                          if (v) await subscribe()
+                          else await unsubscribe()
+                        }} 
+                      />
+                    </div>
+                  )
                 )}
               </div>
           </div>
