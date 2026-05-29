@@ -26,6 +26,7 @@ interface Announcement {
   createdAt: string
   createdBy: AnnouncementAuthor
   class: AnnouncementClass | null
+  imageUrl?: string | null
 }
 
 interface ClassOption {
