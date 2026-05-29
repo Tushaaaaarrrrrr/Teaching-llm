@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
 import { sseEmitter } from '@/lib/sse'
+import { sendFcmToUsers } from '@/lib/fcm'
 
 export async function PUT(
   request: NextRequest,
@@ -39,8 +40,16 @@ export async function PUT(
         }
       })
       
-      // Notify connected client
+      // Notify connected client via SSE
       sseEmitter.emit(`user:${attempt.userId}:notify`)
+
+      // Send FCM push notification to the student
+      sendFcmToUsers([attempt.userId], {
+        title: '📊 Exam Result Published',
+        body: `Your result for "${attempt.exam.title}" is now available for review.`,
+        url: `/exams/${attempt.examId}/result`,
+        tag: `exam-result-${attempt.id}`,
+      }).catch(console.error)
     }
 
     return NextResponse.json(updatedAttempt)

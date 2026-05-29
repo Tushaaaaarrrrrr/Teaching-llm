@@ -4,6 +4,7 @@ import { getSession, isAdminOrManager, getAccessibleCourseIds, canCreateAnnounce
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { sseEmitter } from '@/lib/sse'
 import { sendPushToUsers, sendPushToAllStudents } from '@/lib/push'
+import { sendFcmToUsers, sendFcmToAllStudents } from '@/lib/fcm'
 
 export async function GET() {
   try {
@@ -111,20 +112,18 @@ export async function POST(request: NextRequest) {
       // Fire browser push notifications (works even when browser tab is closed)
       const targetUserIds = targetUsers.map(u => u.id)
       const pushBody = content.length > 120 ? content.slice(0, 117) + '...' : content
+      const pushPayload = {
+        title,
+        body: pushBody,
+        url: '/announcements',
+        tag: `announcement-${announcement.id}`,
+      }
       if (courseId) {
-        sendPushToUsers(targetUserIds, {
-          title,
-          body: pushBody,
-          url: '/announcements',
-          tag: `announcement-${announcement.id}`,
-        }).catch(console.error)
+        sendPushToUsers(targetUserIds, pushPayload).catch(console.error)
+        sendFcmToUsers(targetUserIds, pushPayload).catch(console.error)
       } else {
-        sendPushToAllStudents({
-          title,
-          body: pushBody,
-          url: '/announcements',
-          tag: `announcement-${announcement.id}`,
-        }).catch(console.error)
+        sendPushToAllStudents(pushPayload).catch(console.error)
+        sendFcmToAllStudents(pushPayload).catch(console.error)
       }
     }
 

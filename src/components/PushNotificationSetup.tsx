@@ -2,16 +2,31 @@
 
 import { useEffect } from 'react'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { isCapacitorNative, registerCapacitorPush } from '@/lib/capacitor-push'
 
 /**
- * Automatically triggers the native browser "Allow Notifications?" prompt
- * when the user logs in. If they dismiss or block, they can still enable
- * from Settings → Notifications → Browser Push Alerts.
+ * Handles push notification setup for BOTH platforms:
+ * - Capacitor (Android/iOS) → FCM via @capacitor/push-notifications
+ * - Browser → Web Push via VAPID (existing behaviour)
+ *
+ * Automatically triggers the appropriate registration flow
+ * when the user logs in.
  */
 export default function PushNotificationSetup() {
   const { isSupported, isSubscribed, permissionState, subscribe } = usePushNotifications()
 
   useEffect(() => {
+    // --- Capacitor Native App ---
+    if (isCapacitorNative()) {
+      registerCapacitorPush().then((success) => {
+        if (success) {
+          console.log('Capacitor FCM push registered successfully')
+        }
+      })
+      return // Don't also try browser push
+    }
+
+    // --- Browser Web Push (existing logic) ---
     if (!isSupported) return
     if (isSubscribed) return
     if (permissionState === 'denied' || permissionState === 'granted') return
