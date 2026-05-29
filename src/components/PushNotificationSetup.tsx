@@ -9,23 +9,71 @@ export default function PushNotificationSetup() {
   const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
+    console.log('[PushNotificationSetup] useEffect triggered')
+
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get('reset_push') === 'true') {
+        console.log('[PushNotificationSetup] Found reset_push=true in URL. Clearing localStorage push keys...')
+        localStorage.removeItem('push_permission_modal_interacted')
+        localStorage.removeItem('push_enabled')
+        localStorage.removeItem('last_fcm_token')
+      }
+    }
+
+    const interacted = localStorage.getItem('push_permission_modal_interacted')
+    const lastDeclined = localStorage.getItem('push_permission_last_declined_time')
+    const pushEnabled = localStorage.getItem('push_enabled')
+    
+    let shouldPrompt = false
+    if (interacted !== 'true') {
+      shouldPrompt = true
+    } else if (lastDeclined) {
+      const elapsed = Date.now() - Number(lastDeclined)
+      const sevenDays = 7 * 24 * 60 * 60 * 1000 // 7 days in ms
+      if (elapsed > sevenDays) {
+        console.log('[PushNotificationSetup] More than 7 days since last decline. Allowing modal re-prompt.')
+        shouldPrompt = true
+      }
+    }
+
+    console.log('[PushNotificationSetup] Current localStorage keys:', {
+      push_permission_modal_interacted: interacted,
+      push_permission_last_declined_time: lastDeclined,
+      push_enabled: pushEnabled,
+      shouldPrompt,
+    })
+
     // --- Capacitor Native App ---
     if (isCapacitorNative()) {
+      console.log('[PushNotificationSetup] Running inside Capacitor Native App')
+      
       checkCapacitorPermission().then((status) => {
+        console.log('[PushNotificationSetup] checkCapacitorPermission status callback:', status)
+        
         if (status === 'granted') {
-          // Silent refresh/sync FCM token on boot
+          console.log('[PushNotificationSetup] Permission is already granted. Proceeding to silent registration sync...')
           registerCapacitorPush().then((success) => {
-            if (success) console.log('Capacitor FCM silent sync successful')
+            if (success) {
+              console.log('[PushNotificationSetup] Capacitor FCM silent sync successful')
+            } else {
+              console.warn('[PushNotificationSetup] Capacitor FCM silent sync returned false')
+            }
           })
         } else {
-          // If not granted yet, check if the user has already interacted with the custom modal
-          const interacted = localStorage.getItem('push_permission_modal_interacted')
-          if (interacted !== 'true') {
-            // Short delay for standard app load feel
+          console.log(`[PushNotificationSetup] Permission status is '${status}' (not granted). Check if user should be prompted...`)
+          if (shouldPrompt) {
+            console.log('[PushNotificationSetup] User qualifies for prompt. Setting timer to display modal (1200ms)...')
             const timer = setTimeout(() => {
+              console.log('[PushNotificationSetup] 1200ms timer fired. Setting showModal = true')
               setShowModal(true)
             }, 1200)
-            return () => clearTimeout(timer)
+            return () => {
+              console.log('[PushNotificationSetup] Cleaning up 1200ms modal timer')
+              clearTimeout(timer)
+            }
+          } else {
+            console.log('[PushNotificationSetup] Modal will NOT display: user was prompted recently or has notifications enabled.')
           }
         }
       })
@@ -33,34 +81,64 @@ export default function PushNotificationSetup() {
     }
 
     // --- Browser Web Push ---
-    if (!isSupported) return
-    if (isSubscribed) return
-    if (permissionState === 'denied' || permissionState === 'granted') return
+    console.log('[PushNotificationSetup] Running inside Web Browser (non-native)')
+    console.log('[PushNotificationSetup] Browser support check:', { isSupported, isSubscribed, permissionState })
+    
+    if (!isSupported) {
+      console.log('[PushNotificationSetup] Web Push is not supported by this browser')
+      return
+    }
+    if (isSubscribed) {
+      console.log('[PushNotificationSetup] Web Push is already subscribed')
+      return
+    }
+    if (permissionState === 'denied' || permissionState === 'granted') {
+      console.log(`[PushNotificationSetup] Web Push permission is already '${permissionState}'. Skipping prompt.`)
+      return
+    }
 
-    // Short delay so page feels loaded first, then show native prompt
+    console.log('[PushNotificationSetup] Web Push eligible. Setting timer to auto-subscribe (2000ms)...')
     const timer = setTimeout(() => {
+      console.log('[PushNotificationSetup] 2000ms timer fired. Calling subscribe() for Web Push...')
       subscribe()
     }, 2000)
 
-    return () => clearTimeout(timer)
+    return () => {
+      console.log('[PushNotificationSetup] Cleaning up 2000ms Web Push timer')
+      clearTimeout(timer)
+    }
   }, [isSupported, isSubscribed, permissionState, subscribe])
 
   const handleEnableNow = async () => {
+    console.log('[PushNotificationSetup] User clicked "Enable Now"')
     setShowModal(false)
+    console.log('[PushNotificationSetup] Setting push_permission_modal_interacted = true')
     localStorage.setItem('push_permission_modal_interacted', 'true')
-    localStorage.setItem('push_enabled', 'true')
+    
+    console.log('[PushNotificationSetup] Calling registerCapacitorPush()...')
     const success = await registerCapacitorPush()
     if (success) {
-      console.log('Capacitor FCM push registered successfully after modal accept')
+      console.log('[PushNotificationSetup] registerCapacitorPush returned success')
+      localStorage.setItem('push_enabled', 'true')
+      localStorage.removeItem('push_permission_last_declined_time')
+    } else {
+      console.error('[PushNotificationSetup] registerCapacitorPush returned failure (permission denied)')
+      localStorage.setItem('push_enabled', 'false')
+      localStorage.setItem('push_permission_last_declined_time', Date.now().toString())
+      alert("Notification permissions are disabled. To receive class updates, please enable notifications in your Android System Settings (Apps -> Teaching LMS -> Notifications).")
     }
   }
 
   const handleMaybeLater = () => {
+    console.log('[PushNotificationSetup] User clicked "Maybe Later"')
     setShowModal(false)
+    console.log('[PushNotificationSetup] Setting push_permission_modal_interacted = true and throttle timer')
     localStorage.setItem('push_permission_modal_interacted', 'true')
     localStorage.setItem('push_enabled', 'false')
+    localStorage.setItem('push_permission_last_declined_time', Date.now().toString())
   }
 
+  console.log('[PushNotificationSetup] Rendering render-check. showModal:', showModal)
   if (!showModal) return null
 
   return (
