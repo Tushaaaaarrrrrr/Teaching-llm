@@ -58,6 +58,7 @@ export default function HomeHeroSlider({ slides, intervalMs = 4500 }: Props) {
 
   return (
     <div
+      className="home-hero-slider"
       style={{ marginBottom: '24px' }}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}

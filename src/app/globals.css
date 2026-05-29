@@ -1391,3 +1391,10 @@ tr:hover td {
   height: 100%;
 }
 
+/* Hide Home Hero Slider on desktop (web/large screens) as it is only for the app/mobile */
+@media (min-width: 769px) {
+  .home-hero-slider {
+    display: none !important;
+  }
+}
+
