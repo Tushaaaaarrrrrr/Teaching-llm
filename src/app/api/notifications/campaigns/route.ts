@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       userId: session.userId,
       userName: session.name,
       userRole: session.role,
-      actionType: ACTION.SYSTEM_SETTINGS_UPDATE, // Standard action type
+      actionType: ACTION.ANNOUNCEMENT_CREATED,
       actionDescription: `${session.name} ${
         isScheduledInFuture ? 'scheduled' : 'sent'
       } push notification campaign "${title}" targeting ${targetType || 'ALL'}`,
