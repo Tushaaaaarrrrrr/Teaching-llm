@@ -21,10 +21,14 @@ export default function CapacitorBridge() {
         import('@capacitor/keyboard'),
       ])
 
-      try {
-        await StatusBar.setStyle({ style: Style.Light })
-        await StatusBar.setBackgroundColor({ color: '#e8eaf0' })
-      } catch (e) { console.warn('StatusBar setup failed', e) }
+      const applyStatusBarStyles = async () => {
+        try {
+          await StatusBar.setStyle({ style: Style.Light })
+          await StatusBar.setBackgroundColor({ color: '#e8eaf0' })
+        } catch (e) { console.warn('StatusBar style application failed', e) }
+      }
+
+      await applyStatusBarStyles()
 
       try {
         await Keyboard.setResizeMode({ mode: KeyboardResize.Body })
@@ -47,8 +51,15 @@ export default function CapacitorBridge() {
         }
       })
 
+      const stateHandle = await App.addListener('appStateChange', async (state) => {
+        if (state.isActive) {
+          await applyStatusBarStyles()
+        }
+      })
+
       cleanup = () => {
         backHandle.remove()
+        stateHandle.remove()
       }
     })().catch(e => console.warn('CapacitorBridge init failed', e))
 
