@@ -23,7 +23,7 @@ export default function CapacitorBridge() {
 
       const applyStatusBarStyles = async () => {
         try {
-          await StatusBar.setStyle({ style: Style.Dark })
+          await StatusBar.setStyle({ style: Style.Default })
           await StatusBar.setBackgroundColor({ color: '#e8eaf0' })
         } catch (e) { console.warn('StatusBar style application failed', e) }
       }
