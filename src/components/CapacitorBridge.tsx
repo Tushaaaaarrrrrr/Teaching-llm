@@ -14,6 +14,10 @@ export default function CapacitorBridge() {
       const { Capacitor } = await import('@capacitor/core')
       if (!Capacitor.isNativePlatform()) return
 
+      const platform = Capacitor.getPlatform()
+      document.documentElement.classList.add('is-native')
+      document.documentElement.classList.add(`platform-${platform}`)
+
       const [{ App }, { StatusBar, Style }, { SplashScreen }, { Keyboard, KeyboardResize }, { PushNotifications }] = await Promise.all([
         import('@capacitor/app'),
         import('@capacitor/status-bar'),

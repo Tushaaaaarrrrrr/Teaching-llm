@@ -48,6 +48,7 @@
 
 html {
   height: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -59,6 +60,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   letter-spacing: 0.01em;
+  overflow-x: hidden;
 }
 
 a {
@@ -541,7 +543,7 @@ tr:hover td {
     right: 0;
     bottom: 0;
     z-index: 999;
-    height: 64px;
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
     background: #ffffff;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.06);
@@ -955,15 +957,19 @@ tr:hover td {
 
 .dashboard-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   background: var(--bg);
+  overflow: hidden;
 }
 
 .dashboard-main-container {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
   max-width: calc(100vw - var(--sidebar-width));
   margin-left: var(--sidebar-width);
   overflow: hidden;
@@ -1030,6 +1036,7 @@ tr:hover td {
 @media (max-width: 768px) {
   .dashboard-main-container {
     margin-left: 0;
+    width: 100%;
     max-width: 100vw;
     padding-top: 0 !important;
   }
@@ -1395,6 +1402,13 @@ tr:hover td {
 @media (min-width: 769px) {
   .home-hero-slider {
     display: none !important;
+  }
+}
+
+/* Responsive adjustments for notification dropdown on mobile screens */
+@media (max-width: 768px) {
+  .notification-dropdown {
+    right: -10px !important;
   }
 }
 

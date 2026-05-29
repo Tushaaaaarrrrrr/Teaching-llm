@@ -246,6 +246,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#6b6b8a', cursor: 'pointer',
     transition: 'box-shadow 0.2s ease', border: 'none', flexShrink: 0,
+    outline: 'none',
   } as React.CSSProperties
 
   const firstName = currentUserName.split(' ')[0]
@@ -414,12 +415,15 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </button>
 
           {showNotif && (
-            <div style={{
-              position: 'absolute', right: 0, top: 'calc(100% + 10px)',
-              width: 'min(340px, calc(100vw - 24px))', borderRadius: '20px',
-              background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
-              zIndex: 200, overflow: 'hidden',
-            }}>
+            <div
+              className="notification-dropdown"
+              style={{
+                position: 'absolute', right: 0, top: 'calc(100% + 10px)',
+                width: 'min(340px, calc(100vw - 24px))', borderRadius: '20px',
+                background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
+                zIndex: 200, overflow: 'hidden',
+              }}
+            >
               <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1.5px solid rgba(0,0,0,0.06)' }}>
                 <span style={{ fontWeight: '800', fontSize: '14px', color: '#1e1e3a' }}>
                   Notifications {unreadCount > 0 && <span style={{ color: '#3636e8' }}>({unreadCount})</span>}
@@ -474,7 +478,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
         {/* User pill with dropdown */}
         <div ref={userMenuRef} className="header-profile" style={{ position: 'relative' }}>
           <div
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', cursor: 'pointer', transition: 'box-shadow 0.2s ease' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', cursor: 'pointer', transition: 'box-shadow 0.2s ease', outline: 'none' }}
             onClick={() => setShowUserMenu(v => !v)}
             onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
             onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
