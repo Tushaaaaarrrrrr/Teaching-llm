@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
-type Tab = 'courses' | 'offerings' | 'bundles' | 'lectures' | 'events' | 'materials' | 'announcements' | 'content-bank'
+type Tab = 'courses' | 'offerings' | 'bundles' | 'lectures' | 'events' | 'materials' | 'announcements' | 'content-bank' | 'notifications' | 'home-slides'
 
 export default function ManagePage() {
   const { confirm, confirmDialog } = useConfirmDialog()
@@ -48,6 +48,12 @@ export default function ManagePage() {
   const { data: offeringsData, error: offeringsError, isLoading: loadingOfferings } = useSWR(
     tab === 'offerings' ? '/api/course-offerings' : null, fetcher
   )
+  const { data: campaignsData, error: campaignsError, isLoading: loadingCampaigns } = useSWR(
+    tab === 'notifications' ? '/api/notifications/campaigns' : null, fetcher
+  )
+  const { data: homeSlidesData, error: slidesError, isLoading: loadingSlides } = useSWR(
+    tab === 'home-slides' ? '/api/admin/home-slides' : null, fetcher
+  )
 
   const courses = Array.isArray(coursesData) ? coursesData : Array.isArray(coursesData?.courses) ? coursesData.courses : []
   const offerings = Array.isArray(offeringsData) ? offeringsData : []
@@ -58,6 +64,8 @@ export default function ManagePage() {
   const announcements = Array.isArray(announcementsData) ? announcementsData : Array.isArray(announcementsData?.announcements) ? announcementsData.announcements : []
   const bankQuestions = Array.isArray(contentBankData) ? contentBankData : []
   const instructors = Array.isArray(instructorsData) ? instructorsData : []
+  const campaigns = Array.isArray(campaignsData) ? campaignsData : []
+  const slides = Array.isArray(homeSlidesData) ? homeSlidesData : []
 
   // Loading = only the active tab's loader
   const loading = loadingCourses ||
@@ -67,7 +75,9 @@ export default function ManagePage() {
     (tab === 'events' && loadingEvents) ||
     (tab === 'materials' && loadingMaterials) ||
     (tab === 'announcements' && loadingAnnouncements) ||
-    (tab === 'content-bank' && loadingBank)
+    (tab === 'content-bank' && loadingBank) ||
+    (tab === 'notifications' && loadingCampaigns) ||
+    (tab === 'home-slides' && loadingSlides)
   const loadError =
     authError ||
     coursesError ||
@@ -78,7 +88,9 @@ export default function ManagePage() {
     materialsError ||
     announcementsError ||
     bankError ||
-    instructorsError
+    instructorsError ||
+    campaignsError ||
+    slidesError
 
 
 
@@ -93,6 +105,8 @@ export default function ManagePage() {
     if (tab === 'announcements') mutate('/api/announcements')
     if (tab === 'content-bank')  mutate('/api/content-bank')
     if (tab === 'offerings')     mutate('/api/course-offerings')
+    if (tab === 'notifications') mutate('/api/notifications/campaigns')
+    if (tab === 'home-slides')   mutate('/api/admin/home-slides')
   }
 
   const [showModal, setShowModal]       = useState(false)
@@ -241,7 +255,8 @@ export default function ManagePage() {
           materials:     '/api/materials',
           announcements: '/api/announcements',
           'content-bank': '/api/content-bank',
-
+          notifications: '/api/notifications/campaigns',
+          'home-slides': '/api/admin/home-slides',
         }
         const base = endpoints[tab]
         const url  = editId ? `${base}/${editId}` : base
@@ -323,6 +338,11 @@ export default function ManagePage() {
       await fetch(`/api/content/${id}`, { method: 'DELETE' })
     } else if (tab === 'materials') {
       await fetch(`/api/materials/${id}`, { method: 'DELETE' })
+    } else if (tab === 'notifications') {
+      alert('For audit compliance, notification campaign history cannot be deleted.')
+      return
+    } else if (tab === 'home-slides') {
+      await fetch(`/api/admin/home-slides/${id}`, { method: 'DELETE' })
     } else {
       const endpoints: Record<Tab, string> = {
         courses:       '/api/courses',
@@ -333,6 +353,8 @@ export default function ManagePage() {
         materials:     '',
         announcements: '/api/announcements',
         'content-bank': '/api/content-bank',
+        notifications: '',
+        'home-slides': '',
       }
       await fetch(`${endpoints[tab]}/${id}`, { method: 'DELETE' })
     }
@@ -348,6 +370,8 @@ export default function ManagePage() {
     ...(userRole === 'MANAGER' ? [{ key: 'materials' as Tab, label: 'Materials', count: materials.length }] : []),
     { key: 'announcements', label: 'Announcements', count: announcements.length },
     { key: 'content-bank',  label: 'Content Bank',  count: bankQuestions.length },
+    ...(userRole === 'MANAGER' ? [{ key: 'notifications' as Tab, label: 'Notifications 🔔', count: campaigns.length }] : []),
+    ...(userRole === 'MANAGER' ? [{ key: 'home-slides' as Tab, label: 'Home Carousel 🖼️', count: slides.length }] : []),
   ]
 
   const COLORS = ['#4F46E5', '#7C3AED', '#0EA5E9', '#F59E0B', '#10B981', '#EF4444', '#EC4899']
@@ -736,6 +760,232 @@ export default function ManagePage() {
             <div className="form-group"><label className="form-label">Type</label><select className="form-input" value={f.type || 'info'} onChange={e => set('type', e.target.value)}><option value="info">Info</option><option value="warning">Warning</option><option value="success">Success</option><option value="error">Error</option></select></div>
           </>
         )
+
+      case 'notifications':
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', width: '100%', alignItems: 'start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="form-group">
+                <label className="form-label">Campaign Title *</label>
+                <input className="form-input" value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="e.g. ⚡ IITian Live Batch starts today!" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Message Body *</label>
+                <textarea className="form-input" value={f.body || ''} onChange={e => set('body', e.target.value)} rows={3} style={{ resize: 'vertical' }} placeholder="e.g. Get live classes, study materials, and tests designed by IITians. Tap to enroll!" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Banner Image URL (Optional)</label>
+                <input className="form-input" value={f.imageUrl || ''} onChange={e => set('imageUrl', e.target.value)} placeholder="https://example.com/banner-image.png" />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-group">
+                  <label className="form-label">CTA Text (Optional)</label>
+                  <input className="form-input" value={f.ctaText || ''} onChange={e => set('ctaText', e.target.value)} placeholder="e.g. Join Batch" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">CTA Link (Optional)</label>
+                  <input className="form-input" value={f.ctaLink || ''} onChange={e => set('ctaLink', e.target.value)} placeholder="e.g. /store or /events" />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Target Audience *</label>
+                <select className="form-input" value={f.targetType || 'ALL'} onChange={e => { set('targetType', e.target.value); set('targetId', '') }}>
+                  <option value="ALL">All Students</option>
+                  <option value="COURSE">Course Batch</option>
+                  <option value="BUNDLE">Course Bundle</option>
+                </select>
+              </div>
+              {f.targetType === 'COURSE' && (
+                <div className="form-group">
+                  <label className="form-label">Select Course Batch *</label>
+                  <select className="form-input" value={f.targetId || ''} onChange={e => set('targetId', e.target.value)}>
+                    <option value="">Select course...</option>
+                    {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              )}
+              {f.targetType === 'BUNDLE' && (
+                <div className="form-group">
+                  <label className="form-label">Select Course Bundle *</label>
+                  <select className="form-input" value={f.targetId || ''} onChange={e => set('targetId', e.target.value)}>
+                    <option value="">Select bundle...</option>
+                    {bundles.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </div>
+              )}
+              <div className="form-group">
+                <label className="form-label">Timing *</label>
+                <div style={{ display: 'flex', gap: '16px', marginTop: '4px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                    <input type="radio" name="timing" checked={!f.scheduledFor} onChange={() => set('scheduledFor', null)} /> Send Now
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                    <input type="radio" name="timing" checked={!!f.scheduledFor} onChange={() => set('scheduledFor', new Date(Date.now() + 5*60*1000).toISOString().slice(0, 16))} /> Schedule for Later
+                  </label>
+                </div>
+              </div>
+              {f.scheduledFor && (
+                <div className="form-group">
+                  <label className="form-label">Scheduled Time (IST) *</label>
+                  <input type="datetime-local" className="form-input" value={f.scheduledFor ? new Date(new Date(f.scheduledFor).getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0, 16) : ''} onChange={e => set('scheduledFor', e.target.value)} />
+                </div>
+              )}
+            </div>
+
+            {/* Simulated Smartphone Preview Block */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f5f6f9', border: '1px solid #dcdde2', borderRadius: '24px', padding: '16px', minWidth: '250px' }}>
+              <div style={{ fontSize: '10px', fontWeight: '800', color: '#909196', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '12px' }}>📱 Preview on Device</div>
+              <div style={{
+                width: '240px', height: '390px', background: '#09080c', border: '6px solid #202022', borderRadius: '32px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 12px 24px rgba(0,0,0,0.2)'
+              }}>
+                <div style={{ width: '80px', height: '12px', background: '#202022', borderRadius: '0 0 10px 10px', alignSelf: 'center', position: 'absolute', top: 0, zIndex: 10 }}></div>
+                <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', background: 'linear-gradient(150deg, #1f1a3a 0%, #0d0b18 100%)', position: 'relative' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: '#888596', marginBottom: '28px', fontWeight: '600' }}>
+                    <span>09:41</span>
+                    <span>🔋 100%</span>
+                  </div>
+                  
+                  {/* Push Banner */}
+                  <div style={{
+                    width: '100%', background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', borderRadius: '14px', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px', boxShadow: '0 4px 16px rgba(0,0,0,0.3)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: '#4F46E5', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '7px', fontWeight: '900' }}>G</div>
+                        <span style={{ fontSize: '8px', fontWeight: '700', color: '#1e293b' }}>GENz IITian</span>
+                      </div>
+                      <span style={{ fontSize: '8px', color: '#94a3b8' }}>now</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                      <div style={{ fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{f.title || 'Campaign Title'}</div>
+                      <div style={{ fontSize: '8.5px', color: '#475569', lineHeight: '1.2' }}>{f.body || 'This is how your rich body message will look on students\' screens. Keep it highly engaging!'}</div>
+                    </div>
+                    {f.imageUrl && (
+                      <div style={{
+                        width: '100%', height: '80px', backgroundSize: 'cover', backgroundImage: `url(${f.imageUrl})`, backgroundPosition: 'center', borderRadius: '8px', marginTop: '2px'
+                      }}></div>
+                    )}
+                    {f.ctaText && (
+                      <div style={{
+                        width: '100%', padding: '5px', borderRadius: '6px', background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#4F46E5', fontSize: '8.5px', fontWeight: '700', textAlign: 'center', marginTop: '2px'
+                      }}>{f.ctaText}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 'home-slides':
+        return (
+          <>
+            <div className="form-group">
+              <label className="form-label">Banner Image *</label>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={f.image || ''}
+                  onChange={e => set('image', e.target.value)}
+                  placeholder="https://example.com/slide.png"
+                  style={{ flex: 1 }}
+                />
+                <label className="btn btn-ghost" style={{ border: '1px solid #c5c7cf', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px' }}>
+                  📂 Upload File
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      const uploadData = new FormData();
+                      uploadData.append('file', file);
+                      uploadData.append('type', 'announcements');
+
+                      try {
+                        setSaving(true);
+                        const res = await fetch('/api/upload', {
+                          method: 'POST',
+                          body: uploadData
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.url) {
+                          set('image', data.url);
+                          alert('Image uploaded successfully!');
+                        } else {
+                          alert(`Upload failed: ${data.error || 'Unknown error'}`);
+                        }
+                      } catch (err) {
+                        alert('Error uploading image file');
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+              <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                Upload a 16:9 ratio visual promotion slide (maximum 10MB).
+              </p>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Alt Text (Accessibility) *</label>
+              <input
+                className="form-input"
+                value={f.alt || ''}
+                onChange={e => set('alt', e.target.value)}
+                placeholder="e.g. Special May qualifier exam session banner"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">CTA Link / Redirect Link *</label>
+              <input
+                className="form-input"
+                value={f.href || ''}
+                onChange={e => set('href', e.target.value)}
+                placeholder="e.g. /courses or https://youtube.com/..."
+              />
+              <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                Students will redirect to this page/URL when they click the banner slide.
+              </p>
+            </div>
+
+            {f.image && (
+              <div style={{ marginTop: '12px', width: '100%' }}>
+                <label className="form-label">Carousel Slide Preview:</label>
+                <div style={{
+                  width: '100%',
+                  aspectRatio: '16 / 9',
+                  borderRadius: '14px',
+                  background: '#0f172a',
+                  backgroundImage: `url(${f.image})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '12px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    display: 'flex',
+                    gap: '6px'
+                  }}>
+                    <div style={{ width: '20px', height: '6px', borderRadius: '50px', background: '#3636e8' }}></div>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50px', background: '#e2e8f0' }}></div>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50px', background: '#e2e8f0' }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )
     }
   }
 
@@ -749,6 +999,8 @@ export default function ManagePage() {
       case 'materials':     return materials
       case 'announcements': return announcements
       case 'content-bank':  return bankQuestions
+      case 'notifications': return campaigns
+      case 'home-slides':   return slides
     }
   }
 
@@ -830,12 +1082,22 @@ export default function ManagePage() {
             </>
           )}
         </div>
-        {((tab === 'events' || tab === 'announcements' || tab === 'content-bank') || userRole === 'MANAGER') && (
-          <button onClick={openCreate} className="btn btn-primary">
+        {((tab === 'events' || tab === 'announcements' || tab === 'content-bank' || tab === 'home-slides') || userRole === 'MANAGER') && (
+          <button
+            onClick={() => {
+              if (tab === 'home-slides' && slides.length >= 10) {
+                alert('Maximum limit of 10 slides reached. Delete an existing slide first.')
+                return
+              }
+              openCreate()
+            }}
+            className="btn btn-primary"
+            style={{ ...(tab === 'home-slides' && slides.length >= 10 ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            {tab === 'events' ? 'Add Event' : 'Create New'}
+            {tab === 'events' ? 'Add Event' : tab === 'home-slides' ? 'Add Banner Slide' : 'Create New'}
           </button>
         )}
       </div>
@@ -885,33 +1147,182 @@ export default function ManagePage() {
           </div>
         ) : (
           <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {tab === 'courses' && (
-              <div style={{
-                background: '#3636e8',
-                borderRadius: '16px',
-                padding: '20px',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '10px',
-                boxShadow: '0 8px 16px rgba(54,54,232,0.15)'
-              }}>
-                <div>
-                  <div style={{ fontSize: '11px', fontWeight: '700', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>System Mapping</div>
-                  <div style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px' }}>LMS-COURSE-global</div>
-                  <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.8 }}>Assign this ID to events for global visibility (all students).</div>
-                </div>
-                <button 
-                  onClick={() => { navigator.clipboard.writeText('LMS-COURSE-global'); setCopiedId('global'); setTimeout(() => setCopiedId(null), 2000) }}
-                  className="btn btn-sm"
-                  style={{ background: 'white', color: '#3636e8', fontWeight: '800', border: 'none', borderRadius: '50px', padding: '8px 16px' }}
-                >
-                  {copiedId === 'global' ? 'Copied!' : 'Copy ID'}
-                </button>
+            {tab === 'notifications' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+                {campaigns.map((item: any) => {
+                  const isSent = item.status === 'SENT'
+                  const isPending = item.status === 'PENDING'
+                  return (
+                    <div key={item.id} style={{
+                      display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', borderRadius: '16px', background: '#f8fafc', borderLeft: `5px solid ${isSent ? '#10b981' : isPending ? '#f59e0b' : '#ef4444'}`, transition: 'all 0.2s', boxShadow: '2px 2px 5px rgba(0,0,0,0.03)'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <div>
+                          <span style={{ fontSize: '9px', fontWeight: '800', padding: '2px 6px', borderRadius: '8px', background: isSent ? '#d1fae5' : isPending ? '#fef3c7' : '#fee2e2', color: isSent ? '#065f46' : isPending ? '#92400e' : '#991b1b', textTransform: 'uppercase', marginRight: '8px' }}>
+                            {item.status}
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>Target: <strong>{item.targetType}</strong></span>
+                        </div>
+                        <span style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' }}>ID: {item.id}</span>
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '16px' }}>
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', margin: 0 }}>{item.title}</h4>
+                          <p style={{ fontSize: '11.5px', color: '#475569', marginTop: '4px', lineHeight: '1.4' }}>{item.body}</p>
+                          {item.ctaText && (
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '8px' }}>
+                              <span style={{ fontSize: '9px', fontWeight: '800', color: '#4F46E5', background: '#e0e7ff', padding: '1.5px 5px', borderRadius: '3px' }}>CTA: {item.ctaText}</span>
+                              {item.ctaLink && <span style={{ fontSize: '9px', color: '#64748b', fontFamily: 'monospace' }}>→ {item.ctaLink}</span>}
+                            </div>
+                          )}
+                        </div>
+                        {item.imageUrl && (
+                          <div style={{
+                            width: '80px', height: '50px', backgroundSize: 'cover', backgroundImage: `url(${item.imageUrl})`, backgroundPosition: 'center', borderRadius: '6px', flexShrink: 0
+                          }}></div>
+                        )}
+                      </div>
+                      
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '8px', marginTop: '2px' }}>
+                        <div>Created by: <strong>{item.createdBy?.name || 'Manager'}</strong></div>
+                        <div>
+                          {isSent && item.sentAt && `Sent: ${new Date(item.sentAt).toLocaleString()}`}
+                          {isPending && item.scheduledFor && `Scheduled for: ${new Date(item.scheduledFor).toLocaleString()}`}
+                          {!isSent && !isPending && `Created: ${new Date(item.createdAt).toLocaleString()}`}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-            )}
-            {getItems().map((item, idx) => {
+            ) : tab === 'home-slides' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+                {slides.map((item: any, idx: number) => {
+                  return (
+                    <div key={item.id} style={{
+                      display: 'flex', gap: '16px', padding: '16px', borderRadius: '16px', background: '#f8fafc', alignItems: 'center', boxShadow: '2px 2px 5px rgba(0,0,0,0.03)'
+                    }}>
+                      <div style={{
+                        width: '120px', aspectRatio: '16/9', borderRadius: '10px', background: '#e2e8f0', backgroundImage: `url(${item.image})`, backgroundSize: 'cover', backgroundPosition: 'center', flexShrink: 0
+                      }}></div>
+                      
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          Alt: {item.alt || 'No alt description'}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#6366f1', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          CTA Redirect: <a href={item.href} target="_blank" rel="noreferrer" style={{ color: '#6366f1', textDecoration: 'underline' }}>{item.href}</a>
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>
+                          Display order position: <strong style={{ color: '#1e293b' }}>{idx + 1}</strong>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <button
+                            disabled={idx === 0 || saving}
+                            onClick={async () => {
+                              try {
+                                setSaving(true);
+                                const updated = [...slides];
+                                const temp = updated[idx].order;
+                                updated[idx].order = updated[idx - 1].order;
+                                updated[idx - 1].order = temp;
+                                
+                                const res = await fetch('/api/admin/home-slides', {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ slides: updated })
+                                });
+                                if (res.ok) loadData();
+                              } catch (err) {
+                                console.error(err);
+                              } finally {
+                                setSaving(false);
+                              }
+                            }}
+                            className="btn btn-ghost btn-sm"
+                            style={{ padding: '2px 6px', fontSize: '10px', height: '22px' }}
+                            title="Move Up"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            disabled={idx === slides.length - 1 || saving}
+                            onClick={async () => {
+                              try {
+                                setSaving(true);
+                                const updated = [...slides];
+                                const temp = updated[idx].order;
+                                updated[idx].order = updated[idx + 1].order;
+                                updated[idx + 1].order = temp;
+                                
+                                const res = await fetch('/api/admin/home-slides', {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ slides: updated })
+                                });
+                                if (res.ok) loadData();
+                              } catch (err) {
+                                console.error(err);
+                              } finally {
+                                setSaving(false);
+                              }
+                            }}
+                            className="btn btn-ghost btn-sm"
+                            style={{ padding: '2px 6px', fontSize: '10px', height: '22px' }}
+                            title="Move Down"
+                          >
+                            ▼
+                          </button>
+                        </div>
+
+                        <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm" style={{ padding: '6px' }} title="Edit">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                        <button onClick={() => handleDelete(item.id)} className="btn btn-ghost btn-sm" style={{ padding: '6px', color: '#ef4444' }} title="Delete">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <>
+                {tab === 'courses' && (
+                  <div style={{
+                    background: '#3636e8',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '10px',
+                    boxShadow: '0 8px 16px rgba(54,54,232,0.15)'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '700', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>System Mapping</div>
+                      <div style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px' }}>LMS-COURSE-global</div>
+                      <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.8 }}>Assign this ID to events for global visibility (all students).</div>
+                    </div>
+                    <button 
+                      onClick={() => { navigator.clipboard.writeText('LMS-COURSE-global'); setCopiedId('global'); setTimeout(() => setCopiedId(null), 2000) }}
+                      className="btn btn-sm"
+                      style={{ background: 'white', color: '#3636e8', fontWeight: '800', border: 'none', borderRadius: '50px', padding: '8px 16px' }}
+                    >
+                      {copiedId === 'global' ? 'Copied!' : 'Copy ID'}
+                    </button>
+                  </div>
+                )}
+                {getItems().map((item, idx) => {
               const rawDetail = item.description || item.content || item.duration || ''
               const itemDetail = rawDetail.length > 72 ? rawDetail.slice(0, 69) + '…' : rawDetail
 
@@ -1113,6 +1524,8 @@ export default function ManagePage() {
                 </div>
               )
             })}
+              </>
+            )}
           </div>
         )}
       </div>
@@ -1120,7 +1533,7 @@ export default function ManagePage() {
       {/* Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal" style={{ ...(tab === 'notifications' ? { maxWidth: '780px', width: '92%' } : {}) }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3 style={{ fontSize: '16px', fontWeight: '600' }}>
                 {editId ? 'Edit' : 'Create'} {tab.slice(0, -1).charAt(0).toUpperCase() + tab.slice(1, -1)}

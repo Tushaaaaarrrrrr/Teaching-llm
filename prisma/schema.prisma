@@ -70,6 +70,7 @@ model User {
   promptResponses         PromptResponse[]
   pushSubscriptions       PushSubscription[]
   fcmDeviceTokens         FcmDeviceToken[]
+  notificationCampaigns   NotificationCampaign[]       @relation("CampaignCreator")
   createdNotes            StoreNote[]                  @relation("NoteCreator")
   noteAccesses            StoreNoteAccess[]
   assignedTickets         SupportTicket[]              @relation("TicketAssignee")
@@ -1188,4 +1189,35 @@ model TestSeriesAccess {
 enum EnrollmentType {
   LIVE
   RECORDED
+}
+
+model NotificationCampaign {
+  id           String    @id @default(cuid())
+  title        String
+  body         String
+  imageUrl     String?
+  ctaText      String?
+  ctaLink      String?
+  targetType   String    @default("ALL") // ALL, COURSE, BUNDLE, SPECIFIC
+  targetId     String?   // CourseId or BundleId if targetType is COURSE or BUNDLE
+  scheduledFor DateTime? // null means send immediately
+  status       String    @default("PENDING") // PENDING, SENT, FAILED
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdById  String
+  createdBy    User      @relation("CampaignCreator", fields: [createdById], references: [id])
+
+  @@index([status])
+  @@index([scheduledFor])
+}
+
+model HomeSlide {
+  id        String   @id @default(cuid())
+  image     String
+  alt       String
+  href      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

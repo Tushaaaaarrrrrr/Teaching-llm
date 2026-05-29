@@ -16,6 +16,15 @@ export default function DashboardPage() {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
   })
+  const { data: homeSlidesData } = useSWR('/api/admin/home-slides', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  })
+  const homeSlides = Array.isArray(homeSlidesData) && homeSlidesData.length > 0 ? homeSlidesData : [
+    { image: '/images/qualifier-session.png', alt: 'Qualifier Session', href: 'https://www.youtube.com/@Gen-ZIITian/videos' },
+    { image: '/images/level-up.png',          alt: 'Level Up',          href: 'https://genziitian.in/courses' },
+    { image: '/images/join-community.png',    alt: 'Join Community',    href: 'https://genziitian.in/newsletter' },
+  ]
 
   // Move declarations up to avoid Temporal Dead Zone (TDZ)
   const stats = dashboardData?.stats || null
@@ -607,6 +616,7 @@ export default function DashboardPage() {
 
       {!isManager && (
         <>
+          <HomeHeroSlider slides={homeSlides} />
           {/* ── Row 1: Active Now + Up Next (desktop only on mobile they're replaced by Featured Courses) ── */}
           {!isMobile && (
           <div style={{
@@ -826,16 +836,7 @@ export default function DashboardPage() {
           </div>
 
           )}
-          {/* ── Mobile-only: Hero Image Slider ── */}
-          {isMobile && (
-            <HomeHeroSlider
-              slides={[
-                { image: '/images/qualifier-session.png', alt: 'Qualifier Session', href: 'https://www.youtube.com/@Gen-ZIITian/videos' },
-                { image: '/images/level-up.png',          alt: 'Level Up',          href: 'https://genziitian.in/courses' },
-                { image: '/images/join-community.png',    alt: 'Join Community',    href: 'https://genziitian.in/newsletter' },
-              ]}
-            />
-          )}
+
 
           {/* Categories: temporarily hidden — will be re-enabled later. */}
 

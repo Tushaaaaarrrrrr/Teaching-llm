@@ -8,6 +8,9 @@ interface PushPayload {
   badge?: string
   url?: string   // where to navigate on click
   tag?: string   // collapses duplicate notifications
+  imageUrl?: string
+  ctaText?: string
+  ctaLink?: string
 }
 
 /**
@@ -41,8 +44,11 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
     body:  payload.body,
     icon:  payload.icon  || '/android-chrome-192x192.png',
     badge: payload.badge || '/favicon-32x32.png',
-    url:   payload.url   || '/announcements',
+    url:   payload.url || payload.ctaLink || '/announcements',
     tag:   payload.tag   || 'announcement',
+    imageUrl: payload.imageUrl || '',
+    ctaText: payload.ctaText || '',
+    ctaLink: payload.ctaLink || '',
   })
 
   const staleIds: string[] = []

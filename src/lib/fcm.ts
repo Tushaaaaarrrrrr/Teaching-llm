@@ -7,6 +7,9 @@ interface FcmPayload {
   icon?: string
   url?: string   // deep-link path inside the app
   tag?: string   // collapse key for duplicate notifications
+  imageUrl?: string
+  ctaText?: string
+  ctaLink?: string
 }
 
 /**
@@ -29,10 +32,14 @@ export async function sendFcmToUsers(userIds: string[], payload: FcmPayload) {
     notification: {
       title: payload.title,
       body: payload.body,
+      ...(payload.imageUrl ? { image: payload.imageUrl } : {}),
     },
     data: {
-      url: payload.url || '/announcements',
+      url: payload.url || payload.ctaLink || '/announcements',
       tag: payload.tag || 'general',
+      ctaText: payload.ctaText || '',
+      ctaLink: payload.ctaLink || '',
+      imageUrl: payload.imageUrl || '',
     },
     android: {
       priority: 'high' as const,
