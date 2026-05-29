@@ -28,7 +28,7 @@ export default function ManagePage() {
 
   // All other tabs: only fetch when that tab is active
   const { data: bundlesData, error: bundlesError, isLoading: loadingBundles } = useSWR(
-    tab === 'bundles' && userRole === 'MANAGER' ? '/api/course-bundles' : null, fetcher
+    (tab === 'bundles' || tab === 'notifications') && userRole === 'MANAGER' ? '/api/course-bundles' : null, fetcher
   )
   const { data: lecturesData, error: lecturesError, isLoading: loadingLectures } = useSWR(
     tab === 'lectures' ? '/api/content?hasVideo=true' : null, fetcher
@@ -98,7 +98,7 @@ export default function ManagePage() {
   async function loadData() {
     mutate('/api/courses')
     mutate('/api/instructors')
-    if (tab === 'bundles')       mutate('/api/course-bundles')
+    if (tab === 'bundles' || tab === 'notifications') mutate('/api/course-bundles')
     if (tab === 'lectures')      mutate('/api/content?hasVideo=true')
     if (tab === 'events')        mutate('/api/events')
     if (tab === 'materials')     mutate('/api/materials')
@@ -115,6 +115,121 @@ export default function ManagePage() {
   const [saving, setSaving]             = useState(false)
   const [copiedId, setCopiedId]         = useState<string | null>(null)
   const [materialSourceType, setMaterialSourceType] = useState<'FILE' | 'LINK'>('FILE')
+
+  // Dedicated states for Advanced Inline Notification Dashboard
+  const [inlineNotif, setInlineNotif] = useState({
+    presetStyle: '',
+    title: '',
+    body: '',
+    imageUrl: '',
+    ctaText: '',
+    ctaLink: '',
+    targetType: 'ALL' as 'ALL' | 'COURSE' | 'BUNDLE',
+    targetId: '',
+    scheduledFor: '',
+    sendLater: false,
+    category: 'PROMOTIONAL',
+    priority: 'HIGH',
+  })
+  
+  const [notifSearch, setNotifSearch] = useState('')
+  const [notifStatusFilter, setNotifStatusFilter] = useState<'ALL' | 'SENT' | 'PENDING'>('ALL')
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [isSendingCampaign, setIsSendingCampaign] = useState(false)
+
+  async function handleNotificationImageUpload(file: File) {
+    if (!file) return
+    setIsUploadingImage(true)
+    const uploadData = new FormData()
+    uploadData.append('file', file)
+    uploadData.append('type', 'announcements')
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadData,
+      })
+      const data = await res.json()
+      if (res.ok && data.url) {
+        setInlineNotif(p => ({ ...p, imageUrl: data.url }))
+        alert('Banner image uploaded successfully!')
+      } else {
+        alert(`Upload failed: ${data.error || 'Unknown error'}`)
+      }
+    } catch (err) {
+      alert('Error uploading image file')
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
+  async function handleSendCampaign() {
+    if (!inlineNotif.title || !inlineNotif.body) {
+      alert('Campaign Title and Message Body are required.')
+      return
+    }
+
+    setIsSendingCampaign(true)
+    try {
+      const payload: Record<string, any> = {
+        title: inlineNotif.title,
+        body: inlineNotif.body,
+        imageUrl: inlineNotif.imageUrl || null,
+        ctaText: inlineNotif.ctaText || null,
+        ctaLink: inlineNotif.ctaLink || null,
+        targetType: inlineNotif.targetType,
+        targetId: inlineNotif.targetId || null,
+      }
+
+      if (inlineNotif.sendLater) {
+        if (!inlineNotif.scheduledFor) {
+          alert('Please select a scheduled date and time.')
+          setIsSendingCampaign(false)
+          return
+        }
+        payload.scheduledFor = new Date(inlineNotif.scheduledFor).toISOString()
+      } else {
+        payload.scheduledFor = null
+      }
+
+      const res = await fetch('/api/notifications/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to create campaign')
+      }
+
+      alert(inlineNotif.sendLater ? '🎉 Notification campaign scheduled successfully!' : '🚀 Notification broadcasted successfully!')
+      
+      // Reset form
+      setInlineNotif({
+        presetStyle: '',
+        title: '',
+        body: '',
+        imageUrl: '',
+        ctaText: '',
+        ctaLink: '',
+        targetType: 'ALL',
+        targetId: '',
+        scheduledFor: '',
+        sendLater: false,
+        category: 'PROMOTIONAL',
+        priority: 'HIGH',
+      })
+      
+      // Mutate SWR
+      mutate('/api/notifications/campaigns')
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : 'Error launching notification campaign')
+    } finally {
+      setIsSendingCampaign(false)
+    }
+  }
 
   // For lecture / material forms: topic selector
   const [topicsForCourse, setTopicsForCourse] = useState<any[]>([])
@@ -1082,7 +1197,7 @@ export default function ManagePage() {
             </>
           )}
         </div>
-        {((tab === 'events' || tab === 'announcements' || tab === 'content-bank' || tab === 'home-slides') || userRole === 'MANAGER') && (
+        {tab !== 'notifications' && ((tab === 'events' || tab === 'announcements' || tab === 'content-bank' || tab === 'home-slides') || userRole === 'MANAGER' || userRole === 'ADMIN') && (
           <button
             onClick={() => {
               if (tab === 'home-slides' && slides.length >= 10) {
@@ -1138,65 +1253,820 @@ export default function ManagePage() {
 
 
       {/* Items List */}
-      <div className="card" style={{ overflowX: 'auto', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
-        {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading…</div>
-        ) : getItems().length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>
-            No {tab} yet. Click &quot;Create New&quot; to add one.
+      {tab === 'notifications' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Custom scoped styles for premium UI */}
+          <style dangerouslySetInnerHTML={{__html: `
+            .notif-console-container {
+              display: grid;
+              grid-template-columns: 1.2fr 1fr;
+              gap: 28px;
+              width: 100%;
+              align-items: start;
+            }
+            @media (max-width: 1024px) {
+              .notif-console-container {
+                grid-template-columns: 1fr;
+              }
+            }
+            .notif-glow-card {
+              background: #ffffff;
+              border: 1px solid rgba(226, 232, 240, 0.8);
+              border-radius: 24px;
+              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+              padding: 28px;
+              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+              display: flex;
+              flex-direction: column;
+              gap: 20px;
+            }
+            .notif-glow-card:hover {
+              box-shadow: 0 20px 40px rgba(99, 102, 241, 0.06);
+              border-color: rgba(99, 102, 241, 0.2);
+            }
+            .section-title {
+              font-size: 18px;
+              font-weight: 800;
+              color: #1e1e3a;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              margin: 0;
+              padding-bottom: 12px;
+              border-bottom: 1px solid #f1f5f9;
+            }
+            .input-group {
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+              width: 100%;
+            }
+            .input-label {
+              font-size: 12.5px;
+              font-weight: 700;
+              color: #475569;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            }
+            .char-limit {
+              font-size: 10.5px;
+              font-weight: 500;
+              color: #94a3b8;
+            }
+            .premium-input {
+              width: 100%;
+              padding: 12px 16px;
+              border-radius: 12px;
+              border: 1.5px solid #e2e8f0;
+              background: #f8fafc;
+              font-size: 14px;
+              color: #0f172a;
+              transition: all 0.2s ease;
+            }
+            .premium-input:focus {
+              outline: none;
+              border-color: #6366f1;
+              background: #ffffff;
+              box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+            }
+            .chip-container {
+              display: flex;
+              gap: 8px;
+              flex-wrap: wrap;
+              margin-top: 4px;
+            }
+            .category-chip {
+              padding: 8px 16px;
+              border-radius: 50px;
+              font-size: 12.5px;
+              font-weight: 700;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              border: 2px solid transparent;
+            }
+            .category-chip.active {
+              box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            }
+            .phone-preview-card {
+              border: 12px solid #202022;
+              border-radius: 36px;
+              background: linear-gradient(150deg, #1f1a3a 0%, #0d0b18 100%);
+              padding: 16px;
+              width: 100%;
+              max-width: 290px;
+              height: 480px;
+              display: flex;
+              flex-direction: column;
+              position: relative;
+              overflow: hidden;
+              box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+              margin: 0 auto;
+            }
+            .phone-notch {
+              width: 110px;
+              height: 18px;
+              background: #202022;
+              border-radius: 0 0 14px 14px;
+              position: absolute;
+              top: 0;
+              left: 50%;
+              transform: translateX(-50%);
+              z-index: 10;
+            }
+            .phone-status-bar {
+              display: flex;
+              justify-content: space-between;
+              font-size: 10px;
+              color: #a78bfa;
+              margin-bottom: 24px;
+              padding-top: 4px;
+              font-weight: 600;
+            }
+            .push-notification-banner {
+              width: 100%;
+              background: rgba(255, 255, 255, 0.96);
+              backdrop-filter: blur(20px);
+              border-radius: 18px;
+              padding: 12px;
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+              box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+              animation: slideDown 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+              transform-origin: top center;
+            }
+            @keyframes slideDown {
+              0% { transform: translateY(-40px) scale(0.95); opacity: 0; }
+              100% { transform: translateY(0) scale(1); opacity: 1; }
+            }
+            .push-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            }
+            .push-app-badge {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            }
+            .push-logo {
+              width: 16px;
+              height: 16px;
+              border-radius: 4px;
+              background: #6366f1;
+              color: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 9px;
+              font-weight: 900;
+            }
+            .push-app-name {
+              font-size: 10.5px;
+              font-weight: 800;
+              color: #1e293b;
+            }
+            .push-time {
+              font-size: 9.5px;
+              color: #94a3b8;
+            }
+            .push-title {
+              font-size: 12.5px;
+              font-weight: 800;
+              color: #0f172a;
+              margin: 0;
+            }
+            .push-body {
+              font-size: 10.5px;
+              color: #475569;
+              line-height: 1.35;
+              margin: 0;
+            }
+            .push-banner-img {
+              width: 100%;
+              height: 110px;
+              background-size: cover;
+              background-position: center;
+              border-radius: 10px;
+              margin-top: 4px;
+              border: 1px solid rgba(0,0,0,0.05);
+            }
+            .push-cta-btn {
+              width: 100%;
+              padding: 8px;
+              border-radius: 8px;
+              background: #f1f5f9;
+              border: 1px solid #e2e8f0;
+              color: #6366f1;
+              font-size: 11px;
+              font-weight: 800;
+              text-align: center;
+              margin-top: 4px;
+              transition: background 0.2s;
+            }
+            .metric-bar {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 16px;
+              width: 100%;
+            }
+            .metric-card {
+              background: #ffffff;
+              border: 1.5px solid #f1f5f9;
+              border-radius: 16px;
+              padding: 16px;
+              text-align: center;
+              box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.01);
+            }
+            .metric-num {
+              font-size: 20px;
+              font-weight: 800;
+              color: #6366f1;
+              line-height: 1;
+              margin-bottom: 4px;
+            }
+            .metric-label {
+              font-size: 11px;
+              font-weight: 700;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            }
+            .history-item-card {
+              background: #ffffff;
+              border: 1px solid #f1f5f9;
+              border-radius: 18px;
+              padding: 18px;
+              box-shadow: 0 4px 10px rgba(0,0,0,0.01);
+              transition: all 0.2s ease;
+              display: flex;
+              flex-direction: column;
+              gap: 12px;
+            }
+            .history-item-card:hover {
+              transform: translateX(3px);
+              box-shadow: 0 8px 20px rgba(99, 102, 241, 0.04);
+              border-color: rgba(99, 102, 241, 0.1);
+            }
+          `}} />
+
+          {/* Quick Metrics Bar */}
+          <div className="metric-bar">
+            <div className="metric-card">
+              <div className="metric-num" style={{ color: '#6366f1' }}>{campaigns.filter(c => c.status === 'SENT').length}</div>
+              <div className="metric-label">Delivered</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-num" style={{ color: '#f59e0b' }}>{campaigns.filter(c => c.status === 'PENDING').length}</div>
+              <div className="metric-label">Scheduled</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-num" style={{ color: '#10b981' }}>100%</div>
+              <div className="metric-label">Channel Health</div>
+            </div>
           </div>
-        ) : (
-          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {tab === 'notifications' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
-                {campaigns.map((item: any) => {
-                  const isSent = item.status === 'SENT'
-                  const isPending = item.status === 'PENDING'
-                  return (
-                    <div key={item.id} style={{
-                      display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', borderRadius: '16px', background: '#f8fafc', borderLeft: `5px solid ${isSent ? '#10b981' : isPending ? '#f59e0b' : '#ef4444'}`, transition: 'all 0.2s', boxShadow: '2px 2px 5px rgba(0,0,0,0.03)'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                        <div>
-                          <span style={{ fontSize: '9px', fontWeight: '800', padding: '2px 6px', borderRadius: '8px', background: isSent ? '#d1fae5' : isPending ? '#fef3c7' : '#fee2e2', color: isSent ? '#065f46' : isPending ? '#92400e' : '#991b1b', textTransform: 'uppercase', marginRight: '8px' }}>
-                            {item.status}
-                          </span>
-                          <span style={{ fontSize: '11px', color: '#64748b' }}>Target: <strong>{item.targetType}</strong></span>
-                        </div>
-                        <span style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' }}>ID: {item.id}</span>
-                      </div>
-                      
-                      <div style={{ display: 'flex', gap: '16px' }}>
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', margin: 0 }}>{item.title}</h4>
-                          <p style={{ fontSize: '11.5px', color: '#475569', marginTop: '4px', lineHeight: '1.4' }}>{item.body}</p>
-                          {item.ctaText && (
-                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '8px' }}>
-                              <span style={{ fontSize: '9px', fontWeight: '800', color: '#4F46E5', background: '#e0e7ff', padding: '1.5px 5px', borderRadius: '3px' }}>CTA: {item.ctaText}</span>
-                              {item.ctaLink && <span style={{ fontSize: '9px', color: '#64748b', fontFamily: 'monospace' }}>→ {item.ctaLink}</span>}
-                            </div>
-                          )}
-                        </div>
-                        {item.imageUrl && (
-                          <div style={{
-                            width: '80px', height: '50px', backgroundSize: 'cover', backgroundImage: `url(${item.imageUrl})`, backgroundPosition: 'center', borderRadius: '6px', flexShrink: 0
-                          }}></div>
-                        )}
-                      </div>
-                      
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '8px', marginTop: '2px' }}>
-                        <div>Created by: <strong>{item.createdBy?.name || 'Manager'}</strong></div>
-                        <div>
-                          {isSent && item.sentAt && `Sent: ${new Date(item.sentAt).toLocaleString()}`}
-                          {isPending && item.scheduledFor && `Scheduled for: ${new Date(item.scheduledFor).toLocaleString()}`}
-                          {!isSent && !isPending && `Created: ${new Date(item.createdAt).toLocaleString()}`}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+
+          <div className="notif-console-container">
+            {/* LEFT COLUMN: Sender Console */}
+            <div className="notif-glow-card">
+              <h3 className="section-title">
+                <span style={{ fontSize: '20px' }}>🚀</span> Advanced Broadcast Console
+              </h3>
+
+              {/* Presets Select */}
+              <div className="input-group">
+                <label className="input-label" style={{ color: '#6366f1' }}>
+                  <span>🎨 Quick Swiggy / Zomato Presets</span>
+                  <span style={{ fontSize: '10px', background: '#e0e7ff', color: '#6366f1', padding: '2px 8px', borderRadius: '5px' }}>Engage instantly</span>
+                </label>
+                <select
+                  className="premium-input"
+                  value={inlineNotif.presetStyle || ''}
+                  onChange={e => {
+                    const val = e.target.value
+                    if (val === 'PROMO') {
+                      setInlineNotif(p => ({
+                        ...p,
+                        presetStyle: val,
+                        title: '🍔 Hungry for Success? 50% Off is Served!',
+                        body: 'Satisfy your learning cravings. Get comprehensive lectures, IITian study notes, and masterclass blueprints for half-off. Limited portions remaining! ⚡',
+                        ctaText: 'Claim 50% Deal 🎁',
+                        ctaLink: '/courses/explore',
+                        category: 'PROMOTIONAL',
+                      }))
+                    } else if (val === 'LIVE_NOW') {
+                      setInlineNotif(p => ({
+                        ...p,
+                        presetStyle: val,
+                        title: '🚨 Boom! IITian session starting in 2 minutes!',
+                        body: 'The exam syllabus analysis, high-yield cheat sheets, and direct qualifier mock review is starting. Quick, tap to join the pro livestream room! 🎥',
+                        ctaText: 'Enter Live Stream 📲',
+                        ctaLink: '/live',
+                        category: 'ALERT',
+                      }))
+                    } else if (val === 'NEW_MATERIAL') {
+                      setInlineNotif(p => ({
+                        ...p,
+                        presetStyle: val,
+                        title: '📚 Dropped: May Term solved blueprint notes!',
+                        body: 'We just uploaded the handwritten formulas, solved practice sets, and last-year exam banks to supercharge your test scores. Score high! 🧠',
+                        ctaText: 'Get Blueprint Notes 📂',
+                        ctaLink: '/materials',
+                        category: 'ACADEMIC',
+                      }))
+                    } else if (val === 'ALERT') {
+                      setInlineNotif(p => ({
+                        ...p,
+                        presetStyle: val,
+                        title: '⚠️ ATTENTION: Mock schedule overlap fixed!',
+                        body: 'We adjusted the exam dates to prevent slot overlaps with qualifiers. Open to review the final schedule blueprint immediately to update your calendar. 🗓️',
+                        ctaText: 'See New Schedule 📢',
+                        ctaLink: '/announcements',
+                        category: 'ALERT',
+                      }))
+                    } else if (val === 'QUIZ') {
+                      setInlineNotif(p => ({
+                        ...p,
+                        presetStyle: val,
+                        title: '🧠 Daily Brain Tickler: Can you solve this IITian PYQ?',
+                        body: 'A brand new mock question is now live in the Content Bank. Take 60 seconds to answer and see where you rank among peers today! 🚀',
+                        ctaText: 'Solve Now ⚡',
+                        ctaLink: '/content-bank',
+                        category: 'GENERAL',
+                      }))
+                    } else {
+                      setInlineNotif(p => ({ ...p, presetStyle: '' }))
+                    }
+                  }}
+                  style={{ border: '2px dashed #6366f1', background: '#fafcff' }}
+                >
+                  <option value="">-- Choose High-Converting Preset --</option>
+                  <option value="PROMO">🏷️ Promotional Deal / Offer (Zomato Style)</option>
+                  <option value="LIVE_NOW">🚨 Live Class Alert (Instant Swiggy Style)</option>
+                  <option value="NEW_MATERIAL">📚 Study Notes & PDF Release Alert</option>
+                  <option value="ALERT">📢 High-Alert Syllabus Reschedule</option>
+                  <option value="QUIZ">🏆 Exam prep Daily Engagement Quiz</option>
+                </select>
               </div>
-            ) : tab === 'home-slides' ? (
+
+              {/* Category Badge Chips */}
+              <div className="input-group">
+                <label className="input-label">Category</label>
+                <div className="chip-container">
+                  {[
+                    { key: 'PROMOTIONAL', label: '🏷️ Promo', bg: '#fee2e2', text: '#b91c1c', border: '#fecaca' },
+                    { key: 'ACADEMIC', label: '📚 Academic', bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe' },
+                    { key: 'ALERT', label: '🚨 System Alert', bg: '#fef3c7', text: '#92400e', border: '#fde68a' },
+                    { key: 'GENERAL', label: '📢 General Info', bg: '#d1fae5', text: '#065f46', border: '#a7f3d0' }
+                  ].map(c => {
+                    const isActive = inlineNotif.category === c.key
+                    return (
+                      <button
+                        key={c.key}
+                        type="button"
+                        onClick={() => setInlineNotif(p => ({ ...p, category: c.key }))}
+                        className={`category-chip ${isActive ? 'active' : ''}`}
+                        style={{
+                          background: isActive ? c.bg : '#f1f5f9',
+                          color: isActive ? c.text : '#475569',
+                          borderColor: isActive ? c.border : 'transparent',
+                        }}
+                      >
+                        {c.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Campaign Title */}
+              <div className="input-group">
+                <div className="input-label">
+                  <span>Campaign Title *</span>
+                  <span className="char-limit">{inlineNotif.title.length}/50 chars</span>
+                </div>
+                <input
+                  type="text"
+                  className="premium-input"
+                  value={inlineNotif.title}
+                  onChange={e => {
+                    if (e.target.value.length <= 50) {
+                      setInlineNotif(p => ({ ...p, title: e.target.value }))
+                    }
+                  }}
+                  placeholder="e.g. 🍔 Hungry for success? 50% Off is Served!"
+                />
+              </div>
+
+              {/* Message Body */}
+              <div className="input-group">
+                <div className="input-label">
+                  <span>Message Body *</span>
+                  <span className="char-limit">{inlineNotif.body.length}/150 chars</span>
+                </div>
+                <textarea
+                  className="premium-input"
+                  rows={3}
+                  value={inlineNotif.body}
+                  onChange={e => {
+                    if (e.target.value.length <= 150) {
+                      setInlineNotif(p => ({ ...p, body: e.target.value }))
+                    }
+                  }}
+                  placeholder="e.g. Satisfy your learning cravings. Get video courses for half-off..."
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+
+              {/* Banner Image with Upload */}
+              <div className="input-group">
+                <label className="input-label">Banner Image Visual (Optional)</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="text"
+                    className="premium-input"
+                    value={inlineNotif.imageUrl}
+                    onChange={e => setInlineNotif(p => ({ ...p, imageUrl: e.target.value }))}
+                    placeholder="https://example.com/banner.png"
+                    style={{ flex: 1 }}
+                  />
+                  <label className="btn btn-ghost" style={{ border: '1.5px solid #c5c7cf', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px' }}>
+                    {isUploadingImage ? 'Uploading...' : '📂 Upload Banner'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isUploadingImage}
+                      style={{ display: 'none' }}
+                      onChange={e => {
+                        const file = e.target.files?.[0]
+                        if (file) handleNotificationImageUpload(file)
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* CTA Configuration */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
+                <div className="input-group">
+                  <label className="input-label">CTA Button Label</label>
+                  <input
+                    type="text"
+                    className="premium-input"
+                    value={inlineNotif.ctaText}
+                    onChange={e => setInlineNotif(p => ({ ...p, ctaText: e.target.value }))}
+                    placeholder="e.g. Claim 50% Off 🎁"
+                  />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">CTA Link Destination</label>
+                  <select
+                    className="premium-input"
+                    value={inlineNotif.ctaLink}
+                    onChange={e => setInlineNotif(p => ({ ...p, ctaLink: e.target.value }))}
+                  >
+                    <option value="">-- Choose or Write Custom --</option>
+                    <option value="/courses/explore">Explore Batches 🛍️</option>
+                    <option value="/materials">Prep Materials / Handouts 📂</option>
+                    <option value="/calendar">Events Schedule 🗓️</option>
+                    <option value="/announcements">News & Updates 📢</option>
+                    <option value="/profile">Student Profile 👤</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Optional Custom CTA Link Field */}
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="premium-input"
+                  value={inlineNotif.ctaLink}
+                  onChange={e => setInlineNotif(p => ({ ...p, ctaLink: e.target.value }))}
+                  placeholder="Or enter custom URL/route, e.g. /courses/clg123"
+                />
+              </div>
+
+              {/* Target Audience */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '12px' }}>
+                <div className="input-group">
+                  <label className="input-label">Audience Segment</label>
+                  <select
+                    className="premium-input"
+                    value={inlineNotif.targetType}
+                    onChange={e => setInlineNotif(p => ({ ...p, targetType: e.target.value as any, targetId: '' }))}
+                  >
+                    <option value="ALL">All Registered Students</option>
+                    <option value="COURSE">Specific Course Batch</option>
+                    <option value="BUNDLE">Specific Bundle Pack</option>
+                  </select>
+                </div>
+
+                {inlineNotif.targetType === 'COURSE' && (
+                  <div className="input-group">
+                    <label className="input-label">Select Course Batch *</label>
+                    <select
+                      className="premium-input"
+                      value={inlineNotif.targetId}
+                      onChange={e => setInlineNotif(p => ({ ...p, targetId: e.target.value }))}
+                    >
+                      <option value="">-- Select Course --</option>
+                      {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {inlineNotif.targetType === 'BUNDLE' && (
+                  <div className="input-group">
+                    <label className="input-label">Select Course Bundle *</label>
+                    <select
+                      className="premium-input"
+                      value={inlineNotif.targetId}
+                      onChange={e => setInlineNotif(p => ({ ...p, targetId: e.target.value }))}
+                    >
+                      <option value="">-- Select Bundle --</option>
+                      {bundles.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Delivery Timing */}
+              <div className="input-group">
+                <label className="input-label">Broadcast Delivery Timing</label>
+                <div style={{ display: 'flex', gap: '20px', marginTop: '6px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="inlineTiming"
+                      checked={!inlineNotif.sendLater}
+                      onChange={() => setInlineNotif(p => ({ ...p, sendLater: false }))}
+                      style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                    />
+                    ⚡ Instant Broadcast
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="inlineTiming"
+                      checked={inlineNotif.sendLater}
+                      onChange={() => setInlineNotif(p => ({ ...p, sendLater: true, scheduledFor: new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 16) }))}
+                      style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                    />
+                    🗓️ Schedule for later (IST)
+                  </label>
+                </div>
+              </div>
+
+              {inlineNotif.sendLater && (
+                <div className="input-group">
+                  <label className="input-label">Scheduled Date & Time (Indian Standard Time)</label>
+                  <input
+                    type="datetime-local"
+                    className="premium-input"
+                    value={inlineNotif.scheduledFor}
+                    onChange={e => setInlineNotif(p => ({ ...p, scheduledFor: e.target.value }))}
+                  />
+                  <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>
+                    Campaign will broadcast automatically to target audience at the specified local time.
+                  </p>
+                </div>
+              )}
+
+              {/* Launch Broadcast Button */}
+              <button
+                type="button"
+                onClick={handleSendCampaign}
+                disabled={isSendingCampaign || isUploadingImage || !inlineNotif.title || !inlineNotif.body}
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  padding: '14px 20px',
+                  borderRadius: '14px',
+                  fontSize: '15px',
+                  fontWeight: '800',
+                  background: 'linear-gradient(135deg, #6366f1 0%, #4F46E5 100%)',
+                  border: 'none',
+                  boxShadow: '0 8px 20px rgba(99,102,241,0.2)',
+                  color: 'white',
+                  cursor: (isSendingCampaign || isUploadingImage || !inlineNotif.title || !inlineNotif.body) ? 'not-allowed' : 'pointer',
+                  opacity: (isSendingCampaign || isUploadingImage || !inlineNotif.title || !inlineNotif.body) ? 0.6 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                {isSendingCampaign ? (
+                  <>
+                    <svg className="animate-spin" width="16" height="16" fill="none" viewBox="0 0 24 24" style={{ marginRight: '6px' }}>
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }}></circle>
+                      <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Executing Broadcast...
+                  </>
+                ) : inlineNotif.sendLater ? (
+                  '🗓️ Schedule Push Campaign'
+                ) : (
+                  '🚀 Broadcast Push Notification'
+                )}
+              </button>
+            </div>
+
+            {/* PREVIEW & HISTORY PANEL */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* Smartphone Real-time Preview */}
+              <div className="notif-glow-card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px', marginBottom: '16px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                    📱 Push Notification Live Preview
+                  </h4>
+                  <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }}></span> Pushed Live
+                  </span>
+                </div>
+
+                <div className="phone-preview-card">
+                  <div className="phone-notch"></div>
+                  <div className="phone-status-bar">
+                    <span>09:41</span>
+                    <span>🔋 100%</span>
+                  </div>
+
+                  <div className="push-notification-banner">
+                    <div className="push-header">
+                      <div className="push-app-badge">
+                        <div className="push-logo" style={{
+                          background: inlineNotif.category === 'ALERT' ? '#ea580c' : inlineNotif.category === 'ACADEMIC' ? '#1e1a3a' : '#6366f1'
+                        }}>G</div>
+                        <span className="push-app-name">GENz IITian</span>
+                      </div>
+                      <span className="push-time">now</span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <h5 className="push-title">{inlineNotif.title || '⚡ IITian Live Batch starts today!'}</h5>
+                      <p className="push-body">
+                        {inlineNotif.body || "Get live classes, study materials, and tests designed by IITians. Tap to enroll instantly!"}
+                      </p>
+                    </div>
+
+                    {inlineNotif.imageUrl && (
+                      <div className="push-banner-img" style={{ backgroundImage: `url(${inlineNotif.imageUrl})` }}></div>
+                    )}
+
+                    {inlineNotif.ctaText && (
+                      <div className="push-cta-btn">{inlineNotif.ctaText}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: Broadcast History */}
+              <div className="notif-glow-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>
+                    📰 Broadcast Logs & Audit
+                  </h3>
+                  <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: '6px', fontWeight: '700' }}>
+                    Total: {campaigns.length}
+                  </span>
+                </div>
+
+                {/* Filters Row */}
+                <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                  <input
+                    type="text"
+                    className="premium-input"
+                    value={notifSearch}
+                    onChange={e => setNotifSearch(e.target.value)}
+                    placeholder="Search logs..."
+                    style={{ flex: 1, padding: '8px 12px', fontSize: '13px', borderRadius: '8px' }}
+                  />
+                  <select
+                    className="premium-input"
+                    value={notifStatusFilter}
+                    onChange={e => setNotifStatusFilter(e.target.value as any)}
+                    style={{ width: '120px', padding: '8px 12px', fontSize: '13px', borderRadius: '8px' }}
+                  >
+                    <option value="ALL">All Status</option>
+                    <option value="SENT">Delivered</option>
+                    <option value="PENDING">Scheduled</option>
+                  </select>
+                </div>
+
+                {/* History List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '380px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {campaigns
+                    .filter(c => {
+                      const matchesSearch = c.title.toLowerCase().includes(notifSearch.toLowerCase()) || c.body.toLowerCase().includes(notifSearch.toLowerCase())
+                      const matchesStatus = notifStatusFilter === 'ALL' || c.status === notifStatusFilter
+                      return matchesSearch && matchesStatus
+                    })
+                    .map((item: any) => {
+                      const isSent = item.status === 'SENT'
+                      const isPending = item.status === 'PENDING'
+                      return (
+                        <div key={item.id} className="history-item-card" style={{
+                          borderLeft: `5px solid ${isSent ? '#10b981' : isPending ? '#f59e0b' : '#ef4444'}`,
+                          background: isPending ? '#fffbeb' : '#ffffff'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                              <span style={{
+                                fontSize: '9px',
+                                fontWeight: '900',
+                                padding: '2px 6px',
+                                borderRadius: '6px',
+                                background: isSent ? '#d1fae5' : isPending ? '#fef3c7' : '#fee2e2',
+                                color: isSent ? '#065f46' : isPending ? '#92400e' : '#991b1b',
+                                textTransform: 'uppercase'
+                              }}>
+                                {item.status}
+                              </span>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '700' }}>
+                                Target: {item.targetType}
+                              </span>
+                            </div>
+                            <span style={{ fontSize: '9px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                              {item.id.slice(0, 8)}...
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                            <div style={{ flex: 1 }}>
+                              <h4 style={{ fontSize: '12.5px', fontWeight: '800', color: '#1e293b', margin: 0 }}>
+                                {item.title}
+                              </h4>
+                              <p style={{ fontSize: '11px', color: '#475569', marginTop: '3px', lineHeight: '1.4', margin: '4px 0 0 0' }}>
+                                {item.body}
+                              </p>
+                              {item.ctaText && (
+                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginTop: '6px' }}>
+                                  <span style={{ fontSize: '9px', fontWeight: '800', color: '#6366f1', background: '#e0e7ff', padding: '2px 6px', borderRadius: '4px' }}>
+                                    CTA: {item.ctaText}
+                                  </span>
+                                  {item.ctaLink && (
+                                    <span style={{ fontSize: '9px', color: '#64748b', fontFamily: 'monospace' }}>
+                                      → {item.ctaLink}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {item.imageUrl && (
+                              <div style={{
+                                width: '70px',
+                                height: '44px',
+                                backgroundSize: 'cover',
+                                backgroundImage: `url(${item.imageUrl})`,
+                                backgroundPosition: 'center',
+                                borderRadius: '6px',
+                                flexShrink: 0
+                              }}></div>
+                            )}
+                          </div>
+
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '10px',
+                            color: '#94a3b8',
+                            borderTop: '1px solid #f8fafc',
+                            paddingTop: '6px',
+                            marginTop: '2px'
+                          }}>
+                            <div>Sender: <strong>{item.createdBy?.name || 'Manager'}</strong></div>
+                            <div>
+                              {isSent && item.sentAt && `${new Date(item.sentAt).toLocaleString('en-IN', { hour12: true })}`}
+                              {isPending && item.scheduledFor && `Sched: ${new Date(item.scheduledFor).toLocaleString('en-IN', { hour12: true })}`}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  {campaigns.length === 0 && (
+                    <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+                      No sent notifications in log history.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="card" style={{ overflowX: 'auto', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
+          {loading ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading…</div>
+          ) : getItems().length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>
+              No {tab} yet. Click &quot;Create New&quot; to add one.
+            </div>
+          ) : (
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {tab === 'home-slides' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
                 {slides.map((item: any, idx: number) => {
                   return (
@@ -1529,6 +2399,7 @@ export default function ManagePage() {
           </div>
         )}
       </div>
+    )}
 
       {/* Modal */}
       {showModal && (
