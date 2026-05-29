@@ -10,6 +10,12 @@ function LoginContent() {
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const [showTermsConditions, setShowTermsConditions] = useState(false)
 
+  const footerLinksData = [
+    { label: 'Refund Policy', icon: '💸', onClick: () => setShowRefundPolicy(true) },
+    { label: 'Privacy Policy', icon: '🔒', onClick: () => setShowPrivacyPolicy(true) },
+    { label: 'Terms & Conditions', icon: '📜', onClick: () => setShowTermsConditions(true) },
+  ]
+
   // Show error from query params if any
   const queryError = searchParams.get('error')
   const errorMap: Record<string, string> = {
@@ -20,12 +26,13 @@ function LoginContent() {
   const displayError = queryError ? errorMap[queryError] || `Login error: ${queryError}` : ''
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#F3F4F6' }}>
+    <div className="login-container">
       {/* Left Panel - Branding */}
-      <div style={{ flex: '0 0 42%', background: '#F3F4F6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px', position: 'relative' }}>
+      <div className="login-left-panel">
         {/* Logo & Tagline Centered Layout */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '40px', width: '100%', maxWidth: '440px' }}>
+        <div className="login-logo-container">
           <div 
+            className="login-logo-card"
             style={{ 
             display: 'flex', 
             flexDirection: 'column',
@@ -61,7 +68,7 @@ function LoginContent() {
         </div>
           
           {/* Geometric Characters Composition */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', alignItems: 'center', justifyContent: 'center', margin: '40px 0' }}>
+          <div className="login-geometric-composition">
             {/* Purple Rectangle */}
             <div className="animate-float" style={{ width: '160px', height: '200px', background: '#8B5CF6', borderRadius: '24px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', animationDelay: '0s', boxShadow: '0 15px 35px rgba(139, 92, 246, 0.4)' }}>
               <div style={{ display: 'flex', gap: '12px' }}>
@@ -100,12 +107,8 @@ function LoginContent() {
           </div>
         
         {/* Footer Links */}
-        <div style={{ position: 'absolute', bottom: '24px', left: '32px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          {[
-            { label: 'Refund Policy', icon: '💸', onClick: () => setShowRefundPolicy(true) },
-            { label: 'Privacy Policy', icon: '🔒', onClick: () => setShowPrivacyPolicy(true) },
-            { label: 'Terms & Conditions', icon: '📜', onClick: () => setShowTermsConditions(true) },
-          ].map((btn, i) => (
+        <div className="login-footer-links desktop-only-footer-links">
+          {footerLinksData.map((btn, i) => (
             <button
               key={i}
               onClick={btn.onClick}
@@ -130,9 +133,9 @@ function LoginContent() {
       </div>
 
       {/* Right Panel - Login Form */}
-      <div style={{ flex: 1, background: '#F3F4F6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px', position: 'relative' }}>
-        <div className="modal" style={{ width: '100%', maxWidth: '480px', padding: '52px' }}>
-          <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1e1e3a', marginBottom: '36px', textAlign: 'center' }}>Welcome Back !</h2>
+      <div className="login-right-panel">
+        <div className="modal login-card-container">
+          <h2 className="login-card-title">Welcome Back !</h2>
 
           {/* Error display */}
           {displayError && (
@@ -148,27 +151,14 @@ function LoginContent() {
         </div>
 
         {/* Explore Courses CTA below the card */}
-        <div style={{ marginTop: '28px', textAlign: 'center' }}>
+        <div style={{ marginTop: '24px', textAlign: 'center' }}>
           <a 
             href="https://app.genziitian.in/courses" 
             target="_blank" 
             rel="noopener noreferrer"
+            className="login-explore-btn"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '18px 40px',
-              borderRadius: '20px',
-              background: 'linear-gradient(135deg, #1e1e3a, #3a3a6e)',
-              color: '#fff',
-              fontSize: '16px',
-              fontWeight: '800',
-              textDecoration: 'none',
-              boxShadow: '0 8px 24px rgba(30, 30, 58, 0.35)',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              letterSpacing: '0.03em',
-              position: 'relative',
-              overflow: 'hidden',
             }}
             onMouseOver={e => {
               e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
@@ -189,10 +179,8 @@ function LoginContent() {
         {/* Contact Developer Link (Bottom Right) */}
         <a
           href="mailto:admin@genziitian.org"
+          className="login-contact-developer"
           style={{ 
-            position: 'absolute', 
-            bottom: '24px', 
-            right: '32px', 
             fontSize: '12px', 
             color: '#9999b0', 
             textDecoration: 'none', 
@@ -217,6 +205,31 @@ function LoginContent() {
         >
           <span style={{ fontSize: '14px' }}>✉️</span><span>Contact Developer</span>
         </a>
+
+        {/* Footer Links - Mobile Only */}
+        <div className="mobile-only-footer-links">
+          {footerLinksData.map((btn, i) => (
+            <button
+              key={i}
+              onClick={btn.onClick}
+              style={{
+                fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600',
+                padding: '8px 16px', background: '#F3F4F6', borderRadius: '50px', border: 'none', cursor: 'pointer',
+                boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff', transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
+                e.currentTarget.style.color = '#3636e8';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
+                e.currentTarget.style.color = '#9999b0';
+              }}
+            >
+              <span style={{ fontSize: '14px' }}>{btn.icon}</span><span>{btn.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Policy Modals */}
@@ -383,7 +396,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
         </div>
       )}
 
-      <p style={{ textAlign: 'center', fontSize: '17px', color: '#1e1e3a', marginBottom: '36px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+      <p className="login-card-subtitle">
         Log in or create a new account with Google
       </p>
 
@@ -456,7 +469,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
       </div>
 
       <div style={{ marginTop: '16px' }}>
-        <p style={{ textAlign: 'center', fontSize: '11px', color: '#9999b0', fontWeight: '500', lineHeight: '1.5', whiteSpace: 'nowrap' }}>
+        <p className="login-terms-text">
           By continuing, you agree to the <span onClick={onTermsClick} style={{ color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>Terms & Conditions</span> & <span onClick={onPrivacyClick} style={{ color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>privacy policy</span>
         </p>
       </div>
