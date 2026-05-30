@@ -13,6 +13,7 @@ interface CalEvent {
   endTime?: string
   type: string
   meetLink?: string | null
+  streamProvider?: string | null
   status?: string
   internalStatus?: string
   courseId?: string | null
@@ -181,6 +182,7 @@ function CalendarPageContent() {
       recurrence: 'ONETIME',
       interval: '1',
       parentId: '',
+      streamProvider: 'MEET',
     })
     setShowModal(true)
   }
@@ -201,6 +203,7 @@ function CalendarPageContent() {
       recurrence: ev.recurrence || 'ONETIME',
       interval: ev.interval ? String(ev.interval) : '1',
       parentId: ev.parentId || '',
+      streamProvider: ev.streamProvider || 'MEET',
     })
     setSelectedEvent(null)
     setShowModal(true)
@@ -226,6 +229,7 @@ function CalendarPageContent() {
       const isGlobal = formData.courseId === 'GLOBAL'
       const recurrence = formData.recurrence || 'ONETIME'
       const isSeriesEvent = !!formData.parentId || recurrence !== 'ONETIME'
+      const streamProvider = (formData.streamProvider || 'MEET').toUpperCase()
       const payload = {
         title: formData.title,
         description: formData.description || null,
@@ -233,7 +237,8 @@ function CalendarPageContent() {
         time: formData.time,
         startTime,
         endTime,
-        meetLink: formData.meetLink || null,
+        // Meet/YouTube/Drive all use the meetLink column; Agora ignores it (server clears it anyway).
+        meetLink: streamProvider === 'AGORA' ? null : (formData.meetLink || null),
         status: formData.status || 'SCHEDULED',
         recurrence,
         interval: recurrence === 'CUSTOM' ? (formData.interval || '1') : null,
@@ -242,6 +247,7 @@ function CalendarPageContent() {
         isGlobal,
         instructorId: formData.instructorId || null,
         parentId: formData.parentId || null,
+        streamProvider,
         relatedCourse: !isGlobal && formData.courseId
           ? classes.find(c => c.id === formData.courseId)?.name || null
           : null,
@@ -953,15 +959,45 @@ function CalendarPageContent() {
                 </div>
               </div>
               <div className="form-group">
-                <label className="form-label">Meet Link</label>
-                <input
-                  type="url"
+                <label className="form-label">Stream Provider</label>
+                <select
                   className="form-input"
-                  value={formData.meetLink || ''}
-                  onChange={e => set('meetLink', e.target.value)}
-                  placeholder="https://meet.google.com/..."
-                />
+                  value={formData.streamProvider || 'MEET'}
+                  onChange={e => set('streamProvider', e.target.value)}
+                >
+                  <option value="MEET">Google Meet (paste link)</option>
+                  <option value="YOUTUBE">YouTube (paste link)</option>
+                  <option value="DRIVE">Google Drive (paste link)</option>
+                  <option value="AGORA">In-app live class (Agora)</option>
+                </select>
+                <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
+                  {formData.streamProvider === 'AGORA'
+                    ? 'Students will join inside the app. No external link needed.'
+                    : 'Students follow the link below to attend.'}
+                </p>
               </div>
+              {formData.streamProvider !== 'AGORA' && (
+                <div className="form-group">
+                  <label className="form-label">
+                    {formData.streamProvider === 'YOUTUBE' ? 'YouTube Link'
+                      : formData.streamProvider === 'DRIVE' ? 'Google Drive Link'
+                      : 'Meet Link'}
+                  </label>
+                  <input
+                    type="url"
+                    className="form-input"
+                    value={formData.meetLink || ''}
+                    onChange={e => set('meetLink', e.target.value)}
+                    placeholder={
+                      formData.streamProvider === 'YOUTUBE'
+                        ? 'https://www.youtube.com/watch?v=...'
+                        : formData.streamProvider === 'DRIVE'
+                          ? 'https://drive.google.com/file/d/.../view'
+                          : 'https://meet.google.com/...'
+                    }
+                  />
+                </div>
+              )}
               <div className="form-group">
                 <label className="form-label">Type</label>
                 <select

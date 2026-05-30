@@ -171,10 +171,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { 
-      title, description, startTime, endTime, meetLink, 
+    const {
+      title, description, startTime, endTime, meetLink,
       type, courseId, classId, instructorId, status, isGlobal,
-      recurrence, interval
+      recurrence, interval,
+      streamProvider,
     } = body
     const resolvedCourseId = courseId ?? classId ?? null
 
@@ -182,13 +183,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title, startTime, and endTime are required' }, { status: 400 })
     }
 
+    // Whitelist the stream provider; default to MEET so older clients keep working.
+    const normalizedProvider = ['MEET', 'YOUTUBE', 'DRIVE', 'AGORA'].includes(streamProvider)
+      ? streamProvider
+      : 'MEET'
+
     const event = await prisma.courseEvent.create({
       data: {
         title,
         description: description || null,
         startTime: new Date(startTime),
         endTime: new Date(endTime),
-        meetLink: meetLink || null,
+        meetLink: normalizedProvider === 'AGORA' ? null : (meetLink || null),
         type: type || 'class',
         courseId: isGlobal ? null : resolvedCourseId,
         isGlobal: !!isGlobal,
@@ -197,8 +203,19 @@ export async function POST(request: NextRequest) {
         recurrence: recurrence || 'ONETIME',
         interval: interval ? parseInt(interval) : null,
         createdById: session.userId,
+        streamProvider: normalizedProvider,
       },
     })
+
+    // For Agora-backed events, deterministically derive the channel name from
+    // the new event id so token/start/end endpoints can resolve it from just
+    // the eventId without a separate lookup step.
+    if (normalizedProvider === 'AGORA') {
+      await prisma.courseEvent.update({
+        where: { id: event.id },
+        data: { agoraChannelName: `evt_${event.id}` },
+      })
+    }
 
     // Generate recurring instances only within the next 30 days.
     if (recurrence && recurrence !== 'ONETIME') {
@@ -227,7 +244,7 @@ export async function POST(request: NextRequest) {
           description: description || null,
           startTime: nextStart,
           endTime: new Date(nextStart.getTime() + duration),
-          meetLink: meetLink || null,
+          meetLink: normalizedProvider === 'AGORA' ? null : (meetLink || null),
           type: type || 'class',
           courseId: isGlobal ? null : resolvedCourseId,
           isGlobal: !!isGlobal,
@@ -236,6 +253,8 @@ export async function POST(request: NextRequest) {
           recurrence: 'ONETIME',
           parentId: event.id,
           createdById: session.userId,
+          streamProvider: normalizedProvider,
+          // agoraChannelName left null; /api/live/token populates it lazily the first time the host joins.
         })
       }
 

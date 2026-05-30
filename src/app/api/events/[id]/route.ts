@@ -50,12 +50,16 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
-    const { 
-      title, description, startTime, endTime, meetLink, 
+    const {
+      title, description, startTime, endTime, meetLink,
       type, courseId, classId, instructorId, status, isGlobal,
-      recurrence, interval, originalStartTime, applyToFuture
+      recurrence, interval, originalStartTime, applyToFuture,
+      streamProvider,
     } = body
     const resolvedCourseId = courseId ?? classId ?? null
+    const normalizedProvider = streamProvider !== undefined
+      ? (['MEET', 'YOUTUBE', 'DRIVE', 'AGORA'].includes(streamProvider) ? streamProvider : 'MEET')
+      : undefined
 
     const existingEvent = await prisma.courseEvent.findUnique({
       where: { id },
@@ -80,6 +84,16 @@ export async function PUT(
     if (recurrence !== undefined) data.recurrence = recurrence
     if (interval !== undefined) data.interval = interval ? parseInt(interval as string) : null
     if (originalStartTime !== undefined) data.originalStartTime = originalStartTime ? new Date(originalStartTime) : null
+    if (normalizedProvider !== undefined) {
+      data.streamProvider = normalizedProvider
+      if (normalizedProvider === 'AGORA') {
+        // Pin the channel name on first switch to AGORA so /api/live/token
+        // doesn't need to guess; keep existing channel name if it was set before.
+        if (!existingEvent.agoraChannelName) data.agoraChannelName = `evt_${id}`
+        // Clear meetLink when switching to AGORA so the UI doesn't show a stale link.
+        if (meetLink === undefined) data.meetLink = null
+      }
+    }
     
     let updatedEvent
 
@@ -113,6 +127,7 @@ export async function PUT(
       if (courseId !== undefined || classId !== undefined) commonData.courseId = isGlobal ? null : resolvedCourseId
       if (instructorId !== undefined) commonData.instructorId = instructorId || null
       if (status !== undefined) commonData.status = status
+      if (normalizedProvider !== undefined) commonData.streamProvider = normalizedProvider
 
       await prisma.$transaction(
         futureEvents.map((event) => {

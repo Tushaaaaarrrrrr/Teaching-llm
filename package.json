@@ -49,6 +49,7 @@
     "@types/uuid": "^10.0.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
+    "agora-rtc-sdk-ng": "^4.24.4",
     "agora-token": "^2.0.5",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.1.0",
