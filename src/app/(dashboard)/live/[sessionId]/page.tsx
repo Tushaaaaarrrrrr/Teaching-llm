@@ -111,7 +111,7 @@ export default function LiveSessionPage() {
       await client.setClientRole(role)
 
       // Wire remote user events BEFORE join so we don't miss anything.
-      client.on('user-published', async (user: any, mediaType: string) => {
+      client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
         await client.subscribe(user, mediaType)
         if (mediaType === 'video' && remoteContainerRef.current) {
           // Render this remote user's video into the container. Replace any
@@ -123,7 +123,7 @@ export default function LiveSessionPage() {
           user.audioTrack?.play()
         }
       })
-      client.on('user-unpublished', (user: any, mediaType: string) => {
+      client.on('user-unpublished', (user: any, mediaType: 'audio' | 'video') => {
         if (mediaType === 'video' && remoteContainerRef.current) {
           remoteContainerRef.current.innerHTML = ''
         }
