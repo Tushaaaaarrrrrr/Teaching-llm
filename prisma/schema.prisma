@@ -286,6 +286,16 @@ model CourseEvent {
   parentId          String?
   instructorId      String?
   createdById       String
+  // Stream delivery — MEET (existing Google Meet), YOUTUBE, DRIVE, or AGORA (in-app live).
+  // Defaults to MEET so every existing event keeps its current behaviour.
+  streamProvider    String    @default("MEET")
+  // Auto-generated channel name when streamProvider == AGORA; null otherwise.
+  agoraChannelName  String?   @unique
+  // Lifecycle of an AGORA stream: SCHEDULED → LIVE → ENDED.
+  streamStatus      String    @default("SCHEDULED")
+  startedLiveAt     DateTime?
+  endedLiveAt       DateTime?
+  recordingUrl      String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   course            Course?   @relation(fields: [courseId], references: [id])
@@ -297,6 +307,7 @@ model CourseEvent {
   @@index([createdById])
   @@index([type])
   @@index([isGlobal])
+  @@index([streamStatus])
 }
 
 model DailySessionSnapshot {
