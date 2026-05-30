@@ -127,6 +127,11 @@ export async function GET(request: NextRequest) {
         parentId: ev.parentId,
         originalStartTime: ev.originalStartTime ? ev.originalStartTime.toISOString() : null,
         createdAt: ev.createdAt.toISOString(),
+        streamProvider: ev.streamProvider,
+        streamStatus: ev.streamStatus,
+        agoraChannelName: ev.agoraChannelName,
+        startedLiveAt: ev.startedLiveAt ? ev.startedLiveAt.toISOString() : null,
+        endedLiveAt: ev.endedLiveAt ? ev.endedLiveAt.toISOString() : null,
       }
     })
 
