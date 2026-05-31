@@ -203,39 +203,47 @@ function LoginContent() {
           {/* Geometric Characters Composition */}
           <div className="login-geometric-composition">
             {/* Purple Rectangle */}
-            <div className="animate-float" style={{ width: '160px', height: '200px', background: '#8B5CF6', borderRadius: '24px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', animationDelay: '0s', boxShadow: '0 15px 35px rgba(139, 92, 246, 0.4)' }}>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%' }} />
-                <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%' }} />
+            <div className="animate-float" style={{ width: '160px', height: '200px', animationDelay: '0s', position: 'relative' }}>
+              <div style={{ width: '100%', height: '100%', background: '#8B5CF6', borderRadius: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 15px 35px rgba(139, 92, 246, 0.35)', transform: 'rotate(-8deg)', transformOrigin: 'center' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%' }} />
+                  <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%' }} />
+                </div>
+                <div style={{ width: '32px', height: '16px', border: '4px solid white', borderTop: 'none', borderRadius: '0 0 16px 16px', marginTop: '12px' }} />
               </div>
-              <div style={{ width: '32px', height: '16px', border: '4px solid white', borderTop: 'none', borderRadius: '0 0 16px 16px', marginTop: '12px' }} />
             </div>
 
             {/* Black Rounded Rectangle */}
-            <div className="animate-float" style={{ width: '180px', height: '220px', background: '#111827', borderRadius: '40px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', animationDelay: '2s', boxShadow: '0 15px 35px rgba(17, 24, 39, 0.4)' }}>
-              <div style={{ display: 'flex', gap: '14px' }}>
-                <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%' }} />
-                <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%' }} />
+            <div className="animate-float" style={{ width: '180px', height: '220px', animationDelay: '2s', position: 'relative' }}>
+              <div style={{ width: '100%', height: '100%', background: '#111827', borderRadius: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 15px 35px rgba(17, 24, 39, 0.35)', transform: 'rotate(4deg)', transformOrigin: 'center' }}>
+                <div style={{ display: 'flex', gap: '14px' }}>
+                  <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%' }} />
+                  <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%' }} />
+                </div>
+                <div style={{ width: '40px', height: '10px', background: 'white', borderRadius: '5px', marginTop: '16px' }} />
               </div>
-              <div style={{ width: '40px', height: '10px', background: 'white', borderRadius: '5px', marginTop: '16px' }} />
             </div>
 
             {/* Orange Semicircle */}
-            <div className="animate-float" style={{ width: '200px', height: '100px', background: '#F97316', borderRadius: '100px 100px 0 0', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: '16px', animationDelay: '4s', boxShadow: '0 15px 35px rgba(249, 115, 22, 0.4)' }}>
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '10px' }}>
-                <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%' }} />
-                <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%' }} />
+            <div className="animate-float" style={{ width: '200px', height: '100px', animationDelay: '4s', position: 'relative' }}>
+              <div style={{ width: '100%', height: '100%', background: '#F97316', borderRadius: '100px 100px 0 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: '16px', boxShadow: '0 15px 35px rgba(249, 115, 22, 0.35)' }}>
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '10px' }}>
+                  <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%' }} />
+                  <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%' }} />
+                </div>
+                <div style={{ width: '36px', height: '18px', border: '4px solid white', borderTop: 'none', borderRadius: '0 0 18px 18px' }} />
               </div>
-              <div style={{ width: '36px', height: '18px', border: '4px solid white', borderTop: 'none', borderRadius: '0 0 18px 18px' }} />
             </div>
 
             {/* Yellow Organic Blob */}
-            <div className="animate-float" style={{ width: '180px', height: '180px', background: '#FACC15', borderRadius: '50% 50% 30% 70% / 50% 50% 70% 30%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', animationDelay: '6s', boxShadow: '0 15px 35px rgba(250, 204, 21, 0.4)' }}>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ width: '14px', height: '14px', background: 'white', borderRadius: '50%' }} />
-                <div style={{ width: '14px', height: '14px', background: 'white', borderRadius: '50%' }} />
+            <div className="animate-float" style={{ width: '180px', height: '180px', animationDelay: '6s', position: 'relative' }}>
+              <div style={{ width: '100%', height: '100%', background: '#FACC15', borderRadius: '50% 50% 30% 70% / 50% 50% 70% 30%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 15px 35px rgba(250, 204, 21, 0.35)', transform: 'rotate(8deg)', transformOrigin: 'center' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '14px', height: '14px', background: 'white', borderRadius: '50%' }} />
+                  <div style={{ width: '14px', height: '14px', background: 'white', borderRadius: '50%' }} />
+                </div>
+                <div style={{ width: '32px', height: '3px', background: 'white', marginTop: '12px' }} />
               </div>
-              <div style={{ width: '32px', height: '3px', background: 'white', marginTop: '12px' }} />
             </div>
           </div>
         
