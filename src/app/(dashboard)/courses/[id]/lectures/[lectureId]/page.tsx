@@ -447,10 +447,6 @@ export default function LecturePage() {
                 }}>
                   {content.topic.title}
                 </span>
-                <span style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Clock size={12} />
-                  {content.videoSource} Video
-                </span>
               </div>
             </div>
           </div>
