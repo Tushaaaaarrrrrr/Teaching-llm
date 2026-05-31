@@ -17,6 +17,7 @@ interface ClassItem {
   isDmDisabled?: boolean
   _count?: { lectures: number }
   role?: string
+  isMuted?: boolean
 }
 
 interface CommMsg {
@@ -128,7 +129,20 @@ export default function CommunityPage() {
       setUserId(d.user?.id || '')
       setUserName(d.user?.name || '')
     })
-    loadClasses()
+    
+    // Parse query params to auto-focus the channel (e.g. from push notifications)
+    let preferredId: string | undefined = undefined
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search)
+      const course = searchParams.get('course')
+      const dm = searchParams.get('dm')
+      if (course) {
+        preferredId = course
+      } else if (dm) {
+        preferredId = `dm_${dm}`
+      }
+    }
+    loadClasses(preferredId)
   }, [])
 
   async function loadClasses(preferredId?: string) {
@@ -321,6 +335,27 @@ export default function CommunityPage() {
     })
     setReplyingTo(null)
     loadMessages(selectedClass.id)
+  }
+
+  async function toggleMuteCourse(courseId: string, currentMuted: boolean) {
+    // Optimistically update
+    setClasses(prev => prev.map(c => c.id === courseId ? { ...c, isMuted: !currentMuted } : c))
+    
+    try {
+      const res = await fetch(`/api/community/${courseId}/mute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ muted: !currentMuted }),
+      })
+      if (!res.ok) {
+        throw new Error('Failed to toggle mute')
+      }
+    } catch (err) {
+      console.error(err)
+      // Revert if failed
+      setClasses(prev => prev.map(c => c.id === courseId ? { ...c, isMuted: currentMuted } : c))
+      alert('Could not update notification settings.')
+    }
   }
 
   async function deleteMessage(messageId: string) {
@@ -577,6 +612,53 @@ export default function CommunityPage() {
                 </div>
               )}
             </div>
+            
+            {/* Mute toggle button (bell icon) */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleMuteCourse(cls.id, cls.isMuted || false)
+              }}
+              title={cls.isMuted ? 'Unmute Group' : 'Mute Group'}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '6px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: active ? '#ffffff' : (cls.isMuted ? '#ef4444' : '#9999b0'),
+                opacity: cls.isMuted ? 1 : 0.4,
+                transition: 'opacity 0.2s, color 0.2s',
+                marginLeft: '4px',
+              }}
+              onMouseEnter={(e) => {
+                if (!cls.isMuted) e.currentTarget.style.opacity = '1'
+              }}
+              onMouseLeave={(e) => {
+                if (!cls.isMuted) e.currentTarget.style.opacity = '0.4'
+              }}
+            >
+              {cls.isMuted ? (
+                // Muted Bell (crossed out)
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  <path d="M18.63 13A17.89 17.89 0 0 1 18 8" />
+                  <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8v7a3 3 0 0 1-3 3h15" />
+                  <path d="M18 8a6 6 0 0 0-9.33-5" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              ) : (
+                // Normal Bell
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8v7a3 3 0 0 1-3 3h18a3 3 0 0 1-3-3V8z" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              )}
+            </button>
+
             {isMobile && (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? '#ffffff' : '#9999b0'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: '4px' }}>
                 <polyline points="9 18 15 12 9 6" />

@@ -4,6 +4,7 @@ import { getSession, isManagerOrSuperAdmin } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseExpired } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
+import { scheduleWelcomeSequence } from '@/lib/welcome-notifications'
 
 export async function GET(request: NextRequest) {
   try {
@@ -240,6 +241,11 @@ export async function POST(request: NextRequest) {
 
       return newUser
     })
+
+    // If a STUDENT is manually created, schedule the welcome drip notifications (non-blocking)
+    if (role === 'STUDENT') {
+      scheduleWelcomeSequence(user.id).catch(console.error)
+    }
 
     logActivity({
       userId: session.userId,

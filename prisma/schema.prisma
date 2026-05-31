@@ -82,6 +82,8 @@ model User {
   updateViews             UpdateView[]
   upgradeTransactions     UpgradeTransaction[]
   courseBundleAssignments UserCourseBundleAssignment[]
+  communityMutePrefs      CommunityMutePreference[]
+  scheduledNotifications  ScheduledUserNotification[]
 }
 
 model Course {
@@ -123,7 +125,8 @@ model Course {
   orderItems            OrderItem[]
   supportTickets        SupportTicket[]
   topics                Topic[]
-  upgradeTransactions   UpgradeTransaction[]
+  upgradeTransactions     UpgradeTransaction[]
+  communityMutePrefs      CommunityMutePreference[]
 
   @@index([lastMessageAt])
   @@map("Class")
@@ -1221,3 +1224,37 @@ model HomeSlide {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model CommunityMutePreference {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId   String   @map("classId")
+  isMuted   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+}
+
+model ScheduledUserNotification {
+  id           String   @id @default(cuid())
+  userId       String
+  title        String
+  content      String
+  ctaText      String?
+  ctaLink      String?
+  scheduledFor DateTime
+  status       String   @default("PENDING") // PENDING, SENT, CANCELLED
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([scheduledFor])
+}
+

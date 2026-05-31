@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, canManageContent } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { sendNewLectureNotification } from '@/lib/system-notifications'
 
 export async function GET(request: NextRequest) {
   try {
@@ -58,6 +59,11 @@ export async function POST(request: NextRequest) {
         uploadedById: session.userId,
       },
     })
+
+    // Notify all enrolled students (non-blocking)
+    if (lecture.courseId) {
+      sendNewLectureNotification(lecture.courseId, lecture.title).catch(console.error)
+    }
 
     logActivity({
       userId: session.userId,

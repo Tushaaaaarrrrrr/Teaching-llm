@@ -4,6 +4,8 @@ import { signToken, getCookieConfig } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { v4 as uuidv4 } from 'uuid'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
+import { scheduleWelcomeSequence } from '@/lib/welcome-notifications'
+
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 
@@ -74,6 +76,9 @@ export async function POST(request: NextRequest) {
           securityNumber,
         }
       })
+
+      // Trigger staggered welcome push notifications campaign (non-blocking)
+      scheduleWelcomeSequence(user.id).catch(console.error)
 
       // Auto-enroll in demo course if one exists
       const demoCourse = await prisma.course.findFirst({
