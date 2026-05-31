@@ -175,8 +175,8 @@ function LoginContent() {
             flexShrink: 0,
             width: '100%',
             maxWidth: '320px',
-            minHeight: '148px',
-            padding: '22px 22px 18px',
+            minHeight: '200px',
+            padding: '24px 22px 20px',
             borderRadius: '28px',
             background: '#ffffff',
             boxShadow: '0 8px 30px rgba(0,0,0,0.06)',
@@ -189,12 +189,12 @@ function LoginContent() {
                 width: '100%',
                 maxWidth: '260px',
                 height: 'auto',
-                maxHeight: '84px',
+                maxHeight: '130px',
                 objectFit: 'contain',
                 display: 'block',
               }} 
             />
-            <p style={{ fontSize: '18px', color: '#6b6b8a', fontWeight: '500', letterSpacing: '0.02em', marginTop: '14px', textAlign: 'center' }}>
+            <p style={{ fontSize: '17px', color: '#6b6b8a', fontWeight: '600', letterSpacing: '0.02em', marginTop: '12px', textAlign: 'center' }}>
               Upgrade How You Learn
             </p>
           </div>

@@ -182,11 +182,13 @@ function OnboardingView({
         }}>
           <div style={{
             width: '92px', height: '92px', borderRadius: '50%',
-            background: slide.iconBg,
+            background: '#ffffff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 12px 28px ${slide.accent}55`,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.06), inset 0 2px 4px rgba(0,0,0,0.02)',
+            overflow: 'hidden',
+            padding: '10px',
           }}>
-            <img src="/logo.png" alt="GenZ IITian" style={{ width: '70px', height: '70px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+            <img src="/mobile-logo.png" alt="GenZ IITian" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
         </div>
       </div>
@@ -487,11 +489,13 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         }}>
           <div style={{
             width: '72px', height: '72px', borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+            background: '#ffffff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 8px 18px rgba(99,102,241,0.40)',
+            boxShadow: '0 8px 20px rgba(0,0,0,0.06), inset 0 2px 4px rgba(0,0,0,0.02)',
+            overflow: 'hidden',
+            padding: '8px',
           }}>
-            <img src="/logo.png" alt="GenZ IITian" style={{ width: '54px', height: '54px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+            <img src="/mobile-logo.png" alt="GenZ IITian" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
         </div>
         <h1 style={{
