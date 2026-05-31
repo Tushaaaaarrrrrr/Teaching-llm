@@ -10,6 +10,8 @@ interface FcmPayload {
   imageUrl?: string
   ctaText?: string
   ctaLink?: string
+  importance?: 'high' | 'default'
+  sound?: 'default' | 'none'
 }
 
 /**
@@ -28,6 +30,10 @@ export async function sendFcmToUsers(userIds: string[], payload: FcmPayload) {
 
   if (tokens.length === 0) return
 
+  const isSilent = payload.importance === 'default'
+  const isMuted  = payload.sound === 'none'
+  const channelId = isSilent ? 'silent_updates' : 'class_updates'
+
   const message = {
     notification: {
       title: payload.title,
@@ -42,14 +48,14 @@ export async function sendFcmToUsers(userIds: string[], payload: FcmPayload) {
       imageUrl: payload.imageUrl || '',
     },
     android: {
-      priority: 'high' as const,
+      priority: (isSilent ? 'normal' : 'high') as 'normal' | 'high',
       notification: {
         icon: 'ic_launcher',
         color: '#4F46E5',
-        channelId: 'class_updates',
-        defaultSound: true,
-        defaultVibrateTimings: true,
-        notificationPriority: 'PRIORITY_MAX' as const,
+        channelId,
+        defaultSound: !isMuted,
+        defaultVibrateTimings: !isSilent,
+        notificationPriority: (isSilent ? 'PRIORITY_DEFAULT' : 'PRIORITY_MAX') as 'PRIORITY_DEFAULT' | 'PRIORITY_MAX',
         ...(payload.imageUrl ? { image: payload.imageUrl } : {}),
       },
     },
