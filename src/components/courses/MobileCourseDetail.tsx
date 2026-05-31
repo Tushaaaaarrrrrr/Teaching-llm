@@ -360,6 +360,8 @@ function CurriculumTab({
   updateProgress: (contentId: string, status: string) => void
   isStudent: boolean
 }) {
+  const [activePopover, setActivePopover] = useState<string | null>(null)
+
   if (topics.length === 0) {
     return (
       <div style={{
@@ -375,6 +377,12 @@ function CurriculumTab({
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <style>{`
+        @keyframes popIn {
+          from { opacity: 0; transform: scale(0.9) translateY(-6px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
       {topics.map((topic, idx) => {
         const open = expandedTopics.has(topic.id)
         const completed = topic.content.filter(c => progressMap[c.id] === 'COMPLETED').length
@@ -435,7 +443,8 @@ function CurriculumTab({
                     No lectures in this topic yet
                   </div>
                 ) : topic.content.map((item) => {
-                  const isCompleted = progressMap[item.id] === 'COMPLETED'
+                  const currentStatus = progressMap[item.id] || 'NOT_STARTED'
+                  const isCompleted = currentStatus === 'COMPLETED'
                   return (
                     <div key={item.id} style={{
                       display: 'flex', alignItems: 'center', gap: '12px',
@@ -443,25 +452,138 @@ function CurriculumTab({
                       borderRadius: '14px',
                       background: '#f8fafc',
                       border: '1px solid #f1f5f9',
+                      position: 'relative',
                     }}>
-                      {/* Status check */}
+                      {/* Status Check Selector */}
                       <button
-                        onClick={() => isStudent && updateProgress(item.id, isCompleted ? 'NOT_STARTED' : 'COMPLETED')}
-                        aria-label={isCompleted ? 'Mark not completed' : 'Mark completed'}
+                        onClick={() => isStudent && setActivePopover(activePopover === item.id ? null : item.id)}
+                        aria-label="Select lecture progress status"
                         disabled={!isStudent}
                         style={{
-                          width: '26px', height: '26px', borderRadius: '8px', flexShrink: 0,
-                          background: isCompleted ? '#22c55e' : '#ffffff',
-                          color: isCompleted ? '#ffffff' : '#cbd5e1',
-                          border: isCompleted ? 'none' : '2px solid #e2e8f0',
+                          width: '28px', height: '28px', borderRadius: '9px', flexShrink: 0,
+                          background: 
+                            currentStatus === 'COMPLETED' ? '#10b981' :
+                            currentStatus === 'REWATCH' ? '#f59e0b' : '#ffffff',
+                          color: 
+                            currentStatus === 'COMPLETED' || currentStatus === 'REWATCH' ? '#ffffff' : '#cbd5e1',
+                          border: 
+                            currentStatus === 'COMPLETED' || currentStatus === 'REWATCH' ? 'none' : '2px solid #cbd5e1',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: isStudent ? 'pointer' : 'default',
+                          position: 'relative',
+                          boxShadow: 
+                            currentStatus === 'COMPLETED' ? '0 4px 10px rgba(16,185,129,0.3)' :
+                            currentStatus === 'REWATCH' ? '0 4px 10px rgba(245,158,11,0.3)' : 'none',
+                          transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        }}
+                        onMouseEnter={e => {
+                          if (isStudent && currentStatus === 'NOT_STARTED') {
+                            e.currentTarget.style.borderColor = accent
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (isStudent && currentStatus === 'NOT_STARTED') {
+                            e.currentTarget.style.borderColor = '#cbd5e1'
+                          }
                         }}
                       >
-                        {isCompleted && (
+                        {currentStatus === 'COMPLETED' && (
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         )}
+                        {currentStatus === 'REWATCH' && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                        )}
                       </button>
+
+                      {/* Micro Popover selection menu */}
+                      {activePopover === item.id && (
+                        <>
+                          {/* Full-screen backdrop to close popover */}
+                          <div 
+                            onClick={() => setActivePopover(null)}
+                            style={{
+                              position: 'fixed',
+                              inset: 0,
+                              zIndex: 99,
+                              background: 'transparent',
+                            }}
+                          />
+                          
+                          <div style={{
+                            position: 'absolute',
+                            left: '12px',
+                            top: '44px',
+                            zIndex: 100,
+                            background: '#ffffff',
+                            borderRadius: '16px',
+                            padding: '6px',
+                            display: 'flex',
+                            gap: '6px',
+                            boxShadow: '0 10px 25px rgba(15,23,42,0.15), 0 4px 10px rgba(15,23,42,0.05)',
+                            border: '1px solid rgba(15,23,42,0.08)',
+                            alignItems: 'center',
+                            animation: 'popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                          }}>
+                            {/* Option 1: Completed */}
+                            <button
+                              onClick={() => {
+                                updateProgress(item.id, 'COMPLETED')
+                                setActivePopover(null)
+                              }}
+                              style={{
+                                width: '32px', height: '32px', borderRadius: '10px',
+                                background: '#10b981', color: '#ffffff',
+                                border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', transition: 'transform 0.1s',
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                              title="Mark Completed"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+
+                            {/* Option 2: Rewatch */}
+                            <button
+                              onClick={() => {
+                                updateProgress(item.id, 'REWATCH')
+                                setActivePopover(null)
+                              }}
+                              style={{
+                                width: '32px', height: '32px', borderRadius: '10px',
+                                background: '#f59e0b', color: '#ffffff',
+                                border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', transition: 'transform 0.1s',
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                              title="Mark Rewatch"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                            </button>
+
+                            {/* Option 3: Reset / None */}
+                            <button
+                              onClick={() => {
+                                updateProgress(item.id, 'NOT_STARTED')
+                                setActivePopover(null)
+                              }}
+                              style={{
+                                width: '32px', height: '32px', borderRadius: '10px',
+                                background: '#f1f5f9', color: '#64748b',
+                                border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', transition: 'transform 0.1s',
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                              title="Reset to none"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                          </div>
+                        </>
+                      )}
+
                       {/* Title + duration */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -536,6 +658,7 @@ function CurriculumTab({
     </div>
   )
 }
+
 
 /* ───────── Overview Tab ───────── */
 function OverviewTab({ course, mentorName, totalLectures }: { course: CourseDetail; mentorName: string; totalLectures: number }) {
