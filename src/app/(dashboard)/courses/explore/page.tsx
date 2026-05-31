@@ -489,30 +489,11 @@ export default function ExploreCoursesPage() {
         marginBottom: '16px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         gap: '16px',
         flexWrap: 'wrap',
         marginTop: '0'
       }}>
-        <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-          <h1 style={{
-            fontSize: 'clamp(22px, 5.5vw, 32px)', fontWeight: '900', color: '#1e1e3a',
-            marginTop: 0, marginBottom: '8px', letterSpacing: '-0.02em',
-            lineHeight: 1.15, wordBreak: 'normal', overflowWrap: 'break-word'
-          }}>
-            GenZ IITian Official Store
-          </h1>
-          <p style={{
-            fontSize: 'clamp(13px, 3.4vw, 15px)', color: '#6b6b8a', fontWeight: '500',
-            lineHeight: '1.6', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'
-          }}>
-            You can also buy courses from
-            <a href="https://app.genziitian.in/courses" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', backgroundColor: '#6366f1', padding: '4px 12px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', display: 'inline-block', transition: 'all 0.2s', fontSize: '12px' }}>
-              Visit Here
-            </a>
-          </p>
-        </div>
-
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Help Button */}
           <a
@@ -666,65 +647,7 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
-      {/* Mobile-only: Stylish "Buy from website" banner when in Courses section */}
-      {storeView === 'courses' && (
-        <a
-          href="https://genziitian.in/courses"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="buy-from-web-banner"
-          style={{
-            display: 'flex', alignItems: 'center', gap: '14px',
-            padding: '16px 18px',
-            borderRadius: '22px',
-            background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #8b5cf6 100%)',
-            color: '#ffffff', textDecoration: 'none',
-            boxShadow: '0 12px 28px rgba(79, 70, 229, 0.35)',
-            marginBottom: '18px',
-            position: 'relative', overflow: 'hidden',
-          }}
-        >
-          {/* Decorative circles */}
-          <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: '-40px', right: '40px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
 
-          <div style={{
-            width: '46px', height: '46px', borderRadius: '14px', flexShrink: 0,
-            background: 'rgba(255,255,255,0.18)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: '1.5px solid rgba(255,255,255,0.25)',
-          }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
-          </div>
-          <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'rgba(255,255,255,0.18)', padding: '3px 10px', borderRadius: '50px', marginBottom: '6px' }}>
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} />
-              Recommended
-            </div>
-            <div style={{ fontSize: '14.5px', fontWeight: 900, lineHeight: 1.25 }}>
-              Buy Courses from Here
-            </div>
-            <div style={{ fontSize: '12px', fontWeight: 600, opacity: 0.9, marginTop: '2px' }}>
-              for a smoother checkout experience
-            </div>
-          </div>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: '36px', height: '36px', borderRadius: '50%',
-            background: 'rgba(255,255,255,0.22)', flexShrink: 0,
-            border: '1px solid rgba(255,255,255,0.25)', position: 'relative',
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="7" y1="17" x2="17" y2="7"/>
-              <polyline points="7 7 17 7 17 17"/>
-            </svg>
-          </div>
-        </a>
-      )}
 
       {/* Bundle offerings section */}
       {storeView === 'courses' && activeBundles.length > 0 && (

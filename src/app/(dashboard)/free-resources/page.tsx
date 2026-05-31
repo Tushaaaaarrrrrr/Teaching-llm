@@ -133,6 +133,11 @@ export default function FreeResourcesPage() {
             gap: 8px !important;
           }
         }
+        @media (min-width: 769px) {
+          .page-header {
+            display: none !important;
+          }
+        }
       `}</style>
 
       {/* Premium Neumorphic Page Header */}

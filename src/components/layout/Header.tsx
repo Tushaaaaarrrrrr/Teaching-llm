@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import useSWR from 'swr'
 import { getDefaultAvatar } from '@/lib/avatar'
@@ -22,7 +22,7 @@ interface Notification {
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/dashboard':  { title: 'Dashboard',        subtitle: 'Welcome back to your learning hub' },
-  '/courses/explore': { title: '',            subtitle: '' },
+  '/courses/explore': { title: 'GenZ IITian Official Store', subtitle: 'You can also buy courses from ' },
   '/courses':    { title: 'Courses',          subtitle: 'Manage your enrolled subjects and lectures' },
   '/academics':  { title: 'Academics',        subtitle: 'Everything for your learning journey' },
   '/menu':       { title: 'Profile',          subtitle: 'View and edit your personal information' },
@@ -33,11 +33,13 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
     '/community':  { title: 'Community',         subtitle: 'Connect with your coursemates' },
   '/announcements': { title: 'Announcements',  subtitle: 'Stay updated with the latest news' },
   '/support':    { title: 'Contact & Support', subtitle: 'Raise a ticket or chat with support' },
-  '/manage':     { title: 'Manage Content',    subtitle: 'Create and edit courses, lectures, and sessions' },
-  '/manage/prompts': { title: '', subtitle: '' },
-  '/manage/prompts/[id]/responses': { title: '', subtitle: '' },
+  '/manage/prompts/': { title: 'Prompt Responses', subtitle: 'View gathered feedback from users' },
+  '/manage/prompts': { title: 'User Prompts', subtitle: 'Create and manage quick feedback prompts for users' },
   '/manage/updates': { title: 'Update System', subtitle: 'Manage greetings, updates, and user messages' },
   '/manage/coupons': { title: 'Coupon Management', subtitle: 'Create and manage discount coupons' },
+  '/manage':     { title: 'Manage Content',    subtitle: 'Create and edit courses, lectures, and sessions' },
+  '/company/about-us': { title: 'About Us', subtitle: 'Learn more about GenZ IITian and our team' },
+  '/company/': { title: 'Company Policy', subtitle: 'View terms, privacy and company details' },
   '/admin':      { title: 'User Management',   subtitle: 'Manage platform accounts and permissions' },
   '/profile':    { title: 'My Profile',         subtitle: 'View and edit your personal information' },
   '/settings':   { title: 'Settings',          subtitle: 'Manage passwords, appearance, and notifications' },
@@ -63,6 +65,8 @@ const TYPE_COLORS: Record<string, string> = {
 export default function Header({ userName, userRole }: HeaderProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const tab = searchParams.get('tab')
   // const [notifications, setNotifications] = useState<Notification[]>([]) - Removed in favor of SWR
   const [showNotif, setShowNotif] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -110,7 +114,27 @@ export default function Header({ userName, userRole }: HeaderProps) {
     .sort((a, b) => b.length - a.length)
     .find(key => key === pathname || (key !== '/dashboard' && pathname.startsWith(key)))
 
-  const pageInfo = matchedKey ? PAGE_TITLES[matchedKey] : { title: 'Dashboard', subtitle: '' }
+  let pageInfo = matchedKey ? { ...PAGE_TITLES[matchedKey] } : { title: 'Dashboard', subtitle: '' }
+
+  // Dynamic Tab Overrides for Manage Sub-dashboards
+  if (pathname === '/manage') {
+    const MANAGE_TAB_INFO: Record<string, { title: string; subtitle: string }> = {
+      courses: { title: 'Manage Courses', subtitle: 'Create and edit subjects and schedules' },
+      offerings: { title: 'Course Offerings', subtitle: 'Configure premium recorded and live access tiers' },
+      bundles: { title: 'Course Bundles', subtitle: 'Group multiple courses into packages' },
+      lectures: { title: 'Lectures Manager', subtitle: 'Upload and schedule course lecture videos' },
+      events: { title: 'Events & Live Sessions', subtitle: 'Create and manage online classes, exams and holidays' },
+      materials: { title: 'Study Materials', subtitle: 'Manage downloadable notes and PDFs for subjects' },
+      announcements: { title: 'Announcements Fan-Out', subtitle: 'Publish platform-wide announcements and update notifications' },
+      'content-bank': { title: 'Content Bank', subtitle: 'Global repository of exam questions and solutions' },
+      notifications: { title: 'Push Notifications', subtitle: 'Broadcast notifications and marketing campaigns to students' },
+      'home-slides': { title: 'Home Carousel Banners', subtitle: 'Manage promotional slides shown on student dashboard' },
+    }
+    const tabInfo = MANAGE_TAB_INFO[tab || 'courses']
+    if (tabInfo) {
+      pageInfo = tabInfo
+    }
+  }
 
   // Pages that get the time-based greeting headline on desktop instead of the page title.
   const greetingPages = new Set(['/dashboard'])
@@ -356,7 +380,32 @@ export default function Header({ userName, userRole }: HeaderProps) {
               {pageInfo.title}
             </h1>
             {pageInfo.subtitle ? (
-              <p style={{ fontSize: '13px', color: '#9999b0', marginTop: '2px' }}>{pageInfo.subtitle}</p>
+              <p style={{ fontSize: '13.5px', color: '#6b6b8a', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', fontWeight: '500' }}>
+                {pageInfo.subtitle}
+                {matchedKey === '/courses/explore' && (
+                  <a 
+                    href="https://app.genziitian.in/courses" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ 
+                      color: '#fff', 
+                      textDecoration: 'none', 
+                      backgroundColor: '#6366f1', 
+                      padding: '3px 10px', 
+                      borderRadius: '6px', 
+                      fontWeight: '600', 
+                      cursor: 'pointer', 
+                      display: 'inline-flex', 
+                      alignItems: 'center',
+                      transition: 'all 0.2s', 
+                      fontSize: '11px',
+                      boxShadow: '0 2px 4px rgba(99, 102, 241, 0.2)'
+                    }}
+                  >
+                    Visit Here
+                  </a>
+                )}
+              </p>
             ) : null}
           </>
         )}
