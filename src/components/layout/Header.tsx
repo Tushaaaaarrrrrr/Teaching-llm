@@ -113,7 +113,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
   const pageInfo = matchedKey ? PAGE_TITLES[matchedKey] : { title: 'Dashboard', subtitle: '' }
 
   // Pages that get the time-based greeting headline on desktop instead of the page title.
-  const greetingPages = new Set(['/dashboard', '/courses'])
+  const greetingPages = new Set(['/dashboard'])
   const showGreetingHeadline = matchedKey ? greetingPages.has(matchedKey) : false
 
   const getGreeting = () => {
