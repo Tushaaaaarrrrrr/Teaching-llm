@@ -51,14 +51,6 @@ export async function sendFcmToUsers(userIds: string[], payload: FcmPayload) {
         defaultVibrateTimings: true,
         notificationPriority: 'PRIORITY_MAX' as const,
         ...(payload.imageUrl ? { image: payload.imageUrl } : {}),
-        ...(payload.ctaText ? {
-          actions: [
-            {
-              action: 'open_cta',
-              title: payload.ctaText,
-            }
-          ]
-        } : {}),
       },
     },
   }

@@ -43,14 +43,6 @@ export async function POST(request: NextRequest) {
           defaultVibrateTimings: true,
           notificationPriority: 'PRIORITY_MAX' as const,
           ...(imageUrl ? { image: imageUrl } : {}),
-          ...(ctaText ? {
-            actions: [
-              {
-                action: 'open_cta',
-                title: ctaText,
-              }
-            ]
-          } : {}),
         },
       },
     }
