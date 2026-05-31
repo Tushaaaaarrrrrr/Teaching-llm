@@ -302,34 +302,11 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </a>
         )}
 
-        {/* Mobile-only back button + title (shown on non-home pages) */}
+        {/* Mobile-only title (shown on non-home pages) */}
         {!isHomePage && (
           <div className="mobile-header-back-title" style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
-            <button
-              onClick={() => router.back()}
-              aria-label="Go back"
-              style={{
-                background: '#ffffff',
-                border: 'none',
-                width: '38px',
-                height: '38px',
-                borderRadius: '50%',
-                boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#1e1e3a',
-                cursor: 'pointer',
-                flexShrink: 0,
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"></line>
-                <polyline points="12 19 5 12 12 5"></polyline>
-              </svg>
-            </button>
             <span style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.3px' }}>
-              {pageInfo.title || 'Back'}
+              {pageInfo.title}
             </span>
           </div>
         )}
