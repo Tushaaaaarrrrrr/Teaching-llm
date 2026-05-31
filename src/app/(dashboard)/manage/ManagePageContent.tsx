@@ -144,6 +144,28 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isSendingCampaign, setIsSendingCampaign] = useState(false)
 
+  // Recent photos picker states
+  const [showRecentModal, setShowRecentModal] = useState(false)
+  const [recentPhotos, setRecentPhotos] = useState<string[]>([])
+  const [recentPhotosPage, setRecentPhotosPage] = useState(1)
+  const [recentPhotosHasNext, setRecentPhotosHasNext] = useState(false)
+  const [recentPhotosLoading, setRecentPhotosLoading] = useState(false)
+
+  async function fetchRecentPhotos(pageNumber: number) {
+    setRecentPhotosLoading(true)
+    try {
+      const res = await fetch(`/api/manage/recent-photos?page=${pageNumber}&limit=10`)
+      const d = await res.json()
+      if (d.photos) {
+        setRecentPhotos(d.photos)
+        setRecentPhotosHasNext(d.pagination.hasNext)
+      }
+    } catch (e) {
+      console.error('Error fetching recent photos:', e)
+    }
+    setRecentPhotosLoading(false)
+  }
+
   async function handleNotificationImageUpload(file: File) {
     if (!file) return
     setIsUploadingImage(true)
@@ -1708,7 +1730,10 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     placeholder="https://example.com/banner.png"
                     style={{ flex: 1 }}
                   />
-                  <label className="btn btn-ghost" style={{ border: '1.5px solid #c5c7cf', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px' }}>
+                  <button type="button" onClick={() => { setRecentPhotosPage(1); fetchRecentPhotos(1); setShowRecentModal(true); }} className="btn btn-ghost" style={{ border: '1.5px solid #6366f1', color: '#6366f1', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px', cursor: 'pointer', background: '#fff' }}>
+                    🕒 Choose from Recent
+                  </button>
+                  <label className="btn btn-ghost" style={{ border: '1.5px solid #c5c7cf', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px', background: '#fff' }}>
                     {isUploadingImage ? 'Uploading...' : '📂 Upload Banner'}
                     <input
                       type="file"
@@ -1722,6 +1747,9 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     />
                   </label>
                 </div>
+                <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', marginBottom: 0, lineHeight: '1.4' }}>
+                  💡 <strong>Recommended:</strong> 2:1 or 16:9 aspect ratio (e.g. <code>1024x512 px</code> or <code>1200x675 px</code>) with main content centered. Compress under <code>80-100 KB</code> (WebP/JPG format) for fast loading.
+                </p>
               </div>
 
               {/* CTA Configuration */}
@@ -2441,6 +2469,142 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
         )}
       </div>
     )}
+
+      {/* Recently Used Photos Modal */}
+      {showRecentModal && (
+        <div className="modal-overlay" style={{ zIndex: 10001, backdropFilter: 'blur(8px)', background: 'rgba(15,23,42,0.6)' }} onClick={() => setShowRecentModal(false)}>
+          <div
+            style={{
+              maxWidth: '560px', width: '92%', borderRadius: '24px', overflow: 'hidden',
+              background: '#ffffff', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+              maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+              animation: 'bounceIn 0.3s ease-out',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{
+              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+              padding: '24px 28px', position: 'relative', flexShrink: 0,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                🕒 Choose from Recent Photos
+              </h3>
+              <button onClick={() => setShowRecentModal(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <div style={{ padding: '24px', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>
+              {recentPhotosLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '220px', gap: '12px' }}>
+                  <div style={{ width: '40px', height: '40px', border: '3px solid #e2e8f0', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>Loading recent photos…</span>
+                </div>
+              ) : recentPhotos.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '220px', gap: '8px', border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '20px' }}>
+                  <span style={{ fontSize: '32px' }}>📷</span>
+                  <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '700' }}>No recently uploaded photos</span>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center' }}>Upload a new photo to get started.</span>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+                  {recentPhotos.map((url, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        setInlineNotif(p => ({ ...p, imageUrl: url }))
+                        setShowRecentModal(false)
+                      }}
+                      style={{
+                        position: 'relative',
+                        aspectRatio: '16/9',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        border: '2px solid transparent',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+                        transition: 'all 0.2s ease',
+                        background: '#e2e8f0',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                        e.currentTarget.style.borderColor = '#6366f1'
+                        e.currentTarget.style.boxShadow = '0 10px 15px rgba(99, 102, 241, 0.15)'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'none'
+                        e.currentTarget.style.borderColor = 'transparent'
+                        e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#64748b' }}>
+                Page {recentPhotosPage}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  disabled={recentPhotosPage === 1 || recentPhotosLoading}
+                  onClick={() => {
+                    const prevPage = recentPhotosPage - 1
+                    setRecentPhotosPage(prevPage)
+                    fetchRecentPhotos(prevPage)
+                  }}
+                  className="btn btn-sm"
+                  style={{
+                    background: recentPhotosPage === 1 ? '#f1f5f9' : '#fff',
+                    color: recentPhotosPage === 1 ? '#94a3b8' : '#475569',
+                    border: '1px solid #cbd5e1',
+                    cursor: recentPhotosPage === 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '12px',
+                    padding: '6px 12px',
+                    borderRadius: '8px'
+                  }}
+                >
+                  ◀ Previous 10
+                </button>
+                <button
+                  type="button"
+                  disabled={!recentPhotosHasNext || recentPhotosLoading}
+                  onClick={() => {
+                    const nextPage = recentPhotosPage + 1
+                    setRecentPhotosPage(nextPage)
+                    fetchRecentPhotos(nextPage)
+                  }}
+                  className="btn btn-sm"
+                  style={{
+                    background: !recentPhotosHasNext ? '#f1f5f9' : '#fff',
+                    color: !recentPhotosHasNext ? '#94a3b8' : '#475569',
+                    border: '1px solid #cbd5e1',
+                    cursor: !recentPhotosHasNext ? 'not-allowed' : 'pointer',
+                    fontSize: '12px',
+                    padding: '6px 12px',
+                    borderRadius: '8px'
+                  }}
+                >
+                  Next 10 ▶
+                </button>
+              </div>
+            </div>
+          </div>
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      )}
 
       {/* Modal */}
       {showModal && (
