@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { sendLiveClassNotification } from '@/lib/system-notifications'
 
 export async function GET(
   request: NextRequest,
@@ -157,6 +158,11 @@ export async function PUT(
         where: { id },
         data,
       })
+    }
+    
+    // Check if class status was transitioned to LIVE (non-blocking)
+    if (updatedEvent && updatedEvent.status === 'LIVE' && existingEvent.status !== 'LIVE' && updatedEvent.courseId) {
+      sendLiveClassNotification(updatedEvent.courseId, updatedEvent.title, updatedEvent.meetLink).catch(console.error)
     }
 
     logActivity({

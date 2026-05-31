@@ -57,22 +57,35 @@ export async function registerCapacitorPush(): Promise<boolean> {
     }
 
     // Register with FCM
-    console.log('[CapacitorPush] Creating high importance notification channel for Android...')
+    console.log('[CapacitorPush] Creating notification channels for Android...')
     try {
       if ((window as any).Capacitor?.getPlatform() === 'android') {
+        // High priority channel (Heads-up)
         await PushNotifications.createChannel({
           id: 'class_updates',
-          name: 'Class Updates',
+          name: 'Class Updates (Urgent)',
           description: 'High importance alerts for live classes, announcements, and study notes',
           importance: 5, // 5 = MAX/HIGH importance (forces sound and drop-down banner)
           sound: 'default',
           visibility: 1, // 1 = Public
           vibration: true,
         })
-        console.log('[CapacitorPush] "class_updates" high importance channel created/verified')
+        
+        // Silent priority channel (Tray only)
+        await PushNotifications.createChannel({
+          id: 'silent_updates',
+          name: 'General Updates (Silent)',
+          description: 'Normal importance updates delivered silently directly to the tray',
+          importance: 3, // 3 = DEFAULT (no heads-up banner, silent)
+          sound: '', // no sound
+          visibility: 1,
+          vibration: false,
+        })
+        
+        console.log('[CapacitorPush] Notification channels created/verified successfully')
       }
     } catch (channelErr) {
-      console.error('[CapacitorPush] Failed to create class_updates notification channel:', channelErr)
+      console.error('[CapacitorPush] Failed to create notification channels:', channelErr)
     }
 
     console.log('[CapacitorPush] Calling PushNotifications.register()...')

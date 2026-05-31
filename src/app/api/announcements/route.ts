@@ -136,6 +136,17 @@ export async function POST(request: NextRequest) {
       // Fire browser push notifications (works even when browser tab is closed)
       const targetUserIds = targetUsers.map(u => u.id)
       const pushBody = parsedBody.length > 120 ? parsedBody.slice(0, 117) + '...' : parsedBody
+      
+      let importance: 'high' | 'default' = 'high'
+      let sound: 'default' | 'none' = 'default'
+      if (match) {
+        try {
+          const metadata = JSON.parse(match[1])
+          if (metadata.importance) importance = metadata.importance
+          if (metadata.sound) sound = metadata.sound
+        } catch {}
+      }
+
       const pushPayload = {
         title,
         body: pushBody,
@@ -144,6 +155,8 @@ export async function POST(request: NextRequest) {
         imageUrl: imageUrl || undefined,
         ctaText: ctaText || undefined,
         ctaLink: ctaLink || undefined,
+        importance,
+        sound,
       }
       
       if (targetCourseId) {

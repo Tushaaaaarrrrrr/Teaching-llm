@@ -265,7 +265,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="page-container fade-in mobile-profile-page" style={{ padding: isMobile ? '12px' : '20px', paddingBottom: isMobile ? 'calc(170px + env(safe-area-inset-bottom, 0px))' : '24px' }}>
+    <div className="page-container fade-in mobile-profile-page" style={{ padding: isMobile ? '12px' : '20px', paddingBottom: '24px' }}>
       <div style={{ maxWidth: '960px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
         {/* ── Back ── */}
@@ -563,19 +563,12 @@ export default function ProfilePage() {
           justifyContent: isMobile ? 'stretch' : 'flex-end',
           alignItems: 'center',
           gap: '10px',
-          padding: isMobile ? '12px 16px' : '20px 24px',
-          borderRadius: isMobile ? '0' : '20px',
+          padding: isMobile ? '16px 12px' : '20px 24px',
+          borderRadius: '24px',
           background: '#e8eaf0',
-          boxShadow: isMobile ? '0 -6px 18px rgba(150, 152, 165, 0.25)' : '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+          boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
           flexDirection: 'row',
-          ...(isMobile ? {
-            position: 'fixed',
-            bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
-            left: 0,
-            right: 0,
-            zIndex: 90,
-            borderTop: '1px solid rgba(0,0,0,0.08)'
-          } : {})
+          marginTop: '8px',
         }}>
           <button
             onClick={handleDiscard}

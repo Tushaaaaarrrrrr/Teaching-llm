@@ -80,6 +80,8 @@ function relativeTime(dateStr: string): string {
 interface AnnouncementMetadata {
   ctaText?: string
   ctaLink?: string
+  importance?: 'high' | 'default'
+  sound?: 'default' | 'none'
 }
 
 function parseAnnouncementContent(content: string): { body: string; metadata: AnnouncementMetadata } {
@@ -161,7 +163,10 @@ export default function AnnouncementsPage() {
   const [imageUrl, setImageUrl] = useState('')
   const [ctaText,  setCtaText]  = useState('')
   const [ctaLink,  setCtaLink]  = useState('')
+  const [importance, setImportance] = useState<'high' | 'default'>('high')
+  const [sound, setSound] = useState<'default' | 'none'>('default')
   const [selectedTemplateId, setSelectedTemplateId] = useState('')
+  const [imagePage, setImagePage] = useState(0)
 
   useEffect(() => { loadData() }, [])
 
@@ -189,6 +194,15 @@ export default function AnnouncementsPage() {
     }
   }
 
+  // Extract up to 100 recently used unique images
+  const recentImages = Array.from(
+    new Set(
+      announcements
+        .map(a => a.imageUrl)
+        .filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+    )
+  ).slice(0, 100)
+
   function handleSelectTemplate(templateId: string) {
     setSelectedTemplateId(templateId)
     if (!templateId) return
@@ -203,6 +217,25 @@ export default function AnnouncementsPage() {
     setImageUrl(template.imageUrl || '')
     setCtaText(metadata.ctaText || '')
     setCtaLink(metadata.ctaLink || '')
+    setImportance(metadata.importance || 'high')
+    setSound(metadata.sound || 'default')
+  }
+
+  // Quick fill helper
+  function quickReuse(ann: Announcement) {
+    const { body, metadata } = parseAnnouncementContent(ann.content)
+    setTitle(ann.title)
+    setContent(body)
+    setType(ann.type)
+    setClassId(ann.classId || '')
+    setImageUrl(ann.imageUrl || '')
+    setCtaText(metadata.ctaText || '')
+    setCtaLink(metadata.ctaLink || '')
+    setImportance(metadata.importance || 'high')
+    setSound(metadata.sound || 'default')
+    setShowForm(true)
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -213,11 +246,10 @@ export default function AnnouncementsPage() {
     const meta = {
       ctaText: ctaText.trim(),
       ctaLink: ctaLink.trim(),
+      importance,
+      sound,
     }
-    const hasMeta = meta.ctaText || meta.ctaLink
-    const finalContent = hasMeta
-      ? `${content.trim()}\n\n<!-- fcm_meta:${JSON.stringify(meta)} -->`
-      : content.trim()
+    const finalContent = `${content.trim()}\n\n<!-- fcm_meta:${JSON.stringify(meta)} -->`
 
     try {
       const res = await fetch('/api/announcements', {
@@ -234,7 +266,7 @@ export default function AnnouncementsPage() {
       if (res.ok) {
         const newAnn = await res.json()
         setAnnouncements(prev => [newAnn, ...prev])
-        setTitle(''); setContent(''); setType('info'); setClassId(''); setImageUrl(''); setCtaText(''); setCtaLink(''); setSelectedTemplateId(''); setShowForm(false)
+        setTitle(''); setContent(''); setType('info'); setClassId(''); setImageUrl(''); setCtaText(''); setCtaLink(''); setImportance('high'); setSound('default'); setSelectedTemplateId(''); setShowForm(false)
       }
     } catch { /* ignore */ } finally {
       setSubmitting(false)
@@ -474,26 +506,108 @@ export default function AnnouncementsPage() {
               {/* Advanced push options section */}
               <div style={{
                 marginTop: '8px',
-                padding: '18px',
+                padding: '20px',
                 borderRadius: '18px',
-                background: 'rgba(0,0,0,0.015)',
-                border: '1px dashed rgba(54, 54, 232, 0.2)',
-                boxShadow: 'inset 2px 2px 5px rgba(0,0,0,0.02)',
+                background: '#e8eaf0',
+                boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '14px',
+                gap: '16px',
               }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#3636e8', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#3636e8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
                     <line x1="12" y1="18" x2="12.01" y2="18"></line>
                   </svg>
-                  Mobile Push Notifications Customization
+                  Advanced Push Delivery Customization
                 </div>
-                
+
+                {/* Delivery Mode & Sound Switchers */}
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>
+                      Delivery Urgency Mode
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setImportance('high')}
+                        style={{
+                          flex: 1, padding: '10px 14px', borderRadius: '12px', border: 'none',
+                          fontSize: '12.5px', fontWeight: 700, cursor: 'pointer',
+                          background: importance === 'high' ? '#3636e8' : '#e8eaf0',
+                          color: importance === 'high' ? '#fff' : '#6b6b8a',
+                          boxShadow: importance === 'high'
+                            ? '3px 3px 8px rgba(54,54,232,0.3), -2px -2px 6px #ffffff'
+                            : '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        🔔 Heads-Up Alert (High)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setImportance('default')}
+                        style={{
+                          flex: 1, padding: '10px 14px', borderRadius: '12px', border: 'none',
+                          fontSize: '12.5px', fontWeight: 700, cursor: 'pointer',
+                          background: importance === 'default' ? '#6b6b8a' : '#e8eaf0',
+                          color: importance === 'default' ? '#fff' : '#6b6b8a',
+                          boxShadow: importance === 'default'
+                            ? '3px 3px 8px rgba(107,107,138,0.3), -2px -2px 6px #ffffff'
+                            : '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        📳 Silent Tray (Normal)
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: '200px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>
+                      Notification Sound
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSound('default')}
+                        style={{
+                          flex: 1, padding: '10px 14px', borderRadius: '12px', border: 'none',
+                          fontSize: '12.5px', fontWeight: 700, cursor: 'pointer',
+                          background: sound === 'default' ? '#3636e8' : '#e8eaf0',
+                          color: sound === 'default' ? '#fff' : '#6b6b8a',
+                          boxShadow: sound === 'default'
+                            ? '3px 3px 8px rgba(54,54,232,0.3), -2px -2px 6px #ffffff'
+                            : '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        🔊 Standard Sound
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSound('none')}
+                        style={{
+                          flex: 1, padding: '10px 14px', borderRadius: '12px', border: 'none',
+                          fontSize: '12.5px', fontWeight: 700, cursor: 'pointer',
+                          background: sound === 'none' ? '#ef4444' : '#e8eaf0',
+                          color: sound === 'none' ? '#fff' : '#6b6b8a',
+                          boxShadow: sound === 'none'
+                            ? '3px 3px 8px rgba(239,68,68,0.25), -2px -2px 6px #ffffff'
+                            : '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        🔇 Mute Sound
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '4px' }}>
-                    Banner Image URL (Optional — shows rich photo in push notifications & feed)
+                    Banner Image URL (Optional)
                   </label>
                   <input
                     type="url"
@@ -503,6 +617,110 @@ export default function AnnouncementsPage() {
                     style={neuInput}
                   />
                 </div>
+
+                {/* Recent Media Bank (Last 100 images — Paginated to 5 items) */}
+                {recentImages.length > 0 && (() => {
+                  const itemsPerPage = 5
+                  const totalPages = Math.ceil(recentImages.length / itemsPerPage)
+                  const currentPageItems = recentImages.slice(imagePage * itemsPerPage, (imagePage + 1) * itemsPerPage)
+                  
+                  return (
+                    <div style={{ marginTop: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+                        <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, color: '#3636e8', textTransform: 'uppercase', letterSpacing: '0.3px', margin: 0 }}>
+                          🖼️ Recent Media Bank ({imagePage * itemsPerPage + 1}–{Math.min((imagePage + 1) * itemsPerPage, recentImages.length)} of {recentImages.length})
+                        </label>
+                        
+                        {totalPages > 1 && (
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              disabled={imagePage === 0}
+                              onClick={() => setImagePage(p => Math.max(0, p - 1))}
+                              style={{
+                                padding: '4px 10px', borderRadius: '8px', border: 'none',
+                                fontSize: '11px', fontWeight: 700, cursor: imagePage === 0 ? 'not-allowed' : 'pointer',
+                                background: '#e8eaf0', color: imagePage === 0 ? '#b0b2ba' : '#3636e8',
+                                boxShadow: imagePage === 0 ? 'none' : '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                                transition: 'all 0.1s ease',
+                              }}
+                            >
+                              ← Prev
+                            </button>
+                            <span style={{ fontSize: '11px', color: '#6b6b8a', fontWeight: 600 }}>
+                              Page {imagePage + 1} of {totalPages}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={imagePage >= totalPages - 1}
+                              onClick={() => setImagePage(p => Math.min(totalPages - 1, p + 1))}
+                              style={{
+                                padding: '4px 10px', borderRadius: '8px', border: 'none',
+                                fontSize: '11px', fontWeight: 700, cursor: imagePage >= totalPages - 1 ? 'not-allowed' : 'pointer',
+                                background: '#e8eaf0', color: imagePage >= totalPages - 1 ? '#b0b2ba' : '#3636e8',
+                                boxShadow: imagePage >= totalPages - 1 ? 'none' : '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                                transition: 'all 0.1s ease',
+                              }}
+                            >
+                              Next →
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{
+                        display: 'flex',
+                        gap: '12px',
+                        padding: '4px 2px 8px',
+                      }}>
+                        {currentPageItems.map((url, index) => {
+                          const isSelected = imageUrl === url
+                          return (
+                            <div
+                              key={index}
+                              onClick={() => setImageUrl(url)}
+                              style={{
+                                position: 'relative',
+                                width: '64px',
+                                height: '64px',
+                                borderRadius: '10px',
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                                background: '#f2f3f7',
+                                border: isSelected ? '2px solid #3636e8' : '1px solid rgba(0,0,0,0.1)',
+                                boxShadow: isSelected
+                                  ? '0 0 8px rgba(54,54,232,0.4)'
+                                  : '2px 2px 5px rgba(0,0,0,0.06)',
+                                transition: 'transform 0.15s ease, border-color 0.15s ease',
+                              }}
+                            >
+                              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              {isSelected && (
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '2px',
+                                  right: '2px',
+                                  background: '#3636e8',
+                                  borderRadius: '50%',
+                                  width: '14px',
+                                  height: '14px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#fff',
+                                  fontSize: '8px',
+                                }}>
+                                  ✓
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: '180px' }}>
@@ -729,23 +947,43 @@ export default function AnnouncementsPage() {
                         
                         {/* Delete button (Manager only) */}
                         {canCreate && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDelete(a.id) }}
-                            style={{
-                              marginLeft: 'auto', background: 'none', border: 'none',
-                              color: '#ef4444', cursor: 'pointer', padding: '4px',
-                              borderRadius: '4px', display: 'flex', alignItems: 'center',
-                              justifyContent: 'center', transition: 'background 0.2s',
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                            title="Delete Announcement"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                          </button>
+                          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); quickReuse(a) }}
+                              style={{
+                                background: '#e8eaf0', border: 'none',
+                                color: '#3636e8', cursor: 'pointer', padding: '6px 12px',
+                                borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '6px',
+                                fontSize: '11px', fontWeight: 800,
+                                boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                                transition: 'all 0.2s',
+                              }}
+                              title="Reuse this notification settings"
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                              </svg>
+                              Reuse Settings
+                            </button>
+
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDelete(a.id) }}
+                              style={{
+                                background: 'none', border: 'none',
+                                color: '#ef4444', cursor: 'pointer', padding: '6px',
+                                borderRadius: '50%', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', transition: 'background 0.2s',
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                              title="Delete Announcement"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              </svg>
+                            </button>
+                          </div>
                         )}
                       </div>
                     )}

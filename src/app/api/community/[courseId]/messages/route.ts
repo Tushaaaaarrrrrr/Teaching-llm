@@ -4,6 +4,7 @@ import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { validateLength, sanitizeInput } from '@/lib/validation'
 import { sseEmitter } from '@/lib/sse'
+import { sendCommunityNotification, sendDMNotification } from '@/lib/community-notifications'
 
 // ─── DM helpers ─────────────────────────────────────────────────────────────
 
@@ -214,6 +215,13 @@ export async function POST(
       }
       sseEmitter.emit(`chat:dm_${id}:message`, event)
 
+      // Notify the OTHER participant in the DM (non-blocking)
+      const recipientId = chat.studentId === session.userId ? chat.agentId : chat.studentId
+      sendDMNotification(id, { userId: session.userId, name: session.name }, recipientId, {
+        content: msg.content,
+        imageUrl: msg.imageUrl,
+      }).catch(console.error)
+
       return NextResponse.json(event, { status: 201 })
     }
 
@@ -266,6 +274,16 @@ export async function POST(
     })
 
     sseEmitter.emit(`chat:${params.courseId}:message`, message)
+
+    // Notify all enrolled, unmuted users (non-blocking)
+    sendCommunityNotification(params.courseId, {
+      userId: session.userId,
+      name: session.name,
+      role: session.role,
+    }, {
+      content: message.content,
+      imageUrl: message.imageUrl,
+    }).catch(console.error)
 
     return NextResponse.json({
       ...message,

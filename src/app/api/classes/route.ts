@@ -50,11 +50,18 @@ export async function GET() {
       ],
     })
 
-    const readStates = await prisma.communityReadState.findMany({
-      where: { userId: session.userId },
-      select: { courseId: true, lastReadAt: true },
-    })
+    const [readStates, mutePrefs] = await Promise.all([
+      prisma.communityReadState.findMany({
+        where: { userId: session.userId },
+        select: { courseId: true, lastReadAt: true },
+      }),
+      prisma.communityMutePreference.findMany({
+        where: { userId: session.userId },
+        select: { courseId: true, isMuted: true },
+      }),
+    ])
     const readMap = new Map(readStates.map(r => [r.courseId, r.lastReadAt.getTime()]))
+    const muteMap = new Map(mutePrefs.map(m => [m.courseId, m.isMuted]))
 
     const isManager = isManagerOrSuperAdmin(session.role)
 
@@ -62,12 +69,14 @@ export async function GET() {
         const lastMsgTime = course.lastMessageAt ? course.lastMessageAt.getTime() : 0;
         const lastReadTime = readMap.get(course.id) || 0;
         const hasUnread = lastMsgTime > lastReadTime;
+        const isMuted = muteMap.get(course.id) || false;
 
         return {
           ...course,
           isExpired: isManager ? false : isCourseExpired(course),
           isEffectivelyDisabled: isManager ? false : isCourseEffectivelyDisabled(course),
           hasUnread,
+          isMuted,
         }
       })
     // Fetch ONLY Direct Chats (type=DIRECT) — NEVER show SUPPORT chats here

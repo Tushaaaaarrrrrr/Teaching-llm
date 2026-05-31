@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
+import { scheduleWelcomeSequence } from '@/lib/welcome-notifications'
 
 export async function POST(request: NextRequest) {
   const headerSecret = request.headers.get('x-external-secret')
@@ -130,6 +131,9 @@ export async function POST(request: NextRequest) {
             isProfileComplete: false,
           },
         })
+        
+        // Trigger welcome notifications sequence in background
+        scheduleWelcomeSequence(user.id).catch(console.error)
       } catch (createErr) {
         const errMsg = createErr instanceof Error ? createErr.message : 'Unknown error'
         console.error(`[external-purchase] FAILED — user create error for ${normalizedEmail}:`, createErr)
