@@ -13,25 +13,11 @@ interface OnboardingSlide {
 
 const SLIDES: OnboardingSlide[] = [
   {
-    eyebrow: 'Built for IITM BS',
-    title: 'Made for BS Degree Aspirants',
-    quote: '"By IITians who know your syllabus, your pace, and the exam pressure — because we have been through it ourselves."',
-    accent: '#6366f1',
-    iconBg: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-  },
-  {
-    eyebrow: 'Live + Recorded',
-    title: 'Master Every Topic, Your Way',
-    quote: '"Structured live classes, on-demand recordings, premium notes, and PYQs — with doubt support that never sleeps."',
-    accent: '#0ea5e9',
-    iconBg: 'linear-gradient(135deg, #0ea5e9, #06b6d4)',
-  },
-  {
-    eyebrow: 'Qualify · Excel · Graduate',
-    title: 'Your Complete BS Companion',
-    quote: '"From Qualifier prep to Term-wise live batches — one focused platform from your first attempt to your final degree."',
-    accent: '#10b981',
-    iconBg: 'linear-gradient(135deg, #10b981, #14b8a6)',
+    eyebrow: 'BUILT FOR IITM BS STUDENTS',
+    title: 'Everything You Need to Succeed in IITM BS',
+    quote: 'Live classes, recordings, premium notes, PYQs, and doubt support — designed specifically for IITM BS learners.',
+    accent: '#3636e8',
+    iconBg: 'linear-gradient(135deg, #3636e8, #6366f1)',
   },
 ]
 
@@ -125,7 +111,6 @@ function OnboardingView({
   setSlideIndex: (i: number) => void
 }) {
   const slide = slides[index]
-  const isLast = index === slides.length - 1
 
   return (
     <div
@@ -137,24 +122,11 @@ function OnboardingView({
         position: 'relative', zIndex: 1,
       }}
     >
-      {/* Top bar: page indicator + skip */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', letterSpacing: '0.1em' }}>
-          {String(index + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+      {/* Top bar: clean branding text */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '8px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          GenZ IITian
         </span>
-        {!isLast && (
-          <button
-            onClick={onSkip}
-            style={{
-              background: '#e8eaf0', border: 'none', cursor: 'pointer',
-              color: '#6b6b8a', fontSize: '12.5px', fontWeight: 700,
-              padding: '8px 16px', borderRadius: '50px',
-              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-            }}
-          >
-            Skip
-          </button>
-        )}
       </div>
 
       {/* Center: logo with concentric rings */}
@@ -174,26 +146,19 @@ function OnboardingView({
           />
         ))}
         <div style={{
-          width: '120px', height: '120px', borderRadius: '50%',
-          background: '#e8eaf0',
+          width: '136px', height: '136px', borderRadius: '50%',
+          background: '#ffffff',
           boxShadow: '12px 12px 30px #c5c7cf, -12px -12px 30px #ffffff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           position: 'relative',
+          overflow: 'hidden',
+          padding: '12px',
         }}>
-          <div style={{
-            width: '92px', height: '92px', borderRadius: '50%',
-            background: '#ffffff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.06), inset 0 2px 4px rgba(0,0,0,0.02)',
-            overflow: 'hidden',
-            padding: '10px',
-          }}>
-            <img src="/mobile-logo.png" alt="GenZ IITian" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          </div>
+          <img src="/welcome.png" alt="Welcome to GenZ IITian" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
       </div>
 
-      {/* Bottom: card with eyebrow, title, quote, dots, button */}
+      {/* Bottom: card with eyebrow, title, quote, button */}
       <div
         key={`slide-${index}`}
         style={{
@@ -205,59 +170,48 @@ function OnboardingView({
           animation: 'glSlideUp 0.4s cubic-bezier(0.16,1,0.3,1)',
         }}
       >
-        <div style={{ fontSize: '11px', fontWeight: 800, color: slide.accent, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '10px' }}>
+        <div style={{ fontSize: '10.5px', fontWeight: 800, color: slide.accent, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '10px' }}>
           {slide.eyebrow}
         </div>
         <h1 style={{
-          fontSize: '22px', fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.02em',
+          fontSize: '22px', fontWeight: 900, lineHeight: 1.25, letterSpacing: '-0.02em',
           color: '#1e1e3a', margin: 0, marginBottom: '12px',
         }}>
           {slide.title}
         </h1>
         <p style={{
           fontSize: '13.5px', lineHeight: 1.6, color: '#6b6b8a',
-          margin: 0, fontStyle: 'italic',
-          minHeight: '68px',
+          margin: 0, marginBottom: '22px',
         }}>
           {slide.quote}
         </p>
-
-        {/* Dots */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '18px', marginBottom: '18px' }}>
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setSlideIndex(i)}
-              aria-label={`Slide ${i + 1}`}
-              style={{
-                width: i === index ? '22px' : '6px', height: '6px',
-                borderRadius: '50px',
-                background: i === index ? slide.accent : '#cbd5e1',
-                border: 'none', cursor: 'pointer', padding: 0,
-                transition: 'all 0.3s ease',
-              }}
-            />
-          ))}
-        </div>
 
         {/* CTA */}
         <button
           onClick={onNext}
           style={{
             width: '100%',
-            padding: '14px',
+            padding: '16px',
             borderRadius: '50px',
             border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-            fontSize: '14.5px', fontWeight: 800,
+            fontSize: '15.5px', fontWeight: 800,
             background: slide.iconBg,
             color: '#ffffff',
             boxShadow: `0 10px 24px ${slide.accent}55`,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
             letterSpacing: '0.01em',
+            transition: 'all 0.25s ease',
+          }}
+          onMouseOver={e => {
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = `0 12px 28px ${slide.accent}66`;
+          }}
+          onMouseOut={e => {
+            e.currentTarget.style.transform = 'none';
+            e.currentTarget.style.boxShadow = `0 10px 24px ${slide.accent}55`;
           }}
         >
-          {isLast ? 'Get Started' : 'Next'}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          Continue &rarr;
         </button>
       </div>
 
