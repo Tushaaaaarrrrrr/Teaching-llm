@@ -1183,12 +1183,12 @@ tr:hover td {
 .login-container {
   min-height: 100vh;
   display: flex;
-  background: #F3F4F6;
+  background: #f8fafc;
 }
 
 .login-left-panel {
   flex: 0 0 42%;
-  background: #F3F4F6;
+  background: #f8fafc;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1200,10 +1200,12 @@ tr:hover td {
 .login-geometric-composition {
   display: flex;
   flex-wrap: wrap;
-  gap: 30px;
+  gap: 28px;
   align-items: center;
   justify-content: center;
   margin: 40px 0;
+  max-width: 420px;
+  width: 100%;
 }
 
 .login-footer-links {
@@ -1236,7 +1238,7 @@ tr:hover td {
 
 .login-right-panel {
   flex: 1;
-  background: #F3F4F6;
+  background: #f8fafc;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1248,7 +1250,67 @@ tr:hover td {
 .login-card-container {
   width: 100%;
   max-width: 480px;
-  padding: 52px;
+  padding: 56px 48px;
+  background: #f3f4f6 !important;
+  border-radius: 32px !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.04), inset 1px 1px 0px rgba(255, 255, 255, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  text-align: center;
+}
+
+.login-card-title {
+  font-size: 32px !important;
+  font-weight: 800 !important;
+  color: #1e1e3a !important;
+  margin-top: 0 !important;
+  margin-bottom: 12px !important;
+  text-align: center !important;
+  letter-spacing: -0.02em !important;
+}
+
+.login-card-subtitle {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #555566 !important;
+  margin-top: 0 !important;
+  margin-bottom: 32px !important;
+  text-align: center !important;
+  line-height: 1.5 !important;
+}
+
+.login-terms-text {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #888899 !important;
+  margin-top: 24px !important;
+  text-align: center !important;
+  line-height: 1.6 !important;
+}
+
+.login-terms-text span {
+  color: #1e1e3a !important;
+  font-weight: 700 !important;
+}
+
+.login-explore-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 14px 32px !important;
+  background: #232347 !important; /* Premium dark navy */
+  color: #ffffff !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 25px rgba(35, 35, 71, 0.25) !important;
+  text-decoration: none !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.login-explore-btn:hover {
+  background: #191937 !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 14px 32px rgba(35, 35, 71, 0.35) !important;
 }
 
 .login-contact-developer {
