@@ -22,7 +22,7 @@ interface Notification {
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/dashboard':  { title: 'Dashboard',        subtitle: 'Welcome back to your learning hub' },
-  '/courses/explore': { title: '',            subtitle: '' },
+  '/courses/explore': { title: 'GenZ IITian Official Store', subtitle: 'You can also buy courses from ' },
   '/courses':    { title: 'Courses',          subtitle: 'Manage your enrolled subjects and lectures' },
   '/academics':  { title: 'Academics',        subtitle: 'Everything for your learning journey' },
   '/menu':       { title: 'Profile',          subtitle: 'View and edit your personal information' },
@@ -378,7 +378,32 @@ export default function Header({ userName, userRole }: HeaderProps) {
               {pageInfo.title}
             </h1>
             {pageInfo.subtitle ? (
-              <p style={{ fontSize: '13px', color: '#9999b0', marginTop: '2px' }}>{pageInfo.subtitle}</p>
+              <p style={{ fontSize: '13.5px', color: '#6b6b8a', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', fontWeight: '500' }}>
+                {pageInfo.subtitle}
+                {matchedKey === '/courses/explore' && (
+                  <a 
+                    href="https://app.genziitian.in/courses" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ 
+                      color: '#fff', 
+                      textDecoration: 'none', 
+                      backgroundColor: '#6366f1', 
+                      padding: '3px 10px', 
+                      borderRadius: '6px', 
+                      fontWeight: '600', 
+                      cursor: 'pointer', 
+                      display: 'inline-flex', 
+                      alignItems: 'center',
+                      transition: 'all 0.2s', 
+                      fontSize: '11px',
+                      boxShadow: '0 2px 4px rgba(99, 102, 241, 0.2)'
+                    }}
+                  >
+                    Visit Here
+                  </a>
+                )}
+              </p>
             ) : null}
           </>
         )}
