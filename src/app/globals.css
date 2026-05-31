@@ -1114,6 +1114,7 @@ tr:hover td {
 .mobile-header-greeting { display: none; }
 @media (min-width: 769px) {
   .mobile-header-greeting { display: none !important; }
+  .mobile-header-back-title { display: none !important; }
 }
 
 /* My Courses: swap between desktop layout and mobile experience */
