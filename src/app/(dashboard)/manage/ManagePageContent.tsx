@@ -1011,6 +1011,16 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   placeholder="https://example.com/slide.png"
                   style={{ flex: 1 }}
                 />
+                {f.image && (
+                  <button
+                    type="button"
+                    onClick={() => set('image', '')}
+                    className="btn btn-ghost"
+                    style={{ color: '#ef4444', border: '1px solid #fee2e2', padding: '10px 14px', fontSize: '13px', cursor: 'pointer' }}
+                  >
+                    🗑️ Remove Photo
+                  </button>
+                )}
                 <label className="btn btn-ghost" style={{ border: '1px solid #c5c7cf', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px' }}>
                   📂 Upload File
                   <input
@@ -2080,9 +2090,17 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     <div key={item.id} style={{
                       display: 'flex', gap: '16px', padding: '16px', borderRadius: '16px', background: '#f8fafc', alignItems: 'center', boxShadow: '2px 2px 5px rgba(0,0,0,0.03)'
                     }}>
-                      <div style={{
-                        width: '120px', aspectRatio: '16/9', borderRadius: '10px', background: '#e2e8f0', backgroundImage: `url(${item.image})`, backgroundSize: 'cover', backgroundPosition: 'center', flexShrink: 0
-                      }}></div>
+                      <div 
+                        onClick={() => {
+                          if (item.image) {
+                            window.open(item.image, '_blank', 'noopener,noreferrer');
+                          }
+                        }}
+                        title="Click to view full size"
+                        style={{
+                          width: '120px', aspectRatio: '16/9', borderRadius: '10px', background: '#e2e8f0', backgroundImage: `url(${item.image})`, backgroundSize: 'cover', backgroundPosition: 'center', flexShrink: 0, cursor: 'pointer'
+                        }}
+                      ></div>
                       
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -2156,6 +2174,22 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                           </button>
                         </div>
 
+                         <button
+                          type="button"
+                          onClick={() => {
+                            if (item.image) {
+                              window.open(item.image, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          className="btn btn-ghost btn-sm"
+                          style={{ padding: '6px', color: '#6366f1' }}
+                          title="Preview Image"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
                         <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm" style={{ padding: '6px' }} title="Edit">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
