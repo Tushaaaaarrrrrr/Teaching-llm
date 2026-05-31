@@ -320,8 +320,8 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
 
       {/* Modals */}
       {showEditModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-          <div style={{ background: '#fff', borderRadius: '32px', padding: '40px', width: '550px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '24px', padding: 'clamp(20px, 5vw, 40px)', width: '100%', maxWidth: 'min(550px, calc(100vw - 32px))', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '24px', fontWeight: 950, marginBottom: '24px' }}>Series Settings</h2>
             <form onSubmit={handleUpdateTS} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
@@ -332,7 +332,7 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#6b6b8a', textTransform: 'uppercase', marginBottom: '8px' }}>Description</label>
                 <textarea name="description" defaultValue={ts.description || ''} rows={4} style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', fontSize: '15px', resize: 'none' }} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#6b6b8a', textTransform: 'uppercase', marginBottom: '8px' }}>Price (₹)</label>
                   <input name="price" type="number" defaultValue={ts.price} required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', fontSize: '15px' }} />
@@ -356,8 +356,8 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
       )}
 
       {showAddExamModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-          <div style={{ background: '#fff', borderRadius: '32px', padding: '40px', width: '650px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '24px', padding: 'clamp(20px, 5vw, 40px)', width: '100%', maxWidth: 'min(650px, calc(100vw - 32px))', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
             <h2 style={{ fontSize: '24px', fontWeight: 950, marginBottom: '24px' }}>Import Existing Exam</h2>
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '12px' }}>
               {availableExams.length > 0 ? availableExams.map((exam: any) => (
@@ -376,15 +376,15 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
       )}
 
       {showCreateExamModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-          <div style={{ background: '#fff', borderRadius: '32px', padding: '40px', width: '550px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '24px', padding: 'clamp(20px, 5vw, 40px)', width: '100%', maxWidth: 'min(550px, calc(100vw - 32px))', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '24px', fontWeight: 950, marginBottom: '24px' }}>New Exam in Series</h2>
             <form onSubmit={handleCreateExamInSeries} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#6b6b8a', textTransform: 'uppercase', marginBottom: '8px' }}>Exam Title</label>
                 <input name="title" required placeholder="e.g. Mock Test 01" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', fontSize: '15px' }} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: '#6b6b8a', textTransform: 'uppercase', marginBottom: '8px' }}>Duration (Min)</label>
                   <input name="durationMinutes" type="number" defaultValue="180" required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', fontSize: '15px' }} />

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Script from 'next/script'
+import MobileCourseDetail from '@/components/courses/MobileCourseDetail'
 
 interface ContentItem {
   id: string
@@ -272,7 +273,21 @@ export default function CourseDetailPage() {
   }
 
   return (
-    <div className="page-container fade-in">
+    <>
+    {/* Mobile redesign */}
+    <div className="course-detail-mobile-only">
+      <MobileCourseDetail
+        course={course as any}
+        topics={topics as any}
+        expandedTopics={expandedTopics}
+        toggleTopic={toggleTopic}
+        progressMap={progressMap}
+        updateProgress={updateProgress}
+        role={role}
+      />
+    </div>
+    {/* Desktop layout */}
+    <div className="page-container fade-in course-detail-desktop-only">
       {/* Course Header Banner */}
       <div className="card" style={{ overflow: 'hidden', marginBottom: '20px' }}>
         <div 
@@ -529,13 +544,15 @@ export default function CourseDetailPage() {
                     topic.content.map((item) => (
                       <div
                         key={item.id}
+                        className="lecture-row"
                         style={{
                           display: 'flex', alignItems: 'center', gap: '14px',
                           padding: '12px 20px',
-                          borderRadius: '50px',
+                          borderRadius: '24px',
                           background: '#e8eaf0',
                           boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
                           transition: 'box-shadow 0.2s',
+                          flexWrap: 'wrap',
                         }}
                       >
                         {/* Lecture icon */}
@@ -576,7 +593,7 @@ export default function CourseDetailPage() {
                         </div>
 
                         {/* Action Buttons Group */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginLeft: 'auto' }}>
+                        <div className="lecture-row-actions" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginLeft: 'auto', gap: '6px', flexWrap: 'wrap' }}>
                           {/* Progress actions for students */}
                           {role === 'STUDENT' && (
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginRight: '6px', paddingRight: '12px', borderRight: '1px solid #d8dae3' }}>
@@ -856,5 +873,6 @@ export default function CourseDetailPage() {
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>
+    </>
   )
 }

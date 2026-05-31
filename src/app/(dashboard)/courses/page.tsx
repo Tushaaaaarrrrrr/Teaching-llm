@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Script from 'next/script'
 import useSWR, { mutate } from 'swr'
+import FeedbackModal from '@/components/FeedbackModal'
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -28,12 +29,12 @@ interface CourseItem {
 }
 
 const COURSE_ICONS: Record<string, React.ReactNode> = {
-  BookOpen: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,
-  Brain: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20 14.5 14.5 0 000-20"/><path d="M2 12h20"/></svg>,
-  Globe: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
-  Database: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
-  Monitor: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-  Wifi: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg>,
+  BookOpen: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,
+  Brain: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20 14.5 14.5 0 000-20"/><path d="M2 12h20"/></svg>,
+  Globe: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
+  Database: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+  Monitor: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+  Wifi: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg>,
 }
 
 export default function CoursesPage() {
@@ -44,6 +45,12 @@ export default function CoursesPage() {
   const { data: userData } = useSWR('/api/auth/me', fetcher, { revalidateOnFocus: false })
   const { data: helpCard } = useSWR('/api/support/help-card', fetcher)
   const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
+  const isStudent = userData?.user?.role === 'STUDENT' || userData?.role === 'STUDENT'
+  
+  const { data: feedbacksRaw, mutate: mutateFeedbacks } = useSWR(isStudent ? '/api/feedback' : null, fetcher)
+  const feedbacks = Array.isArray(feedbacksRaw) ? feedbacksRaw : []
+  const [selectedFeedbackCourse, setSelectedFeedbackCourse] = useState<CourseItem | null>(null)
+
   const courses = Array.isArray(data) ? data : (data as any)?.courses || []
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -167,9 +174,9 @@ export default function CoursesPage() {
           Failed to load courses. {error.message}
         </div>
       ) : null}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <div className="courses-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
         <p style={{ fontSize: '13px', color: '#9999b0', margin: 0 }}>{courses.length} courses available</p>
-        <div style={{ position: 'relative' }}>
+        <div className="courses-search-wrap" style={{ position: 'relative' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
@@ -178,11 +185,86 @@ export default function CoursesPage() {
             placeholder="Search courses..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="search-input"
+            className="search-input courses-search-input"
             style={{ width: '260px', borderRadius: '50px', paddingLeft: '40px' }}
           />
         </div>
       </div>
+      <style>{`
+        :root {
+          --course-card-padding: 18px 20px 16px;
+          --course-banner-height: 100px;
+          --course-icon-size: 58px;
+          --course-icon-svg-size: 28px;
+          --course-title-size: 16px;
+          --course-desc-display: -webkit-box;
+          --course-teacher-display: flex;
+          --course-stats-padding: 8px 10px;
+          --course-stats-font-size: 15px;
+          --course-stats-label-size: 11px;
+          --course-stats-gap: 10px;
+          --course-badge-padding: 3px 10px;
+          --course-badge-font: 10px;
+          --course-card-radius: 28px;
+          --course-teacher-margin: 14px;
+          --course-upgrade-padding: 14px 16px;
+          --course-upgrade-font-size: 13px;
+          --course-badge-pos: absolute;
+          --course-badge-left: 12px;
+          --course-upgrade-flex-dir: row;
+          --course-optional-margin: 0;
+        }
+
+        @media (max-width: 768px) {
+          .grid-3 {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+          
+          :root {
+            --course-card-padding: 10px 10px 12px;
+            --course-banner-height: 70px;
+            --course-icon-size: 38px;
+            --course-icon-svg-size: 18px;
+            --course-title-size: 13.5px;
+            --course-desc-display: none; /* Hide descriptions to keep card heights small & consistent */
+            --course-teacher-display: none; /* Hide teacher name to save vertical space on mobile cards */
+            --course-stats-padding: 4px 6px;
+            --course-stats-font-size: 12px;
+            --course-stats-label-size: 8px;
+            --course-stats-gap: 6px;
+            --course-badge-padding: 2px 6px;
+            --course-badge-font: 8px;
+            --course-card-radius: 20px;
+            --course-teacher-margin: 6px;
+            --course-upgrade-padding: 8px 6px;
+            --course-upgrade-font-size: 9px;
+            --course-badge-pos: relative;
+            --course-badge-left: auto;
+            --course-upgrade-flex-dir: column;
+            --course-optional-margin: 0 0 4px 0;
+          }
+
+          /* Match compact margins for headers inside the card */
+          .grid-3 h3 {
+            margin-bottom: 2px !important;
+          }
+
+          .mobile-only-feedback-btn {
+            display: flex !important;
+          }
+        }
+
+        .mobile-only-feedback-btn {
+          display: none !important;
+        }
+
+        @media (max-width: 600px) {
+          .courses-header-row { margin-bottom: 18px !important; }
+          .courses-search-wrap { width: 100%; }
+          .courses-search-input { width: 100% !important; }
+        }
+      `}</style>
 
       <style>{`
         @keyframes proShine {
@@ -221,7 +303,7 @@ export default function CoursesPage() {
             <div
               style={{
                 background: '#e8eaf0',
-                borderRadius: '28px',
+                borderRadius: 'var(--course-card-radius, 28px)',
                 boxShadow: (isLive && !isCourseExpired)
                   ? `8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, 0 0 0 2px ${course.color}40`
                   : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
@@ -273,7 +355,7 @@ export default function CoursesPage() {
               )}
               {/* Gradient Banner */}
               <div style={{
-                height: '100px',
+                height: 'var(--course-banner-height, 100px)',
                 background: isRecorded || isFreeOrDemo ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(135deg, ${course.color}ee, ${course.color}99)`,
                 position: 'relative',
                 overflow: 'hidden',
@@ -284,8 +366,8 @@ export default function CoursesPage() {
                 <div style={{ position: 'absolute', width: '130px', height: '130px', borderRadius: '50%', background: 'rgba(255,255,255,0.12)', top: '-50px', right: '-30px' }} />
                 <div style={{ position: 'absolute', width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', bottom: '-20px', left: '24px' }} />
                 <div style={{
-                  width: '58px',
-                  height: '58px',
+                  width: 'var(--course-icon-size, 58px)',
+                  height: 'var(--course-icon-size, 58px)',
                   borderRadius: '50%',
                   background: 'rgba(255,255,255,0.25)',
                   backdropFilter: 'blur(4px)',
@@ -303,10 +385,10 @@ export default function CoursesPage() {
                 {(isLive || isRecorded || isFreeOrDemo) && (
                   <div style={{
                     position: 'absolute', top: '10px', left: '12px',
-                    padding: '3px 10px', borderRadius: '20px',
+                    padding: 'var(--course-badge-padding, 3px 10px)', borderRadius: '20px',
                     background: isLive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)',
                     backdropFilter: 'blur(8px)',
-                    fontSize: '10px', fontWeight: '800', color: batchBadge.color,
+                    fontSize: 'var(--course-badge-font, 10px)', fontWeight: '800', color: batchBadge.color,
                     letterSpacing: '0.06em',
                   }}>
                     {batchBadge.text}
@@ -347,9 +429,9 @@ export default function CoursesPage() {
               </div>
 
               {/* Card Body */}
-              <div style={{ padding: '18px 20px 16px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div style={{ padding: 'var(--course-card-padding, 18px 20px 16px)', display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <h3 style={{ 
-                  fontSize: '16px', 
+                  fontSize: 'var(--course-title-size, 16px)', 
                   fontWeight: '700', 
                   color: '#1e1e3a', 
                   marginBottom: '4px', 
@@ -385,7 +467,7 @@ export default function CoursesPage() {
                     color: '#6b6b8a',
                     lineHeight: '1.55',
                     marginBottom: '14px',
-                    display: '-webkit-box',
+                    display: 'var(--course-desc-display, -webkit-box)',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
                     overflow: 'hidden',
@@ -396,7 +478,7 @@ export default function CoursesPage() {
 
                 {/* Show teacher for LIVE users and General Batch */}
                 {(!isRecorded || isFreeOrDemo) && course.teacherName && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
+                  <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: 'var(--course-teacher-margin, 14px)' }}>
                     <div style={{
                       width: '24px', height: '24px', borderRadius: '50%',
                       background: course.color + '22',
@@ -416,7 +498,7 @@ export default function CoursesPage() {
                   <div style={{ position: 'relative', marginTop: 'auto' }}>
                     {/* Show teacher only for LIVE users or above upgrade for RECORDED */}
                     {course.teacherName && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                      <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                         <div style={{
                           width: '20px', height: '20px', borderRadius: '50%',
                           background: isRecorded ? '#e5e7eb' : course.color + '22',
@@ -430,17 +512,16 @@ export default function CoursesPage() {
                         </span>
                       </div>
                     )}
-
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setUpgradeModalCourse(course) }}
                       style={{
                         width: '100%',
-                        padding: '14px 16px',
+                        padding: 'var(--course-upgrade-padding, 14px 16px)',
                         borderRadius: '50px',
                         border: 'none',
                         background: '#1e1e3a',
                         color: '#fff',
-                        fontSize: '13px',
+                        fontSize: 'var(--course-upgrade-font-size, 13px)',
                         fontWeight: '800',
                         cursor: 'pointer',
                         marginBottom: '4px',
@@ -448,6 +529,7 @@ export default function CoursesPage() {
                         transition: 'all 0.25s',
                         letterSpacing: '0.02em',
                         display: 'flex',
+                        flexDirection: 'var(--course-upgrade-flex-dir, row)' as any,
                         alignItems: 'center',
                         justifyContent: 'center',
                         position: 'relative',
@@ -455,13 +537,17 @@ export default function CoursesPage() {
                       }}
                     >
                       <span style={{ 
-                        position: 'absolute', left: '12px',
+                        position: 'var(--course-badge-pos, absolute)' as any,
+                        left: 'var(--course-badge-left, 12px)',
+                        margin: 'var(--course-optional-margin, 0)',
                         fontSize: '8px', background: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '20px', 
                         color: '#fff', letterSpacing: '0.05em', fontWeight: '900', border: '1px solid rgba(255,255,255,0.2)' 
                       }}>
                         OPTIONAL
                       </span>
-                      ⚡ Upgrade to PRO — ₹{course.liveUpgradePrice}
+                      <span>
+                        ⚡ Upgrade to PRO — ₹{course.liveUpgradePrice}
+                      </span>
                       
                       {/* Shine effect overlay */}
                       <div style={{
@@ -479,34 +565,71 @@ export default function CoursesPage() {
                   </div>
                 )}
 
+                {/* Mobile-only Course Feedback option */}
+                {isStudent && !feedbacks.some((f: any) => f.courseId === course.id) && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setSelectedFeedbackCourse(course)
+                    }}
+                    className="mobile-only-feedback-btn"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '50px',
+                      border: 'none',
+                      background: '#ffffff',
+                      color: '#d97706',
+                      fontSize: '12.5px',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      marginTop: '8px',
+                      marginBottom: '10px',
+                      boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                      display: 'none',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      fontFamily: "'Outfit', 'Nunito', sans-serif",
+                    }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                    </svg>
+                    Give Course Feedback
+                  </button>
+                )}
+
                 {/* Stats row */}
                 <div style={{
                   display: 'flex',
-                  gap: '10px',
+                  gap: 'var(--course-stats-gap, 10px)',
                   paddingTop: '12px',
                   borderTop: '1.5px solid rgba(0,0,0,0.06)',
                   marginTop: 'auto',
                 }}>
                   <div style={{
-                    flex: 1, padding: '8px 10px', borderRadius: '14px',
+                    flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
                     background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.topics || 0}</div>
-                    <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Topics</div>
+                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.topics || 0}</div>
+                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: '#9999b0', fontWeight: '600' }}>Topics</div>
                   </div>
                   <div style={{
-                    flex: 1, padding: '8px 10px', borderRadius: '14px',
+                    flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
                     background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.lectures || 0}</div>
-                    <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Lectures</div>
+                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.lectures || 0}</div>
+                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: '#9999b0', fontWeight: '600' }}>Lectures</div>
                   </div>
                   <div style={{
-                    flex: 1, padding: '8px 10px', borderRadius: '14px',
+                    flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
                     background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.materials || 0}</div>
-                    <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Materials</div>
+                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.materials || 0}</div>
+                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: '#9999b0', fontWeight: '600' }}>Materials</div>
                   </div>
                 </div>
               </div>
@@ -627,46 +750,69 @@ export default function CoursesPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
           padding: '20px'
         }} onClick={() => setInfoModalCourse(null)}>
+          <style dangerouslySetInnerHTML={{ __html: `
+            .batch-cmp-modal { padding: 30px 40px; }
+            .batch-cmp-table-wrap { padding: 30px 40px; }
+            .batch-cmp-footer { padding: 0 40px 40px; }
+            .batch-cmp-th { padding: 14px 16px; font-size: 13px; }
+            .batch-cmp-td { padding: 14px 16px; font-size: 13px; }
+            .batch-cmp-title { font-size: 24px; }
+            .batch-cmp-sub { font-size: 15px; }
+            @media (max-width: 520px) {
+              .batch-cmp-modal { padding: 18px 16px 14px; }
+              .batch-cmp-table-wrap { padding: 12px; }
+              .batch-cmp-footer { padding: 0 12px 16px; }
+              .batch-cmp-th { padding: 8px 8px; font-size: 10px; }
+              .batch-cmp-td { padding: 10px 8px; font-size: 11px; }
+              .batch-cmp-title { font-size: 18px; }
+              .batch-cmp-sub { font-size: 12px; }
+            }
+          `}} />
           <div style={{
-            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '750px',
+            background: '#ffffff', borderRadius: '24px', width: '100%', maxWidth: '750px',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
             animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
-              <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '25px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <div className="batch-cmp-modal" style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
-              <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Batch Comparison</h2>
-              <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500' }}>Choose the experience that fits your learning style</p>
+              <h2 className="batch-cmp-title" style={{ fontWeight: '800', color: '#1e293b', marginBottom: '6px', paddingRight: '40px' }}>Batch Comparison</h2>
+              <p className="batch-cmp-sub" style={{ color: '#64748b', fontWeight: '500', margin: 0 }}>Choose the experience that fits your learning style</p>
             </div>
 
             {/* Comparison Table */}
-            <div style={{ padding: '30px 40px' }}>
-              <div style={{ borderRadius: '24px', overflow: 'hidden', border: '1.5px solid #e2e8f0', background: '#fff' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <div className="batch-cmp-table-wrap">
+              <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1.5px solid #e2e8f0', background: '#fff' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
+                  <colgroup>
+                    <col style={{ width: '38%' }} />
+                    <col style={{ width: '31%' }} />
+                    <col style={{ width: '31%' }} />
+                  </colgroup>
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>
-                        {infoModalCourse?.enrollmentType === 'FREE' || infoModalCourse?.enrollmentType === 'DEMO' ? 'General Batch' : 'PLUS ( Recorded )'}
+                      <th className="batch-cmp-th" style={{ color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Features</th>
+                      <th className="batch-cmp-th" style={{ color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center', wordBreak: 'break-word' }}>
+                        {infoModalCourse?.enrollmentType === 'FREE' || infoModalCourse?.enrollmentType === 'DEMO' ? 'General' : 'PLUS'}
                       </th>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO ( LIVE )</th>
+                      <th className="batch-cmp-th" style={{ color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[
-                      { f: 'Course Lectures', g: '✅ Full Access', p: '✅ Full Access' },
-                      { f: 'Course Materials', g: '✅ Full Access', p: '✅ Full Access' },
-                      { f: 'Live Classes', g: '❌ No Access', p: '✅ Direct Entry' },
-                      { f: 'Direct Q&A with Teacher', g: '❌ No', p: '✅ Yes (Live)' },
-                      { f: 'Weekly Mentorship', g: '❌ No', p: '✅ Every Sunday' },
-                      { f: 'Priority Support', g: '❌ Standard', p: '✅ 24/7 Priority' },
+                      { f: 'Lectures', g: '✅ Full', p: '✅ Full' },
+                      { f: 'Materials', g: '✅ Full', p: '✅ Full' },
+                      { f: 'Live Classes', g: '❌ No', p: '✅ Yes' },
+                      { f: 'Q&A w/ Teacher', g: '❌ No', p: '✅ Live' },
+                      { f: 'Mentorship', g: '❌ No', p: '✅ Weekly' },
+                      { f: 'Support', g: '❌ Basic', p: '✅ Priority' },
                     ].map((row, i) => (
                       <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#334155', fontWeight: '600' }}>{row.f}</td>
-                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#92400e', textAlign: 'center', background: '#fffdf5' }}>{row.g}</td>
-                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#4338ca', fontWeight: '700', textAlign: 'center', background: '#f5f7ff' }}>{row.p}</td>
+                        <td className="batch-cmp-td" style={{ color: '#334155', fontWeight: '600' }}>{row.f}</td>
+                        <td className="batch-cmp-td" style={{ color: '#92400e', textAlign: 'center', background: '#fffdf5' }}>{row.g}</td>
+                        <td className="batch-cmp-td" style={{ color: '#4338ca', fontWeight: '700', textAlign: 'center', background: '#f5f7ff' }}>{row.p}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -674,8 +820,8 @@ export default function CoursesPage() {
               </div>
             </div>
 
-            <div style={{ padding: '0 40px 40px', textAlign: 'center' }}>
-              <button onClick={() => setInfoModalCourse(null)} style={{ background: '#1e293b', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+            <div className="batch-cmp-footer" style={{ textAlign: 'center' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ background: '#1e293b', color: 'white', padding: '12px 32px', borderRadius: '14px', fontSize: '14px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 Got it, thanks!
               </button>
             </div>
@@ -825,6 +971,18 @@ export default function CoursesPage() {
             <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Please wait while we set up your course access.</p>
           </div>
         </div>
+      )}
+
+      {selectedFeedbackCourse && (
+        <FeedbackModal
+          courseId={selectedFeedbackCourse.id}
+          courseName={selectedFeedbackCourse.name}
+          courseSubject={selectedFeedbackCourse.subject || ''}
+          onClose={() => setSelectedFeedbackCourse(null)}
+          onSuccess={() => {
+            mutateFeedbacks()
+          }}
+        />
       )}
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />

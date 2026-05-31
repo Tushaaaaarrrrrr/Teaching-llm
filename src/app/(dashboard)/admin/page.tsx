@@ -549,7 +549,7 @@ export default function AdminPage() {
                 ? createdAtDate.toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })
                 : 'Unknown'
               return (
-                <div key={user.id} style={{
+                <div key={user.id} className="admin-user-row" style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '16px',
@@ -657,10 +657,10 @@ export default function AdminPage() {
                     )}
                   </div>
                   {/* Right-side Columns for Alignment */}
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '24px', 
+                  <div className="admin-user-meta" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '24px',
                     flexShrink: 0,
                     marginLeft: 'auto'
                   }}>

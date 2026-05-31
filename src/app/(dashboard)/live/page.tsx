@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import useSWR, { mutate } from 'swr'
 import { formatIST, formatISTDate, getEventStatus } from '@/lib/date-utils'
+import LiveSessionsMobile from '@/components/live/LiveSessionsMobile'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -19,10 +21,14 @@ interface CourseEvent {
   courseId: string | null
   course: { id: string; name: string; color: string; teacherName?: string | null } | null
   instructor: { id: string; name: string } | null
+  instructorId?: string | null
+  streamProvider?: string | null
+  streamStatus?: string | null
 }
 
 interface MeResponse {
   user?: {
+    id?: string
     role?: string
   }
 }
@@ -45,6 +51,7 @@ export default function LivePage() {
   const [nowTick, setNowTick] = useState(Date.now())
   const [syncing, setSyncing] = useState(false)
   const [userRole, setUserRole] = useState('')
+  const [userId, setUserId] = useState('')
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
   
   const sessions = Array.isArray(data) ? data : []
@@ -61,6 +68,7 @@ export default function LivePage() {
       .then((res) => res.json())
       .then((data: MeResponse) => {
         setUserRole(data.user?.role || '')
+        setUserId(data.user?.id || '')
       })
       .catch(console.error)
   }, [])
@@ -222,6 +230,42 @@ export default function LivePage() {
             }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
             </div>
+          ) : session.streamProvider === 'AGORA' && (isLive || (!isCompleted && !isCancelled && !isRescheduled)) ? (
+            (() => {
+              const canHost = isManager || (!!session.instructorId && session.instructorId === userId)
+              const streamLive = session.streamStatus === 'LIVE'
+              // Hosts get Go Live (when scheduled) or Open Stage (when live) — both route to /live/[id].
+              // Audience only gets Join Live once the host has started.
+              if (!streamLive && !canHost) {
+                return (
+                  <div style={{
+                    width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0, background: '#e8eaf0',
+                    boxShadow: isNextUpcoming ? '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff, 0 0 0 2px rgba(54,54,232,0.15)' : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isNextUpcoming ? '#3636e8' : '#9999b0'} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  </div>
+                )
+              }
+              const label = streamLive ? (canHost ? 'Open Stage' : 'Join Live') : 'Go Live'
+              const bg = streamLive ? '#16a34a' : '#ef4444'
+              const shadow = streamLive
+                ? '4px 4px 10px rgba(22,163,74,0.4), -2px -2px 6px rgba(255,255,255,0.8)'
+                : '4px 4px 10px rgba(239,68,68,0.4), -2px -2px 6px rgba(255,255,255,0.8)'
+              return (
+                <Link href={`/live/${session.id}`} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '50px', flexShrink: 0,
+                  background: bg, color: 'white', fontWeight: '700', fontSize: '14px', textDecoration: 'none',
+                  boxShadow: shadow,
+                }}>
+                  {streamLive && (
+                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ffffff', animation: 'livePulse 1.5s infinite' }} />
+                  )}
+                  {label}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </Link>
+              )
+            })()
           ) : (isLive || (!isCompleted && !isCancelled && !isRescheduled)) && session.meetLink ? (
             <a href={session.meetLink} target="_blank" rel="noopener noreferrer" style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '50px', flexShrink: 0,
@@ -247,7 +291,13 @@ export default function LivePage() {
   }
 
   return (
-    <div className="page-container fade-in">
+    <>
+    {/* Mobile redesign */}
+    <div className="live-sessions-mobile-only">
+      <LiveSessionsMobile sessions={sessions} />
+    </div>
+    {/* Desktop layout */}
+    <div className="page-container fade-in live-sessions-desktop-only">
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
         <p style={{ fontSize: '13px', color: '#9999b0' }}>Today&apos;s Schedule &bull; {today}</p>
@@ -349,5 +399,6 @@ export default function LivePage() {
         }
       `}</style>
     </div>
+    </>
   )
 }

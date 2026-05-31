@@ -75,6 +75,14 @@ export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
+  useEffect(() => {
+    setIsMobile(window.innerWidth <= 768)
+    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   const [editFirstName, setEditFirstName] = useState('')
   const [editLastName, setEditLastName] = useState('')
   const [editMobile, setEditMobile] = useState('')
@@ -231,7 +239,7 @@ export default function ProfilePage() {
 
   const insetRow: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '14px 18px', borderRadius: '14px', background: '#e8eaf0',
+    padding: isMobile ? '10px 14px' : '14px 18px', borderRadius: '14px', background: '#e8eaf0',
     boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
     gap: '16px',
   }
@@ -257,7 +265,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="page-container fade-in">
+    <div className="page-container fade-in mobile-profile-page" style={{ padding: isMobile ? '12px' : '20px', paddingBottom: isMobile ? 'calc(170px + env(safe-area-inset-bottom, 0px))' : '24px' }}>
       <div style={{ maxWidth: '960px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
         {/* ── Back ── */}
@@ -283,54 +291,27 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Profile Card ── */}
-        <div className="card" style={{ padding: '32px', display: 'flex', alignItems: 'center', gap: '28px', flexWrap: 'wrap' }}>
-          {/* Avatar */}
+        <div className="card" style={{ padding: isMobile ? '20px' : '32px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: isMobile ? '20px' : '28px', textAlign: isMobile ? 'center' : 'left' }}>
+          {/* Avatar — display only; predefined male/female avatar based on gender */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div
-              onClick={() => fileInputRef.current?.click()}
-              title="Click to change photo"
               style={{
                 width: '100px', height: '100px', borderRadius: '50%',
                 background: 'transparent',
                 boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                overflow: 'hidden', cursor: 'pointer',
+                overflow: 'hidden',
               }}
             >
               <img src={resolvedAvatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
-            {/* Camera badge */}
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                position: 'absolute', bottom: '2px', right: '2px',
-                width: '30px', height: '30px', borderRadius: '50%',
-                background: '#3636e8', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', cursor: 'pointer',
-                boxShadow: '2px 2px 5px rgba(0,0,0,0.2)',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                <circle cx="12" cy="13" r="4"/>
-              </svg>
-            </div>
-            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" style={{ display: 'none' }} onChange={handleAvatarUpload} />
-            {uploadingAvatar && (
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg className="spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                  <path d="M12 2a10 10 0 0 1 10 10"/>
-                </svg>
-              </div>
-            )}
           </div>
 
           {/* User info */}
-          <div style={{ flex: 1, minWidth: '180px' }}>
+          <div style={{ flex: 1, minWidth: '180px', width: isMobile ? '100%' : 'auto' }}>
             <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px' }}>{user.name}</h2>
             <p style={{ fontSize: '14px', color: '#9999b0', marginBottom: '6px' }}>{user.email}</p>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
               <span className="badge" style={{
                 background: user.role === 'MANAGER' ? '#ede9fe' : user.role === 'ADMIN' ? '#dbeafe' : '#d1fae5',
                 color: user.role === 'MANAGER' ? '#7c3aed' : user.role === 'ADMIN' ? '#3b82f6' : '#10b981',
@@ -344,30 +325,59 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', flexShrink: 0, alignItems: 'center' }}>
-            {user.avatar && (
-              <button onClick={handleRemoveAvatar} disabled={uploadingAvatar} className="btn btn-ghost" style={{ color: '#ef4444' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
-                </svg>
-                Remove
-              </button>
-            )}
-            <button onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar} className="btn btn-ghost">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                <circle cx="12" cy="13" r="4"/>
-              </svg>
-              Change Photo
-            </button>
-          </div>
+          {/* Profile-pic change disabled — predefined avatars only */}
         </div>
+
+        {/* ── Course Feedback Navigation Row ── */}
+        {user.role === 'STUDENT' && (
+          <div
+            onClick={() => router.push('/feedback')}
+            style={{
+              background: '#ffffff',
+              borderRadius: '24px',
+              padding: '16px 20px',
+              border: '1px solid rgba(15,23,42,0.05)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              transition: 'transform 0.2s ease',
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '12px',
+                background: '#ffeedd',
+                color: '#d97706',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </div>
+              <span style={{ fontSize: '15.5px', fontWeight: '800', color: '#1e1e3a', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+                Course Feedback
+              </span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        )}
 
         {/* ── Personal Information + Account Details (side by side) ── */}
         <div className="responsive-two-column-grid">
 
           {/* ── Personal Information ── */}
-          <div className="card" style={{ padding: '28px', display: 'flex', flexDirection: 'column' }}>
+          <div className="card" style={{ padding: isMobile ? '16px' : '28px', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -388,7 +398,7 @@ export default function ProfilePage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1 }}>
               {/* Name — editable */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? '10px' : '16px' }}>
                 <div className="form-group">
                   <label className="form-label">First Name</label>
                   <input className="form-input" value={editFirstName} onChange={e => setEditFirstName(e.target.value)} placeholder="First Name" />
@@ -400,7 +410,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Gender + Age — side by side */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? '10px' : '12px' }}>
                 {/* Gender */}
                 <div style={{ ...insetRow, flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
                   <span style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '500' }}>Gender</span>
@@ -474,7 +484,7 @@ export default function ProfilePage() {
           </div>
 
           {/* ── Account Details ── */}
-          <div className="card" style={{ padding: '28px', display: 'flex', flexDirection: 'column' }}>
+          <div className="card" style={{ padding: isMobile ? '16px' : '28px', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -488,7 +498,7 @@ export default function ProfilePage() {
               {/* Email */}
               <div style={insetRow}>
                 <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Email Address</span>
-                <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
+                <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600', maxWidth: isMobile ? '120px' : '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
               </div>
 
               {/* Mobile */}
@@ -547,16 +557,54 @@ export default function ProfilePage() {
 
         </div> {/* close grid container */}
 
-        {/* ── Bottom Action Bar — only show save for name fields (or manager editable fields) ── */}
+        {/* ── Bottom Action Bar ── */}
         <div style={{
-          display: 'flex', justifyContent: 'flex-end', gap: '12px',
-          padding: '20px 24px', borderRadius: '20px', background: '#e8eaf0',
-          boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+          display: 'flex',
+          justifyContent: isMobile ? 'stretch' : 'flex-end',
+          alignItems: 'center',
+          gap: '10px',
+          padding: isMobile ? '12px 16px' : '20px 24px',
+          borderRadius: isMobile ? '0' : '20px',
+          background: '#e8eaf0',
+          boxShadow: isMobile ? '0 -6px 18px rgba(150, 152, 165, 0.25)' : '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+          flexDirection: 'row',
+          ...(isMobile ? {
+            position: 'fixed',
+            bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+            left: 0,
+            right: 0,
+            zIndex: 90,
+            borderTop: '1px solid rgba(0,0,0,0.08)'
+          } : {})
         }}>
-          <button onClick={handleDiscard} className="btn btn-ghost">
-            Discard Changes
+          <button
+            onClick={handleDiscard}
+            className="btn btn-ghost"
+            style={{
+              flex: isMobile ? 1 : 'unset',
+              padding: isMobile ? '11px 10px' : undefined,
+              fontSize: isMobile ? '13px' : undefined,
+              fontWeight: isMobile ? '600' : undefined,
+              borderRadius: isMobile ? '50px' : undefined,
+              border: isMobile ? '1.5px solid rgba(99,102,241,0.25)' : undefined,
+              color: isMobile ? '#6366f1' : undefined,
+              background: isMobile ? 'rgba(99,102,241,0.06)' : undefined,
+            }}
+          >
+            Discard
           </button>
-          <button onClick={handleSaveProfile} disabled={saving} className="btn btn-primary">
+          <button
+            onClick={handleSaveProfile}
+            disabled={saving}
+            className="btn btn-primary"
+            style={{
+              flex: isMobile ? 1 : 'unset',
+              padding: isMobile ? '11px 10px' : undefined,
+              fontSize: isMobile ? '13px' : undefined,
+              fontWeight: isMobile ? '700' : undefined,
+              borderRadius: isMobile ? '50px' : undefined,
+            }}
+          >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
@@ -566,7 +614,7 @@ export default function ProfilePage() {
       {/* ── Image Crop Modal ── */}
       {imageSrc && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
-          <div className="modal" style={{ width: '90%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
+          <div className="modal" style={{ width: '95%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
             <div className="modal-header" style={{ padding: '20px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Adjust Profile Picture</h3>
               <button 
@@ -579,7 +627,7 @@ export default function ProfilePage() {
               </button>
             </div>
             
-            <div style={{ position: 'relative', width: '100%', height: '350px', background: '#333' }}>
+            <div style={{ position: 'relative', width: '100%', height: isMobile ? '280px' : '350px', background: '#333' }}>
               <Cropper
                 image={imageSrc}
                 crop={crop}

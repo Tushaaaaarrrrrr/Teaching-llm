@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import useSWR from 'swr'
 import RichTextEditor from '@/components/ui/RichTextEditor'
+import { getDefaultCompanyContent } from '@/lib/companyPagesDefault'
 
 export default function CompanyPage() {
   const params = useParams()
@@ -25,9 +26,10 @@ export default function CompanyPage() {
 
   useEffect(() => {
     if (pageData && !isEditing) {
-      setContent(pageData.content || '')
+      // Use DB content if a manager has saved one, otherwise fall back to bundled default.
+      setContent(pageData.content || getDefaultCompanyContent(slug))
     }
-  }, [pageData, isEditing])
+  }, [pageData, isEditing, slug])
 
   const handleSave = async () => {
     setSaving(true)
@@ -53,8 +55,8 @@ export default function CompanyPage() {
   const neuCard: React.CSSProperties = {
     borderRadius: '20px', background: '#e8eaf0',
     boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
-    padding: '40px',
-    minHeight: '500px'
+    padding: 'clamp(20px, 5vw, 40px)',
+    minHeight: '300px'
   }
   
   const neuButton: React.CSSProperties = {
@@ -73,25 +75,31 @@ export default function CompanyPage() {
     transition: 'all 0.2s ease',
   }
 
-  if (!pageData) {
+  // If the page-data fetch is still in flight, show a soft loader.
+  // We still proceed to render with the default content as a safety net if the API ever fails.
+  if (!pageData && !getDefaultCompanyContent(slug)) {
      return <div style={{ padding: '32px', textAlign: 'center', color: '#9999b0', fontWeight: 600 }}>Loading {titleText}...</div>
   }
 
+  // If pageData hasn't arrived yet but we have a default for this slug, render the default immediately.
+  const displayContent = content || pageData?.content || getDefaultCompanyContent(slug)
+
   return (
-    <div style={{ padding: '24px 32px 48px', maxWidth: '1000px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button 
+    <div style={{ padding: 'clamp(16px, 4vw, 24px) clamp(16px, 4vw, 32px) 48px', maxWidth: '1000px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: '1 1 200px' }}>
+          <button
             onClick={() => router.back()}
-            style={{ 
-              ...neuButtonSecondary, 
-              padding: '10px', 
-              width: '40px', 
-              height: '40px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              borderRadius: '50%' 
+            style={{
+              ...neuButtonSecondary,
+              padding: '10px',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              flexShrink: 0,
             }}
             title="Go Back"
           >
@@ -99,7 +107,7 @@ export default function CompanyPage() {
               <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
             </svg>
           </button>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px' }}>
+          <h1 style={{ fontSize: 'clamp(20px, 5.5vw, 32px)', fontWeight: 800, color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px', wordBreak: 'normal', overflowWrap: 'break-word' }}>
             {titleText}
           </h1>
         </div>
@@ -145,10 +153,10 @@ export default function CompanyPage() {
             />
           </div>
         ) : (
-          <div 
+          <div
             className="custom-page-content"
-            style={{ color: '#4a4a68', lineHeight: '1.8', fontSize: '16px' }}
-            dangerouslySetInnerHTML={{ __html: content || `<p style="color: #9999b0; font-style: italic; text-align: center; padding: 40px;">No content available for ${titleText}. ${isManager ? 'Click Edit to add something.' : ''}</p>` }}
+            style={{ color: '#4a4a68', lineHeight: '1.7', fontSize: 'clamp(14px, 3.6vw, 16px)' }}
+            dangerouslySetInnerHTML={{ __html: displayContent || `<p style="color: #9999b0; font-style: italic; text-align: center; padding: 40px;">No content available for ${titleText}. ${isManager ? 'Click Edit to add something.' : ''}</p>` }}
           />
         )}
       </div>
@@ -205,13 +213,17 @@ export default function CompanyPage() {
 
       {/* Global styles for the rich text editor viewing mode */}
       <style dangerouslySetInnerHTML={{__html: `
-        .custom-page-content h1 { font-size: 2em; margin-bottom: 0.5em; font-weight: 800; color: #1e1e3a; }
-        .custom-page-content h2 { font-size: 1.5em; margin-bottom: 0.5em; font-weight: 700; color: #2e2e4a; margin-top: 1.5em; }
+        .custom-page-content { word-wrap: break-word; overflow-wrap: break-word; }
+        .custom-page-content h1 { font-size: clamp(1.4em, 5vw, 2em); margin-bottom: 0.5em; font-weight: 800; color: #1e1e3a; line-height: 1.25; }
+        .custom-page-content h2 { font-size: clamp(1.15em, 4vw, 1.5em); margin-bottom: 0.5em; font-weight: 700; color: #2e2e4a; margin-top: 1.4em; line-height: 1.3; }
+        .custom-page-content h3 { font-size: clamp(1.05em, 3.6vw, 1.25em); margin-bottom: 0.4em; font-weight: 700; color: #2e2e4a; margin-top: 1.2em; }
         .custom-page-content p { margin-bottom: 1em; }
-        .custom-page-content ul, .custom-page-content ol { padding-left: 2em; margin-bottom: 1em; }
-        .custom-page-content li { margin-bottom: 0.5em; }
-        .custom-page-content a { color: #3636e8; text-decoration: underline; font-weight: 600; }
+        .custom-page-content ul, .custom-page-content ol { padding-left: 1.5em; margin-bottom: 1em; }
+        .custom-page-content li { margin-bottom: 0.4em; }
+        .custom-page-content a { color: #3636e8; text-decoration: underline; font-weight: 600; word-break: break-all; }
         .custom-page-content strong, .custom-page-content b { font-weight: 700; color: #1e1e3a; }
+        .custom-page-content img, .custom-page-content video, .custom-page-content iframe { max-width: 100%; height: auto; border-radius: 12px; }
+        .custom-page-content table { display: block; overflow-x: auto; max-width: 100%; }
       `}} />
     </div>
   )

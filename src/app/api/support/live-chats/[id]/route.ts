@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, isManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 
 // Agent joins or closes a chat
@@ -15,7 +15,7 @@ export async function PUT(
     const { action } = await request.json()
 
     let data: Record<string, unknown> = {}
-    if (action === 'join' && isAdminOrManager(session.role)) {
+    if (action === 'join' && isManager(session.role)) {
       data = { agentId: session.userId, status: 'ACTIVE' }
     } else if (action === 'close') {
       data = { status: 'CLOSED' }

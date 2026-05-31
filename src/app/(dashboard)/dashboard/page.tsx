@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { formatISTDate, getEventStatus } from '@/lib/date-utils'
+import HomeHeroSlider, { HeroSlide } from '@/components/home/HomeHeroSlider'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -11,6 +12,19 @@ export default function DashboardPage() {
   const { data: dashboardData, error, isLoading: loading, mutate } = useSWR('/api/dashboard', fetcher, {
     revalidateOnFocus: false
   })
+  const { data: featuredOfferings } = useSWR('/api/course-offerings', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  })
+  const { data: homeSlidesData } = useSWR('/api/admin/home-slides', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  })
+  const homeSlides = Array.isArray(homeSlidesData) && homeSlidesData.length > 0 ? homeSlidesData : [
+    { image: '/images/qualifier-session.png', alt: 'Qualifier Session', href: 'https://www.youtube.com/@Gen-ZIITian/videos' },
+    { image: '/images/level-up.png',          alt: 'Level Up',          href: 'https://genziitian.in/courses' },
+    { image: '/images/join-community.png',    alt: 'Join Community',    href: 'https://genziitian.in/newsletter' },
+  ]
 
   // Move declarations up to avoid Temporal Dead Zone (TDZ)
   const stats = dashboardData?.stats || null
@@ -37,7 +51,7 @@ export default function DashboardPage() {
   const [activeCard, setActiveCard] = useState(0)
   const [sliding, setSliding] = useState(false)
   const [nowTick, setNowTick] = useState(Date.now())
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
 
   useEffect(() => {
     setIsMobile(window.innerWidth <= 768)
@@ -265,45 +279,66 @@ export default function DashboardPage() {
       `}</style>
 
       {/* Stats Grid */}
-      <div 
-        className="dashboard-stats-grid" 
-        style={{ 
-          marginBottom: isMobile ? '16px' : '24px', 
+      <div
+        className="dashboard-stats-grid"
+        style={{
+          marginBottom: isMobile ? '16px' : '24px',
           marginTop: isMobile ? '16px' : '24px',
           display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
           gap: isMobile ? '12px' : '20px'
         }}
       >
-        {statCards.filter(c => !c.isSupport && c.label !== 'Active Sessions').map((card) => (
+        {statCards.filter(c => !c.isSupport && c.label !== 'Active Sessions' && !isMobile).map((card) => {
+          const mobileHero = isMobile && card.isTimer
+          return (
           <div key={card.label} className="stat-card" style={{
-            background: card.isTimer ? card.bg : undefined,
-            padding: isMobile ? '12px 14px' : '22px 24px',
-            gap: isMobile ? '10px' : '20px',
-            borderRadius: isMobile ? '16px' : '20px',
+            background: mobileHero
+              ? 'linear-gradient(135deg, #ffffff 0%, #f8faff 60%, #eef2ff 100%)'
+              : (card.isTimer ? card.bg : undefined),
+            padding: mobileHero ? '22px 22px' : (isMobile ? '12px 14px' : '22px 24px'),
+            gap: isMobile ? '14px' : '20px',
+            borderRadius: mobileHero ? '22px' : (isMobile ? '16px' : '20px'),
+            border: mobileHero ? '1px solid rgba(99, 102, 241, 0.10)' : undefined,
+            boxShadow: mobileHero ? '0 12px 30px -10px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.04)' : undefined,
+            position: 'relative', overflow: 'hidden',
           } as React.CSSProperties}>
+            {mobileHero && (
+              <span style={{ position: 'absolute', top: '-40px', right: '-30px', width: '140px', height: '140px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.10), transparent 70%)', pointerEvents: 'none' }} />
+            )}
             <div className="stat-card-icon" style={{
-              background: card.isTimer ? 'rgba(255,255,255,0.4)' : card.bg,
-              color: card.color,
-              width: isMobile ? '36px' : '48px',
-              height: isMobile ? '36px' : '48px',
-              borderRadius: isMobile ? '10px' : '14px',
+              background: mobileHero ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : (card.isTimer ? 'rgba(255,255,255,0.4)' : card.bg),
+              color: mobileHero ? '#ffffff' : card.color,
+              width: mobileHero ? '48px' : (isMobile ? '36px' : '48px'),
+              height: mobileHero ? '48px' : (isMobile ? '36px' : '48px'),
+              borderRadius: mobileHero ? '14px' : (isMobile ? '10px' : '14px'),
+              boxShadow: mobileHero ? '0 8px 18px rgba(99,102,241,0.35)' : undefined,
+              flexShrink: 0,
             }}>
               {card.icon}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="stat-card-label" style={{ 
-                color: card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(0,0,0,0.5)' : undefined
+            <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+              <div className="stat-card-label" style={{
+                color: mobileHero ? '#6366f1' : (card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(0,0,0,0.5)' : undefined),
+                fontSize: mobileHero ? '10.5px' : undefined,
+                fontWeight: mobileHero ? 800 : undefined,
+                letterSpacing: mobileHero ? '0.08em' : undefined,
               }}>
                 {card.label}
               </div>
-              <div className="stat-card-value">
+              <div className="stat-card-value" style={{
+                fontSize: mobileHero ? '26px' : undefined,
+                fontWeight: mobileHero ? 900 : undefined,
+                color: mobileHero ? '#1e1e3a' : undefined,
+                marginTop: mobileHero ? '4px' : undefined,
+                letterSpacing: mobileHero ? '-0.02em' : undefined,
+              }}>
                 {card.value}
               </div>
             </div>
 
             {card.isTimer && isManager && (
-              <button 
+              <button
                 onClick={() => {
                   setTimerTitle(examCountdown?.title || 'Exam Countdown')
                   setTimerDays(examCountdown?.daysLeft || 0)
@@ -328,7 +363,8 @@ export default function DashboardPage() {
               </button>
             )}
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Manager Specific Cards (Active Sessions & Support) */}
@@ -580,11 +616,13 @@ export default function DashboardPage() {
 
       {!isManager && (
         <>
-          {/* ── Row 1: Active Now + Up Next ── */}
+          <HomeHeroSlider slides={homeSlides} />
+          {/* ── Row 1: Active Now + Up Next (desktop only on mobile they're replaced by Featured Courses) ── */}
+          {!isMobile && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-            gap: isMobile ? '12px' : '20px',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '20px',
             marginBottom: '20px',
             alignItems: 'stretch',
           }}>
@@ -797,18 +835,159 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          )}
+
+
+          {/* Categories: temporarily hidden — will be re-enabled later. */}
+
+          {/* ── Mobile-only: Upcoming Session (compact) ── */}
+          {isMobile && (
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '14px', padding: '0 4px', gap: '12px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1e1e3a', letterSpacing: '-0.02em', margin: 0 }}>
+                    Upcoming Session
+                  </h3>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#9999b0', marginTop: '2px' }}>
+                    Your next live class
+                  </div>
+                </div>
+                <Link href="/live" style={{ fontSize: '12px', color: '#6366f1', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  View All →
+                </Link>
+              </div>
+              {hasLive && frontSession ? (
+                <a
+                  href={frontSession.meetLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '14px',
+                    padding: '18px',
+                    borderRadius: '20px',
+                    background: '#ffffff',
+                    border: '1px solid rgba(15, 23, 42, 0.05)',
+                    boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
+                    textDecoration: 'none', color: 'inherit',
+                    position: 'relative', overflow: 'hidden',
+                  }}
+                >
+                  <span style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'linear-gradient(180deg, #ef4444, #f97316)' }} />
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '14px', flexShrink: 0,
+                    background: 'linear-gradient(135deg, #ef4444, #f97316)', color: '#ffffff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 8px 18px rgba(239,68,68,0.4)',
+                    animation: 'redLivePulse 2s ease-in-out infinite',
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', animation: 'redLivePulse 1.4s infinite' }} />
+                      LIVE NOW · {frontSession.time}
+                    </div>
+                    <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {frontSession.title}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {frontSession.instructor}{frontSession.course?.name ? ` · ${frontSession.course.name}` : ''}
+                    </div>
+                  </div>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                    fontSize: '12px', fontWeight: 800, color: '#ffffff',
+                    padding: '8px 14px', borderRadius: '50px',
+                    background: 'linear-gradient(135deg, #ef4444, #f97316)',
+                    boxShadow: '0 6px 14px rgba(239,68,68,0.4)',
+                    flexShrink: 0,
+                  }}>
+                    Join
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </span>
+                </a>
+              ) : upNextSessions.length > 0 ? (
+                <a
+                  href={upNextSessions[0].meetLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '14px',
+                    padding: '18px',
+                    borderRadius: '20px',
+                    background: '#ffffff',
+                    border: '1px solid rgba(15, 23, 42, 0.05)',
+                    boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
+                    textDecoration: 'none', color: 'inherit',
+                    position: 'relative', overflow: 'hidden',
+                  }}
+                >
+                  <span style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'linear-gradient(180deg, #6366f1, #4f46e5)' }} />
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '14px', flexShrink: 0,
+                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#ffffff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 8px 18px rgba(99,102,241,0.40)',
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
+                      UP NEXT · {upNextSessions[0].time}
+                    </div>
+                    <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {upNextSessions[0].title}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, marginTop: '2px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      {upNextSessions[0].date}
+                    </div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </a>
+              ) : (
+                <div style={{
+                  padding: '32px 16px', textAlign: 'center', color: '#9999b0', fontSize: '13px',
+                  background: '#ffffff', borderRadius: '20px',
+                  border: '1px solid rgba(15, 23, 42, 0.05)',
+                }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.8" style={{ marginBottom: '8px' }}>
+                    <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                  </svg>
+                  <div style={{ fontWeight: 700, color: '#6b6b8a' }}>No upcoming sessions</div>
+                  <div style={{ fontSize: '11px', marginTop: '2px' }}>Check back later for live classes</div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── Row 2: Recent Lecture Viewed ── */}
-          <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Recent Lecture Viewed</h3>
+          <div className={isMobile ? '' : 'card'} style={isMobile ? { marginBottom: '24px' } : { padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isMobile ? '14px' : '18px', padding: isMobile ? '0 4px' : '0', gap: '12px' }}>
+              <div style={{ minWidth: 0 }}>
+                <h3 style={{ fontSize: isMobile ? '18px' : '16px', fontWeight: isMobile ? 900 : 700, color: '#1e1e3a', letterSpacing: isMobile ? '-0.02em' : 'normal', margin: 0 }}>
+                  Recent Lecture
+                </h3>
+                {isMobile && (
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#9999b0', marginTop: '2px' }}>
+                    Pick up where you left off
+                  </div>
+                )}
+              </div>
               {recentViewedLecture && (
-                <Link href="/materials/recordings" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
+                <Link href="/materials/recordings" style={{ fontSize: '12px', color: '#6366f1', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   View All →
                 </Link>
               )}
             </div>
             {!recentViewedLecture ? (
-              <div style={{ padding: '32px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
+              <div style={{
+                padding: '32px 16px', textAlign: 'center', color: '#9999b0', fontSize: '13px',
+                background: '#ffffff', borderRadius: '20px',
+                border: '1px solid rgba(15, 23, 42, 0.05)',
+              }}>
                 No recent lectures
               </div>
             ) : (
@@ -820,60 +999,72 @@ export default function DashboardPage() {
                     <div
                       key={lec.id}
                       style={{
-                        padding: isMobile ? '16px' : '24px',
-                        borderRadius: isMobile ? '18px' : '24px',
-                        background: '#e8eaf0',
-                        boxShadow: isMobile ? '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                        padding: isMobile ? '18px' : '24px',
+                        borderRadius: isMobile ? '20px' : '24px',
+                        background: isMobile ? '#ffffff' : '#e8eaf0',
+                        boxShadow: isMobile
+                          ? '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)'
+                          : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                        border: isMobile ? '1px solid rgba(15, 23, 42, 0.05)' : undefined,
                         display: 'flex',
                         flexDirection: isMobile ? 'column' : 'row',
-                        alignItems: isMobile ? 'flex-start' : 'center',
+                        alignItems: isMobile ? 'stretch' : 'center',
                         gap: isMobile ? '16px' : '24px',
                         width: '100%',
                         transition: 'all 0.2s',
+                        position: 'relative', overflow: 'hidden',
                       }}
                     >
+                      {isMobile && (
+                        <span style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: `linear-gradient(180deg, ${accent}, ${accent}88)`, borderRadius: '4px 0 0 4px' }} />
+                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%' }}>
                         <div style={{
-                          width: isMobile ? '44px' : '56px', height: isMobile ? '44px' : '56px', borderRadius: isMobile ? '12px' : '16px',
-                          background: accent + '15',
+                          width: isMobile ? '48px' : '56px', height: isMobile ? '48px' : '56px', borderRadius: isMobile ? '14px' : '16px',
+                          background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                          color: '#ffffff',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          boxShadow: isMobile ? `0 8px 18px ${accent}40` : undefined,
                         }}>
-                          <svg width={isMobile ? '20' : '24'} height={isMobile ? '20' : '24'} viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5">
-                            <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
+                          <svg width={isMobile ? '22' : '24'} height={isMobile ? '22' : '24'} viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
                           </svg>
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: isMobile ? '9.5px' : '11px', color: '#9999b0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>
+                          <div style={{ fontSize: isMobile ? '10px' : '11px', color: accent, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
                             {lec.topic?.course?.name || 'Course Lecture'}
                           </div>
                           <div style={{
-                            fontSize: isMobile ? '15px' : '18px', fontWeight: '800', color: '#1e1e3a',
-                            lineHeight: '1.2', marginBottom: '2px',
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                            fontSize: isMobile ? '15.5px' : '18px', fontWeight: 800, color: '#1e1e3a',
+                            lineHeight: '1.25', marginBottom: '4px',
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           }}>
                             {lec.title}
                           </div>
-                          <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#6b6b8a', fontWeight: '500' }}>
+                          <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#94a3b8', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             Last viewed on {formatISTDate(recentViewedLecture.updatedAt)}
                           </div>
                         </div>
                       </div>
-                      <Link 
-                        href={`/courses/${lec.topic?.courseId}/lectures/${lec.id}`} 
+                      <Link
+                        href={`/courses/${lec.topic?.courseId}/lectures/${lec.id}`}
                         className="btn btn-primary"
-                        style={{ 
-                          background: accent, 
-                          boxShadow: `0 8px 16px ${accent}20`,
-                          padding: isMobile ? '10px 20px' : '12px 28px',
-                          fontSize: isMobile ? '13px' : '14px',
-                          fontWeight: '800',
+                        style={{
+                          background: `linear-gradient(135deg, ${accent}, ${accent}dd)`,
+                          boxShadow: `0 8px 18px ${accent}40`,
+                          padding: isMobile ? '12px 22px' : '12px 28px',
+                          fontSize: isMobile ? '13.5px' : '14px',
+                          fontWeight: 800,
                           whiteSpace: 'nowrap',
                           width: isMobile ? '100%' : 'auto',
-                          justifyContent: 'center'
+                          justifyContent: 'center',
+                          letterSpacing: '0.01em',
                         }}
                       >
                         Continue Watching
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px' }}><polyline points="9 18 15 12 9 6"/></svg>
                       </Link>
                     </div>
                   )
@@ -883,34 +1074,51 @@ export default function DashboardPage() {
           </div>
 
           {/* ── Row 3: Upcoming Assessments ── */}
-          <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Upcoming Assessments</h3>
-              <Link href="/exams" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
+          <div className={isMobile ? '' : 'card'} style={isMobile ? { marginBottom: '24px' } : { padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isMobile ? '14px' : '18px', padding: isMobile ? '0 4px' : '0', gap: '12px' }}>
+              <div style={{ minWidth: 0 }}>
+                <h3 style={{ fontSize: isMobile ? '18px' : '16px', fontWeight: isMobile ? 900 : 700, color: '#1e1e3a', letterSpacing: isMobile ? '-0.02em' : 'normal', margin: 0 }}>
+                  Upcoming Assessments
+                </h3>
+                {isMobile && (
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#9999b0', marginTop: '2px' }}>
+                    Tests scheduled for you
+                  </div>
+                )}
+              </div>
+              <Link href="/exams" style={{ fontSize: '12px', color: '#6366f1', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 View All →
               </Link>
             </div>
             {!dashboardData?.upcomingExams?.length ? (
-              <div style={{ padding: '32px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
+              <div style={{
+                padding: '32px 16px', textAlign: 'center', color: '#9999b0', fontSize: '13px',
+                background: isMobile ? '#ffffff' : 'transparent', borderRadius: '20px',
+                border: isMobile ? '1px solid rgba(15, 23, 42, 0.05)' : 'none',
+              }}>
                 No upcoming exams or tests
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '10px' : '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '12px' : '14px' }}>
                 {dashboardData.upcomingExams.map((exam: any) => {
                   const accent = exam.course?.color || '#6366f1'
                   return (
                     <div
                       key={exam.id}
                       style={{
-                        padding: '18px',
-                        borderRadius: '18px',
-                        background: '#e8eaf0',
-                        boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
+                        padding: isMobile ? '18px' : '18px',
+                        borderRadius: isMobile ? '20px' : '18px',
+                        background: isMobile ? '#ffffff' : '#e8eaf0',
+                        boxShadow: isMobile
+                          ? '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)'
+                          : '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
+                        border: isMobile ? '1px solid rgba(15, 23, 42, 0.05)' : undefined,
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '12px',
                         transition: 'all 0.2s',
-                        borderTop: `4px solid ${accent}`
+                        borderTop: `4px solid ${accent}`,
+                        position: 'relative', overflow: 'hidden',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -1031,6 +1239,9 @@ export default function DashboardPage() {
             grid-template-columns: 1fr !important;
           }
         }
+        @keyframes redirectFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes redirectSpin { to { transform: rotate(360deg); } }
+        @keyframes redLivePulse { 0%, 100% { box-shadow: 0 8px 18px rgba(239,68,68,0.40); } 50% { box-shadow: 0 8px 24px rgba(239,68,68,0.65); } }
       `}</style>
 
     </div>

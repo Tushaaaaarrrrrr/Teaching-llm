@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import useSWR from 'swr'
+import { getDefaultAvatar } from '@/lib/avatar'
 
 interface HeaderProps {
   userName: string
@@ -23,6 +24,8 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/dashboard':  { title: 'Dashboard',        subtitle: 'Welcome back to your learning hub' },
   '/courses/explore': { title: '',            subtitle: '' },
   '/courses':    { title: 'Courses',          subtitle: 'Manage your enrolled subjects and lectures' },
+  '/academics':  { title: 'Academics',        subtitle: 'Everything for your learning journey' },
+  '/menu':       { title: 'Profile',          subtitle: 'View and edit your personal information' },
   '/live':       { title: 'Live Sessions',     subtitle: "Today's schedule" },
   '/calendar':   { title: 'Calendar',          subtitle: 'Your schedule and upcoming events' },
   '/materials/recordings': { title: 'Recordings',        subtitle: 'Browse lecture recordings' },
@@ -95,7 +98,8 @@ export default function Header({ userName, userRole }: HeaderProps) {
   // Use SWR data if available, otherwise fall back to props
   const currentUserName = userData?.user?.name || userName
   const currentUserRole = userData?.user?.role || userRole
-  const currentAvatar = userData?.user?.avatar || avatar
+  // Always use the predefined gender-based avatar (custom upload disabled)
+  const currentAvatar = getDefaultAvatar(userData?.user?.gender)
 
   const notifications = Array.isArray(notificationsData) ? notificationsData : []
 
@@ -105,8 +109,12 @@ export default function Header({ userName, userRole }: HeaderProps) {
   const matchedKey = Object.keys(PAGE_TITLES)
     .sort((a, b) => b.length - a.length)
     .find(key => key === pathname || (key !== '/dashboard' && pathname.startsWith(key)))
-    
+
   const pageInfo = matchedKey ? PAGE_TITLES[matchedKey] : { title: 'Dashboard', subtitle: '' }
+
+  // Pages that get the time-based greeting headline on desktop instead of the page title.
+  const greetingPages = new Set(['/dashboard', '/courses'])
+  const showGreetingHeadline = matchedKey ? greetingPages.has(matchedKey) : false
 
   const getGreeting = () => {
     const hour = new Date().getHours()
@@ -156,6 +164,44 @@ export default function Header({ userName, userRole }: HeaderProps) {
       .catch(() => {})
   }, [])
 
+  // Swipe to go back gesture (Android / iOS style)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    let touchStartX = 0
+    let touchStartY = 0
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0]
+      // Start near the left edge of the screen (e.g., within 45px)
+      if (touch.clientX < 45) {
+        touchStartX = touch.clientX
+        touchStartY = touch.clientY
+      } else {
+        touchStartX = 0
+      }
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (touchStartX === 0) return
+      const touch = e.changedTouches[0]
+      const deltaX = touch.clientX - touchStartX
+      const deltaY = Math.abs(touch.clientY - touchStartY)
+
+      // Swipe to the right significantly (e.g., > 90px) with minimal vertical scroll (< 40px)
+      if (deltaX > 90 && deltaY < 40) {
+        router.back()
+      }
+    }
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true })
+    window.addEventListener('touchend', handleTouchEnd, { passive: true })
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart)
+      window.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [router])
+
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -200,19 +246,21 @@ export default function Header({ userName, userRole }: HeaderProps) {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#6b6b8a', cursor: 'pointer',
     transition: 'box-shadow 0.2s ease', border: 'none', flexShrink: 0,
+    outline: 'none',
   } as React.CSSProperties
 
   const firstName = currentUserName.split(' ')[0]
+  const isHomePage = pathname === '/dashboard'
 
   return (
     <header style={{
-      height: pathname === '/dashboard' ? '140px' : '96px', background: '#e8eaf0',
+      height: showGreetingHeadline ? '140px' : '96px', background: '#e8eaf0',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
       transition: 'height 0.3s ease',
-    }} className="dashboard-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }} className="header-left-section">
-        {/* Hamburger Menu Toggle Button on Mobile */}
+    }} className={`dashboard-header ${!isHomePage ? 'mobile-hide-header' : ''}`}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0, flex: 1 }} className="header-left-section">
+        {/* Hamburger Menu Toggle Button on Mobile (hidden — bottom nav handles navigation) */}
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))}
           className="sidebar-toggle-btn"
@@ -225,26 +273,64 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </svg>
         </button>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} className="header-titles">
-        {matchedKey === '/dashboard' ? (
+        {/* Mobile-only greeting block (profile avatar + welcome text) */}
+        {isHomePage && (
+          <a href="/profile" className="mobile-header-greeting" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+            <div style={{
+              width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
+              background: '#ffffff',
+              boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+              border: '2px solid #ffffff',
+            }}>
+              <img
+                src={currentAvatar}
+                alt={currentUserName}
+                onError={e => { (e.target as HTMLImageElement).src = '/avatars/default-neutral.png' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+            <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '15px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.2px' }}>
+                {mounted ? getGreeting().heading : 'Welcome'},
+              </span>
+              <span style={{ fontSize: '20px', fontWeight: 700, color: '#3636e8', lineHeight: 1.15, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.4px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+                {firstName}
+              </span>
+            </div>
+          </a>
+        )}
+
+        {/* Mobile-only title (shown on non-home pages) */}
+        {!isHomePage && (
+          <div className="mobile-header-back-title" style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.3px' }}>
+              {pageInfo.title}
+            </span>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} className={`header-titles ${showGreetingHeadline ? 'header-titles-dashboard' : ''}`}>
+        {showGreetingHeadline ? (
           <>
-            <h1 style={{ 
-              fontSize: '56px', 
-              fontWeight: '900', 
-              color: '#1e1e3a', 
-              lineHeight: '1.0', 
-              letterSpacing: '-1.5px', 
-              display: 'flex', 
-              alignItems: 'baseline', 
-              gap: '12px', 
+            <h1 style={{
+              fontSize: '56px',
+              fontWeight: '900',
+              color: '#1e1e3a',
+              lineHeight: '1.0',
+              letterSpacing: '-1.5px',
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '12px',
               flexWrap: 'wrap',
               fontFamily: "'Outfit', 'Nunito', sans-serif"
             }}>
               {mounted ? getGreeting().heading : 'Welcome'},
-              <span style={{ 
-                fontSize: '40px', 
-                fontWeight: '700', 
-                color: '#3636e8', 
+              <span style={{
+                fontSize: '40px',
+                fontWeight: '700',
+                color: '#3636e8',
                 letterSpacing: '-0.8px',
                 opacity: 0.9,
                 fontFamily: "'Outfit', 'Nunito', sans-serif"
@@ -252,11 +338,11 @@ export default function Header({ userName, userRole }: HeaderProps) {
                 {firstName}
               </span>
             </h1>
-            <p style={{ 
-              fontSize: '16.5px', 
-              color: '#6b6b8a', 
-              marginTop: '6px', 
-              fontWeight: '500', 
+            <p style={{
+              fontSize: '16.5px',
+              color: '#6b6b8a',
+              marginTop: '6px',
+              fontWeight: '500',
               letterSpacing: '0.01em',
               maxWidth: '600px',
               lineHeight: '1.5'
@@ -280,7 +366,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
 
         {/* Notification bell */}
-        <div ref={notifRef} style={{ position: 'relative' }}>
+        <div ref={notifRef} className="header-notif" style={{ position: 'relative' }}>
           <button
             style={{ ...neuIconStyle, position: 'relative' }}
             onClick={() => setShowNotif(v => !v)}
@@ -306,12 +392,15 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </button>
 
           {showNotif && (
-            <div style={{
-              position: 'absolute', right: 0, top: 'calc(100% + 10px)',
-              width: '340px', borderRadius: '20px',
-              background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
-              zIndex: 200, overflow: 'hidden',
-            }}>
+            <div
+              className="notification-dropdown"
+              style={{
+                position: 'absolute', right: 0, top: 'calc(100% + 10px)',
+                width: 'min(340px, calc(100vw - 24px))', borderRadius: '20px',
+                background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
+                zIndex: 200, overflow: 'hidden',
+              }}
+            >
               <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1.5px solid rgba(0,0,0,0.06)' }}>
                 <span style={{ fontWeight: '800', fontSize: '14px', color: '#1e1e3a' }}>
                   Notifications {unreadCount > 0 && <span style={{ color: '#3636e8' }}>({unreadCount})</span>}
@@ -364,9 +453,9 @@ export default function Header({ userName, userRole }: HeaderProps) {
         </div>
 
         {/* User pill with dropdown */}
-        <div ref={userMenuRef} style={{ position: 'relative' }}>
+        <div ref={userMenuRef} className="header-profile" style={{ position: 'relative' }}>
           <div
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', cursor: 'pointer', transition: 'box-shadow 0.2s ease' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', cursor: 'pointer', transition: 'box-shadow 0.2s ease', outline: 'none' }}
             onClick={() => setShowUserMenu(v => !v)}
             onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
             onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
@@ -374,17 +463,17 @@ export default function Header({ userName, userRole }: HeaderProps) {
           >
             <div style={{
               width: '32px', height: '32px', borderRadius: '50%',
-              background: currentAvatar ? 'transparent' : '#e8eaf0',
+              background: '#ffffff',
               boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#3636e8', fontSize: '12px', fontWeight: '800',
               overflow: 'hidden',
             }}>
-              {currentAvatar ? (
-                <img src={currentAvatar} alt={currentUserName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                initials
-              )}
+              <img
+                src={currentAvatar}
+                alt={currentUserName}
+                onError={e => { (e.target as HTMLImageElement).src = '/avatars/default-neutral.png' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             </div>
             <div>
               <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1.2' }}>{currentUserName}</div>

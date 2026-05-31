@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
@@ -13,6 +13,7 @@ interface CalEvent {
   endTime?: string
   type: string
   meetLink?: string | null
+  streamProvider?: string | null
   status?: string
   internalStatus?: string
   courseId?: string | null
@@ -105,6 +106,9 @@ function CalendarPageContent() {
   // Detail popover for clicking event pills on calendar
   const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null)
   const [selectedDailyDay, setSelectedDailyDay] = useState<number | null>(null)
+  // Mobile agenda view selected day (separate from the modal-opening selectedDailyDay)
+  const [mobileSelectedDay, setMobileSelectedDay] = useState<number>(() => new Date().getDate())
+  const mobileDayStripRef = useRef<HTMLDivElement>(null)
 
   const year = currentDate?.getFullYear() || new Date().getFullYear()
   const month = currentDate?.getMonth() ?? new Date().getMonth()
@@ -134,7 +138,7 @@ function CalendarPageContent() {
     const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`
     fetch(`/api/events?month=${monthStr}`)
       .then(r => r.json())
-      .then(data => setEvents(data.events || data || []))
+      .then(data => setEvents(Array.isArray(data) ? data : Array.isArray(data?.events) ? data.events : []))
       .catch(console.error)
       .finally(() => setLoading(false))
   }
@@ -178,6 +182,7 @@ function CalendarPageContent() {
       recurrence: 'ONETIME',
       interval: '1',
       parentId: '',
+      streamProvider: 'MEET',
     })
     setShowModal(true)
   }
@@ -198,6 +203,7 @@ function CalendarPageContent() {
       recurrence: ev.recurrence || 'ONETIME',
       interval: ev.interval ? String(ev.interval) : '1',
       parentId: ev.parentId || '',
+      streamProvider: ev.streamProvider || 'MEET',
     })
     setSelectedEvent(null)
     setShowModal(true)
@@ -223,6 +229,7 @@ function CalendarPageContent() {
       const isGlobal = formData.courseId === 'GLOBAL'
       const recurrence = formData.recurrence || 'ONETIME'
       const isSeriesEvent = !!formData.parentId || recurrence !== 'ONETIME'
+      const streamProvider = (formData.streamProvider || 'MEET').toUpperCase()
       const payload = {
         title: formData.title,
         description: formData.description || null,
@@ -230,7 +237,8 @@ function CalendarPageContent() {
         time: formData.time,
         startTime,
         endTime,
-        meetLink: formData.meetLink || null,
+        // Meet/YouTube/Drive all use the meetLink column; Agora ignores it (server clears it anyway).
+        meetLink: streamProvider === 'AGORA' ? null : (formData.meetLink || null),
         status: formData.status || 'SCHEDULED',
         recurrence,
         interval: recurrence === 'CUSTOM' ? (formData.interval || '1') : null,
@@ -239,6 +247,7 @@ function CalendarPageContent() {
         isGlobal,
         instructorId: formData.instructorId || null,
         parentId: formData.parentId || null,
+        streamProvider,
         relatedCourse: !isGlobal && formData.courseId
           ? classes.find(c => c.id === formData.courseId)?.name || null
           : null,
@@ -289,12 +298,196 @@ function CalendarPageContent() {
     } catch (e) { console.error(e) }
   }
 
+  // Snap mobileSelectedDay to a valid range whenever month changes
+  useEffect(() => {
+    const totalDays = new Date(year, month + 1, 0).getDate()
+    const today = todayState
+    if (today && today.getFullYear() === year && today.getMonth() === month) {
+      setMobileSelectedDay(today.getDate())
+    } else {
+      setMobileSelectedDay(prev => Math.min(prev, totalDays))
+    }
+  }, [year, month, todayState])
+
+  // Auto-scroll the day strip so the selected day stays in view
+  useEffect(() => {
+    const el = mobileDayStripRef.current?.querySelector<HTMLElement>(`[data-day="${mobileSelectedDay}"]`)
+    if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+  }, [mobileSelectedDay])
+
+  // On first mount (and when month/today resolves), force-scroll the day strip to today
+  // so the calendar always opens centered on the current date, even if mobileSelectedDay
+  // happened to already equal today's date and the scroll-on-change effect didn't fire.
+  useEffect(() => {
+    if (!mounted || !todayState) return
+    const el = mobileDayStripRef.current?.querySelector<HTMLElement>(`[data-day="${mobileSelectedDay}"]`)
+    if (el) el.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, todayState, year, month])
+
   if (!mounted || !currentDate) return null
+
+  const mobileDayEvents = getEventsForDay(mobileSelectedDay).sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+  const mobileSelectedDateLabel = new Date(year, month, mobileSelectedDay).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })
+  const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
     <div className="page-container fade-in" style={{ padding: '32px' }}>
       {confirmDialog}
-      <div className="page-header" style={{ marginBottom: '32px' }}>
+
+      {/* ───────────── MOBILE CALENDAR (≤768px) ───────────── */}
+      <div className="calendar-mobile-only">
+        {/* Month navigator */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: '#e8eaf0', padding: '8px 8px 8px 18px', borderRadius: '50px',
+          boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+          marginBottom: '18px',
+        }}>
+          <button onClick={prevMonth} aria-label="Previous month" style={{
+            width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: '#e8eaf0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', color: '#3636e8',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button onClick={goToday} style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            fontFamily: 'inherit', fontSize: '15px', fontWeight: 800, color: '#1e1e3a',
+          }}>{monthName}</button>
+          <button onClick={nextMonth} aria-label="Next month" style={{
+            width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: '#e8eaf0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', color: '#3636e8',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        {/* Day strip (horizontal scroll) */}
+        <div
+          ref={mobileDayStripRef}
+          className="calendar-mobile-day-strip"
+          style={{
+            display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '8px',
+            marginBottom: '20px', WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+            const dayDate = new Date(year, month, day)
+            const wkLabel = WEEKDAY_LABELS[dayDate.getDay()]
+            const isSelected = day === mobileSelectedDay
+            const today = isToday(day)
+            const eventCount = getEventsForDay(day).length
+            return (
+              <button
+                key={`mday-${day}`}
+                data-day={day}
+                onClick={() => setMobileSelectedDay(day)}
+                style={{
+                  flex: '0 0 auto',
+                  width: '54px', minHeight: '70px',
+                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  gap: '4px', padding: '8px 6px', borderRadius: '20px',
+                  background: isSelected ? '#3636e8' : '#e8eaf0',
+                  color: isSelected ? '#ffffff' : (today ? '#3636e8' : '#6b6b8a'),
+                  boxShadow: isSelected
+                    ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px rgba(255,255,255,0.6)'
+                    : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                  transition: 'all 0.2s ease',
+                  position: 'relative',
+                }}
+              >
+                <span style={{ fontSize: '10px', fontWeight: 700, opacity: isSelected ? 0.85 : 1 }}>{wkLabel}</span>
+                <span style={{ fontSize: '17px', fontWeight: 800 }}>{day}</span>
+                {eventCount > 0 && (
+                  <span style={{
+                    position: 'absolute', bottom: '6px',
+                    width: '5px', height: '5px', borderRadius: '50%',
+                    background: isSelected ? '#ffffff' : '#3636e8',
+                  }} />
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Selected day header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 4px' }}>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>Schedule</div>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: '#1e1e3a' }}>{mobileSelectedDateLabel}</div>
+          </div>
+          {isManager && (
+            <button onClick={() => openCreate(`${year}-${String(month + 1).padStart(2, '0')}-${String(mobileSelectedDay).padStart(2, '0')}`)} style={{
+              background: '#3636e8', color: '#fff', border: 'none', cursor: 'pointer',
+              borderRadius: '50%', width: '40px', height: '40px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 6px 14px rgba(54,54,232,0.4)',
+            }} aria-label="Add event">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          )}
+        </div>
+
+        {/* Agenda list for selected day */}
+        {mobileDayEvents.length === 0 ? (
+          <div style={{
+            padding: '40px 20px', textAlign: 'center', borderRadius: '24px',
+            background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff',
+            color: '#9999b0',
+          }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '10px' }}>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#6b6b8a' }}>Nothing scheduled</div>
+            <div style={{ fontSize: '12px', marginTop: '4px' }}>Enjoy your free time</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {mobileDayEvents.map(ev => {
+              const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
+              return (
+                <div
+                  key={ev.id}
+                  onClick={() => setSelectedEvent(ev)}
+                  style={{
+                    display: 'flex', alignItems: 'stretch', gap: '14px',
+                    padding: '14px 16px', borderRadius: '20px',
+                    background: '#ffffff', cursor: 'pointer',
+                    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+                    borderLeft: `5px solid ${tc.bg}`,
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: '56px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e1e3a' }}>{ev.time || '—'}</span>
+                    {ev.endTime && (
+                      <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: 600 }}>to {ev.endTime}</span>
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e1e3a', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {ev.title}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '50px', background: tc.bg + '22', color: tc.bg === '#FFC107' ? '#b48a04' : tc.bg }}>
+                        {tc.label}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#9999b0', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ev.course?.name || (ev.isGlobal ? 'Global' : '')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ───────────── DESKTOP CALENDAR (>768px) ───────────── */}
+      <div className="page-header calendar-desktop-only" style={{ marginBottom: '32px' }}>
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
@@ -354,8 +547,8 @@ function CalendarPageContent() {
       </div>
 
       {/* Calendar Grid */}
-      <div className="card" style={{ 
-        overflow: 'hidden', 
+      <div className="card calendar-desktop-only" style={{
+        overflow: 'hidden',
         borderRadius: '28px',
         border: '1px solid rgba(255,255,255,0.6)',
         boxShadow: '20px 20px 60px #d1d9e6, -20px -20px 60px #ffffff'
@@ -484,10 +677,10 @@ function CalendarPageContent() {
       </div>
 
       {/* Events This Month List */}
-      <div style={{ marginTop: '40px' }}>
-        <h3 style={{ 
-          fontSize: '15px', 
-          fontWeight: '800', 
+      <div className="calendar-desktop-only" style={{ marginTop: '40px' }}>
+        <h3 style={{
+          fontSize: '15px',
+          fontWeight: '800',
           marginBottom: '16px',
           color: '#6b6b8a',
           textTransform: 'uppercase',
@@ -590,7 +783,7 @@ function CalendarPageContent() {
       {/* Event Detail Popover */}
       {selectedEvent && (
         <div className="modal-overlay" onClick={() => setSelectedEvent(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', borderRadius: '28px' }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 'min(440px, calc(100vw - 32px))', borderRadius: '28px' }}>
             <div className="modal-header" style={{ border: 'none', padding: '24px 24px 0' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a' }}>Event Details</h3>
               <button onClick={() => setSelectedEvent(null)} style={{ color: '#9999b0', transition: 'all 0.2s' }} className="hover:rotate-90">
@@ -766,15 +959,45 @@ function CalendarPageContent() {
                 </div>
               </div>
               <div className="form-group">
-                <label className="form-label">Meet Link</label>
-                <input
-                  type="url"
+                <label className="form-label">Stream Provider</label>
+                <select
                   className="form-input"
-                  value={formData.meetLink || ''}
-                  onChange={e => set('meetLink', e.target.value)}
-                  placeholder="https://meet.google.com/..."
-                />
+                  value={formData.streamProvider || 'MEET'}
+                  onChange={e => set('streamProvider', e.target.value)}
+                >
+                  <option value="MEET">Google Meet (paste link)</option>
+                  <option value="YOUTUBE">YouTube (paste link)</option>
+                  <option value="DRIVE">Google Drive (paste link)</option>
+                  <option value="AGORA">In-app live class (Agora)</option>
+                </select>
+                <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
+                  {formData.streamProvider === 'AGORA'
+                    ? 'Students will join inside the app. No external link needed.'
+                    : 'Students follow the link below to attend.'}
+                </p>
               </div>
+              {formData.streamProvider !== 'AGORA' && (
+                <div className="form-group">
+                  <label className="form-label">
+                    {formData.streamProvider === 'YOUTUBE' ? 'YouTube Link'
+                      : formData.streamProvider === 'DRIVE' ? 'Google Drive Link'
+                      : 'Meet Link'}
+                  </label>
+                  <input
+                    type="url"
+                    className="form-input"
+                    value={formData.meetLink || ''}
+                    onChange={e => set('meetLink', e.target.value)}
+                    placeholder={
+                      formData.streamProvider === 'YOUTUBE'
+                        ? 'https://www.youtube.com/watch?v=...'
+                        : formData.streamProvider === 'DRIVE'
+                          ? 'https://drive.google.com/file/d/.../view'
+                          : 'https://meet.google.com/...'
+                    }
+                  />
+                </div>
+              )}
               <div className="form-group">
                 <label className="form-label">Type</label>
                 <select
@@ -857,7 +1080,7 @@ function CalendarPageContent() {
       {/* Daily Schedule Modal */}
       {selectedDailyDay !== null && (
         <div className="modal-overlay" onClick={() => setSelectedDailyDay(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 'min(600px, calc(100vw - 32px))', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <div className="modal-header">
               <div>
                 <h3 style={{ fontSize: '18px', fontWeight: '800' }}>Schedule for the Day</h3>

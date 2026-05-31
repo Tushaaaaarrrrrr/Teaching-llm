@@ -55,8 +55,8 @@ function StudentFeedbackView({ userId }: { userId: string }) {
   if (isLoading) return <div className="page-container animate-pulse" />
 
   return (
-    <div className="page-container fade-in" style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '40px' }}>
+    <div className="page-container fade-in" style={{ maxWidth: '900px', margin: '0 auto', padding: 'clamp(16px, 4vw, 32px)' }}>
+      <div style={{ marginBottom: 'clamp(20px, 5vw, 40px)' }}>
         <button 
           onClick={() => window.history.back()}
           style={{ 
@@ -75,32 +75,68 @@ function StudentFeedbackView({ userId }: { userId: string }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {courses.map(course => {
           const submitted = isAlreadySubmitted(course.id)
+          const feedbackObj = submittedFeedbacks.find(f => f.courseId === course.id)
           return (
-            <div 
+            <div
               key={course.id}
               style={{
                 background: '#ffffff',
                 borderRadius: '24px',
-                padding: '24px 32px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                padding: '24px 28px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: '12px',
                 border: '1px solid #f1f5f9',
               }}
             >
-              <div>
-                <span style={{ 
-                  fontSize: '11px', fontWeight: '800', color: '#9999b0', 
-                  textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' 
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{
+                  fontSize: '11px', fontWeight: '800', color: '#9999b0',
+                  textTransform: 'uppercase', letterSpacing: '0.05em'
                 }}>
                   {course.subject}
                 </span>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px' }}>{course.name}</h3>
-                <p style={{ fontSize: '13px', color: submitted ? '#10b981' : '#94a3b8', fontWeight: '600' }}>
-                  {submitted ? '✓ Feedback submitted' : 'No feedback given yet'}
-                </p>
+                <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>{course.name}</h3>
               </div>
+
+              <p style={{ fontSize: '14px', color: submitted ? '#10b981' : '#94a3b8', fontWeight: '600', margin: 0 }}>
+                {submitted ? '✓ Feedback submitted' : 'No feedback given yet'}
+              </p>
+
+              {submitted && feedbackObj && (
+                <div style={{ width: '100%', marginTop: '6px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px', marginBottom: '12px' }}>
+                    {[
+                      { label: 'Teacher', val: feedbackObj.teacherRating },
+                      { label: 'Concept', val: feedbackObj.conceptRating },
+                      { label: 'Materials', val: feedbackObj.materialRating },
+                      { label: 'Recommend', val: feedbackObj.recommendScore },
+                    ].map(r => (
+                      <div key={r.label}>
+                        <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
+                          {r.label}
+                        </span>
+                        <div style={{ display: 'flex', gap: '2px' }}>
+                          {[1,2,3,4,5].map(s => (
+                            <svg key={s} width="11" height="11" viewBox="0 0 24 24" fill={s <= r.val ? '#fbbf24' : '#e2e8f0'}>
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                            </svg>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {feedbackObj.comment && (
+                    <div style={{ padding: '10px 14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                      <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: '1.4', margin: 0, fontStyle: 'italic' }}>
+                        "{feedbackObj.comment}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {!submitted && (
                 <button
@@ -108,15 +144,16 @@ function StudentFeedbackView({ userId }: { userId: string }) {
                   style={{
                     background: '#0a0a0a',
                     color: 'white',
-                    padding: '12px 24px',
+                    padding: '12px 28px',
                     borderRadius: '50px',
                     border: 'none',
                     fontWeight: '700',
                     fontSize: '14px',
                     cursor: 'pointer',
                     transition: 'transform 0.2s ease',
+                    marginTop: '4px'
                   }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'}
                   onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                 >
                   Share Feedback

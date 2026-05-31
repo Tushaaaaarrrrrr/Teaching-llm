@@ -106,10 +106,10 @@ export default function ChatTranscriptsPage() {
   const neuSmall = { background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }
 
   return (
-    <div className="page-container fade-in" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
+    <div className="page-container fade-in master-detail-layout" data-detail-open={selectedClass ? 'true' : 'false'} style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
 
       {/* Left: Class list */}
-      <div style={{ width: '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
+      <div className="master-detail-list" style={{ width: '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
         <div style={{ fontSize: '12px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px', padding: '0 4px' }}>
           Community Transcripts
         </div>
@@ -167,7 +167,7 @@ export default function ChatTranscriptsPage() {
       </div>
 
       {/* Right: Transcript viewer */}
-      <div style={{ flex: 1, borderRadius: '24px', ...neu, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+      <div className="master-detail-pane" style={{ flex: 1, borderRadius: '24px', ...neu, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         {!selectedClass ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', color: '#9999b0' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -183,6 +183,21 @@ export default function ChatTranscriptsPage() {
           <>
             {/* Header */}
             <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <button
+                className="master-detail-back"
+                onClick={() => setSelectedClass(null)}
+                aria-label="Back to community list"
+                style={{
+                  width: '36px', height: '36px', borderRadius: '10px',
+                  border: 'none', cursor: 'pointer', alignItems: 'center', justifyContent: 'center',
+                  background: '#e8eaf0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                  color: '#1e1e3a', flexShrink: 0,
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
               <div style={{
                 width: '40px', height: '40px', borderRadius: '12px',
                 background: selectedClass.color + '22',
@@ -269,7 +284,8 @@ export default function ChatTranscriptsPage() {
                   </p>
                 </div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', minWidth: '720px', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ position: 'sticky', top: 0, background: '#e8eaf0', zIndex: 1 }}>
                       <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#6b6b8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>User</th>
@@ -352,6 +368,7 @@ export default function ChatTranscriptsPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           </>

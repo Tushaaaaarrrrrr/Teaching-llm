@@ -129,7 +129,7 @@ export default function ReportsPage() {
     <div style={{ padding: '24px 32px 48px' }}>
       <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
         {/* Course Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', flex: '1 1 auto' }}>
           <label style={{ fontSize: '12px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Filter by Course</label>
           <select
             value={selectedCourseId}
@@ -138,7 +138,7 @@ export default function ReportsPage() {
               padding: '10px 16px', borderRadius: '12px', border: 'none',
               background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
               outline: 'none', fontSize: '13px', fontWeight: 600, color: '#1e1e3a',
-              minWidth: '200px',
+              flex: '1 1 200px', maxWidth: '100%',
             }}
           >
             <option value="">All Courses</option>

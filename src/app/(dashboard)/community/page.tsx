@@ -85,7 +85,7 @@ export default function CommunityPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [managingCommunity, setManagingCommunity] = useState(false)
   
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
   useEffect(() => {
     setIsMobile(window.innerWidth <= 768)
     const handleResize = () => setIsMobile(window.innerWidth <= 768)
@@ -148,7 +148,12 @@ export default function CommunityPage() {
       setSelectedClass(current => {
         const nextId = preferredId || current?.id
         const match = nextId ? list.find((item: ClassItem) => item.id === nextId) : null
-        return match || list[0] || null
+        if (match) return match
+        // On mobile, never auto-open the first community — let the user pick from the list.
+        // On desktop, fall back to the first community so the chat panel isn't empty.
+        const isMobileNow = typeof window !== 'undefined' && window.innerWidth <= 768
+        if (isMobileNow) return current
+        return current || list[0] || null
       })
     } catch (error) {
       console.error(error)
@@ -518,57 +523,68 @@ export default function CommunityPage() {
       ) : null}
 
       {/* Left: Class list */}
-      <div style={{ width: isMobile ? '100%' : '230px', flexShrink: 0, display: (isMobile && selectedClass) ? 'none' : 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
+      <div style={{ width: isMobile ? '100%' : '230px', flexShrink: 0, display: (isMobile && selectedClass) ? 'none' : 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '8px', overflowY: 'auto', padding: isMobile ? '4px 2px 16px' : '0' }}>
         {/* Groups header */}
-        <div style={{ fontSize: '12px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px', padding: '0 4px' }}>
+        <div style={{ fontSize: '11px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: isMobile ? '6px' : '4px', padding: '0 6px' }}>
           Communities
         </div>
-        {classes.filter(cls => !cls.isDirectChat).map(cls => (
+        {classes.filter(cls => !cls.isDirectChat).map(cls => {
+          const active = selectedClass?.id === cls.id
+          return (
           <button
             key={cls.id}
             onClick={() => setSelectedClass(cls)}
             style={{
-              display: 'flex', alignItems: 'center', gap: '12px',
-              padding: '12px 16px', borderRadius: '18px', border: 'none',
+              display: 'flex', alignItems: 'center', gap: isMobile ? '14px' : '12px',
+              padding: isMobile ? '14px 16px' : '12px 16px',
+              borderRadius: isMobile ? '20px' : '18px', border: 'none',
               cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
               transition: 'all 0.2s',
-              background: selectedClass?.id === cls.id ? cls.color : '#e8eaf0',
-              color: selectedClass?.id === cls.id ? '#fff' : '#1e1e3a',
-              boxShadow: selectedClass?.id === cls.id
-                ? `5px 5px 12px ${cls.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
-                : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-              position: 'relative'
+              background: active ? cls.color : (isMobile ? '#ffffff' : '#e8eaf0'),
+              color: active ? '#fff' : '#1e1e3a',
+              boxShadow: active
+                ? `5px 5px 14px ${cls.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
+                : (isMobile ? '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff' : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff'),
+              position: 'relative',
+              minHeight: isMobile ? '64px' : 'auto',
             }}
           >
-            {cls.hasUnread && selectedClass?.id !== cls.id && (
-              <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
+            {cls.hasUnread && !active && (
+              <div style={{ position: 'absolute', top: '10px', right: '12px', width: '9px', height: '9px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
             )}
             <div style={{
-              width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0,
-              background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : cls.color + '22',
+              width: isMobile ? '44px' : '34px', height: isMobile ? '44px' : '34px',
+              borderRadius: isMobile ? '14px' : '10px', flexShrink: 0,
+              background: active ? 'rgba(255,255,255,0.25)' : cls.color + '22',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '12px', fontWeight: '800',
-              color: selectedClass?.id === cls.id ? '#fff' : cls.color,
+              fontSize: isMobile ? '14px' : '12px', fontWeight: '800',
+              color: active ? '#fff' : cls.color,
             }}>
               {cls.name.substring(0, 2).toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: isMobile ? '14.5px' : '13px', fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {cls.name}
               </div>
               {cls.subject && (
-                <div style={{ fontSize: '11px', opacity: selectedClass?.id === cls.id ? 0.8 : 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: isMobile ? '12px' : '11px', opacity: active ? 0.85 : 0.6, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
                   {cls.subject}
                 </div>
               )}
               {userRole === 'MANAGER' && cls.isCommunityActive === false && (
-                <div style={{ fontSize: '10px', fontWeight: '800', marginTop: '4px', color: selectedClass?.id === cls.id ? '#fff' : '#ef4444' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', marginTop: '4px', color: active ? '#fff' : '#ef4444' }}>
                   COMMUNITY OFF
                 </div>
               )}
             </div>
+            {isMobile && (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? '#ffffff' : '#9999b0'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: '4px' }}>
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            )}
           </button>
-        ))}
+          )
+        })}
 
         {/* Direct Messages section — hidden for students with zero DMs */}
         {(userRole === 'MANAGER' || classes.some(cls => cls.isDirectChat)) && (
@@ -655,63 +671,41 @@ export default function CommunityPage() {
         ) : (
           <>
             {/* Header */}
-            <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {isMobile && (
-                <button
-                  onClick={() => setSelectedClass(null)}
-                  style={{
-                    marginRight: '4px',
-                    padding: '8px',
-                    borderRadius: '50%',
-                    background: '#e8eaf0',
-                    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: 'none',
-                    cursor: 'pointer',
-                    flexShrink: 0
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e1e3a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                  </svg>
-                </button>
-              )}
+            <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', flexWrap: 'wrap' }}>
               <div style={{
-                width: '40px', height: '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px',
+                width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px',
                 background: selectedClass.color + '22',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '14px', fontWeight: '800', color: selectedClass.color,
+                fontSize: '13px', fontWeight: '800', color: selectedClass.color,
+                flexShrink: 0,
               }}>
                 {isDM(selectedClass)
                   ? selectedClass.name.replace('Chat with ', '').charAt(0).toUpperCase()
                   : selectedClass.name.substring(0, 2).toUpperCase()}
               </div>
-              <div>
-                <div style={{ fontWeight: '800', fontSize: '16px', color: '#1e1e3a' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
                 </div>
                 {isDM(selectedClass) ? (
-                  <div style={{ fontSize: '12px', color: '#9999b0' }}>Direct Message</div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Direct Message</div>
                 ) : selectedClass.subject && (
-                  <div style={{ fontSize: '12px', color: '#9999b0' }}>{selectedClass.subject} · Community Chat</div>
+                  <div style={{ fontSize: '11px', color: '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedClass.subject} · Community Chat</div>
                 )}
               </div>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
                 {!isDM(selectedClass) && selectedClass.isCommunityActive === false && (
-                  <span style={{ padding: '4px 14px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '12px', fontWeight: '700' }}>
-                    Community Off
+                  <span style={{ padding: '4px 10px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '11px', fontWeight: '700' }}>
+                    Off
                   </span>
                 )}
                 {isDM(selectedClass) && selectedClass.isDmDisabled && (
-                  <span style={{ padding: '4px 14px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '12px', fontWeight: '700' }}>
-                    Hidden from Student
+                  <span style={{ padding: '4px 10px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '11px', fontWeight: '700' }}>
+                    Hidden
                   </span>
                 )}
-                <span style={{ padding: '4px 14px', borderRadius: '50px', background: selectedClass.color + '18', color: selectedClass.color, fontSize: '12px', fontWeight: '700' }}>
-                  {messages.length} message{messages.length !== 1 ? 's' : ''}
+                <span style={{ padding: '4px 10px', borderRadius: '50px', background: selectedClass.color + '18', color: selectedClass.color, fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                  {messages.length}{isMobile ? '' : ` message${messages.length !== 1 ? 's' : ''}`}
                 </span>
                 {userRole === 'MANAGER' && (
                   <>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { processSyncQueue, cleanupOldSyncQueue } from '@/lib/sync-queue'
 import { processProgressQueue, cleanupOldProgressQueue } from '@/lib/progress-processor'
+import { processScheduledCampaigns } from '@/lib/campaign-processor'
 
 // This endpoint should be called by a cron job every 10 seconds
 // Configure in vercel.json or use an external cron service
@@ -24,6 +25,11 @@ export async function POST(req: Request) {
     
     // Process lecture progress queue
     const progressResult = await processProgressQueue()
+
+    // Process scheduled rich push campaigns
+    await processScheduledCampaigns().catch((err) =>
+      console.error('[Sync Queue Scheduler] Error processing campaigns:', err)
+    )
 
     // Cleanup old jobs every 10th run (approximately hourly)
     if (Math.random() < 0.1) {

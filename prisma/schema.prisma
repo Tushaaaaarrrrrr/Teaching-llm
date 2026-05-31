@@ -69,6 +69,8 @@ model User {
   orders                  Order[]
   promptResponses         PromptResponse[]
   pushSubscriptions       PushSubscription[]
+  fcmDeviceTokens         FcmDeviceToken[]
+  notificationCampaigns   NotificationCampaign[]       @relation("CampaignCreator")
   createdNotes            StoreNote[]                  @relation("NoteCreator")
   noteAccesses            StoreNoteAccess[]
   assignedTickets         SupportTicket[]              @relation("TicketAssignee")
@@ -284,6 +286,16 @@ model CourseEvent {
   parentId          String?
   instructorId      String?
   createdById       String
+  // Stream delivery — MEET (existing Google Meet), YOUTUBE, DRIVE, or AGORA (in-app live).
+  // Defaults to MEET so every existing event keeps its current behaviour.
+  streamProvider    String    @default("MEET")
+  // Auto-generated channel name when streamProvider == AGORA; null otherwise.
+  agoraChannelName  String?   @unique
+  // Lifecycle of an AGORA stream: SCHEDULED → LIVE → ENDED.
+  streamStatus      String    @default("SCHEDULED")
+  startedLiveAt     DateTime?
+  endedLiveAt       DateTime?
+  recordingUrl      String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   course            Course?   @relation(fields: [courseId], references: [id])
@@ -295,6 +307,7 @@ model CourseEvent {
   @@index([createdById])
   @@index([type])
   @@index([isGlobal])
+  @@index([streamStatus])
 }
 
 model DailySessionSnapshot {
@@ -629,6 +642,18 @@ model PushSubscription {
   p256dh    String
   auth      String
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model FcmDeviceToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String   @default("ANDROID")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -1175,4 +1200,35 @@ model TestSeriesAccess {
 enum EnrollmentType {
   LIVE
   RECORDED
+}
+
+model NotificationCampaign {
+  id           String    @id @default(cuid())
+  title        String
+  body         String
+  imageUrl     String?
+  ctaText      String?
+  ctaLink      String?
+  targetType   String    @default("ALL") // ALL, COURSE, BUNDLE, SPECIFIC
+  targetId     String?   // CourseId or BundleId if targetType is COURSE or BUNDLE
+  scheduledFor DateTime? // null means send immediately
+  status       String    @default("PENDING") // PENDING, SENT, FAILED
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdById  String
+  createdBy    User      @relation("CampaignCreator", fields: [createdById], references: [id])
+
+  @@index([status])
+  @@index([scheduledFor])
+}
+
+model HomeSlide {
+  id        String   @id @default(cuid())
+  image     String
+  alt       String
+  href      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

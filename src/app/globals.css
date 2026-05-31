@@ -48,6 +48,7 @@
 
 html {
   height: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -59,6 +60,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   letter-spacing: 0.01em;
+  overflow-x: hidden;
 }
 
 a {
@@ -432,7 +434,7 @@ img {
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.10);
   width: 100%;
-  max-width: 900px;
+  max-width: min(900px, calc(100vw - 32px));
   max-height: 90vh;
   overflow-y: auto;
 }
@@ -505,9 +507,222 @@ tr:hover td {
   .page-container { padding: 16px; }
 }
 
+/* Tighten gap between the mobile dashboard header (greeting block) and page content */
+@media (max-width: 768px) {
+  .page-container { padding-top: 6px; }
+}
+
 @media (max-width: 600px) {
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+
+/* Mobile: hide header notification & profile chip (sign-out lives in sidebar) */
+.mobile-only-notice { display: none; }
+.mobile-bottom-nav { display: none; }
+.calendar-mobile-only { display: none; }
+/* Need Help floating button — hide on mobile; the bottom nav handles support access */
+@media (max-width: 768px) {
+  a.support-btn-float,
+  .support-btn-float { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header.mobile-hide-header { display: none !important; }
+  .header-profile { display: none !important; }
+  .desktop-only-nav-item { display: none !important; }
+  .calendar-desktop-only { display: none !important; }
+  .calendar-mobile-only { display: block !important; }
+
+  .mobile-bottom-nav {
+    display: flex !important;
+    justify-content: space-around;
+    align-items: flex-end;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    background: #ffffff;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.06);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  }
+  .mobile-bottom-nav.hidden {
+    transform: translateY(110%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .mobile-bottom-nav.visible {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .mobile-bottom-tab {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    height: 100%;
+    text-decoration: none;
+    color: #9ca3af;
+    transition: all 0.25s ease;
+    padding-bottom: 6px;
+  }
+  .mobile-bottom-tab .tab-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    transition: all 0.25s ease;
+  }
+  .mobile-bottom-tab .tab-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    transition: stroke 0.2s ease;
+  }
+  .mobile-bottom-tab .tab-label {
+    font-size: 10px;
+    font-weight: 500;
+    margin-top: 5px;
+    transition: all 0.2s ease;
+  }
+  .mobile-bottom-tab.active {
+    color: #1e1e3b;
+  }
+  .mobile-bottom-tab.active .tab-label {
+    font-weight: 700;
+    color: #1e1e3b;
+  }
+
+  /* Academics Centered Floating Tab with Arc */
+  .mobile-bottom-tab.academics-action-tab {
+    height: auto;
+    overflow: visible;
+    padding-bottom: 6px;
+  }
+  .mobile-bottom-tab.academics-action-tab .tab-icon-wrapper {
+    position: absolute;
+    top: -30px;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    color: #ffffff;
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4), 
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    z-index: 10;
+    border: 4px solid #ffffff;
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .mobile-bottom-tab.academics-action-tab .tab-icon svg {
+    width: 24px;
+    height: 24px;
+    stroke: #ffffff;
+  }
+  .mobile-bottom-tab.academics-action-tab.active .tab-icon-wrapper {
+    background: linear-gradient(135deg, #8b5cf6, #4f46e5);
+    transform: scale(1.05);
+    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.5), 
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  .mobile-bottom-tab.academics-action-tab .tab-label {
+    margin-top: 32px;
+  }
+
+  /* Circular Arc SVG Backdrop Effect in CSS */
+  .mobile-bottom-nav::before {
+    content: '';
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 76px;
+    height: 38px;
+    border-radius: 38px 38px 0 0;
+    background: #ffffff;
+    border-top: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow: 0 -8px 10px rgba(0, 0, 0, 0.02);
+    z-index: 1;
+  }
+}
+
+/* Lecture row on a course page: actions stack below title on mobile so Watch button isn't cut off */
+@media (max-width: 768px) {
+  .lecture-row {
+    padding: 14px 16px !important;
+    border-radius: 20px !important;
+  }
+  .lecture-row > .lecture-row-actions {
+    width: 100% !important;
+    margin-left: 0 !important;
+    justify-content: flex-start !important;
+    border-top: 1px solid #d8dae3;
+    padding-top: 10px;
+    margin-top: 4px;
+  }
+  .lecture-row > .lecture-row-actions > div:first-child {
+    border-right: none !important;
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* Bundle/Checkout modal: stack inner grid on mobile so price column doesn't push content off-screen */
+@media (max-width: 768px) {
+  .bundle-modal-grid {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+  }
+  .bundle-modal-box {
+    height: auto !important;
+    max-height: calc(100vh - 24px) !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* Admin user-row: collapses fixed columns onto next line on phones */
+@media (max-width: 768px) {
+  .admin-user-row {
+    flex-wrap: wrap !important;
+    border-radius: 24px !important;
+    padding: 14px 16px !important;
+    gap: 12px !important;
+  }
+  .admin-user-meta {
+    width: 100% !important;
+    margin-left: 0 !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+  }
+  .admin-user-meta > div {
+    width: auto !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+}
+
+/* Master-detail mobile pattern (chat-transcripts, future two-pane routes) */
+.master-detail-back { display: none; }
+@media (max-width: 768px) {
+  .master-detail-layout {
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+  .master-detail-layout > .master-detail-list {
+    width: 100% !important;
+    flex-shrink: 1 !important;
+  }
+  .master-detail-layout[data-detail-open="true"] > .master-detail-list { display: none !important; }
+  .master-detail-layout:not([data-detail-open="true"]) > .master-detail-pane { display: none !important; }
+  .master-detail-back { display: inline-flex !important; }
 }
 
 /* Mobile Blocker Styles */
@@ -742,15 +957,19 @@ tr:hover td {
 
 .dashboard-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   background: var(--bg);
+  overflow: hidden;
 }
 
 .dashboard-main-container {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
   max-width: calc(100vw - var(--sidebar-width));
   margin-left: var(--sidebar-width);
   overflow: hidden;
@@ -817,7 +1036,9 @@ tr:hover td {
 @media (max-width: 768px) {
   .dashboard-main-container {
     margin-left: 0;
+    width: 100%;
     max-width: 100vw;
+    padding-top: 0 !important;
   }
 
   .sidebar-nav {
@@ -831,7 +1052,7 @@ tr:hover td {
   }
 
   .sidebar-toggle-btn {
-    display: flex;
+    display: none !important; /* Hidden — bottom nav + profile avatar handle navigation */
   }
 
   .sidebar-overlay {
@@ -843,26 +1064,119 @@ tr:hover td {
     pointer-events: auto;
   }
 
-  /* Responsive Header Tuning */
+  /* Responsive Header Tuning — mobile uses greeting block instead of page titles */
   .dashboard-header {
     padding: 0 16px !important;
-    height: 76px !important; /* Compact header on mobile */
+    padding-top: env(safe-area-inset-top, 0px) !important;
+    height: calc(76px + env(safe-area-inset-top, 0px)) !important;
   }
 
-  .header-titles h1 {
-    font-size: 20px !important; /* Scale down greeting titles */
-    gap: 6px !important;
+  /* Support safe-area notch top padding on mobile pages when header is hidden */
+  main {
+    padding-top: env(safe-area-inset-top, 0px) !important;
   }
 
-  .header-titles h1 span {
-    font-size: 16px !important;
+  /* When the header is visible, main does not need additional safe-area padding */
+  body:has(.dashboard-header:not(.mobile-hide-header)) main {
+    padding-top: 0 !important;
   }
 
-  .header-titles p {
-    font-size: 11px !important;
-    display: none; /* Hide subtitle on very small screens to make space */
+  .mobile-hidden-header {
+    display: none !important;
   }
 
+  .header-titles {
+    display: none !important; /* Replaced by .mobile-header-greeting */
+  }
+
+  .mobile-header-greeting {
+    display: flex !important;
+  }
+
+  /* Animated underline accent under the welcome block */
+  .mobile-header-greeting::after {
+    content: '';
+    position: absolute;
+    left: 56px;
+    right: 0;
+    bottom: -10px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, #6366f1 30%, #8b5cf6 70%, transparent);
+    opacity: 0.55;
+  }
+  .mobile-header-greeting { position: relative; }
+
+}
+
+/* Hide mobile greeting on desktop — keep without !important so the
+   mobile @media rule (display: flex !important above) wins on phones. */
+.mobile-header-greeting { display: none; }
+@media (min-width: 769px) {
+  .mobile-header-greeting { display: none !important; }
+  .mobile-header-back-title { display: none !important; }
+}
+
+/* My Courses: swap between desktop layout and mobile experience */
+.my-courses-mobile-only { display: none; }
+.course-detail-mobile-only { display: none; }
+.live-sessions-mobile-only { display: none; }
+@media (max-width: 768px) {
+  .my-courses-desktop-only { display: none !important; }
+  .my-courses-mobile-only { display: block !important; }
+  .course-detail-desktop-only { display: none !important; }
+  .course-detail-mobile-only { display: block !important; }
+  .live-sessions-desktop-only { display: none !important; }
+  .live-sessions-mobile-only { display: block !important; }
+  /* Mobile course detail breaks out of the dashboard container's padding so the purple hero is edge-to-edge.
+     Match the page-container's mobile padding (16px) exactly so the hero spans full viewport width,
+     and the hero's own 22px internal padding gives content proper breathing room. */
+  .course-detail-mobile-only { margin: -16px -16px 0; }
+  /* The hero's content should never touch the screen edge — enforce a min inline padding here in case
+     the inline style is overridden by inherited rules or the negative margin overshoots */
+  .course-detail-mobile-only .mobile-course-detail > div:first-of-type { padding-left: 22px !important; padding-right: 22px !important; }
+  .course-detail-mobile-only .mobile-course-detail > div:first-of-type > h1,
+  .course-detail-mobile-only .mobile-course-detail > div:first-of-type > p,
+  .course-detail-mobile-only .mobile-course-detail > div:first-of-type > div { margin-left: 0; padding-left: 0; }
+
+  /* When the mobile course detail OR lecture player is on screen, hide the dashboard header
+     (the page's own purple hero / lecture top bar acts as the header instead).
+     Also strip the <main> default padding so the hero kisses the top safely.
+     Uses :has() — supported in modern Chromium / WebView ≥ 105 (Capacitor uses current). */
+  body:has(.course-detail-mobile-only > .mobile-course-detail),
+  body:has(.lecture-page-mobile),
+  body:has(.mobile-menu-page),
+  body:has(.mobile-profile-page) {
+    /* fallback if :has() is not understood, nothing happens — desktop selectors still apply */
+  }
+  body:has(.course-detail-mobile-only > .mobile-course-detail) .dashboard-header,
+  body:has(.lecture-page-mobile) .dashboard-header,
+  body:has(.mobile-menu-page) .dashboard-header,
+  body:has(.mobile-profile-page) .dashboard-header {
+    display: none !important;
+  }
+  body:has(.course-detail-mobile-only > .mobile-course-detail) main,
+  body:has(.lecture-page-mobile) main {
+    padding-top: 0 !important;
+  }
+  body:has(.mobile-menu-page) main,
+  body:has(.mobile-profile-page) main {
+    padding-top: env(safe-area-inset-top, 0px) !important;
+  }
+}
+
+/* Login: swap between desktop layout and mobile experience */
+.mobile-only-login { display: none; }
+@media (max-width: 768px) {
+  .desktop-only-login { display: none !important; }
+  .mobile-only-login { display: block !important; }
+}
+
+/* Desktop shows the time-based greeting headline for dashboard + courses;
+   mobile uses .mobile-header-greeting (avatar + Welcome to GenZ IITian) instead. */
+@media (max-width: 768px) {
+  .header-titles-dashboard { display: none !important; }
+  .dashboard-header[style*='140px'] { height: 96px !important; }
 }
 
 /* Login Page Base Responsive Styles */
@@ -905,8 +1219,19 @@ tr:hover td {
   display: flex;
 }
 
-.mobile-only-footer-links {
+.mobile-only-policies-container {
   display: none !important;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    bottom: calc(100% + 4px);
+  }
+  to {
+    opacity: 1;
+    bottom: calc(100% + 10px);
+  }
 }
 
 .login-right-panel {
@@ -981,21 +1306,6 @@ tr:hover td {
     display: none !important;
   }
 
-  .mobile-only-footer-links {
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-    margin-top: 16px;
-    margin-bottom: 8px;
-    width: 100%;
-  }
-
-  .mobile-only-footer-links button {
-    padding: 6px 12px !important;
-    font-size: 11px !important;
-  }
-
   .login-right-panel {
     padding: 8px 16px 20px;
     margin-bottom: 12px;
@@ -1027,11 +1337,79 @@ tr:hover td {
     border-radius: 14px !important;
   }
 
+  .login-right-footer-container {
+    display: flex !important;
+    gap: 16px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 24px;
+    margin-bottom: 8px;
+    width: 100%;
+  }
+
+  .mobile-only-policies-container {
+    display: block !important;
+  }
+
   .login-contact-developer {
     position: static;
-    margin-top: 16px;
+    margin-top: 0 !important;
     align-self: center;
-    padding: 6px 12px !important;
-    font-size: 11px !important;
+    padding: 8px 16px !important;
+    font-size: 12px !important;
   }
 }
+
+/* Lecture Page Layout */
+.lecture-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 32px;
+}
+
+@media (max-width: 768px) {
+  .lecture-layout-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+}
+
+/* Clean Video Player Wrapper (hides Google Drive video controls top bar) */
+.clean-video-wrapper {
+  position: relative;
+  background: #0f172a;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  margin-bottom: 32px;
+  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+}
+
+.clean-video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.clean-video-wrapper.google-drive iframe {
+  top: 0;
+  height: 100%;
+}
+
+/* Hide Home Hero Slider on desktop (web/large screens) as it is only for the app/mobile */
+@media (min-width: 769px) {
+  .home-hero-slider {
+    display: none !important;
+  }
+}
+
+/* Responsive adjustments for notification dropdown on mobile screens */
+@media (max-width: 768px) {
+  .notification-dropdown {
+    right: -10px !important;
+  }
+}
+

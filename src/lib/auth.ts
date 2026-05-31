@@ -3,12 +3,15 @@ import { cookies, headers } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { isCourseEffectivelyDisabled } from '@/lib/course-state'
 
-const JWT_SECRET = process.env.JWT_SECRET?.trim()
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required. Generate one with: openssl rand -hex 32')
-}
 const COOKIE_NAME = 'teaching_llm_token'
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET?.trim()
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required. Generate one with: openssl rand -hex 32')
+  }
+  return secret
+}
 
 export interface JWTPayload {
   userId: string
@@ -34,12 +37,12 @@ export interface FullSession extends JWTPayload {
 }
 
 export function signToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET!, { expiresIn: '1d' })
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: '1d' })
 }
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET!) as JWTPayload
+    return jwt.verify(token, getJwtSecret()) as JWTPayload
   } catch (err) {
     // Silently handle expired/invalid tokens for getSession
     return null

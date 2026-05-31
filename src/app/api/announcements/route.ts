@@ -4,6 +4,7 @@ import { getSession, isAdminOrManager, getAccessibleCourseIds, canCreateAnnounce
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { sseEmitter } from '@/lib/sse'
 import { sendPushToUsers, sendPushToAllStudents } from '@/lib/push'
+import { sendFcmToUsers, sendFcmToAllStudents } from '@/lib/fcm'
 
 export async function GET() {
   try {
@@ -33,7 +34,11 @@ export async function GET() {
       },
     })
 
-    return NextResponse.json(announcements)
+    const mapped = announcements.map(a => ({
+      ...a,
+      classId: a.courseId,
+    }))
+    return NextResponse.json(mapped)
   } catch (error) {
     console.error('Error fetching announcements:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -51,7 +56,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { title, content, type, courseId } = await request.json()
+    const { title, content, type, courseId, classId, imageUrl } = await request.json()
+    const targetCourseId = courseId || classId
 
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 })
@@ -62,8 +68,9 @@ export async function POST(request: NextRequest) {
         title,
         content,
         type: type || 'info',
-        courseId: courseId || null,
+        courseId: targetCourseId || null,
         createdById: session.userId,
+        imageUrl: imageUrl || null,
       },
       include: {
         createdBy: { select: { id: true, name: true, role: true, avatar: true } },
@@ -71,14 +78,14 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Fan-out notifications: if courseId is provided, notify only enrolled students;
+    // Fan-out notifications: if targetCourseId is provided, notify only enrolled students;
     // otherwise notify all users
     let targetUsers: { id: string }[]
 
-    if (courseId) {
+    if (targetCourseId) {
       // Notify only STUDENT-role users enrolled in the specified course
       const enrollments = await prisma.enrollment.findMany({
-        where: { courseId, user: { role: 'STUDENT' } },
+        where: { courseId: targetCourseId, user: { role: 'STUDENT' } },
         select: { userId: true },
       })
       targetUsers = enrollments.map(e => ({ id: e.userId }))
@@ -91,9 +98,27 @@ export async function POST(request: NextRequest) {
     }
 
     if (targetUsers.length > 0) {
-      const truncatedContent = content.length > 100
-        ? content.slice(0, 97) + '...'
-        : content
+      // Parse hidden metadata if any (for ctaText and ctaLink)
+      const metaRegex = /<!-- fcm_meta:({.*?}) -->$/
+      const match = content.match(metaRegex)
+      let ctaText = ''
+      let ctaLink = ''
+      let parsedBody = content
+      
+      if (match) {
+        try {
+          const metadata = JSON.parse(match[1])
+          ctaText = metadata.ctaText || ''
+          ctaLink = metadata.ctaLink || ''
+          parsedBody = content.replace(metaRegex, '').trim()
+        } catch {
+          // Ignore parse errors
+        }
+      }
+
+      const truncatedContent = parsedBody.length > 100
+        ? parsedBody.slice(0, 97) + '...'
+        : parsedBody
 
       await prisma.notification.createMany({
         data: targetUsers.map(u => ({
@@ -110,21 +135,23 @@ export async function POST(request: NextRequest) {
 
       // Fire browser push notifications (works even when browser tab is closed)
       const targetUserIds = targetUsers.map(u => u.id)
-      const pushBody = content.length > 120 ? content.slice(0, 117) + '...' : content
-      if (courseId) {
-        sendPushToUsers(targetUserIds, {
-          title,
-          body: pushBody,
-          url: '/announcements',
-          tag: `announcement-${announcement.id}`,
-        }).catch(console.error)
+      const pushBody = parsedBody.length > 120 ? parsedBody.slice(0, 117) + '...' : parsedBody
+      const pushPayload = {
+        title,
+        body: pushBody,
+        url: ctaLink || '/announcements',
+        tag: `announcement-${announcement.id}`,
+        imageUrl: imageUrl || undefined,
+        ctaText: ctaText || undefined,
+        ctaLink: ctaLink || undefined,
+      }
+      
+      if (targetCourseId) {
+        sendPushToUsers(targetUserIds, pushPayload).catch(console.error)
+        sendFcmToUsers(targetUserIds, pushPayload).catch(console.error)
       } else {
-        sendPushToAllStudents({
-          title,
-          body: pushBody,
-          url: '/announcements',
-          tag: `announcement-${announcement.id}`,
-        }).catch(console.error)
+        sendPushToAllStudents(pushPayload).catch(console.error)
+        sendFcmToAllStudents(pushPayload).catch(console.error)
       }
     }
 
@@ -138,7 +165,10 @@ export async function POST(request: NextRequest) {
       targetId: announcement.id,
     })
 
-    return NextResponse.json(announcement, { status: 201 })
+    return NextResponse.json({
+      ...announcement,
+      classId: announcement.courseId,
+    }, { status: 201 })
   } catch (error) {
     console.error('Error creating announcement:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

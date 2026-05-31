@@ -17,7 +17,9 @@ self.addEventListener('push', function (event) {
     icon:    data.icon    || '/android-chrome-192x192.png',
     badge:   data.badge   || '/favicon-32x32.png',
     tag:     data.tag     || 'announcement',
-    data:  { url: data.url || '/announcements' },
+    image:   data.imageUrl || data.image || null,
+    actions: data.ctaText ? [{ action: 'cta', title: data.ctaText }] : [],
+    data:  { url: data.ctaLink || data.url || '/announcements' },
     vibrate: [200, 100, 200],
     requireInteraction: false,
   };

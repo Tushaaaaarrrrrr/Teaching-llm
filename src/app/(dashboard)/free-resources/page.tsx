@@ -60,10 +60,86 @@ export default function FreeResourcesPage() {
 
   return (
     <div className="page-container fade-in">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', width: '100%' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .free-resources-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+          .free-resources-grid .free-res-card {
+            padding: 18px 12px !important;
+            min-height: 180px !important;
+            border-radius: 20px !important;
+            gap: 12px !important;
+          }
+          .free-resources-grid .free-res-icon {
+            width: 52px !important;
+            height: 52px !important;
+            border-radius: 16px !important;
+            margin-bottom: 0 !important;
+          }
+          .free-resources-grid .free-res-icon svg {
+            width: 22px !important;
+            height: 22px !important;
+          }
+          .free-resources-grid .free-res-title {
+            font-size: 15px !important;
+          }
+          .free-resources-grid .free-res-desc {
+            font-size: 11.5px !important;
+            max-width: 100% !important;
+          }
+          .free-resources-grid .free-res-badge {
+            padding: 5px 10px !important;
+            font-size: 10px !important;
+          }
+          .free-resources-grid .free-res-explore {
+            font-size: 11px !important;
+          }
+          
+          /* Horizontal Rectangle layout for the 3rd card on mobile */
+          .free-resources-grid > a:nth-child(3) {
+            grid-column: span 2 !important;
+          }
+          .free-resources-grid > a:nth-child(3) .free-res-card {
+            display: grid !important;
+            grid-template-columns: auto 1fr !important;
+            grid-template-rows: auto auto !important;
+            text-align: left !important;
+            align-items: center !important;
+            padding: 16px 14px !important;
+            min-height: auto !important;
+            gap: 12px 12px !important;
+          }
+          .free-resources-grid > a:nth-child(3) .free-res-icon {
+            grid-column: 1 !important;
+            grid-row: 1 !important;
+          }
+          .free-resources-grid > a:nth-child(3) .free-res-content {
+            grid-column: 2 !important;
+            grid-row: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+            text-align: left !important;
+          }
+          .free-resources-grid > a:nth-child(3) .free-res-footer {
+            grid-column: 1 / span 2 !important;
+            grid-row: 2 !important;
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            margin-top: 4px !important;
+            gap: 8px !important;
+          }
+        }
+      `}</style>
+      <div className="free-resources-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', width: '100%' }}>
         {cards.map(card => (
           <Link key={card.href} href={card.href} style={{ textDecoration: 'none' }}>
-            <div className="card" style={{
+            <div className="card free-res-card" style={{
               padding: '32px 24px',
               display: 'flex',
               flexDirection: 'column',
@@ -87,7 +163,7 @@ export default function FreeResourcesPage() {
               }}
             >
               {/* Icon Section */}
-              <div style={{
+              <div className="free-res-icon" style={{
                 width: '80px', height: '80px', borderRadius: '24px',
                 background: card.gradient,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -99,11 +175,11 @@ export default function FreeResourcesPage() {
               </div>
 
               {/* Text Content */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px' }}>
+              <div className="free-res-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <h2 className="free-res-title" style={{ fontSize: '22px', fontWeight: '900', color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px' }}>
                   {card.title}
                 </h2>
-                <p style={{ 
+                <p className="free-res-desc" style={{ 
                   fontSize: '14.5px', 
                   color: '#6b6b8a', 
                   margin: 0, 
@@ -115,14 +191,14 @@ export default function FreeResourcesPage() {
               </div>
 
               {/* Status Badge */}
-              <div style={{ 
+              <div className="free-res-footer" style={{ 
                 marginTop: 'auto', 
                 display: 'flex', 
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: '12px'
               }}>
-                <div style={{
+                <div className="free-res-badge" style={{
                   padding: '8px 20px', borderRadius: '50px',
                   background: `${card.color}12`,
                   color: card.color,
@@ -134,7 +210,7 @@ export default function FreeResourcesPage() {
                   {card.count} {card.countLabel}
                 </div>
                 
-                <div style={{ 
+                <div className="free-res-explore" style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: '6px', 

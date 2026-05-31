@@ -6,6 +6,7 @@ import { checkRateLimit } from '@/lib/ratelimit'
 import { sanitizeInput } from '@/lib/validation'
 import { DEFAULT_FINAL_TEST_WINDOW_MS, isFinalTest } from '@/lib/exam-policy'
 import { randomUUID } from 'crypto'
+import { sendFcmToUsers } from '@/lib/fcm'
 
 export async function GET(request: NextRequest) {
   try {
@@ -282,6 +283,15 @@ export async function POST(request: NextRequest) {
               type: 'INFO',
             }))
           })
+
+          // Send FCM push to enrolled students
+          const enrolledUserIds = enrollments.map(e => e.userId)
+          sendFcmToUsers(enrolledUserIds, {
+            title: '📝 New Exam Created',
+            body: `A new exam "${sanitizedTitle}" has been added. Check it in the Exams tab.`,
+            url: '/exams',
+            tag: `exam-${exam.id}`,
+          }).catch(console.error)
         }
       } else if (testSeriesId) {
         // Notify test series subscribers
@@ -299,6 +309,15 @@ export async function POST(request: NextRequest) {
               type: 'INFO',
             }))
           })
+
+          // Send FCM push to test series subscribers
+          const accessUserIds = accesses.map((a: any) => a.userId)
+          sendFcmToUsers(accessUserIds, {
+            title: '📝 New Exam in Test Series',
+            body: `A new exam "${sanitizedTitle}" has been added to your Test Series!`,
+            url: '/exams',
+            tag: `exam-${exam.id}`,
+          }).catch(console.error)
         }
       }
 

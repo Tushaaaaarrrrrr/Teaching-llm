@@ -537,7 +537,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
          {/* Evaluation Overlay */}
          {evaluatingAttempt && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }} onClick={() => setEvaluatingAttempt(null)}>
-               <div className="modal" style={{ maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '32px' }} onClick={e => e.stopPropagation()}>
+               <div className="modal" style={{ maxWidth: 'min(800px, calc(100vw - 32px))', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: 'clamp(16px, 4vw, 32px)' }} onClick={e => e.stopPropagation()}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
                      <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a' }}>Evaluate Submission</h2>
                      <button onClick={() => setEvaluatingAttempt(null)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
@@ -692,7 +692,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
          {showExamEditor && (
            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }} onClick={() => setShowExamEditor(false)}>
-             <div className="modal" style={{ maxWidth: '700px', width: '100%', padding: '32px' }} onClick={e => e.stopPropagation()}>
+             <div className="modal" style={{ maxWidth: 'min(700px, calc(100vw - 32px))', width: '100%', padding: 'clamp(16px, 4vw, 32px)' }} onClick={e => e.stopPropagation()}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>Edit Exam</h2>
                  <button onClick={() => setShowExamEditor(false)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
@@ -700,7 +700,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                <div style={{ display: 'grid', gap: '16px' }}>
                  <input className="form-input" value={examForm.title} onChange={(e) => setExamForm({ ...examForm, title: e.target.value })} placeholder="Exam title" />
                  <textarea className="form-input" value={examForm.description} onChange={(e) => setExamForm({ ...examForm, description: e.target.value })} placeholder="Description" rows={3} style={{ resize: 'vertical' }} />
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 160px', gap: '16px' }}>
+                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
                    <input className="form-input" type="datetime-local" value={examForm.startDate} onChange={(e) => setExamForm({ ...examForm, startDate: e.target.value })} />
                    <input className="form-input" type="datetime-local" value={examForm.expiresAt} onChange={(e) => setExamForm({ ...examForm, expiresAt: e.target.value })} />
                    <input className="form-input" type="number" min="1" value={examForm.durationMinutes} onChange={(e) => setExamForm({ ...examForm, durationMinutes: e.target.value })} />
@@ -715,7 +715,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
          {showQuestionEditor && (
            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }} onClick={() => { setShowQuestionEditor(false); setEditingQuestionIndex(null) }}>
-             <div className="modal" style={{ maxWidth: '760px', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '32px' }} onClick={e => e.stopPropagation()}>
+             <div className="modal" style={{ maxWidth: 'min(760px, calc(100vw - 32px))', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: 'clamp(16px, 4vw, 32px)' }} onClick={e => e.stopPropagation()}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>{editingQuestionIndex === null ? 'Add Question' : 'Edit Question'}</h2>
                  <button onClick={() => { setShowQuestionEditor(false); setEditingQuestionIndex(null) }} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
@@ -854,7 +854,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
       {showCodeModal !== null && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 6000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }} onClick={() => setShowCodeModal(null)}>
-          <div className="modal" style={{ padding: '32px', width: '100%', maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
+          <div className="modal" style={{ padding: 'clamp(16px, 4vw, 32px)', width: '100%', maxWidth: 'min(700px, calc(100vw - 32px))' }} onClick={e => e.stopPropagation()}>
             <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', marginBottom: '16px', textTransform: 'capitalize' }}>Add Code ({showCodeModal.language})</h3>
             <textarea
               value={codeSnippet}

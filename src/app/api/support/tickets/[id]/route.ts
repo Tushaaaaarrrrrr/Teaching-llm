@@ -10,17 +10,16 @@ export async function PUT(
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isManager(session.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const body = await request.json()
     const { status, assignedToId } = body
 
-    // Only managers can assign tickets
     const data: Record<string, unknown> = {}
     if (status !== undefined) data.status = status
     if (assignedToId !== undefined) {
-      if (!isManager(session.role)) {
-        return NextResponse.json({ error: 'Only managers can assign tickets' }, { status: 403 })
-      }
       data.assignedToId = assignedToId || null
     }
 

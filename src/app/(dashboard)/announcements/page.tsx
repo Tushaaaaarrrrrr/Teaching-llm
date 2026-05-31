@@ -26,6 +26,7 @@ interface Announcement {
   createdAt: string
   createdBy: AnnouncementAuthor
   class: AnnouncementClass | null
+  imageUrl?: string | null
 }
 
 interface ClassOption {
@@ -75,6 +76,27 @@ function relativeTime(dateStr: string): string {
   if (days  < 7)  return `${days} days ago`
   return new Date(dateStr).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })
 }
+
+interface AnnouncementMetadata {
+  ctaText?: string
+  ctaLink?: string
+}
+
+function parseAnnouncementContent(content: string): { body: string; metadata: AnnouncementMetadata } {
+  const metaRegex = /<!-- fcm_meta:({.*?}) -->$/
+  const match = content.match(metaRegex)
+  if (match) {
+    try {
+      const metadata = JSON.parse(match[1])
+      const body = content.replace(metaRegex, '').trim()
+      return { body, metadata }
+    } catch {
+      // Ignore
+    }
+  }
+  return { body: content, metadata: {} }
+}
+
 
 function TypeIcon({ type }: { type: string }) {
   const color = TYPE_COLORS[type] || '#3b82f6'
@@ -136,6 +158,10 @@ export default function AnnouncementsPage() {
   const [content, setContent] = useState('')
   const [type,    setType]    = useState('info')
   const [classId, setClassId] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [ctaText,  setCtaText]  = useState('')
+  const [ctaLink,  setCtaLink]  = useState('')
+  const [selectedTemplateId, setSelectedTemplateId] = useState('')
 
   useEffect(() => { loadData() }, [])
 
@@ -163,20 +189,52 @@ export default function AnnouncementsPage() {
     }
   }
 
+  function handleSelectTemplate(templateId: string) {
+    setSelectedTemplateId(templateId)
+    if (!templateId) return
+    const template = announcements.find(a => a.id === templateId)
+    if (!template) return
+
+    const { body, metadata } = parseAnnouncementContent(template.content)
+    setTitle(template.title)
+    setContent(body)
+    setType(template.type)
+    setClassId(template.classId || '')
+    setImageUrl(template.imageUrl || '')
+    setCtaText(metadata.ctaText || '')
+    setCtaLink(metadata.ctaLink || '')
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !content.trim()) return
     setSubmitting(true)
+
+    const meta = {
+      ctaText: ctaText.trim(),
+      ctaLink: ctaLink.trim(),
+    }
+    const hasMeta = meta.ctaText || meta.ctaLink
+    const finalContent = hasMeta
+      ? `${content.trim()}\n\n<!-- fcm_meta:${JSON.stringify(meta)} -->`
+      : content.trim()
+
     try {
       const res = await fetch('/api/announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), content: content.trim(), type, classId: classId || undefined }),
+        body: JSON.stringify({
+          title: title.trim(),
+          content: finalContent,
+          type,
+          classId: classId || undefined,
+          imageUrl: imageUrl.trim() || undefined,
+        }),
       })
       if (res.ok) {
         const newAnn = await res.json()
         setAnnouncements(prev => [newAnn, ...prev])
-        setTitle(''); setContent(''); setType('info'); setClassId(''); setShowForm(false)
+        setTitle(''); setContent(''); setType('info'); setClassId(''); setImageUrl(''); setCtaText(''); setCtaLink(''); setSelectedTemplateId(''); setShowForm(false)
       }
     } catch { /* ignore */ } finally {
       setSubmitting(false)
@@ -242,7 +300,38 @@ export default function AnnouncementsPage() {
   }
 
   return (
-    <div style={{ padding: '24px 32px 48px' }}>
+    <div className="announcements-page-container" style={{ padding: '24px 32px 48px' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .announcements-page-container {
+            padding: 14px 12px 24px !important;
+          }
+          .announcement-card {
+            padding: 16px 12px !important;
+            border-radius: 16px !important;
+          }
+          .announcement-card-body {
+            display: grid !important;
+            grid-template-columns: auto 1fr !important;
+            grid-template-rows: auto auto !important;
+            gap: 12px !important;
+          }
+          .announcement-card-body > div:first-child {
+            grid-column: 1 !important;
+            grid-row: 1 !important;
+          }
+          .announcement-card-content {
+            grid-column: 2 !important;
+            grid-row: 1 !important;
+          }
+          .announcement-card-button {
+            grid-column: 1 / span 2 !important;
+            grid-row: 2 !important;
+            width: 100% !important;
+            margin-top: 4px !important;
+          }
+        }
+      `}</style>
 
       {/* ── Top bar: filter tabs + create button ────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
@@ -317,6 +406,27 @@ export default function AnnouncementsPage() {
           </h3>
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {announcements.length > 0 && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>
+                    Reuse Previous Announcement (Template)
+                  </label>
+                  <select
+                    value={selectedTemplateId}
+                    onChange={e => handleSelectTemplate(e.target.value)}
+                    style={{ ...neuInput, cursor: 'pointer', appearance: 'none', background: 'rgba(54, 54, 232, 0.06)', border: '1px solid rgba(54, 54, 232, 0.15)', fontWeight: 600, color: '#3636e8' }}
+                  >
+                    <option value="" style={{ color: '#6b6b8a' }}>-- Choose a previous announcement to autofill fields --</option>
+                    {announcements.slice(0, 10).map(a => (
+                      <option key={a.id} value={a.id} style={{ color: '#1e1e3a' }}>
+                        {a.title} ({new Date(a.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Title</label>
                 <input type="text" value={title} onChange={e => setTitle(e.target.value)}
@@ -360,7 +470,69 @@ export default function AnnouncementsPage() {
                   </select>
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+
+              {/* Advanced push options section */}
+              <div style={{
+                marginTop: '8px',
+                padding: '18px',
+                borderRadius: '18px',
+                background: 'rgba(0,0,0,0.015)',
+                border: '1px dashed rgba(54, 54, 232, 0.2)',
+                boxShadow: 'inset 2px 2px 5px rgba(0,0,0,0.02)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+              }}>
+                <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#3636e8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                  </svg>
+                  Mobile Push Notifications Customization
+                </div>
+                
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '4px' }}>
+                    Banner Image URL (Optional — shows rich photo in push notifications & feed)
+                  </label>
+                  <input
+                    type="url"
+                    value={imageUrl}
+                    onChange={e => setImageUrl(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    style={neuInput}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: '180px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '4px' }}>
+                      CTA Button Text (Optional — e.g. "Join Class", "Start Quiz")
+                    </label>
+                    <input
+                      type="text"
+                      value={ctaText}
+                      onChange={e => setCtaText(e.target.value)}
+                      placeholder="e.g. Open Notes"
+                      style={neuInput}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: '180px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '4px' }}>
+                      CTA Button Redirect Path (Optional — relative or full link)
+                    </label>
+                    <input
+                      type="text"
+                      value={ctaLink}
+                      onChange={e => setCtaLink(e.target.value)}
+                      placeholder="e.g. /materials or https://zoom.us/..."
+                      style={neuInput}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
                 <button type="submit" disabled={submitting || !title.trim() || !content.trim()}
                   style={{
                     ...neuButton,
@@ -402,11 +574,13 @@ export default function AnnouncementsPage() {
             const typeBg      = TYPE_BG[a.type]    || TYPE_BG.info
             const typeLabel   = TYPE_LABELS[a.type] || 'Info'
             const tagLabel    = a.classId ? 'Class Announcement' : 'System Update'
+            const { body: parsedBody, metadata } = parseAnnouncementContent(a.content)
 
             return (
               <div
                 key={a.id}
                 ref={el => { cardRefs.current[a.id] = el }}
+                className="announcement-card"
                 style={{
                   ...neuCard,
                   padding: '20px 24px',
@@ -414,13 +588,13 @@ export default function AnnouncementsPage() {
                   ...(isHighlight ? { boxShadow: `6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff, 0 0 0 2px ${typeColor}50` } : {}),
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '18px' }}>
+                <div className="announcement-card-body" style={{ display: 'flex', alignItems: 'flex-start', gap: '18px' }}>
 
                   {/* Type icon */}
                   <TypeIcon type={a.type} />
 
                   {/* Content */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="announcement-card-content" style={{ flex: 1, minWidth: 0 }}>
                     {/* Tag row */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
                       <span style={{
@@ -428,7 +602,7 @@ export default function AnnouncementsPage() {
                         background: typeBg, color: typeColor,
                         fontSize: '11px', fontWeight: 700,
                         textTransform: 'uppercase', letterSpacing: '0.5px',
-                      }}>
+                       }}>
                         {tagLabel}
                       </span>
 
@@ -477,8 +651,62 @@ export default function AnnouncementsPage() {
                         whiteSpace: 'pre-wrap' as const,
                       }),
                     }}>
-                      {a.content}
+                      {parsedBody}
                     </p>
+
+                    {/* Rich Banner Image (Expanded mode) */}
+                    {isExpanded && a.imageUrl && (
+                      <div style={{
+                        marginTop: '14px',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        boxShadow: '4px 4px 10px rgba(0,0,0,0.05)',
+                        border: '1px solid rgba(0,0,0,0.08)',
+                        maxWidth: '100%',
+                        maxHeight: '260px',
+                        background: '#f2f3f7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <img
+                          src={a.imageUrl}
+                          alt="Announcement Visual"
+                          style={{ width: '100%', height: '100%', maxHeight: '260px', objectFit: 'contain' }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Custom Action Call-To-Action Button (Expanded mode) */}
+                    {isExpanded && metadata.ctaText && metadata.ctaLink && (
+                      <div style={{ marginTop: '16px' }}>
+                        <a
+                          href={metadata.ctaLink}
+                          target={metadata.ctaLink.startsWith('http') ? '_blank' : '_self'}
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 22px',
+                            borderRadius: '50px',
+                            background: 'linear-gradient(135deg, #3636e8, #6366f1)',
+                            color: '#fff',
+                            fontSize: '13.5px',
+                            fontWeight: 700,
+                            textDecoration: 'none',
+                            boxShadow: '0 4px 12px rgba(54,54,232,0.25), inset 1px 1px 0 rgba(255,255,255,0.2)',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <span>{metadata.ctaText}</span>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                          </svg>
+                        </a>
+                      </div>
+                    )}
 
                     {/* Expanded extra: author */}
                     {isExpanded && (
@@ -526,6 +754,7 @@ export default function AnnouncementsPage() {
                   {/* Read More / Show Less button */}
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : a.id)}
+                    className="announcement-card-button"
                     style={{
                       flexShrink: 0, alignSelf: 'center',
                       padding: '9px 20px', borderRadius: '50px', border: 'none',

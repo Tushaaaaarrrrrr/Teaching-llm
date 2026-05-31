@@ -57,3 +57,17 @@ codebase-tree.json
 # Local agent scratch files
 scratch/
 
+# JetBrains IDE
+.idea/
+
+# Android build artifacts and machine-specific config
+android/build/
+android/app/build/
+android/.gradle/
+android/captures/
+android/local.properties
+android/app/release/
+android/.idea/
+
+# Android bugreports (large emulator dumps)
+bugreport-*.zip
