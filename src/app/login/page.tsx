@@ -25,7 +25,13 @@ function PoliciesDropdown({
   }, [])
 
   return (
-    <div ref={dropdownRef} className="policies-dropdown-container" style={{ position: 'relative', display: 'inline-block' }}>
+    <div 
+      ref={dropdownRef} 
+      className="policies-dropdown-container" 
+      style={{ position: 'relative', display: 'inline-block' }}
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="policies-dropdown-trigger"
@@ -325,7 +331,7 @@ function LoginContent() {
               e.currentTarget.style.color = '#9999b0';
             }}
           >
-            <span style={{ fontSize: '14px' }}>✉️</span><span>Contact Developer</span>
+            <span style={{ fontSize: '14px' }}>✉️</span><span>Contact Us</span>
           </a>
 
           <div className="mobile-only-policies-container">
@@ -601,7 +607,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
               left: 0,
               width: '100%',
               height: '100%',
-              opacity: 0.01,
+              opacity: 0.001,
               zIndex: 10,
               cursor: gsiReady ? 'pointer' : 'default',
               overflow: 'hidden'

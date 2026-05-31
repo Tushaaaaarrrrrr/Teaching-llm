@@ -1242,11 +1242,11 @@ tr:hover td {
 .login-card-container {
   width: 100%;
   max-width: 480px;
-  padding: 56px 48px;
-  background: #f3f4f6 !important;
+  padding: 56px 36px !important;
+  background: #ffffff !important;
   border-radius: 32px !important;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.04), inset 1px 1px 0px rgba(255, 255, 255, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
   text-align: center;
 }
 
@@ -1277,6 +1277,7 @@ tr:hover td {
   margin-top: 24px !important;
   text-align: center !important;
   line-height: 1.6 !important;
+  white-space: nowrap !important;
 }
 
 .login-terms-text span {
@@ -1383,6 +1384,7 @@ tr:hover td {
 
   .login-terms-text {
     font-size: 10px !important;
+    white-space: normal !important;
   }
 
   .login-explore-btn {
