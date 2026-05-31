@@ -489,10 +489,6 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.10)',
         position: 'relative', overflow: 'hidden',
       }}>
-        <p style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', margin: 0, marginBottom: '12px', textAlign: 'center', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          Continue with Google
-        </p>
-
         <div style={{ position: 'relative', minHeight: '44px', display: 'flex', justifyContent: 'center' }}>
           {!isCapacitor && (
             <div 
