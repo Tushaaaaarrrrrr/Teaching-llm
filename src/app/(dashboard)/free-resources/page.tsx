@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import useSWR from 'swr'
+import { useRouter } from 'next/navigation'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 export default function FreeResourcesPage() {
+  const router = useRouter()
   const { data: courses } = useSWR<any[]>('/api/free-resources/courses', fetcher)
   const { data: materials } = useSWR<any[]>('/api/free-resources/materials', fetcher)
 
@@ -89,10 +91,6 @@ export default function FreeResourcesPage() {
             font-size: 11.5px !important;
             max-width: 100% !important;
           }
-          .free-resources-grid .free-res-badge {
-            padding: 5px 10px !important;
-            font-size: 10px !important;
-          }
           .free-resources-grid .free-res-explore {
             font-size: 11px !important;
           }
@@ -128,7 +126,7 @@ export default function FreeResourcesPage() {
             grid-row: 2 !important;
             display: flex !important;
             flex-direction: row !important;
-            justify-content: space-between !important;
+            justify-content: flex-end !important;
             align-items: center !important;
             width: 100% !important;
             margin-top: 4px !important;
@@ -136,6 +134,50 @@ export default function FreeResourcesPage() {
           }
         }
       `}</style>
+
+      {/* Premium Neumorphic Page Header */}
+      <div className="page-header" style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        marginBottom: '32px',
+        justifyContent: 'flex-start'
+      }}>
+        <button
+          onClick={() => router.back()}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            background: '#e8eaf0',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+            color: '#6b6b8a',
+            transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+          }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#3636e8'
+            ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#6b6b8a'
+            ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff'
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+        <h1 className="page-title" style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: '#1e1e3a', letterSpacing: '-0.5px' }}>Free Resources</h1>
+      </div>
+
       <div className="free-resources-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', width: '100%' }}>
         {cards.map(card => (
           <Link key={card.href} href={card.href} style={{ textDecoration: 'none' }}>
@@ -198,18 +240,6 @@ export default function FreeResourcesPage() {
                 alignItems: 'center',
                 gap: '12px'
               }}>
-                <div className="free-res-badge" style={{
-                  padding: '8px 20px', borderRadius: '50px',
-                  background: `${card.color}12`,
-                  color: card.color,
-                  fontSize: '14px', fontWeight: '800',
-                  border: `1px solid ${card.color}20`,
-                  letterSpacing: '0.02em',
-                  textTransform: 'uppercase'
-                }}>
-                  {card.count} {card.countLabel}
-                </div>
-                
                 <div className="free-res-explore" style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
