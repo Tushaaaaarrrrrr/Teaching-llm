@@ -422,8 +422,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           overflow: 'hidden',
           width: '100%',
           maxWidth: '182px',
-          minHeight: '82px',
-          padding: '12px 16px',
+          minHeight: '74px',
+          padding: '8px 12px',
           borderRadius: '999px',
           background: 'linear-gradient(145deg, #f6f7fb, #dde0e8)',
           boxShadow: '14px 14px 28px rgba(197, 199, 207, 0.85), -10px -10px 22px rgba(255, 255, 255, 0.95), inset 1px 1px 0 rgba(255, 255, 255, 0.7)',
@@ -433,9 +433,9 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             alt="GENz IITIAN Logo" 
             style={{ 
               width: '100%',
-              maxWidth: '148px',
+              maxWidth: '158px',
               height: 'auto', 
-              maxHeight: '52px',
+              maxHeight: '58px',
               objectFit: 'contain',
               display: 'block',
             }} 
