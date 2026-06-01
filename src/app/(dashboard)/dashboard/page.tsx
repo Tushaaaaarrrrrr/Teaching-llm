@@ -8,6 +8,28 @@ import HomeHeroSlider, { HeroSlide } from '@/components/home/HomeHeroSlider'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
+interface AnnouncementMetadata {
+  ctaText?: string
+  ctaLink?: string
+  importance?: 'high' | 'default'
+  sound?: 'default' | 'none'
+}
+
+function parseAnnouncementContent(content: string): { body: string; metadata: AnnouncementMetadata } {
+  const metaRegex = /<!-- fcm_meta:({.*?}) -->$/
+  const match = content.match(metaRegex)
+  if (match) {
+    try {
+      const metadata = JSON.parse(match[1])
+      const body = content.replace(metaRegex, '').trim()
+      return { body, metadata }
+    } catch {
+      // Ignore
+    }
+  }
+  return { body: content, metadata: {} }
+}
+
 export default function DashboardPage() {
   const { data: dashboardData, error, isLoading: loading, mutate } = useSWR('/api/dashboard', fetcher, {
     revalidateOnFocus: false
@@ -1169,9 +1191,9 @@ export default function DashboardPage() {
 
       {/* ── Row 3: Announcements ── */}
       {announcements.length > 0 && (
-        <div className="card" style={{ padding: '22px 20px', borderRadius: '22px' }}>
+        <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', maxWidth: '100%', overflow: 'hidden' }}>
           <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a', marginBottom: '16px' }}>Announcements</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '100%' }}>
             {announcements.map((a) => {
               const colors: Record<string, { border: string }> = {
                 info:    { border: '#3b82f6' },
@@ -1180,6 +1202,8 @@ export default function DashboardPage() {
                 error:   { border: '#ef4444' },
               }
               const c = colors[a.type] || colors.info
+              const { body: parsedBody, metadata } = parseAnnouncementContent(a.content)
+
               return (
                 <div key={a.id} style={{
                   padding: '14px 18px',
@@ -1187,14 +1211,46 @@ export default function DashboardPage() {
                   background: '#e8eaf0',
                   boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                   borderLeft: `4px solid ${c.border}`,
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  maxWidth: '100%',
                 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a', marginBottom: '4px', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                     {a.title}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#6b6b8a', lineHeight: '1.55' }}>
-                    {a.content}
+                  <div style={{ fontSize: '12px', color: '#6b6b8a', lineHeight: '1.55', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
+                    {parsedBody}
                   </div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
+                  {metadata.ctaText && metadata.ctaLink && (
+                    <div style={{ marginTop: '10px' }}>
+                      <a
+                        href={metadata.ctaLink}
+                        target={metadata.ctaLink.startsWith('http') ? '_blank' : '_self'}
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '8px 18px',
+                          borderRadius: '50px',
+                          background: 'linear-gradient(135deg, #3636e8, #6366f1)',
+                          color: '#fff',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                          boxShadow: '0 4px 10px rgba(54,54,232,0.25), inset 1px 1px 0 rgba(255,255,255,0.2)',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span>{metadata.ctaText}</span>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                          <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                      </a>
+                    </div>
+                  )}
+                  <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '8px' }}>
                     {new Date(a.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })}
                   </div>
                 </div>

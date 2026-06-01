@@ -76,6 +76,12 @@ export default function Header({ userName, userRole }: HeaderProps) {
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   const fetcher = (url: string) => fetch(url).then(r => r.json())
+
+  const stripFcmMeta = (content: string): string => {
+    const metaRegex = /<!-- fcm_meta:({.*?}) -->$/
+    return content.replace(metaRegex, '').trim()
+  }
+
   const { data: notificationsData, mutate: mutateNotifications } = useSWR('/api/notifications', fetcher, {
     revalidateOnFocus: true,
   })
@@ -488,7 +494,10 @@ export default function Header({ userName, userRole }: HeaderProps) {
                         {n.title}
                       </div>
                       <div style={{ fontSize: '12px', color: '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {n.content.length > 60 ? n.content.slice(0, 57) + '…' : n.content}
+                        {(() => {
+                          const cleanText = stripFcmMeta(n.content)
+                          return cleanText.length > 60 ? cleanText.slice(0, 57) + '…' : cleanText
+                        })()}
                       </div>
                       <div style={{ fontSize: '11px', color: '#b0b2ba', marginTop: '3px' }}>
                         {new Date(n.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
