@@ -232,39 +232,11 @@ export default function MobileCourseDetail({
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             {totalLectures} lectures
           </span>
-          {durationLabel && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              {durationLabel}
-            </span>
-          )}
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             {topics.length} topics
           </span>
         </div>
-
-        {/* Progress bar */}
-        {allContentCount > 0 && (
-          <div style={{ marginTop: '14px', position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-              <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Progress</span>
-              <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#fff' }}>{progressPercent}%</span>
-            </div>
-            <div style={{
-              height: '5px', borderRadius: '10px',
-              background: 'rgba(255,255,255,0.2)',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                height: '100%', borderRadius: '10px',
-                background: 'rgba(255,255,255,0.9)',
-                width: `${progressPercent}%`,
-                transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-              }} />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ──── CONTENT AREA ──── */}
@@ -288,66 +260,31 @@ export default function MobileCourseDetail({
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '12px', fontWeight: 800, color: '#9a3412', lineHeight: 1.3 }}>
-                Access ends in {accessDays} day{accessDays === 1 ? '' : 's'}
-              </div>
-              <div style={{ fontSize: '10.5px', color: '#c2410c', fontWeight: 600 }}>
-                Renew before {expiresOnLabel}
+                Course access ends in {accessDays} day{accessDays === 1 ? '' : 's'}
               </div>
             </div>
           </div>
         )}
 
-        {/* Mentor + Feedback inline row */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '10px',
-        }}>
-          {/* Mentor */}
-          <div style={{
-            flex: 1,
-            display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '10px 14px',
-            borderRadius: '14px',
-            background: '#fff',
-            border: '1px solid rgba(15,23,42,0.06)',
-            boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
-          }}>
-            <div style={{
-              width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-              background: `${accent}12`, color: accent,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '13px', fontWeight: 800,
-            }}>
-              {mentorName.trim().charAt(0).toUpperCase()}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '9px', fontWeight: 800, color: '#9999b0', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Mentor</div>
-              <div style={{ fontSize: '13px', fontWeight: 800, color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {mentorName}
-              </div>
-            </div>
-          </div>
-
-          {/* Feedback button */}
-          {role === 'STUDENT' && !hasFeedback && (
-            <button
-              onClick={() => setShowFeedbackModal(true)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                padding: '10px 16px',
-                borderRadius: '14px',
-                background: '#fff',
-                border: '1px solid rgba(15,23,42,0.06)',
-                boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
-                cursor: 'pointer', fontFamily: 'inherit',
-                fontSize: '12px', fontWeight: 800, color: '#d97706',
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              Feedback
-            </button>
-          )}
-        </div>
+        {/* Feedback button */}
+        {role === 'STUDENT' && !hasFeedback && (
+          <button
+            onClick={() => setShowFeedbackModal(true)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              padding: '10px 16px', width: '100%',
+              borderRadius: '14px',
+              background: '#fff',
+              border: '1px solid rgba(15,23,42,0.06)',
+              boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
+              cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: '12px', fontWeight: 800, color: '#d97706',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Course Feedback
+          </button>
+        )}
 
         {/* ──── Tabs ──── */}
         <div style={{

@@ -37,7 +37,7 @@ export interface FullSession extends JWTPayload {
 }
 
 export function signToken(payload: JWTPayload): string {
-  return jwt.sign(payload, getJwtSecret(), { expiresIn: '1d' })
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: '7d' })
 }
 
 export function verifyToken(token: string): JWTPayload | null {
@@ -185,7 +185,7 @@ export function getCookieConfig() {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax' as const,
-      maxAge: 60 * 60 * 24 * 1, // 1 day — matches JWT expiry
+      maxAge: 60 * 60 * 24 * 7, // 7 days — matches JWT expiry
       path: '/',
     },
   }

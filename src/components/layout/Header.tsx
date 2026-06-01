@@ -322,11 +322,14 @@ export default function Header({ userName, userRole }: HeaderProps) {
               />
             </div>
             <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '15px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.2px' }}>
+              <span style={{ fontSize: '15px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.2px', display: 'flex', alignItems: 'baseline', gap: '5px', flexWrap: 'nowrap' }}>
                 {mounted ? getGreeting().heading : 'Welcome'},
+                <span style={{ fontSize: '17px', fontWeight: 700, color: '#3636e8', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+                  {firstName}
+                </span>
               </span>
-              <span style={{ fontSize: '20px', fontWeight: 700, color: '#3636e8', lineHeight: 1.15, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.4px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
-                {firstName}
+              <span style={{ fontSize: '11.5px', fontWeight: 500, color: '#6b6b8a', lineHeight: 1.3, marginTop: '3px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+                {mounted ? getGreeting().subtext : 'Loading your dashboard...'}
               </span>
             </div>
           </a>
