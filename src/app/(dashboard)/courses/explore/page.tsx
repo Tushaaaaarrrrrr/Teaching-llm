@@ -397,10 +397,59 @@ export default function ExploreCoursesPage() {
   const activeOfferings = offerings || []
   const activeBundles = bundleOfferings || []
 
+  const getMobileHeaderConfig = () => {
+    switch (storeView) {
+      case 'courses':
+        return {
+          title: 'Courses & Bundles',
+          subtitle: 'Explore our learning programs',
+          backAction: () => setStoreView(null)
+        }
+      case 'notes':
+        return {
+          title: 'Premium Notes',
+          subtitle: 'Handwritten & digital revision guides',
+          backAction: () => setStoreView(null)
+        }
+      case 'mentorship':
+        return {
+          title: '1:1 Mentorship',
+          subtitle: 'Book a live call with expert mentors',
+          backAction: () => setStoreView(null)
+        }
+      case 'testSeries':
+        return {
+          title: 'Test Series',
+          subtitle: 'Evaluate your knowledge with mock exams',
+          backAction: () => setStoreView(null)
+        }
+      default:
+        return {
+          title: 'Official Store',
+          subtitle: 'Upgrade your learning package',
+          backAction: () => router.back()
+        }
+    }
+  }
+
+  const mobileHeader = getMobileHeaderConfig()
+
   return (
     <>
       <style>{`
+        .mobile-back-header {
+          display: none;
+        }
         @media (max-width: 768px) {
+          .mobile-back-header {
+            display: flex !important;
+          }
+          .desktop-back-btn {
+            display: none !important;
+          }
+          .page-container {
+            padding: 16px 14px 24px !important;
+          }
           .store-header-banner {
             margin-top: 0 !important;
             padding-top: 10px !important;
@@ -590,6 +639,47 @@ export default function ExploreCoursesPage() {
       </div>
 
       <div className="page-container fade-in">
+        {/* Mobile-only Header with Back Button */}
+        <div className="mobile-back-header" style={{
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '20px',
+          padding: '8px 4px 16px',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+        }}>
+          <button
+            onClick={mobileHeader.backAction}
+            style={{
+              background: '#e8eaf0',
+              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+              border: 'none',
+              borderRadius: '50%',
+              width: '38px',
+              height: '38px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#1e1e3a',
+              transition: 'transform 0.15s ease',
+            }}
+            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <div>
+            <span style={{ display: 'block', fontSize: '20px', fontWeight: 800, color: '#1e1e3a', fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.3px', lineHeight: '1.2' }}>
+              {mobileHeader.title}
+            </span>
+            <span style={{ display: 'block', fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
+              {mobileHeader.subtitle}
+            </span>
+          </div>
+        </div>
 
       {/* STORE CATEGORY CARDS */}
       {!storeView && (
@@ -617,7 +707,7 @@ export default function ExploreCoursesPage() {
 
       {/* BACK BUTTON when inside a view */}
       {storeView && (
-        <button onClick={() => setStoreView(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', color: '#64748b', fontSize: '14px', fontWeight: '700', cursor: 'pointer', marginBottom: '20px', padding: '8px 0' }}>
+        <button className="desktop-back-btn" onClick={() => setStoreView(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', color: '#64748b', fontSize: '14px', fontWeight: '700', cursor: 'pointer', marginBottom: '20px', padding: '8px 0' }}>
           <ArrowLeft size={20} />
           Back to Store
         </button>

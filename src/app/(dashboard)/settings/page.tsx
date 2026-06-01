@@ -145,10 +145,71 @@ export default function SettingsPage() {
 
   return (
     <div className="page-container fade-in" style={{ padding: isMobile ? '12px' : '20px' }}>
+      <style>{`
+        .mobile-back-header {
+          display: none;
+        }
+        .desktop-back-container {
+          display: block;
+        }
+        @media (max-width: 768px) {
+          .mobile-back-header {
+            display: flex !important;
+          }
+          .desktop-back-container {
+            display: none !important;
+          }
+          .page-container {
+            padding: 16px 14px 24px !important;
+          }
+        }
+      `}</style>
       <div style={{ maxWidth: '960px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
+        {/* Mobile-only Header with Back Button */}
+        <div className="mobile-back-header" style={{
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '20px',
+          padding: '8px 4px 16px',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+        }}>
+          <button
+            onClick={() => router.back()}
+            style={{
+              background: '#e8eaf0',
+              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+              border: 'none',
+              borderRadius: '50%',
+              width: '38px',
+              height: '38px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#1e1e3a',
+              transition: 'transform 0.15s ease',
+            }}
+            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <div>
+            <span style={{ display: 'block', fontSize: '20px', fontWeight: 800, color: '#1e1e3a', fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.3px', lineHeight: '1.2' }}>
+              Settings
+            </span>
+            <span style={{ display: 'block', fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
+              Manage passwords, appearance, and notifications
+            </span>
+          </div>
+        </div>
+
         {/* ── Back ── */}
-        <div>
+        <div className="desktop-back-container">
           <button
             onClick={() => router.back()}
             style={{
