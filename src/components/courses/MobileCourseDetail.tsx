@@ -109,8 +109,8 @@ export default function MobileCourseDetail({
     return new Date(course.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }, [course.expiresAt])
 
-  const badge = course.enrollmentType === 'LIVE' ? 'LIVE'
-    : course.enrollmentType === 'RECORDED' ? 'PRO'
+  const badge = course.enrollmentType === 'LIVE' ? 'PRO'
+    : course.enrollmentType === 'RECORDED' ? 'PLUS'
     : course.enrollmentType === 'FREE' ? 'FREE'
     : course.enrollmentType === 'DEMO' ? 'DEMO' : null
 
