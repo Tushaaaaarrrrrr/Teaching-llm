@@ -32,6 +32,7 @@ interface CourseDetail {
   expiresAt?: string
   teacherName?: string
   enrollmentType?: string | null
+  liveUpgradePrice?: number | null
   instructorAssignments?: { instructor: { id: string; name: string } }[]
   _count?: { topics?: number; lectures?: number; materials?: number; courseEvents?: number }
 }
@@ -44,6 +45,8 @@ interface Props {
   progressMap: Record<string, string>
   updateProgress: (contentId: string, status: string) => void
   role: string
+  setInfoModalCourse?: (course: any) => void
+  setUpgradeModalCourse?: (course: any) => void
 }
 
 type TabKey = 'curriculum' | 'overview'
@@ -57,6 +60,7 @@ function cycleStatus(current: string): string {
 
 export default function MobileCourseDetail({
   course, topics, expandedTopics, toggleTopic, progressMap, updateProgress, role,
+  setInfoModalCourse, setUpgradeModalCourse,
 }: Props) {
   const router = useRouter()
   const [tab, setTab] = useState<TabKey>('curriculum')
@@ -109,6 +113,9 @@ export default function MobileCourseDetail({
     return new Date(course.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }, [course.expiresAt])
 
+  const isRecorded = ['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '')
+  const isManager = role === 'ADMIN' || role === 'MANAGER'
+  const heroBg = isRecorded ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(145deg, ${accent}, ${accent}cc)`
   const badge = course.enrollmentType === 'LIVE' ? 'PRO'
     : course.enrollmentType === 'RECORDED' ? 'PLUS'
     : course.enrollmentType === 'FREE' ? 'FREE'
@@ -150,7 +157,7 @@ export default function MobileCourseDetail({
         position: 'relative',
         padding: '16px 20px 20px',
         paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))',
-        background: `linear-gradient(145deg, ${accent}, ${accent}cc)`,
+        background: heroBg,
         color: '#fff',
         borderRadius: '0 0 28px 28px',
         overflow: 'hidden',
@@ -175,7 +182,7 @@ export default function MobileCourseDetail({
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Back
           </button>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {badge && (
               <span style={{
                 fontSize: '9.5px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
@@ -185,6 +192,20 @@ export default function MobileCourseDetail({
               }}>
                 {badge}{course.subject ? ` · ${course.subject}` : ''}
               </span>
+            )}
+            {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && !isManager && setInfoModalCourse && (
+              <button
+                onClick={() => setInfoModalCourse(course)}
+                aria-label="Compare PRO vs PLUS batches"
+                style={{
+                  width: '28px', height: '28px', borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
+                  color: '#fff', fontSize: '13px', fontWeight: '800', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                i
+              </button>
             )}
             <button
               aria-label="Share course"
@@ -237,6 +258,40 @@ export default function MobileCourseDetail({
             {topics.length} topics
           </span>
         </div>
+
+        {/* Upgrade Button */}
+        {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && !isManager && setUpgradeModalCourse && (
+          <button
+            onClick={() => setUpgradeModalCourse(course)}
+            style={{
+              width: '100%',
+              padding: '10px 14px',
+              borderRadius: '50px',
+              border: 'none',
+              background: '#1e1e3a',
+              color: '#ffffff',
+              fontSize: '12px',
+              fontWeight: '800',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(30, 30, 58, 0.35)',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              marginTop: '14px',
+              position: 'relative',
+            }}
+          >
+            <span style={{
+              fontSize: '8px', background: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '20px',
+              color: '#fff', letterSpacing: '0.05em', fontWeight: '900', border: '1px solid rgba(255,255,255,0.2)'
+            }}>
+              OPTIONAL
+            </span>
+            <span>⚡ Upgrade to PRO — ₹{course.liveUpgradePrice}</span>
+          </button>
+        )}
       </div>
 
       {/* ──── CONTENT AREA ──── */}

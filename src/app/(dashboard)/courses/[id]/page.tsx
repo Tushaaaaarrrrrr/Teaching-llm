@@ -284,6 +284,8 @@ export default function CourseDetailPage() {
         progressMap={progressMap}
         updateProgress={updateProgress}
         role={role}
+        setInfoModalCourse={setInfoModalCourse}
+        setUpgradeModalCourse={setUpgradeModalCourse}
       />
     </div>
     {/* Desktop layout */}
