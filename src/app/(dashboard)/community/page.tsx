@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import ManagerUserModal from '@/components/ManagerUserModal'
+import SwipeableMessage from './SwipeableMessage'
 
 interface ClassItem {
   id: string
@@ -114,6 +115,7 @@ export default function CommunityPage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [replyingTo, setReplyingTo] = useState<CommMsg | null>(null)
+  const [selectedMessage, setSelectedMessage] = useState<CommMsg | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
   const loadMessages = useCallback(async (classId: string) => {
@@ -821,10 +823,19 @@ export default function CommunityPage() {
         ) : (
           <>
             {/* Header */}
-            <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', flexWrap: 'wrap' }}>
-              {isMobile && (
+            {selectedMessage ? (
+              <div style={{ 
+                padding: isMobile ? '12px 14px' : '16px 22px', 
+                borderBottom: '1.5px solid rgba(0,0,0,0.06)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px', 
+                background: '#e0e7ff', // Vibrant light indigo highlight for selection
+                transition: 'all 0.3s ease',
+              }}>
                 <button
-                  onClick={() => setSelectedClass(null)}
+                  onClick={() => setSelectedMessage(null)}
+                  title="Cancel selection"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -836,138 +847,267 @@ export default function CommunityPage() {
                     border: 'none',
                     cursor: 'pointer',
                     boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
-                    color: '#6b6b8a',
-                    marginRight: '4px',
+                    color: '#3636e8',
                     flexShrink: 0,
                   }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"/>
-                    <polyline points="12 19 5 12 12 5"/>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
                 </button>
-              )}
-              <div style={{
-                width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px',
-                background: selectedClass.color + '22',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '13px', fontWeight: '800', color: selectedClass.color,
-                flexShrink: 0,
-              }}>
-                {isDM(selectedClass)
-                  ? selectedClass.name.replace('Chat with ', '').charAt(0).toUpperCase()
-                  : selectedClass.name.substring(0, 2).toUpperCase()}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: '850', fontSize: '16px', color: '#1e1e3a' }}>
+                    1 message selected
+                  </div>
                 </div>
-                {isDM(selectedClass) ? (
-                  <div style={{ fontSize: '11px', color: '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Direct Message</div>
-                ) : selectedClass.subject && (
-                  <div style={{ fontSize: '11px', color: '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedClass.subject} · Community Chat</div>
-                )}
-              </div>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
-                {!isDM(selectedClass) && selectedClass.isCommunityActive === false && (
-                  <span style={{ padding: '4px 10px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '11px', fontWeight: '700' }}>
-                    Off
-                  </span>
-                )}
-                {isDM(selectedClass) && selectedClass.isDmDisabled && (
-                  <span style={{ padding: '4px 10px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '11px', fontWeight: '700' }}>
-                    Hidden
-                  </span>
-                )}
-                <span style={{ padding: '4px 10px', borderRadius: '50px', background: selectedClass.color + '18', color: selectedClass.color, fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' }}>
-                  {messages.length}{isMobile ? '' : ` message${messages.length !== 1 ? 's' : ''}`}
-                </span>
-                {userRole === 'MANAGER' && (
-                  <>
-                    <button onClick={openTranscript} style={{ padding: '6px 12px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', ...neu, boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', color: '#3636e8' }}>
-                      Transcript
-                    </button>
-                    {!isDM(selectedClass) && (
-                      <button
-                        onClick={toggleCommunityStatus}
-                        disabled={managingCommunity}
-                        style={{
-                          padding: '6px 12px', borderRadius: '50px', border: 'none',
-                          cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                          background: selectedClass.isCommunityActive === false ? '#22c55e' : '#f59e0b',
-                          color: '#fff',
-                          boxShadow: selectedClass.isCommunityActive === false ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
-                          opacity: managingCommunity ? 0.6 : 1,
-                        }}
-                      >
-                        {selectedClass.isCommunityActive === false ? 'Enable' : 'Disable'}
-                      </button>
-                    )}
-                    {isDM(selectedClass) && (
-                      <button
-                        onClick={async () => {
-                          if (managingCommunity) return
-                          const action = selectedClass.isDmDisabled ? 'enable' : 'disable'
-                          const allowed = await confirm({
-                            title: action === 'disable' ? 'Hide Chat from Student?' : 'Show Chat to Student?',
-                            message: action === 'disable'
-                              ? 'This will hide the chat from the student. All messages are preserved and you can re-enable it anytime.'
-                              : 'This will make the chat visible to the student again.',
-                            confirmLabel: action === 'disable' ? 'Hide Chat' : 'Show Chat',
-                            tone: action === 'disable' ? 'danger' : 'default',
-                          })
-                          if (!allowed) return
-                          setManagingCommunity(true)
-                          try {
-                            const chatId = selectedClass.id.replace('dm_', '')
-                            const res = await fetch('/api/community/direct/toggle', {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ chatId, action }),
-                            })
-                            if (!res.ok) throw new Error('Failed to toggle chat')
-                            await loadClasses(selectedClass.id)
-                          } catch (error) {
-                            console.error(error)
-                            alert(error instanceof Error ? error.message : 'Failed to toggle chat')
-                          } finally {
-                            setManagingCommunity(false)
-                          }
-                        }}
-                        disabled={managingCommunity}
-                        style={{
-                          padding: '6px 12px', borderRadius: '50px', border: 'none',
-                          cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                          background: selectedClass.isDmDisabled ? '#22c55e' : '#f59e0b',
-                          color: '#fff',
-                          boxShadow: selectedClass.isDmDisabled ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
-                          opacity: managingCommunity ? 0.6 : 1,
-                        }}
-                      >
-                        {selectedClass.isDmDisabled ? 'Show to Student' : 'Hide from Student'}
-                      </button>
-                    )}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  {/* Reply Button */}
+                  <button
+                    onClick={() => {
+                      setReplyingTo(selectedMessage)
+                      setSelectedMessage(null)
+                    }}
+                    title="Reply to message"
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '50%',
+                      background: '#ffffff',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '2px 2px 5px rgba(0,0,0,0.08), -2px -2px 5px #ffffff',
+                      color: '#3636e8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'transform 0.2s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 17 4 12 9 7"/>
+                      <path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
+                    </svg>
+                  </button>
+
+                  {/* Copy Button */}
+                  {selectedMessage.content && (
                     <button
-                      onClick={clearCommunityMessages}
-                      disabled={managingCommunity || messages.length === 0}
-                      style={{
-                        padding: '6px 12px', borderRadius: '50px', border: 'none',
-                        cursor: managingCommunity || messages.length === 0 ? 'default' : 'pointer',
-                        fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                        background: '#ef4444', color: '#fff',
-                        boxShadow: '4px 4px 10px rgba(239,68,68,0.25)',
-                        opacity: managingCommunity || messages.length === 0 ? 0.5 : 1,
+                      onClick={() => {
+                        if (typeof window !== 'undefined') {
+                          navigator.clipboard.writeText(selectedMessage.content)
+                        }
+                        setSelectedMessage(null)
                       }}
+                      title="Copy content"
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        background: '#ffffff',
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '2px 2px 5px rgba(0,0,0,0.08), -2px -2px 5px #ffffff',
+                        color: '#4f46e5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'transform 0.2s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                      Clear Chat
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                      </svg>
                     </button>
-                  </>
-                )}
+                  )}
+
+                  {/* Delete Button */}
+                  {(userRole === 'MANAGER' || selectedMessage.sender.id === userId) && !selectedMessage.id.startsWith('temp-') && (
+                    <button
+                      onClick={() => {
+                        deleteMessage(selectedMessage.id)
+                        setSelectedMessage(null)
+                      }}
+                      title="Delete message"
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        background: '#fef2f2',
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '2px 2px 5px rgba(239,68,68,0.15), -2px -2px 5px #ffffff',
+                        color: '#ef4444',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'transform 0.2s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6"/>
+                        <path d="M14 11v6"/>
+                        <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', flexWrap: 'wrap' }}>
+                {isMobile && (
+                  <button
+                    onClick={() => setSelectedClass(null)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '34px',
+                      height: '34px',
+                      borderRadius: '50%',
+                      background: '#ffffff',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                      color: '#6b6b8a',
+                      marginRight: '4px',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="19" y1="12" x2="5" y2="12"/>
+                      <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                  </button>
+                )}
+                <div style={{
+                  width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px',
+                  background: selectedClass.color + '22',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '13px', fontWeight: '800', color: selectedClass.color,
+                  flexShrink: 0,
+                }}>
+                  {isDM(selectedClass)
+                    ? selectedClass.name.replace('Chat with ', '').charAt(0).toUpperCase()
+                    : selectedClass.name.substring(0, 2).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
+                  </div>
+                  {isDM(selectedClass) ? (
+                    <div style={{ fontSize: '11px', color: '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Direct Message</div>
+                  ) : selectedClass.subject && (
+                    <div style={{ fontSize: '11px', color: '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedClass.subject} · Community Chat</div>
+                  )}
+                </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
+                  {!isDM(selectedClass) && selectedClass.isCommunityActive === false && (
+                    <span style={{ padding: '4px 10px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '11px', fontWeight: '700' }}>
+                      Off
+                    </span>
+                  )}
+                  {isDM(selectedClass) && selectedClass.isDmDisabled && (
+                    <span style={{ padding: '4px 10px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '11px', fontWeight: '700' }}>
+                      Hidden
+                    </span>
+                  )}
+                  {userRole === 'MANAGER' && (
+                    <>
+                      <button onClick={openTranscript} style={{ padding: '6px 12px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', ...neu, boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', color: '#3636e8' }}>
+                        Transcript
+                      </button>
+                      {!isDM(selectedClass) && (
+                        <button
+                          onClick={toggleCommunityStatus}
+                          disabled={managingCommunity}
+                          style={{
+                            padding: '6px 12px', borderRadius: '50px', border: 'none',
+                            cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                            background: selectedClass.isCommunityActive === false ? '#22c55e' : '#f59e0b',
+                            color: '#fff',
+                            boxShadow: selectedClass.isCommunityActive === false ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
+                            opacity: managingCommunity ? 0.6 : 1,
+                          }}
+                        >
+                          {selectedClass.isCommunityActive === false ? 'Enable' : 'Disable'}
+                        </button>
+                      )}
+                      {isDM(selectedClass) && (
+                        <button
+                          onClick={async () => {
+                            if (managingCommunity) return
+                            const action = selectedClass.isDmDisabled ? 'enable' : 'disable'
+                            const allowed = await confirm({
+                              title: action === 'disable' ? 'Hide Chat from Student?' : 'Show Chat to Student?',
+                              message: action === 'disable'
+                                ? 'This will hide the chat from the student. All messages are preserved and you can re-enable it anytime.'
+                                : 'This will make the chat visible to the student again.',
+                              confirmLabel: action === 'disable' ? 'Hide Chat' : 'Show Chat',
+                              tone: action === 'disable' ? 'danger' : 'default',
+                            })
+                            if (!allowed) return
+                            setManagingCommunity(true)
+                            try {
+                              const chatId = selectedClass.id.replace('dm_', '')
+                              const res = await fetch('/api/community/direct/toggle', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ chatId, action }),
+                              })
+                              if (!res.ok) throw new Error('Failed to toggle chat')
+                              await loadClasses(selectedClass.id)
+                            } catch (error) {
+                              console.error(error)
+                              alert(error instanceof Error ? error.message : 'Failed to toggle chat')
+                            } finally {
+                              setManagingCommunity(false)
+                            }
+                          }}
+                          disabled={managingCommunity}
+                          style={{
+                            padding: '6px 12px', borderRadius: '50px', border: 'none',
+                            cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                            background: selectedClass.isDmDisabled ? '#22c55e' : '#f59e0b',
+                            color: '#fff',
+                            boxShadow: selectedClass.isDmDisabled ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
+                            opacity: managingCommunity ? 0.6 : 1,
+                          }}
+                        >
+                          {selectedClass.isDmDisabled ? 'Show to Student' : 'Hide from Student'}
+                        </button>
+                      )}
+                      <button
+                        onClick={clearCommunityMessages}
+                        disabled={managingCommunity || messages.length === 0}
+                        style={{
+                          padding: '6px 12px', borderRadius: '50px', border: 'none',
+                          cursor: managingCommunity || messages.length === 0 ? 'default' : 'pointer',
+                          fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                          background: '#ef4444', color: '#fff',
+                          boxShadow: '4px 4px 10px rgba(239,68,68,0.25)',
+                          opacity: managingCommunity || messages.length === 0 ? 0.5 : 1,
+                        }}
+                      >
+                        Clear Chat
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px', backgroundImage: 'url(/images/chat-wallpaper.png)', backgroundRepeat: 'repeat', backgroundSize: '400px auto', backgroundPosition: 'center top' }}>
               {messages.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9999b0' }}>
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.4 }}>
@@ -1065,125 +1205,138 @@ export default function CommunityPage() {
 
                       <div style={{ maxWidth: '75%', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
-                          <div style={{
-                            padding: msg.imageUrl ? '5px 5px 15px 5px' : '7px 12px 15px 12px',
-                            borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                            background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff',
-                            color: '#1e1e3a',
-                            fontSize: '14px', lineHeight: '1.5',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                            minWidth: '80px',
-                            border: isMe ? 'none' : '1px solid #e8eaf0',
-                            position: 'relative',
-                            transition: 'all 0.2s',
-                          }}>
-                            {/* Reply info */}
-                            {msg.replyTo && (
-                              <div 
-                                onClick={() => {
-                                  const el = document.getElementById(`msg-${msg.replyTo!.id}`)
-                                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                                }}
-                                style={{
-                                  background: isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)',
-                                  padding: '8px 12px',
-                                  borderRadius: '10px',
-                                  borderLeft: `4px solid ${isAdmin ? '#3636e8' : '#6b6b8a'}`,
-                                  marginBottom: '8px',
-                                  fontSize: '12px',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: '2px',
-                                  borderTop: '1px solid rgba(0,0,0,0.02)',
-                                  borderRight: '1px solid rgba(0,0,0,0.02)',
-                                  borderBottom: '1px solid rgba(0,0,0,0.02)',
-                                  transition: 'all 0.2s',
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.1)' : 'rgba(54,54,232,0.08)'}
-                                onMouseLeave={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)'}
-                              >
-                                <div style={{ fontWeight: '800', color: isAdmin ? '#3636e8' : '#6b6b8a', fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>{msg.replyTo.sender.name}</span>
-                                </div>
-                                <div style={{ color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '11.5px', lineHeight: '1.4' }}>
-                                  {msg.replyTo.content || (msg.replyTo.imageUrl ? '📷 Image' : 'Message')}
-                                </div>
-                              </div>
-                            )}
-                            {/* Name inside for group/staff */}
-                            {!isMe && showAvatar && (
-                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
-                                <span 
+                          <SwipeableMessage
+                            onSwipeTrigger={() => setReplyingTo(msg)}
+                            onLongPress={() => setSelectedMessage(msg)}
+                            isMe={isMe}
+                            disabled={msg.id.startsWith('temp-')}
+                          >
+                            <div style={{
+                              padding: msg.imageUrl ? '5px 5px 15px 5px' : '7px 12px 15px 12px',
+                              borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                              background: selectedMessage?.id === msg.id
+                                ? '#d0e1fd'
+                                : isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff',
+                              color: '#1e1e3a',
+                              fontSize: '14px', lineHeight: '1.5',
+                              boxShadow: selectedMessage?.id === msg.id
+                                ? '0 0 0 2.5px #3636e8, 0 4px 12px rgba(54,54,232,0.2)'
+                                : '0 2px 4px rgba(0,0,0,0.05)',
+                              minWidth: '80px',
+                              border: selectedMessage?.id === msg.id
+                                ? 'none'
+                                : isMe ? 'none' : '1px solid #e8eaf0',
+                              position: 'relative',
+                              transition: 'all 0.2s',
+                            }}>
+                              {/* Reply info */}
+                              {msg.replyTo && (
+                                <div 
                                   onClick={() => {
-                                    if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
+                                    const el = document.getElementById(`msg-${msg.replyTo!.id}`)
+                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
                                   }}
-                                  style={{ 
-                                    fontSize: '11px', fontWeight: '800', 
-                                    color: isAdmin ? '#3636e8' : '#888',
-                                    cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
-                                    textTransform: 'uppercase',
+                                  style={{
+                                    background: isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)',
+                                    padding: '8px 12px',
+                                    borderRadius: '10px',
+                                    borderLeft: `4px solid ${isAdmin ? '#3636e8' : '#6b6b8a'}`,
+                                    marginBottom: '8px',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '2px',
+                                    borderTop: '1px solid rgba(0,0,0,0.02)',
+                                    borderRight: '1px solid rgba(0,0,0,0.02)',
+                                    borderBottom: '1px solid rgba(0,0,0,0.02)',
+                                    transition: 'all 0.2s',
                                   }}
+                                  onMouseEnter={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.1)' : 'rgba(54,54,232,0.08)'}
+                                  onMouseLeave={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)'}
                                 >
-                                  {msg.sender.name}
-                                </span>
-                                {isAdmin && (
-                                  <span style={{ 
-                                    fontSize: '9px', 
-                                    background: 'linear-gradient(135deg, #3636e8, #6366f1)', 
-                                    color: '#fff', 
-                                    padding: '2px 8px', 
-                                    borderRadius: '50px', 
-                                    fontWeight: '800',
-                                    letterSpacing: '0.02em',
-                                    boxShadow: '0 2px 4px rgba(54,54,232,0.2)',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px',
-                                    textTransform: 'capitalize'
-                                  }}>
-                                    {msg.sender.role.toLowerCase()}
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                                      <polyline points="20 6 9 17 4 12"/>
-                                    </svg>
+                                  <div style={{ fontWeight: '800', color: isAdmin ? '#3636e8' : '#6b6b8a', fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>{msg.replyTo.sender.name}</span>
+                                  </div>
+                                  <div style={{ color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '11.5px', lineHeight: '1.4' }}>
+                                    {msg.replyTo.content || (msg.replyTo.imageUrl ? '📷 Image' : 'Message')}
+                                  </div>
+                                </div>
+                              )}
+                              {/* Name inside for group/staff */}
+                              {!isMe && showAvatar && (
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
+                                  <span 
+                                    onClick={() => {
+                                      if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
+                                    }}
+                                    style={{ 
+                                      fontSize: '11px', fontWeight: '800', 
+                                      color: isAdmin ? '#3636e8' : '#888',
+                                      cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                                      textTransform: 'uppercase',
+                                    }}
+                                  >
+                                    {msg.sender.name}
                                   </span>
+                                  {isAdmin && (
+                                    <span style={{ 
+                                      fontSize: '9px', 
+                                      background: 'linear-gradient(135deg, #3636e8, #6366f1)', 
+                                      color: '#fff', 
+                                      padding: '2px 8px', 
+                                      borderRadius: '50px', 
+                                      fontWeight: '800',
+                                      letterSpacing: '0.02em',
+                                      boxShadow: '0 2px 4px rgba(54,54,232,0.2)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                      textTransform: 'capitalize'
+                                    }}>
+                                      {msg.sender.role.toLowerCase()}
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                      </svg>
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
+                              {msg.imageUrl && (
+                                <img
+                                  src={msg.imageUrl}
+                                  alt="Shared image"
+                                  onClick={() => setLightboxUrl(msg.imageUrl!)}
+                                  style={{
+                                    maxWidth: '100%', maxHeight: '240px',
+                                    borderRadius: '12px',
+                                    cursor: 'pointer', display: 'block',
+                                    objectFit: 'cover',
+                                    marginBottom: msg.content ? '6px' : '0',
+                                  }}
+                                />
+                              )}
+                              {msg.content && (
+                                <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                  {msg.content}
+                                </div>
+                              )}
+
+                              {/* Time inside bubble */}
+                              <div style={{ 
+                                position: 'absolute', bottom: '2px', right: '10px', 
+                                fontSize: '10px', color: isMe ? '#4a7c44' : '#999', 
+                                display: 'flex', alignItems: 'center', gap: '3px',
+                                fontWeight: '600',
+                              }}>
+                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {isMe && (
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                                 )}
                               </div>
-                            )}
-
-                            {msg.imageUrl && (
-                              <img
-                                src={msg.imageUrl}
-                                alt="Shared image"
-                                onClick={() => setLightboxUrl(msg.imageUrl!)}
-                                style={{
-                                  maxWidth: '100%', maxHeight: '240px',
-                                  borderRadius: '12px',
-                                  cursor: 'pointer', display: 'block',
-                                  objectFit: 'cover',
-                                  marginBottom: msg.content ? '6px' : '0',
-                                }}
-                              />
-                            )}
-                            {msg.content && (
-                              <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                                {msg.content}
-                              </div>
-                            )}
-
-                            {/* Time inside bubble */}
-                            <div style={{ 
-                              position: 'absolute', bottom: '2px', right: '10px', 
-                              fontSize: '10px', color: isMe ? '#4a7c44' : '#999', 
-                              display: 'flex', alignItems: 'center', gap: '3px',
-                              fontWeight: '600',
-                            }}>
-                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              {isMe && (
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                              )}
                             </div>
-                          </div>
+                          </SwipeableMessage>
 
                           {/* Message Actions (Visible on Hover/Right Side) */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', opacity: 0, transition: 'opacity 0.2s' }} className="msg-actions">

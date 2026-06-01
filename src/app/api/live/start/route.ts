@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isManagerOrSuperAdmin } from '@/lib/auth'
 import { eventIdToChannelName } from '@/lib/agora'
+import { sendLiveClassNotification } from '@/lib/system-notifications'
 
 /**
  * Flip a CourseEvent into LIVE state. Called by the host when they click
@@ -75,9 +76,10 @@ export async function POST(request: NextRequest) {
       select: { id: true, streamStatus: true, agoraChannelName: true, startedLiveAt: true },
     })
 
-    // TODO(notifications): fan out push to enrolled students that the
-    // session is now live — once the FCM dispatch path is back on this
-    // branch, post a notification with data.url = /courses/<courseId>/live/<eventId>.
+    // Trigger push notification to enrolled students that the session is live
+    if (event.courseId) {
+      sendLiveClassNotification(event.courseId, event.title, null, event.id).catch(console.error)
+    }
 
     return NextResponse.json({ ok: true, ...updated })
   } catch (error: any) {

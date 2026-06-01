@@ -299,6 +299,7 @@ model CourseEvent {
   startedLiveAt     DateTime?
   endedLiveAt       DateTime?
   recordingUrl      String?
+  notifiedStart     Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   course            Course?   @relation(fields: [courseId], references: [id])

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getFullSession, getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { getTodaySessionSnapshots } from '@/lib/daily-session-sync'
+import { sendClassScheduledNotification } from '@/lib/system-notifications'
 
 export async function GET(request: NextRequest) {
   try {
@@ -101,6 +102,17 @@ export async function POST(request: NextRequest) {
         createdById: session.userId,
       },
     })
+
+    // Trigger "New Class Scheduled" notification to enrolled students
+    if (courseEvent.courseId) {
+      sendClassScheduledNotification(
+        courseEvent.courseId,
+        courseEvent.title,
+        courseEvent.startTime,
+        courseEvent.meetLink,
+        courseEvent.id
+      ).catch(console.error)
+    }
 
     logActivity({
       userId: session.userId,

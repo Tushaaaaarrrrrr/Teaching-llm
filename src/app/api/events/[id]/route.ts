@@ -162,7 +162,7 @@ export async function PUT(
     
     // Check if class status was transitioned to LIVE (non-blocking)
     if (updatedEvent && updatedEvent.status === 'LIVE' && existingEvent.status !== 'LIVE' && updatedEvent.courseId) {
-      sendLiveClassNotification(updatedEvent.courseId, updatedEvent.title, updatedEvent.meetLink).catch(console.error)
+      sendLiveClassNotification(updatedEvent.courseId, updatedEvent.title, updatedEvent.meetLink, updatedEvent.id).catch(console.error)
     }
 
     logActivity({

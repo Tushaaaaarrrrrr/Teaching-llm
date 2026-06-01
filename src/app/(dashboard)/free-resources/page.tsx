@@ -143,6 +143,7 @@ export default function FreeResourcesPage() {
       {/* Premium Neumorphic Page Header */}
       <div className="page-header" style={{
         display: 'flex',
+        flexDirection: 'row',
         alignItems: 'center',
         gap: '16px',
         marginBottom: '32px',
