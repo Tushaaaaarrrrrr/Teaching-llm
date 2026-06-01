@@ -565,10 +565,16 @@ export default function ProfilePage() {
           gap: '10px',
           padding: isMobile ? '16px 12px' : '20px 24px',
           borderRadius: '24px',
-          background: '#e8eaf0',
-          boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+          background: 'rgba(232, 234, 240, 0.85)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.04), 6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
           flexDirection: 'row',
-          marginTop: '8px',
+          position: 'sticky',
+          bottom: isMobile ? 'max(12px, env(safe-area-inset-bottom))' : '20px',
+          zIndex: 90,
+          marginTop: '24px',
+          border: '1px solid rgba(255, 255, 255, 0.6)',
         }}>
           <button
             onClick={handleDiscard}

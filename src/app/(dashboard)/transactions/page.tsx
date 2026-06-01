@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface Transaction {
   id: string
@@ -29,6 +30,7 @@ const FILTERS = [
 ]
 
 export default function TransactionsPage() {
+  const router = useRouter()
   const [data, setData] = useState<TransactionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -72,6 +74,66 @@ export default function TransactionsPage() {
 
   return (
     <div className="page-container fade-in">
+      <style>{`
+        .mobile-back-header {
+          display: none;
+        }
+        .mobile-tx-list {
+          display: none;
+        }
+        @media (max-width: 768px) {
+          .desktop-tx-table {
+            display: none !important;
+          }
+          .mobile-back-header {
+            display: flex !important;
+          }
+          .mobile-tx-list {
+            display: flex !important;
+          }
+          .page-container {
+            padding: 16px 14px 24px !important;
+          }
+        }
+      `}</style>
+
+      {/* Mobile-only Header with Back Button */}
+      <div className="mobile-back-header" style={{
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '20px',
+        padding: '8px 4px 16px',
+        borderBottom: '1px solid rgba(0,0,0,0.06)',
+      }}>
+        <button
+          onClick={() => router.back()}
+          style={{
+            background: '#e8eaf0',
+            boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+            border: 'none',
+            borderRadius: '50%',
+            width: '38px',
+            height: '38px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#1e1e3a',
+            transition: 'transform 0.15s ease',
+          }}
+          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
+        <span style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.3px' }}>
+          Upgrade Transactions
+        </span>
+      </div>
+
       {/* Summary Cards */}
       {data?.summary && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: '16px', marginBottom: '24px' }}>
@@ -142,7 +204,7 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table & Card List Views */}
       {loading ? (
         <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
           <div className="skeleton" style={{ height: '300px', borderRadius: '12px' }} />
@@ -154,43 +216,90 @@ export default function TransactionsPage() {
           <p style={{ color: '#94a3b8', fontSize: '14px' }}>Try a different search term or filter.</p>
         </div>
       ) : (
-        <div className="card" style={{ overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                  <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Order ID</th>
-                  <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Student</th>
-                  <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Course</th>
-                  <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Amount</th>
-                  <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
-                  <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTransactions.map((tx, i) => (
-                  <tr key={tx.id} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#fff' : '#fafbfc' }}>
-                    <td style={{ padding: '14px 20px', fontSize: '13px', fontWeight: '700', color: '#6366f1', fontFamily: 'monospace' }}>{tx.orderId}</td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>{tx.user.name}</div>
-                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>{tx.user.email}</div>
-                    </td>
-                    <td style={{ padding: '14px 20px', fontSize: '13px', color: '#334155', fontWeight: '600' }}>{tx.course.name}</td>
-                    <td style={{ padding: '14px 20px', fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>₹{tx.amount}</td>
-                    <td style={{ padding: '14px 20px' }}>{statusBadge(tx.status)}</td>
-                    <td style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b' }}>
-                      {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      <br />
-                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                        {new Date(tx.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </td>
+        <>
+          {/* Desktop Table View */}
+          <div className="card desktop-tx-table" style={{ overflow: 'hidden' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Order ID</th>
+                    <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Student</th>
+                    <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Course</th>
+                    <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Amount</th>
+                    <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                    <th style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredTransactions.map((tx, i) => (
+                    <tr key={tx.id} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#fff' : '#fafbfc' }}>
+                      <td style={{ padding: '14px 20px', fontSize: '13px', fontWeight: '700', color: '#6366f1', fontFamily: 'monospace' }}>{tx.orderId}</td>
+                      <td style={{ padding: '14px 20px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>{tx.user.name}</div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>{tx.user.email}</div>
+                      </td>
+                      <td style={{ padding: '14px 20px', fontSize: '13px', color: '#334155', fontWeight: '600' }}>{tx.course.name}</td>
+                      <td style={{ padding: '14px 20px', fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>₹{tx.amount}</td>
+                      <td style={{ padding: '14px 20px' }}>{statusBadge(tx.status)}</td>
+                      <td style={{ padding: '14px 20px', fontSize: '12px', color: '#64748b' }}>
+                        {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        <br />
+                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                          {new Date(tx.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* Mobile Card List View */}
+          <div className="mobile-tx-list" style={{ flexDirection: 'column', gap: '14px' }}>
+            {filteredTransactions.map(tx => (
+              <div key={tx.id} style={{
+                padding: '18px',
+                borderRadius: '20px',
+                background: '#ffffff',
+                boxShadow: '0 8px 24px rgba(149, 157, 165, 0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                border: '1px solid rgba(0,0,0,0.04)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  {statusBadge(tx.status)}
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: '#1e293b' }}>₹{tx.amount}</div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#1e1e3a', marginBottom: '2px' }}>
+                    {tx.course.name}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6366f1', fontWeight: '700', fontFamily: 'monospace' }}>
+                    {tx.orderId}
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '10px' }}>
+                  <div style={{ fontSize: '10px', color: '#9999b0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>Student</div>
+                  <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#1e293b' }}>{tx.user.name}</div>
+                  <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: '500', marginTop: '1px' }}>{tx.user.email}</div>
+                  {tx.user.mobileNumber && (
+                    <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: '500', marginTop: '1px' }}>📞 {tx.user.mobileNumber}</div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#9999b0', borderTop: '1px solid rgba(0,0,0,0.04)', paddingTop: '8px' }}>
+                  <span>Date: <strong>{new Date(tx.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
+                  <span>Time: <strong>{new Date(tx.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</strong></span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import FeedbackModal from '@/components/FeedbackModal'
 
@@ -39,6 +40,7 @@ export default function FeedbackPage() {
 }
 
 function StudentFeedbackView({ userId }: { userId: string }) {
+  const router = useRouter()
   const { data: coursesRaw, isLoading } = useSWR('/api/courses', fetcher)
   const { data: submittedFeedbacksRaw, mutate: mutateFeedbacks } = useSWR('/api/feedback?studentId=' + userId, fetcher)
 
@@ -56,20 +58,68 @@ function StudentFeedbackView({ userId }: { userId: string }) {
 
   return (
     <div className="page-container fade-in" style={{ maxWidth: '900px', margin: '0 auto', padding: 'clamp(16px, 4vw, 32px)' }}>
-      <div style={{ marginBottom: 'clamp(20px, 5vw, 40px)' }}>
-        <button 
-          onClick={() => window.history.back()}
-          style={{ 
-            background: 'none', border: 'none', color: '#9999b0', fontSize: '14px', 
-            display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', marginBottom: '16px',
-            padding: 0
+      {/* Premium Neumorphic Page Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        marginBottom: '28px',
+        justifyContent: 'flex-start'
+      }}>
+        <button
+          onClick={() => router.back()}
+          aria-label="Go Back"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: '#ffffff',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+            color: '#6b6b8a',
+            flexShrink: 0,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#3636e8'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#6b6b8a'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
           </svg>
-          Back
         </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 style={{
+            fontSize: '22px',
+            fontWeight: 900,
+            color: '#1e1e3a',
+            margin: 0,
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            fontFamily: "'Outfit', 'Nunito', sans-serif"
+          }}>
+            Course Feedback
+          </h1>
+          <p style={{
+            fontSize: '12px',
+            color: '#6b6b8a',
+            fontWeight: 600,
+            margin: '3px 0 0',
+            fontFamily: "'Outfit', sans-serif"
+          }}>
+            Ratings &amp; student reviews
+          </p>
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -187,6 +237,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
 }
 
 function ManagerFeedbackView() {
+  const router = useRouter()
   const { data: feedbacksRaw, isLoading } = useSWR('/api/feedback', fetcher)
   const { data: coursesRaw } = useSWR('/api/courses', fetcher)
 
@@ -208,7 +259,70 @@ function ManagerFeedbackView() {
   if (isLoading) return <div className="page-container animate-pulse" />
 
   return (
-    <div className="page-container fade-in">
+    <div className="page-container fade-in" style={{ padding: 'clamp(16px, 4vw, 32px)' }}>
+      {/* Premium Neumorphic Page Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        marginBottom: '28px',
+        justifyContent: 'flex-start'
+      }}>
+        <button
+          onClick={() => router.back()}
+          aria-label="Go Back"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: '#ffffff',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+            color: '#6b6b8a',
+            flexShrink: 0,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#3636e8'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#6b6b8a'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 style={{
+            fontSize: '22px',
+            fontWeight: 900,
+            color: '#1e1e3a',
+            margin: 0,
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            fontFamily: "'Outfit', 'Nunito', sans-serif"
+          }}>
+            Course Feedback
+          </h1>
+          <p style={{
+            fontSize: '12px',
+            color: '#6b6b8a',
+            fontWeight: 600,
+            margin: '3px 0 0',
+            fontFamily: "'Outfit', sans-serif"
+          }}>
+            Ratings &amp; student reviews
+          </p>
+        </div>
+      </div>
       <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end' }}>
         <div style={{ display: 'flex', gap: '12px' }}>
           <div style={{ position: 'relative' }}>

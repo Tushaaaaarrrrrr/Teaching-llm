@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import ManagerUserModal from '@/components/ManagerUserModal'
 
@@ -75,6 +76,7 @@ function formatMessageDate(dateString: string) {
 }
 
 export default function CommunityPage() {
+  const router = useRouter()
   const { confirm, confirmDialog } = useConfirmDialog()
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null)
@@ -559,6 +561,72 @@ export default function CommunityPage() {
 
       {/* Left: Class list */}
       <div style={{ width: isMobile ? '100%' : '230px', flexShrink: 0, display: (isMobile && selectedClass) ? 'none' : 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '8px', overflowY: 'auto', padding: isMobile ? '4px 2px 16px' : '0' }}>
+        {isMobile && (
+          /* Premium Neumorphic Page Header */
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            marginBottom: '10px',
+            padding: '0 4px',
+            justifyContent: 'flex-start'
+          }}>
+            <button
+              onClick={() => router.back()}
+              aria-label="Go Back"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: '#ffffff',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+                color: '#6b6b8a',
+                flexShrink: 0,
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => {
+                ;(e.currentTarget as HTMLButtonElement).style.color = '#3636e8'
+                ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+              }}
+              onMouseLeave={e => {
+                ;(e.currentTarget as HTMLButtonElement).style.color = '#6b6b8a'
+                ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+              </svg>
+            </button>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1 style={{
+                fontSize: '22px',
+                fontWeight: 900,
+                color: '#1e1e3a',
+                margin: 0,
+                lineHeight: 1.1,
+                letterSpacing: '-0.02em',
+                fontFamily: "'Outfit', 'Nunito', sans-serif"
+              }}>
+                Community
+              </h1>
+              <p style={{
+                fontSize: '12px',
+                color: '#6b6b8a',
+                fontWeight: 600,
+                margin: '3px 0 0',
+                fontFamily: "'Outfit', sans-serif"
+              }}>
+                Connect with your coursemates
+              </p>
+            </div>
+          </div>
+        )}
         {/* Groups header */}
         <div style={{ fontSize: '11px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: isMobile ? '6px' : '4px', padding: '0 6px' }}>
           Communities
@@ -754,6 +822,31 @@ export default function CommunityPage() {
           <>
             {/* Header */}
             <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', flexWrap: 'wrap' }}>
+              {isMobile && (
+                <button
+                  onClick={() => setSelectedClass(null)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '50%',
+                    background: '#ffffff',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                    color: '#6b6b8a',
+                    marginRight: '4px',
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"/>
+                    <polyline points="12 19 5 12 12 5"/>
+                  </svg>
+                </button>
+              )}
               <div style={{
                 width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px',
                 background: selectedClass.color + '22',

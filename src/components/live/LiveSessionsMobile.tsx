@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { formatIST, getEventStatus } from '@/lib/date-utils'
+import { useRouter } from 'next/navigation'
 
 interface CourseEvent {
   id: string
@@ -22,8 +23,6 @@ interface Props {
   sessions: CourseEvent[]
 }
 
-type TabKey = 'live' | 'upcoming' | 'recorded'
-
 const TIME_SLOT_COLORS: { bg: string; fg: string }[] = [
   { bg: '#ede9fe', fg: '#6d28d9' }, // lavender
   { bg: '#d1fae5', fg: '#047857' }, // green
@@ -33,7 +32,7 @@ const TIME_SLOT_COLORS: { bg: string; fg: string }[] = [
 ]
 
 export default function LiveSessionsMobile({ sessions }: Props) {
-  const [tab, setTab] = useState<TabKey>('live')
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [showSearch, setShowSearch] = useState(false)
 
@@ -56,8 +55,6 @@ export default function LiveSessionsMobile({ sessions }: Props) {
     return { live, upcoming, recorded }
   }, [withStatus])
 
-  const counts = { live: buckets.live.length, upcoming: buckets.upcoming.length, recorded: buckets.recorded.length }
-
   const q = search.trim().toLowerCase()
   const filterByQuery = (s: CourseEvent) =>
     !q || s.title.toLowerCase().includes(q) || (s.course?.name || '').toLowerCase().includes(q) || (s.course?.teacherName || s.instructor?.name || '').toLowerCase().includes(q)
@@ -68,29 +65,86 @@ export default function LiveSessionsMobile({ sessions }: Props) {
 
   const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
 
+  const hasAnySessions = sessions.length > 0
+  const hasSearchResults = visibleLive.length > 0 || visibleUpcoming.length > 0 || visibleRecorded.length > 0
+
   return (
     <div className="live-sessions-mobile" style={{
       background: 'transparent',
-      padding: '4px 0 32px',
+      padding: '16px 16px 32px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px',
     }}>
-      {/* Page title row (sits below the dashboard "Welcome to Gen-Z IITian" header) */}
+      {/* Page Title Row (aligned with other premium sub-pages like Free Resources) */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: '12px',
-        padding: '4px 4px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        justifyContent: 'flex-start',
+        paddingBottom: '4px',
       }}>
+        <button
+          onClick={() => router.back()}
+          aria-label="Go Back"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: '#ffffff',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+            color: '#6b6b8a',
+            flexShrink: 0,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#3636e8'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#6b6b8a'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+          <h1 style={{
+            fontSize: '22px',
+            fontWeight: 900,
+            color: '#1e1e3a',
+            margin: 0,
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            fontFamily: "'Outfit', 'Nunito', sans-serif"
+          }}>
             Live Sessions
-          </div>
-          <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: 600, marginTop: '3px' }}>
+          </h1>
+          <p style={{
+            fontSize: '12px',
+            color: '#6b6b8a',
+            fontWeight: 600,
+            margin: '3px 0 0',
+            fontFamily: "'Outfit', sans-serif"
+          }}>
             Join classes &amp; rewatch recordings
-          </div>
+          </p>
         </div>
+
         <button
           onClick={() => setShowSearch(s => !s)}
           aria-label="Search"
           style={{
-            width: '38px', height: '38px', borderRadius: '12px',
+            width: '40px', height: '40px', borderRadius: '50%',
             background: showSearch ? '#3636e8' : '#ffffff',
             boxShadow: showSearch
               ? '0 6px 14px rgba(54,54,232,0.30)'
@@ -100,7 +154,7 @@ export default function LiveSessionsMobile({ sessions }: Props) {
             transition: 'all 0.2s',
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={showSearch ? '#ffffff' : '#1e1e3a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={showSearch ? '#ffffff' : '#6b6b8a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
@@ -108,7 +162,7 @@ export default function LiveSessionsMobile({ sessions }: Props) {
       </div>
 
       {showSearch && (
-        <div style={{ padding: '0 4px 12px' }}>
+        <div style={{ padding: '0 4px 4px' }}>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -130,63 +184,56 @@ export default function LiveSessionsMobile({ sessions }: Props) {
         </div>
       )}
 
-      {/* Tabs */}
-      <div style={{
-        display: 'flex', gap: '8px',
-        padding: '4px 4px 18px',
-      }}>
-        {([
-          { key: 'live' as TabKey, label: 'Live', count: counts.live },
-          { key: 'upcoming' as TabKey, label: 'Upcoming', count: counts.upcoming },
-          { key: 'recorded' as TabKey, label: 'Recorded', count: counts.recorded },
-        ]).map(t => {
-          const active = tab === t.key
-          return (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              style={{
-                flex: 1,
-                padding: '9px 12px',
-                borderRadius: '50px',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: '13px',
-                fontWeight: 800,
-                background: active ? '#3636e8' : '#f3f4f8',
-                color: active ? '#ffffff' : '#6b6b8a',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                transition: 'all 0.2s',
-                boxShadow: active ? '0 6px 14px rgba(54,54,232,0.30)' : 'none',
-              }}
-            >
-              {t.label}
-              <span style={{
-                minWidth: '20px', padding: '1px 6px',
-                borderRadius: '50px',
-                background: active ? 'rgba(255,255,255,0.22)' : '#ffffff',
-                color: active ? '#ffffff' : '#6b6b8a',
-                fontSize: '11px', fontWeight: 800,
-                textAlign: 'center',
-              }}>{t.count}</span>
-            </button>
-          )
-        })}
-      </div>
+      {/* Unified Vertical Section List (Exactly like the website version) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* 1. Live now */}
+        {visibleLive.length > 0 && (
+          <div>
+            <SectionHeader title="Live now" subtitle={`${visibleLive.length} session${visibleLive.length === 1 ? '' : 's'} happening`} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {visibleLive.map(s => <LiveSessionCard key={s.id} session={s} />)}
+            </div>
+          </div>
+        )}
 
-      <div style={{ padding: '4px 0 0' }}>
-        {tab === 'live' && (
-          <LiveTab sessions={visibleLive} todayStr={todayStr} />
+        {/* 2. Coming up today */}
+        {visibleUpcoming.length > 0 && (
+          <div>
+            <SectionHeader title="Coming up today" subtitle={`${visibleUpcoming.length} session${visibleUpcoming.length === 1 ? '' : 's'} scheduled`} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[...visibleUpcoming]
+                .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+                .map((s, idx) => <UpcomingSessionRow key={s.id} session={s} slotIdx={idx} />)
+              }
+            </div>
+          </div>
         )}
-        {tab === 'upcoming' && (
-          <UpcomingTab sessions={visibleUpcoming} />
+
+        {/* 3. Recorded Sessions */}
+        {visibleRecorded.length > 0 && (
+          <div>
+            <SectionHeader title="Past sessions" subtitle={`${visibleRecorded.length} recording${visibleRecorded.length === 1 ? '' : 's'}`} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {visibleRecorded.map(s => <RecordedSessionRow key={s.id} session={s} />)}
+            </div>
+          </div>
         )}
-        {tab === 'recorded' && (
-          <RecordedTab sessions={visibleRecorded} />
+
+        {/* Empty States */}
+        {!hasAnySessions && (
+          <EmptyState icon="live" title="No live sessions" subtitle="When a class starts, it will appear here." />
+        )}
+
+        {hasAnySessions && !hasSearchResults && (
+          <div style={{
+            padding: '48px 24px', textAlign: 'center',
+            background: '#ffffff', borderRadius: '24px',
+            border: '1px solid rgba(15, 23, 42, 0.05)',
+            boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.10)',
+          }}>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a', marginBottom: '4px' }}>No matches found</div>
+            <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: 600 }}>Try searching for another topic or course.</div>
+          </div>
         )}
       </div>
     </div>

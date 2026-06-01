@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface AnnouncementClass {
@@ -141,6 +141,7 @@ function TypeIcon({ type }: { type: string }) {
 }
 
 export default function AnnouncementsPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const highlightId  = searchParams.get('id')
   const cardRefs     = useRef<Record<string, HTMLDivElement | null>>({})
@@ -333,6 +334,70 @@ export default function AnnouncementsPage() {
 
   return (
     <div className="announcements-page-container" style={{ padding: '24px 32px 48px' }}>
+      {/* Premium Neumorphic Page Header */}
+      <div className="page-header" style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        marginBottom: '24px',
+        justifyContent: 'flex-start'
+      }}>
+        <button
+          onClick={() => router.back()}
+          aria-label="Go Back"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: '#ffffff',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+            color: '#6b6b8a',
+            flexShrink: 0,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#3636e8'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#6b6b8a'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 style={{
+            fontSize: '22px',
+            fontWeight: 900,
+            color: '#1e1e3a',
+            margin: 0,
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            fontFamily: "'Outfit', 'Nunito', sans-serif"
+          }}>
+            Announcements
+          </h1>
+          <p style={{
+            fontSize: '12px',
+            color: '#6b6b8a',
+            fontWeight: 600,
+            margin: '3px 0 0',
+            fontFamily: "'Outfit', sans-serif"
+          }}>
+            Latest news &amp; updates
+          </p>
+        </div>
+      </div>
+
       <style>{`
         @media (max-width: 768px) {
           .announcements-page-container {
