@@ -593,42 +593,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         )}
       </div>
 
-      {/* APK Quick Login Fallback */}
-      {isCapacitor && (
-        <div style={{ marginBottom: '16px' }}>
-          <button
-            type="button"
-            onClick={handleStudentQuickLogin}
-            disabled={studentQuickLoading}
-            style={{
-              width: '100%',
-              padding: '13px 20px',
-              borderRadius: '50px',
-              border: 'none',
-              background: studentQuickLoading ? '#cbd5e1' : '#1e1e3a',
-              color: '#ffffff',
-              boxShadow: studentQuickLoading ? 'none' : '0 6px 18px rgba(30, 30, 58, 0.20)',
-              cursor: studentQuickLoading ? 'default' : 'pointer',
-              fontFamily: 'inherit',
-              fontSize: '14px',
-              fontWeight: 800,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            }}
-          >
-            {studentQuickLoading ? (
-              <Spinner color="#ffffff" />
-            ) : (
-              <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                Quick login as Student
-              </>
-            )}
-          </button>
-          <p style={{ margin: '6px 0 0', fontSize: '10.5px', color: '#9999b0', textAlign: 'center', fontWeight: 500 }}>
-            Backup sign-in. Available when the server-side passcode is set.
-          </p>
-        </div>
-      )}
+
 
       {/* Quick Login (dev only) — matches desktop style: full-width violet + emerald pills */}
       {isDev && (
