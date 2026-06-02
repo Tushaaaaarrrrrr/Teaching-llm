@@ -137,8 +137,8 @@ function OnboardingView({
             key={r}
             style={{
               position: 'absolute',
-              width: `${140 + r * 60}px`,
-              height: `${140 + r * 60}px`,
+              width: `${180 + r * 60}px`,
+              height: `${180 + r * 60}px`,
               borderRadius: '50%',
               border: `1px dashed ${slide.accent}${r === 1 ? '55' : r === 2 ? '33' : '1c'}`,
               animation: `ringPulse${r} 4s ease-in-out infinite`,
@@ -146,7 +146,7 @@ function OnboardingView({
           />
         ))}
         <div style={{
-          width: '136px', height: '136px', borderRadius: '50%',
+          width: '180px', height: '180px', borderRadius: '50%',
           background: '#ffffff',
           boxShadow: '12px 12px 30px #c5c7cf, -12px -12px 30px #ffffff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -432,9 +432,9 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
       </div>
 
       {/* Logo block */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px', marginBottom: '28px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 'auto', marginBottom: '28px' }}>
         <div style={{
-          width: '96px', height: '96px', borderRadius: '50%',
+          width: '96px', height: '96px', borderRadius: '24px',
           background: '#e8eaf0',
           boxShadow: '10px 10px 24px #c5c7cf, -10px -10px 24px #ffffff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -442,7 +442,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           position: 'relative',
         }}>
           <div style={{
-            width: '72px', height: '72px', borderRadius: '50%',
+            width: '72px', height: '72px', borderRadius: '20px',
             background: '#ffffff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 8px 20px rgba(0,0,0,0.06), inset 0 2px 4px rgba(0,0,0,0.02)',
@@ -479,14 +479,9 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         </div>
       )}
 
-      {/* Google login card */}
+      {/* Google login container */}
       <div style={{
-        background: '#ffffff',
-        border: '1px solid rgba(15, 23, 42, 0.05)',
-        borderRadius: '22px',
-        padding: '20px 18px',
         marginBottom: '16px',
-        boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.10)',
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'relative', minHeight: '44px', display: 'flex', justifyContent: 'center' }}>
