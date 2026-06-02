@@ -141,10 +141,16 @@ if (fs.existsSync(sourceFile)) {
 }
 
 // 5. Run Capacitor Sync
-console.log('\n🔄 Running "npx cap sync" to apply changes natively...');
-try {
-  execSync('npx cap sync', { stdio: 'inherit', cwd: projectRoot });
-  console.log('\n✨ Configuration switch complete! You are ready to build in Android Studio.');
-} catch (err) {
-  console.error('\n❌ Capacitor Sync failed. Please run "npx cap sync" manually.');
+const nodeMajorVersion = parseInt(process.versions.node.split('.')[0], 10);
+if (nodeMajorVersion < 22) {
+  console.log('\n⚠️ Node.js version is < 22. Skipping "npx cap sync" (only required for native Android builds, which you do on your Mac).');
+  console.log('✨ Configuration switch complete! Environment configured successfully.');
+} else {
+  console.log('\n🔄 Running "npx cap sync" to apply changes natively...');
+  try {
+    execSync('npx cap sync', { stdio: 'inherit', cwd: projectRoot });
+    console.log('\n✨ Configuration switch complete! You are ready to build in Android Studio.');
+  } catch (err) {
+    console.error('\n❌ Capacitor Sync failed. Please run "npx cap sync" manually.');
+  }
 }
