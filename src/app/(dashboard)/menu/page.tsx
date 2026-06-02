@@ -111,6 +111,55 @@ export default function MobileMenuPage() {
     window.dispatchEvent(new CustomEvent('check-for-app-updates', { detail: { manual: true } }))
   }
 
+  async function handleShareApp() {
+    try {
+      const shareText = 'Hey! GenZ IITian has officially launched its own app! downlaod now :  https://zedmvgqhnapmpqpnzoqh.supabase.co/storage/v1/object/public/downloads/class%20genz.apk'
+      
+      const response = await fetch('/images/app-promo.jpg')
+      const blob = await response.blob()
+      const file = new File([blob], 'app-promo.jpg', { type: 'image/jpeg' })
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          text: shareText,
+        })
+      } else if (navigator.share) {
+        await navigator.share({
+          text: shareText,
+        })
+      } else {
+        await navigator.clipboard.writeText(shareText)
+        alert('Share message and download link copied to clipboard!')
+      }
+    } catch (error) {
+      console.error('Error sharing:', error)
+      try {
+        const shareText = 'Hey! GenZ IITian has officially launched its own app! downlaod now :  https://zedmvgqhnapmpqpnzoqh.supabase.co/storage/v1/object/public/downloads/class%20genz.apk'
+        await navigator.clipboard.writeText(shareText)
+        alert('Share message and download link copied to clipboard!')
+      } catch (clipErr) {
+        alert('Failed to share. Download URL: https://zedmvgqhnapmpqpnzoqh.supabase.co/storage/v1/object/public/downloads/class%20genz.apk')
+      }
+    }
+  }
+
+  const shareAppItem: MenuItem = {
+    href: '#',
+    label: 'Share App',
+    iconBg: 'rgba(54, 54, 232, 0.10)',
+    iconColor: '#3636e8',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="18" cy="5" r="3"/>
+        <circle cx="6" cy="12" r="3"/>
+        <circle cx="18" cy="19" r="3"/>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+      </svg>
+    ),
+  }
+
   const updateMenuItem: MenuItem = {
     href: '#',
     label: 'Check for Updates',
@@ -260,6 +309,7 @@ export default function MobileMenuPage() {
       <SectionHeader>General</SectionHeader>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {generalItems.map(item => <MenuRow key={item.href} item={item} />)}
+        <MenuRow item={shareAppItem} onClick={handleShareApp} />
         <MenuRow item={updateMenuItem} onClick={handleCheckForUpdates} />
       </div>
 
