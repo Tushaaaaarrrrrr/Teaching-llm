@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { checkRateLimit, isMaintenanceModeActive } from '@/lib/ratelimit'
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated', '/api/maintenance-status', '/api/external-enroll', '/api/analytics/compute']
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated', '/api/maintenance-status', '/api/external-enroll', '/api/analytics/compute', '/api/app-version']
 const COOKIE_NAME = 'teaching_llm_token'
 const JWT_SECRET = process.env.JWT_SECRET?.trim() || ''
 
