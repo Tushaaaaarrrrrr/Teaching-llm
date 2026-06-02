@@ -49,7 +49,7 @@ interface Props {
   setUpgradeModalCourse?: (course: any) => void
 }
 
-type TabKey = 'curriculum' | 'overview'
+type TabKey = 'curriculum' | 'overview' | 'feedback'
 
 /* ───── 3-state cycle: NOT_STARTED → COMPLETED → REWATCH → NOT_STARTED ───── */
 function cycleStatus(current: string): string {
@@ -296,25 +296,7 @@ export default function MobileCourseDetail({
 
 
 
-        {/* Feedback button */}
-        {role === 'STUDENT' && !hasFeedback && (
-          <button
-            onClick={() => setShowFeedbackModal(true)}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-              padding: '10px 16px', width: '100%',
-              borderRadius: '14px',
-              background: '#fff',
-              border: '1px solid rgba(15,23,42,0.06)',
-              boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
-              cursor: 'pointer', fontFamily: 'inherit',
-              fontSize: '12px', fontWeight: 800, color: '#d97706',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            Course Feedback
-          </button>
-        )}
+
 
         {/* ──── Tabs ──── */}
         <div style={{
@@ -325,7 +307,8 @@ export default function MobileCourseDetail({
           {([
             { key: 'curriculum' as TabKey, label: 'Curriculum', count: topics.length },
             { key: 'overview' as TabKey, label: 'Overview' },
-          ]).map(t => {
+            role === 'STUDENT' && { key: 'feedback' as TabKey, label: 'Feedback' },
+          ].filter(Boolean) as any[]).map(t => {
             const active = tab === t.key
             return (
               <button
@@ -373,7 +356,23 @@ export default function MobileCourseDetail({
           />
         )}
 
-        {tab === 'overview' && <OverviewTab course={course} mentorName={mentorName} totalLectures={totalLectures} accent={accent} accessDays={accessDays} />}
+        {tab === 'overview' && (
+          <OverviewTab 
+            course={course} 
+            mentorName={mentorName} 
+            totalLectures={totalLectures} 
+            accent={accent} 
+            accessDays={accessDays} 
+          />
+        )}
+
+        {tab === 'feedback' && (
+          <FeedbackTab 
+            course={course} 
+            hasFeedback={hasFeedback} 
+            setShowFeedbackModal={setShowFeedbackModal} 
+          />
+        )}
       </div>
 
       {showFeedbackModal && (
@@ -695,8 +694,15 @@ function CurriculumTab({
 }
 
 
-/* ───────── Overview Tab ───────── */
-function OverviewTab({ course, mentorName, totalLectures, accent, accessDays }: { course: CourseDetail; mentorName: string; totalLectures: number; accent: string; accessDays: number | null }) {
+function OverviewTab({ 
+  course, mentorName, totalLectures, accent, accessDays 
+}: { 
+  course: CourseDetail; 
+  mentorName: string; 
+  totalLectures: number; 
+  accent: string; 
+  accessDays: number | null;
+}) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
@@ -802,6 +808,108 @@ function OverviewStat({ label, value, accent }: { label: string; value: string; 
       <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {value}
       </div>
+    </div>
+  )
+}
+
+/* ───────── Feedback Tab ───────── */
+function FeedbackTab({ 
+  course, hasFeedback, setShowFeedbackModal 
+}: { 
+  course: CourseDetail; 
+  hasFeedback: boolean;
+  setShowFeedbackModal: (show: boolean) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {hasFeedback ? (
+        /* Already Submitted View */
+        <div style={{
+          background: '#fff',
+          borderRadius: '16px',
+          padding: '30px 20px',
+          border: '1px solid rgba(34, 197, 94, 0.12)',
+          boxShadow: '0 2px 12px rgba(34, 197, 94, 0.04)',
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px',
+        }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #4ade80, #22c55e)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            boxShadow: '0 6px 18px rgba(34, 197, 94, 0.25)',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1e1e3a', margin: '0 0 6px' }}>Feedback Submitted</h3>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
+              Thank you for sharing your experience! Your private review helps us improve the learning quality.
+            </p>
+          </div>
+        </div>
+      ) : (
+        /* Invite to Rate View */
+        <div style={{
+          background: '#fff',
+          borderRadius: '16px',
+          padding: '30px 20px',
+          border: '1px solid rgba(217, 119, 6, 0.12)',
+          boxShadow: '0 2px 12px rgba(217, 119, 6, 0.04)',
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px',
+        }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #fbbf24, #d97706)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            boxShadow: '0 6px 18px rgba(217, 119, 6, 0.25)',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <div>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1e1e3a', margin: '0 0 6px' }}>Share Your Experience</h3>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
+              Help us make {course.name} even better. Your rating and comments are completely private.
+            </p>
+          </div>
+          
+          <button
+            onClick={() => setShowFeedbackModal(true)}
+            style={{
+              background: 'linear-gradient(135deg, #d97706, #b45309)',
+              color: 'white',
+              padding: '14px 32px',
+              borderRadius: '16px',
+              fontSize: '14px',
+              fontWeight: '800',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 8px 20px rgba(217, 119, 6, 0.2)',
+              width: '100%',
+              fontFamily: 'inherit',
+            }}
+          >
+            ⭐ Rate & Review Course
+          </button>
+        </div>
+      )}
     </div>
   )
 }
