@@ -236,10 +236,25 @@ export default function MobileCourseDetail({
           </div>
         </div>
 
+        {/* Subject Label */}
+        {course.subject && (
+          <div style={{
+            fontSize: '11px',
+            fontWeight: 900,
+            color: 'rgba(255, 255, 255, 0.75)',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            marginBottom: '4px',
+            position: 'relative',
+            zIndex: 2,
+          }}>
+            {course.subject}
+          </div>
+        )}
         {/* Title */}
         <h1 style={{
-          fontSize: '24px', fontWeight: 900, color: '#fff', lineHeight: 1.25, letterSpacing: '-0.02em',
-          margin: '0 0 6px', position: 'relative', zIndex: 2,
+          fontSize: '25px', fontWeight: 900, color: '#fff', lineHeight: 1.2, letterSpacing: '-0.02em',
+          margin: '0 0 8px', position: 'relative', zIndex: 2,
           textShadow: '0 2px 8px rgba(0,0,0,0.12)',
         }}>
           {course.name}
