@@ -594,10 +594,35 @@ export default function SupportPage() {
   // ══════════════════════════════════════════════════════════════════════════
   if (view === 'home') {
     return (
-      <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', overflowY: 'auto', padding: isMobile ? '12px' : '20px' }}>
+      <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', overflowY: 'auto', overflowX: 'hidden' }}>
         <style>{`
           .mobile-back-header {
             display: none;
+          }
+          .support-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+            align-items: flex-start;
+          }
+          .faq-card-col {
+            display: flex;
+            flex-direction: column;
+            order: 0;
+            padding: 28px;
+          }
+          .chat-actions-col {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            order: 0;
+          }
+          .chat-box-pad {
+            padding: 28px;
+          }
+          .ticket-box-pad {
+            padding: 24px;
           }
           @media (max-width: 768px) {
             .mobile-back-header {
@@ -605,6 +630,25 @@ export default function SupportPage() {
             }
             .page-container {
               padding: 16px 14px 24px !important;
+              overflow-x: hidden !important;
+            }
+            .support-grid {
+              grid-template-columns: 1fr !important;
+              gap: 16px !important;
+            }
+            .faq-card-col {
+              order: 2 !important;
+              padding: 16px !important;
+            }
+            .chat-actions-col {
+              order: 1 !important;
+              gap: 16px !important;
+            }
+            .chat-box-pad {
+              padding: 16px !important;
+            }
+            .ticket-box-pad {
+              padding: 16px !important;
             }
           }
         `}</style>
@@ -652,10 +696,10 @@ export default function SupportPage() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: isMobile ? '16px' : '24px', marginBottom: '24px', alignItems: 'flex-start' }}>
+        <div className="support-grid">
 
           {/* FAQ Card (Left Side on desktop, last on mobile) */}
-          <div style={{ ...card, padding: isMobile ? '16px' : '28px', display: 'flex', flexDirection: 'column', order: isMobile ? 2 : 0 }}>
+          <div className="faq-card-col" style={{ ...card }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f0f0fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
@@ -715,10 +759,10 @@ export default function SupportPage() {
           </div>
 
           {/* Right Column (Chat + Tickets) — first on mobile */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px', order: isMobile ? 1 : 0 }}>
+          <div className="chat-actions-col">
             
             {/* Live Chat Card */}
-            <div style={{ ...card, padding: isMobile ? '16px' : '28px', textAlign: 'center' }}>
+            <div className="chat-box-pad" style={{ ...card, textAlign: 'center' }}>
               <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f0f0fa', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
@@ -739,7 +783,7 @@ export default function SupportPage() {
             </div>
 
             {/* Raise a Ticket Box (History merged inside) */}
-            <div style={{ width: '100%', borderRadius: '24px', background: '#f7f7ff', border: '1.5px solid #d9dcff', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)', padding: isMobile ? '16px' : '24px', textAlign: 'left' }}>
+            <div className="ticket-box-pad" style={{ width: '100%', borderRadius: '24px', background: '#f7f7ff', border: '1.5px solid #d9dcff', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)', textAlign: 'left' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <div>
                   <div style={{ fontSize: '12px', fontWeight: '800', color: '#3636e8', letterSpacing: '0.03em', marginBottom: '4px', textTransform: 'uppercase' }}>

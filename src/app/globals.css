@@ -273,7 +273,7 @@ img {
   padding: 24px;
   max-width: 1400px;
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .page-header {
