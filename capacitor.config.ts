@@ -2,11 +2,11 @@ import type { CapacitorConfig } from '@capacitor/cli';
 import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
-  appId: 'com.teaching.lms.test',
-  appName: 'CLASS GENz Test',
+  appId: 'com.teaching.lms',
+  appName: 'CLASS GENz',
   webDir: 'public',
   server: {
-    url: 'https://teaching-llm.onrender.com',
+    url: 'https://class.genziitian.in',
     androidScheme: 'https',
   },
   plugins: {
@@ -14,8 +14,8 @@ const config: CapacitorConfig = {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
     SplashScreen: {
-      launchShowDuration: 0,
-      launchAutoHide: false,
+      launchShowDuration: 3000,
+      launchAutoHide: true,
       backgroundColor: '#ffffff',
       androidSplashResourceName: 'splash',
       showSpinner: false,
