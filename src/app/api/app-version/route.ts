@@ -7,7 +7,7 @@ export async function GET() {
     const updateConfig = {
       latestVersion: '1.1.0', // Bump this when you publish a new APK
       minRequiredVersion: '1.1.0', // Users below this are forced to update
-      apkUrl: 'https://github.com/Tushaaaaarrrrrr/Teaching-llm/releases/latest/download/class.genz.apk',
+      apkUrl: 'https://zedmvgqhnapmpqpnzoqh.supabase.co/storage/v1/object/public/downloads/class%20genz.apk',
       releaseNotes: 'Stability enhancements, streamlined navigation, and native seamless auto-update integration.',
     };
 
