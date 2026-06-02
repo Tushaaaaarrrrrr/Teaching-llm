@@ -429,7 +429,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           boxShadow: '14px 14px 28px rgba(197, 199, 207, 0.85), -10px -10px 22px rgba(255, 255, 255, 0.95), inset 1px 1px 0 rgba(255, 255, 255, 0.7)',
         }}>
           <img 
-            src="/logo.png" 
+            src="/mobile-login-logo.png" 
             alt="GENz IITIAN Logo" 
             style={{ 
               width: '100%',
