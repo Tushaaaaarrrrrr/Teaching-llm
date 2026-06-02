@@ -442,7 +442,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           overflow: 'hidden',
           padding: '10px',
         }}>
-          <img src="/mobile-logo.png" alt="GenZ IITian" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          <img src="/mobile-login-logo.png" alt="GenZ IITian" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
         <h1 style={{
           fontSize: '22px', fontWeight: 900, color: '#1e1e3a', margin: 0, letterSpacing: '-0.02em',
