@@ -127,12 +127,9 @@ function OnboardingView({
         <span style={{ 
           fontSize: '15.5px', 
           fontWeight: 900, 
-          color: '#1e1e3a', 
+          color: '#9999b0', 
           letterSpacing: '0.18em', 
           textTransform: 'uppercase',
-          background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
         }}>
           GenZ IITian
         </span>
