@@ -137,8 +137,8 @@ function OnboardingView({
             key={r}
             style={{
               position: 'absolute',
-              width: `${180 + r * 60}px`,
-              height: `${180 + r * 60}px`,
+              width: `${240 + r * 60}px`,
+              height: `${240 + r * 60}px`,
               borderRadius: '50%',
               border: `1px dashed ${slide.accent}${r === 1 ? '55' : r === 2 ? '33' : '1c'}`,
               animation: `ringPulse${r} 4s ease-in-out infinite`,
@@ -146,7 +146,7 @@ function OnboardingView({
           />
         ))}
         <div style={{
-          width: '180px', height: '180px', borderRadius: '50%',
+          width: '240px', height: '240px', borderRadius: '50%',
           background: '#ffffff',
           boxShadow: '12px 12px 30px #c5c7cf, -12px -12px 30px #ffffff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -162,25 +162,25 @@ function OnboardingView({
       <div
         key={`slide-${index}`}
         style={{
-          background: '#ffffff',
-          border: '1px solid rgba(15, 23, 42, 0.05)',
+          background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%)',
+          border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '28px',
           padding: '24px 22px 20px',
-          boxShadow: '0 18px 36px -12px rgba(15, 23, 42, 0.12), 0 6px 12px -4px rgba(15, 23, 42, 0.04)',
+          boxShadow: '0 18px 36px -12px rgba(0,0,0,0.5), 0 6px 12px -4px rgba(0,0,0,0.3)',
           animation: 'glSlideUp 0.4s cubic-bezier(0.16,1,0.3,1)',
         }}
       >
-        <div style={{ fontSize: '10.5px', fontWeight: 800, color: slide.accent, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '10px' }}>
+        <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#a78bfa', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '10px' }}>
           {slide.eyebrow}
         </div>
         <h1 style={{
           fontSize: '22px', fontWeight: 900, lineHeight: 1.25, letterSpacing: '-0.02em',
-          color: '#1e1e3a', margin: 0, marginBottom: '12px',
+          color: '#ffffff', margin: 0, marginBottom: '12px',
         }}>
           {slide.title}
         </h1>
         <p style={{
-          fontSize: '13.5px', lineHeight: 1.6, color: '#6b6b8a',
+          fontSize: '13.5px', lineHeight: 1.6, color: 'rgba(255,255,255,0.65)',
           margin: 0, marginBottom: '22px',
         }}>
           {slide.quote}
@@ -434,23 +434,15 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
       {/* Logo block */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 'auto', marginBottom: '28px' }}>
         <div style={{
-          width: '96px', height: '96px', borderRadius: '24px',
-          background: '#e8eaf0',
+          width: '110px', height: '110px', borderRadius: '28px',
+          background: '#ffffff',
           boxShadow: '10px 10px 24px #c5c7cf, -10px -10px 24px #ffffff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginBottom: '18px',
-          position: 'relative',
+          overflow: 'hidden',
+          padding: '10px',
         }}>
-          <div style={{
-            width: '72px', height: '72px', borderRadius: '20px',
-            background: '#ffffff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 8px 20px rgba(0,0,0,0.06), inset 0 2px 4px rgba(0,0,0,0.02)',
-            overflow: 'hidden',
-            padding: '8px',
-          }}>
-            <img src="/mobile-logo.png" alt="GenZ IITian" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          </div>
+          <img src="/mobile-logo.png" alt="GenZ IITian" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
         <h1 style={{
           fontSize: '22px', fontWeight: 900, color: '#1e1e3a', margin: 0, letterSpacing: '-0.02em',

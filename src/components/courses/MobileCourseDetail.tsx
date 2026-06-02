@@ -254,33 +254,7 @@ export default function MobileCourseDetail({
           </p>
         )}
 
-        {/* Stats chips row */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          position: 'relative', zIndex: 2,
-          fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.9)',
-        }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '5px',
-            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)',
-            backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-            padding: '5px 12px', borderRadius: '50px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-          }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" style={{ opacity: 0.95 }}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            {totalLectures} lectures
-          </span>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '5px',
-            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)',
-            backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-            padding: '5px 12px', borderRadius: '50px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-          }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" style={{ opacity: 0.95 }}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            {topics.length} topics
-          </span>
-        </div>
+
 
         {/* Upgrade Button */}
         {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && !isManager && setUpgradeModalCourse && (
@@ -320,29 +294,7 @@ export default function MobileCourseDetail({
       {/* ──── CONTENT AREA ──── */}
       <div style={{ padding: '0 14px', marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
-        {/* Access expiry warning */}
-        {accessDays !== null && accessDays <= 30 && accessDays > 0 && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '10px 14px',
-            borderRadius: '14px',
-            background: '#fff7ed',
-            border: '1px solid #fed7aa',
-          }}>
-            <div style={{
-              width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
-              background: 'linear-gradient(135deg, #f97316, #ea580c)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
-            }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#9a3412', lineHeight: 1.3 }}>
-                Course access ends in {accessDays} day{accessDays === 1 ? '' : 's'}
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {/* Feedback button */}
         {role === 'STUDENT' && !hasFeedback && (
@@ -421,7 +373,7 @@ export default function MobileCourseDetail({
           />
         )}
 
-        {tab === 'overview' && <OverviewTab course={course} mentorName={mentorName} totalLectures={totalLectures} accent={accent} />}
+        {tab === 'overview' && <OverviewTab course={course} mentorName={mentorName} totalLectures={totalLectures} accent={accent} accessDays={accessDays} />}
       </div>
 
       {showFeedbackModal && (
@@ -744,9 +696,41 @@ function CurriculumTab({
 
 
 /* ───────── Overview Tab ───────── */
-function OverviewTab({ course, mentorName, totalLectures, accent }: { course: CourseDetail; mentorName: string; totalLectures: number; accent: string }) {
+function OverviewTab({ course, mentorName, totalLectures, accent, accessDays }: { course: CourseDetail; mentorName: string; totalLectures: number; accent: string; accessDays: number | null }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
+      {/* Access expiry warning — only when 10 or fewer days left */}
+      {accessDays !== null && accessDays <= 10 && accessDays > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '12px',
+          padding: '14px 16px',
+          borderRadius: '16px',
+          background: accessDays <= 3 ? '#fef2f2' : '#fff7ed',
+          border: `1px solid ${accessDays <= 3 ? '#fecaca' : '#fed7aa'}`,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        }}>
+          <div style={{
+            width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+            background: accessDays <= 3
+              ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+              : 'linear-gradient(135deg, #f97316, #ea580c)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+            boxShadow: accessDays <= 3 ? '0 4px 12px rgba(239,68,68,0.3)' : '0 4px 12px rgba(249,115,22,0.3)',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '13px', fontWeight: 800, color: accessDays <= 3 ? '#991b1b' : '#9a3412', lineHeight: 1.3 }}>
+              ⚠️ Access ending soon!
+            </div>
+            <div style={{ fontSize: '11.5px', fontWeight: 600, color: accessDays <= 3 ? '#b91c1c' : '#c2410c', marginTop: '2px' }}>
+              Only {accessDays} day{accessDays === 1 ? '' : 's'} left — your course access ends soon.
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{
         background: '#fff',
         borderRadius: '16px',
