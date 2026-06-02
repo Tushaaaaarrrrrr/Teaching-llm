@@ -3,7 +3,7 @@ import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
   appId: 'com.teaching.lms',
-  appName: 'Teaching LMS',
+  appName: 'CLASS GENz',
   webDir: 'public',
   server: {
     url: 'https://teaching-llm.onrender.com',
@@ -16,7 +16,7 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 0,
       launchAutoHide: false,
-      backgroundColor: '#e8eaf0',
+      backgroundColor: '#ffffff',
       androidSplashResourceName: 'splash',
       showSpinner: false,
     },

@@ -37,13 +37,16 @@ export default function AppUpdater() {
   useEffect(() => {
     let active = true
 
-    const initUpdater = async () => {
+    const initUpdater = async (isManual = false) => {
       try {
         // Dynamic imports prevent SSR failure during Next.js server compilation
         const { Capacitor } = await import('@capacitor/core')
         
         // This is only relevant for native Android APK distribution
         if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') {
+          if (isManual) {
+            alert('App update checks are only available in the Android application.')
+          }
           return
         }
 
@@ -72,20 +75,37 @@ export default function AppUpdater() {
         const isNewer = isOlderVersion(currentVersion, data.latestVersion)
         const isForce = isOlderVersion(currentVersion, data.minRequiredVersion || data.latestVersion)
 
-        if (isNewer && active) {
-          setUpdateAvailable(true)
-          setIsForceUpdate(isForce)
+        if (isNewer) {
+          if (active) {
+            setUpdateAvailable(true)
+            setIsForceUpdate(isForce)
+          }
+        } else if (isManual) {
+          alert(`Your app is already up to date! (v${currentVersion})`)
         }
       } catch (err) {
         console.warn('[AppUpdater] Failed to verify system version:', err)
+        if (isManual) {
+          alert('Failed to check for updates. Please check your internet connection and try again.')
+        }
       }
     }
 
-    initUpdater()
+    // Run automatically on load
+    initUpdater(false)
+
+    // Listen for manual check trigger from UI (e.g. settings or menu page)
+    const handleManualCheck = (e: Event) => {
+      const customEvent = e as CustomEvent
+      initUpdater(customEvent.detail?.manual || false)
+    }
+
+    window.addEventListener('check-for-app-updates', handleManualCheck)
 
     return () => {
       active = false
       if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+      window.removeEventListener('check-for-app-updates', handleManualCheck)
     }
   }, [])
 

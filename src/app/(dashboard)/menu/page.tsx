@@ -88,6 +88,24 @@ export default function MobileMenuPage() {
     router.refresh()
   }
 
+  function handleCheckForUpdates() {
+    window.dispatchEvent(new CustomEvent('check-for-app-updates', { detail: { manual: true } }))
+  }
+
+  const updateMenuItem: MenuItem = {
+    href: '#',
+    label: 'Check for Updates',
+    iconBg: 'rgba(56, 189, 248, 0.12)',
+    iconColor: '#0284c7',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+      </svg>
+    ),
+  }
+
   const generalItems: MenuItem[] = [
     {
       href: '/courses/explore',
@@ -223,6 +241,7 @@ export default function MobileMenuPage() {
       <SectionHeader>General</SectionHeader>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {generalItems.map(item => <MenuRow key={item.href} item={item} />)}
+        <MenuRow item={updateMenuItem} onClick={handleCheckForUpdates} />
       </div>
 
       <SectionHeader>Information</SectionHeader>
