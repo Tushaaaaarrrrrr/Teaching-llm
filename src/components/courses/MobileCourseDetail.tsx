@@ -115,7 +115,9 @@ export default function MobileCourseDetail({
 
   const isRecorded = ['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '')
   const isManager = role === 'ADMIN' || role === 'MANAGER'
-  const heroBg = isRecorded ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(145deg, ${accent}, ${accent}cc)`
+  const heroBg = isRecorded
+    ? 'linear-gradient(135deg, #4b5563 0%, #374151 50%, #111827 100%)'
+    : `linear-gradient(135deg, ${accent} 0%, ${accent}dd 50%, #1e1e3a 100%)`
   const badge = course.enrollmentType === 'LIVE' ? 'PRO'
     : course.enrollmentType === 'RECORDED' ? 'PLUS'
     : course.enrollmentType === 'FREE' ? 'FREE'
@@ -155,40 +157,45 @@ export default function MobileCourseDetail({
       {/* ──── HERO ──── */}
       <div style={{
         position: 'relative',
-        padding: '16px 20px 20px',
-        paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))',
+        padding: '20px 22px 24px',
+        paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))',
         background: heroBg,
         color: '#fff',
-        borderRadius: '0 0 28px 28px',
+        borderRadius: '0 0 32px 32px',
         overflow: 'hidden',
+        boxShadow: `0 12px 32px -8px ${isRecorded ? 'rgba(0,0,0,0.15)' : `${accent}40`}`,
       }}>
-        {/* Decorative orbs */}
-        <div style={{ position: 'absolute', top: '-40px', right: '-20px', width: '140px', height: '140px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-30px', left: '-20px', width: '100px', height: '100px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.08), transparent 70%)', pointerEvents: 'none' }} />
+        {/* Decorative glass orbs */}
+        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.16) 0%, transparent 75%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-40px', left: '-20px', width: '140px', height: '140px', borderRadius: '50%', background: `radial-gradient(circle, ${accent} 0%, transparent 70%)`, opacity: 0.35, filter: 'blur(20px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '35%', right: '10%', width: '90px', height: '90px', borderRadius: '50%', background: 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0))', border: '1px solid rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
 
         {/* Top bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', position: 'relative', zIndex: 2 }}>
           <button
             onClick={() => router.push('/courses')}
             aria-label="Back to courses"
             style={{
               display: 'flex', alignItems: 'center', gap: '6px',
-              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.22)',
-              backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-              padding: '7px 14px', borderRadius: '50px', color: '#fff',
-              fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)',
+              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+              padding: '8px 16px', borderRadius: '50px', color: '#fff',
+              fontSize: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
             }}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Back
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {badge && (
               <span style={{
-                fontSize: '9.5px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
-                padding: '5px 10px', borderRadius: '50px',
-                background: 'rgba(255,255,255,0.2)', color: '#fff',
-                backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)',
+                fontSize: '9.5px', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase',
+                padding: '6px 12px', borderRadius: '50px',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))', color: '#fff',
+                backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
               }}>
                 {badge}{course.subject ? ` · ${course.subject}` : ''}
               </span>
@@ -198,8 +205,9 @@ export default function MobileCourseDetail({
                 onClick={() => setInfoModalCourse(course)}
                 aria-label="Compare PRO vs PLUS batches"
                 style={{
-                  width: '28px', height: '28px', borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
+                  width: '30px', height: '30px', borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
                   color: '#fff', fontSize: '13px', fontWeight: '800', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
@@ -216,45 +224,60 @@ export default function MobileCourseDetail({
               }}
               style={{
                 width: '32px', height: '32px', borderRadius: '50%',
-                background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.22)',
-                backdropFilter: 'blur(6px)', cursor: 'pointer', color: '#fff',
+                background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)',
+                backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                cursor: 'pointer', color: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
             </button>
           </div>
         </div>
 
         {/* Title */}
         <h1 style={{
-          fontSize: '22px', fontWeight: 900, color: '#fff', lineHeight: 1.2, letterSpacing: '-0.02em',
-          margin: '0 0 4px', position: 'relative',
+          fontSize: '24px', fontWeight: 900, color: '#fff', lineHeight: 1.25, letterSpacing: '-0.02em',
+          margin: '0 0 6px', position: 'relative', zIndex: 2,
+          textShadow: '0 2px 8px rgba(0,0,0,0.12)',
         }}>
           {course.name}
         </h1>
         {course.description && (
           <p style={{
-            fontSize: '12.5px', color: 'rgba(255,255,255,0.8)', fontWeight: 500,
-            margin: '0 0 14px', position: 'relative', lineHeight: 1.45,
+            fontSize: '12.5px', color: 'rgba(255,255,255,0.85)', fontWeight: 500,
+            margin: '0 0 16px', position: 'relative', zIndex: 2, lineHeight: 1.45,
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>
             {course.description}
           </p>
         )}
 
-        {/* Stats row */}
+        {/* Stats chips row */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: '16px',
-          position: 'relative',
-          fontSize: '11.5px', fontWeight: 700, color: 'rgba(255,255,255,0.85)',
+          display: 'flex', alignItems: 'center', gap: '8px',
+          position: 'relative', zIndex: 2,
+          fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.9)',
         }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+            padding: '5px 12px', borderRadius: '50px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+          }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" style={{ opacity: 0.95 }}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             {totalLectures} lectures
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+            padding: '5px 12px', borderRadius: '50px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+          }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" style={{ opacity: 0.95 }}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             {topics.length} topics
           </span>
         </div>
@@ -490,35 +513,37 @@ function CurriculumTab({
 
         return (
           <div key={topic.id} className="mcd-topic-card" style={{
-            background: '#fff',
-            borderRadius: '16px',
-            border: '1px solid rgba(15,23,42,0.05)',
-            boxShadow: '0 2px 10px rgba(15,23,42,0.04)',
+            background: '#ffffff',
+            borderRadius: '18px',
+            border: '1px solid rgba(15,23,42,0.08)',
+            boxShadow: '0 4px 15px rgba(15,23,42,0.03)',
             overflow: 'hidden',
-            borderLeft: `3px solid ${accent}`,
+            marginBottom: '4px',
           }}>
             <button
               onClick={() => toggleTopic(topic.id)}
               style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '12px 14px',
-                background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
+                padding: '14px 16px',
+                background: 'linear-gradient(to right, #f8fafc, #ffffff)',
+                border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                 textAlign: 'left',
+                borderLeft: `4px solid ${accent}`,
               }}
             >
               {/* Topic number */}
               <div style={{
-                width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                background: `${accent}10`, color: accent,
+                width: '30px', height: '30px', borderRadius: '8px', flexShrink: 0,
+                background: `${accent}15`, color: accent,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '12px', fontWeight: 800,
+                fontSize: '11px', fontWeight: 800,
               }}>
                 {String(idx + 1).padStart(2, '0')}
               </div>
 
               {/* Title + meta */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {topic.title}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
@@ -563,11 +588,18 @@ function CurriculumTab({
               </div>
             </button>
 
-            {/* Lectures list */}
+            {/* Lectures list inside nested tray */}
             {open && (
-              <div style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ 
+                padding: '12px', 
+                background: '#f5f7fa', 
+                borderTop: '1px solid rgba(15,23,42,0.06)',
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '6px' 
+              }}>
                 {topic.content.length === 0 ? (
-                  <div style={{ padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', background: '#f8f9fc', borderRadius: '12px' }}>
+                  <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', background: '#ffffff', borderRadius: '12px', border: '1px solid rgba(15,23,42,0.05)' }}>
                     No lectures in this topic yet
                   </div>
                 ) : topic.content.map((item) => {
@@ -577,9 +609,11 @@ function CurriculumTab({
                   return (
                     <div key={item.id} className="mcd-lecture-row" style={{
                       display: 'flex', alignItems: 'center', gap: '10px',
-                      padding: '10px 10px',
+                      padding: '11px 12px',
                       borderRadius: '12px',
-                      background: '#f8f9fc',
+                      background: '#ffffff',
+                      border: '1px solid rgba(15,23,42,0.05)',
+                      boxShadow: '0 2px 8px rgba(15,23,42,0.02)',
                       position: 'relative',
                     }}>
                       {/* 3-state toggle button */}

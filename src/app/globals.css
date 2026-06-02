@@ -1131,7 +1131,7 @@ tr:hover td {
   /* Mobile course detail breaks out of the dashboard container's padding so the purple hero is edge-to-edge.
      Match the page-container's mobile padding (16px) exactly so the hero spans full viewport width,
      and the hero's own 22px internal padding gives content proper breathing room. */
-  .course-detail-mobile-only { margin: -16px -16px 0; }
+  .course-detail-mobile-only { margin: 0; }
   /* The hero's content should never touch the screen edge — enforce a min inline padding here in case
      the inline style is overridden by inherited rules or the negative margin overshoots */
   .course-detail-mobile-only .mobile-course-detail > div:first-of-type { padding-left: 22px !important; padding-right: 22px !important; }
