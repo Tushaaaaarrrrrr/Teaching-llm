@@ -123,8 +123,17 @@ function OnboardingView({
       }}
     >
       {/* Top bar: clean branding text */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '8px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '12px', marginTop: '4px' }}>
+        <span style={{ 
+          fontSize: '15.5px', 
+          fontWeight: 900, 
+          color: '#1e1e3a', 
+          letterSpacing: '0.18em', 
+          textTransform: 'uppercase',
+          background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}>
           GenZ IITian
         </span>
       </div>
