@@ -2,8 +2,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
 import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
-  appId: 'com.teaching.lms',
-  appName: 'CLASS GENz',
+  appId: 'com.teaching.lms.test',
+  appName: 'CLASS GENz Test',
   webDir: 'public',
   server: {
     url: 'https://teaching-llm.onrender.com',

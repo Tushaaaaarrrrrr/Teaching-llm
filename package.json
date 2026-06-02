@@ -17,7 +17,9 @@
     "db:cleanup": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/scripts/cleanup-logs.ts",
     "analytics:compute": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/scripts/compute-analytics.ts",
     "db:studio": "npx prisma studio",
-    "prepare": "husky install || true"
+    "prepare": "husky install || true",
+    "switch:test": "node scripts/switch-env.js test",
+    "switch:prod": "node scripts/switch-env.js prod"
   },
   "engines": {
     "node": ">=18.0.0"
