@@ -161,19 +161,30 @@ export default function AppUpdater() {
         } catch (e) { /* ignore */ }
       }, 2000)
     } catch (err) {
-      console.error('[AppUpdater] Failed to download or install package:', err)
+      console.error('[AppUpdater] Failed to download or install package natively:', err)
       
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current)
       }
 
-      setStatusMessage('Update not available yet. Please try again later.')
-      setDownloadProgress(0)
+      // Automatically fall back to browser download
+      setStatusMessage('Opening system browser to download directly...')
+      setDownloadProgress(75)
 
-      // Reset after 3 seconds to let user dismiss or retry
-      setTimeout(() => {
-        setDownloading(false)
-      }, 3000)
+      setTimeout(async () => {
+        try {
+          const { Browser } = await import('@capacitor/browser')
+          await Browser.open({ url: apkUrl })
+        } catch (e) {
+          window.open(apkUrl, '_blank')
+        }
+        
+        // Reset the updating status after the browser opens
+        setTimeout(() => {
+          setDownloading(false)
+          setDownloadProgress(0)
+        }, 2000)
+      }, 1500)
     }
   }
 
