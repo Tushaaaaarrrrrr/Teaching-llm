@@ -700,35 +700,61 @@ function OverviewTab({ course, mentorName, totalLectures, accent, accessDays }: 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
-      {/* Access expiry warning — only when 10 or fewer days left */}
-      {accessDays !== null && accessDays <= 10 && accessDays > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '12px',
-          padding: '14px 16px',
-          borderRadius: '16px',
-          background: accessDays <= 3 ? '#fef2f2' : '#fff7ed',
-          border: `1px solid ${accessDays <= 3 ? '#fecaca' : '#fed7aa'}`,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-        }}>
+      {/* Access expiry info / warning */}
+      {accessDays !== null && accessDays > 0 && (
+        accessDays <= 10 ? (
+          /* Warning Banner (<= 10 days) */
           <div style={{
-            width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
-            background: accessDays <= 3
-              ? 'linear-gradient(135deg, #ef4444, #dc2626)'
-              : 'linear-gradient(135deg, #f97316, #ea580c)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
-            boxShadow: accessDays <= 3 ? '0 4px 12px rgba(239,68,68,0.3)' : '0 4px 12px rgba(249,115,22,0.3)',
+            display: 'flex', alignItems: 'center', gap: '12px',
+            padding: '14px 16px',
+            borderRadius: '16px',
+            background: accessDays <= 3 ? '#fef2f2' : '#fff7ed',
+            border: `1px solid ${accessDays <= 3 ? '#fecaca' : '#fed7aa'}`,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '13px', fontWeight: 800, color: accessDays <= 3 ? '#991b1b' : '#9a3412', lineHeight: 1.3 }}>
-              ⚠️ Access ending soon!
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+              background: accessDays <= 3
+                ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                : 'linear-gradient(135deg, #f97316, #ea580c)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+              boxShadow: accessDays <= 3 ? '0 4px 12px rgba(239,68,68,0.3)' : '0 4px 12px rgba(249,115,22,0.3)',
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
-            <div style={{ fontSize: '11.5px', fontWeight: 600, color: accessDays <= 3 ? '#b91c1c' : '#c2410c', marginTop: '2px' }}>
-              Only {accessDays} day{accessDays === 1 ? '' : 's'} left — your course access ends soon.
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: accessDays <= 3 ? '#991b1b' : '#9a3412', lineHeight: 1.3 }}>
+                ⚠️ Access ending soon!
+              </div>
+              <div style={{ fontSize: '11.5px', fontWeight: 600, color: accessDays <= 3 ? '#b91c1c' : '#c2410c', marginTop: '2px' }}>
+                Only {accessDays} day{accessDays === 1 ? '' : 's'} left — your course access ends soon.
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          /* Neutral Info Banner (> 10 days) */
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            padding: '12px 16px',
+            borderRadius: '16px',
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+          }}>
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+              background: 'linear-gradient(135deg, #94a3b8, #64748b)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#64748b', lineHeight: 1.3 }}>
+                Course access ends in {accessDays} days
+              </div>
+            </div>
+          </div>
+        )
       )}
 
       <div style={{
