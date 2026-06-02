@@ -51,6 +51,7 @@ function MenuRow({ item, onClick }: { item: MenuItem; onClick?: () => void }) {
     textDecoration: 'none', color: '#1e1e3a',
     fontFamily: 'inherit', border: 'none', width: '100%', cursor: 'pointer',
     transition: 'box-shadow 0.15s ease',
+    textAlign: 'left',
   }
   if (onClick) return <button onClick={onClick} style={baseStyle}>{content}</button>
   if (item.external) return <a href={item.href} target="_blank" rel="noopener noreferrer" style={baseStyle}>{content}</a>
