@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import useSWR from 'swr'
 import { getDefaultAvatar } from '@/lib/avatar'
 
@@ -81,6 +82,24 @@ export default function MobileMenuPage() {
   const roleLabel = userRole.charAt(0) + userRole.slice(1).toLowerCase()
 
   const txHref = userRole === 'STUDENT' ? '/my-transactions' : '/transactions'
+
+  const [appInfo, setAppInfo] = useState<{ version: string; build: string; platform: string } | null>(null)
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) return
+        const { App } = await import('@capacitor/app')
+        const info = await App.getInfo()
+        setAppInfo({
+          version: info.version || '—',
+          build: info.build || '—',
+          platform: Capacitor.getPlatform(),
+        })
+      } catch (e) { /* web browser — skip */ }
+    })()
+  }, [])
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -253,6 +272,40 @@ export default function MobileMenuPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {socialItems.map(item => <MenuRow key={item.href} item={item} />)}
       </div>
+
+      {/* App Info Card — only visible inside the native Android app */}
+      {appInfo && (
+        <>
+          <SectionHeader>App Info</SectionHeader>
+          <div style={{
+            padding: '18px 20px', borderRadius: '18px',
+            background: '#e8eaf0',
+            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#6b6b8a' }}>App Version</span>
+                <span style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a' }}>v{appInfo.version}</span>
+              </div>
+              <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#6b6b8a' }}>Build Number</span>
+                <span style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a' }}>{appInfo.build}</span>
+              </div>
+              <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#6b6b8a' }}>Platform</span>
+                <span style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a', textTransform: 'capitalize' }}>{appInfo.platform}</span>
+              </div>
+              <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#6b6b8a' }}>Package</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: '#9999b0' }}>com.teaching.lms</span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <SectionHeader>Session</SectionHeader>
       <button onClick={handleLogout} style={{

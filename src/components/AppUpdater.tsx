@@ -152,20 +152,28 @@ export default function AppUpdater() {
         filePath: downloadResult.path,
         contentType: 'application/vnd.android.package-archive'
       })
-    } catch (err) {
-      console.error('[AppUpdater] Failed to download or install package:', err)
-      setStatusMessage('Update failed. Opening browser to download...')
-      
-      // Fallback: Use Capacitor Browser to open direct download url
+
+      // After the installer opens, exit the app so Android restarts fresh with the new version
       setTimeout(async () => {
         try {
-          const { Browser } = await import('@capacitor/browser')
-          await Browser.open({ url: apkUrl })
-        } catch (e) {
-          window.location.href = apkUrl
-        }
+          const { App } = await import('@capacitor/app')
+          await App.exitApp()
+        } catch (e) { /* ignore */ }
+      }, 2000)
+    } catch (err) {
+      console.error('[AppUpdater] Failed to download or install package:', err)
+      
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current)
+      }
+
+      setStatusMessage('Update not available yet. Please try again later.')
+      setDownloadProgress(0)
+
+      // Reset after 3 seconds to let user dismiss or retry
+      setTimeout(() => {
         setDownloading(false)
-      }, 1500)
+      }, 3000)
     }
   }
 
