@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
+import Script from 'next/script'
 import { formatISTDate, getEventStatus } from '@/lib/date-utils'
 import HomeHeroSlider, { HeroSlide } from '@/components/home/HomeHeroSlider'
 
@@ -34,6 +35,82 @@ export default function DashboardPage() {
   const { data: dashboardData, error, isLoading: loading, mutate } = useSWR('/api/dashboard', fetcher, {
     revalidateOnFocus: false
   })
+  
+  const [upgradeModalCourse, setUpgradeModalCourse] = useState<{ id: string; name: string; liveUpgradePrice: number } | null>(null)
+  const [upgrading, setUpgrading] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
+
+  const handleUpgrade = async (courseId: string) => {
+    setIsProcessing(true)
+    setUpgrading(true)
+    try {
+      const orderRes = await fetch(`/api/courses/${courseId}/create-razorpay-order`, { method: 'POST' })
+      if (!orderRes.ok) {
+        const data = await orderRes.json()
+        alert(data.error || 'Failed to create order')
+        setIsProcessing(false)
+        setUpgrading(false)
+        return
+      }
+      const orderData = await orderRes.json()
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'GenZ IItian',
+        description: `PRO Upgrade — ${orderData.courseName}`,
+        order_id: orderData.razorpayOrderId,
+        prefill: {
+          name: orderData.userName,
+          email: orderData.userEmail,
+        },
+        theme: { color: '#6366f1' },
+        handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+          setIsProcessing(true)
+          try {
+            const verifyRes = await fetch(`/api/courses/${courseId}/upgrade`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            })
+            const verifyData = await verifyRes.json()
+            if (verifyRes.ok) {
+              setUpgradeModalCourse(null)
+              setUpgradeSuccessOrderId(verifyData.orderId)
+              mutate()
+            } else {
+              alert(verifyData.error || 'Payment verification failed')
+            }
+          } catch {
+            alert('Payment verification failed. Please contact support.')
+          } finally {
+            setIsProcessing(false)
+            setUpgrading(false)
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setIsProcessing(false)
+            setUpgrading(false)
+          },
+        },
+      }
+
+      setIsProcessing(false)
+      const rzp = new (window as unknown as { Razorpay: new (opts: typeof options) => { open: () => void } }).Razorpay(options)
+      rzp.open()
+    } catch (e: any) {
+      alert(e.message || 'Something went wrong')
+      setIsProcessing(false)
+      setUpgrading(false)
+    }
+  }
   const { data: featuredOfferings } = useSWR('/api/course-offerings', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
@@ -243,6 +320,7 @@ export default function DashboardPage() {
   const hasLive = liveNow.length > 0
 
   return (
+    <>
     <div className="page-container fade-in">
       <style>{`
         @media (max-width: 768px) {
@@ -723,37 +801,77 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <a
-                      href={frontSession.meetLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        padding: '14px 32px',
-                        borderRadius: '14px',
-                        background: '#ef4444',
-                        color: '#ffffff', fontSize: '15px', fontWeight: '800',
-                        textDecoration: 'none', letterSpacing: '0.01em',
-                        animation: 'joinPulse 2s ease-in-out infinite, joinGlow 2.5s ease-in-out infinite',
-                        transition: 'transform 0.2s, background 0.18s',
-                        boxShadow: '0 8px 20px rgba(239,68,68,0.3)',
-                        whiteSpace: 'nowrap',
-                        marginLeft: '10px'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                      <div style={{
-                        width: '24px', height: '24px', borderRadius: '6px',
-                        background: 'rgba(255,255,255,0.2)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5">
-                          <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                        </svg>
-                      </div>
-                      Join Live
-                    </a>
+                    {frontSession.isRecordedOnly ? (
+                      <button
+                        onClick={() => {
+                          if (frontSession.courseId) {
+                            setUpgradeModalCourse({
+                              id: frontSession.courseId,
+                              name: frontSession.course?.name || 'This Course',
+                              liveUpgradePrice: frontSession.course?.liveUpgradePrice || 999
+                            })
+                          }
+                        }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '8px',
+                          padding: '14px 32px',
+                          borderRadius: '14px', border: 'none', cursor: 'pointer',
+                          background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                          color: '#ffffff', fontSize: '15px', fontWeight: '800',
+                          letterSpacing: '0.01em',
+                          animation: 'joinPulse 2s ease-in-out infinite, joinGlow 2.5s ease-in-out infinite',
+                          transition: 'transform 0.2s, background 0.18s',
+                          boxShadow: '0 8px 20px rgba(239,68,68,0.3)',
+                          whiteSpace: 'nowrap',
+                          marginLeft: '10px'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        <div style={{
+                          width: '24px', height: '24px', borderRadius: '6px',
+                          background: 'rgba(255,255,255,0.2)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                        }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                          </svg>
+                        </div>
+                        Upgrade to Join
+                      </button>
+                    ) : (
+                      <a
+                        href={frontSession.meetLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '8px',
+                          padding: '14px 32px',
+                          borderRadius: '14px',
+                          background: '#ef4444',
+                          color: '#ffffff', fontSize: '15px', fontWeight: '800',
+                          textDecoration: 'none', letterSpacing: '0.01em',
+                          animation: 'joinPulse 2s ease-in-out infinite, joinGlow 2.5s ease-in-out infinite',
+                          transition: 'transform 0.2s, background 0.18s',
+                          boxShadow: '0 8px 20px rgba(239,68,68,0.3)',
+                          whiteSpace: 'nowrap',
+                          marginLeft: '10px'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        <div style={{
+                          width: '24px', height: '24px', borderRadius: '6px',
+                          background: 'rgba(255,255,255,0.2)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                        }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5">
+                            <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                          </svg>
+                        </div>
+                        Join Live
+                      </a>
+                    )}
                   </div>
 
                   {liveSessions.length > 1 && (
@@ -805,10 +923,22 @@ export default function DashboardPage() {
                   {upNextSessions.map((session, idx) => (
                     <a
                       key={session.id}
-                      href={session.meetLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ textDecoration: 'none' }}
+                      href={session.isRecordedOnly ? undefined : session.meetLink}
+                      target={session.isRecordedOnly ? undefined : "_blank"}
+                      rel={session.isRecordedOnly ? undefined : "noopener noreferrer"}
+                      onClick={(e) => {
+                        if (session.isRecordedOnly) {
+                          e.preventDefault()
+                          if (session.courseId) {
+                            setUpgradeModalCourse({
+                              id: session.courseId,
+                              name: session.course?.name || 'This Course',
+                              liveUpgradePrice: session.course?.liveUpgradePrice || 999
+                            })
+                          }
+                        }
+                      }}
+                      style={{ textDecoration: 'none', cursor: 'pointer' }}
                     >
                       <div
                         style={{
@@ -879,10 +1009,20 @@ export default function DashboardPage() {
                 </Link>
               </div>
               {hasLive && frontSession ? (
-                <a
-                  href={frontSession.meetLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <div
+                  onClick={() => {
+                    if (frontSession.isRecordedOnly) {
+                      if (frontSession.courseId) {
+                        setUpgradeModalCourse({
+                          id: frontSession.courseId,
+                          name: frontSession.course?.name || 'This Course',
+                          liveUpgradePrice: frontSession.course?.liveUpgradePrice || 999
+                        })
+                      }
+                    } else if (frontSession.meetLink) {
+                      window.open(frontSession.meetLink, '_blank')
+                    }
+                  }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '14px',
                     padding: '18px',
@@ -890,7 +1030,7 @@ export default function DashboardPage() {
                     background: '#ffffff',
                     border: '1px solid rgba(15, 23, 42, 0.05)',
                     boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
-                    textDecoration: 'none', color: 'inherit',
+                    cursor: 'pointer',
                     position: 'relative', overflow: 'hidden',
                   }}
                 >
@@ -916,23 +1056,48 @@ export default function DashboardPage() {
                       {frontSession.instructor}{frontSession.course?.name ? ` · ${frontSession.course.name}` : ''}
                     </div>
                   </div>
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '5px',
-                    fontSize: '12px', fontWeight: 800, color: '#ffffff',
-                    padding: '8px 14px', borderRadius: '50px',
-                    background: 'linear-gradient(135deg, #ef4444, #f97316)',
-                    boxShadow: '0 6px 14px rgba(239,68,68,0.4)',
-                    flexShrink: 0,
-                  }}>
-                    Join
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                  </span>
-                </a>
+                  {frontSession.isRecordedOnly ? (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '5px',
+                      fontSize: '12px', fontWeight: 800, color: '#ffffff',
+                      padding: '8px 14px', borderRadius: '50px',
+                      background: 'linear-gradient(135deg, #ef4444, #f97316)',
+                      boxShadow: '0 6px 14px rgba(239,68,68,0.4)',
+                      flexShrink: 0,
+                    }}>
+                      Upgrade
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    </span>
+                  ) : (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '5px',
+                      fontSize: '12px', fontWeight: 800, color: '#ffffff',
+                      padding: '8px 14px', borderRadius: '50px',
+                      background: 'linear-gradient(135deg, #ef4444, #f97316)',
+                      boxShadow: '0 6px 14px rgba(239,68,68,0.4)',
+                      flexShrink: 0,
+                    }}>
+                      Join
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </span>
+                  )}
+                </div>
               ) : upNextSessions.length > 0 ? (
-                <a
-                  href={upNextSessions[0].meetLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <div
+                  onClick={() => {
+                    const upNext = upNextSessions[0]
+                    if (upNext.isRecordedOnly) {
+                      if (upNext.courseId) {
+                        setUpgradeModalCourse({
+                          id: upNext.courseId,
+                          name: upNext.course?.name || 'This Course',
+                          liveUpgradePrice: upNext.course?.liveUpgradePrice || 999
+                        })
+                      }
+                    } else if (upNext.meetLink) {
+                      window.open(upNext.meetLink, '_blank')
+                    }
+                  }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '14px',
                     padding: '18px',
@@ -940,7 +1105,7 @@ export default function DashboardPage() {
                     background: '#ffffff',
                     border: '1px solid rgba(15, 23, 42, 0.05)',
                     boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
-                    textDecoration: 'none', color: 'inherit',
+                    cursor: 'pointer',
                     position: 'relative', overflow: 'hidden',
                   }}
                 >
@@ -968,7 +1133,7 @@ export default function DashboardPage() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                     <polyline points="9 18 15 12 9 6"/>
                   </svg>
-                </a>
+                </div>
               ) : (
                 <div style={{
                   padding: '32px 16px', textAlign: 'center', color: '#9999b0', fontSize: '13px',
@@ -1301,5 +1466,152 @@ export default function DashboardPage() {
       `}</style>
 
     </div>
+
+    {/* Upgrade Confirmation Modal */}
+    {upgradeModalCourse && (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+        padding: '20px'
+      }} onClick={() => !upgrading && setUpgradeModalCourse(null)}>
+        <div style={{
+          background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
+          boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
+          animation: 'modalSlideUp 0.3s ease-out', position: 'relative'
+        }} onClick={e => e.stopPropagation()}>
+          {upgrading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', marginBottom: '24px' }}>
+                <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/>
+              </svg>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Processing Payment...</h2>
+              <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', textAlign: 'center' }}>
+                Please wait while we securely process your transaction.<br/>Do not close or refresh this page.
+              </p>
+              <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
+            </div>
+          ) : (
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+              <button
+                onClick={() => setUpgradeModalCourse(null)}
+                style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: '#94a3b8', cursor: 'pointer', lineHeight: 1 }}
+              >&times;</button>
+              <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#ffffff', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              </div>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
+              <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
+                You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
+              </p>
+
+              <div style={{ background: '#f8faff', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid #e0e7ff' }}>
+                <div style={{ fontSize: '36px', fontWeight: '900', color: '#6366f1', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
+                <div style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '600' }}>One-time upgrade fee</div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '14px' }}>
+                <button
+                  onClick={() => setUpgradeModalCourse(null)}
+                  style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'white', color: '#64748b', fontWeight: '700', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleUpgrade(upgradeModalCourse.id)}
+                  style={{
+                    flex: 1.5, padding: '16px', borderRadius: '18px', border: 'none',
+                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                    color: 'white', fontWeight: '700', cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                  }}
+                >
+                  ✓ Confirm Upgrade
+                </button>
+              </div>
+
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '24px' }}>
+                Course will be updated automatically after Payment
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+
+    {/* Upgrade Success Modal */}
+    {upgradeSuccessOrderId && (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+        padding: '20px'
+      }} onClick={() => setUpgradeSuccessOrderId(null)}>
+        <div style={{
+          background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
+          boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          padding: '40px', textAlign: 'center',
+          animation: 'modalSlideUp 0.3s ease-out'
+        }} onClick={e => e.stopPropagation()}>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Welcome to PRO!</h2>
+          <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
+            Your upgrade was successful. You now have full access to live classes, mentorship, and priority support.
+          </p>
+          <div style={{ background: '#f0fdf4', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #bbf7d0' }}>
+            <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
+          </div>
+          <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
+          <button
+            onClick={() => setUpgradeSuccessOrderId(null)}
+            style={{
+              width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+              color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
+            }}
+          >
+            Got it, let&apos;s go! 🚀
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* Processing Modal */}
+    {isProcessing && (
+      <div style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(8px)', zIndex: 9999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>
+        <div style={{
+          background: 'white', padding: '40px', borderRadius: '32px',
+          textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+          width: '320px'
+        }}>
+          <div className="spinner" style={{
+            width: '40px', height: '40px', border: '4px solid #f3f3f3',
+            borderTop: '4px solid #6366f1', borderRadius: '50%',
+            margin: '0 auto 20px',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Processing...</h3>
+          <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Please wait while we set up your course access.</p>
+        </div>
+      </div>
+    )}
+
+    <style dangerouslySetInnerHTML={{ __html: `
+      @keyframes modalSlideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    `}} />
+
+    <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+    </>
   )
 }

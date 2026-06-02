@@ -15,12 +15,14 @@ interface CourseEvent {
   status: string
   manualStatus: string
   courseId: string | null
-  course: { id: string; name: string; color: string; teacherName?: string | null } | null
+  course: { id: string; name: string; color: string; teacherName?: string | null; liveUpgradePrice?: number | null } | null
   instructor: { id: string; name: string } | null
+  isRecordedOnly?: boolean
 }
 
 interface Props {
   sessions: CourseEvent[]
+  onUpgradeClick?: (courseId: string, courseName: string, price: number) => void
 }
 
 const TIME_SLOT_COLORS: { bg: string; fg: string }[] = [
@@ -31,7 +33,7 @@ const TIME_SLOT_COLORS: { bg: string; fg: string }[] = [
   { bg: '#dbeafe', fg: '#1d4ed8' }, // blue
 ]
 
-export default function LiveSessionsMobile({ sessions }: Props) {
+export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) {
   const router = useRouter()
   const [search, setSearch] = useState('')
   const [showSearch, setShowSearch] = useState(false)
@@ -191,7 +193,7 @@ export default function LiveSessionsMobile({ sessions }: Props) {
           <div>
             <SectionHeader title="Live now" subtitle={`${visibleLive.length} session${visibleLive.length === 1 ? '' : 's'} happening`} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {visibleLive.map(s => <LiveSessionCard key={s.id} session={s} />)}
+              {visibleLive.map(s => <LiveSessionCard key={s.id} session={s} onUpgradeClick={onUpgradeClick} />)}
             </div>
           </div>
         )}
@@ -256,7 +258,7 @@ function LiveTab({ sessions, todayStr }: { sessions: (CourseEvent & { derivedSta
   )
 }
 
-function LiveSessionCard({ session }: { session: CourseEvent }) {
+function LiveSessionCard({ session, onUpgradeClick }: { session: CourseEvent; onUpgradeClick?: (courseId: string, courseName: string, price: number) => void }) {
   const startedMin = Math.max(0, Math.floor((Date.now() - new Date(session.startTime).getTime()) / 60000))
   const startedLabel = startedMin === 0 ? 'just started' : `started ${formatRelativeMinutes(startedMin)} ago`
   const instructorName = session.course?.teacherName || session.instructor?.name || 'Faculty'
@@ -334,6 +336,36 @@ function LiveSessionCard({ session }: { session: CourseEvent }) {
               <polyline points="12 5 19 12 12 19" />
             </svg>
           </a>
+        ) : session.isRecordedOnly ? (
+          <button
+            onClick={() => {
+              if (onUpgradeClick && session.courseId && session.course?.liveUpgradePrice) {
+                onUpgradeClick(session.courseId, session.course.name, session.course.liveUpgradePrice)
+              }
+            }}
+            style={{
+              flex: 1,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              padding: '13px 16px', borderRadius: '50px',
+              background: '#ffffff', color: '#dc2626',
+              fontSize: '14px', fontWeight: 800, border: 'none', cursor: 'pointer',
+              boxShadow: '0 6px 14px rgba(0,0,0,0.10)',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'
+              ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 18px rgba(0,0,0,0.15)'
+            }}
+            onMouseLeave={e => {
+              ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
+              ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 14px rgba(0,0,0,0.10)'
+            }}
+          >
+            Upgrade to join
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </button>
         ) : (
           <span style={{
             flex: 1,

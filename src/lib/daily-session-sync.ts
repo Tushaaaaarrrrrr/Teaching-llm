@@ -64,7 +64,7 @@ export async function getTodaySessionSnapshots(session: SessionRole) {
   const snapshots = await (prisma as any).dailySessionSnapshot.findMany({
     where,
     include: {
-      course: { select: { id: true, name: true, color: true, subject: true, teacherName: true } },
+      course: { select: { id: true, name: true, color: true, subject: true, teacherName: true, liveUpgradePrice: true } },
       instructor: { select: { id: true, name: true } },
     },
     orderBy: { startTime: 'asc' },
