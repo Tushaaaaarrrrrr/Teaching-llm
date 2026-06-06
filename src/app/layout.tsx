@@ -5,6 +5,7 @@ import CsrfProvider from '@/components/CsrfProvider'
 import MobileBlocker from '@/components/layout/MobileBlocker'
 import CapacitorBridge from '@/components/CapacitorBridge'
 import AppUpdater from '@/components/AppUpdater'
+import { PostHogProvider } from '@/components/PostHogProvider'
 
 export const metadata: Metadata = {
   title: 'GENz IITIAN',
@@ -31,10 +32,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <MobileBlocker />
-        <CapacitorBridge />
-        <AppUpdater />
-        <CsrfProvider>{children}</CsrfProvider>
+        <PostHogProvider>
+          <MobileBlocker />
+          <CapacitorBridge />
+          <AppUpdater />
+          <CsrfProvider>{children}</CsrfProvider>
+        </PostHogProvider>
       </body>
     </html>
   )

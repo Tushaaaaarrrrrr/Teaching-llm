@@ -3,6 +3,7 @@
 import { useState, Suspense, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import MobileLoginExperience from '@/components/auth/MobileLoginExperience'
+import posthog from 'posthog-js'
 
 function PoliciesDropdown({ 
   links, 
@@ -565,8 +566,19 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
       setGError(data.error || 'Google login failed')
+      // Track failed login
+      posthog.capture('login_failed', { method: 'google', error: data.error })
       return
     }
+    // Track successful login & identify user
+    if (data.user) {
+      posthog.identify(data.user.id, {
+        email: data.user.email,
+        name: data.user.name,
+        role: data.user.role,
+      })
+    }
+    posthog.capture('user_logged_in', { method: 'google', platform: isCapacitor ? 'app' : 'web' })
     router.push('/dashboard')
     router.refresh()
   }
