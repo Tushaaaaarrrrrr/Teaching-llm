@@ -423,9 +423,9 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
 
-        {/* Download App Button */}
+        {/* Download App Button — links to professional download page */}
         <a
-          href="https://zedmvgqhnapmpqpnzoqh.supabase.co/storage/v1/object/public/downloads/class%20genz.apk"
+          href="/download"
           target="_blank"
           rel="noopener noreferrer"
           className="download-btn"
