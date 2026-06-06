@@ -191,7 +191,7 @@ function LoginContent() {
           }}>
             <img 
               src="/mobile-login-logo.png" 
-              alt="GENz IITIAN Logo" 
+              alt="GenZ IITIAN Logo" 
               style={{ 
                 width: '100%',
                 maxWidth: '260px',

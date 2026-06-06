@@ -430,7 +430,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
         }}>
           <img 
             src="/mobile-login-logo.png" 
-            alt="GENz IITIAN Logo" 
+            alt="GenZ IITIAN Logo" 
             style={{ 
               width: '100%',
               maxWidth: '158px',

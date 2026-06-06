@@ -16,12 +16,12 @@ const env = target.toLowerCase();
 const configs = {
   test: {
     appId: 'com.teaching.lms.test',
-    appName: 'GENz IITIAN Test',
+    appName: 'GenZ IITIAN Test',
     url: 'https://teaching-llm.onrender.com',
   },
   prod: {
     appId: 'com.teaching.lms',
-    appName: 'GENz IITIAN',
+    appName: 'GenZ IITIAN',
     url: 'https://class.genziitian.in',
   }
 };

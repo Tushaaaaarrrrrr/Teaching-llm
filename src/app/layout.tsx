@@ -8,7 +8,7 @@ import AppUpdater from '@/components/AppUpdater'
 import { PostHogProvider } from '@/components/PostHogProvider'
 
 export const metadata: Metadata = {
-  title: 'GENz IITIAN',
+  title: 'GenZ IITIAN',
   description: 'Upgrade How You Learn',
   manifest: '/site.webmanifest',
   icons: {

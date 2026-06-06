@@ -3,7 +3,7 @@ import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
   appId: 'com.teaching.lms',
-  appName: 'GENz IITIAN',
+  appName: 'GenZ IITIAN',
   webDir: 'public',
   server: {
     url: 'https://class.genziitian.in',

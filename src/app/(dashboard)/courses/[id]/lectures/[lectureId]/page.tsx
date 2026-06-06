@@ -562,10 +562,14 @@ export default function LecturePage() {
         }}>
           {content.videoUrl ? (
             isDriveSource(content.videoUrl, content.videoSource) ? (
-              // Drive → unified player (HTML5 engine over auth-checked proxy)
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                <CustomVideoPlayer source={{ type: 'html5', src: getProxyStreamUrl(params.lectureId as string) }} />
-              </div>
+              // Drive → Google Drive iframe (since native proxy player fails/not preferred on desktop/tablet/laptop)
+              <iframe
+                src={getEmbedUrl(content.videoUrl, content.videoSource)}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onContextMenu={e => e.preventDefault()}
+              />
             ) : (content.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content.videoUrl || '')) && extractYouTubeId(content.videoUrl) ? (
               // YouTube → unified player (IFrame API engine)
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
