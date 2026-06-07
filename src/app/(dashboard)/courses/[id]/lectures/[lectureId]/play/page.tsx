@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ChevronLeft, Loader2, AlertCircle } from 'lucide-react'
+import CustomVideoPlayer from '@/components/courses/CustomVideoPlayer'
 
 interface ContentItem {
   id: string
@@ -27,6 +28,14 @@ export default function PlayDriveVideoPage() {
   const [content, setContent] = useState<ContentItem | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth <= 768)
+    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const fetchData = useCallback(async () => {
     try {
@@ -142,9 +151,13 @@ export default function PlayDriveVideoPage() {
       {/* Main Video Area */}
       <div style={{
         flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#000'
+        background: '#000', width: '100%'
       }}>
-        {embedUrl ? (
+        {isMobile ? (
+          <div style={{ width: '100%', maxWidth: '100%', position: 'relative' }}>
+            <CustomVideoPlayer source={{ type: 'html5', src: `/api/drive-stream/${params.lectureId}` }} />
+          </div>
+        ) : embedUrl ? (
           <iframe
             src={embedUrl}
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}

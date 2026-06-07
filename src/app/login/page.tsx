@@ -621,14 +621,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
         Log in or create a new account with Google
       </p>
 
-      <div style={{
-        background: '#F3F4F6',
-        borderRadius: '20px',
-        padding: '12px',
-        border: '1px solid rgba(0,0,0,0.06)',
-        marginBottom: '4px',
-      }}>
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', marginBottom: '16px' }}>
         {/* GSI hidden overlay — web only; the native plugin handles clicks inside Capacitor */}
         {!isCapacitor && (
           <div
@@ -654,9 +647,9 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
             width: '100%',
             padding: '14px 24px',
             borderRadius: '50px',
-            border: 'none',
+            border: '1px solid rgba(0,0,0,0.08)',
             background: '#ffffff',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
             cursor: (isCapacitor ? nativeReady : gsiReady) && !gLoading ? 'pointer' : 'default',
             display: 'flex',
             alignItems: 'center',
@@ -671,12 +664,12 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
           }}
           onMouseOver={(e) => {
             if ((isCapacitor ? nativeReady : gsiReady) && !gLoading) {
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.12)'
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.1)'
               e.currentTarget.style.transform = 'translateY(-1px)'
             }
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'
             e.currentTarget.style.transform = 'none'
           }}
         >
@@ -697,7 +690,6 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
             </>
           )}
         </button>
-      </div>
       </div>
 
       {/* APK quick-login fallback — visible only inside Capacitor, gated server-side by STUDENT_QUICK_LOGIN_EMAIL */}
