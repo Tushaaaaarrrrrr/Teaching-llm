@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { useTheme } from '@/components/ThemeProvider'
 
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -63,8 +64,8 @@ export default function SettingsPage() {
     checkNativeStatus()
   }, [])
 
-  // Theme preference
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  // Theme preference — wired to the real ThemeProvider (persists + applies live)
+  const { theme, setTheme } = useTheme()
 
   // Language preference
   const [language, setLanguage] = useState('en-US')
@@ -321,7 +322,7 @@ export default function SettingsPage() {
                   <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>Select your preferred interface theme</div>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                  {(['light', 'dark'] as const).map(t => (
+                  {(['light', 'dark', 'system'] as const).map(t => (
                     <button
                       key={t}
                       onClick={() => setTheme(t)}

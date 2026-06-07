@@ -18,7 +18,7 @@ export default function CapacitorBridge() {
       document.documentElement.classList.add('is-native')
       document.documentElement.classList.add(`platform-${platform}`)
 
-      const [{ App }, { StatusBar, Style }, { SplashScreen }, { Keyboard, KeyboardResize }, { PushNotifications }] = await Promise.all([
+      const [{ App }, { StatusBar, Style }, { SplashScreen }, { Keyboard, KeyboardResize, KeyboardStyle }, { PushNotifications }] = await Promise.all([
         import('@capacitor/app'),
         import('@capacitor/status-bar'),
         import('@capacitor/splash-screen'),
@@ -26,14 +26,23 @@ export default function CapacitorBridge() {
         import('@capacitor/push-notifications'),
       ])
 
+      // Status bar follows the app theme (data-theme is set by ThemeProvider /
+      // the anti-FOUC script). Style.Dark = light text (for dark bg), Style.Light
+      // = dark text (for light bg).
       const applyStatusBarStyles = async () => {
         try {
-          await StatusBar.setStyle({ style: Style.Default })
-          await StatusBar.setBackgroundColor({ color: '#e8eaf0' })
+          const dark = document.documentElement.getAttribute('data-theme') === 'dark'
+          await StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light })
+          await StatusBar.setBackgroundColor({ color: dark ? '#161a23' : '#e8eaf0' })
+          try { await Keyboard.setStyle({ style: dark ? KeyboardStyle.Dark : KeyboardStyle.Light }) } catch {}
         } catch (e) { console.warn('StatusBar style application failed', e) }
       }
 
       await applyStatusBarStyles()
+
+      // Re-skin the status bar whenever the user switches theme.
+      const onThemeChange = () => { applyStatusBarStyles() }
+      window.addEventListener('themechange', onThemeChange)
 
       try {
         await Keyboard.setResizeMode({ mode: KeyboardResize.Body })
@@ -114,6 +123,7 @@ export default function CapacitorBridge() {
       })
 
       cleanup = () => {
+        window.removeEventListener('themechange', onThemeChange)
         backHandle.remove()
         stateHandle.remove()
         registrationHandle.remove()

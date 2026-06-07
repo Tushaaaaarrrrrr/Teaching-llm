@@ -44,6 +44,53 @@
   --radius-xl: 28px;
   --radius-pill: 50px;
   --transition: all 0.2s ease;
+  --scrollbar-thumb: #D1D5DB;
+  --scrollbar-thumb-hover: #9CA3AF;
+  --skeleton-base: #e8eaf0;
+  --skeleton-shine: #dddfe6;
+}
+
+/* ── Dark theme palette ──
+   Activated by <html data-theme="dark"> (set by ThemeProvider + the anti-FOUC
+   script in layout.tsx). Overrides the same tokens as :root, so every component
+   that uses var(--token) — and the whole class-based shell (.card/.btn/.sidebar/
+   tables/modals) — flips automatically. Hardcoded inline hex colors are migrated
+   to these tokens in later waves; until then they stay light. */
+:root[data-theme="dark"] {
+  --sidebar-bg: #161a23;
+  --bg: #0f1219;
+  --surface: #171b24;
+  --surface-2: #1f2430;
+  --border: rgba(255,255,255,0.08);
+  --border-light: rgba(255,255,255,0.05);
+  --primary: #6d6dff;
+  --primary-dark: #5757e8;
+  --primary-light: rgba(109,109,255,0.16);
+  --accent: #818cf8;
+  --success: #34d399;
+  --success-light: rgba(52,211,153,0.16);
+  --warning: #fbbf24;
+  --warning-light: rgba(251,191,36,0.16);
+  --danger: #f87171;
+  --danger-light: rgba(248,113,113,0.16);
+  --info: #60a5fa;
+  --info-light: rgba(96,165,250,0.16);
+  --text-primary: #e6e8f0;
+  --text-secondary: #a3a8bd;
+  --text-muted: #6f7488;
+  --text-inverse: #0f1219;
+  --neu-light: #1f2430;
+  --neu-dark: #0b0e14;
+  --shadow-sm: 3px 3px 6px #0b0e14, -3px -3px 6px #1f2430;
+  --shadow: 6px 6px 12px #0b0e14, -6px -6px 12px #1f2430;
+  --shadow-md: 8px 8px 16px #090c11, -8px -8px 16px #1f2430;
+  --shadow-lg: 12px 12px 24px #07090d, -12px -12px 24px #1f2430;
+  --shadow-inset: inset 4px 4px 8px #0b0e14, inset -4px -4px 8px #1f2430;
+  --scrollbar-thumb: #2f3645;
+  --scrollbar-thumb-hover: #3d4556;
+  --skeleton-base: #1f2430;
+  --skeleton-shine: #272d3b;
+  color-scheme: dark;
 }
 
 html {
@@ -93,12 +140,12 @@ img {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-::webkit-scrollbar-thumb {
-  background: #D1D5DB;
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
   border-radius: 10px;
 }
-::webkit-scrollbar-thumb:hover {
-  background: #9CA3AF;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Utility classes */
@@ -405,7 +452,7 @@ img {
 
 /* Loading skeleton */
 .skeleton {
-  background: linear-gradient(90deg, #dddfe6 25%, #e8eaf0 50%, #dddfe6 75%);
+  background: linear-gradient(90deg, var(--skeleton-shine) 25%, var(--skeleton-base) 50%, var(--skeleton-shine) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;
   border-radius: var(--radius-sm);
@@ -999,11 +1046,11 @@ tr:hover td {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #e8eaf0;
-  box-shadow: 4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff;
+  background: var(--sidebar-bg);
+  box-shadow: var(--shadow-sm);
   align-items: center;
   justify-content: center;
-  color: #6b6b8a;
+  color: var(--text-secondary);
   cursor: pointer;
   border: none;
   flex-shrink: 0;
@@ -1012,11 +1059,11 @@ tr:hover td {
 
 .sidebar-toggle-btn:hover {
   color: var(--primary);
-  box-shadow: 2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff;
+  box-shadow: var(--shadow);
 }
 
 .sidebar-toggle-btn:active {
-  box-shadow: inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff;
+  box-shadow: var(--shadow-inset);
 }
 
 /* Drawer overlays on mobile */
