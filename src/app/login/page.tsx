@@ -14,6 +14,16 @@ function PoliciesDropdown({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const openMenu = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current)
+    setIsOpen(true)
+  }
+
+  const scheduleClose = () => {
+    closeTimer.current = setTimeout(() => setIsOpen(false), 150)
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -22,7 +32,10 @@ function PoliciesDropdown({
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      if (closeTimer.current) clearTimeout(closeTimer.current)
+    }
   }, [])
 
   return (
@@ -30,8 +43,8 @@ function PoliciesDropdown({
       ref={dropdownRef} 
       className="policies-dropdown-container" 
       style={{ position: 'relative', display: 'inline-block' }}
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
+      onMouseEnter={openMenu}
+      onMouseLeave={scheduleClose}
     >
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -608,6 +621,13 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
         Log in or create a new account with Google
       </p>
 
+      <div style={{
+        background: '#F3F4F6',
+        borderRadius: '20px',
+        padding: '12px',
+        border: '1px solid rgba(0,0,0,0.06)',
+        marginBottom: '4px',
+      }}>
       <div style={{ position: 'relative' }}>
         {/* GSI hidden overlay — web only; the native plugin handles clicks inside Capacitor */}
         {!isCapacitor && (
@@ -677,6 +697,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
             </>
           )}
         </button>
+      </div>
       </div>
 
       {/* APK quick-login fallback — visible only inside Capacitor, gated server-side by STUDENT_QUICK_LOGIN_EMAIL */}

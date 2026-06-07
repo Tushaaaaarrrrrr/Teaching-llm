@@ -64,6 +64,29 @@ export default function CapacitorBridge() {
 
       // Early global push listeners to capture cold boots & foreground alerts
       console.log('[CapacitorBridge] Registering persistent PushNotification listeners...')
+
+      // 🔑 Token refresh listener — FCM periodically rotates device tokens.
+      // If we don't catch this, the old token stays in DB and notifications fail silently.
+      const registrationHandle = await PushNotifications.addListener('registration', async (token) => {
+        console.log('[CapacitorBridge] FCM token (re)issued:', token.value)
+        try {
+          const saved = localStorage.getItem('last_fcm_token')
+          if (saved === token.value) {
+            console.log('[CapacitorBridge] Token unchanged — skipping re-registration')
+            return
+          }
+          await fetch('/api/fcm/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token.value, platform: 'ANDROID' }),
+          })
+          localStorage.setItem('last_fcm_token', token.value)
+          console.log('[CapacitorBridge] FCM token refreshed & saved to backend')
+        } catch (err) {
+          console.error('[CapacitorBridge] Failed to refresh FCM token:', err)
+        }
+      })
+
       const receivedHandle = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
         console.log('[CapacitorBridge] "pushNotificationReceived" listener fired in foreground:', JSON.stringify(notification))
       })
@@ -93,6 +116,7 @@ export default function CapacitorBridge() {
       cleanup = () => {
         backHandle.remove()
         stateHandle.remove()
+        registrationHandle.remove()
         receivedHandle.remove()
         actionHandle.remove()
       }

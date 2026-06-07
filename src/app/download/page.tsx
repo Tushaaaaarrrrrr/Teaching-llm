@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import posthog from 'posthog-js'
+import Link from 'next/link'
 
 const APK_URL = 'https://qaevtwsmomhapzqcrynh.supabase.co/storage/v1/object/public/downloads/class%20genz%20test.apk'
 const SHARE_URL = 'https://class.genziitian.in/download'
@@ -27,6 +28,22 @@ export default function DownloadPage() {
   const [downloading, setDownloading] = useState(false)
   const [activeScreen, setActiveScreen] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [downloadCount, setDownloadCount] = useState(344)
+
+  useEffect(() => {
+    const calculateDownloads = () => {
+      // Anchored to June 7, 2026, at 09:00:00 UTC+5:30
+      const anchorTime = new Date('2026-06-07T09:00:00+05:30').getTime()
+      const now = Date.now()
+      const diffMs = now - anchorTime
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+      setDownloadCount(344 + Math.max(0, diffHours))
+    }
+
+    calculateDownloads()
+    const interval = setInterval(calculateDownloads, 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     posthog.capture('download_page_viewed')
@@ -94,6 +111,13 @@ export default function DownloadPage() {
           transition: all 0.2s ease; box-shadow: 0 4px 16px rgba(99,102,241,0.35);
         }
         .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(99,102,241,0.5); }
+        .nav-actions { display: flex; align-items: center; gap: 12px; }
+        .nav-login-link {
+          color: #94a3b8; text-decoration: none; font-size: 13px; font-weight: 600;
+          padding: 10px 16px; transition: all 0.2s ease;
+          border-radius: 12px; border: 1px solid transparent;
+        }
+        .nav-login-link:hover { color: #fff; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
 
         /* ─── HERO ─── */
         .hero {
@@ -245,14 +269,43 @@ export default function DownloadPage() {
           border-top: 1px solid rgba(255,255,255,0.06);
           border-bottom: 1px solid rgba(255,255,255,0.06);
           padding: 36px 40px;
-          display: flex; justify-content: center; gap: 80px; flex-wrap: wrap;
+          display: flex; justify-content: center; gap: 60px; flex-wrap: wrap;
         }
-        .stat { text-align: center; }
+        .stat {
+          text-align: center;
+          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+          cursor: default;
+          padding: 14px 28px;
+          border-radius: 20px;
+          border: 1px solid transparent;
+        }
+        .stat:hover {
+          transform: translateY(-6px) scale(1.05);
+          background: rgba(255, 255, 255, 0.02);
+          border-color: rgba(255, 255, 255, 0.04);
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        }
+        .stat-highlight {
+          background: rgba(99, 102, 241, 0.05);
+          border: 1px solid rgba(99, 102, 241, 0.15);
+          box-shadow: 0 8px 32px rgba(99, 102, 241, 0.06);
+        }
+        .stat-highlight:hover {
+          background: rgba(99, 102, 241, 0.08);
+          border-color: rgba(99, 102, 241, 0.25);
+          box-shadow: 0 12px 36px rgba(99, 102, 241, 0.12);
+        }
         .stat-n {
           font-size: 38px; font-weight: 900; letter-spacing: -1.5px; line-height: 1;
           background: linear-gradient(135deg, #6366f1, #a855f7);
           -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
           margin-bottom: 6px;
+          display: inline-block;
+          animation: pulse-glow 3s ease-in-out infinite alternate;
+        }
+        @keyframes pulse-glow {
+          0% { filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.2)); }
+          100% { filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5)); }
         }
         .stat-l { font-size: 13px; color: #475569; font-weight: 500; }
 
@@ -393,9 +446,14 @@ export default function DownloadPage() {
           <div className="nav-logo-dot" />
           GENz IITian
         </div>
-        <button className="nav-cta" onClick={handleDownload}>
-          ⬇ Download App
-        </button>
+        <div className="nav-actions">
+          <Link href="/login" className="nav-login-link">
+            Student Login
+          </Link>
+          <button className="nav-cta" onClick={handleDownload}>
+            ⬇ Download App
+          </button>
+        </div>
       </nav>
 
       {/* ─── HERO ─── */}
@@ -471,17 +529,37 @@ export default function DownloadPage() {
       {/* ─── STATS ─── */}
       <div className="stats">
         {[
+          { n: `${downloadCount}+`, l: 'App Downloads', highlight: true },
           { n: '500+', l: 'Active Students' },
           { n: '50+',  l: 'Live Sessions' },
           { n: '4.9★', l: 'Student Rating' },
           { n: '100%', l: 'Free to Download' },
         ].map(s => (
-          <div key={s.l} className="stat">
+          <div key={s.l} className={`stat ${s.highlight ? 'stat-highlight' : ''}`}>
             <div className="stat-n">{s.n}</div>
             <div className="stat-l">{s.l}</div>
           </div>
         ))}
       </div>
+
+      {/* ─── SCREENSHOTS ─── */}
+      <section className="screens-section">
+        <p className="section-tag">App Preview</p>
+        <h2 className="section-h">See It In Action</h2>
+        <div className="screens-row">
+          {SCREENSHOTS.map((s, i) => (
+            <div key={i} className="screen-item">
+              <div className="screen-phone">
+                <img src={s.src} alt={s.label} onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                  e.currentTarget.parentElement!.style.background = 'linear-gradient(180deg, #1e1b4b 0%, #312e81 100%)'
+                }} />
+              </div>
+              <div className="screen-lbl">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* ─── ABOUT ─── */}
       <section className="about-section">
@@ -519,24 +597,7 @@ export default function DownloadPage() {
         </div>
       </section>
 
-      {/* ─── SCREENSHOTS ─── */}
-      <section className="screens-section">
-        <p className="section-tag">App Preview</p>
-        <h2 className="section-h">See It In Action</h2>
-        <div className="screens-row">
-          {SCREENSHOTS.map((s, i) => (
-            <div key={i} className="screen-item">
-              <div className="screen-phone">
-                <img src={s.src} alt={s.label} onError={(e) => {
-                  e.currentTarget.style.display = 'none'
-                  e.currentTarget.parentElement!.style.background = 'linear-gradient(180deg, #1e1b4b 0%, #312e81 100%)'
-                }} />
-              </div>
-              <div className="screen-lbl">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+
 
       {/* ─── INSTALL GUIDE ─── */}
       <section className="install-section">

@@ -477,9 +477,39 @@ export default function LecturePage() {
           {content.videoUrl ? (
             <>
               {isDriveSource(content.videoUrl, content.videoSource) ? (
-                // Drive videos → unified player using HTML5 engine on top of our auth-checked proxy
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                  <CustomVideoPlayer source={{ type: 'html5', src: getProxyStreamUrl(params.lectureId as string) }} />
+                // On mobile, Google Drive videos play in a dedicated fullscreen player to avoid double controls
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  background: 'linear-gradient(135deg, #1e1b4b, #0f172a)',
+                  color: '#fff', textAlign: 'center', padding: '20px'
+                }}>
+                  <div style={{
+                    width: '56px', height: '56px', borderRadius: '50%',
+                    background: 'rgba(255, 255, 255, 0.12)', backdropFilter: 'blur(8px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: '12px', border: '1px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
+                  }}>
+                    <Play size={24} color="#fff" fill="#fff" style={{ marginLeft: '3px' }} />
+                  </div>
+                  <h4 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>Google Drive Video</h4>
+                  <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '16px', maxWidth: '240px' }}>
+                    This video is hosted on Google Drive. Click below to play it in a dedicated immersive player.
+                  </p>
+                  <button
+                    onClick={() => router.push(`/courses/${params.id}/lectures/${params.lectureId}/play`)}
+                    style={{
+                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                      color: 'white', border: 'none', borderRadius: '30px',
+                      padding: '8px 20px', fontSize: '13px', fontWeight: '700',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
+                    }}
+                  >
+                    Click here to play the video
+                    <ExternalLink size={12} />
+                  </button>
                 </div>
               ) : (content.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content.videoUrl || '')) && extractYouTubeId(content.videoUrl) ? (
                 // YouTube → unified player using IFrame API engine
