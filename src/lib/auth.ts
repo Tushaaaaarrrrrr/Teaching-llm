@@ -49,6 +49,24 @@ export function verifyToken(token: string): JWTPayload | null {
   }
 }
 
+export interface StreamTokenPayload {
+  userId: string
+  lectureId: string
+  role: string
+}
+
+export function signStreamToken(userId: string, lectureId: string, role: string): string {
+  return jwt.sign({ userId, lectureId, role }, getJwtSecret(), { expiresIn: '4h' })
+}
+
+export function verifyStreamToken(token: string): StreamTokenPayload | null {
+  try {
+    return jwt.verify(token, getJwtSecret()) as StreamTokenPayload
+  } catch (err) {
+    return null
+  }
+}
+
 
 
 export async function getSession(): Promise<JWTPayload | null> {

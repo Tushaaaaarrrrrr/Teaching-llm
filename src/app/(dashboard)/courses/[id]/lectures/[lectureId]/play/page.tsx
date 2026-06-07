@@ -29,6 +29,9 @@ export default function PlayDriveVideoPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
+  const [streamToken, setStreamToken] = useState<string | null>(null)
+  const [tokenLoading, setTokenLoading] = useState(false)
+  const [tokenError, setTokenError] = useState<string | null>(null)
 
   useEffect(() => {
     setIsMobile(window.innerWidth <= 768)
@@ -36,6 +39,33 @@ export default function PlayDriveVideoPage() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  useEffect(() => {
+    if (!content || !isMobile) return
+    if (content.videoSource !== 'GOOGLE_DRIVE') return
+
+    const fetchToken = async () => {
+      setTokenLoading(true)
+      setTokenError(null)
+      try {
+        const res = await fetch(`/api/auth/stream-token?lectureId=${params.lectureId}`)
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}))
+          setTokenError(errData.error || 'Failed to authenticate video stream')
+          return
+        }
+        const data = await res.json()
+        setStreamToken(data.token)
+      } catch (err) {
+        console.error('Error fetching stream token:', err)
+        setTokenError('Network error while authenticating stream')
+      } finally {
+        setTokenLoading(false)
+      }
+    }
+
+    fetchToken()
+  }, [content, isMobile, params.lectureId])
 
   const fetchData = useCallback(async () => {
     try {
@@ -71,19 +101,21 @@ export default function PlayDriveVideoPage() {
     return u
   }
 
-  if (loading) {
+  if (loading || (isMobile && content?.videoSource === 'GOOGLE_DRIVE' && tokenLoading)) {
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         minHeight: '100vh', background: '#090d16', color: '#fff', gap: '16px'
       }}>
         <Loader2 className="animate-spin" size={36} color="#6366f1" />
-        <span style={{ fontSize: '15px', color: '#94a3b8', fontWeight: '500' }}>Loading player...</span>
+        <span style={{ fontSize: '15px', color: '#94a3b8', fontWeight: '500' }}>
+          {tokenLoading ? 'Authenticating secure player...' : 'Loading player...'}
+        </span>
       </div>
     )
   }
 
-  if (error || !content) {
+  if (error || tokenError || !content) {
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -92,7 +124,7 @@ export default function PlayDriveVideoPage() {
         <AlertCircle size={48} color="#ef4444" />
         <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Error Loading Video</h3>
         <p style={{ fontSize: '14px', color: '#94a3b8', maxWidth: '300px' }}>
-          {error || "We couldn't retrieve the video content."}
+          {error || tokenError || "We couldn't retrieve the video content."}
         </p>
         <button
           onClick={() => router.back()}
@@ -153,9 +185,9 @@ export default function PlayDriveVideoPage() {
         flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: '#000', width: '100%'
       }}>
-        {isMobile ? (
+        {isMobile && content.videoSource === 'GOOGLE_DRIVE' && streamToken ? (
           <div style={{ width: '100%', maxWidth: '100%', position: 'relative' }}>
-            <CustomVideoPlayer source={{ type: 'html5', src: `/api/drive-stream/${params.lectureId}` }} />
+            <CustomVideoPlayer source={{ type: 'html5', src: `/api/drive-stream/${params.lectureId}?token=${streamToken}` }} />
           </div>
         ) : embedUrl ? (
           <iframe

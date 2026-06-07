@@ -30,6 +30,14 @@ function getSessionToken(request: NextRequest): string | undefined {
   if (authHeader?.startsWith('Bearer ')) {
     return authHeader.substring(7)
   }
+
+  // Also check query param token for drive-stream requests
+  const pathname = request.nextUrl.pathname
+  if (pathname.startsWith('/api/drive-stream/')) {
+    const queryToken = request.nextUrl.searchParams.get('token')
+    if (queryToken) return queryToken
+  }
+
   return undefined
 }
 
