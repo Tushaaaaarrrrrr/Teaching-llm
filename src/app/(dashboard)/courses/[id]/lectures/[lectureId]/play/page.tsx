@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ChevronLeft, Loader2, AlertCircle } from 'lucide-react'
-import CustomVideoPlayer from '@/components/courses/CustomVideoPlayer'
 
 interface ContentItem {
   id: string
@@ -28,20 +27,28 @@ export default function PlayDriveVideoPage() {
   const [content, setContent] = useState<ContentItem | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
+  const [isNativeApp, setIsNativeApp] = useState(false)
   const [streamToken, setStreamToken] = useState<string | null>(null)
   const [tokenLoading, setTokenLoading] = useState(false)
   const [tokenError, setTokenError] = useState<string | null>(null)
 
   useEffect(() => {
-    setIsMobile(window.innerWidth <= 768)
-    const handleResize = () => setIsMobile(window.innerWidth <= 768)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    const detectNativeApp = () => {
+      const w = window as any
+      setIsNativeApp(
+        document.documentElement.classList.contains('is-native') ||
+        Boolean(w.Capacitor?.isNativePlatform?.() || w.Capacitor?.isNative)
+      )
+    }
+
+    detectNativeApp()
+    const observer = new MutationObserver(detectNativeApp)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
   }, [])
 
   useEffect(() => {
-    if (!content || !isMobile) return
+    if (!content || !isNativeApp) return
     if (content.videoSource !== 'GOOGLE_DRIVE') return
 
     const fetchToken = async () => {
@@ -65,7 +72,7 @@ export default function PlayDriveVideoPage() {
     }
 
     fetchToken()
-  }, [content, isMobile, params.lectureId])
+  }, [content, isNativeApp, params.lectureId])
 
   const fetchData = useCallback(async () => {
     try {
@@ -101,7 +108,7 @@ export default function PlayDriveVideoPage() {
     return u
   }
 
-  if (loading || (isMobile && content?.videoSource === 'GOOGLE_DRIVE' && tokenLoading)) {
+  if (loading || (isNativeApp && content?.videoSource === 'GOOGLE_DRIVE' && tokenLoading)) {
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -146,7 +153,7 @@ export default function PlayDriveVideoPage() {
       display: 'flex', flexDirection: 'column',
       height: '100vh', background: '#000', color: '#fff',
       paddingTop: 'env(safe-area-inset-top, 0px)',
-      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
       overflow: 'hidden'
     }}>
       {/* Top Header Row */}
@@ -183,12 +190,19 @@ export default function PlayDriveVideoPage() {
       {/* Main Video Area */}
       <div style={{
         flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#000', width: '100%'
+        background: '#000', width: '100%', minHeight: 0
       }}>
-        {isMobile && content.videoSource === 'GOOGLE_DRIVE' && streamToken ? (
-          <div style={{ width: '100%', maxWidth: '100%', position: 'relative' }}>
-            <CustomVideoPlayer source={{ type: 'html5', src: `/api/drive-stream/${params.lectureId}?token=${streamToken}` }} />
-          </div>
+        {isNativeApp && content.videoSource === 'GOOGLE_DRIVE' && streamToken ? (
+          <video
+            src={`/api/drive-stream/${params.lectureId}?token=${streamToken}`}
+            controls
+            autoPlay
+            playsInline
+            preload="metadata"
+            controlsList="nodownload"
+            onContextMenu={e => e.preventDefault()}
+            style={{ width: '100%', height: '100%', background: '#000', objectFit: 'contain' }}
+          />
         ) : embedUrl ? (
           <iframe
             src={embedUrl}

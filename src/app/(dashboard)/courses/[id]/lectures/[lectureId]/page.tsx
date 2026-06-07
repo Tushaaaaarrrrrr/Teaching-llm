@@ -65,9 +65,9 @@ export default function LecturePage() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const commentInputRef = useRef<HTMLTextAreaElement>(null)
   const videoIframeRef = useRef<HTMLIFrameElement>(null)
-  const videoElementRef = useRef<HTMLVideoElement>(null)
   const videoWrapperRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
+  const [isNativeApp, setIsNativeApp] = useState(false)
   const [activeTab, setActiveTab] = useState<'info' | 'qa'>('info')
 
   useEffect(() => {
@@ -77,82 +77,26 @@ export default function LecturePage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Auto-unlock orientation when exiting fullscreen so portrait UI returns cleanly
   useEffect(() => {
-    const onFsChange = () => {
-      const isFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement)
-      if (!isFs) {
-        try { (screen.orientation as any)?.unlock?.() } catch {}
-      }
+    const detectNativeApp = () => {
+      const w = window as any
+      setIsNativeApp(
+        document.documentElement.classList.contains('is-native') ||
+        Boolean(w.Capacitor?.isNativePlatform?.() || w.Capacitor?.isNative)
+      )
     }
-    document.addEventListener('fullscreenchange', onFsChange)
-    document.addEventListener('webkitfullscreenchange', onFsChange as any)
-    return () => {
-      document.removeEventListener('fullscreenchange', onFsChange)
-      document.removeEventListener('webkitfullscreenchange', onFsChange as any)
-    }
+
+    detectNativeApp()
+    const observer = new MutationObserver(detectNativeApp)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
   }, [])
 
-  async function requestFs(el: any): Promise<boolean> {
-    if (!el) return false
-    try {
-      if (el.requestFullscreen) { await el.requestFullscreen({ navigationUI: 'hide' } as any); return true }
-      if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); return true }
-      if (el.webkitEnterFullscreen) { el.webkitEnterFullscreen(); return true }   // iOS Safari <video>
-      if (el.mozRequestFullScreen) { el.mozRequestFullScreen(); return true }
-      if (el.msRequestFullscreen) { el.msRequestFullscreen(); return true }
-    } catch (e) { console.warn('Fullscreen attempt failed', e) }
-    return false
-  }
-
-  async function enterFullscreenLandscape() {
-    // Open our in-app overlay first (keeps the user inside the app/WebView).
-    // The overlay's <video> autoplays at the current time and then we attempt
-    // the browser fullscreen API on top — but if FS API fails (common in
-    // Capacitor WebView), the overlay alone is the experience.
-    setOverlayOpen(true)
-    try { await (screen.orientation as any)?.lock?.('landscape') } catch {}
-  }
-
-  // Route Drive videos through our proxy so they actually play (and can't be leaked).
-  // YouTube keeps using iframe — embeds work fine and the URL is public-by-design.
   function isDriveSource(url: string | undefined, source: string | undefined) {
     if (source === 'GOOGLE_DRIVE') return true
     if (!url) return false
     return /drive\.google\.com|docs\.google\.com/i.test(url)
   }
-  function getProxyStreamUrl(lectureId: string | undefined) {
-    if (!lectureId) return ''
-    return `/api/drive-stream/${lectureId}`
-  }
-
-  // In-app fullscreen overlay (kept inside the WebView; no external browser tab)
-  const [overlayOpen, setOverlayOpen] = useState(false)
-  // If the native <video> can't decode the Drive proxy bytes, fall back to the iframe
-  const [videoErrored, setVideoErrored] = useState(false)
-  // Track the actual HTTP status from the proxy so we can show a useful diagnostic
-  const [streamDiagnostic, setStreamDiagnostic] = useState<string | null>(null)
-
-  // When the native <video> errors, probe the proxy to learn WHY (auth? Drive disabled? not shared?)
-  useEffect(() => {
-    if (!videoErrored || !content?.videoUrl || content?.videoSource !== 'GOOGLE_DRIVE') return
-    let cancelled = false
-    fetch(getProxyStreamUrl(params.lectureId as string), { method: 'HEAD' })
-      .then(async res => {
-        if (cancelled) return
-        if (res.ok) { setStreamDiagnostic(null); return } // probably codec/transient — iframe fallback is fine
-        let msg = `Proxy returned ${res.status}`
-        try {
-          const r2 = await fetch(getProxyStreamUrl(params.lectureId as string))
-          const data = await r2.json().catch(() => null)
-          if (data?.error) msg = data.error
-        } catch {}
-        setStreamDiagnostic(msg)
-      })
-      .catch(() => setStreamDiagnostic('Could not reach the streaming endpoint'))
-    return () => { cancelled = true }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoErrored, content?.videoUrl, content?.videoSource])
 
   const fetchData = useCallback(async () => {
     try {
@@ -476,8 +420,8 @@ export default function LecturePage() {
         >
           {content.videoUrl ? (
             <>
-              {isDriveSource(content.videoUrl, content.videoSource) ? (
-                // Simplified click-to-play mobile overlay
+              {isDriveSource(content.videoUrl, content.videoSource) && isNativeApp ? (
+                // App-only: Drive videos use our backend proxy player inside the WebView.
                 <div 
                   onClick={() => router.push(`/courses/${params.id}/lectures/${params.lectureId}/play`)}
                   style={{
@@ -510,6 +454,17 @@ export default function LecturePage() {
                     <ExternalLink size={14} color="#a5b4fc" />
                   </span>
                 </div>
+              ) : isDriveSource(content.videoUrl, content.videoSource) ? (
+                // Website/mobile browser: keep Google Drive's native iframe player.
+                <iframe
+                  ref={videoIframeRef}
+                  src={getEmbedUrl(content.videoUrl, content.videoSource)}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  scrolling="no"
+                  onContextMenu={e => e.preventDefault()}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', overflow: 'hidden', background: '#000' }}
+                />
               ) : (content.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content.videoUrl || '')) && extractYouTubeId(content.videoUrl) ? (
                 // YouTube → unified player using IFrame API engine
                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
@@ -542,29 +497,6 @@ export default function LecturePage() {
             </div>
           )}
         </div>
-
-        {/* Diagnostic when the secure stream is failing — tells you what to fix. Friendly, not alarming, since the iframe-fallback is likely already showing the video. */}
-        {videoErrored && streamDiagnostic && (
-          <details style={{
-            padding: '10px 14px',
-            borderRadius: '14px',
-            background: 'rgba(245, 158, 11, 0.08)',
-            border: '1px solid rgba(245, 158, 11, 0.22)',
-            marginBottom: '12px',
-            fontSize: '12px',
-            color: '#92400e',
-          }}>
-            <summary style={{ cursor: 'pointer', fontWeight: 800, color: '#92400e', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              Using fallback player — tap for details
-            </summary>
-            <div style={{ marginTop: '8px', fontSize: '11.5px', fontWeight: 600, lineHeight: 1.6, color: '#7c2d12', wordBreak: 'break-word' }}>
-              {/cannotDownloadFile|download by the user/i.test(streamDiagnostic)
-                ? 'The Drive file has download disabled. In Drive: right-click the file → File information → "Disable options to download, print, and copy" → turn OFF. Then refresh.'
-                : streamDiagnostic}
-            </div>
-          </details>
-        )}
 
         {/* Mobile lecture meta block — appears UNDER the video like inspiration */}
         <div style={{ padding: '0 4px', marginBottom: '18px' }}>
@@ -1000,66 +932,6 @@ export default function LecturePage() {
         </div>
       )}
 
-      {/* ───────── In-app fullscreen overlay ─────────
-          Kept inside the WebView (no external browser). Black background,
-          close button, safe-area padding so native controls aren't hidden
-          behind Android status bar or nav bar in landscape. */}
-      {overlayOpen && content?.videoUrl && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, zIndex: 10000,
-            background: '#000',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            paddingTop: 'env(safe-area-inset-top, 0px)',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            paddingLeft: 'env(safe-area-inset-left, 0px)',
-            paddingRight: 'env(safe-area-inset-right, 0px)',
-          }}
-        >
-          <button
-            onClick={async () => {
-              setOverlayOpen(false)
-              try { (screen.orientation as any)?.unlock?.() } catch {}
-            }}
-            aria-label="Close fullscreen"
-            style={{
-              position: 'absolute',
-              top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
-              right: 'calc(env(safe-area-inset-right, 0px) + 12px)',
-              width: '40px', height: '40px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.20)',
-              backdropFilter: 'blur(8px)', cursor: 'pointer', color: '#ffffff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              zIndex: 10001,
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}>
-            {isDriveSource(content.videoUrl, content.videoSource) && !videoErrored ? (
-              <video
-                src={getProxyStreamUrl(params.lectureId as string)}
-                controls
-                autoPlay
-                playsInline
-                preload="auto"
-                controlsList="nodownload"
-                onContextMenu={e => e.preventDefault()}
-                onError={() => setVideoErrored(true)}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
-              />
-            ) : (
-              <iframe
-                src={getEmbedUrl(content.videoUrl, content.videoSource)}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                allowFullScreen
-                style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
-              />
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
