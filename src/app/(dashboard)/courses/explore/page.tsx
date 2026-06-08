@@ -2466,7 +2466,7 @@ export default function ExploreCoursesPage() {
             animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
+            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, var(--surface-2), var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
               <button onClick={() => setShowBatchComparisonModal(false)} style={{ position: 'absolute', top: '25px', right: '30px', background: 'var(--surface)', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <X size={20} />
               </button>
@@ -2506,7 +2506,7 @@ export default function ExploreCoursesPage() {
             </div>
 
             <div style={{ padding: '0 40px 40px', textAlign: 'center' }}>
-              <button onClick={() => setShowBatchComparisonModal(false)} style={{ background: 'var(--text-primary)', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+              <button onClick={() => setShowBatchComparisonModal(false)} style={{ background: 'var(--primary)', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 Got it, thanks!
               </button>
             </div>
@@ -3583,7 +3583,7 @@ export default function ExploreCoursesPage() {
             animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div style={{ padding: 'clamp(20px, 5vw, 30px) clamp(20px, 5vw, 40px)', background: 'linear-gradient(135deg, #f8fafc, var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
+            <div style={{ padding: 'clamp(20px, 5vw, 30px) clamp(20px, 5vw, 40px)', background: 'linear-gradient(135deg, var(--surface-2), var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
               <button onClick={() => setInfoModalOffering(null)} style={{ position: 'absolute', top: '18px', right: '18px', background: 'var(--surface)', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <X size={20} />
               </button>
@@ -3632,7 +3632,7 @@ export default function ExploreCoursesPage() {
             </div>
 
             <div style={{ padding: '0 40px 40px', textAlign: 'center' }}>
-              <button onClick={() => setInfoModalOffering(null)} style={{ background: 'var(--text-primary)', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+              <button onClick={() => setInfoModalOffering(null)} style={{ background: 'var(--primary)', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 Got it, thanks!
               </button>
             </div>

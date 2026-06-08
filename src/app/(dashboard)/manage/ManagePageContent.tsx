@@ -1309,7 +1309,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               }
             }
             .notif-glow-card {
-              background: #ffffff;
+              background: var(--surface);
               border: 1px solid rgba(226, 232, 240, 0.8);
               border-radius: 24px;
               box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
@@ -1326,7 +1326,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             .section-title {
               font-size: 18px;
               font-weight: 800;
-              color: #1e1e3a;
+              color: var(--text-primary);
               display: flex;
               align-items: center;
               gap: 8px;
@@ -1343,7 +1343,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             .input-label {
               font-size: 12.5px;
               font-weight: 700;
-              color: #475569;
+              color: var(--text-secondary);
               display: flex;
               align-items: center;
               justify-content: space-between;
@@ -1351,22 +1351,22 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             .char-limit {
               font-size: 10.5px;
               font-weight: 500;
-              color: #94a3b8;
+              color: var(--text-muted);
             }
             .premium-input {
               width: 100%;
               padding: 12px 16px;
               border-radius: 12px;
               border: 1.5px solid var(--border);
-              background: #f8fafc;
+              background: var(--surface-2);
               font-size: 14px;
-              color: #0f172a;
+              color: var(--text-primary);
               transition: all 0.2s ease;
             }
             .premium-input:focus {
               outline: none;
               border-color: #6366f1;
-              background: #ffffff;
+              background: var(--surface);
               box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
             }
             .chip-container {
@@ -1464,21 +1464,21 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             .push-app-name {
               font-size: 10.5px;
               font-weight: 800;
-              color: #1e293b;
+              color: var(--text-primary);
             }
             .push-time {
               font-size: 9.5px;
-              color: #94a3b8;
+              color: var(--text-muted);
             }
             .push-title {
               font-size: 12.5px;
               font-weight: 800;
-              color: #0f172a;
+              color: var(--text-primary);
               margin: 0;
             }
             .push-body {
               font-size: 10.5px;
-              color: #475569;
+              color: var(--text-secondary);
               line-height: 1.35;
               margin: 0;
             }
@@ -1511,7 +1511,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               width: 100%;
             }
             .metric-card {
-              background: #ffffff;
+              background: var(--surface);
               border: 1.5px solid var(--border);
               border-radius: 16px;
               padding: 16px;
@@ -1528,12 +1528,12 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             .metric-label {
               font-size: 11px;
               font-weight: 700;
-              color: #64748b;
+              color: var(--text-secondary);
               text-transform: uppercase;
               letter-spacing: 0.05em;
             }
             .history-item-card {
-              background: #ffffff;
+              background: var(--surface);
               border: 1px solid var(--border);
               border-radius: 18px;
               padding: 18px;

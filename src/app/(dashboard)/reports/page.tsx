@@ -245,7 +245,7 @@ export default function ReportsPage() {
                  <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px' }}>Recent Submissions</h3>
                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {data.recentSubmissions.map((s: any, i: number) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: '#fff', borderRadius: '12px' }}>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--surface)', borderRadius: '12px' }}>
                         <div>
                            <div style={{ fontSize: '14px', fontWeight: 700 }}>{s.student}</div>
                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{s.exam}</div>
@@ -263,7 +263,7 @@ export default function ReportsPage() {
                  <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px' }}>Top Performers</h3>
                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {data.topPerformers.map((p: any, i: number) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: '#fff', borderRadius: '12px' }}>
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--surface)', borderRadius: '12px' }}>
                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px' }}>{i+1}</div>
                          <div style={{ flex: 1 }}>
                             <div style={{ fontSize: '14px', fontWeight: 700 }}>{p.name}</div>
@@ -339,7 +339,7 @@ export default function ReportsPage() {
                    ) : (
                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                        {data.exams.map((ex: any, i: number) => (
-                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#fff', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--surface)', borderRadius: '14px', border: '1px solid var(--border)' }}>
                            <div>
                               <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>{ex.title}</div>
                               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{new Date(ex.date).toLocaleDateString('en-GB')}</div>
@@ -364,7 +364,7 @@ export default function ReportsPage() {
                    <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '24px' }}>Top Performers</h3>
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {(data.topPerformers || []).map((p: any, i: number) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: '#fff', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--surface)', borderRadius: '14px', border: '1px solid var(--border)' }}>
                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '11px' }}>{i+1}</div>
                            <div style={{ flex: 1 }}>
                               <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{p.name}</div>
@@ -404,7 +404,7 @@ export default function ReportsPage() {
                       <div style={{ width: '12px', height: '12px', background: 'var(--success)', borderRadius: '3px' }} /> Present
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <div style={{ width: '12px', height: '12px', background: '#fff', border: '1px solid #c5c7cf', borderRadius: '3px' }} /> Absent
+                      <div style={{ width: '12px', height: '12px', background: 'var(--surface)', border: '1px solid #c5c7cf', borderRadius: '3px' }} /> Absent
                     </div>
                 </div>
               </div>
