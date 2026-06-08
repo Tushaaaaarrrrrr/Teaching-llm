@@ -1216,8 +1216,10 @@ export default function CommunityPage() {
                               borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                               background: selectedMessage?.id === msg.id
                                 ? '#d0e1fd'
-                                : isMe ? '#dcf8c6' : isAdmin ? 'var(--primary-light)' : '#ffffff',
-                              color: 'var(--text-primary)',
+                                : isMe ? '#dcf8c6' : isAdmin ? '#e0e7ff' : '#ffffff',
+                              // Bubbles stay light (WhatsApp-style) in both themes, so text is a
+                              // constant dark — var(--text-primary) would go light and vanish in dark.
+                              color: '#1e1e3a',
                               fontSize: '14px', lineHeight: '1.5',
                               boxShadow: selectedMessage?.id === msg.id
                                 ? '0 0 0 2.5px #3636e8, 0 4px 12px rgba(54,54,232,0.2)'
@@ -1255,7 +1257,7 @@ export default function CommunityPage() {
                                   onMouseEnter={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.1)' : 'rgba(54,54,232,0.08)'}
                                   onMouseLeave={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)'}
                                 >
-                                  <div style={{ fontWeight: '800', color: isAdmin ? 'var(--primary)' : 'var(--text-secondary)', fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
+                                  <div style={{ fontWeight: '800', color: isAdmin ? 'var(--primary)' : '#555', fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
                                     <span>{msg.replyTo.sender.name}</span>
                                   </div>
                                   <div style={{ color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '11.5px', lineHeight: '1.4' }}>
