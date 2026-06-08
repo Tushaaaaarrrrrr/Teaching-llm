@@ -109,6 +109,20 @@
   filter: brightness(0) invert(1);
 }
 
+/* Community chat wallpaper — light doodle by default, dark doodle in dark mode.
+   Save the dark doodle image to public/images/chat-wallpaper-dark.png. The dark
+   base color is a graceful fallback until that asset exists. */
+.chat-wallpaper {
+  background-image: url(/images/chat-wallpaper.png);
+  background-repeat: repeat;
+  background-size: 400px auto;
+  background-position: center top;
+}
+:root[data-theme="dark"] .chat-wallpaper {
+  background-color: #111317;
+  background-image: url(/images/chat-wallpaper-dark.png);
+}
+
 html {
   height: 100%;
   overflow-x: hidden;

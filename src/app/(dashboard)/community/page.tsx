@@ -1107,7 +1107,7 @@ export default function CommunityPage() {
             )}
 
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px', backgroundImage: 'url(/images/chat-wallpaper.png)', backgroundRepeat: 'repeat', backgroundSize: '400px auto', backgroundPosition: 'center top' }}>
+            <div className="chat-wallpaper" style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {messages.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.4 }}>
