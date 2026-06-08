@@ -76,8 +76,8 @@ export default function AnalyticsDashboard() {
   // ─── Shared Styles ─────────────────────────────────────────────────
   const neuCard: React.CSSProperties = {
     borderRadius: '20px',
-    background: '#e8eaf0',
-    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+    background: 'var(--surface-2)',
+    boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)',
     padding: '24px',
   }
 
@@ -183,11 +183,11 @@ export default function AnalyticsDashboard() {
               onClick={() => setRange(key)}
               style={{
                 padding: '8px 18px', borderRadius: '50px', border: 'none',
-                background: range === key ? '#3636e8' : '#e8eaf0',
-                color: range === key ? '#fff' : '#6b6b8a',
+                background: range === key ? '#3636e8' : 'var(--surface-2)',
+                color: range === key ? '#fff' : 'var(--text-secondary)',
                 boxShadow: range === key
                   ? '0 4px 12px rgba(54,54,232,0.3)'
-                  : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                  : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                 fontWeight: 700, fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
               }}
             >
@@ -197,8 +197,8 @@ export default function AnalyticsDashboard() {
         </div>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '10px 20px', borderRadius: '50px', background: '#e8eaf0',
-          boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+          padding: '10px 20px', borderRadius: '50px', background: 'var(--surface-2)',
+          boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.5">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -223,7 +223,7 @@ export default function AnalyticsDashboard() {
               <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {kpi.icon} {kpi.label}
               </div>
-              <div style={{ fontSize: '28px', fontWeight: 900, color: '#1e1e3a', marginTop: '8px' }}>
+              <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '8px' }}>
                 {typeof kpi.value === 'number' ? (
                   Number.isInteger(kpi.value) ? kpi.value.toLocaleString() : kpi.value.toFixed(2)
                 ) : '—'}
@@ -235,7 +235,7 @@ export default function AnalyticsDashboard() {
 
       {/* ─── Enrollment Trend (Area Chart) ──────────────────────────── */}
       <div style={neuCard}>
-        <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>
           📈 Enrollment Trend ({RANGE_LABELS[range]})
         </h3>
         {trendData.length === 0 ? (
@@ -272,7 +272,7 @@ export default function AnalyticsDashboard() {
 
         {/* Top 7 Courses (Bar Chart) */}
         <div style={neuCard}>
-          <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>
             🏆 Top Courses
           </h3>
           {topCourses.length === 0 ? (
@@ -289,7 +289,7 @@ export default function AnalyticsDashboard() {
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#dddfe6" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#9999b0' }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 11, fill: '#6b6b8a', fontWeight: 600 }} tickLine={false} axisLine={false} />
+                <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 11, fill: '#9999b0', fontWeight: 600 }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="Students" radius={[0, 6, 6, 0]} barSize={20}>
                   {topCourses.map((_: any, i: number) => (
@@ -303,7 +303,7 @@ export default function AnalyticsDashboard() {
 
         {/* Course Distribution (Pie Chart) */}
         <div style={neuCard}>
-          <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>
             🍩 Course Distribution
           </h3>
           {pieData.length === 0 ? (
@@ -337,7 +337,7 @@ export default function AnalyticsDashboard() {
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
                       {c.name}
                     </span>
-                    <span style={{ fontWeight: 800, color: '#1e1e3a' }}>{c.count}</span>
+                    <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{c.count}</span>
                     <span style={{ color: '#9999b0', fontSize: '11px' }}>
                       ({((c.count / totalPieEnrollments) * 100).toFixed(1)}%)
                     </span>
@@ -356,7 +356,7 @@ export default function AnalyticsDashboard() {
         {/* Section heading */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', margin: 0 }}>👥 Audience Demographics</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>👥 Audience Demographics</h2>
             <p style={{ fontSize: '12px', color: '#9999b0', marginTop: '4px', fontWeight: 600 }}>Based on profile data from all active students</p>
           </div>
           {!demographics && (
@@ -371,7 +371,7 @@ export default function AnalyticsDashboard() {
 
           {/* ── Gender Card ── */}
           <div style={neuCard}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>⚧ Gender Split</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>⚧ Gender Split</h3>
             {!demographics || genderData.length === 0 ? (
               <div style={{ padding: '40px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No data yet</div>
             ) : (
@@ -384,7 +384,7 @@ export default function AnalyticsDashboard() {
                   return (
                     <div key={key}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e1e3a' }}>{cfg.icon} {key.charAt(0) + key.slice(1).toLowerCase()}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{cfg.icon} {key.charAt(0) + key.slice(1).toLowerCase()}</span>
                         <span style={{ fontSize: '13px', fontWeight: 800, color: cfg.color }}>{count} <span style={{ fontSize: '11px', color: '#9999b0', fontWeight: 600 }}>({pct}%)</span></span>
                       </div>
                       <div style={{ height: '8px', borderRadius: '4px', background: '#e0e3ea', overflow: 'hidden' }}>
@@ -399,7 +399,7 @@ export default function AnalyticsDashboard() {
 
           {/* ── Age Card ── */}
           <div style={neuCard}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>🎂 Age Brackets</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>🎂 Age Brackets</h3>
             {!demographics || ageData.length === 0 ? (
               <div style={{ padding: '40px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No data yet</div>
             ) : (
@@ -409,7 +409,7 @@ export default function AnalyticsDashboard() {
                   return (
                     <div key={a.name}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e1e3a' }}>{a.name}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{a.name}</span>
                         <span style={{ fontSize: '13px', fontWeight: 800, color: AGE_COLORS[i % AGE_COLORS.length] }}>{a.value} <span style={{ fontSize: '11px', color: '#9999b0', fontWeight: 600 }}>({pct}%)</span></span>
                       </div>
                       <div style={{ height: '8px', borderRadius: '4px', background: '#e0e3ea', overflow: 'hidden' }}>
@@ -424,7 +424,7 @@ export default function AnalyticsDashboard() {
 
           {/* ── State Distribution Card ── */}
           <div style={{ ...neuCard, maxHeight: '380px', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: '#1e1e3a', flexShrink: 0 }}>📍 State Distribution</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)', flexShrink: 0 }}>📍 State Distribution</h3>
             {!demographics || stateData.length === 0 ? (
               <div style={{ padding: '40px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No location data yet</div>
             ) : (
@@ -437,9 +437,9 @@ export default function AnalyticsDashboard() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: barColor, flexShrink: 0 }} />
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e1e3a' }}>{s.name}</span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{s.name}</span>
                         </div>
-                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e1e3a' }}>{s.value} <span style={{ color: '#9999b0', fontWeight: 600 }}>({pct}%)</span></span>
+                        <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>{s.value} <span style={{ color: '#9999b0', fontWeight: 600 }}>({pct}%)</span></span>
                       </div>
                       <div style={{ height: '6px', borderRadius: '3px', background: '#e0e3ea', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: '3px', transition: 'width 0.6s ease' }} />
@@ -459,7 +459,7 @@ export default function AnalyticsDashboard() {
 
         {/* Course Growth Table */}
         <div style={neuCard}>
-          <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: '#1e1e3a' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>
             📈 Course Growth
           </h3>
           {courseGrowth.length === 0 ? (
