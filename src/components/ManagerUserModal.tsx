@@ -395,7 +395,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                         padding: '10px', borderRadius: '16px',
                         background: formData.gender === g
-                          ? g === 'MALE' ? 'var(--primary-light)' : g === 'FEMALE' ? '#fce7f3' : '#f3e8ff'
+                          ? g === 'MALE' ? 'var(--primary-light)' : g === 'FEMALE' ? 'rgba(236,72,153,0.16)' : 'rgba(168,85,247,0.16)'
                           : 'var(--surface)',
                         boxShadow: formData.gender === g
                           ? g === 'MALE' ? 'inset 3px 3px 6px rgba(99,102,241,0.18), inset -3px -3px 6px var(--neu-light)'
