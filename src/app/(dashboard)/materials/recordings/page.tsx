@@ -335,7 +335,7 @@ export default function RecordingsPage() {
                     </span>
                   )}
                   {lec.isRecordingOnly && (
-                    <span style={{ fontSize: '12px', color: '#7c3aed', fontWeight: '700' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: '700' }}>
                       Recording only
                     </span>
                   )}

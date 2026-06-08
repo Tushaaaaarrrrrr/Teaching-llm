@@ -627,7 +627,7 @@ export default function CourseEditPage() {
                             }}
                             style={{
                               textAlign: 'left', padding: '12px 14px', borderRadius: '12px', border: 'none',
-                              background: '#f0f2f8', boxShadow: '3px 3px 6px #d1d9e6, -3px -3px 6px var(--neu-light)',
+                              background: 'var(--surface)', boxShadow: '3px 3px 6px #d1d9e6, -3px -3px 6px var(--neu-light)',
                               cursor: 'pointer',
                             }}
                           >
@@ -650,7 +650,7 @@ export default function CourseEditPage() {
                   Material Source Type
                 </label>
                 <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'FILE' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'FILE' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'FILE' ? 'var(--primary-light)' : 'transparent' }}>
                     <input
                       type="radio"
                       name="lectureMaterialSource"
@@ -663,7 +663,7 @@ export default function CourseEditPage() {
                     />
                     <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'FILE' ? '600' : '500', color: 'var(--text-primary)' }}>📄 Upload File</span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'LINK' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'LINK' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'LINK' ? 'var(--primary-light)' : 'transparent' }}>
                     <input
                       type="radio"
                       name="lectureMaterialSource"
@@ -976,7 +976,7 @@ export default function CourseEditPage() {
 
                       <div style={{
                         width: '30px', height: '30px', borderRadius: '8px',
-                        background: item.videoUrl ? '#3636e818' : '#f0f0f5',
+                        background: item.videoUrl ? 'var(--primary-light)' : '#f0f0f5',
                         color: item.videoUrl ? 'var(--primary)' : 'var(--text-muted)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                       }}>

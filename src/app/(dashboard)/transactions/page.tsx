@@ -161,7 +161,7 @@ export default function TransactionsPage() {
               onClick={() => setFilter(f.key)}
               style={{
                 padding: '8px 18px', borderRadius: '20px', fontSize: '13px', fontWeight: '700',
-                border: filter === f.key ? '2px solid #6366f1' : '2px solid #e2e8f0',
+                border: filter === f.key ? '2px solid #6366f1' : '2px solid var(--border)',
                 background: filter === f.key ? 'var(--primary-light)' : 'white',
                 color: filter === f.key ? 'var(--accent)' : 'var(--text-secondary)',
                 cursor: 'pointer', transition: 'all 0.2s',
@@ -184,13 +184,13 @@ export default function TransactionsPage() {
               width: '100%',
               padding: '12px 20px 12px 48px',
               borderRadius: '50px',
-              border: '2px solid #e2e8f0',
+              border: '2px solid var(--border)',
               background: 'var(--surface)',
               fontSize: '14px',
               fontWeight: '600',
               color: 'var(--text-primary)',
               outline: 'none',
-              boxShadow: 'inset 2px 2px 5px #f1f5f9',
+              boxShadow: 'inset 2px 2px 5px var(--border)',
               transition: 'all 0.3s'
             }}
             onFocus={(e) => e.target.style.borderColor = 'var(--accent)'}
@@ -222,7 +222,7 @@ export default function TransactionsPage() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ background: 'var(--surface)', borderBottom: '2px solid #e2e8f0' }}>
+                  <tr style={{ background: 'var(--surface)', borderBottom: '2px solid var(--border)' }}>
                     <th style={{ padding: '14px 20px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Order ID</th>
                     <th style={{ padding: '14px 20px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Student</th>
                     <th style={{ padding: '14px 20px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Course</th>
@@ -233,7 +233,7 @@ export default function TransactionsPage() {
                 </thead>
                 <tbody>
                   {filteredTransactions.map((tx, i) => (
-                    <tr key={tx.id} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#fff' : '#fafbfc' }}>
+                    <tr key={tx.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? '#fff' : '#fafbfc' }}>
                       <td style={{ padding: '14px 20px', fontSize: '13px', fontWeight: '700', color: 'var(--accent)', fontFamily: 'monospace' }}>{tx.orderId}</td>
                       <td style={{ padding: '14px 20px' }}>
                         <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{tx.user.name}</div>

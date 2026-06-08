@@ -99,7 +99,7 @@ export default function HomeCategoryCards() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#ffffff',
               boxShadow: `0 10px 22px -6px ${c.shadow}, 0 4px 6px -2px rgba(15,23,42,0.04)`,
-              border: '3px solid #ffffff',
+              border: '3px solid var(--border)',
               transition: 'transform 0.2s ease',
             }}>
               {c.icon}

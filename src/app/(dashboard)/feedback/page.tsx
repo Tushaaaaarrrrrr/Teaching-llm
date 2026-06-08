@@ -138,7 +138,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
                 flexDirection: 'column',
                 alignItems: 'flex-start',
                 gap: '12px',
-                border: '1px solid #f1f5f9',
+                border: '1px solid var(--border)',
               }}
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -156,7 +156,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
               </p>
 
               {submitted && feedbackObj && (
-                <div style={{ width: '100%', marginTop: '6px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ width: '100%', marginTop: '6px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px', marginBottom: '12px' }}>
                     {[
                       { label: 'Teacher', val: feedbackObj.teacherRating },
@@ -179,7 +179,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
                     ))}
                   </div>
                   {feedbackObj.comment && (
-                    <div style={{ padding: '10px 14px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                    <div style={{ padding: '10px 14px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                       <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0, fontStyle: 'italic' }}>
                         "{feedbackObj.comment}"
                       </p>
@@ -332,7 +332,7 @@ function ManagerFeedbackView() {
               style={{
                 padding: '10px 16px',
                 borderRadius: '12px',
-                border: '1px solid #e2e8f0',
+                border: '1px solid var(--border)',
                 background: 'var(--surface)',
                 fontSize: '14px',
                 color: 'var(--text-primary)',
@@ -355,7 +355,7 @@ function ManagerFeedbackView() {
             style={{
               padding: '10px 16px',
               borderRadius: '12px',
-              border: '1px solid #e2e8f0',
+              border: '1px solid var(--border)',
               background: 'var(--surface)',
               fontSize: '14px',
               outline: 'none',
@@ -373,7 +373,7 @@ function ManagerFeedbackView() {
               borderRadius: '20px',
               padding: '24px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-              border: '1px solid #f1f5f9',
+              border: '1px solid var(--border)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'flex-start' }}>
@@ -383,7 +383,7 @@ function ManagerFeedbackView() {
               </div>
               <div style={{ 
                 background: 'var(--surface)', padding: '6px 14px', borderRadius: '50px', 
-                fontSize: '12px', fontWeight: '700', color: 'var(--primary)', border: '1px solid #e2e8f0' 
+                fontSize: '12px', fontWeight: '700', color: 'var(--primary)', border: '1px solid var(--border)' 
               }}>
                 {f.course.name}
               </div>
@@ -410,7 +410,7 @@ function ManagerFeedbackView() {
             </div>
 
             {f.comment && (
-              <div style={{ padding: '14px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+              <div style={{ padding: '14px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                 <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
                   "{f.comment}"
                 </p>

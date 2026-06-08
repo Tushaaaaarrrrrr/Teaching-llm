@@ -251,7 +251,7 @@ export default function CreateTestSeriesPage() {
                 </label>
               )}
               
-              <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: examType === 'FINAL_TEST' ? '#ef444410' : '#10b98110', borderLeft: `4px solid ${examType === 'FINAL_TEST' ? 'var(--danger)' : 'var(--success)'}` }}>
+              <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: examType === 'FINAL_TEST' ? 'var(--danger-light)' : 'var(--success-light)', borderLeft: `4px solid ${examType === 'FINAL_TEST' ? 'var(--danger)' : 'var(--success)'}` }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 800, color: examType === 'FINAL_TEST' ? 'var(--danger)' : 'var(--success)', marginBottom: '8px' }}>
                   {examType === 'FINAL_TEST' ? 'Final Test Rules' : 'General Test Rules'}
                 </h3>
@@ -323,7 +323,7 @@ export default function CreateTestSeriesPage() {
                 <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>Step 2: Questions</h2>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button type="button" onClick={() => setStep(1)} style={secondaryButton}>Back</button>
-                  <button type="button" onClick={() => { setShowBank(true); fetchBankQuestions(bankSubjectFilter) }} style={{ ...secondaryButton, background: '#3636e815' }}>Browse Content Bank</button>
+                  <button type="button" onClick={() => { setShowBank(true); fetchBankQuestions(bankSubjectFilter) }} style={{ ...secondaryButton, background: 'var(--primary-light)' }}>Browse Content Bank</button>
                   <button type="button" onClick={handleAddQuestion} style={secondaryButton}>+ Add Question</button>
                 </div>
               </div>
@@ -343,7 +343,7 @@ export default function CreateTestSeriesPage() {
                            )}
                          </p>
                        </div>
-                       <button onClick={() => setShowBank(false)} style={{ background: '#ef444410', border: 'none', color: 'var(--danger)', padding: '8px 16px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>Close Bank</button>
+                       <button onClick={() => setShowBank(false)} style={{ background: 'var(--danger-light)', border: 'none', color: 'var(--danger)', padding: '8px 16px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>Close Bank</button>
                     </div>
 
                     <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
@@ -374,7 +374,7 @@ export default function CreateTestSeriesPage() {
                          <div key={q.id} style={{ padding: '20px', background: 'rgba(255,255,255,0.4)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
                             <div style={{ flex: 1 }}>
                                <div style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
-                                 <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--primary)', background: '#3636e810', padding: '2px 8px', borderRadius: '6px' }}>{q.type}</span>
+                                 <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--primary)', background: 'var(--primary-light)', padding: '2px 8px', borderRadius: '6px' }}>{q.type}</span>
                                  <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)', background: '#00000005', padding: '2px 8px', borderRadius: '6px' }}>{q.marks || 1} Marks</span>
                                </div>
                                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: '1.4' }}><RichTextDisplay text={q.text} /></div>
@@ -572,7 +572,7 @@ export default function CreateTestSeriesPage() {
                                   onChange={() => handleQuestionChange(idx, 'correctAnswer', opt)} 
                                   style={{ width: '22px', height: '22px', accentColor: 'var(--primary)', cursor: 'pointer' }} 
                                 />
-                                <div style={{ ...neuInput, background: q.correctAnswer === opt ? '#3636e810' : 'var(--surface-2)', color: q.correctAnswer === opt ? 'var(--primary)' : 'var(--text-primary)', fontWeight: 700 }}>{opt}</div>
+                                <div style={{ ...neuInput, background: q.correctAnswer === opt ? 'var(--primary-light)' : 'var(--surface-2)', color: q.correctAnswer === opt ? 'var(--primary)' : 'var(--text-primary)', fontWeight: 700 }}>{opt}</div>
                               </div>
                             ))
                           ) : (

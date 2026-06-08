@@ -1048,7 +1048,7 @@ export default function SupportPage() {
                         <div style={{ 
                           padding: r.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px', 
                           borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', 
-                          background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff', 
+                          background: isMe ? '#dcf8c6' : isAdmin ? 'var(--primary-light)' : '#ffffff', 
                           boxShadow: '0 1px 2px rgba(0,0,0,0.1)', 
                           color: 'var(--text-primary)',
                           border: isMe ? 'none' : '1px solid #e8eaf0',
@@ -1096,7 +1096,7 @@ export default function SupportPage() {
                           {r.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{r.content}</div>}
                           
                           {/* Time inside bubble */}
-                          <div style={{ position: 'absolute', bottom: '4px', right: '8px', fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <div style={{ position: 'absolute', bottom: '4px', right: '8px', fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
                             {new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             {isMe && (
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1113,16 +1113,16 @@ export default function SupportPage() {
               {selected.status !== 'CLOSED' && (
                 <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)' }}>
                   {pendingReplyImagePreview && (
-                    <div style={{ marginBottom: '10px', position: 'relative', display: 'inline-flex', alignItems: 'flex-end', gap: '8px', padding: '10px 14px', borderRadius: '16px', background: '#f0f0ff', border: '2px solid #3636e830', boxShadow: '0 4px 12px rgba(54,54,232,0.1)' }}>
+                    <div style={{ marginBottom: '10px', position: 'relative', display: 'inline-flex', alignItems: 'flex-end', gap: '8px', padding: '10px 14px', borderRadius: '16px', background: 'var(--primary-light)', border: '2px solid #3636e830', boxShadow: '0 4px 12px rgba(54,54,232,0.1)' }}>
                       <img src={pendingReplyImagePreview} alt="Preview" style={{ maxHeight: '80px', maxWidth: '160px', borderRadius: '10px', objectFit: 'cover' }} />
                       <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '600' }}>📎 Ready to send</div>
-                      <button onClick={clearReplyImage} style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: 'var(--danger)', color: '#fff', border: '2px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)' }}>✕</button>
+                      <button onClick={clearReplyImage} style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: 'var(--danger)', color: '#fff', border: '2px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)' }}>✕</button>
                     </div>
                   )}
                   {uploadingImage && <div style={{ marginBottom: '6px', fontSize: '12px', color: 'var(--primary)', fontWeight: '600' }}>Uploading...</div>}
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input type="file" accept="image/jpeg,image/png,image/webp" ref={replyImageRef} onChange={handleReplyImageSelect} style={{ display: 'none' }} />
-                    <button onClick={() => replyImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingReplyImage ? '#3636e818' : 'var(--surface-2)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingReplyImage ? 'var(--primary)' : 'var(--text-muted)', flexShrink: 0 }}>
+                    <button onClick={() => replyImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingReplyImage ? 'var(--primary-light)' : 'var(--surface-2)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingReplyImage ? 'var(--primary)' : 'var(--text-muted)', flexShrink: 0 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
                     <input value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendReply()} placeholder="Type your reply..." disabled={uploadingImage} style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: 'var(--text-primary)' }} />
@@ -1227,7 +1227,7 @@ export default function SupportPage() {
                   return (
                     <div key={m.id} style={{ display: 'flex', justifyContent: isStudent ? 'flex-start' : 'flex-end', gap: '8px', alignItems: 'flex-end' }}>
                       {isStudent && <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--surface-2)', boxShadow: '2px 2px 5px var(--neu-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: 'var(--text-secondary)', flexShrink: 0 }}>{m.sender.name.charAt(0)}</div>}
-                      <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: isStudent ? '18px 18px 18px 4px' : '18px 18px 4px 18px', background: isStudent ? 'var(--surface-2)' : '#f0f0ff', boxShadow: '3px 3px 8px var(--neu-dark), -3px -3px 8px var(--neu-light)', color: 'var(--text-primary)' }}>
+                      <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: isStudent ? '18px 18px 18px 4px' : '18px 18px 4px 18px', background: isStudent ? 'var(--surface-2)' : 'var(--primary-light)', boxShadow: '3px 3px 8px var(--neu-dark), -3px -3px 8px var(--neu-light)', color: 'var(--text-primary)' }}>
                         <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isStudent ? 'var(--text-muted)' : 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           {m.sender.name}
                           {!isStudent && (
@@ -1385,7 +1385,7 @@ export default function SupportPage() {
                           <div style={{ 
                             padding: m.imageUrl ? '5px 5px 15px 5px' : '7px 12px 15px 12px', 
                             borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px', 
-                            background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff', 
+                            background: isMe ? '#dcf8c6' : isAdmin ? 'var(--primary-light)' : '#ffffff', 
                             boxShadow: '0 1px 2px rgba(0,0,0,0.1)', 
                             color: 'var(--text-primary)',
                             border: isMe ? 'none' : '1px solid #e8eaf0',
@@ -1424,7 +1424,7 @@ export default function SupportPage() {
                             {m.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.content}</div>}
                             
                             {/* Time inside bubble */}
-                            <div style={{ position: 'absolute', bottom: '2px', right: '8px', fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <div style={{ position: 'absolute', bottom: '2px', right: '8px', fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
                               {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               {isMe && (
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1440,16 +1440,16 @@ export default function SupportPage() {
 
                 <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)' }}>
                   {pendingChatImagePreview && (
-                    <div style={{ marginBottom: '10px', position: 'relative', display: 'inline-flex', alignItems: 'flex-end', gap: '8px', padding: '10px 14px', borderRadius: '16px', background: '#f0f0ff', border: '2px solid #3636e830', boxShadow: '0 4px 12px rgba(54,54,232,0.1)' }}>
+                    <div style={{ marginBottom: '10px', position: 'relative', display: 'inline-flex', alignItems: 'flex-end', gap: '8px', padding: '10px 14px', borderRadius: '16px', background: 'var(--primary-light)', border: '2px solid #3636e830', boxShadow: '0 4px 12px rgba(54,54,232,0.1)' }}>
                       <img src={pendingChatImagePreview} alt="Preview" style={{ maxHeight: '80px', maxWidth: '160px', borderRadius: '10px', objectFit: 'cover' }} />
                       <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '600' }}>📎 Ready to send</div>
-                      <button onClick={clearChatImage} style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: 'var(--danger)', color: '#fff', border: '2px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)' }}>✕</button>
+                      <button onClick={clearChatImage} style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: 'var(--danger)', color: '#fff', border: '2px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)' }}>✕</button>
                     </div>
                   )}
                   {uploadingImage && <div style={{ marginBottom: '6px', fontSize: '12px', color: 'var(--primary)', fontWeight: '600' }}>Uploading...</div>}
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input type="file" accept="image/jpeg,image/png,image/webp" ref={chatImageRef} onChange={handleChatImageSelect} style={{ display: 'none' }} />
-                    <button onClick={() => chatImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingChatImage ? '#3636e818' : 'var(--surface-2)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingChatImage ? 'var(--primary)' : 'var(--text-muted)', flexShrink: 0 }}>
+                    <button onClick={() => chatImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingChatImage ? 'var(--primary-light)' : 'var(--surface-2)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingChatImage ? 'var(--primary)' : 'var(--text-muted)', flexShrink: 0 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
                     <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMsg()} placeholder="Type a message..." disabled={uploadingImage} style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: 'var(--text-primary)' }} />

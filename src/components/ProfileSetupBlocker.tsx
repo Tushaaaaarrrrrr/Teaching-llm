@@ -129,7 +129,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
         {error && (
           <div style={{
             background: 'var(--danger-light)',
-            color: '#b91c1c',
+            color: 'var(--danger)',
             padding: '12px 16px',
             borderRadius: '12px',
             fontSize: '13px',
@@ -156,7 +156,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
                 name="firstName"
                 placeholder="John"
                 className="form-input"
-                style={{ background: '#f8f9fa' }}
+                style={{ background: 'var(--surface)' }}
                 value={formData.firstName}
                 onChange={handleChange}
               />
@@ -168,7 +168,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
                 name="lastName"
                 placeholder="Doe"
                 className="form-input"
-                style={{ background: '#f8f9fa' }}
+                style={{ background: 'var(--surface)' }}
                 value={formData.lastName}
                 onChange={handleChange}
               />
@@ -183,7 +183,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
                 name="mobileNumber"
                 placeholder="10 digit number"
                 className="form-input"
-                style={{ background: '#f8f9fa' }}
+                style={{ background: 'var(--surface)' }}
                 value={formData.mobileNumber}
                 onChange={handleChange}
                 maxLength={10}
@@ -196,7 +196,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
                 name="age"
                 placeholder="e.g. 21"
                 className="form-input"
-                style={{ background: '#f8f9fa' }}
+                style={{ background: 'var(--surface)' }}
                 value={formData.age}
                 onChange={handleChange}
               />
@@ -208,7 +208,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
             <select
               name="state"
               className="form-input"
-              style={{ background: '#f8f9fa', cursor: 'pointer', appearance: 'auto' }}
+              style={{ background: 'var(--surface)', cursor: 'pointer', appearance: 'auto' }}
               value={formData.state}
               onChange={handleChange}
             >
@@ -236,7 +236,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
                     fontSize: '14px',
                     fontWeight: 700,
                     border: formData.gender === g ? '2px solid #6366f1' : '2px solid #e0e3ea',
-                    background: formData.gender === g ? '#eff0fe' : '#f8f9fa',
+                    background: formData.gender === g ? '#eff0fe' : 'var(--surface)',
                     color: formData.gender === g ? 'var(--accent)' : 'var(--text-secondary)',
                     transition: 'all 0.2s'
                   }}
@@ -312,7 +312,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
             </p>
 
             {/* Summary of entered details */}
-            <div style={{ background: '#f8f9fa', borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'left' }}>
+            <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'left' }}>
               {[
                 { label: 'Name', value: `${formData.firstName} ${formData.lastName}` },
                 { label: 'Mobile', value: formData.mobileNumber },

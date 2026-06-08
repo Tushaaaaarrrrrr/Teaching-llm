@@ -341,7 +341,7 @@ export default function AdminPage() {
   }
 
   const roleColors: Record<string, { bg: string; color: string }> = {
-    MANAGER: { bg: '#ede9fe', color: '#7c3aed' },
+    MANAGER: { bg: 'var(--primary-light)', color: 'var(--accent)' },
     ADMIN: { bg: 'var(--info-light)', color: 'var(--info)' },
     INSTRUCTOR: { bg: 'var(--warning-light)', color: 'var(--warning)' },
     STUDENT: { bg: 'var(--success-light)', color: 'var(--success)' },
@@ -368,7 +368,7 @@ export default function AdminPage() {
   const filterTabs = [
     { label: 'All Users', key: 'all', color: 'var(--accent)', bg: 'var(--primary-light)' },
     ...(userRole === 'MANAGER' ? [
-      { label: 'Managers', key: 'MANAGER', color: '#7c3aed', bg: '#ede9fe' },
+      { label: 'Managers', key: 'MANAGER', color: 'var(--accent)', bg: 'var(--primary-light)' },
     ] : []),
     ...(userRole === 'MANAGER' ? [
       { label: 'Admins', key: 'ADMIN', color: 'var(--info)', bg: 'var(--info-light)' },
@@ -521,8 +521,8 @@ export default function AdminPage() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
           padding: '10px 18px', marginBottom: '12px', borderRadius: '12px',
-          background: 'linear-gradient(135deg, #eff6ff, #e0e7ff)',
-          border: '1px solid #c7d2fe', fontSize: '13px', color: '#3730a3',
+          background: 'linear-gradient(135deg, #eff6ff, var(--border))',
+          border: '1px solid var(--border)', fontSize: '13px', color: '#3730a3',
         }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -584,7 +584,7 @@ export default function AdminPage() {
                       {user.isSuperManager && (
                         <span style={{
                           fontSize: '10px', fontWeight: '700', color: 'var(--warning)',
-                          background: 'linear-gradient(135deg, #fef3c7, #fde68a)', padding: '2px 10px', borderRadius: '20px',
+                          background: 'linear-gradient(135deg, var(--border), var(--border))', padding: '2px 10px', borderRadius: '20px',
                           border: '1px solid #fcd34d', letterSpacing: '0.5px',
                         }}>
                           ⭐ SYSTEM OWNER
@@ -603,7 +603,7 @@ export default function AdminPage() {
                       <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{user.email}</span>
                       {user.securityNumber && (
                         <>
-                          <span style={{ color: '#d1d5db' }}>•</span>
+                          <span style={{ color: 'var(--border)' }}>•</span>
                           <span style={{ color: 'var(--accent)', fontWeight: '600', letterSpacing: '0.05em', flexShrink: 0 }}>{user.securityNumber}</span>
                         </>
                       )}
@@ -630,7 +630,7 @@ export default function AdminPage() {
                         {user.courseBundleAssignments.map(bundleAssignment => (
                           <span key={bundleAssignment.bundleId} style={{
                             padding: '2px 8px', borderRadius: '50px', fontSize: '10px', fontWeight: '700',
-                            background: '#ede9fe', color: '#7c3aed',
+                            background: 'var(--primary-light)', color: 'var(--accent)',
                             whiteSpace: 'nowrap',
                           }}>
                             Bundle: {bundleAssignment.bundle.name}
@@ -685,7 +685,7 @@ export default function AdminPage() {
                       {isNewUser && (
                         <span style={{
                           fontSize: '10px', fontWeight: '700', color: '#065f46',
-                          background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)', padding: '3px 10px', borderRadius: '20px',
+                          background: 'linear-gradient(135deg, #dcfce7, var(--border))', padding: '3px 10px', borderRadius: '20px',
                           border: '1px solid #86efac', letterSpacing: '0.5px',
                           display: 'inline-flex', alignItems: 'center', gap: '4px',
                         }}>
@@ -770,7 +770,7 @@ export default function AdminPage() {
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '70vh', overflowY: 'auto' }}>
               {error && (
-                <div style={{ background: 'var(--danger-light)', color: '#991b1b', padding: '10px 14px', borderRadius: '8px', fontSize: '13px' }}>
+                <div style={{ background: 'var(--danger-light)', color: 'var(--danger)', padding: '10px 14px', borderRadius: '8px', fontSize: '13px' }}>
                   {error}
                 </div>
               )}
@@ -793,7 +793,7 @@ export default function AdminPage() {
               <div className="form-group">
                 <label className="form-label">Email *</label>
                 <input type="email" className="form-input" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="john@example.com" disabled={editingUserIsSuperManager} style={editingUserIsSuperManager ? { opacity: 0.6 } : {}} />
-                {editingUserIsSuperManager && <span style={{ fontSize: '10px', color: '#92400e' }}>Super Manager email cannot be changed</span>}
+                {editingUserIsSuperManager && <span style={{ fontSize: '10px', color: 'var(--warning)' }}>Super Manager email cannot be changed</span>}
               </div>
               <div className="form-group">
                 <label className="form-label">Mobile Number</label>
@@ -804,7 +804,7 @@ export default function AdminPage() {
                 <div className="form-group">
                   <label className="form-label">Password</label>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', color: '#6b7280' }}>Password is auto-generated. Use the button to reset.</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Password is auto-generated. Use the button to reset.</span>
                     <button
                       type="button"
                       onClick={() => setForm(p => ({ ...p, password: p.password === 'RESET' ? '' : 'RESET' }))}
@@ -812,7 +812,7 @@ export default function AdminPage() {
                       style={{
                         color: form.password === 'RESET' ? 'var(--danger)' : 'var(--info)',
                         border: form.password === 'RESET' ? '1px solid #fee2e2' : '1px solid #dbeafe',
-                        background: form.password === 'RESET' ? 'var(--danger-light)' : '#eff6ff',
+                        background: form.password === 'RESET' ? 'var(--danger-light)' : 'var(--info-light)',
                         fontSize: '11px',
                       }}
                     >
@@ -822,12 +822,12 @@ export default function AdminPage() {
                 </div>
               )}
               {!editId && (
-                <div style={{ padding: '10px 14px', background: '#eff6ff', borderRadius: '8px', fontSize: '12px', color: 'var(--info)', border: '1px solid #dbeafe' }}>
+                <div style={{ padding: '10px 14px', background: 'var(--info-light)', borderRadius: '8px', fontSize: '12px', color: 'var(--info)', border: '1px solid #dbeafe' }}>
                   💡 Password will be auto-generated and shown once after creation.
                 </div>
               )}
               {editingUserIsSuperManager && (
-                <div style={{ padding: '10px 14px', background: 'var(--warning-light)', borderRadius: '8px', fontSize: '12px', color: '#92400e', border: '1px solid #fcd34d' }}>
+                <div style={{ padding: '10px 14px', background: 'var(--warning-light)', borderRadius: '8px', fontSize: '12px', color: 'var(--warning)', border: '1px solid #fcd34d' }}>
                   🔒 Super Manager credentials cannot be changed here.
                 </div>
               )}
@@ -907,12 +907,12 @@ export default function AdminPage() {
               {userRole === 'MANAGER' && (form.role === 'ADMIN' || form.role === 'INSTRUCTOR') && (
                 <div style={{
                   background: 'var(--surface)', padding: '12px', borderRadius: '10px',
-                  border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: '10px'
+                  border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '10px'
                 }}>
-                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '2px' }}>GRANULAR PERMISSIONS</div>
+                  <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '2px' }}>GRANULAR PERMISSIONS</div>
                   
                   <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                    <span style={{ fontSize: '13px', color: '#4b5563' }}>Allow User Termination</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Allow User Termination</span>
                     <div style={{ position: 'relative', display: 'inline-block', width: '36px', height: '20px' }}>
                       <input 
                         type="checkbox" 
@@ -922,7 +922,7 @@ export default function AdminPage() {
                       />
                       <span style={{
                         position: 'absolute', cursor: 'pointer', inset: 0,
-                        backgroundColor: form.canTerminate ? 'var(--info)' : '#d1d5db',
+                        backgroundColor: form.canTerminate ? 'var(--info)' : 'var(--border)',
                         borderRadius: '34px', transition: '.2s'
                       }}>
                         <span style={{
@@ -935,7 +935,7 @@ export default function AdminPage() {
                   </label>
 
                   <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                    <span style={{ fontSize: '13px', color: '#4b5563' }}>Allow Student Creation</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Allow Student Creation</span>
                     <div style={{ position: 'relative', display: 'inline-block', width: '36px', height: '20px' }}>
                       <input 
                         type="checkbox" 
@@ -945,7 +945,7 @@ export default function AdminPage() {
                       />
                       <span style={{
                         position: 'absolute', cursor: 'pointer', inset: 0,
-                        backgroundColor: form.canCreateStudents ? 'var(--info)' : '#d1d5db',
+                        backgroundColor: form.canCreateStudents ? 'var(--info)' : 'var(--border)',
                         borderRadius: '34px', transition: '.2s'
                       }}>
                         <span style={{
@@ -986,7 +986,7 @@ export default function AdminPage() {
                               }}
                             />
                             <span style={{ fontSize: '13px', fontWeight: '600', color: '#5b21b6' }}>{bundle.name}</span>
-                            <span style={{ fontSize: '11px', color: '#8b5cf6' }}>
+                            <span style={{ fontSize: '11px', color: 'var(--accent)' }}>
                               ({bundle.courses?.length || 0} courses)
                             </span>
                           </label>
@@ -999,7 +999,7 @@ export default function AdminPage() {
                     display: 'flex', flexDirection: 'column', gap: '6px',
                     maxHeight: '200px', overflowY: 'auto',
                     padding: '10px', borderRadius: '8px',
-                    background: 'var(--bg)', border: '1px solid #e5e7eb',
+                    background: 'var(--bg)', border: '1px solid var(--border)',
                   }}>
                     {courses.length === 0 ? (
                       <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>No courses available</span>
@@ -1028,13 +1028,13 @@ export default function AdminPage() {
                             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({cls.subject})</span>
                           )}
                           {cls.isExpired && (
-                            <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700' }}>Expired</span>
+                            <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700' }}>Expired</span>
                           )}
                           {cls.isEffectivelyDisabled && !cls.isExpired && (
                             <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700' }}>Disabled</span>
                           )}
                           {bundledCourseIds.has(cls.id) && (
-                            <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: '600' }}>Included by selected bundle</span>
+                            <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: '600' }}>Included by selected bundle</span>
                           )}
                           {form.courseIds.includes(cls.id) && !bundledCourseIds.has(cls.id) && (
                             <select
@@ -1045,8 +1045,8 @@ export default function AdminPage() {
                               }}
                               style={{
                                 marginLeft: 'auto', padding: '2px 8px', borderRadius: '4px',
-                                border: '1px solid #d1d5db', fontSize: '11px', background: 'var(--surface)',
-                                fontWeight: '600', color: '#374151', cursor: 'pointer'
+                                border: '1px solid var(--border)', fontSize: '11px', background: 'var(--surface)',
+                                fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer'
                               }}
                               onClick={e => e.stopPropagation()}
                             >
@@ -1071,7 +1071,7 @@ export default function AdminPage() {
                     display: 'flex', flexDirection: 'column', gap: '6px',
                     maxHeight: '200px', overflowY: 'auto',
                     padding: '10px', borderRadius: '8px',
-                    background: 'var(--bg)', border: '1px solid #e5e7eb',
+                    background: 'var(--bg)', border: '1px solid var(--border)',
                   }}>
                     {courses.length === 0 ? (
                       <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>No courses available</span>
@@ -1100,7 +1100,7 @@ export default function AdminPage() {
                             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({cls.subject})</span>
                           )}
                           {cls.isExpired && (
-                            <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700' }}>Expired</span>
+                            <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700' }}>Expired</span>
                           )}
                           {cls.isEffectivelyDisabled && !cls.isExpired && (
                             <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700' }}>Disabled</span>
@@ -1135,14 +1135,14 @@ export default function AdminPage() {
               </button>
             </div>
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ padding: '14px', background: 'var(--warning-light)', borderRadius: '10px', fontSize: '12px', color: '#92400e', border: '1px solid #fcd34d' }}>
+              <div style={{ padding: '14px', background: 'var(--warning-light)', borderRadius: '10px', fontSize: '12px', color: 'var(--warning)', border: '1px solid #fcd34d' }}>
                 ⚠️ This password will only be shown <strong>once</strong>. Copy and store it securely. You can reveal it up to 2 more times, after which a reset will be required.
               </div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
                 padding: '14px 18px', borderRadius: '10px',
-                background: '#f0fdf4', border: '1px solid #bbf7d0',
-                fontFamily: 'monospace', fontSize: '15px', fontWeight: '600', color: '#166534',
+                background: 'var(--success-light)', border: '1px solid var(--border)',
+                fontFamily: 'monospace', fontSize: '15px', fontWeight: '600', color: 'var(--success)',
                 letterSpacing: '1px',
               }}>
                 <span style={{ flex: 1, wordBreak: 'break-all' }}>{generatedPassword}</span>
@@ -1152,7 +1152,7 @@ export default function AdminPage() {
                   style={{
                     color: passwordCopied ? 'var(--success)' : 'var(--info)',
                     border: passwordCopied ? '1px solid #d1fae5' : '1px solid #dbeafe',
-                    background: passwordCopied ? 'var(--success-light)' : '#eff6ff',
+                    background: passwordCopied ? 'var(--success-light)' : 'var(--info-light)',
                     flexShrink: 0,
                   }}
                 >

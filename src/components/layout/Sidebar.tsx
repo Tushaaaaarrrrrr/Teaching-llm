@@ -425,7 +425,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           minHeight: '74px',
           padding: '8px 12px',
           borderRadius: '999px',
-          background: 'linear-gradient(145deg, #f6f7fb, #dde0e8)',
+          background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
           boxShadow: 'var(--shadow-lg)',
         }}>
           <img

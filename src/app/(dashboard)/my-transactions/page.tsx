@@ -47,8 +47,8 @@ export default function MyTransactionsPage() {
     const isUpgrade = type === 'UPGRADE'
     return (
       <span style={{
-        background: isUpgrade ? 'var(--primary-light)' : '#f0fdf4',
-        color: isUpgrade ? '#4338ca' : '#15803d',
+        background: isUpgrade ? 'var(--primary-light)' : 'var(--success-light)',
+        color: isUpgrade ? 'var(--primary-dark)' : 'var(--success)',
         padding: '2px 8px',
         borderRadius: '6px',
         fontSize: '10px',
@@ -57,7 +57,7 @@ export default function MyTransactionsPage() {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '4px',
-        border: `1px solid ${isUpgrade ? '#c7d2fe' : 'var(--success-light)'}`,
+        border: `1px solid ${isUpgrade ? 'var(--border)' : 'var(--success-light)'}`,
         marginBottom: '6px'
       }}>
         {isUpgrade ? (

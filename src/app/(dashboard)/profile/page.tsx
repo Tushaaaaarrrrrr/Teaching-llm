@@ -313,8 +313,8 @@ export default function ProfilePage() {
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '6px' }}>{user.email}</p>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
               <span className="badge" style={{
-                background: user.role === 'MANAGER' ? '#ede9fe' : user.role === 'ADMIN' ? 'var(--info-light)' : 'var(--success-light)',
-                color: user.role === 'MANAGER' ? '#7c3aed' : user.role === 'ADMIN' ? 'var(--info)' : 'var(--success)',
+                background: user.role === 'MANAGER' ? 'var(--primary-light)' : user.role === 'ADMIN' ? 'var(--info-light)' : 'var(--success-light)',
+                color: user.role === 'MANAGER' ? 'var(--accent)' : user.role === 'ADMIN' ? 'var(--info)' : 'var(--success)',
                 padding: '4px 12px', fontSize: '12px',
               }}>
                 {roleLabel}
@@ -390,7 +390,7 @@ export default function ProfilePage() {
               <div style={{
                 padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '14px',
                 background: profileMsg.type === 'success' ? 'var(--success-light)' : profileMsg.type === 'error' ? 'var(--danger-light)' : 'var(--info-light)',
-                color: profileMsg.type === 'success' ? '#065f46' : profileMsg.type === 'error' ? '#991b1b' : '#1e40af',
+                color: profileMsg.type === 'success' ? '#065f46' : profileMsg.type === 'error' ? 'var(--danger)' : 'var(--info)',
               }}>
                 {profileMsg.text}
               </div>
@@ -469,7 +469,7 @@ export default function ProfilePage() {
               {user.role !== 'MANAGER' && (
                 <div style={{
                   padding: '12px 16px', borderRadius: '12px',
-                  background: '#f0f0ff', border: '1px solid #d4d4ff',
+                  background: 'var(--primary-light)', border: '1px solid #d4d4ff',
                   display: 'flex', gap: '10px', alignItems: 'flex-start', marginTop: '4px'
                 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ flexShrink: 0, marginTop: '1px' }}>
@@ -536,8 +536,8 @@ export default function ProfilePage() {
               <div style={insetRow}>
                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>Role</span>
                 <span className="badge" style={{
-                  background: user.role === 'MANAGER' ? '#ede9fe' : user.role === 'ADMIN' ? 'var(--info-light)' : 'var(--success-light)',
-                  color: user.role === 'MANAGER' ? '#7c3aed' : user.role === 'ADMIN' ? 'var(--info)' : 'var(--success)',
+                  background: user.role === 'MANAGER' ? 'var(--primary-light)' : user.role === 'ADMIN' ? 'var(--info-light)' : 'var(--success-light)',
+                  color: user.role === 'MANAGER' ? 'var(--accent)' : user.role === 'ADMIN' ? 'var(--info)' : 'var(--success)',
                   fontSize: '12px',
                 }}>
                   {roleLabel}

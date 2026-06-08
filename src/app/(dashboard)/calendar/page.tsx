@@ -57,7 +57,7 @@ const TYPE_COLORS: Record<string, { bg: string; color: string; label: string }> 
   exam: { bg: 'var(--danger)', color: '#ffffff', label: 'Exam' },
   assignment: { bg: '#FFC107', color: '#000000', label: 'Assignment' }, // Punchy Yellow
   event: { bg: 'var(--success)', color: '#ffffff', label: 'Event' },
-  holiday: { bg: '#6b7280', color: '#ffffff', label: 'Holiday' },
+  holiday: { bg: 'var(--text-secondary)', color: '#ffffff', label: 'Holiday' },
 }
 
 const EVENT_TYPES = [
@@ -561,7 +561,7 @@ function CalendarPageContent() {
           background: 'var(--surface-2)',
           padding: '6px',
           borderRadius: '50px',
-          boxShadow: 'inset 4px 4px 8px #d1d5db, inset -4px -4px 8px var(--neu-light)'
+          boxShadow: 'inset 4px 4px 8px var(--border), inset -4px -4px 8px var(--neu-light)'
         }}>
           <button onClick={goToday} className="btn btn-sm" style={{ 
             background: 'transparent', 
@@ -569,7 +569,7 @@ function CalendarPageContent() {
             color: 'var(--text-primary)',
             fontWeight: '700'
           }}>Today</button>
-          <div style={{ width: '1px', height: '20px', background: '#d1d5db', margin: '0 4px' }} />
+          <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
           <button onClick={prevMonth} style={{ 
             width: '32px', height: '32px', borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -1227,7 +1227,7 @@ function CalendarPageContent() {
                           )}
 
                           {isManager && ev.meetLink && (
-                            <div style={{ marginTop: '16px', padding: '12px', background: 'var(--surface)', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ marginTop: '16px', padding: '12px', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)' }}>
                               <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Meeting Link (Manager Only)</div>
                               <a href={ev.meetLink} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: 'var(--info)', fontWeight: '600', wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
@@ -1244,7 +1244,7 @@ function CalendarPageContent() {
               })()}
             </div>
             
-            <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', background: 'var(--surface)' }}>
+            <div className="modal-footer" style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
               <button 
                 onClick={() => setSelectedDailyDay(null)} 
                 className="btn btn-primary"

@@ -350,9 +350,9 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                 <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{exam.title} Management</h1>
                 <span style={{ 
                   fontSize: '10px', fontWeight: 800, padding: '4px 12px', borderRadius: '50px',
-                  background: isFinalTest(exam.examType) ? '#ef444415' : '#8b5cf612',
-                  color: isFinalTest(exam.examType) ? 'var(--danger)' : '#8b5cf6',
-                  border: `1px solid ${isFinalTest(exam.examType) ? '#ef444425' : '#8b5cf625'}`,
+                  background: isFinalTest(exam.examType) ? 'var(--danger-light)' : 'var(--primary-light)',
+                  color: isFinalTest(exam.examType) ? 'var(--danger)' : 'var(--accent)',
+                  border: `1px solid ${isFinalTest(exam.examType) ? 'var(--danger-light)' : 'var(--primary-light)'}`,
                   textTransform: 'uppercase', letterSpacing: '0.02em'
                 }}>
                   {isFinalTest(exam.examType) ? 'Final Test' : 'Practice Test'}
@@ -369,7 +369,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
               {canEditExam && (
                 <button
                   onClick={openExamEditor}
-                  style={{ padding: '10px 20px', borderRadius: '50px', background: '#3636e815', color: 'var(--primary)', border: 'none', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
+                  style={{ padding: '10px 20px', borderRadius: '50px', background: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
                 >
                   Edit Exam
                 </button>
@@ -377,7 +377,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
               <button 
                 onClick={handlePublish}
                 style={{ 
-                  padding: '10px 20px', borderRadius: '50px', background: exam.isPublished ? '#ef444415' : '#10b98115', 
+                  padding: '10px 20px', borderRadius: '50px', background: exam.isPublished ? 'var(--danger-light)' : 'var(--success-light)', 
                   color: exam.isPublished ? 'var(--danger)' : 'var(--success)', border: 'none', fontSize: '13px', fontWeight: 800, cursor: 'pointer' 
                 }}
               >
@@ -414,7 +414,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                  )}
                </div>
                {canEditExam && hasAttempts && (
-                 <div style={{ padding: '12px 16px', borderRadius: '14px', background: '#f59e0b10', color: '#b45309', fontSize: '13px', fontWeight: 700 }}>
+                 <div style={{ padding: '12px 16px', borderRadius: '14px', background: 'var(--warning-light)', color: 'var(--warning)', fontSize: '13px', fontWeight: 700 }}>
                    Question changes are locked because this exam already has attempts.
                  </div>
                )}
@@ -473,7 +473,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                 <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
                                   {a.user?.name || `Student ${a.userId.slice(-4)}`}
                                   {allowsMultipleAttempts(exam.examType) && (
-                                    <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--primary)', background: '#3636e810', padding: '2px 6px', borderRadius: '6px' }}>
+                                    <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--primary)', background: 'var(--primary-light)', padding: '2px 6px', borderRadius: '6px' }}>
                                       Attempt {exam.attempts.filter((att: any) => att.userId === a.userId && new Date(att.startedAt) <= new Date(a.startedAt)).length}
                                     </span>
                                   )}
@@ -494,7 +494,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                         <span 
                                           onClick={(e) => { e.stopPropagation(); handleTogglePublishAttempt(a.id, a.isPublished); }}
                                           style={{ 
-                                            background: a.isPublished ? '#10b98120' : '#f59e0b20', 
+                                            background: a.isPublished ? 'var(--success-light)' : 'var(--warning-light)', 
                                             color: a.isPublished ? 'var(--success)' : 'var(--warning)',
                                             padding: '2px 8px', borderRadius: '10px', fontSize: '9px', fontWeight: 800, cursor: 'pointer'
                                           }}
@@ -578,7 +578,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                        }
                                        if (q.type === 'NAT') return parseFloat(resp?.answer || '0') === parseFloat(q.correctAnswer || '0')
                                        return resp?.answer === q.correctAnswer
-                                     })() ? '#10b98110' : '#ef444410',
+                                     })() ? 'var(--success-light)' : 'var(--danger-light)',
                                      padding: '4px 10px', borderRadius: '50px' 
                                    }}>
                                       {(() => {
@@ -634,7 +634,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
                       <div style={{ background: 'var(--surface)', padding: '24px', borderRadius: '20px', boxShadow: '4px 4px 10px var(--neu-dark)', marginTop: '20px' }}>
                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '24px' }}>
-                            <div style={{ padding: '16px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            <div style={{ padding: '16px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', textAlign: 'center' }}>
                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Marks Summary</div>
                                <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)' }}>
                                   {(Object.values(evaluations).reduce((acc, curr) => acc + curr.marks, 0) + bonusMarks).toFixed(1)}
@@ -666,7 +666,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                   style={{ marginTop: '6px', fontSize: '14px' }}
                                />
                             </div>
-                            <div style={{ padding: '20px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ padding: '20px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                <input 
                                   type="checkbox" 
                                   id="publish-cb"
@@ -898,7 +898,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
             <ExamTimingStatus startDate={exam.startDate} expiresAt={exam.expiresAt} />
           </div>
 
-          <div style={{ textAlign: 'left', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: exam.examType === 'FINAL_TEST' ? '#ef444410' : '#10b98110', borderLeft: `4px solid ${exam.examType === 'FINAL_TEST' ? 'var(--danger)' : 'var(--success)'}` }}>
+          <div style={{ textAlign: 'left', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: exam.examType === 'FINAL_TEST' ? 'var(--danger-light)' : 'var(--success-light)', borderLeft: `4px solid ${exam.examType === 'FINAL_TEST' ? 'var(--danger)' : 'var(--success)'}` }}>
             <h3 style={{ fontSize: '14px', fontWeight: 800, color: exam.examType === 'FINAL_TEST' ? 'var(--danger)' : 'var(--success)', marginBottom: '8px' }}>
                       {isFinalTest(exam.examType) ? 'Final Test Rules' : 'General Test Rules'}
             </h3>
@@ -955,19 +955,19 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                    </div>
                  </div>
                ) : (
-                 <div style={{ padding: '20px', borderRadius: '20px', background: '#f59e0b10', border: '2px dashed #f59e0b', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                 <div style={{ padding: '20px', borderRadius: '20px', background: 'var(--warning-light)', border: '2px dashed #f59e0b', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ color: 'var(--warning)', fontWeight: 800, fontSize: '15px' }}>Assessment Submitted</div>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>Your responses are being reviewed. Results will be visible once published by the instructor.</p>
                  </div>
                )}
              </>
           ) : isUpcoming ? (
-            <div style={{ padding: '20px', borderRadius: '20px', background: '#3636e810', border: '2px dashed #3636e8', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ padding: '20px', borderRadius: '20px', background: 'var(--primary-light)', border: '2px dashed #3636e8', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '15px' }}>Exam Not Started Yet</div>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>You will be able to start this exam when the countdown reaches zero.</p>
             </div>
           ) : isExpired ? (
-            <div style={{ padding: '16px', borderRadius: '50px', background: '#ef444410', color: 'var(--danger)', fontWeight: 700 }}>
+            <div style={{ padding: '16px', borderRadius: '50px', background: 'var(--danger-light)', color: 'var(--danger)', fontWeight: 700 }}>
               This exam has ended.
             </div>
           ) : (

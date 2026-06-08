@@ -241,7 +241,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
   const neuInset = {
     background: 'var(--surface)',
     borderRadius: '12px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid var(--border)',
     padding: '10px 14px',
     outline: 'none',
     width: '100%',
@@ -288,9 +288,9 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
                   <div style={{
                     width: '90px', height: '90px', borderRadius: '50%',
-                    background: '#f0f2f8', boxShadow: '4px 4px 10px #d1d9e6, -4px -4px 10px var(--neu-light)',
+                    background: 'var(--surface)', boxShadow: '4px 4px 10px #d1d9e6, -4px -4px 10px var(--neu-light)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                    border: '3px solid #fff', flexShrink: 0
+                    border: '3px solid var(--border)', flexShrink: 0
                   }}>
                     {user.avatar || user.gender ? (
                       <img src={user.avatar || getDefaultAvatar(formData.gender || user.gender)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -329,7 +329,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                       {isRecentlyCreated && (
                         <span style={{
                           fontSize: '10px', fontWeight: '700', color: '#065f46',
-                          background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)', padding: '4px 12px', borderRadius: '20px',
+                          background: 'linear-gradient(135deg, #dcfce7, var(--border))', padding: '4px 12px', borderRadius: '20px',
                           border: '1px solid #86efac',
                         }}>
                           NEWBIE
@@ -396,7 +396,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         padding: '10px', borderRadius: '16px',
                         background: formData.gender === g
                           ? g === 'MALE' ? 'var(--primary-light)' : g === 'FEMALE' ? '#fce7f3' : '#f3e8ff'
-                          : '#f0f2f8',
+                          : 'var(--surface)',
                         boxShadow: formData.gender === g
                           ? g === 'MALE' ? 'inset 3px 3px 6px rgba(99,102,241,0.18), inset -3px -3px 6px var(--neu-light)'
                           : g === 'FEMALE' ? 'inset 3px 3px 6px rgba(236,72,153,0.14), inset -3px -3px 6px var(--neu-light)'
@@ -414,7 +414,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 {/* Security ID */}
                 <div style={{
                   padding: '20px', borderRadius: '20px',
-                  background: 'linear-gradient(135deg, #f0f2f8, #f8fafc)',
+                  background: 'linear-gradient(135deg, var(--border), #f8fafc)',
                   boxShadow: 'inset 4px 4px 10px #d1d9e6, inset -4px -4px 10px var(--neu-light)',
                   border: '1px solid rgba(255,255,255,0.6)'
                 }}>
@@ -430,7 +430,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 {user && 'enableDetailedLogs' in user && (
                   <div style={{
                     padding: '20px', borderRadius: '20px', marginTop: '24px',
-                    background: 'linear-gradient(135deg, #f0f2f8, #f8fafc)',
+                    background: 'linear-gradient(135deg, var(--border), #f8fafc)',
                     boxShadow: 'inset 4px 4px 10px #d1d9e6, inset -4px -4px 10px var(--neu-light)',
                     border: '1px solid rgba(255,255,255,0.6)'
                   }}>
@@ -475,7 +475,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                             boxShadow: '4px 4px 8px #d1d9e6, -4px -4px 8px var(--neu-light)',
                             display: 'flex', alignItems: 'center', gap: '10px'
                           }}>
-                            <span style={{ fontSize: '13px', fontWeight: '700', color: '#6d28d9' }}>{bundle.name}</span>
+                            <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent)' }}>{bundle.name}</span>
                             <button
                               onClick={() => setFormData({...formData, bundleIds: formData.bundleIds.filter(id => id !== bundle.id)})}
                               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--danger)', display: 'flex' }}
@@ -494,7 +494,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                             }}
                             style={{
                               padding: '10px 18px', borderRadius: '16px', border: '2px dashed #ddd6fe', background: 'rgba(255,255,255,0.3)',
-                              fontSize: '13px', fontWeight: '700', color: '#7c3aed', cursor: 'pointer', appearance: 'none'
+                              fontSize: '13px', fontWeight: '700', color: 'var(--accent)', cursor: 'pointer', appearance: 'none'
                             }}
                             value=""
                           >
@@ -515,13 +515,13 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           const isLive = enrollType === 'LIVE'
                           return (
                           <div key={c.id} style={{
-                            padding: '10px 18px', borderRadius: '16px', background: '#f0f2f8',
+                            padding: '10px 18px', borderRadius: '16px', background: 'var(--surface)',
                             boxShadow: '4px 4px 8px #d1d9e6, -4px -4px 8px var(--neu-light)',
                             display: 'flex', alignItems: 'center', gap: '10px'
                           }}>
                              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
                              <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.name}</span>
-                             {c.isExpired && <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>Expired</span>}
+                             {c.isExpired && <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>Expired</span>}
                              {c.isEffectivelyDisabled && !c.isExpired && <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700', background: 'var(--danger-light)', padding: '2px 8px', borderRadius: '20px' }}>Disabled</span>}
                              {/* Live/Recorded Dropdown */}
                              <select
@@ -530,11 +530,11 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                   setFormData({...formData, enrollmentTypes: {...formData.enrollmentTypes, [c.id]: e.target.value}})
                                 }}
                                 style={{
-                                  padding: '4px 10px', borderRadius: '20px', border: '1px solid ' + (isLive ? '#bbf7d0' : '#fde68a'),
+                                  padding: '4px 10px', borderRadius: '20px', border: '1px solid ' + (isLive ? 'var(--border)' : 'var(--border)'),
                                   background: isLive
-                                    ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)'
-                                    : 'linear-gradient(135deg, #fef3c7, #fde68a)',
-                                  color: isLive ? '#166534' : '#92400e',
+                                    ? 'linear-gradient(135deg, #dcfce7, var(--border))'
+                                    : 'linear-gradient(135deg, var(--border), var(--border))',
+                                  color: isLive ? 'var(--success)' : 'var(--warning)',
                                   fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em',
                                   cursor: 'pointer', transition: 'all 0.2s',
                                   boxShadow: '2px 2px 4px #d1d9e6, -2px -2px 4px var(--neu-light)',
@@ -585,7 +585,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         </div>
                       </div>
                       {bundledCourseIds.size > 0 && (
-                        <div style={{ marginTop: '14px', fontSize: '12px', color: '#7c3aed', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--accent)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                           Bundled courses are automatically handled.
                         </div>
@@ -593,7 +593,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     </div>
                   </>
                 ) : (
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)', borderRadius: '24px', border: '2px dashed #e2e8f0', padding: '40px', textAlign: 'center' }}>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)', borderRadius: '24px', border: '2px dashed var(--border)', padding: '40px', textAlign: 'center' }}>
                     <div>
                       <div style={{ fontSize: '32px', marginBottom: '16px' }}>🛡️</div>
                       <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>Manager Controls</div>

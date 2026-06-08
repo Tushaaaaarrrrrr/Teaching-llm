@@ -236,8 +236,8 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
               <div key={exam.id} style={{ ...neu, padding: '28px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <span style={{ padding: '4px 12px', borderRadius: '50px', background: exam.isPublished ? '#eff6ff' : 'var(--surface)', color: exam.isPublished ? 'var(--info)' : 'var(--text-muted)', fontSize: '10px', fontWeight: 900 }}>{exam.isPublished ? 'PUBLISHED' : 'DRAFT'}</span>
-                    <span style={{ padding: '4px 12px', borderRadius: '50px', background: '#f5f3ff', color: '#7c3aed', fontSize: '10px', fontWeight: 900 }}>{exam._count?.questions || 0} Qs</span>
+                    <span style={{ padding: '4px 12px', borderRadius: '50px', background: exam.isPublished ? 'var(--info-light)' : 'var(--surface)', color: exam.isPublished ? 'var(--info)' : 'var(--text-muted)', fontSize: '10px', fontWeight: 900 }}>{exam.isPublished ? 'PUBLISHED' : 'DRAFT'}</span>
+                    <span style={{ padding: '4px 12px', borderRadius: '50px', background: '#f5f3ff', color: 'var(--accent)', fontSize: '10px', fontWeight: 900 }}>{exam._count?.questions || 0} Qs</span>
                   </div>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     <button title="Clone Exam" onClick={() => handleCloneExam(exam.id)} style={{ padding: '8px', borderRadius: '8px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>📋</button>
@@ -269,7 +269,7 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                <tr style={{ borderBottom: '2px solid var(--border)', textAlign: 'left' }}>
                   <th style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase' }}>Student</th>
                   <th style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase' }}>Purchase Date</th>
                   <th style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase' }}>Expires At</th>
@@ -278,7 +278,7 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
               </thead>
               <tbody>
                 {ts.accesses?.length > 0 ? ts.accesses.map((acc: any) => (
-                  <tr key={acc.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <tr key={acc.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '16px' }}>
                       <div style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{acc.user?.name}</div>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{acc.user?.email}</div>
@@ -326,20 +326,20 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
             <form onSubmit={handleUpdateTS} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>Series Title</label>
-                <input name="title" defaultValue={ts.title} required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', fontSize: '15px' }} />
+                <input name="title" defaultValue={ts.title} required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid var(--border)', fontSize: '15px' }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>Description</label>
-                <textarea name="description" defaultValue={ts.description || ''} rows={4} style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', fontSize: '15px', resize: 'none' }} />
+                <textarea name="description" defaultValue={ts.description || ''} rows={4} style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid var(--border)', fontSize: '15px', resize: 'none' }} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>Price (₹)</label>
-                  <input name="price" type="number" defaultValue={ts.price} required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', fontSize: '15px' }} />
+                  <input name="price" type="number" defaultValue={ts.price} required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid var(--border)', fontSize: '15px' }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>Validity (Days)</label>
-                  <input name="validityDays" type="number" defaultValue={ts.validityDays} required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', fontSize: '15px' }} />
+                  <input name="validityDays" type="number" defaultValue={ts.validityDays} required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid var(--border)', fontSize: '15px' }} />
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--surface)', padding: '16px', borderRadius: '16px' }}>
@@ -361,7 +361,7 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
             <h2 style={{ fontSize: '24px', fontWeight: 950, marginBottom: '24px' }}>Import Existing Exam</h2>
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '12px' }}>
               {availableExams.length > 0 ? availableExams.map((exam: any) => (
-                <div key={exam.id} style={{ padding: '20px', borderRadius: '20px', border: '2px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={exam.id} style={{ padding: '20px', borderRadius: '20px', border: '2px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: 900, fontSize: '16px', color: 'var(--text-primary)' }}>{exam.title}</div>
                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>{exam._count?.questions || 0} Questions • Created {new Date(exam.createdAt).toLocaleDateString()}</div>
@@ -382,16 +382,16 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
             <form onSubmit={handleCreateExamInSeries} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>Exam Title</label>
-                <input name="title" required placeholder="e.g. Mock Test 01" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', fontSize: '15px' }} />
+                <input name="title" required placeholder="e.g. Mock Test 01" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid var(--border)', fontSize: '15px' }} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>Duration (Min)</label>
-                  <input name="durationMinutes" type="number" defaultValue="180" required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', fontSize: '15px' }} />
+                  <input name="durationMinutes" type="number" defaultValue="180" required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid var(--border)', fontSize: '15px' }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>Expiry Date</label>
-                  <input name="expiresAt" type="datetime-local" required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #f1f5f9', fontSize: '15px' }} />
+                  <input name="expiresAt" type="datetime-local" required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid var(--border)', fontSize: '15px' }} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>

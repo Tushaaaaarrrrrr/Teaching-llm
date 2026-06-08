@@ -301,11 +301,11 @@ export default function ChatTranscriptsPage() {
                       <tr
                         key={msg.id}
                         style={{
-                          background: msg.isDeleted ? '#fff5f5' : 'transparent',
+                          background: msg.isDeleted ? 'var(--danger-light)' : 'transparent',
                           transition: 'background 0.15s',
                         }}
                         onMouseEnter={e => { if (!msg.isDeleted) e.currentTarget.style.background = '#f0f0f8' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = msg.isDeleted ? '#fff5f5' : 'transparent' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = msg.isDeleted ? 'var(--danger-light)' : 'transparent' }}
                       >
                         <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -354,7 +354,7 @@ export default function ChatTranscriptsPage() {
                           ) : (
                             <span style={{
                               padding: '3px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
-                              background: '#f0fdf4', color: 'var(--success)',
+                              background: 'var(--success-light)', color: 'var(--success)',
                             }}>Active</span>
                           )}
                         </td>

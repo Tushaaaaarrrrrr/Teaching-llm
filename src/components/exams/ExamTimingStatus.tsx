@@ -12,13 +12,13 @@ interface ExamTimingStatusProps {
 function getTone(state: ExamTimingState): { background: string; color: string } {
   switch (state) {
     case 'before':
-      return { background: '#3636e812', color: 'var(--primary)' }
+      return { background: 'var(--primary-light)', color: 'var(--primary)' }
     case 'ending':
-      return { background: '#f59e0b18', color: 'var(--warning)' }
+      return { background: 'var(--warning-light)', color: 'var(--warning)' }
     case 'ended':
-      return { background: '#ef444415', color: 'var(--danger)' }
+      return { background: 'var(--danger-light)', color: 'var(--danger)' }
     default:
-      return { background: '#10b98115', color: 'var(--success)' }
+      return { background: 'var(--success-light)', color: 'var(--success)' }
   }
 }
 

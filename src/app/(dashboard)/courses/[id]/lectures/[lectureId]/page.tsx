@@ -228,7 +228,7 @@ export default function LecturePage() {
       <div key={comment.id} style={{ 
         marginLeft: depth > 0 ? '40px' : '0', 
         marginTop: '16px',
-        borderLeft: depth > 0 ? '2px solid #e2e8f0' : 'none',
+        borderLeft: depth > 0 ? '2px solid var(--border)' : 'none',
         paddingLeft: depth > 0 ? '16px' : '0'
       }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -292,7 +292,7 @@ export default function LecturePage() {
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder="Write a reply..."
                   style={{ 
-                    flex: 1, padding: '8px 16px', borderRadius: '20px', border: '1px solid #e2e8f0',
+                    flex: 1, padding: '8px 16px', borderRadius: '20px', border: '1px solid var(--border)',
                     fontSize: '13px', outline: 'none'
                   }}
                   autoFocus
@@ -607,7 +607,7 @@ export default function LecturePage() {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{ 
-                      width: '32px', height: '32px', borderRadius: '8px', background: '#6366f115', 
+                      width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary-light)', 
                       color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' 
                     }}>
                       <Download size={16} />
@@ -672,7 +672,7 @@ export default function LecturePage() {
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Ask a question or share your thoughts..."
                       style={{ 
-                        width: '100%', padding: '10px 14px', borderRadius: '12px', border: '2px solid #f1f5f9',
+                        width: '100%', padding: '10px 14px', borderRadius: '12px', border: '2px solid var(--border)',
                         fontSize: '13px', minHeight: '70px', outline: 'none', resize: 'vertical',
                         transition: 'border-color 0.2s', fontFamily: 'inherit'
                       }}
@@ -810,7 +810,7 @@ export default function LecturePage() {
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Ask a question or share your thoughts..."
                       style={{ 
-                        width: '100%', padding: '12px 16px', borderRadius: '16px', border: '2px solid #f1f5f9',
+                        width: '100%', padding: '12px 16px', borderRadius: '16px', border: '2px solid var(--border)',
                         fontSize: '14px', minHeight: '80px', outline: 'none', resize: 'vertical',
                         transition: 'border-color 0.2s', fontFamily: 'inherit'
                       }}
@@ -868,7 +868,7 @@ export default function LecturePage() {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{ 
-                      width: '36px', height: '36px', borderRadius: '8px', background: '#6366f115', 
+                      width: '36px', height: '36px', borderRadius: '8px', background: 'var(--primary-light)', 
                       color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' 
                     }}>
                       <Download size={18} />

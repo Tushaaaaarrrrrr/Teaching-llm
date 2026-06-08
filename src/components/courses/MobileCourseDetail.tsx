@@ -524,7 +524,7 @@ function CurriculumTab({
                 {topic.content.length > 0 && (
                   <div style={{ position: 'relative', width: '26px', height: '26px' }}>
                     <svg width="26" height="26" viewBox="0 0 26 26" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="13" cy="13" r="10" fill="none" stroke="#f1f5f9" strokeWidth="2.5" />
+                      <circle cx="13" cy="13" r="10" fill="none" stroke="var(--border)" strokeWidth="2.5" />
                       <circle
                         cx="13" cy="13" r="10" fill="none"
                         stroke={topicProgress === 100 ? 'var(--success)' : accent}
@@ -684,7 +684,7 @@ function CurriculumTab({
                             display: 'inline-flex', alignItems: 'center', gap: '4px',
                             padding: '6px 12px', borderRadius: '50px',
                             background: 'var(--surface)', color: 'var(--text-secondary)',
-                            border: '1.5px solid #e2e8f0',
+                            border: '1.5px solid var(--border)',
                             fontSize: '11px', fontWeight: 800,
                             textDecoration: 'none',
                             flexShrink: 0,
@@ -729,8 +729,8 @@ function OverviewTab({
             display: 'flex', alignItems: 'center', gap: '12px',
             padding: '14px 16px',
             borderRadius: '16px',
-            background: accessDays <= 3 ? 'var(--danger-light)' : '#fff7ed',
-            border: `1px solid ${accessDays <= 3 ? '#fecaca' : '#fed7aa'}`,
+            background: accessDays <= 3 ? 'var(--danger-light)' : 'var(--warning-light)',
+            border: `1px solid ${accessDays <= 3 ? 'var(--border)' : 'var(--border)'}`,
             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           }}>
             <div style={{
@@ -744,10 +744,10 @@ function OverviewTab({
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '13px', fontWeight: 800, color: accessDays <= 3 ? '#991b1b' : '#9a3412', lineHeight: 1.3 }}>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: accessDays <= 3 ? 'var(--danger)' : 'var(--warning)', lineHeight: 1.3 }}>
                 ⚠️ Access ending soon!
               </div>
-              <div style={{ fontSize: '11.5px', fontWeight: 600, color: accessDays <= 3 ? '#b91c1c' : '#c2410c', marginTop: '2px' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: 600, color: accessDays <= 3 ? 'var(--danger)' : 'var(--warning)', marginTop: '2px' }}>
                 Only {accessDays} day{accessDays === 1 ? '' : 's'} left — your course access ends soon.
               </div>
             </div>
@@ -759,7 +759,7 @@ function OverviewTab({
             padding: '12px 16px',
             borderRadius: '16px',
             background: 'var(--surface)',
-            border: '1px solid #e2e8f0',
+            border: '1px solid var(--border)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
           }}>
             <div style={{

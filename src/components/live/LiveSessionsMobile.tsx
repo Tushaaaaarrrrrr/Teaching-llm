@@ -26,11 +26,11 @@ interface Props {
 }
 
 const TIME_SLOT_COLORS: { bg: string; fg: string }[] = [
-  { bg: '#ede9fe', fg: '#6d28d9' }, // lavender
-  { bg: 'var(--success-light)', fg: '#047857' }, // green
-  { bg: 'var(--warning-light)', fg: '#b45309' }, // amber
-  { bg: 'var(--danger-light)', fg: '#b91c1c' }, // red
-  { bg: 'var(--info-light)', fg: '#1d4ed8' }, // blue
+  { bg: 'var(--primary-light)', fg: 'var(--accent)' }, // lavender
+  { bg: 'var(--success-light)', fg: 'var(--success)' }, // green
+  { bg: 'var(--warning-light)', fg: 'var(--warning)' }, // amber
+  { bg: 'var(--danger-light)', fg: 'var(--danger)' }, // red
+  { bg: 'var(--info-light)', fg: 'var(--info)' }, // blue
 ]
 
 export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) {
@@ -456,7 +456,7 @@ function RemindButton() {
       style={{
         padding: '8px 14px',
         borderRadius: '50px',
-        border: reminded ? 'none' : '1.5px solid #e2e8f0',
+        border: reminded ? 'none' : '1.5px solid var(--border)',
         background: reminded ? 'var(--primary)' : '#ffffff',
         color: reminded ? '#ffffff' : 'var(--primary)',
         fontSize: '11.5px',
@@ -553,8 +553,8 @@ function EmptyState({ icon, title, subtitle }: { icon: 'live' | 'upcoming' | 're
       <div style={{
         width: '52px', height: '52px', margin: '0 auto 12px',
         borderRadius: '16px',
-        background: icon === 'live' ? 'var(--danger-light)' : icon === 'upcoming' ? '#ede9fe' : 'var(--primary-light)',
-        color: icon === 'live' ? 'var(--danger)' : icon === 'upcoming' ? '#6d28d9' : '#4338ca',
+        background: icon === 'live' ? 'var(--danger-light)' : icon === 'upcoming' ? 'var(--primary-light)' : 'var(--primary-light)',
+        color: icon === 'live' ? 'var(--danger)' : icon === 'upcoming' ? 'var(--accent)' : 'var(--primary-dark)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         {icon === 'live' ? (

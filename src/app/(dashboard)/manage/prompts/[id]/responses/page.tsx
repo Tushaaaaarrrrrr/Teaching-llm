@@ -91,7 +91,7 @@ export default function PromptResponsesPage() {
             
             return (
               <div key={r.id} className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 24px', background: '#f8f9fa', borderBottom: '1px solid #f0f1f5' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 24px', background: 'var(--surface)', borderBottom: '1px solid #f0f1f5' }}>
                   <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px' }}>
                     {r.user.name.charAt(0)}
                   </div>

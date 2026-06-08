@@ -83,7 +83,7 @@ export default function GoogleSyncPage() {
               style={{ 
                 background: 'var(--danger-light)', 
                 color: 'var(--danger)', 
-                border: '1px solid #fecaca',
+                border: '1px solid var(--border)',
                 fontSize: '11px',
                 fontWeight: '700'
               }}
@@ -255,7 +255,7 @@ export default function GoogleSyncPage() {
                         padding: '10px 12px',
                         borderRadius: '8px',
                         background: job.status === 'FAILED' ? 'var(--danger-light)' : '#f8f7ff',
-                        border: job.status === 'FAILED' ? '1px solid #fecaca' : '1px solid #ede9fe',
+                        border: job.status === 'FAILED' ? '1px solid var(--border)' : '1px solid #ede9fe',
                         alignItems: 'center',
                       }}
                     >

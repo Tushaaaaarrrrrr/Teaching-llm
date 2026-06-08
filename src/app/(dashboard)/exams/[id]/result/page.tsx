@@ -105,7 +105,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
             <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 700, color: scorePercentage! >= 50 ? 'var(--success)' : 'var(--danger)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div>{scorePercentage?.toFixed(0)}% - {scorePercentage! >= 50 ? 'Passed' : 'Needs Improvement'}</div>
               {attempt.bonusMarks > 0 && (
-                <div style={{ fontSize: '11px', color: 'var(--primary)', background: '#3636e810', padding: '4px 12px', borderRadius: '50px', alignSelf: 'center', marginTop: '8px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--primary)', background: 'var(--primary-light)', padding: '4px 12px', borderRadius: '50px', alignSelf: 'center', marginTop: '8px' }}>
                   Includes {attempt.bonusMarks} Bonus Points
                 </div>
               )}
@@ -185,7 +185,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
           <div 
             style={{ 
               width: '100%', maxWidth: '1000px', maxHeight: '90vh', overflowY: 'auto',
-              background: '#f0f2f8', borderRadius: '32px', 
+              background: 'var(--surface)', borderRadius: '32px', 
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
               position: 'relative', padding: '40px',
               display: 'flex', flexDirection: 'column', gap: '24px'
@@ -254,7 +254,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                       <span style={{ 
                         fontSize: '11px', fontWeight: 900, letterSpacing: '0.05em',
-                        background: '#3636e815', color: 'var(--primary)', padding: '6px 14px', borderRadius: '50px' 
+                        background: 'var(--primary-light)', color: 'var(--primary)', padding: '6px 14px', borderRadius: '50px' 
                       }}>
                         {q.type.replace('_', ' ')}
                       </span>
@@ -266,7 +266,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                         color: isCorrect ? 'var(--success)' : 'var(--danger)',
                         background: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
                         padding: '6px 14px', borderRadius: '50px', 
-                        border: `1px solid ${isCorrect ? '#10b98130' : '#ef444430'}`
+                        border: `1px solid ${isCorrect ? 'var(--success-light)' : 'var(--danger-light)'}`
                       }}>
                         {isCorrect ? '✓ Correct Answer' : '✗ Incorrect Answer'}
                       </span>
@@ -280,8 +280,8 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <div style={{ 
                       padding: '24px', borderRadius: '24px', 
-                      background: isCorrect ? '#10b98108' : '#ef444408', 
-                      border: `1px solid ${isCorrect ? '#10b98120' : '#ef444420'}`,
+                      background: isCorrect ? 'var(--success-light)' : 'var(--danger-light)', 
+                      border: `1px solid ${isCorrect ? 'var(--success-light)' : 'var(--danger-light)'}`,
                       boxShadow: 'inset 2px 2px 5px rgba(0,0,0,0.02)'
                     }}>
                       <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>Your Submission</div>
@@ -291,7 +291,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                     </div>
  
                     {q.correctAnswer && !isCorrect && (
-                      <div style={{ padding: '24px', background: '#3636e808', borderRadius: '24px', border: '1px solid #3636e820' }}>
+                      <div style={{ padding: '24px', background: 'var(--primary-light)', borderRadius: '24px', border: '1px solid #3636e820' }}>
                         <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '12px' }}>Correct Solution</div>
                         <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--primary)', lineHeight: '1.5' }}>
                           <RichTextDisplay text={correctDisplayAnswer} />

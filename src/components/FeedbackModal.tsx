@@ -131,7 +131,7 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
           {courseSubject}
         </p>
 
-        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 'clamp(20px, 5vw, 32px)' }}>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'clamp(20px, 5vw, 32px)' }}>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))',
@@ -180,7 +180,7 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
                 height: '120px',
                 padding: '20px',
                 borderRadius: '20px',
-                border: '2px solid #f1f5f9',
+                border: '2px solid var(--border)',
                 fontSize: '15px',
                 fontFamily: 'inherit',
                 resize: 'none',
@@ -208,7 +208,7 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
           padding: '16px', 
           background: 'var(--surface)', 
           borderRadius: '16px',
-          border: '1px solid #e2e8f0',
+          border: '1px solid var(--border)',
         }}>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>
             → Your feedback is completely private. Teachers cannot see your feedback or ratings.
@@ -244,7 +244,7 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
                 flex: 1,
                 padding: '14px',
                 borderRadius: '50px',
-                border: '1px solid #e2e8f0',
+                border: '1px solid var(--border)',
                 background: 'var(--surface)',
                 color: 'var(--text-secondary)',
                 fontWeight: '700',

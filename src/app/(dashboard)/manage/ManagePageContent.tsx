@@ -516,7 +516,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
     { key: 'content-bank',  label: 'Content Bank',  count: bankQuestions.length },
   ]
 
-  const COLORS = ['var(--primary)', '#7C3AED', 'var(--info)', 'var(--warning)', 'var(--success)', 'var(--danger)', '#EC4899']
+  const COLORS = ['var(--primary)', 'var(--accent)', 'var(--info)', 'var(--warning)', 'var(--success)', 'var(--danger)', '#EC4899']
 
   function renderForm() {
     const f = formData
@@ -693,7 +693,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: course.color, flexShrink: 0 }} />
                     <span style={{ fontSize: '13px' }}>{course.name}</span>
                     {course.subject && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({course.subject})</span>}
-                    {course.isExpired && <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700' }}>Expired</span>}
+                    {course.isExpired && <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700' }}>Expired</span>}
                     {course.isEffectivelyDisabled && !course.isExpired && <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700' }}>Disabled</span>}
                   </label>
                 ))}
@@ -818,7 +818,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             <div className="form-group">
               <label className="form-label">Source Type *</label>
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'FILE' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'FILE' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'FILE' ? 'var(--primary-light)' : 'transparent' }}>
                   <input
                     type="radio"
                     name="materialSourceType"
@@ -829,7 +829,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   />
                   <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'FILE' ? '600' : '500', color: 'var(--text-primary)' }}>📄 Upload File</span>
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'LINK' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'LINK' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'LINK' ? 'var(--primary-light)' : 'transparent' }}>
                   <input
                     type="radio"
                     name="materialSourceType"
@@ -879,7 +879,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 </div>
               )}
             </div>
-            <div style={{ border: '1px solid #c7d2fe', borderRadius: '12px', padding: '16px', background: 'var(--primary-light)', marginBottom: '16px' }}>
+            <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', background: 'var(--primary-light)', marginBottom: '16px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <input type="checkbox" checked={!!f.hasLive} onChange={e => set('hasLive', e.target.checked)} />
                 <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>🔴 Live (Pro) Access</span>
@@ -1009,7 +1009,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     )}
                     {f.ctaText && (
                       <div style={{
-                        width: '100%', padding: '5px', borderRadius: '6px', background: 'var(--surface)', border: '1px solid #e2e8f0', color: 'var(--primary)', fontSize: '8.5px', fontWeight: '700', textAlign: 'center', marginTop: '2px'
+                        width: '100%', padding: '5px', borderRadius: '6px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--primary)', fontSize: '8.5px', fontWeight: '700', textAlign: 'center', marginTop: '2px'
                       }}>{f.ctaText}</div>
                     )}
                   </div>
@@ -1165,9 +1165,9 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           style={{
             marginBottom: '16px',
             padding: '14px 18px',
-            border: '1px solid #fecaca',
-            color: '#b91c1c',
-            background: '#fff5f5',
+            border: '1px solid var(--border)',
+            color: 'var(--danger)',
+            background: 'var(--danger-light)',
           }}
         >
           Failed to load manage data. {loadError.message}
@@ -1332,7 +1332,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               gap: 8px;
               margin: 0;
               padding-bottom: 12px;
-              border-bottom: 1px solid #f1f5f9;
+              border-bottom: 1px solid var(--border);
             }
             .input-group {
               display: flex;
@@ -1357,7 +1357,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               width: 100%;
               padding: 12px 16px;
               border-radius: 12px;
-              border: 1.5px solid #e2e8f0;
+              border: 1.5px solid var(--border);
               background: #f8fafc;
               font-size: 14px;
               color: #0f172a;
@@ -1495,8 +1495,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               width: 100%;
               padding: 8px;
               border-radius: 8px;
-              background: #f1f5f9;
-              border: 1px solid #e2e8f0;
+              background: var(--border);
+              border: 1px solid var(--border);
               color: #6366f1;
               font-size: 11px;
               font-weight: 800;
@@ -1512,7 +1512,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             }
             .metric-card {
               background: #ffffff;
-              border: 1.5px solid #f1f5f9;
+              border: 1.5px solid var(--border);
               border-radius: 16px;
               padding: 16px;
               text-align: center;
@@ -1534,7 +1534,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             }
             .history-item-card {
               background: #ffffff;
-              border: 1px solid #f1f5f9;
+              border: 1px solid var(--border);
               border-radius: 18px;
               padding: 18px;
               box-shadow: 0 4px 10px rgba(0,0,0,0.01);
@@ -1654,9 +1654,9 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 <label className="input-label">Category</label>
                 <div className="chip-container">
                   {[
-                    { key: 'PROMOTIONAL', label: '🏷️ Promo', bg: 'var(--danger-light)', text: '#b91c1c', border: '#fecaca' },
-                    { key: 'ACADEMIC', label: '📚 Academic', bg: 'var(--primary-light)', text: '#3730a3', border: '#c7d2fe' },
-                    { key: 'ALERT', label: '🚨 System Alert', bg: 'var(--warning-light)', text: '#92400e', border: '#fde68a' },
+                    { key: 'PROMOTIONAL', label: '🏷️ Promo', bg: 'var(--danger-light)', text: 'var(--danger)', border: 'var(--border)' },
+                    { key: 'ACADEMIC', label: '📚 Academic', bg: 'var(--primary-light)', text: '#3730a3', border: 'var(--border)' },
+                    { key: 'ALERT', label: '🚨 System Alert', bg: 'var(--warning-light)', text: 'var(--warning)', border: 'var(--border)' },
                     { key: 'GENERAL', label: '📢 General Info', bg: 'var(--success-light)', text: '#065f46', border: '#a7f3d0' }
                   ].map(c => {
                     const isActive = inlineNotif.category === c.key
@@ -1922,7 +1922,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {/* Smartphone Real-time Preview */}
               <div className="notif-glow-card" style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px' }}>
                   <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
                     📱 Push Notification Live Preview
                   </h4>
@@ -1942,7 +1942,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     <div className="push-header">
                       <div className="push-app-badge">
                         <div className="push-logo" style={{
-                          background: inlineNotif.category === 'ALERT' ? '#ea580c' : inlineNotif.category === 'ACADEMIC' ? '#1e1a3a' : 'var(--accent)'
+                          background: inlineNotif.category === 'ALERT' ? 'var(--warning)' : inlineNotif.category === 'ACADEMIC' ? '#1e1a3a' : 'var(--accent)'
                         }}>G</div>
                         <span className="push-app-name">GENz IITian</span>
                       </div>
@@ -1969,7 +1969,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
 
               {/* RIGHT COLUMN: Broadcast History */}
               <div className="notif-glow-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
                     📰 Broadcast Logs & Audit
                   </h3>
@@ -2024,7 +2024,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                                 padding: '2px 6px',
                                 borderRadius: '6px',
                                 background: isSent ? 'var(--success-light)' : isPending ? 'var(--warning-light)' : 'var(--danger-light)',
-                                color: isSent ? '#065f46' : isPending ? '#92400e' : '#991b1b',
+                                color: isSent ? '#065f46' : isPending ? 'var(--warning)' : 'var(--danger)',
                                 textTransform: 'uppercase'
                               }}>
                                 {item.status}
@@ -2335,7 +2335,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '4px' }}>{item._count?.lectures || 0}L</span>
                         {item.isDemo && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: 'var(--primary)', color: 'white', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>DEMO</span>}
                         {item.isFree && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: 'var(--success)', color: 'white', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>FREE</span>}
-                        {item.isExpired && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#fff7ed', color: '#ea580c', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>EXP</span>}
+                        {item.isExpired && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: 'var(--warning-light)', color: 'var(--warning)', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>EXP</span>}
                         {item.isEffectivelyDisabled && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: 'var(--danger-light)', color: 'var(--danger)', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>DIS</span>}
                       </>
                     )}
@@ -2354,7 +2354,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                       </div>
                     )}
                     {tab === 'bundles' && (
-                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#ede9fe', color: '#7c3aed', fontWeight: '700' }}>
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--primary-light)', color: 'var(--accent)', fontWeight: '700' }}>
                         {item._count?.courses || item.courses?.length || 0} courses
                       </span>
                     )}
@@ -2451,7 +2451,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                         disabled={item.isDemo}
                         title={item.isDemo ? "Cannot delete system demo course" : "Delete course"}
                         className="btn btn-sm" 
-                        style={{ color: item.isDemo ? '#d1d5db' : 'var(--danger)', border: `1px solid ${item.isDemo ? 'var(--surface-2)' : 'var(--danger-light)'}`, cursor: item.isDemo ? 'not-allowed' : 'pointer' }}
+                        style={{ color: item.isDemo ? 'var(--border)' : 'var(--danger)', border: `1px solid ${item.isDemo ? 'var(--surface-2)' : 'var(--danger-light)'}`, cursor: item.isDemo ? 'not-allowed' : 'pointer' }}
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="3 6 5 6 21 6"/>
@@ -2500,7 +2500,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             <div style={{ padding: '24px', overflowY: 'auto', flex: 1, background: 'var(--surface)' }}>
               {recentPhotosLoading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '220px', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', border: '3px solid #e2e8f0', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <div style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                   <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>Loading recent photos…</span>
                 </div>
               ) : recentPhotos.length === 0 ? (
@@ -2547,7 +2547,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               )}
             </div>
 
-            <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: 'var(--surface)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>
                 Page {recentPhotosPage}
               </div>
@@ -2642,7 +2642,7 @@ export default function ManagePage() {
   return (
     <Suspense fallback={
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--accent)' }}>
-        <div className="animate-spin" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid #e0e7ff', borderTopColor: 'var(--accent)' }} />
+        <div className="animate-spin" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--accent)' }} />
       </div>
     }>
       <ManagePageInner />

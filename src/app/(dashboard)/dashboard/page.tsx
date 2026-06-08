@@ -242,7 +242,7 @@ export default function DashboardPage() {
     { label: 'Total Courses', value: stats?.totalCourses ?? 0, color: 'var(--accent)', bg: 'var(--primary-light)', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
     )},
-    { label: 'Lectures', value: stats?.totalLectures ?? 0, color: '#8b5cf6', bg: 'var(--primary-light)', icon: (
+    { label: 'Lectures', value: stats?.totalLectures ?? 0, color: 'var(--accent)', bg: 'var(--primary-light)', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
     )},
     ...(!isStudentView ? [{
@@ -270,7 +270,7 @@ export default function DashboardPage() {
       { 
         label: 'Active Sessions', 
         value: liveNowCount, 
-        color: '#f43f5e',
+        color: 'var(--danger)',
         bg: 'var(--danger-light)',
         icon: (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2">
@@ -491,10 +491,10 @@ export default function DashboardPage() {
                   }}>
                     <div style={{
                       width: '7px', height: '7px', borderRadius: '50%',
-                      background: '#f43f5e', flexShrink: 0,
+                      background: 'var(--danger)', flexShrink: 0,
                       animation: 'livePulse 1.5s infinite',
                     }} />
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#f43f5e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       Active Sessions
                     </span>
                   </div>
@@ -536,7 +536,7 @@ export default function DashboardPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{
                       width: '28px', height: '28px', borderRadius: '50%',
-                      background: '#fff1f2', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'var(--danger-light)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2">
                         <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -559,7 +559,7 @@ export default function DashboardPage() {
                             width: i === activeCard ? '24px' : '8px',
                             height: '8px',
                             borderRadius: '4px',
-                            background: i === activeCard ? '#f43f5e' : 'var(--surface-2)',
+                            background: i === activeCard ? 'var(--danger)' : 'var(--surface-2)',
                             transition: 'all 0.3s ease',
                             cursor: 'pointer',
                           }}
@@ -574,7 +574,7 @@ export default function DashboardPage() {
                     rel="noopener noreferrer"
                     className="btn btn-primary"
                     style={{
-                      background: '#f43f5e',
+                      background: 'var(--danger)',
                       boxShadow: '0 8px 20px rgba(244,63,94,0.3)',
                       padding: '12px 24px',
                       fontSize: '14px',
@@ -587,7 +587,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '180px', gap: '16px' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: '#fff1f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--danger-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2">
                     <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
                   </svg>
@@ -630,7 +630,7 @@ export default function DashboardPage() {
                 padding: '6px 12px',
                 borderRadius: '50px',
                 background: dashboardData?.supportSummary?.isSupportActive ? 'var(--success-light)' : 'var(--danger-light)',
-                color: dashboardData?.supportSummary?.isSupportActive ? '#15803d' : '#b91c1c',
+                color: dashboardData?.supportSummary?.isSupportActive ? 'var(--success)' : 'var(--danger)',
                 fontSize: '11px',
                 fontWeight: '800',
                 textTransform: 'uppercase',
@@ -1510,7 +1510,7 @@ export default function DashboardPage() {
               <div style={{ display: 'flex', gap: '14px' }}>
                 <button
                   onClick={() => setUpgradeModalCourse(null)}
-                  style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
@@ -1558,7 +1558,7 @@ export default function DashboardPage() {
           </p>
           <div style={{ background: 'var(--success-light)', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid var(--success)' }}>
             <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
-            <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--success)', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
           </div>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
           <button

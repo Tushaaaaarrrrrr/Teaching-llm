@@ -265,7 +265,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
   // Shared Styles
   const neuCard: React.CSSProperties = {
-    borderRadius: '24px', background: '#f0f2f8',
+    borderRadius: '24px', background: 'var(--surface)',
     boxShadow: '8px 8px 16px #cfd6e1, -8px -8px 16px var(--neu-light)',
     padding: '32px',
   }
@@ -275,7 +275,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
     height: '100vh',
     position: 'sticky',
     top: 0,
-    background: '#f0f2f8',
+    background: 'var(--surface)',
     borderRight: '1px solid #cfd6e1',
     display: 'flex',
     flexDirection: 'column',
@@ -289,7 +289,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
     height: '100vh',
     overflowY: 'auto',
     padding: '32px',
-    background: '#f0f2f8',
+    background: 'var(--surface)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center'
@@ -297,13 +297,13 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
   if (isMobile) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f0f2f8' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--surface)' }}>
         
         {/* Sticky Mobile Header */}
         <header style={{
           position: 'sticky',
           top: 0,
-          background: '#f0f2f8',
+          background: 'var(--surface)',
           borderBottom: '1px solid #cfd6e1',
           padding: '12px 16px',
           display: 'flex',
@@ -396,7 +396,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
         }}>
           <div style={{ width: '100%' }}>
             <div style={{
-              borderRadius: '20px', background: '#f0f2f8',
+              borderRadius: '20px', background: 'var(--surface)',
               boxShadow: '6px 6px 12px #cfd6e1, -6px -6px 12px var(--neu-light)',
               padding: '20px',
             }}>
@@ -406,7 +406,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <span style={{ 
                       fontSize: '9px', fontWeight: 900, letterSpacing: '0.05em',
-                      background: '#3636e815', color: 'var(--primary)', padding: '4px 8px', borderRadius: '50px' 
+                      background: 'var(--primary-light)', color: 'var(--primary)', padding: '4px 8px', borderRadius: '50px' 
                   }}>
                     QUESTION {currentIdx + 1}
                   </span>
@@ -521,7 +521,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                       placeholder="Enter numerical response..."
                       style={{
                         width: '100%', padding: '16px', borderRadius: '16px', border: 'none',
-                        background: '#f0f2f8', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px var(--neu-light)',
+                        background: 'var(--surface)', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px var(--neu-light)',
                         fontSize: '16px', fontWeight: 700, outline: 'none', color: 'var(--text-primary)',
                       }}
                     />
@@ -534,7 +534,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     rows={6}
                     style={{
                       width: '100%', padding: '16px', borderRadius: '16px', border: 'none',
-                      background: '#f0f2f8', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px var(--neu-light)',
+                      background: 'var(--surface)', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px var(--neu-light)',
                       fontSize: '14px', lineHeight: '1.6', outline: 'none', color: 'var(--text-primary)',
                       fontFamily: 'inherit'
                     }}
@@ -614,7 +614,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
               bottom: 0,
               left: 0,
               right: 0,
-              background: '#f0f2f8',
+              background: 'var(--surface)',
               borderTopLeftRadius: '28px',
               borderTopRightRadius: '28px',
               boxShadow: '0 -8px 30px rgba(0, 0, 0, 0.15)',
@@ -666,7 +666,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     textColor = '#fff'
                   } else if (!isVisited) {
                     bgColor = '#e0e0e0'
-                    textColor = '#999'
+                    textColor = 'var(--text-muted)'
                     shadow = 'none'
                   }
 
@@ -732,7 +732,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f2f8' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--surface)' }}>
       
       {/* LEFT PANEL - Fixed Sidebar */}
       <aside style={sidebarStyle}>
@@ -751,7 +751,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
             </span>
             <span style={{ 
                 fontSize: '11px', fontWeight: 800, 
-                background: isFinal ? '#ef444415' : '#3636e815', 
+                background: isFinal ? 'var(--danger-light)' : 'var(--primary-light)', 
                 color: isFinal ? 'var(--danger)' : 'var(--primary)', 
                 padding: '4px 10px', borderRadius: '50px' 
             }}>
@@ -824,7 +824,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                 textColor = '#fff'
               } else if (!isVisited) {
                 bgColor = '#e0e0e0'
-                textColor = '#999'
+                textColor = 'var(--text-muted)'
                 shadow = 'none'
               }
 
@@ -875,7 +875,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <span style={{ 
                             fontSize: '10px', fontWeight: 900, letterSpacing: '0.05em',
-                            background: '#3636e815', color: 'var(--primary)', padding: '6px 12px', borderRadius: '50px' 
+                            background: 'var(--primary-light)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '50px' 
                         }}>
                           QUESTION {currentIdx + 1}
                         </span>
@@ -989,7 +989,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                           placeholder="Enter number (decimals allowed)..."
                           style={{
                               width: '100%', padding: '24px', borderRadius: '20px', border: 'none',
-                              background: '#f0f2f8', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px var(--neu-light)',
+                              background: 'var(--surface)', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px var(--neu-light)',
                               fontSize: '18px', fontWeight: 700, outline: 'none', color: 'var(--text-primary)',
                           }}
                         />
@@ -1002,7 +1002,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                         rows={10}
                         style={{
                             width: '100%', padding: '24px', borderRadius: '20px', border: 'none',
-                            background: '#f0f2f8', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px var(--neu-light)',
+                            background: 'var(--surface)', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px var(--neu-light)',
                             fontSize: '16px', lineHeight: '1.6', outline: 'none', color: 'var(--text-primary)',
                             fontFamily: 'inherit'
                         }}

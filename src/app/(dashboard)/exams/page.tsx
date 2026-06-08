@@ -102,18 +102,18 @@ export default function ExamsPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ padding: '4px 12px', borderRadius: '50px', background: `${color}18`, color, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>{label}</span>
-            <span style={{ padding: '4px 14px', borderRadius: '50px', background: exam.examType === 'FINAL_TEST' ? '#ef444410' : '#8b5cf612', color: exam.examType === 'FINAL_TEST' ? 'var(--danger)' : '#8b5cf6', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', border: `1px solid ${exam.examType === 'FINAL_TEST' ? '#ef444420' : '#8b5cf625'}`, letterSpacing: '0.02em' }}>
+            <span style={{ padding: '4px 14px', borderRadius: '50px', background: exam.examType === 'FINAL_TEST' ? 'var(--danger-light)' : 'var(--primary-light)', color: exam.examType === 'FINAL_TEST' ? 'var(--danger)' : 'var(--accent)', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', border: `1px solid ${exam.examType === 'FINAL_TEST' ? 'var(--danger-light)' : 'var(--primary-light)'}`, letterSpacing: '0.02em' }}>
               {exam.examType === 'FINAL_TEST' ? 'Final Test' : 'Practice Test'}
             </span>
-            {exam.testSeriesId && <span style={{ padding: '4px 10px', borderRadius: '50px', background: 'var(--warning-light)', color: '#92400e', fontSize: '10px', fontWeight: 800 }}>TEST SERIES</span>}
+            {exam.testSeriesId && <span style={{ padding: '4px 10px', borderRadius: '50px', background: 'var(--warning-light)', color: 'var(--warning)', fontSize: '10px', fontWeight: 800 }}>TEST SERIES</span>}
           </div>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             {isManager && (
               <button onClick={(e) => { e.stopPropagation(); setShowCopyModal(exam); setCopyDestType('course'); setCopyDestId('') }}
-                style={{ padding: '4px 10px', borderRadius: '50px', background: '#f0fdf4', border: '1px solid #bbf7d0', color: 'var(--success)', fontSize: '10px', fontWeight: 800, cursor: 'pointer' }}>📋 Copy</button>
+                style={{ padding: '4px 10px', borderRadius: '50px', background: 'var(--success-light)', border: '1px solid var(--border)', color: 'var(--success)', fontSize: '10px', fontWeight: 800, cursor: 'pointer' }}>📋 Copy</button>
             )}
             {isUpcoming ? (
-              <span style={{ padding: '4px 10px', borderRadius: '50px', background: '#3636e812', color: 'var(--primary)', fontSize: '10px', fontWeight: 800 }}>UPCOMING</span>
+              <span style={{ padding: '4px 10px', borderRadius: '50px', background: 'var(--primary-light)', color: 'var(--primary)', fontSize: '10px', fontWeight: 800 }}>UPCOMING</span>
             ) : !exam.isPublished && (
               <span style={{ padding: '4px 10px', borderRadius: '50px', background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)', fontSize: '10px', fontWeight: 700 }}>DRAFT</span>
             )}
@@ -185,9 +185,9 @@ export default function ExamsPage() {
                   {isManager && (
                     <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                       <button onClick={() => router.push(`/exams/test-series/${ts.id}`)}
-                        style={{ flex: 1, padding: '8px', borderRadius: '10px', background: '#3636e812', border: '1px solid #3636e825', color: 'var(--primary)', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>⚙️ Manage</button>
+                        style={{ flex: 1, padding: '8px', borderRadius: '10px', background: 'var(--primary-light)', border: '1px solid #3636e825', color: 'var(--primary)', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>⚙️ Manage</button>
                       <button onClick={async () => { if (!confirm(`Delete "${ts.title}"?`)) return; await fetch(`/api/test-series/${ts.id}`, { method: 'DELETE' }); mutateTS() }}
-                        style={{ padding: '8px 12px', borderRadius: '10px', background: 'var(--danger-light)', border: '1px solid #fecaca', color: 'var(--danger)', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>🗑️</button>
+                        style={{ padding: '8px 12px', borderRadius: '10px', background: 'var(--danger-light)', border: '1px solid var(--border)', color: 'var(--danger)', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>🗑️</button>
                     </div>
                   )}
                 </div>
@@ -230,14 +230,14 @@ export default function ExamsPage() {
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>Copying: <strong>{showCopyModal.title}</strong></p>
             <div style={{ marginBottom: '14px' }}>
               <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>Destination Type</label>
-              <select value={copyDestType} onChange={e => { setCopyDestType(e.target.value as any); setCopyDestId('') }} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', marginTop: '6px', fontSize: '14px' }}>
+              <select value={copyDestType} onChange={e => { setCopyDestType(e.target.value as any); setCopyDestId('') }} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid var(--border)', marginTop: '6px', fontSize: '14px' }}>
                 <option value="course">Course</option>
                 <option value="testSeries">Test Series</option>
               </select>
             </div>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>Select {copyDestType === 'course' ? 'Course' : 'Test Series'}</label>
-              <select value={copyDestId} onChange={e => setCopyDestId(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', marginTop: '6px', fontSize: '14px' }}>
+              <select value={copyDestId} onChange={e => setCopyDestId(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid var(--border)', marginTop: '6px', fontSize: '14px' }}>
                 <option value="">Choose...</option>
                 {copyDestType === 'course'
                   ? courses.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)
@@ -259,11 +259,11 @@ export default function ExamsPage() {
           <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: '20px', padding: '28px', width: '420px', maxWidth: '90vw' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px' }}>📝 Create Test Series</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <input id="ts-title" placeholder="Test Series Title *" style={{ padding: '12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '14px' }} />
-              <input id="ts-desc" placeholder="Description (optional)" style={{ padding: '12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '14px' }} />
+              <input id="ts-title" placeholder="Test Series Title *" style={{ padding: '12px', borderRadius: '10px', border: '1.5px solid var(--border)', fontSize: '14px' }} />
+              <input id="ts-desc" placeholder="Description (optional)" style={{ padding: '12px', borderRadius: '10px', border: '1.5px solid var(--border)', fontSize: '14px' }} />
               <div style={{ display: 'flex', gap: '10px' }}>
-                <input id="ts-price" type="number" placeholder="Price (₹)" defaultValue="0" style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '14px' }} />
-                <input id="ts-validity" type="number" placeholder="Validity (days)" defaultValue="365" style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '14px' }} />
+                <input id="ts-price" type="number" placeholder="Price (₹)" defaultValue="0" style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1.5px solid var(--border)', fontSize: '14px' }} />
+                <input id="ts-validity" type="number" placeholder="Validity (days)" defaultValue="365" style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1.5px solid var(--border)', fontSize: '14px' }} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>

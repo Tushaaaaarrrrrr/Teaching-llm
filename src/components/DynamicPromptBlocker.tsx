@@ -113,7 +113,7 @@ export default function DynamicPromptBlocker() {
 
         {error && (
           <div style={{
-            background: 'var(--danger-light)', color: '#b91c1c', padding: '12px 16px',
+            background: 'var(--danger-light)', color: 'var(--danger)', padding: '12px 16px',
             borderRadius: '12px', fontSize: '13px', fontWeight: 600,
             marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px'
           }}>
@@ -135,7 +135,7 @@ export default function DynamicPromptBlocker() {
                       flex: 1, padding: '12px', borderRadius: '12px', textAlign: 'center', cursor: 'pointer',
                       fontSize: '14px', fontWeight: 700,
                       border: answers[q.id] === opt ? '2px solid #6366f1' : '2px solid #e0e3ea',
-                      background: answers[q.id] === opt ? '#eff0fe' : '#f8f9fa',
+                      background: answers[q.id] === opt ? '#eff0fe' : 'var(--surface)',
                       color: answers[q.id] === opt ? 'var(--accent)' : 'var(--text-secondary)',
                       transition: 'all 0.2s'
                     }}>
@@ -152,7 +152,7 @@ export default function DynamicPromptBlocker() {
                       padding: '12px 16px', borderRadius: '12px', cursor: 'pointer',
                       fontSize: '14px', fontWeight: 600,
                       border: answers[q.id] === opt ? '2px solid #6366f1' : '2px solid #e0e3ea',
-                      background: answers[q.id] === opt ? '#eff0fe' : '#f8f9fa',
+                      background: answers[q.id] === opt ? '#eff0fe' : 'var(--surface)',
                       color: answers[q.id] === opt ? 'var(--accent)' : 'var(--text-primary)',
                       transition: 'all 0.2s'
                     }}>

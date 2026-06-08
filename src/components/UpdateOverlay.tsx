@@ -289,7 +289,7 @@ export default function UpdateOverlay() {
           100% { transform: translateY(-800px) scale(1.5); opacity: 0; }
         }
         .close-btn-update:hover {
-          background: #e2e8f0 !important;
+          background: var(--border) !important;
         }
       `}</style>
     </div>

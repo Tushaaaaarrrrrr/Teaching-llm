@@ -33,7 +33,7 @@ const FILE_STYLES: Record<string, { color: string }> = {
   DOCX: { color: 'var(--info)' },
   XLS:  { color: 'var(--success)' },
   XLSX: { color: 'var(--success)' },
-  ZIP:  { color: '#8B5CF6' },
+  ZIP:  { color: 'var(--accent)' },
   PNG:  { color: '#EC4899' },
   JPG:  { color: '#EC4899' },
   LINK: { color: 'var(--info)' },
@@ -460,7 +460,7 @@ export default function StudyResourcesPage() {
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 700 }}>SOURCE TYPE *</label>
                   <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'FILE' ? 'var(--accent)' : 'var(--surface-2)'}`, background: sourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'FILE' ? 'var(--accent)' : 'var(--surface-2)'}`, background: sourceType === 'FILE' ? 'var(--primary-light)' : 'transparent' }}>
                       <input
                         type="radio"
                         name="sourceType"
@@ -470,7 +470,7 @@ export default function StudyResourcesPage() {
                       />
                       <span style={{ fontSize: '13px', fontWeight: sourceType === 'FILE' ? '600' : '500', color: 'var(--text-primary)' }}>📄 Upload File</span>
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'LINK' ? 'var(--accent)' : 'var(--surface-2)'}`, background: sourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'LINK' ? 'var(--accent)' : 'var(--surface-2)'}`, background: sourceType === 'LINK' ? 'var(--primary-light)' : 'transparent' }}>
                       <input
                         type="radio"
                         name="sourceType"

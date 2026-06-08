@@ -123,13 +123,13 @@ export default function PromptsAdminPage() {
           <div style={{ marginTop: '24px' }}>
             <label className="form-label">Questions / CTAs (Max 3)</label>
             {questions.length === 0 && (
-              <div style={{ padding: '20px', textAlign: 'center', background: '#f8f9fa', borderRadius: '12px', border: '1px dashed var(--neu-dark)', color: 'var(--text-muted)', fontSize: '14px' }}>
+              <div style={{ padding: '20px', textAlign: 'center', background: 'var(--surface)', borderRadius: '12px', border: '1px dashed var(--neu-dark)', color: 'var(--text-muted)', fontSize: '14px' }}>
                 No questions added yet. Add one below. (Max 3)
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {questions.map((q, i) => (
-                <div key={q.id} style={{ background: '#f8f9fa', padding: '16px', borderRadius: '12px', position: 'relative' }}>
+                <div key={q.id} style={{ background: 'var(--surface)', padding: '16px', borderRadius: '12px', position: 'relative' }}>
                   <button onClick={() => removeQuestion(q.id)} style={{ position: 'absolute', top: '16px', right: '16px', color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
                     <Trash size={18} />
                   </button>
@@ -209,7 +209,7 @@ export default function PromptsAdminPage() {
                     <span style={{ 
                       padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
                       background: p.isActive ? 'var(--success-light)' : '#f3f4f8', 
-                      color: p.isActive ? '#15803d' : 'var(--text-secondary)' 
+                      color: p.isActive ? 'var(--success)' : 'var(--text-secondary)' 
                     }}>
                       {p.isActive ? 'Active' : 'Inactive'}
                     </span>

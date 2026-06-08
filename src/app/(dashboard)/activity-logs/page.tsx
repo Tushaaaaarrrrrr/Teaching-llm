@@ -51,11 +51,11 @@ function formatTimestamp(ts: string): string {
 
 function getRoleBadgeStyle(role: string): React.CSSProperties {
   const colors: Record<string, { bg: string; color: string }> = {
-    MANAGER: { bg: '#ede9fe', color: '#7c3aed' },
+    MANAGER: { bg: 'var(--primary-light)', color: 'var(--accent)' },
     ADMIN: { bg: 'var(--info-light)', color: 'var(--info)' },
     STUDENT: { bg: 'var(--success-light)', color: 'var(--success)' },
   }
-  const c = colors[role] || { bg: 'var(--bg)', color: '#6b7280' }
+  const c = colors[role] || { bg: 'var(--bg)', color: 'var(--text-secondary)' }
   return {
     display: 'inline-block',
     padding: '2px 10px',
@@ -239,7 +239,7 @@ export default function ActivityLogPage() {
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>Today&apos;s Actions</div>
           </div>
           <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: '800', color: '#7c3aed' }}>{page}/{totalPages || 1}</div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--accent)' }}>{page}/{totalPages || 1}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>Current Page</div>
           </div>
         </div>

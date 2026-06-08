@@ -370,7 +370,7 @@ export default function SettingsPage() {
               {isManagerUser && (
                 <div style={{
                   ...insetRow,
-                  background: maintenanceMode ? '#fff1f2' : 'var(--surface-2)',
+                  background: maintenanceMode ? 'var(--danger-light)' : 'var(--surface-2)',
                   transition: 'background 0.3s ease',
                   border: maintenanceMode ? '1px solid #fda4af' : '1px solid transparent'
                 }}>
@@ -423,7 +423,7 @@ export default function SettingsPage() {
                     value={helpCardConfig.title}
                     onChange={e => setHelpCardConfig(p => ({ ...p, title: e.target.value }))}
                     placeholder="e.g. Join the Community"
-                    style={{ background: 'var(--surface)', border: '1px solid #e2e8f0', boxShadow: 'none' }}
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'none' }}
                   />
                 </div>
                 <div className="form-group">
@@ -434,7 +434,7 @@ export default function SettingsPage() {
                     value={helpCardConfig.buttonText}
                     onChange={e => setHelpCardConfig(p => ({ ...p, buttonText: e.target.value }))}
                     placeholder="e.g. Enroll Now"
-                    style={{ background: 'var(--surface)', border: '1px solid #e2e8f0', boxShadow: 'none' }}
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'none' }}
                   />
                 </div>
                 <div className="form-group">
@@ -445,7 +445,7 @@ export default function SettingsPage() {
                     value={helpCardConfig.redirectUrl}
                     onChange={e => setHelpCardConfig(p => ({ ...p, redirectUrl: e.target.value }))}
                     placeholder="https://..."
-                    style={{ background: 'var(--surface)', border: '1px solid #e2e8f0', boxShadow: 'none' }}
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'none' }}
                   />
                 </div>
               </div>

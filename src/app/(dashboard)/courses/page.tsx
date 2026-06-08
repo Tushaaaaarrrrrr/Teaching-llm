@@ -166,9 +166,9 @@ export default function CoursesPage() {
           style={{
             marginBottom: '16px',
             padding: '14px 18px',
-            border: '1px solid #fecaca',
-            color: '#b91c1c',
-            background: '#fff5f5',
+            border: '1px solid var(--border)',
+            color: 'var(--danger)',
+            background: 'var(--danger-light)',
           }}
         >
           Failed to load courses. {error.message}
@@ -306,7 +306,7 @@ export default function CoursesPage() {
           const getBatchBadge = () => {
             if (isFreeOrDemo) return { text: 'General Batch', color: '#bae6fd' }
             if (isLive) return { text: 'PRO Batch', color: '#fff' }
-            if (isRecorded) return { text: 'PLUS', color: '#fde68a' }
+            if (isRecorded) return { text: 'PLUS', color: 'var(--border)' }
             return { text: 'General Batch', color: '#bae6fd' }
           }
           const batchBadge = getBatchBadge()
@@ -464,7 +464,7 @@ export default function CoursesPage() {
                     padding: '3px 12px',
                     borderRadius: '50px',
                     background: isRecorded ? 'var(--surface-2)' : course.color + '18',
-                    color: isRecorded ? '#4b5563' : course.color,
+                    color: isRecorded ? 'var(--text-secondary)' : course.color,
                     fontSize: '12px',
                     fontWeight: '700',
                     marginBottom: '8px',
@@ -517,7 +517,7 @@ export default function CoursesPage() {
                           width: '20px', height: '20px', borderRadius: '50%',
                           background: isRecorded ? 'var(--surface-2)' : course.color + '22',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '9px', fontWeight: '700', color: isRecorded ? '#4b5563' : course.color,
+                          fontSize: '9px', fontWeight: '700', color: isRecorded ? 'var(--text-secondary)' : course.color,
                         }}>
                           {course.teacherName.charAt(0).toUpperCase()}
                         </div>
@@ -788,7 +788,7 @@ export default function CoursesPage() {
             animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="batch-cmp-modal" style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
+            <div className="batch-cmp-modal" style={{ background: 'linear-gradient(135deg, #f8fafc, var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
               <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'var(--surface)', border: 'none', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
@@ -798,7 +798,7 @@ export default function CoursesPage() {
 
             {/* Comparison Table */}
             <div className="batch-cmp-table-wrap">
-              <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1.5px solid #e2e8f0', background: 'var(--surface)' }}>
+              <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1.5px solid var(--border)', background: 'var(--surface)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
                   <colgroup>
                     <col style={{ width: '38%' }} />
@@ -808,10 +808,10 @@ export default function CoursesPage() {
                   <thead>
                     <tr style={{ background: 'var(--surface)' }}>
                       <th className="batch-cmp-th" style={{ color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Features</th>
-                      <th className="batch-cmp-th" style={{ color: '#92400e', fontWeight: '800', background: 'var(--warning-light)', textAlign: 'center', wordBreak: 'break-word' }}>
+                      <th className="batch-cmp-th" style={{ color: 'var(--warning)', fontWeight: '800', background: 'var(--warning-light)', textAlign: 'center', wordBreak: 'break-word' }}>
                         {infoModalCourse?.enrollmentType === 'FREE' || infoModalCourse?.enrollmentType === 'DEMO' ? 'General' : 'PLUS'}
                       </th>
-                      <th className="batch-cmp-th" style={{ color: '#4338ca', fontWeight: '800', background: 'var(--primary-light)', textAlign: 'center' }}>PRO</th>
+                      <th className="batch-cmp-th" style={{ color: 'var(--primary-dark)', fontWeight: '800', background: 'var(--primary-light)', textAlign: 'center' }}>PRO</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -823,10 +823,10 @@ export default function CoursesPage() {
                       { f: 'Mentorship', g: '❌ No', p: '✅ Weekly' },
                       { f: 'Support', g: '❌ Basic', p: '✅ Priority' },
                     ].map((row, i) => (
-                      <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
+                      <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
                         <td className="batch-cmp-td" style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>{row.f}</td>
-                        <td className="batch-cmp-td" style={{ color: '#92400e', textAlign: 'center', background: '#fffdf5' }}>{row.g}</td>
-                        <td className="batch-cmp-td" style={{ color: '#4338ca', fontWeight: '700', textAlign: 'center', background: '#f5f7ff' }}>{row.p}</td>
+                        <td className="batch-cmp-td" style={{ color: 'var(--warning)', textAlign: 'center', background: 'var(--warning-light)' }}>{row.g}</td>
+                        <td className="batch-cmp-td" style={{ color: 'var(--primary-dark)', fontWeight: '700', textAlign: 'center', background: 'var(--surface)' }}>{row.p}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -888,7 +888,7 @@ export default function CoursesPage() {
                   You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
                 </p>
 
-                <div style={{ background: '#f8faff', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid #e0e7ff' }}>
+                <div style={{ background: 'var(--surface)', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid var(--border)' }}>
                   <div style={{ fontSize: '36px', fontWeight: '900', color: 'var(--accent)', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
                   <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600' }}>One-time upgrade fee</div>
                 </div>
@@ -897,7 +897,7 @@ export default function CoursesPage() {
                   <button
                     onClick={() => setUpgradeModalCourse(null)}
                     style={{
-                      flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'var(--surface)',
+                      flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid var(--border)', background: 'var(--surface)',
                       color: 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer'
                     }}
                   >
@@ -944,9 +944,9 @@ export default function CoursesPage() {
             <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
               Your upgrade was successful. You now have full access to live classes, mentorship, and priority support.
             </p>
-            <div style={{ background: '#f0fdf4', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #bbf7d0' }}>
+            <div style={{ background: 'var(--success-light)', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid var(--border)' }}>
               <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
-              <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--success)', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
             <button

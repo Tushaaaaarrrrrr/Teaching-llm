@@ -48,7 +48,7 @@ function Toggle({ value, onChange, disabled }: { value: boolean; onChange: (v: b
       style={{
         width: '50px', height: '26px', borderRadius: '13px', border: 'none',
         cursor: disabled ? 'default' : 'pointer',
-        background: value ? 'var(--success)' : '#d1d5db',
+        background: value ? 'var(--success)' : 'var(--border)',
         position: 'relative', transition: 'all 0.25s',
         opacity: disabled ? 0.5 : 1,
         boxShadow: value ? '0 4px 12px rgba(16,185,129,0.25)' : 'none',
@@ -319,8 +319,8 @@ export default function ManageUpdatesPage() {
         <div style={{
           padding: '4px 12px', borderRadius: '20px', fontSize: '10px',
           fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0,
-          background: isWelcome ? '#ede9fe' : 'var(--info-light)',
-          color: isWelcome ? '#7c3aed' : 'var(--info)',
+          background: isWelcome ? 'var(--primary-light)' : 'var(--info-light)',
+          color: isWelcome ? 'var(--accent)' : 'var(--info)',
         }}>
           {isWelcome ? 'Welcome' : 'Custom'}
         </div>
@@ -372,7 +372,7 @@ export default function ManageUpdatesPage() {
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '28px' }}>
         {[
-          { label: 'Welcome Msgs', value: welcomeUpdates.length, color: '#7c3aed' },
+          { label: 'Welcome Msgs', value: welcomeUpdates.length, color: 'var(--accent)' },
           { label: 'Custom Msgs', value: customUpdates.length, color: 'var(--info)' },
           { label: 'Active Custom', value: customUpdates.filter(u => u.isActive).length, color: 'var(--success)' },
           { label: 'Total Views', value: allUpdates.reduce((s, u) => s + u._count.views, 0), color: 'var(--warning)' },
@@ -396,7 +396,7 @@ export default function ManageUpdatesPage() {
         {isLoading ? (
           <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>
         ) : welcomeUpdates.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '2px dashed #e2e8f0', borderRadius: '12px' }}>
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '2px dashed var(--border)', borderRadius: '12px' }}>
             No welcome message yet.<br />
             <button onClick={() => openCreate('WELCOME')} className="btn btn-primary" style={{ marginTop: '12px', padding: '8px 20px', fontSize: '13px' }}>
               + Create Welcome Message
@@ -424,7 +424,7 @@ export default function ManageUpdatesPage() {
         {isLoading ? (
           <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>
         ) : customUpdates.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '2px dashed #e2e8f0', borderRadius: '12px' }}>
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '2px dashed var(--border)', borderRadius: '12px' }}>
             No custom messages yet.
             <br />
             <button onClick={() => openCreate('CUSTOM')} className="btn btn-primary" style={{ marginTop: '12px', padding: '8px 20px', fontSize: '13px' }}>
@@ -452,7 +452,7 @@ export default function ManageUpdatesPage() {
                 {editId ? 'Edit' : 'Create'} {editType === 'WELCOME' ? 'Welcome Message' : 'Custom Message'}
               </h3>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={() => setShowPreview(true)} className="btn btn-sm" style={{ background: 'var(--surface)', border: '1px solid #e2e8f0', color: 'var(--text-secondary)' }}>
+                <button onClick={() => setShowPreview(true)} className="btn btn-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                   👀 Preview
                 </button>
                 <button onClick={() => setShowModal(false)} style={{ color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none' }}>
@@ -466,8 +466,8 @@ export default function ManageUpdatesPage() {
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1, padding: '24px' }}>
 
               {/* Type pill */}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', background: editType === 'WELCOME' ? '#ede9fe' : 'var(--info-light)', alignSelf: 'flex-start' }}>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: editType === 'WELCOME' ? '#7c3aed' : 'var(--info)', textTransform: 'uppercase' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', background: editType === 'WELCOME' ? 'var(--primary-light)' : 'var(--info-light)', alignSelf: 'flex-start' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: editType === 'WELCOME' ? 'var(--accent)' : 'var(--info)', textTransform: 'uppercase' }}>
                   {editType === 'WELCOME' ? '👋 Welcome Message — shown once per user lifetime' : '📢 Custom Message'}
                 </span>
               </div>
@@ -528,7 +528,7 @@ export default function ManageUpdatesPage() {
               {/* Image */}
               <div className="form-group">
                 <label className="form-label">Attached Image (Optional)</label>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: 'var(--surface)', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: 'var(--surface)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border)' }}>
                   <input type="file" ref={fileInputRef} accept="image/png,image/jpeg" onChange={handleImageSelect} style={{ display: 'none' }} />
                   <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-sm" style={{ background: 'var(--surface)', border: '1px solid #cbd5e1', fontSize: '12px' }}>
                     {uploading ? 'Uploading…' : '📷 Choose Image'}
@@ -650,7 +650,7 @@ export default function ManageUpdatesPage() {
                     <label className="form-label">Targeting</label>
                     <div style={{
                       padding: '14px', borderRadius: '12px',
-                      border: '1px solid #e2e8f0', background: 'var(--surface)',
+                      border: '1px solid var(--border)', background: 'var(--surface)',
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                         <span style={{ fontSize: '13px', fontWeight: '600', color: selectedCourses.length === 0 ? 'var(--success)' : 'var(--text-secondary)' }}>
@@ -700,7 +700,7 @@ export default function ManageUpdatesPage() {
               )}
             </div>
 
-            <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="modal-footer" style={{ borderTop: '1px solid var(--border)', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ fontSize: '13px', fontWeight: '600', color: isActive ? 'var(--success)' : 'var(--text-secondary)' }}>
                   {isActive ? 'ACTIVE' : 'INACTIVE'}
@@ -767,7 +767,7 @@ export default function ManageUpdatesPage() {
                 style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.7', wordBreak: 'break-word' }}
               />
             </div>
-            <div style={{ padding: '20px 28px', textAlign: 'center', flexShrink: 0, borderTop: '1px solid #e2e8f0', background: 'var(--surface)', display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <div style={{ padding: '20px 28px', textAlign: 'center', flexShrink: 0, borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', gap: '12px', justifyContent: 'center' }}>
               {ctaText && ctaLink && (
                 <button style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '14px 24px', borderRadius: '50px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', flex: 1, maxWidth: '200px' }}>
                   {ctaText}
@@ -818,7 +818,7 @@ export default function ManageUpdatesPage() {
             <div style={{ padding: '24px', overflowY: 'auto', flex: 1, background: 'var(--surface)' }}>
               {recentPhotosLoading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '220px', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', border: '3px solid #e2e8f0', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <div style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                   <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>Loading recent photos…</span>
                 </div>
               ) : recentPhotos.length === 0 ? (
@@ -865,7 +865,7 @@ export default function ManageUpdatesPage() {
               )}
             </div>
 
-            <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: 'var(--surface)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>
                 Page {recentPhotosPage}
               </div>

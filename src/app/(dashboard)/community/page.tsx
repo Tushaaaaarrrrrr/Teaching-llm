@@ -552,9 +552,9 @@ export default function CommunityPage() {
             transform: 'translateX(-50%)',
             zIndex: 5,
             padding: '12px 16px',
-            border: '1px solid #fecaca',
-            color: '#b91c1c',
-            background: '#fff5f5',
+            border: '1px solid var(--border)',
+            color: 'var(--danger)',
+            background: 'var(--danger-light)',
           }}
         >
           Failed to load community data. {loadError}
@@ -776,7 +776,7 @@ export default function CommunityPage() {
                 )}
                 <div style={{
                   width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-                  background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : '#3636e822',
+                  background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : 'var(--primary-light)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '12px', fontWeight: '800',
                   color: selectedClass?.id === cls.id ? '#fff' : 'var(--primary)',
@@ -1216,7 +1216,7 @@ export default function CommunityPage() {
                               borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                               background: selectedMessage?.id === msg.id
                                 ? '#d0e1fd'
-                                : isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff',
+                                : isMe ? '#dcf8c6' : isAdmin ? 'var(--primary-light)' : '#ffffff',
                               color: 'var(--text-primary)',
                               fontSize: '14px', lineHeight: '1.5',
                               boxShadow: selectedMessage?.id === msg.id
@@ -1326,7 +1326,7 @@ export default function CommunityPage() {
                               {/* Time inside bubble */}
                               <div style={{ 
                                 position: 'absolute', bottom: '2px', right: '10px', 
-                                fontSize: '10px', color: isMe ? '#4a7c44' : '#999', 
+                                fontSize: '10px', color: isMe ? '#4a7c44' : 'var(--text-muted)', 
                                 display: 'flex', alignItems: 'center', gap: '3px',
                                 fontWeight: '600',
                               }}>
@@ -1389,7 +1389,7 @@ export default function CommunityPage() {
               {replyingTo && (
                 <div style={{ 
                   marginBottom: '8px', padding: '10px 14px', 
-                  background: '#f0f0ff', borderRadius: '12px',
+                  background: 'var(--primary-light)', borderRadius: '12px',
                   borderLeft: '4px solid #3636e8',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   fontSize: '12px'
@@ -1400,7 +1400,7 @@ export default function CommunityPage() {
                       {replyingTo.content || 'Image'}
                     </div>
                   </div>
-                  <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999' }}>
+                  <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                   </button>
                 </div>
@@ -1411,7 +1411,7 @@ export default function CommunityPage() {
                 <div style={{ 
                   marginBottom: '10px', position: 'relative', display: 'inline-flex', 
                   alignItems: 'flex-end', gap: '8px', padding: '10px 14px', 
-                  borderRadius: '16px', background: '#f0f0ff', 
+                  borderRadius: '16px', background: 'var(--primary-light)', 
                   border: '2px solid #3636e830',
                   boxShadow: '0 4px 12px rgba(54,54,232,0.1)',
                 }}>
@@ -1422,7 +1422,7 @@ export default function CommunityPage() {
                     style={{
                       position: 'absolute', top: '-8px', right: '-8px',
                       width: '24px', height: '24px', borderRadius: '50%',
-                      background: 'var(--danger)', color: '#fff', border: '2px solid #fff',
+                      background: 'var(--danger)', color: '#fff', border: '2px solid var(--border)',
                       cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)',
                     }}
@@ -1449,7 +1449,7 @@ export default function CommunityPage() {
                   style={{
                     width: '40px', height: '40px', borderRadius: '50%', border: 'none',
                     cursor: 'pointer', flexShrink: 0,
-                    background: pendingImage ? '#3636e818' : 'var(--surface-2)',
+                    background: pendingImage ? 'var(--primary-light)' : 'var(--surface-2)',
                     boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: pendingImage ? 'var(--primary)' : 'var(--text-muted)',
@@ -1548,8 +1548,8 @@ export default function CommunityPage() {
                       style={{
                         padding: '12px 14px',
                         borderRadius: '14px',
-                        background: msg.isDeleted ? '#fff5f5' : 'var(--surface)',
-                        border: msg.isDeleted ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                        background: msg.isDeleted ? 'var(--danger-light)' : 'var(--surface)',
+                        border: msg.isDeleted ? '1px solid var(--border)' : '1px solid var(--border)',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '6px', flexWrap: 'wrap' }}>
@@ -1585,7 +1585,7 @@ export default function CommunityPage() {
                             </svg>
                           </span>
                           {msg.sender.securityNumber && (
-                            <span style={{ fontSize: '10px', background: '#f59e0b22', color: 'var(--warning)', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
+                            <span style={{ fontSize: '10px', background: 'var(--warning-light)', color: 'var(--warning)', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
                               {msg.sender.securityNumber}
                             </span>
                           )}
@@ -1666,7 +1666,7 @@ export default function CommunityPage() {
                       onMouseEnter={e => { if (!dmStarting) (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary)'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
                       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)' }}
                     >
-                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#3636e818', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', color: 'var(--primary)', flexShrink: 0 }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', color: 'var(--primary)', flexShrink: 0 }}>
                         {u.name.charAt(0).toUpperCase()}
                       </div>
                       <div>

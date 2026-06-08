@@ -67,6 +67,21 @@ const MAP = {
   '#fee2e2': 'var(--danger-light)', '#fef2f2': 'var(--danger-light)',
   '#d1fae5': 'var(--success-light)', '#dcfce7': 'var(--success-light)',
   '#fef3c7': 'var(--warning-light)', '#fffbeb': 'var(--warning-light)',
+  // more light tints (badge / chip / modal section backgrounds)
+  '#ede9fe': 'var(--primary-light)', '#f0f0ff': 'var(--primary-light)', '#f0f4ff': 'var(--primary-light)',
+  '#f5f7ff': 'var(--surface)', '#f0f2f8': 'var(--surface)', '#f8f9fa': 'var(--surface)', '#f8faff': 'var(--surface)', '#fafbff': 'var(--surface)',
+  '#eff6ff': 'var(--info-light)', '#e0f2fe': 'var(--info-light)', '#f0f9ff': 'var(--info-light)',
+  '#f0fdf4': 'var(--success-light)', '#ecfdf5': 'var(--success-light)', '#fff1f2': 'var(--danger-light)',
+  '#fff5f5': 'var(--danger-light)', '#fffdf5': 'var(--warning-light)', '#fefce8': 'var(--warning-light)', '#fff7ed': 'var(--warning-light)',
+  // darker accent/status text (sits on the light tints above)
+  '#7c3aed': 'var(--accent)', '#6d28d9': 'var(--accent)', '#8b5cf6': 'var(--accent)', '#a855f7': 'var(--accent)',
+  '#4338ca': 'var(--primary-dark)', '#1e40af': 'var(--info)', '#1d4ed8': 'var(--info)', '#1e3a8a': 'var(--info)',
+  '#b91c1c': 'var(--danger)', '#991b1b': 'var(--danger)', '#f43f5e': 'var(--danger)',
+  '#15803d': 'var(--success)', '#166534': 'var(--success)', '#047857': 'var(--success)', '#15803c': 'var(--success)',
+  '#92400e': 'var(--warning)', '#b45309': 'var(--warning)', '#ea580c': 'var(--warning)', '#c2410c': 'var(--warning)', '#9a3412': 'var(--warning)',
+  // grays
+  '#d1d5db': 'var(--border)', '#9ca3af': 'var(--text-muted)', '#999': 'var(--text-muted)', '#aaa': 'var(--text-muted)',
+  '#6b7280': 'var(--text-secondary)', '#374151': 'var(--text-secondary)', '#4b5563': 'var(--text-secondary)',
 }
 
 const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -86,6 +101,21 @@ for (const file of files) {
     const re = new RegExp("'" + esc(hex) + "'", 'gi')
     out = out.replace(re, () => { n++; return `'${token}'` })
   }
+
+  // 2b) Brand/status colors written with an 8-digit alpha suffix (e.g.
+  //     '#3636e810' = primary @ ~6% as a tint background) -> the *-light tokens.
+  for (const [hex6, token] of [['#3636e8', '--primary-light'], ['#6366f1', '--primary-light'], ['#4f46e5', '--primary-light'], ['#ef4444', '--danger-light'], ['#dc2626', '--danger-light'], ['#10b981', '--success-light'], ['#f59e0b', '--warning-light'], ['#3b82f6', '--info-light'], ['#8b5cf6', '--primary-light']]) {
+    const re = new RegExp("'" + esc(hex6) + "[0-9a-f]{2}'", 'gi')
+    out = out.replace(re, () => { n++; return `'var(${token})'` })
+  }
+
+  // 2c) Light border/divider colors that survive inside compound strings
+  //     (e.g. "1px solid #e2e8f0"). After the value pass these only remain in
+  //     such compound uses -> subtle theme border. Also white borders.
+  for (const c of ['#e2e8f0', '#e5e7eb', '#edf0f5', '#f1f5f9', '#eef2ff', '#f0f2f8', '#dde0e8', '#d1d5db', '#fecaca', '#fef3c7', '#fde68a', '#bbf7d0', '#bfdbfe', '#c7d2fe', '#fed7aa', '#e0e7ff']) {
+    out = out.replace(new RegExp(esc(c), 'gi'), () => { n++; return 'var(--border)' })
+  }
+  out = out.replace(/(solid\s+)#(?:ffffff|fff)\b/gi, (_, p) => { n++; return p + 'var(--border)' })
 
   // 3) Neumorphic shadow glow -> theme-aware neu tokens.
   //    Shadow COLORS always follow a blur radius ("8px #ffffff"), so matching

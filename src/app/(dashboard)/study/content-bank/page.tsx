@@ -475,7 +475,7 @@ export default function ContentBankPage() {
                            ['True', 'False'].map(opt => (
                              <div key={opt} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                <input type="radio" checked={form.correctAnswer === opt} onChange={() => setForm({...form, correctAnswer: opt})} style={{ width: '22px', height: '22px', accentColor: 'var(--primary)', cursor: 'pointer' }} />
-                               <div style={{ ...neuInput, background: form.correctAnswer === opt ? '#3636e810' : 'var(--surface-2)', color: form.correctAnswer === opt ? 'var(--primary)' : 'var(--text-primary)', fontWeight: 700 }}>{opt}</div>
+                               <div style={{ ...neuInput, background: form.correctAnswer === opt ? 'var(--primary-light)' : 'var(--surface-2)', color: form.correctAnswer === opt ? 'var(--primary)' : 'var(--text-primary)', fontWeight: 700 }}>{opt}</div>
                              </div>
                            ))
                          ) : (
