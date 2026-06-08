@@ -1271,12 +1271,12 @@ tr:hover td {
 .login-container {
   min-height: 100vh;
   display: flex;
-  background: #f8fafc;
+  background: var(--bg);
 }
 
 .login-left-panel {
   flex: 0 0 42%;
-  background: #f8fafc;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1326,7 +1326,7 @@ tr:hover td {
 
 .login-right-panel {
   flex: 1;
-  background: #f8fafc;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1339,7 +1339,7 @@ tr:hover td {
   width: 100%;
   max-width: 480px;
   padding: 56px 36px !important;
-  background: #ffffff !important;
+  background: var(--surface) !important;
   border-radius: 32px !important;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
   border: 1px solid rgba(0, 0, 0, 0.05) !important;
@@ -1349,7 +1349,7 @@ tr:hover td {
 .login-card-title {
   font-size: 32px !important;
   font-weight: 800 !important;
-  color: #1e1e3a !important;
+  color: var(--text-primary) !important;
   margin-top: 0 !important;
   margin-bottom: 12px !important;
   text-align: center !important;
@@ -1359,7 +1359,7 @@ tr:hover td {
 .login-card-subtitle {
   font-size: 15px !important;
   font-weight: 600 !important;
-  color: #555566 !important;
+  color: var(--text-secondary) !important;
   margin-top: 0 !important;
   margin-bottom: 32px !important;
   text-align: center !important;
@@ -1369,7 +1369,7 @@ tr:hover td {
 .login-terms-text {
   font-size: 12px !important;
   font-weight: 500 !important;
-  color: #888899 !important;
+  color: var(--text-muted) !important;
   margin-top: 24px !important;
   text-align: center !important;
   line-height: 1.6 !important;
@@ -1377,7 +1377,7 @@ tr:hover td {
 }
 
 .login-terms-text span {
-  color: #1e1e3a !important;
+  color: var(--text-primary) !important;
   font-weight: 700 !important;
 }
 
@@ -1386,7 +1386,7 @@ tr:hover td {
   align-items: center !important;
   gap: 8px !important;
   padding: 14px 32px !important;
-  background: #232347 !important; /* Premium dark navy */
+  background: var(--primary) !important; /* Premium dark navy */
   color: #ffffff !important;
   font-size: 15px !important;
   font-weight: 700 !important;
@@ -1397,7 +1397,7 @@ tr:hover td {
 }
 
 .login-explore-btn:hover {
-  background: #191937 !important;
+  background: var(--primary-dark) !important;
   transform: translateY(-2px) scale(1.02) !important;
   box-shadow: 0 14px 32px rgba(35, 35, 71, 0.35) !important;
 }
