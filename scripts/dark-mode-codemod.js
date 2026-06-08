@@ -28,6 +28,10 @@ const DENY = [
   'CustomVideoPlayer', 'ThemeProvider', 'CapacitorBridge', 'CsrfProvider',
   'PostHogProvider', 'MobileBlocker', 'AppUpdater',
   '/login/', '/signup/', 'components/auth/',
+  // Chat bubbles use deliberate constant-dark text on constant-light bubbles
+  // (WhatsApp style). The value map would revert those literals and make text
+  // invisible, so these files are hand-maintained.
+  'community/page', 'support/page',
 ]
 const path = require('path')
 function collect(p, acc) {
