@@ -616,7 +616,7 @@ function CalendarPageContent() {
       <div className="card calendar-desktop-only" style={{
         overflow: 'hidden',
         borderRadius: '28px',
-        border: '1px solid rgba(255,255,255,0.6)',
+        border: '1px solid var(--border)',
         boxShadow: '20px 20px 60px var(--neu-dark), -20px -20px 60px var(--neu-light)'
       }}>
         {/* Day headers */}
@@ -667,7 +667,7 @@ function CalendarPageContent() {
               }}
               onMouseEnter={e => { 
                 if (day) {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.7)';
+                  e.currentTarget.style.background = 'var(--surface-2)';
                   e.currentTarget.style.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.02)';
                   e.currentTarget.style.zIndex = '5';
                 }
@@ -722,7 +722,7 @@ function CalendarPageContent() {
                             whiteSpace: 'nowrap',
                             cursor: isManager ? 'pointer' : 'default',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                            border: '1px solid rgba(255,255,255,0.1)'
+                            border: '1px solid var(--border)'
                           }} title={`${ev.title}${ev.time ? ` ${ev.time}` : ''}`}>
                             {ev.title}
                           </div>
@@ -753,7 +753,7 @@ function CalendarPageContent() {
           letterSpacing: '0.1em'
         }}>Events This Month</h3>
         {events.length === 0 ? (
-          <div className="card" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(10px)' }}>
+          <div className="card" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--surface-2)', backdropFilter: 'blur(10px)' }}>
             No events this month
           </div>
         ) : (
@@ -770,7 +770,7 @@ function CalendarPageContent() {
                   background: 'var(--surface)',
                   boxShadow: '8px 8px 24px rgba(0,0,0,0.04), -8px -8px 24px var(--neu-glow)',
                   transition: 'all 0.3s ease',
-                  border: '1px solid rgba(255,255,255,0.5)'
+                  border: '1px solid var(--border)'
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.transform = 'translateY(-2px)'
@@ -831,7 +831,7 @@ function CalendarPageContent() {
                           <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                       </button>
-                      <button onClick={() => handleDelete(ev.id)} className="btn btn-sm" style={{ padding: '8px', color: 'var(--danger)', background: '#fee2e220', boxShadow: 'none' }}>
+                      <button onClick={() => handleDelete(ev.id)} className="btn btn-sm" style={{ padding: '8px', color: 'var(--danger)', background: 'var(--danger-light)', boxShadow: 'none' }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <polyline points="3 6 5 6 21 6"/>
                           <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
