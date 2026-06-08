@@ -565,7 +565,7 @@ export default function ProfilePage() {
           gap: '10px',
           padding: isMobile ? '16px 12px' : '20px 24px',
           borderRadius: '24px',
-          background: 'rgba(232, 234, 240, 0.85)',
+          background: 'var(--surface-2)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.04), 6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
