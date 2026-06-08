@@ -639,10 +639,10 @@ tr:hover td {
     bottom: 0;
     z-index: 999;
     height: calc(64px + env(safe-area-inset-bottom, 0px));
-    background: #ffffff;
+    background: var(--sidebar-bg);
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.06);
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+    border-top: 1px solid var(--border);
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
   }
   .mobile-bottom-nav.hidden {
@@ -664,7 +664,7 @@ tr:hover td {
     flex: 1;
     height: 100%;
     text-decoration: none;
-    color: #9ca3af;
+    color: var(--text-muted);
     transition: all 0.25s ease;
     padding-bottom: 6px;
   }
@@ -689,11 +689,11 @@ tr:hover td {
     transition: all 0.2s ease;
   }
   .mobile-bottom-tab.active {
-    color: #1e1e3b;
+    color: var(--text-primary);
   }
   .mobile-bottom-tab.active .tab-label {
     font-weight: 700;
-    color: #1e1e3b;
+    color: var(--text-primary);
   }
 
   /* Academics Centered Floating Tab with Arc */
