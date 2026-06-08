@@ -57,8 +57,8 @@ export default function MobileLoginExperience() {
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      background: '#e8eaf0',
-      color: '#1e1e3a',
+      background: 'var(--surface-2)',
+      color: 'var(--text-primary)',
       display: 'flex', flexDirection: 'column',
       overflow: 'hidden',
       zIndex: 100,
@@ -127,7 +127,7 @@ function OnboardingView({
         <span style={{ 
           fontSize: '15.5px', 
           fontWeight: 900, 
-          color: '#9999b0', 
+          color: 'var(--text-muted)', 
           letterSpacing: '0.18em', 
           textTransform: 'uppercase',
         }}>
@@ -153,7 +153,7 @@ function OnboardingView({
         ))}
         <div style={{
           width: '240px', height: '240px', borderRadius: '50%',
-          background: '#ffffff',
+          background: 'var(--surface)',
           boxShadow: '12px 12px 30px #c5c7cf, -12px -12px 30px #ffffff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           position: 'relative',
@@ -427,7 +427,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           onClick={onBackToOnboarding}
           aria-label="Back to intro"
           style={{
-            background: '#e8eaf0', border: 'none', cursor: 'pointer', color: '#1e1e3a',
+            background: 'var(--surface-2)', border: 'none', cursor: 'pointer', color: 'var(--text-primary)',
             width: '40px', height: '40px', borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
@@ -441,7 +441,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 'auto', marginBottom: '28px' }}>
         <div style={{
           width: '110px', height: '110px', borderRadius: '28px',
-          background: '#ffffff',
+          background: 'var(--surface)',
           boxShadow: '10px 10px 24px #c5c7cf, -10px -10px 24px #ffffff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginBottom: '18px',
@@ -451,13 +451,13 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           <img src="/mobile-login-logo.png" alt="GenZ IITian" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
         <h1 style={{
-          fontSize: '22px', fontWeight: 900, color: '#1e1e3a', margin: 0, letterSpacing: '-0.02em',
+          fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em',
           textAlign: 'center',
         }}>
           Sign In to Your Account
         </h1>
         <p style={{
-          fontSize: '13px', color: '#6b6b8a', marginTop: '6px', marginBottom: 0, textAlign: 'center',
+          fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px', marginBottom: 0, textAlign: 'center',
           maxWidth: '300px', lineHeight: 1.5, fontWeight: 500,
         }}>
           Access your live classes, recordings, premium notes, and personalized study plan.
@@ -504,7 +504,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
             !nativeReady ? (
               <div style={{
                 width: '100%', padding: '13px 20px', borderRadius: '50px',
-                background: '#f1f5f9', color: '#94a3b8',
+                background: 'var(--surface-2)', color: 'var(--text-muted)',
                 fontSize: '13px', fontWeight: 700, textAlign: 'center',
                 border: '1px solid #e2e8f0',
               }}>
@@ -519,7 +519,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
                   padding: '13px 20px',
                   borderRadius: '50px',
                   border: '1px solid #e2e8f0',
-                  background: '#ffffff',
+                  background: 'var(--surface)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -527,7 +527,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
                   gap: '10px',
                   fontSize: '14px',
                   fontWeight: 700,
-                  color: '#1e1e3a',
+                  color: 'var(--text-primary)',
                   fontFamily: 'inherit',
                   boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                 }}
@@ -545,7 +545,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
             !gsiReady ? (
               <div style={{
                 width: '100%', padding: '13px 20px', borderRadius: '50px',
-                background: '#f1f5f9', color: '#94a3b8',
+                background: 'var(--surface-2)', color: 'var(--text-muted)',
                 fontSize: '13px', fontWeight: 700, textAlign: 'center',
                 border: '1px solid #e2e8f0',
               }}>
@@ -559,7 +559,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
                   padding: '13px 20px',
                   borderRadius: '50px',
                   border: '1px solid #e2e8f0',
-                  background: '#ffffff',
+                  background: 'var(--surface)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -567,7 +567,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
                   gap: '10px',
                   fontSize: '14px',
                   fontWeight: 700,
-                  color: '#1e1e3a',
+                  color: 'var(--text-primary)',
                   fontFamily: 'inherit',
                   boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                 }}
@@ -587,7 +587,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         {gLoading && (
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'rgba(232, 234, 240, 0.85)',
+            background: 'var(--surface-2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             borderRadius: '22px',
           }}>
@@ -671,7 +671,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
             fontSize: '13px', fontWeight: 700, color: '#4f46e5',
             textDecoration: 'none',
             padding: '10px 18px', borderRadius: '50px',
-            background: '#e8eaf0',
+            background: 'var(--surface-2)',
             boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
           }}
         >
@@ -679,7 +679,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
         </a>
 
-        <p style={{ fontSize: '11px', color: '#9999b0', textAlign: 'center', margin: 0, lineHeight: 1.6, fontWeight: 500 }}>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', margin: 0, lineHeight: 1.6, fontWeight: 500 }}>
           By continuing, you agree to our<br />
           <a href="/company/terms-and-conditions" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 700 }}>Terms</a>
           {' · '}
