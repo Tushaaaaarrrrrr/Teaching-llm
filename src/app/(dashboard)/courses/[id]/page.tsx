@@ -680,7 +680,7 @@ export default function CourseDetailPage() {
             animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
+            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, var(--surface-2), var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
               <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '25px', right: '30px', background: 'var(--surface)', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
@@ -722,7 +722,7 @@ export default function CourseDetailPage() {
             </div>
 
             <div style={{ padding: '0 40px 40px', textAlign: 'center' }}>
-              <button onClick={() => setInfoModalCourse(null)} style={{ background: 'var(--text-primary)', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ background: 'var(--primary)', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 Got it, thanks!
               </button>
             </div>
@@ -891,7 +891,7 @@ export default function CourseDetailPage() {
             animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div style={{ padding: '24px 24px', background: 'linear-gradient(135deg, #f8fafc, var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
+            <div style={{ padding: '24px 24px', background: 'linear-gradient(135deg, var(--surface-2), var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
               <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'var(--surface)', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
@@ -933,7 +933,7 @@ export default function CourseDetailPage() {
             </div>
 
             <div style={{ padding: '0 20px 24px', textAlign: 'center' }}>
-              <button onClick={() => setInfoModalCourse(null)} style={{ background: 'var(--text-primary)', color: 'white', padding: '12px 36px', borderRadius: '14px', fontSize: '14px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ background: 'var(--primary)', color: 'white', padding: '12px 36px', borderRadius: '14px', fontSize: '14px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 Got it, thanks!
               </button>
             </div>

@@ -135,11 +135,12 @@ export async function getFullSession(): Promise<FullSession | null> {
     user = await (prisma.user.findUnique as any)({
       where: { id: jwtPayload.userId },
       select: {
+        role: true,
         isTerminated: true,
         tokenVersion: true,
         isProfileComplete: true,
         enableDetailedLogs: true,
-        enrollments: (jwtPayload.role !== 'MANAGER' && jwtPayload.role !== 'SUPER_ADMIN') ? {
+        enrollments: {
           where: {
             course: {
               isDisabled: false,
@@ -150,7 +151,7 @@ export async function getFullSession(): Promise<FullSession | null> {
             },
           },
           select: { courseId: true, type: true },
-        } : false,
+        },
       },
     })
   } catch (error: any) {
@@ -180,19 +181,21 @@ export async function getFullSession(): Promise<FullSession | null> {
   }
 
   const enrollments = (user.enrollments as { courseId: string; type: string }[] | undefined) ?? []
+  const userRole = user.role || jwtPayload.role
 
   return {
     ...jwtPayload,
+    role: userRole,
     isTerminated: user.isTerminated,
     isProfileComplete: user.isProfileComplete,
     enableDetailedLogs: user.enableDetailedLogs || false,
-    accessibleCourseIds: (jwtPayload.role === 'MANAGER' || jwtPayload.role === 'SUPER_ADMIN') 
+    accessibleCourseIds: (userRole === 'MANAGER' || userRole === 'SUPER_ADMIN') 
       ? null 
       : enrollments.map(e => e.courseId),
-    enrollmentTypes: (jwtPayload.role === 'MANAGER' || jwtPayload.role === 'SUPER_ADMIN')
+    enrollmentTypes: (userRole === 'MANAGER' || userRole === 'SUPER_ADMIN')
       ? {}
       : Object.fromEntries(enrollments.map(e => [e.courseId, e.type])),
-    isMaintenanceMode: settings?.maintenanceMode && (jwtPayload.role !== 'MANAGER' && jwtPayload.role !== 'SUPER_ADMIN')
+    isMaintenanceMode: settings?.maintenanceMode && (userRole !== 'MANAGER' && userRole !== 'SUPER_ADMIN')
   }
 }
 

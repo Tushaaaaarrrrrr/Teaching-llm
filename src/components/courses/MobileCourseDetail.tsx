@@ -491,7 +491,7 @@ function CurriculumTab({
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
                 padding: '14px 16px',
-                background: 'linear-gradient(to right, #f8fafc, #ffffff)',
+                background: 'linear-gradient(135deg, var(--surface-2), var(--surface))',
                 border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                 textAlign: 'left',
                 borderLeft: `4px solid ${accent}`,
