@@ -75,7 +75,7 @@ function getModuleBadgeStyle(): React.CSSProperties {
     borderRadius: '50px',
     fontSize: '11px',
     fontWeight: '600',
-    background: '#f0f0f8',
+    background: 'var(--surface-2)',
     color: '#4b4b7a',
     letterSpacing: '0.3px',
   }
@@ -312,7 +312,7 @@ export default function ActivityLogPage() {
                   padding: '12px 16px',
                   gap: '12px',
                   borderRadius: '12px',
-                  background: 'rgba(255,255,255,0.7)',
+                  background: 'var(--surface)',
                   border: '1px solid rgba(255,255,255,0.8)',
                   boxShadow: '2px 2px 5px var(--neu-dark), -1px -1px 3px var(--neu-light)',
                 }}
@@ -346,7 +346,7 @@ export default function ActivityLogPage() {
                 </div>
 
                 <div style={{ minWidth: '120px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--text-secondary)', background: '#dddde8', padding: '2px 8px', borderRadius: '50px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--text-secondary)', background: 'var(--surface-2)', padding: '2px 8px', borderRadius: '50px' }}>
                     {formatActionType(log.actionType)}
                   </span>
                   <button 

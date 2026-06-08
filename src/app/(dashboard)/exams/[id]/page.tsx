@@ -753,7 +753,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                      style={{ resize: 'vertical', minHeight: '100px' }} 
                    />
                    {questionForm.text.includes('```') && (
-                     <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.6)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                     <div style={{ marginTop: '16px', background: 'var(--surface)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                          <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>Code Preview</span>
                          <button 
@@ -772,7 +772,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                    )}
 
                     {/* Attachment Row */}
-                    <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.4)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)' }}>
+                    <div style={{ marginTop: '16px', background: 'var(--surface)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)' }}>
                        <div style={{ opacity: questionForm.imageUrl ? 0.5 : 1, pointerEvents: questionForm.imageUrl ? 'none' : 'auto' }}>
                          <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>Code Block</p>
                          <select

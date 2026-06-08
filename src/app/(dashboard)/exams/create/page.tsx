@@ -366,7 +366,7 @@ export default function CreateExamPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                        {bankQuestions.filter(q => q.text.toLowerCase().includes(bankSearch.toLowerCase())).map(q => (
-                         <div key={q.id} style={{ padding: '20px', background: 'rgba(255,255,255,0.4)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
+                         <div key={q.id} style={{ padding: '20px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
                             <div style={{ flex: 1 }}>
                                <div style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
                                  <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--primary)', background: 'var(--primary-light)', padding: '2px 8px', borderRadius: '6px' }}>{q.type}</span>
@@ -449,7 +449,7 @@ export default function CreateExamPage() {
                           required 
                         />
                         {q.text.includes('```') && (
-                          <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.6)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                          <div style={{ marginTop: '16px', background: 'var(--surface)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                               <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>Code Preview</span>
                               <button 
@@ -479,7 +479,7 @@ export default function CreateExamPage() {
                     </div>
 
                     {/* Attachment Row */}
-                    <div style={{ background: 'rgba(255,255,255,0.4)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.6)' }}>
+                    <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.6)' }}>
                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '10px' }}>Attachment (Optional)</label>
                        
                        {(q.imageUrl && q.text.includes('```')) && (
