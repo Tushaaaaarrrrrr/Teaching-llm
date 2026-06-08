@@ -505,7 +505,6 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           const showAdminHeader = item.href === '/manage'
           
           const hasRedDot = (
-            (item.href === '/community' && unread?.community) ||
             (item.href === '/support' && unread?.support) ||
             (item.href === '/announcements' && unread?.announcements)
           )

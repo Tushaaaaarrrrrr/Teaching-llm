@@ -5,6 +5,7 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 import crypto from 'crypto'
 import { sendEmailNotification } from '@/lib/email-service'
+import { sendCourseEnrollmentNotification } from '@/lib/system-notifications'
 
 export async function POST(
   request: NextRequest,
@@ -118,6 +119,8 @@ export async function POST(
           type: accessType as 'RECORDED' | 'LIVE'
         }
       })
+
+      sendCourseEnrollmentNotification(session.userId, courseId, order.amount).catch(console.error)
 
       // Sync Google Group if needed
       await queueGoogleGroupSyncJobs(prisma, {

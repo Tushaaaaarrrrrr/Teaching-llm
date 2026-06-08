@@ -4,6 +4,7 @@ import crypto from 'crypto'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 import { sendEmailNotification } from '@/lib/email-service'
+import { sendCourseEnrollmentNotification } from '@/lib/system-notifications'
 
 // Webhook signature verification
 function verifyWebhookSignature(body: string, signature: string): boolean {
@@ -120,6 +121,8 @@ export async function POST(request: NextRequest) {
               type: accessType as 'RECORDED' | 'LIVE',
             },
           })
+
+          sendCourseEnrollmentNotification(order.userId, courseId, order.amount).catch(console.error)
 
           // Sync Google Group if needed
           await queueGoogleGroupSyncJobs(prisma, {
