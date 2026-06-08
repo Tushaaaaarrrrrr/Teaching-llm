@@ -62,6 +62,19 @@ for (const file of files) {
     out = out.replace(re, () => { n++; return `'${token}'` })
   }
 
+  // 3) Neumorphic shadow glow -> theme-aware neu tokens.
+  //    Shadow COLORS always follow a blur radius ("8px #ffffff"), so matching
+  //    `<num>px #fff` only hits shadow highlights — never text/fill/border white.
+  //    --neu-light/--neu-dark are #ffffff/#c5c7cf in light (no visual change) and
+  //    dark surfaces in dark (kills the white halo).
+  out = out.replace(/(\d+px\s+)#ffffff\b/gi, (_, p) => { n++; return p + 'var(--neu-light)' })
+  out = out.replace(/(\d+px\s+)#fff\b/gi, (_, p) => { n++; return p + 'var(--neu-light)' })
+  // These grays are used exclusively as neumorphic shadow colors in this codebase.
+  for (const g of ['#c5c7cf', '#bdbfc7', '#c2c4cc']) {
+    const re = new RegExp(esc(g), 'gi')
+    out = out.replace(re, () => { n++; return 'var(--neu-dark)' })
+  }
+
   grand += n
   console.log(`${n.toString().padStart(4)}  ${file}`)
   if (write && n > 0) fs.writeFileSync(file, out)

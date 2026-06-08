@@ -45,13 +45,13 @@ export default function FreeCoursesPage() {
   }
 
   if (isLoading) {
-    return <div className="page-container fade-in"><div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading Free Courses...</div></div>
+    return <div className="page-container fade-in"><div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading Free Courses...</div></div>
   }
 
   if (!courses || courses.length === 0) {
     return (
       <div className="page-container fade-in">
-        <div className="card" style={{ padding: '60px 20px', textAlign: 'center', color: '#6b6b8a' }}>
+        <div className="card" style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
           No free courses available at the moment.
         </div>
       </div>
@@ -67,7 +67,7 @@ export default function FreeCoursesPage() {
           <div
             key={course.id}
             style={{
-              background: '#e8eaf0',
+              background: 'var(--surface-2)',
               borderRadius: '28px',
               boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
               overflow: 'hidden',
@@ -80,7 +80,7 @@ export default function FreeCoursesPage() {
             {/* Gradient Banner */}
             <div style={{
               height: '100px',
-              background: `linear-gradient(135deg, ${course.color || '#6366f1'}ee, ${course.color || '#6366f1'}99)`,
+              background: `linear-gradient(135deg, ${course.color || 'var(--accent)'}ee, ${course.color || 'var(--accent)'}99)`,
               position: 'relative',
               overflow: 'hidden',
               display: 'flex',
@@ -111,7 +111,7 @@ export default function FreeCoursesPage() {
               <h3 style={{
                 fontSize: '16px',
                 fontWeight: '700',
-                color: '#1e1e3a',
+                color: 'var(--text-primary)',
                 marginBottom: '4px',
                 lineHeight: '1.3',
                 display: '-webkit-box',
@@ -127,8 +127,8 @@ export default function FreeCoursesPage() {
                   display: 'inline-block',
                   padding: '3px 12px',
                   borderRadius: '50px',
-                  background: (course.color || '#6366f1') + '18',
-                  color: (course.color || '#6366f1'),
+                  background: (course.color || 'var(--accent)') + '18',
+                  color: (course.color || 'var(--accent)'),
                   fontSize: '12px',
                   fontWeight: '700',
                   marginBottom: '8px',
@@ -143,13 +143,13 @@ export default function FreeCoursesPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
                   <div style={{
                     width: '24px', height: '24px', borderRadius: '50%',
-                    background: (course.color || '#6366f1') + '22',
+                    background: (course.color || 'var(--accent)') + '22',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '10px', fontWeight: '700', color: (course.color || '#6366f1'),
+                    fontSize: '10px', fontWeight: '700', color: (course.color || 'var(--accent)'),
                   }}>
                     {course.teacherName.charAt(0).toUpperCase()}
                   </div>
-                  <span style={{ fontSize: '12.5px', color: '#9999b0', fontWeight: '500' }}>
+                  <span style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: '500' }}>
                     {course.teacherName}
                   </span>
                 </div>
@@ -166,27 +166,27 @@ export default function FreeCoursesPage() {
               }}>
                 <div style={{
                   flex: 1, padding: '8px 10px', borderRadius: '14px',
-                  background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                  background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
                   textAlign: 'center',
                 }}>
-                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.topics || 0}</div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Topics</div>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.topics || 0}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>Topics</div>
                 </div>
                 <div style={{
                   flex: 1, padding: '8px 10px', borderRadius: '14px',
-                  background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                  background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
                   textAlign: 'center',
                 }}>
-                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.lectures || 0}</div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Lectures</div>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.lectures || 0}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>Lectures</div>
                 </div>
                 <div style={{
                   flex: 1, padding: '8px 10px', borderRadius: '14px',
-                  background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                  background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
                   textAlign: 'center',
                 }}>
-                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.materials || 0}</div>
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Materials</div>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.materials || 0}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>Materials</div>
                 </div>
               </div>
 
@@ -197,7 +197,7 @@ export default function FreeCoursesPage() {
                     <button 
                       disabled={loadingId === course.id}
                       className="btn" 
-                      style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', borderRadius: '50px', fontWeight: '700', padding: '12px 20px', fontSize: '14.5px', minHeight: '44px', height: 'auto' }}
+                      style={{ flex: 1, background: 'var(--success)', color: 'white', border: 'none', borderRadius: '50px', fontWeight: '700', padding: '12px 20px', fontSize: '14.5px', minHeight: '44px', height: 'auto' }}
                       onClick={() => { window.location.href = `/courses/${course.id}` }}
                     >
                       Open Course
@@ -207,7 +207,7 @@ export default function FreeCoursesPage() {
                       className="btn btn-ghost" 
                       title="Unenroll"
                       onClick={() => handleEnroll(course.id, true)}
-                      style={{ padding: '0 16px', color: '#ef4444', borderColor: '#fee2e2', borderRadius: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '44px', height: 'auto' }}
+                      style={{ padding: '0 16px', color: 'var(--danger)', borderColor: 'var(--danger-light)', borderRadius: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '44px', height: 'auto' }}
                     >
                       {loadingId === course.id ? '...' : (
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -218,7 +218,7 @@ export default function FreeCoursesPage() {
                   <button 
                     disabled={loadingId === course.id}
                     className="btn btn-primary" 
-                    style={{ flex: 1, borderRadius: '50px', fontWeight: '700', background: '#3636e8', border: 'none', padding: '12px 20px', fontSize: '14.5px', minHeight: '44px', height: 'auto' }}
+                    style={{ flex: 1, borderRadius: '50px', fontWeight: '700', background: 'var(--primary)', border: 'none', padding: '12px 20px', fontSize: '14.5px', minHeight: '44px', height: 'auto' }}
                     onClick={() => handleEnroll(course.id, false)}
                   >
                     {loadingId === course.id ? 'Enrolling...' : 'Enroll for Free'}

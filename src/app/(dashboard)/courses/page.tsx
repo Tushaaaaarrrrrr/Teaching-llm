@@ -319,8 +319,8 @@ export default function CoursesPage() {
                 background: 'var(--surface-2)',
                 borderRadius: 'var(--course-card-radius, 28px)',
                 boxShadow: (isLive && !isCourseExpired)
-                  ? `8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, 0 0 0 2px ${course.color}40`
-                  : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${course.color}40`
+                  : '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)',
                 overflow: 'hidden',
                 cursor: isCourseExpired ? 'default' : 'pointer',
                 transition: 'all 0.25s ease',
@@ -335,16 +335,16 @@ export default function CoursesPage() {
                 if (isCourseExpired) return;
                 e.currentTarget.style.transform = 'translateY(-4px)'
                 e.currentTarget.style.boxShadow = isLive
-                  ? `12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff, 0 0 0 2px ${course.color}60`
-                  : '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
+                  ? `12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light), 0 0 0 2px ${course.color}60`
+                  : '12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light)'
                 if (!isFreeOrDemo && isRecorded) setShowUpgradeHint(course.id)
               }}
               onMouseLeave={e => {
                 if (isCourseExpired) return;
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.boxShadow = isLive
-                  ? `8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, 0 0 0 2px ${course.color}40`
-                  : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
+                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${course.color}40`
+                  : '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)'
                 setShowUpgradeHint(null)
               }}
             >
@@ -600,7 +600,7 @@ export default function CoursesPage() {
                       cursor: 'pointer',
                       marginTop: '8px',
                       marginBottom: '10px',
-                      boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                      boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                       display: 'none',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -626,21 +626,21 @@ export default function CoursesPage() {
                 }}>
                   <div style={{
                     flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
-                    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
+                    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)', textAlign: 'center',
                   }}>
                     <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.topics || 0}</div>
                     <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: 'var(--text-muted)', fontWeight: '600' }}>Topics</div>
                   </div>
                   <div style={{
                     flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
-                    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
+                    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)', textAlign: 'center',
                   }}>
                     <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.lectures || 0}</div>
                     <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: 'var(--text-muted)', fontWeight: '600' }}>Lectures</div>
                   </div>
                   <div style={{
                     flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
-                    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
+                    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)', textAlign: 'center',
                   }}>
                     <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.materials || 0}</div>
                     <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: 'var(--text-muted)', fontWeight: '600' }}>Materials</div>
@@ -667,7 +667,7 @@ export default function CoursesPage() {
               style={{
                 background: 'var(--surface-2)',
                 borderRadius: '28px',
-                boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                boxShadow: '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)',
                 overflow: 'hidden',
                 cursor: 'pointer',
                 transition: 'all 0.25s ease',
@@ -678,11 +678,11 @@ export default function CoursesPage() {
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.transform = 'translateY(-4px)'
-                e.currentTarget.style.boxShadow = '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
+                e.currentTarget.style.boxShadow = '12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light)'
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
+                e.currentTarget.style.boxShadow = '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)'
               }}
             >
               {/* Simple Gradient Banner */}

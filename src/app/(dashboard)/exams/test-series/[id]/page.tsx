@@ -158,8 +158,8 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
     }
   }
 
-  const neu: React.CSSProperties = { borderRadius: '24px', background: 'var(--surface-2)', boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff', padding: '32px' }
-  const neuBtn: React.CSSProperties = { padding: '12px 24px', borderRadius: '14px', border: 'none', background: 'var(--surface)', color: 'var(--primary)', fontWeight: 800, cursor: 'pointer', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', transition: 'all 0.2s' }
+  const neu: React.CSSProperties = { borderRadius: '24px', background: 'var(--surface-2)', boxShadow: '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)', padding: '32px' }
+  const neuBtn: React.CSSProperties = { padding: '12px 24px', borderRadius: '14px', border: 'none', background: 'var(--surface)', color: 'var(--primary)', fontWeight: 800, cursor: 'pointer', boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)', transition: 'all 0.2s' }
   const tabStyle = (active: boolean): React.CSSProperties => ({ padding: '12px 24px', borderRadius: '12px', background: active ? 'var(--primary)' : 'transparent', color: active ? '#fff' : 'var(--text-secondary)', fontWeight: 800, cursor: 'pointer', border: 'none', transition: 'all 0.2s' })
 
   if (loadingTS) return <div style={{ padding: '100px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 700 }}>Loading Test Series...</div>

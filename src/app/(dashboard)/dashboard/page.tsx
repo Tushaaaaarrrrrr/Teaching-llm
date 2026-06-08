@@ -232,12 +232,8 @@ export default function DashboardPage() {
   }
 
   const getTimerColor = (days: number) => {
-    if (days === 0) return '#ffffff'
-    if (days <= 3) {
-      // Transition from yellow (#fef3c7) to light red (#fee2e2)
-      // For simplicity, we'll use solid colors or a gradient
-      return 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' 
-    }
+    if (days === 0) return 'var(--surface)'
+    if (days <= 3) return 'var(--danger-light)'
     return 'var(--warning-light)' // Soft yellow
   }
 
@@ -246,7 +242,7 @@ export default function DashboardPage() {
     { label: 'Total Courses', value: stats?.totalCourses ?? 0, color: 'var(--accent)', bg: 'var(--primary-light)', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
     )},
-    { label: 'Lectures', value: stats?.totalLectures ?? 0, color: '#8b5cf6', bg: '#ede9fe', icon: (
+    { label: 'Lectures', value: stats?.totalLectures ?? 0, color: '#8b5cf6', bg: 'var(--primary-light)', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
     )},
     ...(!isStudentView ? [{
@@ -274,8 +270,8 @@ export default function DashboardPage() {
       { 
         label: 'Active Sessions', 
         value: liveNowCount, 
-        color: '#f43f5e', 
-        bg: '#fff1f2', 
+        color: '#f43f5e',
+        bg: 'var(--danger-light)',
         icon: (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2">
             <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
@@ -394,7 +390,7 @@ export default function DashboardPage() {
           return (
           <div key={card.label} className="stat-card" style={{
             background: mobileHero
-              ? 'linear-gradient(135deg, #ffffff 0%, #f8faff 60%, #eef2ff 100%)'
+              ? 'linear-gradient(135deg, var(--surface) 0%, var(--surface) 55%, var(--primary-light) 100%)'
               : (card.isTimer ? card.bg : undefined),
             padding: mobileHero ? '22px 22px' : (isMobile ? '12px 14px' : '22px 24px'),
             gap: isMobile ? '14px' : '20px',
@@ -512,7 +508,7 @@ export default function DashboardPage() {
                         style={{
                           width: '32px', height: '32px', borderRadius: '50%',
                           background: 'var(--surface-2)',
-                          boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                          boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           border: 'none', cursor: 'pointer', transition: 'box-shadow 0.2s',
                         }}
@@ -608,7 +604,7 @@ export default function DashboardPage() {
           <div className="card" style={{
             padding: '24px',
             borderRadius: '20px',
-            background: 'linear-gradient(135deg, #ebebff 0%, #e0e0ff 100%)',
+            background: 'var(--primary-light)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -763,7 +759,7 @@ export default function DashboardPage() {
                           style={{
                             width: '30px', height: '30px', borderRadius: '50%',
                             background: 'var(--surface-2)',
-                            boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                            boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                             border: 'none', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             flexShrink: 0,
@@ -884,7 +880,7 @@ export default function DashboardPage() {
                             width: i === activeCard ? '18px' : '6px',
                             height: '6px',
                             borderRadius: '3px',
-                            background: i === activeCard ? 'var(--success)' : '#c5c7cf',
+                            background: i === activeCard ? 'var(--success)' : 'var(--neu-dark)',
                             transition: 'all 0.3s ease',
                             cursor: 'pointer',
                           }}
@@ -895,8 +891,8 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '10px' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#f3f4f8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="2">
+                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--neu-dark)" strokeWidth="2">
                       <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                     </svg>
                   </div>
@@ -946,7 +942,7 @@ export default function DashboardPage() {
                           padding: '13px 14px',
                           borderRadius: '14px',
                           background: 'var(--surface-2)',
-                          boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                          boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                           transition: 'box-shadow 0.2s',
                         }}
                       >
@@ -976,7 +972,7 @@ export default function DashboardPage() {
                             {session.date} · {session.time}
                           </div>
                         </div>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--neu-dark)" strokeWidth="2.5" style={{ flexShrink: 0 }}>
                           <polyline points="9 18 15 12 9 6"/>
                         </svg>
                       </div>
@@ -1188,10 +1184,10 @@ export default function DashboardPage() {
                       style={{
                         padding: isMobile ? '18px' : '24px',
                         borderRadius: isMobile ? '20px' : '24px',
-                        background: isMobile ? '#ffffff' : 'var(--surface-2)',
+                        background: isMobile ? 'var(--surface)' : 'var(--surface-2)',
                         boxShadow: isMobile
                           ? '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)'
-                          : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                          : '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)',
                         border: isMobile ? '1px solid rgba(15, 23, 42, 0.05)' : undefined,
                         display: 'flex',
                         flexDirection: isMobile ? 'column' : 'row',
@@ -1280,7 +1276,7 @@ export default function DashboardPage() {
             {!dashboardData?.upcomingExams?.length ? (
               <div style={{
                 padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px',
-                background: isMobile ? '#ffffff' : 'transparent', borderRadius: '20px',
+                background: isMobile ? 'var(--surface)' : 'transparent', borderRadius: '20px',
                 border: isMobile ? '1px solid rgba(15, 23, 42, 0.05)' : 'none',
               }}>
                 No upcoming exams or tests
@@ -1295,10 +1291,10 @@ export default function DashboardPage() {
                       style={{
                         padding: isMobile ? '18px' : '18px',
                         borderRadius: isMobile ? '20px' : '18px',
-                        background: isMobile ? '#ffffff' : 'var(--surface-2)',
+                        background: isMobile ? 'var(--surface)' : 'var(--surface-2)',
                         boxShadow: isMobile
                           ? '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)'
-                          : '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
+                          : '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)',
                         border: isMobile ? '1px solid rgba(15, 23, 42, 0.05)' : undefined,
                         display: 'flex',
                         flexDirection: 'column',
@@ -1374,7 +1370,7 @@ export default function DashboardPage() {
                   padding: '14px 18px',
                   borderRadius: '14px',
                   background: 'var(--surface-2)',
-                  boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                  boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                   borderLeft: `4px solid ${c.border}`,
                   wordBreak: 'break-word',
                   overflowWrap: 'break-word',
@@ -1477,7 +1473,7 @@ export default function DashboardPage() {
       }} onClick={() => !upgrading && setUpgradeModalCourse(null)}>
         <div style={{
           background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
-          boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
           animation: 'modalSlideUp 0.3s ease-out', position: 'relative'
         }} onClick={e => e.stopPropagation()}>
           {upgrading ? (
@@ -1506,7 +1502,7 @@ export default function DashboardPage() {
                 You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
               </p>
 
-              <div style={{ background: '#f8faff', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid #e0e7ff' }}>
+              <div style={{ background: 'var(--surface-2)', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid var(--border)' }}>
                 <div style={{ fontSize: '36px', fontWeight: '900', color: 'var(--accent)', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
                 <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600' }}>One-time upgrade fee</div>
               </div>
@@ -1551,7 +1547,7 @@ export default function DashboardPage() {
       }} onClick={() => setUpgradeSuccessOrderId(null)}>
         <div style={{
           background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
-          boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           padding: '40px', textAlign: 'center',
           animation: 'modalSlideUp 0.3s ease-out'
         }} onClick={e => e.stopPropagation()}>
@@ -1560,7 +1556,7 @@ export default function DashboardPage() {
           <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
             Your upgrade was successful. You now have full access to live classes, mentorship, and priority support.
           </p>
-          <div style={{ background: '#f0fdf4', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #bbf7d0' }}>
+          <div style={{ background: 'var(--success-light)', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid var(--success)' }}>
             <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
             <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
           </div>

@@ -11,8 +11,8 @@ export default function PromptResponsesPage() {
   const router = useRouter()
   const { data, isLoading } = useSWR(`/api/admin/prompts/${id}`, fetcher)
 
-  if (isLoading) return <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading responses...</div>
-  if (!data?.prompt) return <div style={{ padding: '40px', textAlign: 'center', color: '#ef4444' }}>Prompt not found</div>
+  if (isLoading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading responses...</div>
+  if (!data?.prompt) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--danger)' }}>Prompt not found</div>
 
   const prompt = data.prompt
   const questions = JSON.parse(prompt.questions)
@@ -47,22 +47,22 @@ export default function PromptResponsesPage() {
     <div className="page-container fade-in" style={{ paddingBottom: '80px' }}>
       <button 
         onClick={() => router.back()}
-        style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#6366f1', fontWeight: 700, cursor: 'pointer', marginBottom: '24px', fontSize: '14px' }}
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 700, cursor: 'pointer', marginBottom: '24px', fontSize: '14px' }}
       >
         <ArrowLeft size={18} /> Back to Prompts
       </button>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
         <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#1e1e3a', marginBottom: '8px' }}>{prompt.title}</h1>
-          <p style={{ color: '#6b6b8a', fontSize: '14px' }}>Viewing all student responses for this prompt.</p>
+          <h1 style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '8px' }}>{prompt.title}</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Viewing all student responses for this prompt.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <div style={{ padding: '12px 24px', borderRadius: '16px', background: '#fff', boxShadow: '4px 4px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ padding: '12px 24px', borderRadius: '16px', background: 'var(--surface)', boxShadow: '4px 4px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Users size={20} color="#6366f1" />
             <div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#1e1e3a' }}>{responses.length}</div>
-              <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: 700, textTransform: 'uppercase' }}>Total Responses</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)' }}>{responses.length}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Total Responses</div>
             </div>
           </div>
           <button 
@@ -80,8 +80,8 @@ export default function PromptResponsesPage() {
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#f3f4f8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <Users size={30} color="#c5c7cf" />
           </div>
-          <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', marginBottom: '8px' }}>No Responses Yet</h3>
-          <p style={{ color: '#6b6b8a', fontSize: '14px' }}>When students answer this prompt, their details will appear here.</p>
+          <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>No Responses Yet</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>When students answer this prompt, their details will appear here.</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gap: '20px' }}>
@@ -92,19 +92,19 @@ export default function PromptResponsesPage() {
             return (
               <div key={r.id} className="card" style={{ padding: '0', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 24px', background: '#f8f9fa', borderBottom: '1px solid #f0f1f5' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e0e7ff', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px' }}>
                     {r.user.name.charAt(0)}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 800, fontSize: '15px', color: '#1e1e3a' }}>{r.user.name}</span>
-                      <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: 500 }}>•</span>
-                      <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>{r.user.name}</span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>•</span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Mail size={12} /> {r.user.email}
                       </span>
                     </div>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
                     <Calendar size={14} /> {new Date(r.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
@@ -112,12 +112,12 @@ export default function PromptResponsesPage() {
                 <div style={{ padding: '24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
                   {questions.map((q: any) => (
                     <div key={q.id}>
-                      <div style={{ fontSize: '12px', fontWeight: 700, color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '8px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '8px' }}>
                         {q.text}
                       </div>
                       <div style={{ 
                         padding: '12px 16px', borderRadius: '12px', 
-                        background: '#f3f4f8', color: '#1e1e3a', fontWeight: 700, fontSize: '14px',
+                        background: '#f3f4f8', color: 'var(--text-primary)', fontWeight: 700, fontSize: '14px',
                         border: '1px solid #e0e3ea'
                       }}>
                         {answers[q.id as keyof typeof answers] || 'N/A'}

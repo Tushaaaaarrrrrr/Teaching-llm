@@ -266,7 +266,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   // Shared Styles
   const neuCard: React.CSSProperties = {
     borderRadius: '24px', background: '#f0f2f8',
-    boxShadow: '8px 8px 16px #cfd6e1, -8px -8px 16px #ffffff',
+    boxShadow: '8px 8px 16px #cfd6e1, -8px -8px 16px var(--neu-light)',
     padding: '32px',
   }
 
@@ -327,7 +327,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
             background: 'var(--surface)',
             padding: '6px 14px',
             borderRadius: '50px',
-            boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff',
+            boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)',
             display: 'flex',
             alignItems: 'center',
             gap: '6px'
@@ -353,7 +353,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                 fontSize: '12px',
                 fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff',
+                boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px'
@@ -397,7 +397,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
           <div style={{ width: '100%' }}>
             <div style={{
               borderRadius: '20px', background: '#f0f2f8',
-              boxShadow: '6px 6px 12px #cfd6e1, -6px -6px 12px #ffffff',
+              boxShadow: '6px 6px 12px #cfd6e1, -6px -6px 12px var(--neu-light)',
               padding: '20px',
             }}>
               
@@ -486,7 +486,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                             color: isSelected ? '#fff' : 'var(--text-primary)',
                             boxShadow: isSelected 
                               ? 'inset 3px 3px 6px rgba(0,0,0,0.2)' 
-                              : '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff',
+                              : '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)',
                             cursor: 'pointer', transition: 'all 0.2s',
                             display: 'flex', alignItems: 'center', gap: '12px'
                           }}
@@ -521,7 +521,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                       placeholder="Enter numerical response..."
                       style={{
                         width: '100%', padding: '16px', borderRadius: '16px', border: 'none',
-                        background: '#f0f2f8', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px #ffffff',
+                        background: '#f0f2f8', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px var(--neu-light)',
                         fontSize: '16px', fontWeight: 700, outline: 'none', color: 'var(--text-primary)',
                       }}
                     />
@@ -534,7 +534,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     rows={6}
                     style={{
                       width: '100%', padding: '16px', borderRadius: '16px', border: 'none',
-                      background: '#f0f2f8', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px #ffffff',
+                      background: '#f0f2f8', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px var(--neu-light)',
                       fontSize: '14px', lineHeight: '1.6', outline: 'none', color: 'var(--text-primary)',
                       fontFamily: 'inherit'
                     }}
@@ -552,7 +552,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     background: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 800, fontSize: '12px',
                     cursor: currentIdx === 0 ? 'default' : 'pointer',
                     opacity: currentIdx === 0 ? 0.5 : 1,
-                    boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff'
+                    boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)'
                   }}
                 >
                   ← Prev
@@ -655,7 +655,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                   
                   let bgColor = '#fff'
                   let textColor = 'var(--text-primary)'
-                  let shadow = '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
+                  let shadow = '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)'
 
                   if (isCurrent) {
                     bgColor = 'var(--primary)'
@@ -779,7 +779,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                         padding: '8px 16px', borderRadius: '50px', border: 'none',
                         background: isPaused ? 'var(--success)' : '#fff', color: isPaused ? '#fff' : 'var(--text-primary)',
                         fontSize: '12px', fontWeight: 800, cursor: 'pointer',
-                        boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
+                        boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)'
                     }}
                 >
                     {isPaused ? 'Resume' : 'Pause'}
@@ -790,7 +790,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                         padding: '8px 16px', borderRadius: '50px', border: 'none',
                         background: 'var(--surface)', color: 'var(--text-primary)',
                         fontSize: '12px', fontWeight: 800, cursor: 'pointer',
-                        boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
+                        boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)'
                     }}
                 >
                     Reset
@@ -813,7 +813,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
               
               let bgColor = '#fff'
               let textColor = 'var(--text-primary)'
-              let shadow = '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
+              let shadow = '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)'
 
               if (isCurrent) {
                 bgColor = 'var(--primary)'
@@ -955,7 +955,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                                       color: isSelected ? '#fff' : 'var(--text-primary)',
                                       boxShadow: isSelected 
                                           ? 'inset 4px 4px 10px rgba(0,0,0,0.2)' 
-                                          : '4px 4px 10px #cfd6e1, -4px -4px 10px #ffffff',
+                                          : '4px 4px 10px #cfd6e1, -4px -4px 10px var(--neu-light)',
                                       cursor: 'pointer', transition: 'all 0.2s',
                                       display: 'flex', alignItems: 'center', gap: '16px'
                                   }}
@@ -989,7 +989,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                           placeholder="Enter number (decimals allowed)..."
                           style={{
                               width: '100%', padding: '24px', borderRadius: '20px', border: 'none',
-                              background: '#f0f2f8', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px #ffffff',
+                              background: '#f0f2f8', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px var(--neu-light)',
                               fontSize: '18px', fontWeight: 700, outline: 'none', color: 'var(--text-primary)',
                           }}
                         />
@@ -1002,7 +1002,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                         rows={10}
                         style={{
                             width: '100%', padding: '24px', borderRadius: '20px', border: 'none',
-                            background: '#f0f2f8', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px #ffffff',
+                            background: '#f0f2f8', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px var(--neu-light)',
                             fontSize: '16px', lineHeight: '1.6', outline: 'none', color: 'var(--text-primary)',
                             fontFamily: 'inherit'
                         }}
@@ -1020,7 +1020,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                             background: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 800, 
                             cursor: currentIdx === 0 ? 'default' : 'pointer',
                             opacity: currentIdx === 0 ? 0.5 : 1,
-                            boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px #ffffff'
+                            boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px var(--neu-light)'
                         }}
                     >
                         ← Previous

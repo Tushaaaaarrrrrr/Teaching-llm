@@ -12,7 +12,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       onClick={() => onChange(!checked)}
       style={{
         width: '46px', height: '26px', borderRadius: '13px', flexShrink: 0,
-        background: checked ? 'var(--primary)' : '#c5c7cf',
+        background: checked ? 'var(--primary)' : 'var(--neu-dark)',
         boxShadow: checked
           ? 'inset 2px 2px 5px rgba(0,0,0,0.2)'
           : 'inset 2px 2px 4px #b0b2ba, inset -2px -2px 4px #dadce4',
@@ -139,7 +139,7 @@ export default function SettingsPage() {
   const insetRow: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: isMobile ? '12px 14px' : '14px 18px', borderRadius: '14px', background: 'var(--surface-2)',
-    boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+    boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
     gap: '12px',
   }
 
@@ -179,7 +179,7 @@ export default function SettingsPage() {
             onClick={() => router.back()}
             style={{
               background: 'var(--surface-2)',
-              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+              boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
               border: 'none',
               borderRadius: '50%',
               width: '38px',
@@ -217,7 +217,7 @@ export default function SettingsPage() {
               display: 'inline-flex', alignItems: 'center', gap: '8px',
               padding: '8px 16px', borderRadius: '50px',
               background: 'var(--surface-2)', border: 'none', cursor: 'pointer',
-              boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+              boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
               fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)',
               transition: 'color 0.2s ease',
             }}
@@ -333,7 +333,7 @@ export default function SettingsPage() {
                         color: theme === t ? '#ffffff' : 'var(--text-secondary)',
                         boxShadow: theme === t
                           ? '3px 3px 7px rgba(54,54,232,0.35), -1px -1px 4px rgba(255,255,255,0.5)'
-                          : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                          : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                         transition: 'all 0.2s ease',
                       }}
                     >
@@ -356,7 +356,7 @@ export default function SettingsPage() {
                     padding: '7px 12px', borderRadius: '50px', border: 'none',
                     fontSize: '12px', fontWeight: '600', cursor: 'pointer',
                     background: 'var(--surface-2)', color: 'var(--text-primary)', fontFamily: 'inherit',
-                    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                    boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                     outline: 'none', appearance: 'auto', flexShrink: 0,
                   }}
                 >

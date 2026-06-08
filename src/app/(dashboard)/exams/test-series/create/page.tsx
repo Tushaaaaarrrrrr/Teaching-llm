@@ -168,12 +168,12 @@ export default function CreateTestSeriesPage() {
   // Shared Styles
   const neuCard: React.CSSProperties = {
     borderRadius: '20px', background: 'var(--surface-2)',
-    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+    boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)',
     padding: '24px',
   }
   const neuInput: React.CSSProperties = {
     width: '100%', padding: '12px 16px', borderRadius: '14px', border: 'none',
-    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
     fontSize: '14px', color: 'var(--text-primary)', outline: 'none',
   }
 
@@ -189,7 +189,7 @@ export default function CreateTestSeriesPage() {
     ...neuButton,
     background: 'var(--surface)',
     color: 'var(--primary)',
-    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+    boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
   }
 
   return (
@@ -201,8 +201,8 @@ export default function CreateTestSeriesPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
            <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>Create Test Series</h1>
            <div style={{ display: 'flex', gap: '8px' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: step === 1 ? 'var(--primary)' : '#c5c7cf' }} />
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: step === 2 ? 'var(--primary)' : '#c5c7cf' }} />
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: step === 1 ? 'var(--primary)' : 'var(--neu-dark)' }} />
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: step === 2 ? 'var(--primary)' : 'var(--neu-dark)' }} />
            </div>
         </div>
       </div>

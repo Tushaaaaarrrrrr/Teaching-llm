@@ -52,10 +52,10 @@ function formatTimestamp(ts: string): string {
 function getRoleBadgeStyle(role: string): React.CSSProperties {
   const colors: Record<string, { bg: string; color: string }> = {
     MANAGER: { bg: '#ede9fe', color: '#7c3aed' },
-    ADMIN: { bg: '#dbeafe', color: '#2563eb' },
-    STUDENT: { bg: '#d1fae5', color: '#059669' },
+    ADMIN: { bg: 'var(--info-light)', color: 'var(--info)' },
+    STUDENT: { bg: 'var(--success-light)', color: 'var(--success)' },
   }
-  const c = colors[role] || { bg: '#f3f4f6', color: '#6b7280' }
+  const c = colors[role] || { bg: 'var(--bg)', color: '#6b7280' }
   return {
     display: 'inline-block',
     padding: '2px 10px',
@@ -231,16 +231,16 @@ export default function ActivityLogPage() {
 
         <div className="grid-3" style={{ marginBottom: '20px', gap: '16px' }}>
           <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: '800', color: '#3636e8' }}>{total.toLocaleString()}</div>
-            <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '600', marginTop: '2px' }}>Total Logs</div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--primary)' }}>{total.toLocaleString()}</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>Total Logs</div>
           </div>
           <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: '800', color: '#059669' }}>{todayCount.toLocaleString()}</div>
-            <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '600', marginTop: '2px' }}>Today&apos;s Actions</div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--success)' }}>{todayCount.toLocaleString()}</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>Today&apos;s Actions</div>
           </div>
           <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
             <div style={{ fontSize: '24px', fontWeight: '800', color: '#7c3aed' }}>{page}/{totalPages || 1}</div>
-            <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '600', marginTop: '2px' }}>Current Page</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>Current Page</div>
           </div>
         </div>
 
@@ -250,11 +250,11 @@ export default function ActivityLogPage() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
             </svg>
-            <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a' }}>Filters</span>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>Filters</span>
             {userIdFilter && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#e0e7ff', color: '#4f46e5', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--primary-light)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
                 Filtered by User ID
-                <button onClick={() => setUserIdFilter('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#4f46e5' }}>&times;</button>
+                <button onClick={() => setUserIdFilter('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--primary)' }}>&times;</button>
               </span>
             )}
             {hasFilters && (
@@ -291,7 +291,7 @@ export default function ActivityLogPage() {
           {loading ? (
             <div className="card" style={{ padding: '60px', textAlign: 'center' }}>
               <div className="spinner" style={{ margin: '0 auto 16px' }} />
-              <div style={{ color: '#6b6b8a', fontSize: '14px' }}>Loading activity logs...</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Loading activity logs...</div>
             </div>
           ) : logs.length === 0 ? (
             <div className="card" style={{ padding: '60px', textAlign: 'center' }}>
@@ -300,7 +300,7 @@ export default function ActivityLogPage() {
                   <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
                 </svg>
               </div>
-              <div style={{ color: '#6b6b8a', fontSize: '14px', fontWeight: '600' }}>No activity logs found</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '600' }}>No activity logs found</div>
             </div>
           ) : (
             logs.map((log) => (
@@ -318,15 +318,15 @@ export default function ActivityLogPage() {
                 }}
               >
                 <div style={{ minWidth: '150px', flexShrink: 0 }}>
-                  <div style={{ fontSize: '11px', fontWeight: '600', color: '#1e1e3a' }}>{formatTimestamp(log.timestamp)}</div>
+                  <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-primary)' }}>{formatTimestamp(log.timestamp)}</div>
                 </div>
 
                 <div style={{ minWidth: '120px', flexShrink: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <div onClick={() => setSelectedUserId(log.userId)} style={{ fontSize: '12px', fontWeight: '700', color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>
+                    <div onClick={() => setSelectedUserId(log.userId)} style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer', textDecoration: 'underline' }}>
                       {log.userName}
                     </div>
-                    <button onClick={() => setUserIdFilter(log.userId)} title="Filter logs for this user" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b8a', padding: '0 4px', display: 'flex', alignItems: 'center' }}>
+                    <button onClick={() => setUserIdFilter(log.userId)} title="Filter logs for this user" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0 4px', display: 'flex', alignItems: 'center' }}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
                       </svg>
@@ -336,7 +336,7 @@ export default function ActivityLogPage() {
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '12px', color: '#1e1e3a', fontWeight: '500', wordBreak: 'break-word' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '500', wordBreak: 'break-word' }}>
                     {log.actionDescription}
                   </div>
                 </div>
@@ -346,12 +346,12 @@ export default function ActivityLogPage() {
                 </div>
 
                 <div style={{ minWidth: '120px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: '600', color: '#6b6b8a', background: '#dddde8', padding: '2px 8px', borderRadius: '50px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--text-secondary)', background: '#dddde8', padding: '2px 8px', borderRadius: '50px' }}>
                     {formatActionType(log.actionType)}
                   </span>
                   <button 
                     onClick={() => handleDeleteLog(log.id)} 
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#ef4444', opacity: 0.7, display: 'flex', alignItems: 'center' }} 
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--danger)', opacity: 0.7, display: 'flex', alignItems: 'center' }} 
                     title="Delete log" 
                     onMouseEnter={e => e.currentTarget.style.opacity='1'} 
                     onMouseLeave={e => e.currentTarget.style.opacity='0.7'}
@@ -371,7 +371,7 @@ export default function ActivityLogPage() {
       {totalPages > 1 && (
         <div style={{ flexShrink: 0, padding: '16px 0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
           <button className="btn btn-ghost btn-xs" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ opacity: page <= 1 ? 0.4 : 1 }}>Previous</button>
-          <div style={{ fontSize: '12px', fontWeight: '600', color: '#1e1e3a' }}>Page {page} of {totalPages}</div>
+          <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>Page {page} of {totalPages}</div>
           <button className="btn btn-ghost btn-xs" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ opacity: page >= totalPages ? 0.4 : 1 }}>Next</button>
         </div>
       )}

@@ -36,11 +36,11 @@ interface MeResponse {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; dotColor: string; bg: string }> = {
-  live:        { label: 'LIVE',        color: '#16a34a', dotColor: '#16a34a', bg: 'rgba(22,163,74,0.10)' },
-  upcoming:    { label: 'UPCOMING',    color: '#6b6b8a', dotColor: '#c5c7cf', bg: 'transparent' },
-  completed:   { label: 'COMPLETED',   color: '#9999b0', dotColor: '#c5c7cf', bg: 'transparent' },
-  cancelled:   { label: 'CANCELLED',   color: '#ef4444', dotColor: '#ef4444', bg: 'rgba(239,68,68,0.10)' },
-  rescheduled: { label: 'RESCHEDULED', color: '#d97706', dotColor: '#d97706', bg: 'rgba(217,119,6,0.10)' },
+  live:        { label: 'LIVE',        color: 'var(--success)', dotColor: 'var(--success)', bg: 'rgba(22,163,74,0.10)' },
+  upcoming:    { label: 'UPCOMING',    color: 'var(--text-secondary)', dotColor: '#c5c7cf', bg: 'transparent' },
+  completed:   { label: 'COMPLETED',   color: 'var(--text-muted)', dotColor: '#c5c7cf', bg: 'transparent' },
+  cancelled:   { label: 'CANCELLED',   color: 'var(--danger)', dotColor: 'var(--danger)', bg: 'rgba(239,68,68,0.10)' },
+  rescheduled: { label: 'RESCHEDULED', color: 'var(--warning)', dotColor: 'var(--warning)', bg: 'rgba(217,119,6,0.10)' },
 }
 
 export default function LivePage() {
@@ -86,7 +86,7 @@ export default function LivePage() {
           name: orderData.userName,
           email: orderData.userEmail,
         },
-        theme: { color: '#6366f1' },
+        theme: { color: 'var(--accent)' },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
           setIsProcessing(true)
           try {
@@ -192,8 +192,8 @@ export default function LivePage() {
 
     const statusCfg = STATUS_CONFIG[session.status] || STATUS_CONFIG.upcoming
 
-    const dotColor = isLive ? '#16a34a' : isCancelled ? '#ef4444' : isRescheduled ? '#d97706' : '#c5c7cf'
-    const dotFill = isLive ? '#16a34a' : '#e8eaf0'
+    const dotColor = isLive ? 'var(--success)' : isCancelled ? 'var(--danger)' : isRescheduled ? 'var(--warning)' : '#c5c7cf'
+    const dotFill = isLive ? 'var(--success)' : 'var(--surface-2)'
     const dotGlow = isLive
       ? '0 0 0 4px rgba(22,163,74,0.18)'
       : isNextUpcoming
@@ -218,17 +218,17 @@ export default function LivePage() {
 
         <div style={{
           flex: 1, display: 'flex', alignItems: 'center', gap: '20px',
-          padding: '18px 24px', borderRadius: '50px', background: '#e8eaf0',
+          padding: '18px 24px', borderRadius: '50px', background: 'var(--surface-2)',
           boxShadow: rowShadow, opacity: isCompleted ? 0.65 : isCancelled ? 0.55 : 1,
           transition: 'all 0.2s ease',
         }}>
           {/* Time block */}
           <div style={{ width: '120px', flexShrink: 0, overflow: 'hidden' }}>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: isLive ? '#16a34a' : isCompleted || isCancelled ? '#9999b0' : '#6b6b8a', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: isLive ? 'var(--success)' : isCompleted || isCancelled ? 'var(--text-muted)' : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
               {formatIST(session.startTime)}
             </div>
             <div style={{ fontSize: '11px', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              <span style={{ color: '#9999b0' }}>{formatISTDate(session.startTime)}</span>
+              <span style={{ color: 'var(--text-muted)' }}>{formatISTDate(session.startTime)}</span>
             </div>
           </div>
 
@@ -239,7 +239,7 @@ export default function LivePage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', overflow: 'hidden' }}>
                 <span style={{
                   fontSize: '15px', fontWeight: '800',
-                  color: isCompleted || isCancelled ? '#9999b0' : '#1e1e3a',
+                  color: isCompleted || isCancelled ? 'var(--text-muted)' : 'var(--text-primary)',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
                   textDecoration: isCancelled ? 'line-through' : 'none',
                 }}>
@@ -265,7 +265,7 @@ export default function LivePage() {
                 {isNextUpcoming && !isLive && (
                   <span style={{
                     display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '50px',
-                    background: 'rgba(54,54,232,0.08)', color: '#3636e8', fontSize: '10px', fontWeight: '700', letterSpacing: '0.04em', flexShrink: 0,
+                    background: 'rgba(54,54,232,0.08)', color: 'var(--primary)', fontSize: '10px', fontWeight: '700', letterSpacing: '0.04em', flexShrink: 0,
                   }}>
                     UP NEXT
                   </span>
@@ -273,13 +273,13 @@ export default function LivePage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
                   </svg>
                   Instructor: {session.course?.teacherName || 'Standard Faculty'}
                 </div>
-                <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '2px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '2px' }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                   </svg>
@@ -292,19 +292,19 @@ export default function LivePage() {
           {/* Action button */}
           {isCompleted ? (
             <div style={{
-              width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0, background: '#e8eaf0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0, background: 'var(--surface-2)', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
           ) : isCancelled ? (
             <div style={{
-              width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0, background: '#e8eaf0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0, background: 'var(--surface-2)', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </div>
           ) : isRescheduled ? (
             <div style={{
-              width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0, background: '#e8eaf0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0, background: 'var(--surface-2)', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
             </div>
@@ -317,16 +317,16 @@ export default function LivePage() {
               if (!streamLive && !canHost) {
                 return (
                   <div style={{
-                    width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0, background: '#e8eaf0',
+                    width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0, background: 'var(--surface-2)',
                     boxShadow: isNextUpcoming ? '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff, 0 0 0 2px rgba(54,54,232,0.15)' : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isNextUpcoming ? '#3636e8' : '#9999b0'} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isNextUpcoming ? 'var(--primary)' : 'var(--text-muted)'} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                   </div>
                 )
               }
               const label = streamLive ? (canHost ? 'Open Stage' : 'Join Live') : 'Go Live'
-              const bg = streamLive ? '#16a34a' : '#ef4444'
+              const bg = streamLive ? 'var(--success)' : 'var(--danger)'
               const shadow = streamLive
                 ? '4px 4px 10px rgba(22,163,74,0.4), -2px -2px 6px rgba(255,255,255,0.8)'
                 : '4px 4px 10px rgba(239,68,68,0.4), -2px -2px 6px rgba(255,255,255,0.8)'
@@ -337,7 +337,7 @@ export default function LivePage() {
                   boxShadow: shadow,
                 }}>
                   {streamLive && (
-                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ffffff', animation: 'livePulse 1.5s infinite' }} />
+                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--surface)', animation: 'livePulse 1.5s infinite' }} />
                   )}
                   {label}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -347,7 +347,7 @@ export default function LivePage() {
           ) : (isLive || (!isCompleted && !isCancelled && !isRescheduled)) && session.meetLink ? (
             <a href={session.meetLink} target="_blank" rel="noopener noreferrer" style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '50px', flexShrink: 0,
-              background: isLive ? '#16a34a' : '#3636e8', color: 'white', fontWeight: '600', fontSize: '14px', textDecoration: 'none',
+              background: isLive ? 'var(--success)' : 'var(--primary)', color: 'white', fontWeight: '600', fontSize: '14px', textDecoration: 'none',
               boxShadow: isLive
                 ? '4px 4px 10px rgba(22,163,74,0.4), -2px -2px 6px rgba(255,255,255,0.8)'
                 : '4px 4px 10px rgba(54,54,232,0.3), -2px -2px 6px rgba(255,255,255,0.8)',
@@ -386,11 +386,11 @@ export default function LivePage() {
             </button>
           ) : (
             <div style={{
-              width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0, background: '#e8eaf0',
+              width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0, background: 'var(--surface-2)',
               boxShadow: isNextUpcoming ? '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff, 0 0 0 2px rgba(54,54,232,0.15)' : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isNextUpcoming ? '#3636e8' : '#9999b0'} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isNextUpcoming ? 'var(--primary)' : 'var(--text-muted)'} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             </div>
           )}
       </div>
@@ -412,11 +412,11 @@ export default function LivePage() {
     <div className="page-container fade-in live-sessions-desktop-only">
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-        <p style={{ fontSize: '13px', color: '#9999b0' }}>Today&apos;s Schedule &bull; {today}</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Today&apos;s Schedule &bull; {today}</p>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {isManager && lastSyncAt && (
-            <span style={{ fontSize: '12px', color: '#9999b0', padding: '0 12px' }}>
-              Last Sync: <span style={{ fontWeight: '600', color: '#6b6b8a' }}>{formatLastSync(lastSyncAt)}</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '0 12px' }}>
+              Last Sync: <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>{formatLastSync(lastSyncAt)}</span>
             </span>
           )}
           {isManager && (
@@ -445,9 +445,9 @@ export default function LivePage() {
               }}
               style={{
                 padding: '0 16px', height: '42px', borderRadius: '50px', border: 'none',
-                background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                background: 'var(--surface-2)', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                 display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-                color: '#3636e8', fontSize: '13px', fontWeight: '700',
+                color: 'var(--primary)', fontSize: '13px', fontWeight: '700',
               }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -465,9 +465,9 @@ export default function LivePage() {
         {/* Category: Live */}
         {liveSessions.length > 0 && (
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a', marginBottom: '16px', paddingLeft: '8px' }}>Live Sessions</h2>
+            <h2 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '16px', paddingLeft: '8px' }}>Live Sessions</h2>
             <div style={{ position: 'relative', paddingLeft: '48px' }}>
-              <div style={{ position: 'absolute', left: '15px', top: '24px', bottom: '24px', width: '2px', background: '#16a34a', borderRadius: '2px' }} />
+              <div style={{ position: 'absolute', left: '15px', top: '24px', bottom: '24px', width: '2px', background: 'var(--success)', borderRadius: '2px' }} />
               {liveSessions.map(session => renderSessionBlock(session, false))}
             </div>
           </div>
@@ -476,7 +476,7 @@ export default function LivePage() {
         {/* Category: Upcoming */}
         {upcomingSessions.length > 0 && (
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a', marginBottom: '16px', paddingLeft: '8px' }}>Upcoming Sessions</h2>
+            <h2 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '16px', paddingLeft: '8px' }}>Upcoming Sessions</h2>
             <div style={{ position: 'relative', paddingLeft: '48px' }}>
               <div style={{ position: 'absolute', left: '15px', top: '24px', bottom: '24px', width: '2px', background: '#c5c7cf', borderRadius: '2px' }} />
               {upcomingSessions.map(session => renderSessionBlock(session, session.id === nextUpcomingSessionId))}
@@ -487,15 +487,15 @@ export default function LivePage() {
         {/* Category: Recent */}
         {recentSessions.length > 0 && (
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a', marginBottom: '16px', paddingLeft: '8px' }}>Recent Sessions</h2>
+            <h2 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '16px', paddingLeft: '8px' }}>Recent Sessions</h2>
             <div style={{ position: 'relative', paddingLeft: '48px' }}>
-              <div style={{ position: 'absolute', left: '15px', top: '24px', bottom: '24px', width: '2px', background: '#e8eaf0', borderRadius: '2px' }} />
+              <div style={{ position: 'absolute', left: '15px', top: '24px', bottom: '24px', width: '2px', background: 'var(--surface-2)', borderRadius: '2px' }} />
               {recentSessions.map(session => renderSessionBlock(session, false))}
             </div>
           </div>
         )}
         {sessions.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9999b0' }}>
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="1.5" style={{ margin: '0 auto 12px', display: 'block' }}>
               <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
             </svg>
@@ -521,7 +521,7 @@ export default function LivePage() {
         padding: '20px'
       }} onClick={() => !upgrading && setUpgradeModalCourse(null)}>
         <div style={{
-          background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
+          background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
           boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
           animation: 'modalSlideUp 0.3s ease-out', position: 'relative'
         }} onClick={e => e.stopPropagation()}>
@@ -530,8 +530,8 @@ export default function LivePage() {
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', marginBottom: '24px' }}>
                 <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/>
               </svg>
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Processing Payment...</h2>
-              <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', textAlign: 'center' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '12px' }}>Processing Payment...</h2>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', textAlign: 'center' }}>
                 Please wait while we securely process your transaction.<br/>Do not close or refresh this page.
               </p>
               <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
@@ -540,26 +540,26 @@ export default function LivePage() {
             <div style={{ padding: '40px', textAlign: 'center' }}>
               <button
                 onClick={() => setUpgradeModalCourse(null)}
-                style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: '#94a3b8', cursor: 'pointer', lineHeight: 1 }}
+                style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: 'var(--text-muted)', cursor: 'pointer', lineHeight: 1 }}
               >&times;</button>
-              <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#ffffff', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+              <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'var(--surface)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               </div>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
-              <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
-              <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '32px' }}>
                 You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
               </p>
 
               <div style={{ background: '#f8faff', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid #e0e7ff' }}>
-                <div style={{ fontSize: '36px', fontWeight: '900', color: '#6366f1', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
-                <div style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '600' }}>One-time upgrade fee</div>
+                <div style={{ fontSize: '36px', fontWeight: '900', color: 'var(--accent)', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
+                <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600' }}>One-time upgrade fee</div>
               </div>
 
               <div style={{ display: 'flex', gap: '14px' }}>
                 <button
                   onClick={() => setUpgradeModalCourse(null)}
-                  style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'white', color: '#64748b', fontWeight: '700', cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
@@ -577,7 +577,7 @@ export default function LivePage() {
                 </button>
               </div>
 
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '24px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '24px' }}>
                 Course will be updated automatically after Payment
               </div>
             </div>
@@ -595,21 +595,21 @@ export default function LivePage() {
         padding: '20px'
       }} onClick={() => setUpgradeSuccessOrderId(null)}>
         <div style={{
-          background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
+          background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
           boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           padding: '40px', textAlign: 'center',
           animation: 'modalSlideUp 0.3s ease-out'
         }} onClick={e => e.stopPropagation()}>
           <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
-          <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Welcome to PRO!</h2>
-          <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Welcome to PRO!</h2>
+          <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
             Your upgrade was successful. You now have full access to live classes, mentorship, and priority support.
           </p>
           <div style={{ background: '#f0fdf4', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #bbf7d0' }}>
-            <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
+            <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
             <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
           </div>
-          <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
           <button
             onClick={() => setUpgradeSuccessOrderId(null)}
             style={{
@@ -633,7 +633,7 @@ export default function LivePage() {
         display: 'flex', alignItems: 'center', justifyContent: 'center'
       }}>
         <div style={{
-          background: 'white', padding: '40px', borderRadius: '32px',
+          background: 'var(--surface)', padding: '40px', borderRadius: '32px',
           textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
           width: '320px'
         }}>
@@ -643,8 +643,8 @@ export default function LivePage() {
             margin: '0 auto 20px',
             animation: 'spin 1s linear infinite'
           }} />
-          <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Processing...</h3>
-          <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Please wait while we set up your course access.</p>
+          <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Processing...</h3>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>Please wait while we set up your course access.</p>
         </div>
       </div>
     )}

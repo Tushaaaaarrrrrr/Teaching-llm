@@ -76,7 +76,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
 
   const neuCard: React.CSSProperties = {
     borderRadius: '20px', background: 'var(--surface-2)',
-    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+    boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)',
     padding: '32px',
   }
 
@@ -208,7 +208,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                   style={{ 
                     padding: '12px 24px', borderRadius: '50px', border: 'none', 
                     background: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 800, cursor: 'pointer',
-                    boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px #ffffff'
+                    boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px var(--neu-light)'
                   }}
                 >
                   Close Review
@@ -320,7 +320,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                   background: 'var(--surface)', color: 'var(--text-primary)',
                   fontWeight: 800, opacity: currentIdx === 0 ? 0.5 : 1, 
                   cursor: currentIdx === 0 ? 'default' : 'pointer',
-                  boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px #ffffff'
+                  boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px var(--neu-light)'
                 }}
               >
                 ← Previous Question

@@ -260,7 +260,7 @@ export default function StudyResourcesPage() {
                 width: '100%', padding: '11px 18px',
                 border: 'none', borderRadius: '50px',
                 background: 'var(--surface-2)',
-                boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                 color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
                 appearance: 'none', cursor: 'pointer'
               }}
@@ -291,7 +291,7 @@ export default function StudyResourcesPage() {
                 width: '100%', padding: '11px 18px 11px 42px',
                 border: 'none', borderRadius: '50px',
                 background: 'var(--surface-2)',
-                boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                 color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
               }}
             />
@@ -303,7 +303,7 @@ export default function StudyResourcesPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {filteredData.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="1.5" style={{ margin: '0 auto 12px', display: 'block' }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--neu-dark)" strokeWidth="1.5" style={{ margin: '0 auto 12px', display: 'block' }}>
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
             <p style={{ fontWeight: '500' }}>No materials found</p>
@@ -322,7 +322,7 @@ export default function StudyResourcesPage() {
                 display: 'flex', alignItems: 'center', gap: '18px',
                 padding: '16px 24px', borderRadius: '50px',
                 background: 'var(--surface-2)',
-                boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+                boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
                 transition: 'all 0.2s ease',
               }}
               onMouseEnter={e => (e.currentTarget.style.transform = 'translateX(6px)')}
@@ -331,7 +331,7 @@ export default function StudyResourcesPage() {
                 {/* File type badge */}
                 <div style={{
                   width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0,
-                  background: 'var(--surface-2)', boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
+                  background: 'var(--surface-2)', boxShadow: '3px 3px 7px var(--neu-dark), -3px -3px 7px var(--neu-light)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '9px', fontWeight: '800', color: style.color, letterSpacing: '0.03em',
                 }}>
@@ -375,7 +375,7 @@ export default function StudyResourcesPage() {
                         onClick={() => handleEdit(mat)}
                         style={{
                           width: '38px', height: '38px', borderRadius: '50%', border: 'none',
-                          background: 'var(--surface-2)', boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
+                          background: 'var(--surface-2)', boxShadow: '3px 3px 7px var(--neu-dark), -3px -3px 7px var(--neu-light)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: 'pointer', color: 'var(--accent)', flexShrink: 0,
                         }}
@@ -386,7 +386,7 @@ export default function StudyResourcesPage() {
                         onClick={() => handleDelete(mat.id, mat.title)}
                         style={{
                           width: '38px', height: '38px', borderRadius: '50%', border: 'none',
-                          background: 'var(--surface-2)', boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
+                          background: 'var(--surface-2)', boxShadow: '3px 3px 7px var(--neu-dark), -3px -3px 7px var(--neu-light)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: 'pointer', color: 'var(--danger)', flexShrink: 0,
                         }}
@@ -499,7 +499,7 @@ export default function StudyResourcesPage() {
                           style={{
                             display: 'flex', alignItems: 'center', gap: '10px',
                             padding: '12px 20px', borderRadius: '14px',
-                            background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                            background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
                             cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)'
                           }}
                         >

@@ -552,7 +552,7 @@ export default function CourseDetailPage() {
                           padding: '12px 20px',
                           borderRadius: '24px',
                           background: 'var(--surface-2)',
-                          boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
+                          boxShadow: '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)',
                           transition: 'box-shadow 0.2s',
                           flexWrap: 'wrap',
                         }}

@@ -62,7 +62,7 @@ export default function CouponManagementPage() {
     } catch { alert('Failed to update') }
   }
 
-  const labelStyle: React.CSSProperties = { fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '6px', letterSpacing: '0.04em' }
+  const labelStyle: React.CSSProperties = { fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '6px', letterSpacing: '0.04em' }
   const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid #e0e7ff', fontSize: '14px', fontWeight: '600', boxSizing: 'border-box', outline: 'none', transition: 'border 0.2s' }
 
   return (
@@ -74,38 +74,38 @@ export default function CouponManagementPage() {
       </div>
 
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>Loading coupons...</div>
+        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>Loading coupons...</div>
       ) : !coupons?.length ? (
-        <div style={{ textAlign: 'center', padding: '60px', background: '#f8fafc', borderRadius: '20px', border: '2px dashed #e2e8f0' }}>
+        <div style={{ textAlign: 'center', padding: '60px', background: 'var(--surface)', borderRadius: '20px', border: '2px dashed #e2e8f0' }}>
           <div style={{ fontSize: '48px', marginBottom: '12px' }}>🏷️</div>
-          <p style={{ fontSize: '16px', fontWeight: '700', color: '#334155' }}>No coupons yet</p>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>Create your first coupon to start offering discounts</p>
+          <p style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-secondary)' }}>No coupons yet</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Create your first coupon to start offering discounts</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {coupons.map((c: any) => (
-            <div key={c.id} style={{ background: '#fff', borderRadius: '16px', padding: '18px 22px', boxShadow: '0 2px 12px rgba(15,23,42,0.06)', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div key={c.id} style={{ background: 'var(--surface)', borderRadius: '16px', padding: '18px 22px', boxShadow: '0 2px 12px rgba(15,23,42,0.06)', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '16px' }}>
               {/* Code badge */}
               <div style={{ minWidth: '120px' }}>
-                <div style={{ background: c.isActive ? '#eff6ff' : '#f8fafc', border: c.isActive ? '1.5px solid #bfdbfe' : '1.5px solid #e2e8f0', borderRadius: '10px', padding: '8px 14px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '15px', fontWeight: '900', color: c.isActive ? '#1e40af' : '#94a3b8', letterSpacing: '0.06em', fontFamily: 'monospace' }}>{c.code}</div>
+                <div style={{ background: c.isActive ? '#eff6ff' : 'var(--surface)', border: c.isActive ? '1.5px solid #bfdbfe' : '1.5px solid #e2e8f0', borderRadius: '10px', padding: '8px 14px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '900', color: c.isActive ? '#1e40af' : 'var(--text-muted)', letterSpacing: '0.06em', fontFamily: 'monospace' }}>{c.code}</div>
                 </div>
               </div>
 
               {/* Info */}
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>
                     {c.discountType === 'PERCENTAGE' ? `${c.discountValue}% OFF` : `₹${c.discountValue} OFF`}
                   </span>
-                  <span style={{ fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: c.applicability === 'GLOBAL' ? '#dcfce7' : c.applicability === 'BUNDLE' ? '#fef3c7' : '#f3e8ff', color: c.applicability === 'GLOBAL' ? '#166534' : c.applicability === 'BUNDLE' ? '#92400e' : '#7c3aed' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: c.applicability === 'GLOBAL' ? 'var(--success-light)' : c.applicability === 'BUNDLE' ? 'var(--warning-light)' : '#f3e8ff', color: c.applicability === 'GLOBAL' ? '#166534' : c.applicability === 'BUNDLE' ? '#92400e' : '#7c3aed' }}>
                     {c.applicability}
                   </span>
-                  {c.isHidden && <span style={{ fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: '#f1f5f9', color: '#64748b' }}>HIDDEN</span>}
-                  {c.isFirstPurchaseOnly && <span style={{ fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: '#fef2f2', color: '#dc2626' }}>1ST BUY</span>}
+                  {c.isHidden && <span style={{ fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: 'var(--surface)', color: 'var(--text-secondary)' }}>HIDDEN</span>}
+                  {c.isFirstPurchaseOnly && <span style={{ fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: 'var(--danger-light)', color: 'var(--danger)' }}>1ST BUY</span>}
                   {c.isSingleUsePerUser && <span style={{ fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: '#fff7ed', color: '#c2410c' }}>1x/USER</span>}
                 </div>
-                <div style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
                   <span>Uses: {c.currentUses}{c.maxUses ? `/${c.maxUses}` : ''}</span>
                   <span>Revenue: ₹{c.totalRevenueGenerated || 0}</span>
                   {c.expiresAt && <span>Expires: {new Date(c.expiresAt).toLocaleDateString()}</span>}
@@ -115,13 +115,13 @@ export default function CouponManagementPage() {
 
               {/* Actions */}
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button onClick={() => toggleActive(c)} style={{ padding: '6px 14px', borderRadius: '8px', background: c.isActive ? '#dcfce7' : '#fef2f2', border: c.isActive ? '1px solid #86efac' : '1px solid #fecaca', color: c.isActive ? '#166534' : '#dc2626', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
+                <button onClick={() => toggleActive(c)} style={{ padding: '6px 14px', borderRadius: '8px', background: c.isActive ? 'var(--success-light)' : 'var(--danger-light)', border: c.isActive ? '1px solid #86efac' : '1px solid #fecaca', color: c.isActive ? '#166534' : 'var(--danger)', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
                   {c.isActive ? 'Active' : 'Inactive'}
                 </button>
-                <button onClick={() => { setEditingCoupon(c); setForm({ code: c.code, discountType: c.discountType, discountValue: c.discountValue, applicability: c.applicability, targetBundleIds: c.targetBundleIds || '', targetUserEmails: c.targetUserEmails || '', targetSubjects: c.targetSubjects || '', minOrderValue: c.minOrderValue || '', isFirstPurchaseOnly: c.isFirstPurchaseOnly, isSingleUsePerUser: c.isSingleUsePerUser, isHidden: c.isHidden, startDate: c.startDate ? new Date(c.startDate).toISOString().slice(0, 16) : '', expiresAt: c.expiresAt ? new Date(c.expiresAt).toISOString().slice(0, 16) : '', maxUses: c.maxUses || '', isActive: c.isActive }); setShowCreate(true) }} style={{ padding: '6px 14px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
+                <button onClick={() => { setEditingCoupon(c); setForm({ code: c.code, discountType: c.discountType, discountValue: c.discountValue, applicability: c.applicability, targetBundleIds: c.targetBundleIds || '', targetUserEmails: c.targetUserEmails || '', targetSubjects: c.targetSubjects || '', minOrderValue: c.minOrderValue || '', isFirstPurchaseOnly: c.isFirstPurchaseOnly, isSingleUsePerUser: c.isSingleUsePerUser, isHidden: c.isHidden, startDate: c.startDate ? new Date(c.startDate).toISOString().slice(0, 16) : '', expiresAt: c.expiresAt ? new Date(c.expiresAt).toISOString().slice(0, 16) : '', maxUses: c.maxUses || '', isActive: c.isActive }); setShowCreate(true) }} style={{ padding: '6px 14px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid #e2e8f0', color: 'var(--text-secondary)', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
                   Edit
                 </button>
-                <button onClick={() => handleDelete(c.id)} style={{ padding: '6px 10px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
+                <button onClick={() => handleDelete(c.id)} style={{ padding: '6px 10px', borderRadius: '8px', background: 'var(--danger-light)', border: '1px solid #fecaca', color: 'var(--danger)', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
                   🗑️
                 </button>
               </div>
@@ -133,9 +133,9 @@ export default function CouponManagementPage() {
       {/* Create/Edit Modal */}
       {showCreate && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001, padding: '20px' }} onClick={() => { setShowCreate(false); setEditingCoupon(null) }}>
-          <div style={{ background: '#fff', borderRadius: '24px', width: '100%', maxWidth: '640px', padding: '32px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#1e1e3a', marginBottom: '4px' }}>{editingCoupon ? 'Edit Coupon' : 'Create New Coupon'}</h2>
-            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '24px' }}>Configure discount code settings</p>
+          <div style={{ background: 'var(--surface)', borderRadius: '24px', width: '100%', maxWidth: '640px', padding: '32px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '4px' }}>{editingCoupon ? 'Edit Coupon' : 'Create New Coupon'}</h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>Configure discount code settings</p>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
@@ -208,19 +208,19 @@ export default function CouponManagementPage() {
                 { key: 'isHidden', label: 'Hidden/Private', desc: 'Not visible publicly' },
                 { key: 'isActive', label: 'Active', desc: 'Coupon is usable' },
               ].map(opt => (
-                <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e0e7ff', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={!!form[opt.key]} onChange={e => setForm({ ...form, [opt.key]: e.target.checked })} style={{ width: '16px', height: '16px', accentColor: '#6366f1' }} />
+                <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', background: 'var(--surface)', border: '1px solid #e0e7ff', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={!!form[opt.key]} onChange={e => setForm({ ...form, [opt.key]: e.target.checked })} style={{ width: '16px', height: '16px', accentColor: 'var(--accent)' }} />
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>{opt.label}</div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>{opt.desc}</div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{opt.label}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{opt.desc}</div>
                   </div>
                 </label>
               ))}
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => { setShowCreate(false); setEditingCoupon(null) }} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff', background: '#f8f9fc', color: '#1e1e3a', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
-              <button disabled={saving} onClick={handleSave} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: saving ? '#94a3b8' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: saving ? 'not-allowed' : 'pointer' }}>
+              <button onClick={() => { setShowCreate(false); setEditingCoupon(null) }} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #e0e7ff', background: 'var(--surface)', color: 'var(--text-primary)', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+              <button disabled={saving} onClick={handleSave} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: saving ? 'var(--text-muted)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: saving ? 'not-allowed' : 'pointer' }}>
                 {saving ? 'Saving...' : editingCoupon ? 'Update Coupon' : 'Create Coupon'}
               </button>
             </div>

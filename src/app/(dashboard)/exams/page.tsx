@@ -60,7 +60,7 @@ export default function ExamsPage() {
   const activeExams = courseExams.filter(e => { const s = getExamTimingState(e.startDate, e.expiresAt, now); return s === 'active' || s === 'ending' })
   const expiredExams = courseExams.filter(e => getExamTimingState(e.startDate, e.expiresAt, now) === 'ended')
 
-  const neu: React.CSSProperties = { borderRadius: '20px', background: 'var(--surface-2)', boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff', padding: '24px' }
+  const neu: React.CSSProperties = { borderRadius: '20px', background: 'var(--surface-2)', boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)', padding: '24px' }
   const neuBtn: React.CSSProperties = { padding: '12px 28px', borderRadius: '50px', border: 'none', background: 'var(--primary)', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer', boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)', transition: 'all 0.2s ease' }
 
   const handleCopy = async () => {
@@ -129,7 +129,7 @@ export default function ExamsPage() {
           <div style={{ display: 'flex', flexDirection: 'column' }}><span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Questions</span><span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 700 }}>{exam._count.questions}</span></div>
         </div>
         <button onClick={() => router.push(`/exams/${exam.id}`)} disabled={(isExpired || isUpcoming) && !isManager}
-          style={{ width: '100%', padding: '12px', borderRadius: '14px', border: 'none', background: (isExpired || isUpcoming) && !isManager ? '#c5c7cf' : '#fff', color: (isExpired || isUpcoming) && !isManager ? 'var(--text-secondary)' : 'var(--primary)', fontSize: '14px', fontWeight: 700, cursor: (isExpired || isUpcoming) && !isManager ? 'default' : 'pointer', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', transition: 'all 0.2s', marginTop: '4px' }}>
+          style={{ width: '100%', padding: '12px', borderRadius: '14px', border: 'none', background: (isExpired || isUpcoming) && !isManager ? 'var(--neu-dark)' : '#fff', color: (isExpired || isUpcoming) && !isManager ? 'var(--text-secondary)' : 'var(--primary)', fontSize: '14px', fontWeight: 700, cursor: (isExpired || isUpcoming) && !isManager ? 'default' : 'pointer', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', transition: 'all 0.2s', marginTop: '4px' }}>
           {isManager ? 'Manage Exam' : isUpcoming ? 'Not Started' : isExpired ? 'Expired' : 'Start Assessment'}
         </button>
       </div>

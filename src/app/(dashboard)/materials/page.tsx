@@ -19,7 +19,7 @@ export default function StudyMaterialsLandingPage() {
             padding: '32px',
             borderRadius: '32px',
             background: 'var(--surface-2)',
-            boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+            boxShadow: '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -31,11 +31,11 @@ export default function StudyMaterialsLandingPage() {
           }}
           onMouseEnter={e => {
             e.currentTarget.style.transform = 'translateY(-6px)'
-            e.currentTarget.style.boxShadow = '12px 12px 24px #c5c7cf, -12px -12px 24px #ffffff'
+            e.currentTarget.style.boxShadow = '12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light)'
           }}
           onMouseLeave={e => {
             e.currentTarget.style.transform = 'translateY(0)'
-            e.currentTarget.style.boxShadow = '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
+            e.currentTarget.style.boxShadow = '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)'
           }}
           >
             <div style={{
@@ -43,7 +43,7 @@ export default function StudyMaterialsLandingPage() {
               height: '72px',
               borderRadius: '24px',
               background: 'var(--surface-2)',
-              boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+              boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -69,7 +69,7 @@ export default function StudyMaterialsLandingPage() {
             padding: '32px',
             borderRadius: '32px',
             background: 'var(--surface-2)',
-            boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+            boxShadow: '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -81,11 +81,11 @@ export default function StudyMaterialsLandingPage() {
           }}
           onMouseEnter={e => {
             e.currentTarget.style.transform = 'translateY(-6px)'
-            e.currentTarget.style.boxShadow = '12px 12px 24px #c5c7cf, -12px -12px 24px #ffffff'
+            e.currentTarget.style.boxShadow = '12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light)'
           }}
           onMouseLeave={e => {
             e.currentTarget.style.transform = 'translateY(0)'
-            e.currentTarget.style.boxShadow = '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
+            e.currentTarget.style.boxShadow = '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)'
           }}
           >
             <div style={{
@@ -93,7 +93,7 @@ export default function StudyMaterialsLandingPage() {
               height: '72px',
               borderRadius: '24px',
               background: 'var(--surface-2)',
-              boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+              boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

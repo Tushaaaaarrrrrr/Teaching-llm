@@ -494,7 +494,7 @@ export default function CourseEditPage() {
               <button onClick={() => setContentModal(null)} style={{
                 width: '32px', height: '32px', borderRadius: '50%', background: 'var(--surface-2)',
                 border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text-secondary)',
-                boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>×</button>
             </div>
@@ -627,7 +627,7 @@ export default function CourseEditPage() {
                             }}
                             style={{
                               textAlign: 'left', padding: '12px 14px', borderRadius: '12px', border: 'none',
-                              background: '#f0f2f8', boxShadow: '3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff',
+                              background: '#f0f2f8', boxShadow: '3px 3px 6px #d1d9e6, -3px -3px 6px var(--neu-light)',
                               cursor: 'pointer',
                             }}
                           >
@@ -697,7 +697,7 @@ export default function CourseEditPage() {
                         style={{
                           display: 'flex', alignItems: 'center', gap: '10px',
                           padding: '12px 20px', borderRadius: '14px',
-                          background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                          background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
                           cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)'
                         }}
                       >
@@ -847,7 +847,7 @@ export default function CourseEditPage() {
                     width: '20px', height: '20px', borderRadius: '4px', background: 'var(--surface-2)',
                     border: 'none', cursor: topicIdx === 0 ? 'not-allowed' : 'pointer',
                     opacity: topicIdx === 0 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                    boxShadow: '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
                   }}
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>
@@ -859,7 +859,7 @@ export default function CourseEditPage() {
                     width: '20px', height: '20px', borderRadius: '4px', background: 'var(--surface-2)',
                     border: 'none', cursor: topicIdx === topics.length - 1 ? 'not-allowed' : 'pointer',
                     opacity: topicIdx === topics.length - 1 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                    boxShadow: '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
                   }}
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -955,7 +955,7 @@ export default function CourseEditPage() {
                             width: '20px', height: '20px', borderRadius: '4px', background: 'var(--surface-2)',
                             border: 'none', cursor: itemIdx === 0 ? 'not-allowed' : 'pointer',
                             opacity: itemIdx === 0 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                            boxShadow: '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
                           }}
                         >
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>
@@ -967,7 +967,7 @@ export default function CourseEditPage() {
                             width: '20px', height: '20px', borderRadius: '4px', background: 'var(--surface-2)',
                             border: 'none', cursor: itemIdx === topic.content.length - 1 ? 'not-allowed' : 'pointer',
                             opacity: itemIdx === topic.content.length - 1 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                            boxShadow: '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
                           }}
                         >
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -1050,13 +1050,13 @@ export default function CourseEditPage() {
             onClick={() => setAddingTopic(true)}
             style={{
               padding: '14px 20px', borderRadius: '12px',
-              border: '2px dashed #c5c7cf', background: 'transparent',
+              border: '2px dashed var(--neu-dark)', background: 'transparent',
               cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '13.5px', fontWeight: '500',
               display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
               transition: 'all 0.15s',
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#c5c7cf'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--neu-dark)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add New Topic

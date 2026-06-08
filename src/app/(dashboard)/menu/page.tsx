@@ -31,7 +31,7 @@ function MenuRow({ item, onClick }: { item: MenuItem; onClick?: () => void }) {
       }}>
         {item.icon}
       </div>
-      <span style={{ flex: 1, fontSize: '14px', fontWeight: 700, color: '#1e1e3a' }}>
+      <span style={{ flex: 1, fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
         {item.label}
       </span>
       {item.external ? (
@@ -46,9 +46,9 @@ function MenuRow({ item, onClick }: { item: MenuItem; onClick?: () => void }) {
   const baseStyle: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: '14px',
     padding: '14px 16px', borderRadius: '18px',
-    background: '#e8eaf0',
+    background: 'var(--surface-2)',
     boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
-    textDecoration: 'none', color: '#1e1e3a',
+    textDecoration: 'none', color: 'var(--text-primary)',
     fontFamily: 'inherit', border: 'none', width: '100%', cursor: 'pointer',
     transition: 'box-shadow 0.15s ease',
     textAlign: 'left',
@@ -61,7 +61,7 @@ function MenuRow({ item, onClick }: { item: MenuItem; onClick?: () => void }) {
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: '11px', fontWeight: 800, color: '#9999b0',
+      fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)',
       letterSpacing: '0.08em', textTransform: 'uppercase',
       padding: '0 6px', margin: '14px 0 8px',
     }}>{children}</div>
@@ -149,7 +149,7 @@ export default function MobileMenuPage() {
     href: '#',
     label: 'Share App',
     iconBg: 'rgba(54, 54, 232, 0.10)',
-    iconColor: '#3636e8',
+    iconColor: 'var(--primary)',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="18" cy="5" r="3"/>
@@ -179,25 +179,25 @@ export default function MobileMenuPage() {
     {
       href: '/courses/explore',
       label: 'Store',
-      iconBg: 'rgba(99, 102, 241, 0.12)', iconColor: '#6366f1',
+      iconBg: 'rgba(99, 102, 241, 0.12)', iconColor: 'var(--accent)',
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
     },
     {
       href: txHref,
       label: 'Transactions',
-      iconBg: 'rgba(54, 54, 232, 0.10)', iconColor: '#3636e8',
+      iconBg: 'rgba(54, 54, 232, 0.10)', iconColor: 'var(--primary)',
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
     },
     {
       href: '/support',
       label: 'Support',
-      iconBg: 'rgba(16, 185, 129, 0.10)', iconColor: '#10b981',
+      iconBg: 'rgba(16, 185, 129, 0.10)', iconColor: 'var(--success)',
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
     },
     {
       href: '/settings',
       label: 'Settings',
-      iconBg: 'rgba(107, 107, 138, 0.10)', iconColor: '#6b6b8a',
+      iconBg: 'rgba(107, 107, 138, 0.10)', iconColor: 'var(--text-secondary)',
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
     },
   ]
@@ -206,13 +206,13 @@ export default function MobileMenuPage() {
     {
       href: '/company/about-us',
       label: 'About Us',
-      iconBg: 'rgba(99, 102, 241, 0.10)', iconColor: '#6366f1',
+      iconBg: 'rgba(99, 102, 241, 0.10)', iconColor: 'var(--accent)',
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
     },
     {
       href: '/company/privacy-policy',
       label: 'Privacy Policy',
-      iconBg: 'rgba(14, 165, 233, 0.10)', iconColor: '#0ea5e9',
+      iconBg: 'rgba(14, 165, 233, 0.10)', iconColor: 'var(--info)',
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
     },
     {
@@ -324,28 +324,28 @@ export default function MobileMenuPage() {
           <SectionHeader>App Info</SectionHeader>
           <div style={{
             padding: '18px 20px', borderRadius: '18px',
-            background: '#e8eaf0',
+            background: 'var(--surface-2)',
             boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
           }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#6b6b8a' }}>App Version</span>
-                <span style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a' }}>v{appInfo.version}</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>App Version</span>
+                <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>v{appInfo.version}</span>
               </div>
               <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#6b6b8a' }}>Build Number</span>
-                <span style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a' }}>{appInfo.build}</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Build Number</span>
+                <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>{appInfo.build}</span>
               </div>
               <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#6b6b8a' }}>Platform</span>
-                <span style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a', textTransform: 'capitalize' }}>{appInfo.platform}</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Platform</span>
+                <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'capitalize' }}>{appInfo.platform}</span>
               </div>
               <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#6b6b8a' }}>Package</span>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: '#9999b0' }}>com.teaching.lms</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Package</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>com.teaching.lms</span>
               </div>
             </div>
           </div>
@@ -356,14 +356,14 @@ export default function MobileMenuPage() {
       <button onClick={handleLogout} style={{
         display: 'flex', alignItems: 'center', gap: '14px',
         padding: '14px 16px', borderRadius: '18px',
-        background: '#e8eaf0',
+        background: 'var(--surface-2)',
         boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
         border: 'none', width: '100%', cursor: 'pointer',
-        fontFamily: 'inherit', color: '#ef4444',
+        fontFamily: 'inherit', color: 'var(--danger)',
       }}>
         <div style={{
           width: '38px', height: '38px', borderRadius: '12px', flexShrink: 0,
-          background: 'rgba(239, 68, 68, 0.10)', color: '#ef4444',
+          background: 'rgba(239, 68, 68, 0.10)', color: 'var(--danger)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -334,7 +334,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
   // Shared Styles
   const neuCard: React.CSSProperties = {
     borderRadius: '20px', background: 'var(--surface-2)',
-    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+    boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)',
     padding: '32px',
   }
 
@@ -468,7 +468,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                        {exam.attempts.map((a: any) => (
-                         <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'var(--surface)', borderRadius: '12px', boxShadow: '2px 2px 4px #c5c7cf' }}>
+                         <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'var(--surface)', borderRadius: '12px', boxShadow: '2px 2px 4px var(--neu-dark)' }}>
                              <div>
                                 <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
                                   {a.user?.name || `Student ${a.userId.slice(-4)}`}
@@ -549,7 +549,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                         const evalData = evaluations[resp?.id] || { marks: 0, feedback: '' }
 
                         return (
-                           <div key={q.id} style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', boxShadow: '2px 2px 5px #c5c7cf' }}>
+                           <div key={q.id} style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', boxShadow: '2px 2px 5px var(--neu-dark)' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                  <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>{q.type} - Max {q.marks} Marks</span>
                                  {q.type !== 'SUBJECTIVE' && (
@@ -632,7 +632,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                         )
                      })}
 
-                      <div style={{ background: 'var(--surface)', padding: '24px', borderRadius: '20px', boxShadow: '4px 4px 10px #c5c7cf', marginTop: '20px' }}>
+                      <div style={{ background: 'var(--surface)', padding: '24px', borderRadius: '20px', boxShadow: '4px 4px 10px var(--neu-dark)', marginTop: '20px' }}>
                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '24px' }}>
                             <div style={{ padding: '16px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Marks Summary</div>
@@ -920,11 +920,11 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
-             <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--surface)', boxShadow: '3px 3px 6px #c5c7cf' }}>
+             <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--surface)', boxShadow: '3px 3px 6px var(--neu-dark)' }}>
                 <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Questions</div>
                 <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>{exam.questions?.length}</div>
              </div>
-             <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--surface)', boxShadow: '3px 3px 6px #c5c7cf' }}>
+             <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--surface)', boxShadow: '3px 3px 6px var(--neu-dark)' }}>
                 <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Duration</div>
                 <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>{exam.durationMinutes}m</div>
              </div>

@@ -213,7 +213,7 @@ export default function RecordingsPage() {
               <button onClick={() => setVideoModal(null)} style={{
                 width: '32px', height: '32px', borderRadius: '50%',
                 background: 'var(--surface-2)', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text-secondary)',
-                boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>×</button>
             </div>
@@ -246,7 +246,7 @@ export default function RecordingsPage() {
             borderRadius: '50px',
             border: 'none', outline: 'none',
             background: 'var(--surface-2)',
-            boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff',
+            boxShadow: 'inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light)',
             fontSize: '14.5px', color: 'var(--text-primary)', fontFamily: 'inherit',
           }}
         />
@@ -263,7 +263,7 @@ export default function RecordingsPage() {
             color:      courseFilter === 'all' ? '#ffffff'  : 'var(--text-secondary)',
             boxShadow:  courseFilter === 'all'
               ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)'
-              : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+              : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
           }}
         >
           All Courses
@@ -279,7 +279,7 @@ export default function RecordingsPage() {
               color:      courseFilter === cls.id ? '#ffffff' : 'var(--text-secondary)',
               boxShadow:  courseFilter === cls.id
                 ? `4px 4px 10px ${cls.color}55, -2px -2px 6px rgba(255,255,255,0.7)`
-                : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
             }}
           >
             {cls.name}
@@ -296,16 +296,16 @@ export default function RecordingsPage() {
               display: 'flex', alignItems: 'center', gap: '18px',
               padding: '16px 24px', borderRadius: '50px',
               background: 'var(--surface-2)',
-              boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+              boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
               transition: 'box-shadow 0.2s ease',
             }}
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)')}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)')}
             >
               {/* Play badge */}
               <div style={{
                 width: '48px', height: '48px', borderRadius: '50%', flexShrink: 0,
-                background: 'var(--surface-2)', boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
+                background: 'var(--surface-2)', boxShadow: '3px 3px 7px var(--neu-dark), -3px -3px 7px var(--neu-light)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill={course?.color || 'var(--accent)'} stroke="none">
