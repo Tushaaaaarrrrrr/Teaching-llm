@@ -414,9 +414,9 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 {/* Security ID */}
                 <div style={{
                   padding: '20px', borderRadius: '20px',
-                  background: 'linear-gradient(135deg, var(--border), #f8fafc)',
+                  background: 'linear-gradient(135deg, var(--surface-2), var(--surface))',
                   boxShadow: 'inset 4px 4px 10px var(--neu-dark), inset -4px -4px 10px var(--neu-light)',
-                  border: '1px solid rgba(255,255,255,0.6)'
+                  border: '1px solid var(--border)'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Security Identification</div>
