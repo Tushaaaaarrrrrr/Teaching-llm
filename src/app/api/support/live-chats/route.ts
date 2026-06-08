@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { sendNewLiveChatNotificationToManagers } from '@/lib/system-notifications'
 
 const CHAT_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 
@@ -86,6 +87,8 @@ export async function POST(request: NextRequest) {
         agent: { select: { id: true, name: true, role: true } },
       },
     })
+
+    sendNewLiveChatNotificationToManagers(chat.id, session.name, initialMessage).catch(console.error)
 
     logActivity({
       userId: session.userId,

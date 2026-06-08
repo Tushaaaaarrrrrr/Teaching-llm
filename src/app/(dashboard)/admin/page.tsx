@@ -160,7 +160,7 @@ export default function AdminPage() {
   const { data: bundlesData } = useSWR(userRole === 'MANAGER' ? '/api/course-bundles' : null, url => fetch(url).then(r => r.json()))
 
   const users = normalizeCollection<User>(usersData, 'users')
-  const isLimitedView = !debouncedSearchQuery
+  const isLimitedView = users.length >= 500 && !debouncedSearchQuery
   const bundles = normalizeCollection<CourseBundleInfo>(bundlesData, 'bundles')
   const managerCount = users.filter(u => u.role === 'MANAGER').length
   const bundledCourseIds = new Set(
@@ -527,7 +527,7 @@ export default function AdminPage() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
-          Showing 10 most recently enrolled users. <strong style={{ marginLeft: 4 }}>Search by name, email, or security number to find anyone.</strong>
+          Showing 500 most recently enrolled users. <strong style={{ marginLeft: 4 }}>Search by name, email, or security number to find anyone.</strong>
         </div>
       )}
 
@@ -821,11 +821,7 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
-              {!editId && (
-                <div style={{ padding: '10px 14px', background: 'var(--info-light)', borderRadius: '8px', fontSize: '12px', color: 'var(--info)', border: '1px solid #dbeafe' }}>
-                  💡 Password will be auto-generated and shown once after creation.
-                </div>
-              )}
+
               {editingUserIsSuperManager && (
                 <div style={{ padding: '10px 14px', background: 'var(--warning-light)', borderRadius: '8px', fontSize: '12px', color: 'var(--warning)', border: '1px solid #fcd34d' }}>
                   🔒 Super Manager credentials cannot be changed here.

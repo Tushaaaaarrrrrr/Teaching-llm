@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import crypto from 'crypto'
 import { logActivity, MODULE, ACTION } from '@/lib/activity-log'
+import { sendCourseEnrollmentNotification } from '@/lib/system-notifications'
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,6 +64,8 @@ export async function POST(request: NextRequest) {
             packageName: packageName
           } 
         })
+
+        sendCourseEnrollmentNotification(session.userId, item.courseId, order.amount).catch(console.error)
         
         // Log individual enrollment
         logActivity({

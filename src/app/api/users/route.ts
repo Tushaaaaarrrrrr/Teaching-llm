@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       const users = await prisma.user.findMany({
         select: userSelect,
         orderBy: { createdAt: 'desc' },
-        take: 10,
+        take: 500,
       })
       return NextResponse.json({ users, limited: true })
     }
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       },
       select: userSelect,
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: 500,
     })
 
     return NextResponse.json({ users, limited: false })
