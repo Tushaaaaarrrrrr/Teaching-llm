@@ -107,7 +107,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/activity-logs',
     label: 'Activity Log',
-    roles: ['MANAGER', 'SUPER_ADMIN'],
+    roles: ['MANAGER'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
@@ -209,7 +209,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/transactions',
     label: 'Transactions',
-    roles: ['MANAGER', 'SUPER_ADMIN'],
+    roles: ['MANAGER'],
     desktopOnly: true,
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -266,7 +266,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/manage/prompts',
     label: 'User Prompts',
-    roles: ['MANAGER', 'SUPER_ADMIN'],
+    roles: ['MANAGER'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
@@ -288,7 +288,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/admin',
     label: 'User Admin',
-    roles: ['MANAGER', 'SUPER_ADMIN'],
+    roles: ['MANAGER'],
     icon: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -441,7 +441,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             }} 
           />
         </div>
-        <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '800', letterSpacing: '0.01em', textTransform: 'uppercase', paddingLeft: '2px' }}>
+        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.01em', textTransform: 'uppercase', paddingLeft: '2px' }}>
           {roleLabel} Portal
         </div>
       </div>
@@ -484,11 +484,11 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             }
             return {
               display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 18px', borderRadius: '50px',
-              color: isActive ? '#ffffff' : '#6b6b8a',
-              background: isActive ? '#3636e8' : '#e8eaf0',
+              color: isActive ? '#ffffff' : 'var(--text-secondary)',
+              background: isActive ? 'var(--primary)' : 'var(--sidebar-bg)',
               boxShadow: isActive
-                ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)'
-                : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-light)'
+                : 'var(--shadow)',
               textDecoration: 'none', fontSize: '14px', fontWeight: isActive ? '700' : '500', transition: 'all 0.2s ease',
               marginBottom: '4px', position: 'relative' as const, whiteSpace: 'nowrap' as const
             }
@@ -497,18 +497,18 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           return (
             <div key={item.href} className={item.desktopOnly ? 'desktop-only-nav-item' : undefined}>
               {showGeneralHeader && (
-                <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '10px', paddingLeft: '12px' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '10px', paddingLeft: '12px' }}>
                   General
                 </div>
               )}
               
               {showCommunityHeader && (
-                <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '16px', paddingLeft: '12px' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '16px', paddingLeft: '12px' }}>
                   Engagement
                 </div>
               )}
               {showAdminHeader && (
-                <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '16px', paddingLeft: '12px' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '16px', paddingLeft: '12px' }}>
                   Administration
                 </div>
               )}
@@ -533,7 +533,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   `}} />
                 )}
                 <span style={{
-                  color: isStore ? '#ffffff' : (isActive ? '#ffffff' : '#6b6b8a'),
+                  color: isStore ? '#ffffff' : (isActive ? '#ffffff' : 'var(--text-secondary)'),
                   flexShrink: 0,
                   display: 'flex',
                   position: 'relative',
@@ -548,8 +548,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                       width: '8px',
                       height: '8px',
                       borderRadius: '50%',
-                      background: '#ef4444',
-                      border: `2px solid ${isStore ? '#64748b' : (isActive ? '#3636e8' : '#e8eaf0')}`,
+                      background: 'var(--danger)',
+                      border: `2px solid ${isStore ? '#64748b' : (isActive ? 'var(--primary)' : 'var(--sidebar-bg)')}`,
                       boxShadow: '0 0 6px rgba(239, 68, 68, 0.4)'
                     }} />
                   )}
@@ -587,11 +587,11 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             width="18" height="18"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#b0b0c8"
+            stroke="currentColor"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ animation: 'sidebarBounce 1.6s ease-in-out infinite' }}
+            style={{ color: 'var(--text-muted)', animation: 'sidebarBounce 1.6s ease-in-out infinite' }}
           >
             <polyline points="6 9 12 15 18 9" />
           </svg>
@@ -607,9 +607,9 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           gap: '12px',
           padding: '11px 18px',
           borderRadius: '50px',
-          color: '#ef4444',
-          background: '#e8eaf0',
-          boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+          color: 'var(--danger)',
+          background: 'var(--sidebar-bg)',
+          boxShadow: 'var(--shadow)',
           border: 'none',
           cursor: 'pointer',
           fontSize: '14.5px',
@@ -620,7 +620,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           width: '100%',
         }}
       >
-        <span style={{ color: '#ef4444', flexShrink: 0, display: 'flex' }}>
+        <span style={{ color: 'var(--danger)', flexShrink: 0, display: 'flex' }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
