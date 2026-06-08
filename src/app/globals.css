@@ -125,14 +125,21 @@
 
 /* Rich-text page content (About Us / policies) — keep headings & links readable
    on dark when the stored HTML doesn't carry its own color. */
-:root[data-theme="dark"] .custom-page-content { color: var(--text-secondary); }
+/* Stored HTML (About/Contact/policy pages) often has inline dark text colors
+   baked in by the manager, which vanish on dark. Force readable colors in dark
+   with !important so those inline styles can't make text invisible. Links and
+   headings/emphasis get their own readable tokens. */
+:root[data-theme="dark"] .custom-page-content,
+:root[data-theme="dark"] .custom-page-content * { color: var(--text-secondary) !important; }
 :root[data-theme="dark"] .custom-page-content h1,
 :root[data-theme="dark"] .custom-page-content h2,
 :root[data-theme="dark"] .custom-page-content h3,
 :root[data-theme="dark"] .custom-page-content h4,
+:root[data-theme="dark"] .custom-page-content h5,
+:root[data-theme="dark"] .custom-page-content h6,
 :root[data-theme="dark"] .custom-page-content strong,
-:root[data-theme="dark"] .custom-page-content b { color: var(--text-primary); }
-:root[data-theme="dark"] .custom-page-content a { color: var(--accent); }
+:root[data-theme="dark"] .custom-page-content b { color: var(--text-primary) !important; }
+:root[data-theme="dark"] .custom-page-content a { color: var(--accent) !important; }
 
 html {
   height: 100%;
