@@ -306,7 +306,7 @@ export default function CoursesPage() {
           const getBatchBadge = () => {
             if (isFreeOrDemo) return { text: 'General Batch', color: '#bae6fd' }
             if (isLive) return { text: 'PRO Batch', color: '#fff' }
-            if (isRecorded) return { text: 'PLUS', color: 'var(--border)' }
+            if (isRecorded) return { text: 'PLUS', color: '#ffffff' }
             return { text: 'General Batch', color: '#bae6fd' }
           }
           const batchBadge = getBatchBadge()
