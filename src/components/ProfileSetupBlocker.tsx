@@ -110,7 +110,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
       padding: '20px'
     }}>
       <div className="fade-in" style={{
-        background: '#fff',
+        background: 'var(--surface)',
         width: '100%',
         maxWidth: '540px',
         padding: '40px',
@@ -118,17 +118,17 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
         boxShadow: '0 20px 40px rgba(0,0,0,0.08)'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#1e1e3a', marginBottom: '8px' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '8px' }}>
             Welcome back to GenZ IITian!
           </h1>
-          <p style={{ fontSize: '14px', color: '#6b6b8a', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             Please update your details so we can serve you better.
           </p>
         </div>
 
         {error && (
           <div style={{
-            background: '#fee2e2',
+            background: 'var(--danger-light)',
             color: '#b91c1c',
             padding: '12px 16px',
             borderRadius: '12px',
@@ -237,7 +237,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
                     fontWeight: 700,
                     border: formData.gender === g ? '2px solid #6366f1' : '2px solid #e0e3ea',
                     background: formData.gender === g ? '#eff0fe' : '#f8f9fa',
-                    color: formData.gender === g ? '#6366f1' : '#6b6b8a',
+                    color: formData.gender === g ? 'var(--accent)' : 'var(--text-secondary)',
                     transition: 'all 0.2s'
                   }}
                 >
@@ -282,7 +282,7 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
           padding: '20px'
         }}>
           <div className="fade-in" style={{
-            background: '#fff',
+            background: 'var(--surface)',
             borderRadius: '20px',
             padding: '36px 32px',
             maxWidth: '420px',
@@ -304,11 +304,11 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
               </svg>
             </div>
 
-            <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', marginBottom: '12px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '12px' }}>
               Please check all details carefully
             </h2>
-            <p style={{ fontSize: '14px', color: '#6b6b8a', lineHeight: 1.65, marginBottom: '28px' }}>
-              These details <strong style={{ color: '#ef4444' }}>cannot be changed</strong> once submitted. Make sure everything is correct before continuing.
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: '28px' }}>
+              These details <strong style={{ color: 'var(--danger)' }}>cannot be changed</strong> once submitted. Make sure everything is correct before continuing.
             </p>
 
             {/* Summary of entered details */}
@@ -321,8 +321,8 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
                 { label: 'State', value: formData.state },
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #eee', fontSize: '13.5px' }}>
-                  <span style={{ color: '#6b6b8a', fontWeight: 600 }}>{label}</span>
-                  <span style={{ color: '#1e1e3a', fontWeight: 700 }}>{value}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{value}</span>
                 </div>
               ))}
             </div>
@@ -332,8 +332,8 @@ export default function ProfileSetupBlocker({ user }: { user: FullSession }) {
                 onClick={() => setShowConfirmModal(false)}
                 style={{
                   flex: 1, padding: '13px', borderRadius: '12px',
-                  border: '2px solid #e0e3ea', background: '#fff',
-                  color: '#6b6b8a', fontSize: '14px', fontWeight: 700,
+                  border: '2px solid #e0e3ea', background: 'var(--surface)',
+                  color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 700,
                   cursor: 'pointer', fontFamily: 'inherit'
                 }}
               >

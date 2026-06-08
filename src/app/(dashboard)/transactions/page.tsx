@@ -109,7 +109,7 @@ export default function TransactionsPage() {
           onClick={() => router.back()}
           style={{
             background: 'var(--surface-2)',
-            boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+            boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
             border: 'none',
             borderRadius: '50%',
             width: '38px',

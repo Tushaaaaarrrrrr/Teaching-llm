@@ -857,7 +857,7 @@ export default function CoursesPage() {
             onClick={e => e.stopPropagation()}
             style={{
               background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
-              boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
               padding: '40px', textAlign: 'center', position: 'relative',
               animation: 'modalSlideUp 0.3s ease-out'
             }}
@@ -935,7 +935,7 @@ export default function CoursesPage() {
         }} onClick={() => setUpgradeSuccessOrderId(null)}>
           <div style={{
             background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
-            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px', textAlign: 'center',
             animation: 'modalSlideUp 0.3s ease-out'
           }} onClick={e => e.stopPropagation()}>

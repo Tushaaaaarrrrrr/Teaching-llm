@@ -12,13 +12,13 @@ interface ExamTimingStatusProps {
 function getTone(state: ExamTimingState): { background: string; color: string } {
   switch (state) {
     case 'before':
-      return { background: '#3636e812', color: '#3636e8' }
+      return { background: '#3636e812', color: 'var(--primary)' }
     case 'ending':
-      return { background: '#f59e0b18', color: '#d97706' }
+      return { background: '#f59e0b18', color: 'var(--warning)' }
     case 'ended':
-      return { background: '#ef444415', color: '#ef4444' }
+      return { background: '#ef444415', color: 'var(--danger)' }
     default:
-      return { background: '#10b98115', color: '#10b981' }
+      return { background: '#10b98115', color: 'var(--success)' }
   }
 }
 
@@ -99,7 +99,7 @@ export default function ExamTimingStatus({ startDate, expiresAt, compact = false
         <div ref={primaryTextRef} style={{ fontSize: '18px', fontWeight: 900, color: tone.color, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
           {initialPrimaryText}
         </div>
-        <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: 600 }}>
+        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
           {secondaryText}
         </div>
       </div>
@@ -107,14 +107,14 @@ export default function ExamTimingStatus({ startDate, expiresAt, compact = false
   }
 
   return (
-    <div style={{ padding: '16px 18px', borderRadius: '18px', background: '#fff', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div style={{ padding: '16px 18px', borderRadius: '18px', background: 'var(--surface)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <span style={{ alignSelf: 'flex-start', padding: '5px 12px', borderRadius: '50px', background: tone.background, color: tone.color, fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {label}
       </span>
       <div ref={primaryTextRef} style={{ fontSize: '24px', fontWeight: 900, color: tone.color, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
         {initialPrimaryText}
       </div>
-      <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: 600 }}>
+      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>
         {secondaryText}
       </div>
     </div>

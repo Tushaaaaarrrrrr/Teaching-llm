@@ -240,7 +240,7 @@ export default function ProfilePage() {
   const insetRow: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: isMobile ? '10px 14px' : '14px 18px', borderRadius: '14px', background: 'var(--surface-2)',
-    boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+    boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
     gap: '16px',
   }
 
@@ -276,7 +276,7 @@ export default function ProfilePage() {
               display: 'inline-flex', alignItems: 'center', gap: '8px',
               padding: '8px 16px', borderRadius: '50px',
               background: 'var(--surface-2)', border: 'none', cursor: 'pointer',
-              boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+              boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
               fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)',
               transition: 'color 0.2s ease',
             }}
@@ -298,7 +298,7 @@ export default function ProfilePage() {
               style={{
                 width: '100px', height: '100px', borderRadius: '50%',
                 background: 'transparent',
-                boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+                boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 overflow: 'hidden',
               }}
@@ -568,7 +568,7 @@ export default function ProfilePage() {
           background: 'rgba(232, 234, 240, 0.85)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.04), 6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+          boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.04), 6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
           flexDirection: 'row',
           position: 'sticky',
           bottom: isMobile ? 'max(12px, env(safe-area-inset-bottom))' : '20px',

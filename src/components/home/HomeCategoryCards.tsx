@@ -70,10 +70,10 @@ export default function HomeCategoryCards() {
   return (
     <div style={{ marginBottom: '24px' }}>
       <div style={{ marginBottom: '14px', padding: '0 4px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1e1e3a', letterSpacing: '-0.02em', margin: 0 }}>
+        <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
           Categories
         </h3>
-        <div style={{ fontSize: '11px', fontWeight: 600, color: '#9999b0', marginTop: '2px' }}>
+        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '2px' }}>
           Find a track that fits your goal
         </div>
       </div>
@@ -105,7 +105,7 @@ export default function HomeCategoryCards() {
               {c.icon}
             </div>
             <div style={{
-              fontSize: '11px', fontWeight: 800, color: '#1e1e3a',
+              fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)',
               textAlign: 'center', lineHeight: 1.2,
               padding: '0 2px',
             }}>

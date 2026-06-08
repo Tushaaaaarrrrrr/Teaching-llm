@@ -79,18 +79,18 @@ function StudentFeedbackView({ userId }: { userId: string }) {
             background: 'var(--surface)',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+            boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
             color: 'var(--text-secondary)',
             flexShrink: 0,
             transition: 'all 0.2s',
           }}
           onMouseEnter={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
           }}
           onMouseLeave={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -281,18 +281,18 @@ function ManagerFeedbackView() {
             background: 'var(--surface)',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+            boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
             color: 'var(--text-secondary)',
             flexShrink: 0,
             transition: 'all 0.2s',
           }}
           onMouseEnter={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
           }}
           onMouseLeave={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

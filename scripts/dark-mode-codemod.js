@@ -18,7 +18,32 @@
 const fs = require('fs')
 
 const write = process.argv.includes('--write')
-const files = process.argv.slice(2).filter(a => a !== '--write')
+const inputs = process.argv.slice(2).filter(a => a !== '--write')
+
+// Never touch these (charts break with var(), content-color palettes, already-dark
+// video surfaces, infra files with no colors, in-flight files).
+const DENY = [
+  'lectures/[lectureId]/play', 'live/[sessionId]', 'reports/page',
+  'AnalyticsDashboard', 'RichTextEditor', 'RichTextDisplay', 'MathDisplay',
+  'CustomVideoPlayer', 'ThemeProvider', 'CapacitorBridge', 'CsrfProvider',
+  'PostHogProvider', 'MobileBlocker', 'AppUpdater',
+  '/login/', '/signup/', 'components/auth/',
+]
+const path = require('path')
+function collect(p, acc) {
+  let st
+  try { st = fs.statSync(p) } catch { return acc }
+  if (st.isDirectory()) {
+    for (const e of fs.readdirSync(p)) {
+      if (e === 'node_modules' || e === '.next' || e === '.git') continue
+      collect(path.join(p, e), acc)
+    }
+  } else if (p.endsWith('.tsx')) {
+    if (!DENY.some(d => p.includes(d))) acc.push(p)
+  }
+  return acc
+}
+const files = inputs.flatMap(p => collect(p, []))
 
 // value -> token (applied to single-quoted literals, case-insensitive)
 const MAP = {
@@ -74,6 +99,12 @@ for (const file of files) {
     const re = new RegExp(esc(g), 'gi')
     out = out.replace(re, () => { n++; return 'var(--neu-dark)' })
   }
+  // rgba(255,255,255,a) in SHADOW position (preceded by a blur/spread number) is
+  // the soft white halo. Only matches after "<num>px " or "<num> " — never a
+  // background/border/gradient-stop white. -> var(--neu-glow) (white in light,
+  // transparent in dark, so the halo vanishes in dark only).
+  out = out.replace(/([\d.]+(?:px)?\s+)rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*[\d.]+\s*\)/gi,
+    (_, p) => { n++; return p + 'var(--neu-glow)' })
 
   grand += n
   console.log(`${n.toString().padStart(4)}  ${file}`)

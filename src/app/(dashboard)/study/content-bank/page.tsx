@@ -188,13 +188,13 @@ export default function ContentBankPage() {
   // Shared Styles from Exam system
   const neuCard: React.CSSProperties = {
     borderRadius: '20px', background: 'var(--surface-2)',
-    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+    boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)',
     padding: '24px',
   }
 
   const neuInput: React.CSSProperties = {
     width: '100%', padding: '12px 16px', borderRadius: '14px', border: 'none',
-    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
     fontSize: '14px', color: 'var(--text-primary)', outline: 'none',
   }
 
@@ -202,7 +202,7 @@ export default function ContentBankPage() {
     padding: '12px 28px', borderRadius: '50px', border: 'none',
     background: 'var(--primary)', color: '#fff', fontSize: '14px', fontWeight: 700,
     cursor: 'pointer',
-    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)',
+    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-glow)',
     transition: 'all 0.2s ease',
   }
 
@@ -210,7 +210,7 @@ export default function ContentBankPage() {
     ...neuButton,
     background: 'var(--surface)',
     color: 'var(--primary)',
-    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+    boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
   }
 
   if (loading && !user) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Content Bank...</div>

@@ -78,7 +78,7 @@ export default function PromptResponsesPage() {
       {responses.length === 0 ? (
         <div className="card" style={{ padding: '80px 20px', textAlign: 'center' }}>
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#f3f4f8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-            <Users size={30} color="#c5c7cf" />
+            <Users size={30} color="var(--neu-dark)" />
           </div>
           <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>No Responses Yet</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>When students answer this prompt, their details will appear here.</p>

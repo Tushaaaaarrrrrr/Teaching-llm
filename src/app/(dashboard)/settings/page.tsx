@@ -332,7 +332,7 @@ export default function SettingsPage() {
                         background: theme === t ? 'var(--primary)' : 'var(--surface-2)',
                         color: theme === t ? '#ffffff' : 'var(--text-secondary)',
                         boxShadow: theme === t
-                          ? '3px 3px 7px rgba(54,54,232,0.35), -1px -1px 4px rgba(255,255,255,0.5)'
+                          ? '3px 3px 7px rgba(54,54,232,0.35), -1px -1px 4px var(--neu-glow)'
                           : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                         transition: 'all 0.2s ease',
                       }}

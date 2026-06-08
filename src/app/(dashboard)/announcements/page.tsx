@@ -308,19 +308,19 @@ export default function AnnouncementsPage() {
   // ── Shared styles ──────────────────────────────────────────────────────────
   const neuCard: React.CSSProperties = {
     borderRadius: '20px', background: 'var(--surface-2)',
-    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+    boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)',
     padding: '24px',
   }
   const neuInput: React.CSSProperties = {
     width: '100%', padding: '12px 16px', borderRadius: '14px', border: 'none',
-    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
     fontSize: '14px', fontFamily: 'inherit', color: 'var(--text-primary)', outline: 'none',
   }
   const neuButton: React.CSSProperties = {
     padding: '12px 28px', borderRadius: '50px', border: 'none',
     background: 'var(--primary)', color: '#fff', fontSize: '14px', fontWeight: 700,
     fontFamily: 'inherit', cursor: 'pointer',
-    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)',
+    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-glow)',
     transition: 'all 0.2s ease',
   }
 
@@ -356,18 +356,18 @@ export default function AnnouncementsPage() {
             background: 'var(--surface)',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+            boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
             color: 'var(--text-secondary)',
             flexShrink: 0,
             transition: 'all 0.2s',
           }}
           onMouseEnter={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
           }}
           onMouseLeave={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -438,7 +438,7 @@ export default function AnnouncementsPage() {
         <div style={{
           display: 'flex', gap: '6px', padding: '6px',
           borderRadius: '50px', background: 'var(--surface-2)',
-          boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+          boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
         }}>
           {(['all', 'updates', 'class'] as FilterTab[]).map(tab => {
             const labels: Record<FilterTab, string> = { all: 'All', updates: 'Updates', class: 'Class' }
@@ -453,7 +453,7 @@ export default function AnnouncementsPage() {
                   fontFamily: 'inherit', cursor: 'pointer',
                   background:  isActive ? 'var(--primary)' : 'transparent',
                   color:       isActive ? '#fff'    : 'var(--text-secondary)',
-                  boxShadow:   isActive ? '3px 3px 8px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.6)' : 'none',
+                  boxShadow:   isActive ? '3px 3px 8px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-glow)' : 'none',
                   transition: 'all 0.2s',
                 }}
               >
@@ -481,8 +481,8 @@ export default function AnnouncementsPage() {
               ...neuButton,
               background: showForm ? 'var(--text-secondary)' : 'var(--primary)',
               boxShadow: showForm
-                ? '4px 4px 10px rgba(107,107,138,0.35), -2px -2px 6px rgba(255,255,255,0.7)'
-                : '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)',
+                ? '4px 4px 10px rgba(107,107,138,0.35), -2px -2px 6px var(--neu-glow)'
+                : '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-glow)',
               display: 'flex', alignItems: 'center', gap: '8px',
             }}
           >
@@ -548,8 +548,8 @@ export default function AnnouncementsPage() {
                           background: type === opt.value ? opt.color : 'var(--surface-2)',
                           color:      type === opt.value ? '#fff'    : 'var(--text-secondary)',
                           boxShadow:  type === opt.value
-                            ? `3px 3px 8px ${opt.color}40, -2px -2px 6px rgba(255,255,255,0.7)`
-                            : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                            ? `3px 3px 8px ${opt.color}40, -2px -2px 6px var(--neu-glow)`
+                            : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                           transition: 'all 0.2s',
                         }}>
                         {opt.label}
@@ -575,7 +575,7 @@ export default function AnnouncementsPage() {
                 padding: '20px',
                 borderRadius: '18px',
                 background: 'var(--surface-2)',
-                boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '16px',
@@ -604,8 +604,8 @@ export default function AnnouncementsPage() {
                           background: importance === 'high' ? 'var(--primary)' : 'var(--surface-2)',
                           color: importance === 'high' ? '#fff' : 'var(--text-secondary)',
                           boxShadow: importance === 'high'
-                            ? '3px 3px 8px rgba(54,54,232,0.3), -2px -2px 6px #ffffff'
-                            : '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                            ? '3px 3px 8px rgba(54,54,232,0.3), -2px -2px 6px var(--neu-light)'
+                            : '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
                           transition: 'all 0.15s ease'
                         }}
                       >
@@ -620,8 +620,8 @@ export default function AnnouncementsPage() {
                           background: importance === 'default' ? 'var(--text-secondary)' : 'var(--surface-2)',
                           color: importance === 'default' ? '#fff' : 'var(--text-secondary)',
                           boxShadow: importance === 'default'
-                            ? '3px 3px 8px rgba(107,107,138,0.3), -2px -2px 6px #ffffff'
-                            : '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                            ? '3px 3px 8px rgba(107,107,138,0.3), -2px -2px 6px var(--neu-light)'
+                            : '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
                           transition: 'all 0.15s ease'
                         }}
                       >
@@ -644,8 +644,8 @@ export default function AnnouncementsPage() {
                           background: sound === 'default' ? 'var(--primary)' : 'var(--surface-2)',
                           color: sound === 'default' ? '#fff' : 'var(--text-secondary)',
                           boxShadow: sound === 'default'
-                            ? '3px 3px 8px rgba(54,54,232,0.3), -2px -2px 6px #ffffff'
-                            : '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                            ? '3px 3px 8px rgba(54,54,232,0.3), -2px -2px 6px var(--neu-light)'
+                            : '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
                           transition: 'all 0.15s ease'
                         }}
                       >
@@ -660,8 +660,8 @@ export default function AnnouncementsPage() {
                           background: sound === 'none' ? 'var(--danger)' : 'var(--surface-2)',
                           color: sound === 'none' ? '#fff' : 'var(--text-secondary)',
                           boxShadow: sound === 'none'
-                            ? '3px 3px 8px rgba(239,68,68,0.25), -2px -2px 6px #ffffff'
-                            : '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                            ? '3px 3px 8px rgba(239,68,68,0.25), -2px -2px 6px var(--neu-light)'
+                            : '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
                           transition: 'all 0.15s ease'
                         }}
                       >
@@ -707,7 +707,7 @@ export default function AnnouncementsPage() {
                                 padding: '4px 10px', borderRadius: '8px', border: 'none',
                                 fontSize: '11px', fontWeight: 700, cursor: imagePage === 0 ? 'not-allowed' : 'pointer',
                                 background: 'var(--surface-2)', color: imagePage === 0 ? 'var(--text-muted)' : 'var(--primary)',
-                                boxShadow: imagePage === 0 ? 'none' : '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                                boxShadow: imagePage === 0 ? 'none' : '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
                                 transition: 'all 0.1s ease',
                               }}
                             >
@@ -724,7 +724,7 @@ export default function AnnouncementsPage() {
                                 padding: '4px 10px', borderRadius: '8px', border: 'none',
                                 fontSize: '11px', fontWeight: 700, cursor: imagePage >= totalPages - 1 ? 'not-allowed' : 'pointer',
                                 background: 'var(--surface-2)', color: imagePage >= totalPages - 1 ? 'var(--text-muted)' : 'var(--primary)',
-                                boxShadow: imagePage >= totalPages - 1 ? 'none' : '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                                boxShadow: imagePage >= totalPages - 1 ? 'none' : '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
                                 transition: 'all 0.1s ease',
                               }}
                             >
@@ -838,7 +838,7 @@ export default function AnnouncementsPage() {
       {/* ── Announcement list ────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
         <div style={{ ...neuCard, textAlign: 'center', padding: '60px 24px' }}>
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="1.5" strokeLinecap="round" style={{ margin: '0 auto 16px' }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--neu-dark)" strokeWidth="1.5" strokeLinecap="round" style={{ margin: '0 auto 16px' }}>
             <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/>
           </svg>
           <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
@@ -869,7 +869,7 @@ export default function AnnouncementsPage() {
                   ...neuCard,
                   padding: '20px 24px',
                   transition: 'box-shadow 0.2s',
-                  ...(isHighlight ? { boxShadow: `6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff, 0 0 0 2px ${typeColor}50` } : {}),
+                  ...(isHighlight ? { boxShadow: `6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light), 0 0 0 2px ${typeColor}50` } : {}),
                 }}
               >
                 <div className="announcement-card-body" style={{ display: 'flex', alignItems: 'flex-start', gap: '18px' }}>
@@ -979,7 +979,7 @@ export default function AnnouncementsPage() {
                             fontSize: '13.5px',
                             fontWeight: 700,
                             textDecoration: 'none',
-                            boxShadow: '0 4px 12px rgba(54,54,232,0.25), inset 1px 1px 0 rgba(255,255,255,0.2)',
+                            boxShadow: '0 4px 12px rgba(54,54,232,0.25), inset 1px 1px 0 var(--neu-glow)',
                             transition: 'all 0.15s ease',
                           }}
                         >
@@ -997,7 +997,7 @@ export default function AnnouncementsPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
                         <div style={{
                           width: '24px', height: '24px', borderRadius: '50%',
-                          background: 'var(--surface-2)', boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                          background: 'var(--surface-2)', boxShadow: '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: '9px', fontWeight: 800, color: 'var(--primary)', overflow: 'hidden', flexShrink: 0,
                         }}>
@@ -1021,7 +1021,7 @@ export default function AnnouncementsPage() {
                                 color: 'var(--primary)', cursor: 'pointer', padding: '6px 12px',
                                 borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '6px',
                                 fontSize: '11px', fontWeight: 800,
-                                boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                                boxShadow: '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
                                 transition: 'all 0.2s',
                               }}
                               title="Reuse this notification settings"
@@ -1066,8 +1066,8 @@ export default function AnnouncementsPage() {
                       color: isExpanded ? 'var(--text-secondary)' : typeColor,
                       fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
                       boxShadow: isExpanded
-                        ? '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff'
-                        : `3px 3px 8px ${typeColor}30, -2px -2px 6px rgba(255,255,255,0.8)`,
+                        ? '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)'
+                        : `3px 3px 8px ${typeColor}30, -2px -2px 6px var(--neu-glow)`,
                       transition: 'all 0.2s',
                       whiteSpace: 'nowrap' as const,
                     }}

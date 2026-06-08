@@ -532,8 +532,8 @@ export default function CommunityPage() {
 
   const isDM = (cls: ClassItem | null) => cls?.isDirectChat === true
 
-  const neu = { background: 'var(--surface-2)', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
-  const neuInset = { background: 'var(--surface-2)', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
+  const neu = { background: 'var(--surface-2)', boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)' }
+  const neuInset = { background: 'var(--surface-2)', boxShadow: 'inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light)' }
 
 
   return (
@@ -586,18 +586,18 @@ export default function CommunityPage() {
                 background: 'var(--surface)',
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+                boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
                 color: 'var(--text-secondary)',
                 flexShrink: 0,
                 transition: 'all 0.2s',
               }}
               onMouseEnter={e => {
                 ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
-                ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+                ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
               }}
               onMouseLeave={e => {
                 ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
-                ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+                ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
               }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -648,8 +648,8 @@ export default function CommunityPage() {
               background: active ? cls.color : (isMobile ? '#ffffff' : 'var(--surface-2)'),
               color: active ? '#fff' : 'var(--text-primary)',
               boxShadow: active
-                ? `5px 5px 14px ${cls.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
-                : (isMobile ? '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff' : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff'),
+                ? `5px 5px 14px ${cls.color}55, -3px -3px 8px var(--neu-glow)`
+                : (isMobile ? '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)' : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)'),
               position: 'relative',
               minHeight: isMobile ? '64px' : 'auto',
             }}
@@ -765,8 +765,8 @@ export default function CommunityPage() {
                   background: selectedClass?.id === cls.id ? 'var(--primary)' : 'var(--surface-2)',
                   color: selectedClass?.id === cls.id ? '#fff' : 'var(--text-primary)',
                   boxShadow: selectedClass?.id === cls.id
-                    ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px rgba(255,255,255,0.6)'
-                    : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px var(--neu-glow)'
+                    : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                   opacity: cls.isDmDisabled ? 0.55 : 1,
                   position: 'relative'
                 }}
@@ -846,7 +846,7 @@ export default function CommunityPage() {
                     background: 'var(--surface)',
                     border: 'none',
                     cursor: 'pointer',
-                    boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                    boxShadow: '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
                     color: 'var(--primary)',
                     flexShrink: 0,
                   }}
@@ -876,7 +876,7 @@ export default function CommunityPage() {
                       background: 'var(--surface)',
                       border: 'none',
                       cursor: 'pointer',
-                      boxShadow: '2px 2px 5px rgba(0,0,0,0.08), -2px -2px 5px #ffffff',
+                      boxShadow: '2px 2px 5px rgba(0,0,0,0.08), -2px -2px 5px var(--neu-light)',
                       color: 'var(--primary)',
                       display: 'flex',
                       alignItems: 'center',
@@ -909,7 +909,7 @@ export default function CommunityPage() {
                         background: 'var(--surface)',
                         border: 'none',
                         cursor: 'pointer',
-                        boxShadow: '2px 2px 5px rgba(0,0,0,0.08), -2px -2px 5px #ffffff',
+                        boxShadow: '2px 2px 5px rgba(0,0,0,0.08), -2px -2px 5px var(--neu-light)',
                         color: 'var(--primary)',
                         display: 'flex',
                         alignItems: 'center',
@@ -941,7 +941,7 @@ export default function CommunityPage() {
                         background: 'var(--danger-light)',
                         border: 'none',
                         cursor: 'pointer',
-                        boxShadow: '2px 2px 5px rgba(239,68,68,0.15), -2px -2px 5px #ffffff',
+                        boxShadow: '2px 2px 5px rgba(239,68,68,0.15), -2px -2px 5px var(--neu-light)',
                         color: 'var(--danger)',
                         display: 'flex',
                         alignItems: 'center',
@@ -977,7 +977,7 @@ export default function CommunityPage() {
                       background: 'var(--surface)',
                       border: 'none',
                       cursor: 'pointer',
-                      boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                      boxShadow: '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
                       color: 'var(--text-secondary)',
                       marginRight: '4px',
                       flexShrink: 0,
@@ -1023,7 +1023,7 @@ export default function CommunityPage() {
                   )}
                   {userRole === 'MANAGER' && (
                     <>
-                      <button onClick={openTranscript} style={{ padding: '6px 12px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', ...neu, boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', color: 'var(--primary)' }}>
+                      <button onClick={openTranscript} style={{ padding: '6px 12px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', ...neu, boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)', color: 'var(--primary)' }}>
                         Transcript
                       </button>
                       {!isDM(selectedClass) && (
@@ -1147,7 +1147,7 @@ export default function CommunityPage() {
                           <div style={{
                             width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
                             background: 'var(--surface-2)',
-                            boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                            boxShadow: '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
                             display: showAvatar ? 'flex' : 'none',
                             alignItems: 'center', justifyContent: 'center',
                             fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)',
@@ -1159,7 +1159,7 @@ export default function CommunityPage() {
                         <div style={{
                           padding: '8px 14px', borderRadius: '14px',
                           background: 'transparent',
-                          border: '1.5px dashed #c5c7cf',
+                          border: '1.5px dashed var(--neu-dark)',
                           color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic',
                         }}>
                           Message deleted
@@ -1190,7 +1190,7 @@ export default function CommunityPage() {
                           style={{
                             width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
                             background: isAdmin ? 'var(--primary)' : 'var(--surface-2)',
-                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                             display: showAvatar ? 'flex' : 'none',
                             alignItems: 'center', justifyContent: 'center',
                             fontSize: '11px', fontWeight: '800',
@@ -1450,7 +1450,7 @@ export default function CommunityPage() {
                     width: '40px', height: '40px', borderRadius: '50%', border: 'none',
                     cursor: 'pointer', flexShrink: 0,
                     background: pendingImage ? '#3636e818' : 'var(--surface-2)',
-                    boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: pendingImage ? 'var(--primary)' : 'var(--text-muted)',
                     transition: 'all 0.2s',
@@ -1495,7 +1495,7 @@ export default function CommunityPage() {
                     background: (input.trim() || pendingImage) ? selectedClass.color : 'var(--surface-2)',
                     color: (input.trim() || pendingImage) ? '#fff' : 'var(--text-muted)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, gap: '6px',
-                    boxShadow: (input.trim() || pendingImage) ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    boxShadow: (input.trim() || pendingImage) ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                     transition: 'all 0.2s', fontWeight: '700', fontSize: '13px', fontFamily: 'inherit',
                   }}
                 >
@@ -1660,7 +1660,7 @@ export default function CommunityPage() {
                         padding: '10px 14px', borderRadius: '14px', border: 'none',
                         cursor: dmStarting ? 'default' : 'pointer', textAlign: 'left',
                         background: 'var(--surface-2)', fontFamily: 'inherit',
-                        boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                        boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                         transition: 'all 0.15s', opacity: dmStarting ? 0.6 : 1,
                       }}
                       onMouseEnter={e => { if (!dmStarting) (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary)'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}

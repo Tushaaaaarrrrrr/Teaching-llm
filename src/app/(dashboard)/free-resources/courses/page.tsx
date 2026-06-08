@@ -69,7 +69,7 @@ export default function FreeCoursesPage() {
             style={{
               background: 'var(--surface-2)',
               borderRadius: '28px',
-              boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+              boxShadow: '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -166,7 +166,7 @@ export default function FreeCoursesPage() {
               }}>
                 <div style={{
                   flex: 1, padding: '8px 10px', borderRadius: '14px',
-                  background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                  background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
                   textAlign: 'center',
                 }}>
                   <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.topics || 0}</div>
@@ -174,7 +174,7 @@ export default function FreeCoursesPage() {
                 </div>
                 <div style={{
                   flex: 1, padding: '8px 10px', borderRadius: '14px',
-                  background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                  background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
                   textAlign: 'center',
                 }}>
                   <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.lectures || 0}</div>
@@ -182,7 +182,7 @@ export default function FreeCoursesPage() {
                 </div>
                 <div style={{
                   flex: 1, padding: '8px 10px', borderRadius: '14px',
-                  background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                  background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
                   textAlign: 'center',
                 }}>
                   <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.materials || 0}</div>

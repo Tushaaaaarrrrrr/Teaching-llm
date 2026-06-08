@@ -105,7 +105,7 @@ function TicketStatusIcon({ status }: { status: string }) {
 }
 
 function BackButton({ onClick }: { onClick: () => void }) {
-  const neu = { background: 'var(--surface-2)', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
+  const neu = { background: 'var(--surface-2)', boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)' }
   return (
     <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'inherit', fontSize: '14px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '50px', ...neu }}>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
@@ -135,7 +135,7 @@ function CreateTicketModal({
             <label className="form-label">Issue Type</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               {['GENERAL', 'SUBJECT'].map(t => (
-                <button key={t} onClick={() => setForm((f: any) => ({ ...f, type: t }))} style={{ flex: 1, padding: '10px', borderRadius: '14px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', background: form.type === t ? 'var(--primary)' : 'var(--surface-2)', color: form.type === t ? '#fff' : 'var(--text-secondary)', boxShadow: form.type === t ? '4px 4px 10px rgba(54,54,232,0.3)' : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }}>
+                <button key={t} onClick={() => setForm((f: any) => ({ ...f, type: t }))} style={{ flex: 1, padding: '10px', borderRadius: '14px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', background: form.type === t ? 'var(--primary)' : 'var(--surface-2)', color: form.type === t ? '#fff' : 'var(--text-secondary)', boxShadow: form.type === t ? '4px 4px 10px rgba(54,54,232,0.3)' : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)' }}>
                   {t === 'GENERAL' ? '📋 General Support' : '📚 Subject Related'}
                 </button>
               ))}
@@ -165,7 +165,7 @@ function CreateTicketModal({
               <label className="form-label">Priority</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {['LOW', 'MEDIUM', 'HIGH'].map(p => (
-                  <button key={p} onClick={() => setForm((f: any) => ({ ...f, priority: p }))} style={{ flex: 1, padding: '8px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', background: form.priority === p ? PRIORITY_COLORS[p] : 'var(--surface-2)', color: form.priority === p ? '#fff' : 'var(--text-secondary)', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff' }}>{p}</button>
+                  <button key={p} onClick={() => setForm((f: any) => ({ ...f, priority: p }))} style={{ flex: 1, padding: '8px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', background: form.priority === p ? PRIORITY_COLORS[p] : 'var(--surface-2)', color: form.priority === p ? '#fff' : 'var(--text-secondary)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)' }}>{p}</button>
                 ))}
               </div>
             </div>
@@ -316,8 +316,8 @@ export default function SupportPage() {
   const chatImageRef = useRef<HTMLInputElement>(null)
   const replyImageRef = useRef<HTMLInputElement>(null)
 
-  const neu = { background: 'var(--surface-2)', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
-  const neuInset = { background: 'var(--surface-2)', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
+  const neu = { background: 'var(--surface-2)', boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)' }
+  const neuInset = { background: 'var(--surface-2)', boxShadow: 'inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light)' }
   const card = { background: 'var(--surface)', borderRadius: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 6px 24px rgba(0,0,0,0.04)' }
 
   const loadTickets = useCallback(async () => {
@@ -666,7 +666,7 @@ export default function SupportPage() {
             onClick={() => router.back()}
             style={{
               background: 'var(--surface-2)',
-              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+              boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
               border: 'none',
               borderRadius: '50%',
               width: '38px',
@@ -783,7 +783,7 @@ export default function SupportPage() {
             </div>
 
             {/* Raise a Ticket Box (History merged inside) */}
-            <div className="ticket-box-pad" style={{ width: '100%', borderRadius: '24px', background: '#f7f7ff', border: '1.5px solid #d9dcff', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)', textAlign: 'left' }}>
+            <div className="ticket-box-pad" style={{ width: '100%', borderRadius: '24px', background: '#f7f7ff', border: '1.5px solid #d9dcff', boxShadow: 'inset 0 1px 0 var(--neu-glow)', textAlign: 'left' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <div>
                   <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.03em', marginBottom: '4px', textTransform: 'uppercase' }}>
@@ -979,7 +979,7 @@ export default function SupportPage() {
                   <>
                     <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
                       {['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].map(s => (
-                        <button key={s} onClick={() => updateStatus(selected.id, s)} style={{ padding: '4px 10px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '11px', fontWeight: '700', background: selected.status === s ? STATUS_COLORS[s] : 'var(--surface-2)', color: selected.status === s ? '#fff' : 'var(--text-muted)', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff' }}>
+                        <button key={s} onClick={() => updateStatus(selected.id, s)} style={{ padding: '4px 10px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '11px', fontWeight: '700', background: selected.status === s ? STATUS_COLORS[s] : 'var(--surface-2)', color: selected.status === s ? '#fff' : 'var(--text-muted)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)' }}>
                           {s.replace('_', ' ')}
                         </button>
                       ))}
@@ -990,7 +990,7 @@ export default function SupportPage() {
                         <select
                           value={selected.assignedTo?.id || ''}
                           onChange={e => assignTicket(selected.id, e.target.value)}
-                          style={{ flex: 1, padding: '6px 10px', borderRadius: '10px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '12.5px', background: 'var(--surface-2)', boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff', color: 'var(--text-primary)', cursor: 'pointer' }}
+                          style={{ flex: 1, padding: '6px 10px', borderRadius: '10px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '12.5px', background: 'var(--surface-2)', boxShadow: '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)', color: 'var(--text-primary)', cursor: 'pointer' }}
                         >
                           <option value="">Unassigned</option>
                           {admins.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -1032,7 +1032,7 @@ export default function SupportPage() {
                           style={{ 
                             width: '28px', height: '28px', borderRadius: '50%', 
                             background: isAdmin ? 'var(--primary)' : 'var(--surface-2)', 
-                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '2px 2px 5px #c5c7cf', 
+                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '2px 2px 5px var(--neu-dark)', 
                             display: showAvatar ? 'flex' : 'none', 
                             alignItems: 'center', justifyContent: 'center', 
                             fontSize: '10px', fontWeight: '700', 
@@ -1122,7 +1122,7 @@ export default function SupportPage() {
                   {uploadingImage && <div style={{ marginBottom: '6px', fontSize: '12px', color: 'var(--primary)', fontWeight: '600' }}>Uploading...</div>}
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input type="file" accept="image/jpeg,image/png,image/webp" ref={replyImageRef} onChange={handleReplyImageSelect} style={{ display: 'none' }} />
-                    <button onClick={() => replyImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingReplyImage ? '#3636e818' : 'var(--surface-2)', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingReplyImage ? 'var(--primary)' : 'var(--text-muted)', flexShrink: 0 }}>
+                    <button onClick={() => replyImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingReplyImage ? '#3636e818' : 'var(--surface-2)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingReplyImage ? 'var(--primary)' : 'var(--text-muted)', flexShrink: 0 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
                     <input value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendReply()} placeholder="Type your reply..." disabled={uploadingImage} style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: 'var(--text-primary)' }} />
@@ -1226,8 +1226,8 @@ export default function SupportPage() {
                   const isStudent = m.sender.role === 'STUDENT'
                   return (
                     <div key={m.id} style={{ display: 'flex', justifyContent: isStudent ? 'flex-start' : 'flex-end', gap: '8px', alignItems: 'flex-end' }}>
-                      {isStudent && <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--surface-2)', boxShadow: '2px 2px 5px #c5c7cf', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: 'var(--text-secondary)', flexShrink: 0 }}>{m.sender.name.charAt(0)}</div>}
-                      <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: isStudent ? '18px 18px 18px 4px' : '18px 18px 4px 18px', background: isStudent ? 'var(--surface-2)' : '#f0f0ff', boxShadow: '3px 3px 8px #c5c7cf, -3px -3px 8px #ffffff', color: 'var(--text-primary)' }}>
+                      {isStudent && <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--surface-2)', boxShadow: '2px 2px 5px var(--neu-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: 'var(--text-secondary)', flexShrink: 0 }}>{m.sender.name.charAt(0)}</div>}
+                      <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: isStudent ? '18px 18px 18px 4px' : '18px 18px 4px 18px', background: isStudent ? 'var(--surface-2)' : '#f0f0ff', boxShadow: '3px 3px 8px var(--neu-dark), -3px -3px 8px var(--neu-light)', color: 'var(--text-primary)' }}>
                         <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isStudent ? 'var(--text-muted)' : 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           {m.sender.name}
                           {!isStudent && (
@@ -1327,7 +1327,7 @@ export default function SupportPage() {
         <div style={{ borderRadius: '24px', ...neu, display: (isMobile && !activeChatId) ? 'none' : 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {!activeChatId ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', gap: '16px' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--surface-2)', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--surface-2)', boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
               </div>
               <p style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)' }}>Live Support Chat</p>
@@ -1371,7 +1371,7 @@ export default function SupportPage() {
                           <div style={{ 
                             width: '28px', height: '28px', borderRadius: '50%', 
                             background: isAdmin ? 'var(--primary)' : 'var(--surface-2)', 
-                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '2px 2px 5px #c5c7cf', 
+                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '2px 2px 5px var(--neu-dark)', 
                             display: showAvatar ? 'flex' : 'none', 
                             alignItems: 'center', justifyContent: 'center', 
                             fontSize: '10px', fontWeight: '700', 
@@ -1449,7 +1449,7 @@ export default function SupportPage() {
                   {uploadingImage && <div style={{ marginBottom: '6px', fontSize: '12px', color: 'var(--primary)', fontWeight: '600' }}>Uploading...</div>}
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input type="file" accept="image/jpeg,image/png,image/webp" ref={chatImageRef} onChange={handleChatImageSelect} style={{ display: 'none' }} />
-                    <button onClick={() => chatImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingChatImage ? '#3636e818' : 'var(--surface-2)', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingChatImage ? 'var(--primary)' : 'var(--text-muted)', flexShrink: 0 }}>
+                    <button onClick={() => chatImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingChatImage ? '#3636e818' : 'var(--surface-2)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingChatImage ? 'var(--primary)' : 'var(--text-muted)', flexShrink: 0 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
                     <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMsg()} placeholder="Type a message..." disabled={uploadingImage} style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: 'var(--text-primary)' }} />

@@ -179,7 +179,7 @@ export default function CreateExamPage() {
     padding: '12px 28px', borderRadius: '50px', border: 'none',
     background: 'var(--primary)', color: '#fff', fontSize: '14px', fontWeight: 700,
     cursor: 'pointer',
-    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)',
+    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-glow)',
     transition: 'all 0.2s ease',
   }
 

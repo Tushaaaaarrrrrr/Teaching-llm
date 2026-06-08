@@ -125,7 +125,7 @@ export default function AcademicsPage() {
               padding: '18px 18px',
               borderRadius: '22px',
               background: 'var(--surface)',
-              boxShadow: '6px 6px 16px #c5c7cf, -6px -6px 14px #ffffff',
+              boxShadow: '6px 6px 16px var(--neu-dark), -6px -6px 14px var(--neu-light)',
               textDecoration: 'none', color: 'var(--text-primary)',
               transition: 'transform 0.2s ease, box-shadow 0.2s ease',
             }}

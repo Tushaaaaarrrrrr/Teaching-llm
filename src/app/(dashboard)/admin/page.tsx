@@ -386,7 +386,7 @@ export default function AdminPage() {
         <div style={{
           flex: 1, minWidth: '300px', display: 'flex', alignItems: 'center', gap: '12px',
           padding: '10px 20px', borderRadius: '50px', background: 'var(--surface-2)',
-          boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+          boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.5">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -417,7 +417,7 @@ export default function AdminPage() {
           padding: '10px 18px',
           borderRadius: '50px',
           background: 'var(--surface-2)',
-          boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+          boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
         }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2">
             <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
@@ -556,19 +556,19 @@ export default function AdminPage() {
                   padding: '12px 20px',
                   borderRadius: '50px',
                   background: user.isTerminated ? 'rgba(239,68,68,0.04)' : 'var(--surface-2)',
-                  boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+                  boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
                   transition: 'box-shadow 0.2s',
                   opacity: user.isTerminated ? 0.7 : 1,
                   flexWrap: 'nowrap',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
-                onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)')}
                 >
                   <div style={{
                     width: '40px', height: '40px', borderRadius: '50%', background: user.isTerminated ? 'var(--danger-light)' : rc.bg,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: user.isTerminated ? 'var(--danger)' : rc.color, fontSize: '13px', fontWeight: '600', flexShrink: 0,
-                    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                    boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                   }}>
                     {initials}
                   </div>

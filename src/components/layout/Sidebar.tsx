@@ -414,7 +414,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
       <nav className={`sidebar-nav ${isOpen ? 'sidebar-open' : ''}`}>
       {/* Logo & Portal Label */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', padding: '4px 8px', marginBottom: '22px' }}>
-        <div style={{
+        <div className="sidebar-logo-plate" style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -428,10 +428,11 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           background: 'linear-gradient(145deg, #f6f7fb, #dde0e8)',
           boxShadow: 'var(--shadow-lg)',
         }}>
-          <img 
-            src="/mobile-login-logo.png" 
-            alt="GenZ IITIAN Logo" 
-            style={{ 
+          <img
+            src="/mobile-login-logo.png"
+            alt="GenZ IITIAN Logo"
+            className="sidebar-logo-img"
+            style={{
               width: '100%',
               maxWidth: '158px',
               height: 'auto', 
@@ -477,7 +478,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 18px', borderRadius: '50px',
                 color: '#ffffff',
                 background: 'linear-gradient(135deg, #4b5563, #1f2937)',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255,255,255,0.2)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px var(--neu-glow)',
                 textDecoration: 'none', fontSize: '14px', fontWeight: '800', transition: 'all 0.2s ease',
                 marginBottom: '4px', position: 'relative' as const, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const
               }
@@ -549,7 +550,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                       height: '8px',
                       borderRadius: '50%',
                       background: 'var(--danger)',
-                      border: `2px solid ${isStore ? '#64748b' : (isActive ? 'var(--primary)' : 'var(--sidebar-bg)')}`,
+                      border: `2px solid ${isStore ? 'var(--text-secondary)' : (isActive ? 'var(--primary)' : 'var(--sidebar-bg)')}`,
                       boxShadow: '0 0 6px rgba(239, 68, 68, 0.4)'
                     }} />
                   )}

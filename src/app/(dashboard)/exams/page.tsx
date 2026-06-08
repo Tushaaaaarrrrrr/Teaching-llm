@@ -61,7 +61,7 @@ export default function ExamsPage() {
   const expiredExams = courseExams.filter(e => getExamTimingState(e.startDate, e.expiresAt, now) === 'ended')
 
   const neu: React.CSSProperties = { borderRadius: '20px', background: 'var(--surface-2)', boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)', padding: '24px' }
-  const neuBtn: React.CSSProperties = { padding: '12px 28px', borderRadius: '50px', border: 'none', background: 'var(--primary)', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer', boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)', transition: 'all 0.2s ease' }
+  const neuBtn: React.CSSProperties = { padding: '12px 28px', borderRadius: '50px', border: 'none', background: 'var(--primary)', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer', boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-glow)', transition: 'all 0.2s ease' }
 
   const handleCopy = async () => {
     if (!showCopyModal || !copyDestId) return
@@ -141,7 +141,7 @@ export default function ExamsPage() {
   return (
     <div className="page-container fade-in">
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '32px', gap: '12px', flexWrap: 'wrap' }}>
-        {isManager && <button onClick={() => router.push('/exams/test-series/create')} style={{ ...neuBtn, background: 'var(--warning)', boxShadow: '4px 4px 10px rgba(245,158,11,0.35), -2px -2px 6px rgba(255,255,255,0.7)' }}>+ Test Series</button>}
+        {isManager && <button onClick={() => router.push('/exams/test-series/create')} style={{ ...neuBtn, background: 'var(--warning)', boxShadow: '4px 4px 10px rgba(245,158,11,0.35), -2px -2px 6px var(--neu-glow)' }}>+ Test Series</button>}
         {isManager && <button onClick={() => router.push('/exams/create')} style={neuBtn}>Create New Exam</button>}
       </div>
 

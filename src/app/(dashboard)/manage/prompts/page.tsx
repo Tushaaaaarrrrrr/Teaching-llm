@@ -123,7 +123,7 @@ export default function PromptsAdminPage() {
           <div style={{ marginTop: '24px' }}>
             <label className="form-label">Questions / CTAs (Max 3)</label>
             {questions.length === 0 && (
-              <div style={{ padding: '20px', textAlign: 'center', background: '#f8f9fa', borderRadius: '12px', border: '1px dashed #c5c7cf', color: 'var(--text-muted)', fontSize: '14px' }}>
+              <div style={{ padding: '20px', textAlign: 'center', background: '#f8f9fa', borderRadius: '12px', border: '1px dashed var(--neu-dark)', color: 'var(--text-muted)', fontSize: '14px' }}>
                 No questions added yet. Add one below. (Max 3)
               </div>
             )}

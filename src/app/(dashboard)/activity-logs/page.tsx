@@ -314,7 +314,7 @@ export default function ActivityLogPage() {
                   borderRadius: '12px',
                   background: 'rgba(255,255,255,0.7)',
                   border: '1px solid rgba(255,255,255,0.8)',
-                  boxShadow: '2px 2px 5px #c5c7cf, -1px -1px 3px #ffffff',
+                  boxShadow: '2px 2px 5px var(--neu-dark), -1px -1px 3px var(--neu-light)',
                 }}
               >
                 <div style={{ minWidth: '150px', flexShrink: 0 }}>

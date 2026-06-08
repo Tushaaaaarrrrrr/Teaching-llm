@@ -126,7 +126,7 @@ export default function SwipeableMessage({
         if (translateX >= triggerThreshold) {
           if (!info.triggered) {
             info.triggered = true
-            iconRef.current.style.color = '#3636e8'
+            iconRef.current.style.color = 'var(--primary)'
             iconRef.current.style.backgroundColor = 'rgba(54, 54, 232, 0.16)'
             iconRef.current.style.boxShadow = '0 2px 8px rgba(54, 54, 232, 0.15)'
             
@@ -138,7 +138,7 @@ export default function SwipeableMessage({
         } else {
           if (info.triggered) {
             info.triggered = false
-            iconRef.current.style.color = '#9999b0'
+            iconRef.current.style.color = 'var(--text-muted)'
             iconRef.current.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'
             iconRef.current.style.boxShadow = 'none'
           }
@@ -184,7 +184,7 @@ export default function SwipeableMessage({
       if (!drag.current.isSwiping) {
         setShowIcon(false)
         if (iconRef.current) {
-          iconRef.current.style.color = '#9999b0'
+          iconRef.current.style.color = 'var(--text-muted)'
           iconRef.current.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'
           iconRef.current.style.boxShadow = 'none'
         }
@@ -320,7 +320,7 @@ export default function SwipeableMessage({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#9999b0',
+            color: 'var(--text-muted)',
             opacity: 0,
             pointerEvents: 'none',
             zIndex: 1,

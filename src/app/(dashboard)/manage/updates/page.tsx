@@ -311,7 +311,7 @@ export default function ManageUpdatesPage() {
         display: 'flex', alignItems: 'center', gap: '16px',
         padding: '14px 20px', borderRadius: '50px',
         background: 'var(--surface-2)',
-        boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+        boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
         opacity: u.isActive ? 1 : 0.55,
         transition: 'opacity 0.2s',
       }}>

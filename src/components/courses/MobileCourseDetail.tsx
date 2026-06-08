@@ -70,7 +70,7 @@ export default function MobileCourseDetail({
   const submittedFeedbacks = Array.isArray(submittedFeedbacksRaw) ? submittedFeedbacksRaw : []
   const hasFeedback = submittedFeedbacks.some((f: any) => f.courseId === course.id)
 
-  const accent = course.color || '#6366f1'
+  const accent = course.color || 'var(--accent)'
   const totalLectures = course._count?.lectures || topics.reduce((s, t) => s + (t.content?.length || 0), 0)
 
   const completedCount = useMemo(() => {
@@ -280,7 +280,7 @@ export default function MobileCourseDetail({
               padding: '10px 14px',
               borderRadius: '50px',
               border: 'none',
-              background: '#1e1e3a',
+              background: 'var(--text-primary)',
               color: '#ffffff',
               fontSize: '12px',
               fontWeight: '800',
@@ -334,7 +334,7 @@ export default function MobileCourseDetail({
                   background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                   padding: '10px 18px',
                   fontSize: '13px', fontWeight: active ? 900 : 600,
-                  color: active ? '#1e1e3a' : '#9999b0',
+                  color: active ? 'var(--text-primary)' : 'var(--text-muted)',
                   marginBottom: '-1.5px',
                   ...(active ? { ['--after-bg' as string]: accent } : {}),
                 }}
@@ -423,11 +423,11 @@ function CurriculumTab({
     return (
       <div style={{
         padding: '40px 20px', textAlign: 'center',
-        background: '#fff', borderRadius: '18px',
+        background: 'var(--surface)', borderRadius: '18px',
         border: '1px solid rgba(15,23,42,0.05)',
-        color: '#9999b0', fontSize: '13px',
+        color: 'var(--text-muted)', fontSize: '13px',
       }}>
-        <div style={{ fontWeight: 800, color: '#6b6b8a', marginBottom: '4px' }}>No content yet</div>
+        <div style={{ fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px' }}>No content yet</div>
         <div>Topics and lectures will appear here once your instructor adds them.</div>
       </div>
     )
@@ -440,23 +440,23 @@ function CurriculumTab({
           display: 'flex', alignItems: 'center', gap: '14px',
           padding: '8px 14px',
           borderRadius: '12px',
-          background: '#fff',
+          background: 'var(--surface)',
           border: '1px solid rgba(15,23,42,0.04)',
-          fontSize: '10px', fontWeight: 700, color: '#94a3b8',
+          fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)',
         }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#94a3b8' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
             Tap to cycle:
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', border: '1.5px solid #cbd5e1', display: 'inline-block' }} />
             None
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#10b981' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--success)' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
             Done
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#f59e0b' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--warning)' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--warning)', display: 'inline-block' }} />
             Rewatch
           </span>
         </div>
@@ -479,7 +479,7 @@ function CurriculumTab({
 
         return (
           <div key={topic.id} className="mcd-topic-card" style={{
-            background: '#ffffff',
+            background: 'var(--surface)',
             borderRadius: '18px',
             border: '1px solid rgba(15,23,42,0.08)',
             boxShadow: '0 4px 15px rgba(15,23,42,0.03)',
@@ -509,11 +509,11 @@ function CurriculumTab({
 
               {/* Title + meta */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {topic.title}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
-                  <span style={{ fontSize: '10.5px', color: '#94a3b8', fontWeight: 600 }}>
+                  <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
                     {topic.content.length} lecture{topic.content.length !== 1 ? 's' : ''}{durationLabel ? ` · ${durationLabel}` : ''}
                   </span>
                 </div>
@@ -527,7 +527,7 @@ function CurriculumTab({
                       <circle cx="13" cy="13" r="10" fill="none" stroke="#f1f5f9" strokeWidth="2.5" />
                       <circle
                         cx="13" cy="13" r="10" fill="none"
-                        stroke={topicProgress === 100 ? '#10b981' : accent}
+                        stroke={topicProgress === 100 ? 'var(--success)' : accent}
                         strokeWidth="2.5"
                         strokeDasharray={`${2 * Math.PI * 10}`}
                         strokeDashoffset={`${2 * Math.PI * 10 * (1 - topicProgress / 100)}`}
@@ -539,7 +539,7 @@ function CurriculumTab({
                       position: 'absolute', inset: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '7.5px', fontWeight: 800,
-                      color: topicProgress === 100 ? '#10b981' : '#64748b',
+                      color: topicProgress === 100 ? 'var(--success)' : 'var(--text-secondary)',
                     }}>
                       {topicProgress === 100 ? '✓' : `${completed}/${topic.content.length}`}
                     </span>
@@ -565,7 +565,7 @@ function CurriculumTab({
                 gap: '6px' 
               }}>
                 {topic.content.length === 0 ? (
-                  <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', background: '#ffffff', borderRadius: '12px', border: '1px solid rgba(15,23,42,0.05)' }}>
+                  <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid rgba(15,23,42,0.05)' }}>
                     No lectures in this topic yet
                   </div>
                 ) : topic.content.map((item) => {
@@ -577,7 +577,7 @@ function CurriculumTab({
                       display: 'flex', alignItems: 'center', gap: '10px',
                       padding: '11px 12px',
                       borderRadius: '12px',
-                      background: '#ffffff',
+                      background: 'var(--surface)',
                       border: '1px solid rgba(15,23,42,0.05)',
                       boxShadow: '0 2px 8px rgba(15,23,42,0.02)',
                       position: 'relative',
@@ -591,10 +591,10 @@ function CurriculumTab({
                           style={{
                             width: '26px', height: '26px', borderRadius: '8px', flexShrink: 0,
                             background:
-                              isCompleted ? '#10b981' :
-                              isRewatch ? '#f59e0b' : '#fff',
+                              isCompleted ? 'var(--success)' :
+                              isRewatch ? 'var(--warning)' : '#fff',
                             color:
-                              (isCompleted || isRewatch) ? '#fff' : '#cbd5e1',
+                              (isCompleted || isRewatch) ? '#fff' : 'var(--text-muted)',
                             border:
                               (isCompleted || isRewatch) ? 'none' : '2px solid #d4d8e0',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -615,8 +615,8 @@ function CurriculumTab({
                       ) : (
                         <div style={{
                           width: '26px', height: '26px', borderRadius: '8px', flexShrink: 0,
-                          background: item.videoUrl ? `${accent}10` : '#f1f5f9',
-                          color: item.videoUrl ? accent : '#94a3b8',
+                          background: item.videoUrl ? `${accent}10` : 'var(--surface)',
+                          color: item.videoUrl ? accent : 'var(--text-muted)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
                           {item.videoUrl ? (
@@ -630,7 +630,7 @@ function CurriculumTab({
                       {/* Title + duration */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
-                          fontSize: '13px', fontWeight: 700, color: '#1e1e3a',
+                          fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)',
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           textDecoration: isCompleted ? 'none' : 'none',
                           opacity: isCompleted ? 0.7 : 1,
@@ -638,7 +638,7 @@ function CurriculumTab({
                           {item.title}
                         </div>
                         {typeof item.durationMinutes === 'number' && item.durationMinutes > 0 && (
-                          <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600, marginTop: '1px' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '1px' }}>
                             {Math.floor(item.durationMinutes / 60) > 0
                               ? `${Math.floor(item.durationMinutes / 60)}h ${item.durationMinutes % 60}m`
                               : `${item.durationMinutes}m`}
@@ -683,7 +683,7 @@ function CurriculumTab({
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: '4px',
                             padding: '6px 12px', borderRadius: '50px',
-                            background: '#fff', color: '#6b6b8a',
+                            background: 'var(--surface)', color: 'var(--text-secondary)',
                             border: '1.5px solid #e2e8f0',
                             fontSize: '11px', fontWeight: 800,
                             textDecoration: 'none',
@@ -694,7 +694,7 @@ function CurriculumTab({
                           Open
                         </a>
                       ) : (
-                        <span style={{ fontSize: '11px', color: '#cbd5e1', fontWeight: 700 }}>—</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>—</span>
                       )}
                     </div>
                   )
@@ -729,7 +729,7 @@ function OverviewTab({
             display: 'flex', alignItems: 'center', gap: '12px',
             padding: '14px 16px',
             borderRadius: '16px',
-            background: accessDays <= 3 ? '#fef2f2' : '#fff7ed',
+            background: accessDays <= 3 ? 'var(--danger-light)' : '#fff7ed',
             border: `1px solid ${accessDays <= 3 ? '#fecaca' : '#fed7aa'}`,
             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           }}>
@@ -758,7 +758,7 @@ function OverviewTab({
             display: 'flex', alignItems: 'center', gap: '12px',
             padding: '12px 16px',
             borderRadius: '16px',
-            background: '#f8fafc',
+            background: 'var(--surface)',
             border: '1px solid #e2e8f0',
             boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
           }}>
@@ -770,7 +770,7 @@ function OverviewTab({
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#64748b', lineHeight: 1.3 }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
                 Course access ends in {accessDays} days
               </div>
             </div>
@@ -779,21 +779,21 @@ function OverviewTab({
       )}
 
       <div style={{
-        background: '#fff',
+        background: 'var(--surface)',
         borderRadius: '16px',
         padding: '16px',
         border: '1px solid rgba(15,23,42,0.05)',
         boxShadow: '0 2px 10px rgba(15,23,42,0.04)',
       }}>
-        <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+        <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
           About this course
         </div>
-        <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
           {course.description || 'No description provided yet. Check the curriculum tab for the full lecture list.'}
         </p>
       </div>
       <div style={{
-        background: '#fff',
+        background: 'var(--surface)',
         borderRadius: '16px',
         padding: '16px',
         border: '1px solid rgba(15,23,42,0.05)',
@@ -815,12 +815,12 @@ function OverviewStat({ label, value, accent }: { label: string; value: string; 
     <div style={{
       padding: '10px 12px',
       borderRadius: '12px',
-      background: '#f8f9fc',
+      background: 'var(--surface)',
     }}>
-      <div style={{ fontSize: '9px', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
+      <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
         {label}
       </div>
-      <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {value}
       </div>
     </div>
@@ -840,7 +840,7 @@ function FeedbackTab({
       {hasFeedback ? (
         /* Already Submitted View */
         <div style={{
-          background: '#fff',
+          background: 'var(--surface)',
           borderRadius: '16px',
           padding: '30px 20px',
           border: '1px solid rgba(34, 197, 94, 0.12)',
@@ -865,8 +865,8 @@ function FeedbackTab({
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1e1e3a', margin: '0 0 6px' }}>Feedback Submitted</h3>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>Feedback Submitted</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
               Thank you for sharing your experience! Your private review helps us improve the learning quality.
             </p>
           </div>
@@ -874,7 +874,7 @@ function FeedbackTab({
       ) : (
         /* Invite to Rate View */
         <div style={{
-          background: '#fff',
+          background: 'var(--surface)',
           borderRadius: '16px',
           padding: '30px 20px',
           border: '1px solid rgba(217, 119, 6, 0.12)',
@@ -899,8 +899,8 @@ function FeedbackTab({
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           </div>
           <div>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1e1e3a', margin: '0 0 6px' }}>Share Your Experience</h3>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>Share Your Experience</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
               Help us make {course.name} even better. Your rating and comments are completely private.
             </p>
           </div>

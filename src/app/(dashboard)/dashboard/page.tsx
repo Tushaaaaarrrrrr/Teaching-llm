@@ -1399,7 +1399,7 @@ export default function DashboardPage() {
                           fontSize: '12px',
                           fontWeight: 700,
                           textDecoration: 'none',
-                          boxShadow: '0 4px 10px rgba(54,54,232,0.25), inset 1px 1px 0 rgba(255,255,255,0.2)',
+                          boxShadow: '0 4px 10px rgba(54,54,232,0.25), inset 1px 1px 0 var(--neu-glow)',
                           transition: 'all 0.15s ease',
                         }}
                       >

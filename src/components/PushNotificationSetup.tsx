@@ -80,10 +80,10 @@ function RequestPermissionModal({
         style={{
           width: '100%',
           maxWidth: '400px',
-          background: '#e8eaf0',
+          background: 'var(--surface-2)',
           borderRadius: '28px',
           padding: '32px 28px 24px',
-          boxShadow: '0 24px 48px rgba(15,23,42,0.18), 0 8px 16px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.85)',
+          boxShadow: '0 24px 48px rgba(15,23,42,0.18), 0 8px 16px rgba(15,23,42,0.08), inset 0 1px 0 var(--neu-glow)',
           border: '1px solid rgba(255,255,255,0.5)',
           display: 'flex',
           flexDirection: 'column',
@@ -112,10 +112,10 @@ function RequestPermissionModal({
           </div>
         </div>
 
-        <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', marginBottom: '10px', fontFamily: "'Outfit', sans-serif" }}>
+        <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '10px', fontFamily: "'Outfit', sans-serif" }}>
           Enable Live Alerts
         </div>
-        <p style={{ fontSize: '13.5px', lineHeight: '1.65', color: '#6b6b8a', marginBottom: '26px', padding: '0 4px' }}>
+        <p style={{ fontSize: '13.5px', lineHeight: '1.65', color: 'var(--text-secondary)', marginBottom: '26px', padding: '0 4px' }}>
           Get instant updates for live sessions, subject blueprints, announcements, and study notes so you never miss a class.
         </p>
 
@@ -128,7 +128,7 @@ function RequestPermissionModal({
               padding: '14px 20px', fontFamily: 'inherit', fontSize: '14px', fontWeight: '700',
               cursor: 'pointer', color: '#fff',
               background: 'linear-gradient(135deg, #3636e8, #6366f1)',
-              boxShadow: '4px 4px 10px rgba(54,54,232,0.25), inset 1px 1px 0 rgba(255,255,255,0.2)',
+              boxShadow: '4px 4px 10px rgba(54,54,232,0.25), inset 1px 1px 0 var(--neu-glow)',
               transition: 'all 0.2s ease',
             }}
           >
@@ -140,7 +140,7 @@ function RequestPermissionModal({
             style={{
               width: '100%', border: 'none', background: 'transparent',
               padding: '10px 20px', fontFamily: 'inherit', fontSize: '13.5px',
-              fontWeight: '600', color: '#9999b0', cursor: 'pointer', transition: 'color 0.2s ease',
+              fontWeight: '600', color: 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s ease',
             }}
           >
             Maybe Later
@@ -203,7 +203,7 @@ function PermissionDeniedModal({ onDismiss }: { onDismiss: () => void }) {
           background: 'linear-gradient(160deg, #1a1a3a 0%, #12122a 100%)',
           borderRadius: '28px',
           padding: '30px 26px 24px',
-          boxShadow: '0 32px 64px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)',
+          boxShadow: '0 32px 64px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 var(--neu-glow)',
           border: '1px solid rgba(255,255,255,0.08)',
           display: 'flex',
           flexDirection: 'column',
@@ -307,7 +307,7 @@ function PermissionDeniedModal({ onDismiss }: { onDismiss: () => void }) {
               padding: '14px 20px', fontFamily: 'inherit', fontSize: '14px', fontWeight: '700',
               cursor: 'pointer', color: '#fff',
               background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-              boxShadow: '0 6px 20px rgba(245,158,11,0.30), inset 1px 1px 0 rgba(255,255,255,0.15)',
+              boxShadow: '0 6px 20px rgba(245,158,11,0.30), inset 1px 1px 0 var(--neu-glow)',
               transition: 'all 0.2s ease',
             }}
           >

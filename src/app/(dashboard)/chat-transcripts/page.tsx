@@ -101,9 +101,9 @@ export default function ChatTranscriptsPage() {
     return true
   })
 
-  const neu = { background: 'var(--surface-2)', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
-  const neuInset = { background: 'var(--surface-2)', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
-  const neuSmall = { background: 'var(--surface-2)', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }
+  const neu = { background: 'var(--surface-2)', boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)' }
+  const neuInset = { background: 'var(--surface-2)', boxShadow: 'inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light)' }
+  const neuSmall = { background: 'var(--surface-2)', boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)' }
 
   return (
     <div className="page-container fade-in master-detail-layout" data-detail-open={selectedClass ? 'true' : 'false'} style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
@@ -130,8 +130,8 @@ export default function ChatTranscriptsPage() {
               background: selectedClass?.id === cls.id ? cls.color : 'var(--surface-2)',
               color: selectedClass?.id === cls.id ? '#fff' : 'var(--text-primary)',
               boxShadow: selectedClass?.id === cls.id
-                ? `5px 5px 12px ${cls.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
-                : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                ? `5px 5px 12px ${cls.color}55, -3px -3px 8px var(--neu-glow)`
+                : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
             }}
           >
             <div style={{
@@ -190,7 +190,7 @@ export default function ChatTranscriptsPage() {
                 style={{
                   width: '36px', height: '36px', borderRadius: '10px',
                   border: 'none', cursor: 'pointer', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--surface-2)', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                  background: 'var(--surface-2)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                   color: 'var(--text-primary)', flexShrink: 0,
                 }}
               >
@@ -262,7 +262,7 @@ export default function ChatTranscriptsPage() {
                       color: filter === f ? '#fff' : 'var(--text-secondary)',
                       boxShadow: filter === f
                         ? '4px 4px 10px rgba(54,54,232,0.25)'
-                        : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                        : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                       transition: 'all 0.2s',
                     }}
                   >
@@ -312,7 +312,7 @@ export default function ChatTranscriptsPage() {
                             <div style={{
                               width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
                               background: msg.sender.role !== 'STUDENT' ? 'var(--primary)' : 'var(--surface-2)',
-                              boxShadow: msg.sender.role !== 'STUDENT' ? 'none' : '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
+                              boxShadow: msg.sender.role !== 'STUDENT' ? 'none' : '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: '10px', fontWeight: '800',
                               color: msg.sender.role !== 'STUDENT' ? '#fff' : 'var(--text-secondary)',

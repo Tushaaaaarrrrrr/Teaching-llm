@@ -262,7 +262,7 @@ export default function RecordingsPage() {
             background: courseFilter === 'all' ? 'var(--primary)' : 'var(--surface-2)',
             color:      courseFilter === 'all' ? '#ffffff'  : 'var(--text-secondary)',
             boxShadow:  courseFilter === 'all'
-              ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)'
+              ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-glow)'
               : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
           }}
         >
@@ -278,7 +278,7 @@ export default function RecordingsPage() {
               background: courseFilter === cls.id ? cls.color : 'var(--surface-2)',
               color:      courseFilter === cls.id ? '#ffffff' : 'var(--text-secondary)',
               boxShadow:  courseFilter === cls.id
-                ? `4px 4px 10px ${cls.color}55, -2px -2px 6px rgba(255,255,255,0.7)`
+                ? `4px 4px 10px ${cls.color}55, -2px -2px 6px var(--neu-glow)`
                 : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
             }}
           >

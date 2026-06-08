@@ -740,7 +740,7 @@ export default function CourseDetailPage() {
         }} onClick={() => !upgrading && setUpgradeModalCourse(null)}>
           <div style={{
             background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
-            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
             animation: 'modalSlideUp 0.3s ease-out', position: 'relative'
           }} onClick={e => e.stopPropagation()}>
             {upgrading ? (
@@ -821,7 +821,7 @@ export default function CourseDetailPage() {
         }} onClick={() => setUpgradeSuccessOrderId(null)}>
           <div style={{
             background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
-            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px', textAlign: 'center',
             animation: 'modalSlideUp 0.3s ease-out'
           }} onClick={e => e.stopPropagation()}>
@@ -951,7 +951,7 @@ export default function CourseDetailPage() {
         }} onClick={() => !upgrading && setUpgradeModalCourse(null)}>
           <div style={{
             background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
-            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
             animation: 'modalSlideUp 0.3s ease-out', position: 'relative'
           }} onClick={e => e.stopPropagation()}>
             {upgrading ? (
@@ -1032,7 +1032,7 @@ export default function CourseDetailPage() {
         }} onClick={() => setUpgradeSuccessOrderId(null)}>
           <div style={{
             background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
-            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px', textAlign: 'center',
             animation: 'modalSlideUp 0.3s ease-out'
           }} onClick={e => e.stopPropagation()}>

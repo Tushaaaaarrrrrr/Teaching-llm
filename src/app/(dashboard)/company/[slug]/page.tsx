@@ -54,7 +54,7 @@ export default function CompanyPage() {
 
   const neuCard: React.CSSProperties = {
     borderRadius: '20px', background: 'var(--surface-2)',
-    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+    boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)',
     padding: 'clamp(20px, 5vw, 40px)',
     minHeight: '300px'
   }
@@ -63,7 +63,7 @@ export default function CompanyPage() {
     padding: '10px 24px', borderRadius: '50px', border: 'none',
     background: 'var(--primary)', color: '#fff', fontSize: '14px', fontWeight: 700,
     fontFamily: 'inherit', cursor: 'pointer',
-    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)',
+    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-glow)',
     transition: 'all 0.2s ease',
   }
 
@@ -71,7 +71,7 @@ export default function CompanyPage() {
     padding: '10px 24px', borderRadius: '50px', border: 'none',
     background: 'var(--surface-2)', color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 700,
     fontFamily: 'inherit', cursor: 'pointer',
-    boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+    boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
     transition: 'all 0.2s ease',
   }
 
@@ -186,7 +186,7 @@ export default function CompanyPage() {
                   textDecoration: 'none',
                   fontWeight: 700,
                   fontSize: '14px',
-                  boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                  boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '10px',
@@ -194,11 +194,11 @@ export default function CompanyPage() {
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff'
+                  e.currentTarget.style.boxShadow = '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)'
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff'
+                  e.currentTarget.style.boxShadow = '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)'
                 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

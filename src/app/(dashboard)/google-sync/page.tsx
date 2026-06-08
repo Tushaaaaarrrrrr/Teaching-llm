@@ -146,7 +146,7 @@ export default function GoogleSyncPage() {
               <button
                 onClick={() => setRefreshKey(prev => prev + 1)}
                 className="btn btn-sm btn-ghost"
-                style={{ border: '1px solid #c5c7cf' }}
+                style={{ border: '1px solid var(--neu-dark)' }}
                 disabled={isLoading}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px', animation: isLoading ? 'spin 1s linear infinite' : 'none' }}>
@@ -166,7 +166,7 @@ export default function GoogleSyncPage() {
                   style={{
                     padding: '6px 10px',
                     borderRadius: '6px',
-                    border: '1px solid #c5c7cf',
+                    border: '1px solid var(--neu-dark)',
                     fontSize: '12px',
                     background: 'var(--surface)',
                     cursor: 'pointer',
@@ -187,7 +187,7 @@ export default function GoogleSyncPage() {
                   style={{
                     padding: '6px 10px',
                     borderRadius: '6px',
-                    border: '1px solid #c5c7cf',
+                    border: '1px solid var(--neu-dark)',
                     fontSize: '12px',
                     background: 'var(--surface)',
                     cursor: 'pointer',
@@ -279,7 +279,7 @@ export default function GoogleSyncPage() {
                 <button
                   onClick={() => setFilters({ ...filters, page: Math.max(1, filters.page - 1) })}
                   disabled={filters.page === 1}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #c5c7cf', background: 'var(--surface)', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === 1 ? '#ccc' : 'var(--accent)' }}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--neu-dark)', background: 'var(--surface)', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === 1 ? '#ccc' : 'var(--accent)' }}
                 >
                   ← Prev
                 </button>
@@ -289,7 +289,7 @@ export default function GoogleSyncPage() {
                 <button
                   onClick={() => setFilters({ ...filters, page: Math.min(pagination.totalPages, filters.page + 1) })}
                   disabled={filters.page === pagination.totalPages}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #c5c7cf', background: 'var(--surface)', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === pagination.totalPages ? '#ccc' : 'var(--accent)' }}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--neu-dark)', background: 'var(--surface)', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === pagination.totalPages ? '#ccc' : 'var(--accent)' }}
                 >
                   Next →
                 </button>

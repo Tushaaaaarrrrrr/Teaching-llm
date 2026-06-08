@@ -161,19 +161,19 @@ export default function FreeResourcesPage() {
             background: 'var(--surface-2)',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+            boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
             color: 'var(--text-secondary)',
             transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           }}
           onMouseEnter={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
             ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
           }}
           onMouseLeave={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
             ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)'
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -203,11 +203,11 @@ export default function FreeResourcesPage() {
             }}
               onMouseEnter={e => { 
                 e.currentTarget.style.transform = 'translateY(-10px) scale(1.02)' 
-                e.currentTarget.style.boxShadow = '20px 20px 40px #c5c7cf, -20px -20px 40px #ffffff'
+                e.currentTarget.style.boxShadow = '20px 20px 40px var(--neu-dark), -20px -20px 40px var(--neu-light)'
               }}
               onMouseLeave={e => { 
                 e.currentTarget.style.transform = 'translateY(0) scale(1)' 
-                e.currentTarget.style.boxShadow = '10px 10px 20px #c5c7cf, -10px -10px 20px #ffffff'
+                e.currentTarget.style.boxShadow = '10px 10px 20px var(--neu-dark), -10px -10px 20px var(--neu-light)'
               }}
             >
               {/* Icon Section */}

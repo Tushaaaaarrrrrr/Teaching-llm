@@ -47,7 +47,7 @@ function MenuRow({ item, onClick }: { item: MenuItem; onClick?: () => void }) {
     display: 'flex', alignItems: 'center', gap: '14px',
     padding: '14px 16px', borderRadius: '18px',
     background: 'var(--surface-2)',
-    boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+    boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
     textDecoration: 'none', color: 'var(--text-primary)',
     fontFamily: 'inherit', border: 'none', width: '100%', cursor: 'pointer',
     transition: 'box-shadow 0.15s ease',
@@ -269,7 +269,7 @@ export default function MobileMenuPage() {
         padding: '18px 18px',
         borderRadius: '24px',
         background: 'linear-gradient(135deg, #3636e8, #6366f1)',
-        boxShadow: '6px 6px 16px rgba(54,54,232,0.25), -6px -6px 14px #ffffff',
+        boxShadow: '6px 6px 16px rgba(54,54,232,0.25), -6px -6px 14px var(--neu-light)',
         textDecoration: 'none', color: '#fff',
         marginBottom: '6px',
       }}>
@@ -325,7 +325,7 @@ export default function MobileMenuPage() {
           <div style={{
             padding: '18px 20px', borderRadius: '18px',
             background: 'var(--surface-2)',
-            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+            boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
           }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -357,7 +357,7 @@ export default function MobileMenuPage() {
         display: 'flex', alignItems: 'center', gap: '14px',
         padding: '14px 16px', borderRadius: '18px',
         background: 'var(--surface-2)',
-        boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+        boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
         border: 'none', width: '100%', cursor: 'pointer',
         fontFamily: 'inherit', color: 'var(--danger)',
       }}>

@@ -32,6 +32,7 @@
   --text-inverse: #ffffff;
   --neu-light: #ffffff;
   --neu-dark: #c5c7cf;
+  --neu-glow: rgba(255,255,255,0.7);
   --shadow-sm: 3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff;
   --shadow: 6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff;
   --shadow-md: 8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff;
@@ -81,6 +82,7 @@
   --text-inverse: #0f1219;
   --neu-light: #1f2430;
   --neu-dark: #0b0e14;
+  --neu-glow: transparent;
   --shadow-sm: 3px 3px 6px #0b0e14, -3px -3px 6px #1f2430;
   --shadow: 6px 6px 12px #0b0e14, -6px -6px 12px #1f2430;
   --shadow-md: 8px 8px 16px #090c11, -8px -8px 16px #1f2430;
@@ -91,6 +93,16 @@
   --skeleton-base: #1f2430;
   --skeleton-shine: #272d3b;
   color-scheme: dark;
+}
+
+/* Dark-mode logo: dark plate + render the (dark-inked) logo as a clean white
+   silhouette so it reads on the dark sidebar instead of glowing as a white blob. */
+:root[data-theme="dark"] .sidebar-logo-plate {
+  background: var(--surface-2) !important;
+  box-shadow: var(--shadow) !important;
+}
+:root[data-theme="dark"] .sidebar-logo-img {
+  filter: brightness(0) invert(1);
 }
 
 html {

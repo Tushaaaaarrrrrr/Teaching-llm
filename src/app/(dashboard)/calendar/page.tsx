@@ -360,18 +360,18 @@ function CalendarPageContent() {
               background: 'var(--surface)',
               border: 'none',
               cursor: 'pointer',
-              boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+              boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
               color: 'var(--text-secondary)',
               flexShrink: 0,
               transition: 'all 0.2s',
             }}
             onMouseEnter={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
-              ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+              ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
             }}
             onMouseLeave={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
-              ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+              ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
             }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -407,13 +407,13 @@ function CalendarPageContent() {
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           background: 'var(--surface-2)', padding: '8px 8px 8px 18px', borderRadius: '50px',
-          boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+          boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
           marginBottom: '18px',
         }}>
           <button onClick={prevMonth} aria-label="Previous month" style={{
             width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'var(--surface-2)', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', color: 'var(--primary)',
+            background: 'var(--surface-2)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', color: 'var(--primary)',
           }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
@@ -424,7 +424,7 @@ function CalendarPageContent() {
           <button onClick={nextMonth} aria-label="Next month" style={{
             width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'var(--surface-2)', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', color: 'var(--primary)',
+            background: 'var(--surface-2)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', color: 'var(--primary)',
           }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
@@ -459,8 +459,8 @@ function CalendarPageContent() {
                   background: isSelected ? 'var(--primary)' : 'var(--surface-2)',
                   color: isSelected ? '#ffffff' : (today ? 'var(--primary)' : 'var(--text-secondary)'),
                   boxShadow: isSelected
-                    ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px rgba(255,255,255,0.6)'
-                    : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px var(--neu-glow)'
+                    : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                   transition: 'all 0.2s ease',
                   position: 'relative',
                 }}
@@ -501,10 +501,10 @@ function CalendarPageContent() {
         {mobileDayEvents.length === 0 ? (
           <div style={{
             padding: '40px 20px', textAlign: 'center', borderRadius: '24px',
-            background: 'var(--surface-2)', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff',
+            background: 'var(--surface-2)', boxShadow: 'inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light)',
             color: 'var(--text-muted)',
           }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '10px' }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--neu-dark)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '10px' }}>
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
             <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>Nothing scheduled</div>
@@ -522,7 +522,7 @@ function CalendarPageContent() {
                     display: 'flex', alignItems: 'stretch', gap: '14px',
                     padding: '14px 16px', borderRadius: '20px',
                     background: 'var(--surface)', cursor: 'pointer',
-                    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+                    boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)',
                     borderLeft: `5px solid ${tc.bg}`,
                   }}
                 >
@@ -561,7 +561,7 @@ function CalendarPageContent() {
           background: 'var(--surface-2)',
           padding: '6px',
           borderRadius: '50px',
-          boxShadow: 'inset 4px 4px 8px #d1d5db, inset -4px -4px 8px #ffffff'
+          boxShadow: 'inset 4px 4px 8px #d1d5db, inset -4px -4px 8px var(--neu-light)'
         }}>
           <button onClick={goToday} className="btn btn-sm" style={{ 
             background: 'transparent', 
@@ -595,7 +595,7 @@ function CalendarPageContent() {
           fontWeight: '800', 
           color: 'var(--text-primary)',
           margin: 0,
-          background: 'linear-gradient(135deg, #1e1e3a, #3b82f6)',
+          background: 'linear-gradient(135deg, var(--text-primary), var(--info))',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent'
         }}>
@@ -617,7 +617,7 @@ function CalendarPageContent() {
         overflow: 'hidden',
         borderRadius: '28px',
         border: '1px solid rgba(255,255,255,0.6)',
-        boxShadow: '20px 20px 60px #d1d9e6, -20px -20px 60px #ffffff'
+        boxShadow: '20px 20px 60px #d1d9e6, -20px -20px 60px var(--neu-light)'
       }}>
         {/* Day headers */}
         <div style={{
@@ -768,7 +768,7 @@ function CalendarPageContent() {
                   gap: '16px',
                   borderRadius: '24px',
                   background: 'var(--surface)',
-                  boxShadow: '8px 8px 24px rgba(0,0,0,0.04), -8px -8px 24px rgba(255,255,255,0.8)',
+                  boxShadow: '8px 8px 24px rgba(0,0,0,0.04), -8px -8px 24px var(--neu-glow)',
                   transition: 'all 0.3s ease',
                   border: '1px solid rgba(255,255,255,0.5)'
                 }}
@@ -778,7 +778,7 @@ function CalendarPageContent() {
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '8px 8px 24px rgba(0,0,0,0.04), -8px -8px 24px rgba(255,255,255,0.8)'
+                  e.currentTarget.style.boxShadow = '8px 8px 24px rgba(0,0,0,0.04), -8px -8px 24px var(--neu-glow)'
                 }}
                 >
                   <div style={{
