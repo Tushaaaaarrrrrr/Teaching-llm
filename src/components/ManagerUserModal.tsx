@@ -288,7 +288,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
                   <div style={{
                     width: '90px', height: '90px', borderRadius: '50%',
-                    background: 'var(--surface)', boxShadow: '4px 4px 10px #d1d9e6, -4px -4px 10px var(--neu-light)',
+                    background: 'var(--surface)', boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
                     border: '3px solid var(--border)', flexShrink: 0
                   }}>
@@ -401,7 +401,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           ? g === 'MALE' ? 'inset 3px 3px 6px rgba(99,102,241,0.18), inset -3px -3px 6px var(--neu-light)'
                           : g === 'FEMALE' ? 'inset 3px 3px 6px rgba(236,72,153,0.14), inset -3px -3px 6px var(--neu-light)'
                           : 'inset 3px 3px 6px rgba(168,85,247,0.14), inset -3px -3px 6px var(--neu-light)'
-                          : '4px 4px 8px #d1d9e6, -4px -4px 8px var(--neu-light)',
+                          : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                         cursor: 'pointer', color: 'var(--text-primary)', fontSize: '13px', fontWeight: '700', transition: 'all 0.2s'
                       }}>
                         <input type="radio" checked={formData.gender === g} onChange={() => setFormData({ ...formData, gender: g })} />
@@ -415,7 +415,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 <div style={{
                   padding: '20px', borderRadius: '20px',
                   background: 'linear-gradient(135deg, var(--border), #f8fafc)',
-                  boxShadow: 'inset 4px 4px 10px #d1d9e6, inset -4px -4px 10px var(--neu-light)',
+                  boxShadow: 'inset 4px 4px 10px var(--neu-dark), inset -4px -4px 10px var(--neu-light)',
                   border: '1px solid rgba(255,255,255,0.6)'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -431,7 +431,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   <div style={{
                     padding: '20px', borderRadius: '20px', marginTop: '24px',
                     background: 'linear-gradient(135deg, var(--border), #f8fafc)',
-                    boxShadow: 'inset 4px 4px 10px #d1d9e6, inset -4px -4px 10px var(--neu-light)',
+                    boxShadow: 'inset 4px 4px 10px var(--neu-dark), inset -4px -4px 10px var(--neu-light)',
                     border: '1px solid rgba(255,255,255,0.6)'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -472,7 +472,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         {bundles.filter(bundle => formData.bundleIds.includes(bundle.id)).map(bundle => (
                           <div key={bundle.id} style={{
                             padding: '10px 18px', borderRadius: '16px', background: '#f3f0ff',
-                            boxShadow: '4px 4px 8px #d1d9e6, -4px -4px 8px var(--neu-light)',
+                            boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                             display: 'flex', alignItems: 'center', gap: '10px'
                           }}>
                             <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent)' }}>{bundle.name}</span>
@@ -516,7 +516,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           return (
                           <div key={c.id} style={{
                             padding: '10px 18px', borderRadius: '16px', background: 'var(--surface)',
-                            boxShadow: '4px 4px 8px #d1d9e6, -4px -4px 8px var(--neu-light)',
+                            boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                             display: 'flex', alignItems: 'center', gap: '10px'
                           }}>
                              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
@@ -537,7 +537,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                   color: isLive ? 'var(--success)' : 'var(--warning)',
                                   fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em',
                                   cursor: 'pointer', transition: 'all 0.2s',
-                                  boxShadow: '2px 2px 4px #d1d9e6, -2px -2px 4px var(--neu-light)',
+                                  boxShadow: '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
                                   outline: 'none',
                                 }}
                               >
@@ -571,7 +571,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                   }
                                 }}
                               style={{
-                                padding: '10px 18px', borderRadius: '16px', border: '2px dashed #d1d9e6', background: 'rgba(255,255,255,0.3)',
+                                padding: '10px 18px', borderRadius: '16px', border: '2px dashed var(--neu-dark)', background: 'rgba(255,255,255,0.3)',
                                 fontSize: '13px', fontWeight: '700', color: 'var(--accent)', cursor: 'pointer', appearance: 'none'
                               }}
                               value=""

@@ -15,7 +15,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
         background: checked ? 'var(--primary)' : 'var(--neu-dark)',
         boxShadow: checked
           ? 'inset 2px 2px 5px rgba(0,0,0,0.2)'
-          : 'inset 2px 2px 4px #b0b2ba, inset -2px -2px 4px #dadce4',
+          : 'inset 2px 2px 4px var(--neu-dark), inset -2px -2px 4px var(--neu-dark)',
         position: 'relative', cursor: 'pointer',
         transition: 'background 0.25s ease',
       }}

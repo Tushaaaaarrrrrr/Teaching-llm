@@ -112,7 +112,7 @@ for (const file of files) {
   // 2c) Light border/divider colors that survive inside compound strings
   //     (e.g. "1px solid #e2e8f0"). After the value pass these only remain in
   //     such compound uses -> subtle theme border. Also white borders.
-  for (const c of ['#e2e8f0', '#e5e7eb', '#edf0f5', '#f1f5f9', '#eef2ff', '#f0f2f8', '#dde0e8', '#d1d5db', '#fecaca', '#fef3c7', '#fde68a', '#bbf7d0', '#bfdbfe', '#c7d2fe', '#fed7aa', '#e0e7ff']) {
+  for (const c of ['#e2e8f0', '#e5e7eb', '#edf0f5', '#f1f5f9', '#eef2ff', '#f0f2f8', '#fecaca', '#fef3c7', '#fde68a', '#bbf7d0', '#bfdbfe', '#c7d2fe', '#fed7aa', '#e0e7ff']) {
     out = out.replace(new RegExp(esc(c), 'gi'), () => { n++; return 'var(--border)' })
   }
   out = out.replace(/(solid\s+)#(?:ffffff|fff)\b/gi, (_, p) => { n++; return p + 'var(--border)' })
@@ -125,7 +125,7 @@ for (const file of files) {
   out = out.replace(/(\d+px\s+)#ffffff\b/gi, (_, p) => { n++; return p + 'var(--neu-light)' })
   out = out.replace(/(\d+px\s+)#fff\b/gi, (_, p) => { n++; return p + 'var(--neu-light)' })
   // These grays are used exclusively as neumorphic shadow colors in this codebase.
-  for (const g of ['#c5c7cf', '#bdbfc7', '#c2c4cc']) {
+  for (const g of ['#c5c7cf', '#bdbfc7', '#c2c4cc', '#d1d9e6', '#d1d5db', '#dde0e8', '#b0b2ba', '#dadce4']) {
     const re = new RegExp(esc(g), 'gi')
     out = out.replace(re, () => { n++; return 'var(--neu-dark)' })
   }

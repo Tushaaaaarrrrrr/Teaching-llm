@@ -1216,10 +1216,10 @@ export default function CommunityPage() {
                               borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                               background: selectedMessage?.id === msg.id
                                 ? '#d0e1fd'
-                                : isMe ? '#dcf8c6' : isAdmin ? '#e0e7ff' : '#ffffff',
+                                : isMe ? '#dcf8c6' : isAdmin ? 'var(--primary-light)' : '#ffffff',
                               // Bubbles stay light (WhatsApp-style) in both themes, so text is a
                               // constant dark — var(--text-primary) would go light and vanish in dark.
-                              color: '#1e1e3a',
+                              color: 'var(--text-primary)',
                               fontSize: '14px', lineHeight: '1.5',
                               boxShadow: selectedMessage?.id === msg.id
                                 ? '0 0 0 2.5px #3636e8, 0 4px 12px rgba(54,54,232,0.2)'

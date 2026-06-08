@@ -701,7 +701,7 @@ export default function SupportPage() {
           {/* FAQ Card (Left Side on desktop, last on mobile) */}
           <div className="faq-card-col" style={{ ...card }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f0f0fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" strokeWidth="2.5" strokeLinecap="round" />
                 </svg>
@@ -724,10 +724,10 @@ export default function SupportPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {faqs.map(f => (
-                    <div key={f.id} style={{ borderRadius: '16px', border: '1.5px solid #f0f1f5', overflow: 'hidden' }}>
+                    <div key={f.id} style={{ borderRadius: '16px', border: '1.5px solid var(--border)', overflow: 'hidden' }}>
                       <div 
                         onClick={() => setExpandedFaq(expandedFaq === f.id ? null : f.id)}
-                        style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: expandedFaq === f.id ? '#f8f9ff' : '#fff', transition: 'background 0.2s' }}
+                        style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: expandedFaq === f.id ? 'var(--surface-2)' : 'var(--surface)', transition: 'background 0.2s' }}
                       >
                         <span style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-primary)' }}>{f.question}</span>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -747,7 +747,7 @@ export default function SupportPage() {
                         </div>
                       </div>
                       {expandedFaq === f.id && (
-                        <div style={{ padding: '0 18px 16px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6', background: '#f8f9ff', whiteSpace: 'pre-wrap' }}>
+                        <div style={{ padding: '0 18px 16px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6', background: 'var(--surface-2)', whiteSpace: 'pre-wrap' }}>
                           {f.answer}
                         </div>
                       )}
@@ -763,7 +763,7 @@ export default function SupportPage() {
             
             {/* Live Chat Card */}
             <div className="chat-box-pad" style={{ ...card, textAlign: 'center' }}>
-              <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f0f0fa', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                 </svg>
@@ -783,7 +783,7 @@ export default function SupportPage() {
             </div>
 
             {/* Raise a Ticket Box (History merged inside) */}
-            <div className="ticket-box-pad" style={{ width: '100%', borderRadius: '24px', background: '#f7f7ff', border: '1.5px solid #d9dcff', boxShadow: 'inset 0 1px 0 var(--neu-glow)', textAlign: 'left' }}>
+            <div className="ticket-box-pad" style={{ width: '100%', borderRadius: '24px', background: 'var(--surface-2)', border: '1.5px solid var(--border)', boxShadow: 'inset 0 1px 0 var(--neu-glow)', textAlign: 'left' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <div>
                   <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.03em', marginBottom: '4px', textTransform: 'uppercase' }}>
@@ -817,7 +817,7 @@ export default function SupportPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {tickets.slice(0, 5).map((t) => (
                       <div key={t.id} onClick={() => { setSelected(t); setView('allTickets') }}
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--surface)', borderRadius: '16px', cursor: 'pointer', border: '1px solid #e8eaf0' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--surface)', borderRadius: '16px', cursor: 'pointer', border: '1px solid var(--border)' }}
                       >
                         <TicketStatusIcon status={t.status} />
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -1003,7 +1003,7 @@ export default function SupportPage() {
 
               </div>
 
-              <div style={{ padding: '14px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.05)', background: '#f0f1f5' }}>
+              <div style={{ padding: '14px 20px', borderBottom: '1.5px solid var(--border)', background: 'var(--surface-2)' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: '600' }}>
                   Original request — <span 
                     onClick={() => {
@@ -1048,10 +1048,10 @@ export default function SupportPage() {
                         <div style={{ 
                           padding: r.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px', 
                           borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', 
-                          background: isMe ? '#dcf8c6' : isAdmin ? 'var(--primary-light)' : '#ffffff', 
+                          background: isMe ? '#dcf8c6' : isAdmin ? '#e0e7ff' : '#ffffff', 
                           boxShadow: '0 1px 2px rgba(0,0,0,0.1)', 
-                          color: 'var(--text-primary)',
-                          border: isMe ? 'none' : '1px solid #e8eaf0',
+                          color: '#1e1e3a',
+                          border: isMe ? 'none' : '1px solid var(--border)',
                           minWidth: '60px'
                         }}>
                           {!isMe && showAvatar && (
@@ -1385,10 +1385,10 @@ export default function SupportPage() {
                           <div style={{ 
                             padding: m.imageUrl ? '5px 5px 15px 5px' : '7px 12px 15px 12px', 
                             borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px', 
-                            background: isMe ? '#dcf8c6' : isAdmin ? 'var(--primary-light)' : '#ffffff', 
+                            background: isMe ? '#dcf8c6' : isAdmin ? '#e0e7ff' : '#ffffff', 
                             boxShadow: '0 1px 2px rgba(0,0,0,0.1)', 
-                            color: 'var(--text-primary)',
-                            border: isMe ? 'none' : '1px solid #e8eaf0',
+                            color: '#1e1e3a',
+                            border: isMe ? 'none' : '1px solid var(--border)',
                             minWidth: '60px'
                           }}>
                             {!isMe && showAvatar && (

@@ -617,7 +617,7 @@ function CalendarPageContent() {
         overflow: 'hidden',
         borderRadius: '28px',
         border: '1px solid rgba(255,255,255,0.6)',
-        boxShadow: '20px 20px 60px #d1d9e6, -20px -20px 60px var(--neu-light)'
+        boxShadow: '20px 20px 60px var(--neu-dark), -20px -20px 60px var(--neu-light)'
       }}>
         {/* Day headers */}
         <div style={{

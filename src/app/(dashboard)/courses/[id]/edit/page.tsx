@@ -627,7 +627,7 @@ export default function CourseEditPage() {
                             }}
                             style={{
                               textAlign: 'left', padding: '12px 14px', borderRadius: '12px', border: 'none',
-                              background: 'var(--surface)', boxShadow: '3px 3px 6px #d1d9e6, -3px -3px 6px var(--neu-light)',
+                              background: 'var(--surface)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                               cursor: 'pointer',
                             }}
                           >
