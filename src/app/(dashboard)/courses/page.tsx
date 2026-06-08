@@ -370,7 +370,7 @@ export default function CoursesPage() {
               {/* Gradient Banner */}
               <div style={{
                 height: 'var(--course-banner-height, 100px)',
-                background: isRecorded || isFreeOrDemo ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(135deg, ${course.color}ee, ${course.color}99)`,
+                background: isRecorded || isFreeOrDemo ? 'linear-gradient(135deg, #4b5563, #6b7280)' : `linear-gradient(135deg, ${course.color}ee, ${course.color}99)`,
                 position: 'relative',
                 overflow: 'hidden',
                 display: 'flex',
@@ -427,7 +427,7 @@ export default function CoursesPage() {
                         </button>
                         <div style={{
                           position: 'absolute', top: 'calc(100% + 8px)', right: '0',
-                          background: 'var(--text-primary)', color: '#fff', padding: '8px 14px', borderRadius: '12px',
+                          background: 'var(--primary)', color: '#fff', padding: '8px 14px', borderRadius: '12px',
                           fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
                           boxShadow: '0 8px 25px rgba(0,0,0,0.4)', pointerEvents: 'none',
                           opacity: showUpgradeHint === course.id ? 1 : 0, 
@@ -533,7 +533,7 @@ export default function CoursesPage() {
                         padding: 'var(--course-upgrade-padding, 14px 16px)',
                         borderRadius: '50px',
                         border: 'none',
-                        background: 'var(--text-primary)',
+                        background: 'var(--primary)',
                         color: '#fff',
                         fontSize: 'var(--course-upgrade-font-size, 13px)',
                         fontWeight: '800',
