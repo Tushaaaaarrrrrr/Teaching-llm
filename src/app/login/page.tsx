@@ -51,18 +51,18 @@ function PoliciesDropdown({
         className="policies-dropdown-trigger"
         style={{
           fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600',
-          padding: '8px 16px', background: '#F3F4F6', borderRadius: '50px', border: 'none', cursor: 'pointer',
-          boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff', transition: 'all 0.2s ease',
+          padding: '8px 16px', background: 'var(--surface-2)', borderRadius: '50px', border: 'none', cursor: 'pointer',
+          boxShadow: 'var(--shadow)', transition: 'all 0.2s ease',
           outline: 'none'
         }}
         onMouseOver={(e) => {
-          e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
-          e.currentTarget.style.color = '#3636e8';
+          e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+          e.currentTarget.style.color = 'var(--primary)';
         }}
         onMouseOut={(e) => {
           if (!isOpen) {
-            e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
-            e.currentTarget.style.color = '#9999b0';
+            e.currentTarget.style.boxShadow = 'var(--shadow)';
+            e.currentTarget.style.color = 'var(--text-muted)';
           }
         }}
       >
@@ -123,7 +123,7 @@ function PoliciesDropdown({
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.background = '#F3F4F6';
-                e.currentTarget.style.color = '#3636e8';
+                e.currentTarget.style.color = 'var(--primary)';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = 'none';
@@ -331,18 +331,18 @@ function LoginContent() {
               gap: '8px', 
               fontWeight: '600',
               padding: '8px 16px',
-              background: '#F3F4F6',
+              background: 'var(--surface-2)',
               borderRadius: '50px',
-              boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff',
+              boxShadow: 'var(--shadow)',
               transition: 'all 0.2s ease'
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
-              e.currentTarget.style.color = '#3636e8';
+              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+              e.currentTarget.style.color = 'var(--primary)';
             }}
             onMouseOut={(e) => {
-              e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
-              e.currentTarget.style.color = '#9999b0';
+              e.currentTarget.style.boxShadow = 'var(--shadow)';
+              e.currentTarget.style.color = 'var(--text-muted)';
             }}
           >
             <span style={{ fontSize: '14px' }}>✉️</span><span>Contact Us</span>
