@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import posthog from 'posthog-js'
 import Link from 'next/link'
 
-const APK_URL = 'https://qaevtwsmomhapzqcrynh.supabase.co/storage/v1/object/public/downloads/class%20genz%20test.apk'
+const APK_URL = 'https://zedmvgqhnapmpqpnzoqh.supabase.co/storage/v1/object/public/downloads/class%20genz.apk'
 const SHARE_URL = 'https://class.genziitian.in/download'
 
 const FEATURES = [

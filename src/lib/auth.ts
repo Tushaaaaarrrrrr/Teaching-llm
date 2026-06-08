@@ -16,7 +16,7 @@ function getJwtSecret(): string {
 export interface JWTPayload {
   userId: string
   email: string
-  role: 'MANAGER' | 'SUPER_ADMIN' | 'ADMIN' | 'STUDENT' | 'INSTRUCTOR'
+  role: 'MANAGER' | 'ADMIN' | 'STUDENT' | 'INSTRUCTOR'
   name: string
   canTerminate?: boolean
   canCreateStudents?: boolean
@@ -139,7 +139,7 @@ export async function getFullSession(): Promise<FullSession | null> {
         tokenVersion: true,
         isProfileComplete: true,
         enableDetailedLogs: true,
-        enrollments: (jwtPayload.role !== 'MANAGER' && jwtPayload.role !== 'SUPER_ADMIN') ? {
+        enrollments: (jwtPayload.role !== 'MANAGER') ? {
           where: {
             course: {
               isDisabled: false,
@@ -186,13 +186,13 @@ export async function getFullSession(): Promise<FullSession | null> {
     isTerminated: user.isTerminated,
     isProfileComplete: user.isProfileComplete,
     enableDetailedLogs: user.enableDetailedLogs || false,
-    accessibleCourseIds: (jwtPayload.role === 'MANAGER' || jwtPayload.role === 'SUPER_ADMIN') 
+    accessibleCourseIds: (jwtPayload.role === 'MANAGER') 
       ? null 
       : enrollments.map(e => e.courseId),
-    enrollmentTypes: (jwtPayload.role === 'MANAGER' || jwtPayload.role === 'SUPER_ADMIN')
+    enrollmentTypes: (jwtPayload.role === 'MANAGER')
       ? {}
       : Object.fromEntries(enrollments.map(e => [e.courseId, e.type])),
-    isMaintenanceMode: settings?.maintenanceMode && (jwtPayload.role !== 'MANAGER' && jwtPayload.role !== 'SUPER_ADMIN')
+    isMaintenanceMode: settings?.maintenanceMode && (jwtPayload.role !== 'MANAGER')
   }
 }
 
@@ -214,11 +214,11 @@ export function isManager(role: string) {
 }
 
 export function isSuperAdmin(role: string) {
-  return role === 'SUPER_ADMIN'
+  return false
 }
 
 export function isManagerOrSuperAdmin(role: string) {
-  return role === 'MANAGER' || role === 'SUPER_ADMIN'
+  return role === 'MANAGER'
 }
 
 export function isAdminOrManager(role: string) {
@@ -246,7 +246,7 @@ export async function getAccessibleCourseIds(
   userId: string,
   role: string
 ): Promise<string[] | null> {
-  if (role === 'MANAGER' || role === 'SUPER_ADMIN') return null
+  if (role === 'MANAGER') return null
 
   const now = new Date()
 
