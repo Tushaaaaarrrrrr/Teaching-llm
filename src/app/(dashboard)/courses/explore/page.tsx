@@ -4446,7 +4446,7 @@ export default function ExploreCoursesPage() {
                   setIsProcessing(false)
                 }
               }} 
-              style={{ width: '100%', padding: '14px', background: 'var(--text-primary)', color: 'white', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer' }}>
+              style={{ width: '100%', padding: '14px', background: 'var(--primary)', color: 'white', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer' }}>
               {isProcessing ? 'Saving...' : 'Save Slots'}
             </button>
           </div>
