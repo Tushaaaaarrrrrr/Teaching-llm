@@ -123,6 +123,17 @@
   background-image: url(/images/chat-wallpaper-dark.png);
 }
 
+/* Rich-text page content (About Us / policies) — keep headings & links readable
+   on dark when the stored HTML doesn't carry its own color. */
+:root[data-theme="dark"] .custom-page-content { color: var(--text-secondary); }
+:root[data-theme="dark"] .custom-page-content h1,
+:root[data-theme="dark"] .custom-page-content h2,
+:root[data-theme="dark"] .custom-page-content h3,
+:root[data-theme="dark"] .custom-page-content h4,
+:root[data-theme="dark"] .custom-page-content strong,
+:root[data-theme="dark"] .custom-page-content b { color: var(--text-primary); }
+:root[data-theme="dark"] .custom-page-content a { color: var(--accent); }
+
 html {
   height: 100%;
   overflow-x: hidden;
@@ -985,7 +996,7 @@ tr:hover td {
 .stat-card-value {
   font-size: 26px;
   font-weight: 800;
-  color: #1e1e3a;
+  color: var(--text-primary);
   line-height: 1.1;
 }
 

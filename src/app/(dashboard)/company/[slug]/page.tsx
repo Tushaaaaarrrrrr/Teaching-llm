@@ -155,7 +155,7 @@ export default function CompanyPage() {
         ) : (
           <div
             className="custom-page-content"
-            style={{ color: '#4a4a68', lineHeight: '1.7', fontSize: 'clamp(14px, 3.6vw, 16px)' }}
+            style={{ color: 'var(--text-secondary)', lineHeight: '1.7', fontSize: 'clamp(14px, 3.6vw, 16px)' }}
             dangerouslySetInnerHTML={{ __html: displayContent || `<p style="color: #9999b0; font-style: italic; text-align: center; padding: 40px;">No content available for ${titleText}. ${isManager ? 'Click Edit to add something.' : ''}</p>` }}
           />
         )}
