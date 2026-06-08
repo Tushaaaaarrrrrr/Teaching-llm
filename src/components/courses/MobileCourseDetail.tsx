@@ -126,7 +126,7 @@ export default function MobileCourseDetail({
   const mentorName = course.teacherName || course.instructorAssignments?.[0]?.instructor?.name || 'Mentor'
 
   return (
-    <div className="mobile-course-detail" style={{ paddingBottom: '24px', background: '#f0f2f7', minHeight: '100vh' }}>
+    <div className="mobile-course-detail" style={{ paddingBottom: '24px', background: 'var(--bg)', minHeight: '100vh' }}>
       <style>{`
         @keyframes mcdFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes mcdPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
@@ -134,7 +134,7 @@ export default function MobileCourseDetail({
         .mcd-topic-card { transition: all 0.2s ease; }
         .mcd-topic-card:active { transform: scale(0.985); }
         .mcd-lecture-row { transition: all 0.15s ease; }
-        .mcd-lecture-row:active { transform: scale(0.98); background: #eef0f5 !important; }
+        .mcd-lecture-row:active { transform: scale(0.98); background: var(--surface-2) !important; }
         .mcd-status-btn { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .mcd-status-btn:active { transform: scale(0.85); }
         .mcd-tab-btn { transition: all 0.2s ease; position: relative; }
@@ -280,7 +280,7 @@ export default function MobileCourseDetail({
               padding: '10px 14px',
               borderRadius: '50px',
               border: 'none',
-              background: 'var(--text-primary)',
+              background: 'var(--primary)',
               color: '#ffffff',
               fontSize: '12px',
               fontWeight: '800',
@@ -316,7 +316,7 @@ export default function MobileCourseDetail({
         {/* ──── Tabs ──── */}
         <div style={{
           display: 'flex', gap: '0',
-          borderBottom: '1.5px solid #dddfe6',
+          borderBottom: '1.5px solid var(--border)',
           marginTop: '4px',
         }}>
           {([
@@ -558,7 +558,7 @@ function CurriculumTab({
             {open && (
               <div style={{ 
                 padding: '12px', 
-                background: '#f5f7fa', 
+                background: 'var(--surface)', 
                 borderTop: '1px solid rgba(15,23,42,0.06)',
                 display: 'flex', 
                 flexDirection: 'column', 
