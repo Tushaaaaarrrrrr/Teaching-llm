@@ -623,8 +623,8 @@ function CalendarPageContent() {
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(7, 1fr)',
-          borderBottom: '1px solid rgba(0,0,0,0.05)',
-          background: 'rgba(232, 234, 240, 0.5)',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--surface-2)',
           backdropFilter: 'blur(10px)'
         }}>
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
