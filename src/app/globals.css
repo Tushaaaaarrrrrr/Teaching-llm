@@ -80,14 +80,18 @@
   --text-secondary: #a3a8bd;
   --text-muted: #6f7488;
   --text-inverse: #0f1219;
-  --neu-light: #1f2430;
+  /* Flat drop shadows in dark — neumorphism's light offset reads as a boxy
+     frame on dark, so we drop it. --neu-light goes transparent so the inline
+     neumorphic pairs (…var(--neu-dark), …var(--neu-light)) the codemod produced
+     collapse to a single clean shadow with no box. --neu-dark is softened. */
+  --neu-light: transparent;
   --neu-dark: #0b0e14;
   --neu-glow: transparent;
-  --shadow-sm: 3px 3px 6px #0b0e14, -3px -3px 6px #1f2430;
-  --shadow: 6px 6px 12px #0b0e14, -6px -6px 12px #1f2430;
-  --shadow-md: 8px 8px 16px #090c11, -8px -8px 16px #1f2430;
-  --shadow-lg: 12px 12px 24px #07090d, -12px -12px 24px #1f2430;
-  --shadow-inset: inset 4px 4px 8px #0b0e14, inset -4px -4px 8px #1f2430;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.45);
+  --shadow: 0 2px 8px rgba(0,0,0,0.45);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.5);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.55);
+  --shadow-inset: inset 0 1px 3px rgba(0,0,0,0.45);
   --scrollbar-thumb: #2f3645;
   --scrollbar-thumb-hover: #3d4556;
   --skeleton-base: #1f2430;
