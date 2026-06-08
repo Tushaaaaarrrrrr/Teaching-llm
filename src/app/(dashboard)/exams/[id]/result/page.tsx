@@ -75,7 +75,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
   }
 
   const neuCard: React.CSSProperties = {
-    borderRadius: '20px', background: '#e8eaf0',
+    borderRadius: '20px', background: 'var(--surface-2)',
     boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
     padding: '32px',
   }
@@ -90,38 +90,38 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
   return (
     <div style={{ padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#1e1e3a', marginBottom: '8px' }}>Assessment Complete</h1>
-        <p style={{ color: '#6b6b8a' }}>{exam.title}</p>
+        <h1 style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '8px' }}>Assessment Complete</h1>
+        <p style={{ color: 'var(--text-secondary)' }}>{exam.title}</p>
       </div>
 
       <div style={{ ...neuCard, textAlign: 'center', marginBottom: '40px' }}>
-        <div style={{ fontSize: '14px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>Your Score</div>
+        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Your Score</div>
         {attempt.isEvaluated ? (
           <div>
-            <div style={{ fontSize: '48px', fontWeight: 900, color: '#3636e8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+            <div style={{ fontSize: '48px', fontWeight: 900, color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
               <span>{attempt.totalMarks}</span>
-              <span style={{ fontSize: '20px', color: '#9999b0' }}>/ {exam.questions.reduce((acc: number, q: any) => acc + q.marks, 0)}</span>
+              <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>/ {exam.questions.reduce((acc: number, q: any) => acc + q.marks, 0)}</span>
             </div>
-            <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 700, color: scorePercentage! >= 50 ? '#10b981' : '#ef4444', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 700, color: scorePercentage! >= 50 ? 'var(--success)' : 'var(--danger)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div>{scorePercentage?.toFixed(0)}% - {scorePercentage! >= 50 ? 'Passed' : 'Needs Improvement'}</div>
               {attempt.bonusMarks > 0 && (
-                <div style={{ fontSize: '11px', color: '#3636e8', background: '#3636e810', padding: '4px 12px', borderRadius: '50px', alignSelf: 'center', marginTop: '8px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--primary)', background: '#3636e810', padding: '4px 12px', borderRadius: '50px', alignSelf: 'center', marginTop: '8px' }}>
                   Includes {attempt.bonusMarks} Bonus Points
                 </div>
               )}
             </div>
           </div>
         ) : (
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#3636e8' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--primary)' }}>
             Pending Manual Evaluation
-            <p style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: 500, marginTop: '4px' }}>Some questions require instructor review.</p>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500, marginTop: '4px' }}>Some questions require instructor review.</p>
           </div>
         )}
 
         {!(exam?.examType === 'FINAL_TEST' && !attempt.isPublished) && (
           <button 
             onClick={() => setReviewMode(!reviewMode)}
-            style={{ marginTop: '24px', padding: '12px 24px', borderRadius: '50px', border: '2px solid #3636e8', background: reviewMode ? '#3636e8' : 'transparent', color: reviewMode ? '#fff' : '#3636e8', fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}
+            style={{ marginTop: '24px', padding: '12px 24px', borderRadius: '50px', border: '2px solid #3636e8', background: reviewMode ? 'var(--primary)' : 'transparent', color: reviewMode ? '#fff' : 'var(--primary)', fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}
           >
             {reviewMode ? 'Exit Review Mode' : 'Enter Review Mode'}
           </button>
@@ -132,25 +132,25 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
         <div style={{ ...neuCard, textAlign: 'center', marginBottom: '40px', background: cooldownSeconds > 0 ? '#fff3cd' : '#d4edda' }}>
           {cooldownSeconds > 0 ? (
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '12px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>
                 Cooldown Active
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 900, color: '#f59e0b', marginBottom: '8px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--warning)', marginBottom: '8px' }}>
                 {Math.floor(cooldownSeconds / 60)}m {cooldownSeconds % 60}s
               </div>
-              <p style={{ fontSize: '13px', color: '#6b6b8a', margin: '0' }}>You can retake this exam in the time shown above</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0' }}>You can retake this exam in the time shown above</p>
             </div>
           ) : (
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', marginBottom: '8px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--success)', textTransform: 'uppercase', marginBottom: '8px' }}>
                 ✓ Ready to Retake
               </div>
-              <p style={{ fontSize: '13px', color: '#6b6b8a', margin: '0 0 12px 0' }}>The cooldown period has ended. You can now attempt this exam again.</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 12px 0' }}>The cooldown period has ended. You can now attempt this exam again.</p>
               <button
                 onClick={() => router.push(`/exams/${params.id}/attempt`)}
                 style={{
                   padding: '12px 32px', borderRadius: '50px', border: 'none',
-                  background: '#10b981', color: '#fff', fontSize: '14px', fontWeight: 800,
+                  background: 'var(--success)', color: '#fff', fontSize: '14px', fontWeight: 800,
                   cursor: 'pointer', boxShadow: '4px 4px 10px rgba(16,185,129,0.35)'
                 }}
               >
@@ -163,10 +163,10 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
 
       {!isGeneralTest && (
         <div style={{ ...neuCard, textAlign: 'center', marginBottom: '40px', background: '#e8d7e8' }}>
-          <div style={{ fontSize: '14px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '8px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>
             Final Assessment
           </div>
-          <p style={{ fontSize: '15px', fontWeight: 700, color: '#6b6b8a', margin: '0' }}>
+          <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-secondary)', margin: '0' }}>
             You have completed this final assessment. You cannot retake this exam.
           </p>
         </div>
@@ -195,10 +195,10 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#1e1e3a', margin: 0 }}>
+                <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>
                   Review Assessment
                 </h2>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginTop: '4px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', marginTop: '4px' }}>
                   Question {currentIdx + 1} of {exam.questions.length}
                 </div>
               </div>
@@ -207,7 +207,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                   onClick={() => setReviewMode(false)}
                   style={{ 
                     padding: '12px 24px', borderRadius: '50px', border: 'none', 
-                    background: '#fff', color: '#1e1e3a', fontWeight: 800, cursor: 'pointer',
+                    background: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 800, cursor: 'pointer',
                     boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px #ffffff'
                   }}
                 >
@@ -254,16 +254,16 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                       <span style={{ 
                         fontSize: '11px', fontWeight: 900, letterSpacing: '0.05em',
-                        background: '#3636e815', color: '#3636e8', padding: '6px 14px', borderRadius: '50px' 
+                        background: '#3636e815', color: 'var(--primary)', padding: '6px 14px', borderRadius: '50px' 
                       }}>
                         {q.type.replace('_', ' ')}
                       </span>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a' }}>{q.marks} Marks</span>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>{q.marks} Marks</span>
                     </div>
                     {q.type !== 'SUBJECTIVE' && q.correctAnswer !== null && q.correctAnswer !== undefined && (
                       <span style={{ 
                         fontSize: '11px', fontWeight: 800, 
-                        color: isCorrect ? '#10b981' : '#ef4444',
+                        color: isCorrect ? 'var(--success)' : 'var(--danger)',
                         background: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
                         padding: '6px 14px', borderRadius: '50px', 
                         border: `1px solid ${isCorrect ? '#10b98130' : '#ef444430'}`
@@ -273,7 +273,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                     )}
                   </div>
  
-                  <div style={{ fontSize: '22px', fontWeight: 800, color: '#1e1e3a', lineHeight: '1.4', marginBottom: '32px' }}>
+                  <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.4', marginBottom: '32px' }}>
                     <RichTextDisplay text={q.text} />
                   </div>
                   
@@ -284,25 +284,25 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                       border: `1px solid ${isCorrect ? '#10b98120' : '#ef444420'}`,
                       boxShadow: 'inset 2px 2px 5px rgba(0,0,0,0.02)'
                     }}>
-                      <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '12px' }}>Your Submission</div>
-                      <div style={{ fontSize: '17px', fontWeight: 700, color: isCorrect ? '#10b981' : '#ef4444', lineHeight: '1.5' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>Your Submission</div>
+                      <div style={{ fontSize: '17px', fontWeight: 700, color: isCorrect ? 'var(--success)' : 'var(--danger)', lineHeight: '1.5' }}>
                         <RichTextDisplay text={studentDisplayAnswer} />
                       </div>
                     </div>
  
                     {q.correctAnswer && !isCorrect && (
                       <div style={{ padding: '24px', background: '#3636e808', borderRadius: '24px', border: '1px solid #3636e820' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#3636e8', textTransform: 'uppercase', marginBottom: '12px' }}>Correct Solution</div>
-                        <div style={{ fontSize: '17px', fontWeight: 800, color: '#3636e8', lineHeight: '1.5' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '12px' }}>Correct Solution</div>
+                        <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--primary)', lineHeight: '1.5' }}>
                           <RichTextDisplay text={correctDisplayAnswer} />
                         </div>
                       </div>
                     )}
 
                     {q.explanation && (
-                      <div style={{ padding: '24px', background: '#fff', borderRadius: '24px', border: '1px solid #cfd6e1', boxShadow: '4px 4px 12px rgba(0,0,0,0.03)' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a', textTransform: 'uppercase', marginBottom: '12px' }}>Evaluation Notes & Explanation</div>
-                        <div style={{ fontSize: '15px', color: '#1e1e3a', lineHeight: '1.6' }}><RichTextDisplay text={q.explanation} /></div>
+                      <div style={{ padding: '24px', background: 'var(--surface)', borderRadius: '24px', border: '1px solid #cfd6e1', boxShadow: '4px 4px 12px rgba(0,0,0,0.03)' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px' }}>Evaluation Notes & Explanation</div>
+                        <div style={{ fontSize: '15px', color: 'var(--text-primary)', lineHeight: '1.6' }}><RichTextDisplay text={q.explanation} /></div>
                       </div>
                     )}
                   </div>
@@ -317,7 +317,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                 onClick={() => setCurrentIdx(prev => prev - 1)}
                 style={{ 
                   padding: '12px 32px', borderRadius: '50px', border: 'none',
-                  background: '#fff', color: '#1e1e3a',
+                  background: 'var(--surface)', color: 'var(--text-primary)',
                   fontWeight: 800, opacity: currentIdx === 0 ? 0.5 : 1, 
                   cursor: currentIdx === 0 ? 'default' : 'pointer',
                   boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px #ffffff'
@@ -325,7 +325,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
               >
                 ← Previous Question
               </button>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#6b6b8a' }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>
                 {currentIdx + 1} / {exam.questions.length}
               </div>
               <button 
@@ -333,7 +333,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                 onClick={() => setCurrentIdx(prev => prev + 1)}
                 style={{ 
                   padding: '12px 32px', borderRadius: '50px', 
-                  background: '#3636e8', border: 'none', color: '#fff',
+                  background: 'var(--primary)', border: 'none', color: '#fff',
                   fontWeight: 800, opacity: currentIdx === exam.questions.length - 1 ? 0.5 : 1, 
                   cursor: currentIdx === exam.questions.length - 1 ? 'default' : 'pointer',
                   boxShadow: '0 8px 20px rgba(54,54,232,0.3)'
@@ -351,7 +351,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
           onClick={() => router.push('/exams')}
           style={{
             padding: '16px 40px', borderRadius: '50px', border: 'none',
-            background: '#3636e8', color: '#fff', fontSize: '15px', fontWeight: 800,
+            background: 'var(--primary)', color: '#fff', fontSize: '15px', fontWeight: 800,
             boxShadow: '4px 4px 10px rgba(54,54,232,0.35)', cursor: 'pointer'
           }}
         >

@@ -479,7 +479,7 @@ export default function CourseEditPage() {
         onClick={() => setContentModal(null)}
         >
           <div style={{
-            background: '#e8eaf0', borderRadius: '16px', width: '100%', maxWidth: '540px',
+            background: 'var(--surface-2)', borderRadius: '16px', width: '100%', maxWidth: '540px',
             boxShadow: '0 24px 48px rgba(0,0,0,0.3)',
           }}
           onClick={e => e.stopPropagation()}
@@ -488,12 +488,12 @@ export default function CourseEditPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '18px 20px', borderBottom: '1px solid #d0d2d9',
             }}>
-              <span style={{ fontWeight: '700', color: '#1e1e3a', fontSize: '16px' }}>
+              <span style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '16px' }}>
                 {contentModal.mode === 'add' ? 'Add Lecture' : 'Edit Lecture'}
               </span>
               <button onClick={() => setContentModal(null)} style={{
-                width: '32px', height: '32px', borderRadius: '50%', background: '#e8eaf0',
-                border: 'none', cursor: 'pointer', fontSize: '18px', color: '#6b6b8a',
+                width: '32px', height: '32px', borderRadius: '50%', background: 'var(--surface-2)',
+                border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text-secondary)',
                 boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>×</button>
@@ -501,7 +501,7 @@ export default function CourseEditPage() {
 
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
                   Lecture Title *
                 </label>
                 <input
@@ -515,7 +515,7 @@ export default function CourseEditPage() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
                     Video Source
                   </label>
                   <select
@@ -529,7 +529,7 @@ export default function CourseEditPage() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
                     Video URL *
                   </label>
                   <input
@@ -556,11 +556,11 @@ export default function CourseEditPage() {
                 onClick={() => setRecordingsModalOpen(false)}
                 >
                   <div
-                    style={{ background: '#e8eaf0', borderRadius: '16px', width: '100%', maxWidth: '760px', maxHeight: '80vh', overflow: 'auto', padding: '20px' }}
+                    style={{ background: 'var(--surface-2)', borderRadius: '16px', width: '100%', maxWidth: '760px', maxHeight: '80vh', overflow: 'auto', padding: '20px' }}
                     onClick={e => e.stopPropagation()}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a' }}>Import From Recording</h3>
+                      <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)' }}>Import From Recording</h3>
                       <button type="button" onClick={() => setRecordingsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>
                     </div>
 
@@ -585,7 +585,7 @@ export default function CourseEditPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto' }}>
                       {loadingRecordings ? (
-                        <div style={{ fontSize: '12px', color: '#9999b0' }}>Loading recordings...</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Loading recordings...</div>
                       ) : recordings
                         .filter(recording => {
                           const query = recordingSearch.toLowerCase()
@@ -631,11 +631,11 @@ export default function CourseEditPage() {
                               cursor: 'pointer',
                             }}
                           >
-                            <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a' }}>{recording.title}</div>
-                            <div style={{ fontSize: '11px', color: '#6b6b8a', marginTop: '2px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{recording.title}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                               {recording.topic?.course?.name || 'Unknown Course'} • {recording.topic?.title || 'No Topic'}
                             </div>
-                            <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                               {recording.createdAt ? new Date(recording.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'No date'}
                             </div>
                           </button>
@@ -646,11 +646,11 @@ export default function CourseEditPage() {
               )}
 
               <div className="form-group">
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
                   Material Source Type
                 </label>
                 <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'FILE' ? '#6366f1' : '#e5e7eb'}`, background: materialSourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'FILE' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
                     <input
                       type="radio"
                       name="lectureMaterialSource"
@@ -661,9 +661,9 @@ export default function CourseEditPage() {
                       }}
                       style={{ cursor: 'pointer' }}
                     />
-                    <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'FILE' ? '600' : '500', color: '#1e1e3a' }}>📄 Upload File</span>
+                    <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'FILE' ? '600' : '500', color: 'var(--text-primary)' }}>📄 Upload File</span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'LINK' ? '#6366f1' : '#e5e7eb'}`, background: materialSourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'LINK' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
                     <input
                       type="radio"
                       name="lectureMaterialSource"
@@ -674,14 +674,14 @@ export default function CourseEditPage() {
                       }}
                       style={{ cursor: 'pointer' }}
                     />
-                    <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'LINK' ? '600' : '500', color: '#1e1e3a' }}>🔗 External Link</span>
+                    <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'LINK' ? '600' : '500', color: 'var(--text-primary)' }}>🔗 External Link</span>
                   </label>
                 </div>
               </div>
 
               {materialSourceType === 'FILE' ? (
                 <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
                     Uploaded Material
                   </label>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -697,8 +697,8 @@ export default function CourseEditPage() {
                         style={{
                           display: 'flex', alignItems: 'center', gap: '10px',
                           padding: '12px 20px', borderRadius: '14px',
-                          background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
-                          cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#6b6b8a'
+                          background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                          cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)'
                         }}
                       >
                         {uploadingMaterial ? 'Uploading...' : selectedMaterial ? selectedMaterial.title : 'Choose file...'}
@@ -707,20 +707,20 @@ export default function CourseEditPage() {
                     {selectedMaterial && (
                       <div style={{
                         padding: '12px 16px', borderRadius: '14px',
-                        background: '#e0e7ff', color: '#6366f1',
+                        background: 'var(--primary-light)', color: 'var(--accent)',
                         fontSize: '11px', fontWeight: '800'
                       }}>
                         {selectedMaterial.fileType}
                       </div>
                     )}
                   </div>
-                  <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '8px', display: 'block' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', display: 'block' }}>
                     Optional. Upload a file if this lecture should include downloadable material.
                   </span>
                 </div>
               ) : (
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
                     Material Link
                   </label>
                   <input
@@ -734,7 +734,7 @@ export default function CourseEditPage() {
               )}
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
                   Description
                 </label>
                 <textarea
@@ -792,7 +792,7 @@ export default function CourseEditPage() {
                   onClick={saveOrder}
                   disabled={savingOrder}
                   style={{
-                    background: '#22c55e',
+                    background: 'var(--success)',
                     color: 'white',
                     border: 'none',
                     borderRadius: '20px',
@@ -844,7 +844,7 @@ export default function CourseEditPage() {
                   onClick={() => moveTopic(topic.id, 'up')}
                   disabled={topicIdx === 0 || saving}
                   style={{
-                    width: '20px', height: '20px', borderRadius: '4px', background: '#e8eaf0',
+                    width: '20px', height: '20px', borderRadius: '4px', background: 'var(--surface-2)',
                     border: 'none', cursor: topicIdx === 0 ? 'not-allowed' : 'pointer',
                     opacity: topicIdx === 0 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
@@ -856,7 +856,7 @@ export default function CourseEditPage() {
                   onClick={() => moveTopic(topic.id, 'down')}
                   disabled={topicIdx === topics.length - 1 || saving}
                   style={{
-                    width: '20px', height: '20px', borderRadius: '4px', background: '#e8eaf0',
+                    width: '20px', height: '20px', borderRadius: '4px', background: 'var(--surface-2)',
                     border: 'none', cursor: topicIdx === topics.length - 1 ? 'not-allowed' : 'pointer',
                     opacity: topicIdx === topics.length - 1 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
@@ -886,8 +886,8 @@ export default function CourseEditPage() {
                 />
               ) : (
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e1e3a' }}>{topic.title}</span>
-                  <span style={{ fontSize: '12px', color: '#9999b0', marginLeft: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>{topic.title}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: '8px' }}>
                     {topic.content.length} lecture{topic.content.length !== 1 ? 's' : ''}
                   </span>
                 </div>
@@ -920,7 +920,7 @@ export default function CourseEditPage() {
                     </button>
                     <button onClick={() => deleteTopic(topic.id)} disabled={saving} style={{
                       background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
-                      color: '#ef4444', borderRadius: '6px', display: 'flex', alignItems: 'center',
+                      color: 'var(--danger)', borderRadius: '6px', display: 'flex', alignItems: 'center',
                     }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
                     </button>
@@ -933,9 +933,9 @@ export default function CourseEditPage() {
             {expanded.has(topic.id) && (
               <div>
                 {topic.content.length === 0 ? (
-                  <div style={{ padding: '16px 20px', color: '#9999b0', fontSize: '13px', textAlign: 'center' }}>
+                  <div style={{ padding: '16px 20px', color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center' }}>
                     No lectures yet.{' '}
-                    <button onClick={() => openAddContent(topic.id)} style={{ color: '#3636e8', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                    <button onClick={() => openAddContent(topic.id)} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
                       Add the first one →
                     </button>
                   </div>
@@ -952,7 +952,7 @@ export default function CourseEditPage() {
                           onClick={() => moveLecture(topic.id, item.id, 'up')}
                           disabled={itemIdx === 0}
                           style={{
-                            width: '20px', height: '20px', borderRadius: '4px', background: '#e8eaf0',
+                            width: '20px', height: '20px', borderRadius: '4px', background: 'var(--surface-2)',
                             border: 'none', cursor: itemIdx === 0 ? 'not-allowed' : 'pointer',
                             opacity: itemIdx === 0 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                             boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
@@ -964,7 +964,7 @@ export default function CourseEditPage() {
                           onClick={() => moveLecture(topic.id, item.id, 'down')}
                           disabled={itemIdx === topic.content.length - 1}
                           style={{
-                            width: '20px', height: '20px', borderRadius: '4px', background: '#e8eaf0',
+                            width: '20px', height: '20px', borderRadius: '4px', background: 'var(--surface-2)',
                             border: 'none', cursor: itemIdx === topic.content.length - 1 ? 'not-allowed' : 'pointer',
                             opacity: itemIdx === topic.content.length - 1 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                             boxShadow: '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff',
@@ -977,7 +977,7 @@ export default function CourseEditPage() {
                       <div style={{
                         width: '30px', height: '30px', borderRadius: '8px',
                         background: item.videoUrl ? '#3636e818' : '#f0f0f5',
-                        color: item.videoUrl ? '#3636e8' : '#9999b0',
+                        color: item.videoUrl ? 'var(--primary)' : 'var(--text-muted)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                       }}>
                         {item.videoUrl
@@ -986,24 +986,24 @@ export default function CourseEditPage() {
                         }
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a' }}>{item.title}</div>
+                        <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-primary)' }}>{item.title}</div>
                         {item.description && (
-                          <p style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
                             {item.description}
                           </p>
                         )}
                         <div style={{ display: 'flex', gap: '10px', marginTop: '3px' }}>
-                          {item.videoUrl && <span style={{ fontSize: '11px', color: '#3636e8' }}>📹 Video linked</span>}
-                          {item.pptUrl && <span style={{ fontSize: '11px', color: '#10b981' }}>📄 PPT linked</span>}
+                          {item.videoUrl && <span style={{ fontSize: '11px', color: 'var(--primary)' }}>📹 Video linked</span>}
+                          {item.pptUrl && <span style={{ fontSize: '11px', color: 'var(--success)' }}>📄 PPT linked</span>}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', marginRight: '8px' }}>
-                          <div style={{ fontSize: '10px', color: '#9999b0', background: '#f0f0f5', padding: '2px 6px', borderRadius: '4px', fontStyle: 'italic' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', background: '#f0f0f5', padding: '2px 6px', borderRadius: '4px', fontStyle: 'italic' }}>
                             ID: {item.id}
                           </div>
                           {item.createdAt && (
-                            <div style={{ fontSize: '10px', color: '#9999b0' }}>
+                            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                               Added: {new Date(item.createdAt).toLocaleDateString('en-GB')}
                             </div>
                           )}
@@ -1014,7 +1014,7 @@ export default function CourseEditPage() {
                         </button>
                         <button onClick={() => deleteContent(item.id, topic.id)} disabled={saving} style={{
                           background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
-                          color: '#ef4444', borderRadius: '6px', display: 'flex', alignItems: 'center',
+                          color: 'var(--danger)', borderRadius: '6px', display: 'flex', alignItems: 'center',
                         }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
                           </svg>
@@ -1051,12 +1051,12 @@ export default function CourseEditPage() {
             style={{
               padding: '14px 20px', borderRadius: '12px',
               border: '2px dashed #c5c7cf', background: 'transparent',
-              cursor: 'pointer', color: '#6b6b8a', fontSize: '13.5px', fontWeight: '500',
+              cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '13.5px', fontWeight: '500',
               display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
               transition: 'all 0.15s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#3636e8'; e.currentTarget.style.color = '#3636e8' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#c5c7cf'; e.currentTarget.style.color = '#6b6b8a' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#c5c7cf'; e.currentTarget.style.color = 'var(--text-secondary)' }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add New Topic

@@ -333,7 +333,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
   // Shared Styles
   const neuCard: React.CSSProperties = {
-    borderRadius: '20px', background: '#e8eaf0',
+    borderRadius: '20px', background: 'var(--surface-2)',
     boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
     padding: '32px',
   }
@@ -347,20 +347,20 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
            <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>{exam.title} Management</h1>
+                <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{exam.title} Management</h1>
                 <span style={{ 
                   fontSize: '10px', fontWeight: 800, padding: '4px 12px', borderRadius: '50px',
                   background: isFinalTest(exam.examType) ? '#ef444415' : '#8b5cf612',
-                  color: isFinalTest(exam.examType) ? '#ef4444' : '#8b5cf6',
+                  color: isFinalTest(exam.examType) ? 'var(--danger)' : '#8b5cf6',
                   border: `1px solid ${isFinalTest(exam.examType) ? '#ef444425' : '#8b5cf625'}`,
                   textTransform: 'uppercase', letterSpacing: '0.02em'
                 }}>
                   {isFinalTest(exam.examType) ? 'Final Test' : 'Practice Test'}
                 </span>
               </div>
-              <p style={{ color: '#6b6b8a' }}>{exam.course?.name}</p>
+              <p style={{ color: 'var(--text-secondary)' }}>{exam.course?.name}</p>
               {canEditExam && (
-                <p style={{ color: '#10b981', fontSize: '13px', fontWeight: 700, margin: '6px 0 0' }}>
+                <p style={{ color: 'var(--success)', fontSize: '13px', fontWeight: 700, margin: '6px 0 0' }}>
                   This exam is unpublished. You can edit exam details, and question changes are allowed until attempts begin.
                 </p>
               )}
@@ -369,7 +369,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
               {canEditExam && (
                 <button
                   onClick={openExamEditor}
-                  style={{ padding: '10px 20px', borderRadius: '50px', background: '#3636e815', color: '#3636e8', border: 'none', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
+                  style={{ padding: '10px 20px', borderRadius: '50px', background: '#3636e815', color: 'var(--primary)', border: 'none', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
                 >
                   Edit Exam
                 </button>
@@ -378,7 +378,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                 onClick={handlePublish}
                 style={{ 
                   padding: '10px 20px', borderRadius: '50px', background: exam.isPublished ? '#ef444415' : '#10b98115', 
-                  color: exam.isPublished ? '#ef4444' : '#10b981', border: 'none', fontSize: '13px', fontWeight: 800, cursor: 'pointer' 
+                  color: exam.isPublished ? 'var(--danger)' : 'var(--success)', border: 'none', fontSize: '13px', fontWeight: 800, cursor: 'pointer' 
                 }}
               >
                 {exam.isPublished ? 'Unpublish' : 'Publish'}
@@ -393,7 +393,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                 if (!allowed) return
                 await fetch(`/api/exams/${params.id}`, { method: 'DELETE' })
                 router.push('/exams')
-              }} style={{ padding: '10px 20px', borderRadius: '50px', background: '#ef4444', border: 'none', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>Delete Exam</button>
+              }} style={{ padding: '10px 20px', borderRadius: '50px', background: 'var(--danger)', border: 'none', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>Delete Exam</button>
            </div>
          </div>
 
@@ -402,12 +402,12 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                <ExamTimingStatus startDate={exam.startDate} expiresAt={exam.expiresAt} />
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                 <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>Question Structure</h2>
+                 <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Question Structure</h2>
                  {canEditExam && (
                    <button
                      onClick={() => openQuestionEditor()}
                      disabled={hasAttempts}
-                     style={{ padding: '10px 18px', borderRadius: '50px', background: hasAttempts ? '#cbd5e1' : '#3636e8', color: '#fff', border: 'none', fontSize: '12px', fontWeight: 800, cursor: hasAttempts ? 'not-allowed' : 'pointer' }}
+                     style={{ padding: '10px 18px', borderRadius: '50px', background: hasAttempts ? 'var(--text-muted)' : 'var(--primary)', color: '#fff', border: 'none', fontSize: '12px', fontWeight: 800, cursor: hasAttempts ? 'not-allowed' : 'pointer' }}
                    >
                      + Add Question
                    </button>
@@ -421,20 +421,20 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                {exam.questions.map((q: any, i: number) => (
                  <div key={q.id} style={{ ...neuCard, padding: '20px 24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#3636e8' }}>Q{i+1} - {q.type.replace('_', ' ')}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--primary)' }}>Q{i+1} - {q.type.replace('_', ' ')}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a' }}>{q.marks} Marks</span>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>{q.marks} Marks</span>
                         {canEditExam && !hasAttempts && (
                           <>
                             <button
                               onClick={() => openQuestionEditor(q, i)}
-                              style={{ background: 'none', border: 'none', color: '#3636e8', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
+                              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleDeleteQuestion(i)}
-                              style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
+                              style={{ background: 'none', border: 'none', color: 'var(--danger)', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
                             >
                               Delete
                             </button>
@@ -442,9 +442,9 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                         )}
                       </div>
                     </div>
-                    <div style={{ fontWeight: 600, color: '#1e1e3a', marginBottom: '8px' }}><RichTextDisplay text={q.text} /></div>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}><RichTextDisplay text={q.text} /></div>
                     {q.options && (
-                      <p style={{ fontSize: '12px', color: '#6b6b8a', marginTop: '10px' }}>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '10px' }}>
                         Options: {(() => {
                           try {
                             const options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options
@@ -461,33 +461,33 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
             {/* Submissions */}
             <div>
-               <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '16px' }}>Submissions</h2>
+               <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px' }}>Submissions</h2>
                <div style={{ ...neuCard, padding: '16px' }}>
                   {exam.attempts?.length === 0 ? (
-                    <p style={{ fontSize: '14px', color: '#9999b0', textAlign: 'center' }}>No submissions yet.</p>
+                    <p style={{ fontSize: '14px', color: 'var(--text-muted)', textAlign: 'center' }}>No submissions yet.</p>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                        {exam.attempts.map((a: any) => (
-                         <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#fff', borderRadius: '12px', boxShadow: '2px 2px 4px #c5c7cf' }}>
+                         <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'var(--surface)', borderRadius: '12px', boxShadow: '2px 2px 4px #c5c7cf' }}>
                              <div>
-                                <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e1e3a' }}>
+                                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
                                   {a.user?.name || `Student ${a.userId.slice(-4)}`}
                                   {allowsMultipleAttempts(exam.examType) && (
-                                    <span style={{ marginLeft: '8px', fontSize: '11px', color: '#3636e8', background: '#3636e810', padding: '2px 6px', borderRadius: '6px' }}>
+                                    <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--primary)', background: '#3636e810', padding: '2px 6px', borderRadius: '6px' }}>
                                       Attempt {exam.attempts.filter((att: any) => att.userId === a.userId && new Date(att.startedAt) <= new Date(a.startedAt)).length}
                                     </span>
                                   )}
                                 </div>
                                 {a.user?.email && (
-                                  <div style={{ fontSize: '11px', color: '#9999b0' }}>
+                                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                                     {a.user.email}{a.user.securityNumber ? ` • ${a.user.securityNumber}` : ''}
                                   </div>
                                 )}
-                                <div style={{ fontSize: '11px', color: '#6b6b8a', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', gap: '8px', alignItems: 'center' }}>
                                   <span>{new Date(a.startedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                                   {a.submittedAt ? (
                                     <>
-                                      <span style={{ color: a.isEvaluated ? '#10b981' : '#3636e8', fontWeight: 700 }}>
+                                      <span style={{ color: a.isEvaluated ? 'var(--success)' : 'var(--primary)', fontWeight: 700 }}>
                                         {a.isEvaluated ? 'Evaluated' : 'Needs Review'}
                                       </span>
                                       {a.isEvaluated && (
@@ -495,7 +495,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                           onClick={(e) => { e.stopPropagation(); handleTogglePublishAttempt(a.id, a.isPublished); }}
                                           style={{ 
                                             background: a.isPublished ? '#10b98120' : '#f59e0b20', 
-                                            color: a.isPublished ? '#10b981' : '#f59e0b',
+                                            color: a.isPublished ? 'var(--success)' : 'var(--warning)',
                                             padding: '2px 8px', borderRadius: '10px', fontSize: '9px', fontWeight: 800, cursor: 'pointer'
                                           }}
                                         >
@@ -521,7 +521,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                    setBonusMarks(a.bonusMarks || 0)
                                    setPublishImmediately(a.isPublished)
                                  }}
-                                 style={{ background: 'none', border: 'none', color: '#3636e8', fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}
+                                 style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}
                                >
                                  {a.isEvaluated ? 'Review' : 'Evaluate'}
                                </button>
@@ -539,8 +539,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }} onClick={() => setEvaluatingAttempt(null)}>
                <div className="modal" style={{ maxWidth: 'min(800px, calc(100vw - 32px))', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: 'clamp(16px, 4vw, 32px)' }} onClick={e => e.stopPropagation()}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-                     <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a' }}>Evaluate Submission</h2>
-                     <button onClick={() => setEvaluatingAttempt(null)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
+                     <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>Evaluate Submission</h2>
+                     <button onClick={() => setEvaluatingAttempt(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontWeight: 800, cursor: 'pointer' }}>Close</button>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -549,9 +549,9 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                         const evalData = evaluations[resp?.id] || { marks: 0, feedback: '' }
 
                         return (
-                           <div key={q.id} style={{ background: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '2px 2px 5px #c5c7cf' }}>
+                           <div key={q.id} style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', boxShadow: '2px 2px 5px #c5c7cf' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                 <span style={{ fontSize: '12px', fontWeight: 800, color: '#6b6b8a' }}>{q.type} - Max {q.marks} Marks</span>
+                                 <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>{q.type} - Max {q.marks} Marks</span>
                                  {q.type !== 'SUBJECTIVE' && (
                                    <span style={{ 
                                      fontSize: '11px', fontWeight: 900, 
@@ -566,7 +566,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                        }
                                        if (q.type === 'NAT') return parseFloat(resp?.answer || '0') === parseFloat(q.correctAnswer || '0')
                                        return resp?.answer === q.correctAnswer
-                                     })() ? '#10b981' : '#ef4444',
+                                     })() ? 'var(--success)' : 'var(--danger)',
                                      background: (() => {
                                        if (q.type === 'MCQ' || q.type === 'TRUE_FALSE') return resp?.answer === q.correctAnswer
                                        if (q.type === 'MSQ') {
@@ -596,15 +596,15 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                    </span>
                                  )}
                               </div>
-                              <div style={{ fontWeight: 700, color: '#1e1e3a', marginBottom: '12px' }}><RichTextDisplay text={q.text} /></div>
-                              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', marginBottom: '16px', borderLeft: '4px solid #3636e8' }}>
-                                 <div style={{ fontSize: '10px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Answer</div>
-                                 <div style={{ fontSize: '14px', color: '#1e1e3a' }}><RichTextDisplay text={resp?.answer || 'No answer'} /></div>
+                              <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}><RichTextDisplay text={q.text} /></div>
+                              <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', marginBottom: '16px', borderLeft: '4px solid #3636e8' }}>
+                                 <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Answer</div>
+                                 <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}><RichTextDisplay text={resp?.answer || 'No answer'} /></div>
                               </div>
 
                               <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '16px' }}>
                                  <div>
-                                    <label style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a' }}>Marks</label>
+                                    <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)' }}>Marks</label>
                                     <input 
                                        type="number" 
                                        disabled={q.type === 'MCQ' || q.type === 'TRUE_FALSE'}
@@ -612,13 +612,13 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                        onChange={(e) => setEvaluations({...evaluations, [resp.id]: {...evalData, marks: parseFloat(e.target.value) || 0}})}
                                        className="form-input"
                                        style={{ 
-                                         fontWeight: 700, color: '#1e1e3a',
+                                         fontWeight: 700, color: 'var(--text-primary)',
                                          cursor: (q.type === 'MCQ' || q.type === 'TRUE_FALSE') ? 'not-allowed' : 'text'
                                        }} 
                                     />
                                  </div>
                                  <div>
-                                    <label style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a' }}>Feedback</label>
+                                    <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)' }}>Feedback</label>
                                     <input 
                                       type="text" 
                                       value={evalData.feedback}
@@ -632,17 +632,17 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                         )
                      })}
 
-                      <div style={{ background: '#fff', padding: '24px', borderRadius: '20px', boxShadow: '4px 4px 10px #c5c7cf', marginTop: '20px' }}>
+                      <div style={{ background: 'var(--surface)', padding: '24px', borderRadius: '20px', boxShadow: '4px 4px 10px #c5c7cf', marginTop: '20px' }}>
                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '24px' }}>
-                            <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                               <div style={{ fontSize: '10px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '4px' }}>Marks Summary</div>
-                               <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a' }}>
+                            <div style={{ padding: '16px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                               <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Marks Summary</div>
+                               <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)' }}>
                                   {(Object.values(evaluations).reduce((acc, curr) => acc + curr.marks, 0) + bonusMarks).toFixed(1)}
-                                  <span style={{ fontSize: '14px', color: '#9999b0', fontWeight: 700 }}> / {exam.questions.reduce((acc, q) => acc + q.marks, 0)}</span>
+                                  <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 700 }}> / {exam.questions.reduce((acc, q) => acc + q.marks, 0)}</span>
                                </div>
                             </div>
                             <div>
-                               <label style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Bonus Points</label>
+                               <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Bonus Points</label>
                                <input 
                                   type="number" 
                                   value={bonusMarks}
@@ -656,7 +656,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
 
                          <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
                             <div style={{ flex: 1 }}>
-                               <label style={{ fontSize: '11px', fontWeight: 800, color: '#6b6b8a', textTransform: 'uppercase' }}>Instructor Overall Remarks</label>
+                               <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Instructor Overall Remarks</label>
                                <textarea 
                                   className="form-input"
                                   value={examFeedback}
@@ -666,7 +666,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                   style={{ marginTop: '6px', fontSize: '14px' }}
                                />
                             </div>
-                            <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ padding: '20px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                <input 
                                   type="checkbox" 
                                   id="publish-cb"
@@ -674,13 +674,13 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                   onChange={(e) => setPublishImmediately(e.target.checked)}
                                   style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                                />
-                               <label htmlFor="publish-cb" style={{ fontSize: '13px', fontWeight: 700, color: '#1e1e3a', cursor: 'pointer' }}>Publish Result</label>
+                               <label htmlFor="publish-cb" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', cursor: 'pointer' }}>Publish Result</label>
                             </div>
                          </div>
 
                          <button 
                             onClick={handleEvaluateSubmit}
-                            style={{ width: '100%', padding: '18px', borderRadius: '50px', background: '#3636e8', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 8px 16px rgba(54,54,232,0.3)', marginTop: '24px', fontSize: '15px' }}
+                            style={{ width: '100%', padding: '18px', borderRadius: '50px', background: 'var(--primary)', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 8px 16px rgba(54,54,232,0.3)', marginTop: '24px', fontSize: '15px' }}
                          >
                             Apply Evaluation & Save
                          </button>
@@ -694,8 +694,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }} onClick={() => setShowExamEditor(false)}>
              <div className="modal" style={{ maxWidth: 'min(700px, calc(100vw - 32px))', width: '100%', padding: 'clamp(16px, 4vw, 32px)' }} onClick={e => e.stopPropagation()}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>Edit Exam</h2>
-                 <button onClick={() => setShowExamEditor(false)} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
+                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Edit Exam</h2>
+                 <button onClick={() => setShowExamEditor(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontWeight: 800, cursor: 'pointer' }}>Close</button>
                </div>
                <div style={{ display: 'grid', gap: '16px' }}>
                  <input className="form-input" value={examForm.title} onChange={(e) => setExamForm({ ...examForm, title: e.target.value })} placeholder="Exam title" />
@@ -705,7 +705,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                    <input className="form-input" type="datetime-local" value={examForm.expiresAt} onChange={(e) => setExamForm({ ...examForm, expiresAt: e.target.value })} />
                    <input className="form-input" type="number" min="1" value={examForm.durationMinutes} onChange={(e) => setExamForm({ ...examForm, durationMinutes: e.target.value })} />
                  </div>
-                 <button onClick={saveExamDetails} disabled={savingExam} style={{ padding: '14px 18px', borderRadius: '50px', border: 'none', background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
+                 <button onClick={saveExamDetails} disabled={savingExam} style={{ padding: '14px 18px', borderRadius: '50px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
                    {savingExam ? 'Saving...' : 'Save Exam Changes'}
                  </button>
                </div>
@@ -717,8 +717,8 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }} onClick={() => { setShowQuestionEditor(false); setEditingQuestionIndex(null) }}>
              <div className="modal" style={{ maxWidth: 'min(760px, calc(100vw - 32px))', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: 'clamp(16px, 4vw, 32px)' }} onClick={e => e.stopPropagation()}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e1e3a', margin: 0 }}>{editingQuestionIndex === null ? 'Add Question' : 'Edit Question'}</h2>
-                 <button onClick={() => { setShowQuestionEditor(false); setEditingQuestionIndex(null) }} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Close</button>
+                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{editingQuestionIndex === null ? 'Add Question' : 'Edit Question'}</h2>
+                 <button onClick={() => { setShowQuestionEditor(false); setEditingQuestionIndex(null) }} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontWeight: 800, cursor: 'pointer' }}>Close</button>
                </div>
                <div style={{ display: 'grid', gap: '16px' }}>
                  <select className="form-input" value={questionForm.type} onChange={(e) => setQuestionForm({
@@ -733,7 +733,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                  </select>
                  <div>
                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                     <label style={{ fontSize: '13px', fontWeight: 800, color: '#6b6b8a', display: 'none' }}>Question Text</label>
+                     <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)', display: 'none' }}>Question Text</label>
                    </div>
                    <textarea 
                      className="form-input"
@@ -755,14 +755,14 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                    {questionForm.text.includes('```') && (
                      <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.6)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                         <span style={{ fontSize: '12px', fontWeight: 800, color: '#6b6b8a' }}>Code Preview</span>
+                         <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>Code Preview</span>
                          <button 
                            type="button" 
                            onClick={() => {
                              const textOnly = questionForm.text.split('```')[0].trim();
                              setQuestionForm({ ...questionForm, text: textOnly });
                            }}
-                           style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
+                           style={{ background: 'none', border: 'none', color: 'var(--danger)', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
                          >
                            REMOVE CODE
                          </button>
@@ -774,7 +774,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                     {/* Attachment Row */}
                     <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.4)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)' }}>
                        <div style={{ opacity: questionForm.imageUrl ? 0.5 : 1, pointerEvents: questionForm.imageUrl ? 'none' : 'auto' }}>
-                         <p style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '8px' }}>Code Block</p>
+                         <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>Code Block</p>
                          <select
                            onChange={(e) => {
                              const lang = e.target.value;
@@ -791,7 +791,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                e.target.value = '';
                              }
                            }}
-                           style={{ padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: '#3636e8' }}
+                           style={{ padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: 'var(--surface)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--primary)' }}
                          >
                            <option value="">+ Add Code</option>
                            <option value="python">Python</option>
@@ -833,7 +833,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                        </div>
                      ))}
                      {questionForm.type === 'MCQ' && questionForm.options.length < 6 && (
-                       <button onClick={() => setQuestionForm({ ...questionForm, options: [...questionForm.options, ''] })} style={{ padding: '10px 16px', borderRadius: '12px', border: '1px dashed #3636e8', background: 'transparent', color: '#3636e8', fontWeight: 700, cursor: 'pointer' }}>
+                       <button onClick={() => setQuestionForm({ ...questionForm, options: [...questionForm.options, ''] })} style={{ padding: '10px 16px', borderRadius: '12px', border: '1px dashed #3636e8', background: 'transparent', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}>
                          Add Option
                        </button>
                      )}
@@ -844,7 +844,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                  )}
                  <input className="form-input" value={questionForm.explanation} onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })} placeholder="Explanation (optional)" />
                  <input className="form-input" type="number" min="1" value={questionForm.marks} onChange={(e) => setQuestionForm({ ...questionForm, marks: parseInt(e.target.value, 10) || 1 })} placeholder="Marks" />
-                 <button onClick={handleSaveQuestion} disabled={savingQuestions} style={{ padding: '14px 18px', borderRadius: '50px', border: 'none', background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
+                 <button onClick={handleSaveQuestion} disabled={savingQuestions} style={{ padding: '14px 18px', borderRadius: '50px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
                    {savingQuestions ? 'Saving...' : 'Save Question'}
                  </button>
                </div>
@@ -855,15 +855,15 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
       {showCodeModal !== null && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 6000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }} onClick={() => setShowCodeModal(null)}>
           <div className="modal" style={{ padding: 'clamp(16px, 4vw, 32px)', width: '100%', maxWidth: 'min(700px, calc(100vw - 32px))' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', marginBottom: '16px', textTransform: 'capitalize' }}>Add Code ({showCodeModal.language})</h3>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '16px', textTransform: 'capitalize' }}>Add Code ({showCodeModal.language})</h3>
             <textarea
               value={codeSnippet}
               onChange={e => setCodeSnippet(e.target.value)}
               placeholder="Paste or write your code here..."
-              style={{ width: '100%', height: '300px', padding: '16px', borderRadius: '12px', border: '1px solid #cfd6e1', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical', background: '#f8f9fc' }}
+              style={{ width: '100%', height: '300px', padding: '16px', borderRadius: '12px', border: '1px solid #cfd6e1', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical', background: 'var(--surface)' }}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-              <button onClick={() => setShowCodeModal(null)} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', background: '#f1f1f8', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => setShowCodeModal(null)} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', background: '#f1f1f8', color: 'var(--text-secondary)', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
               <button 
                 onClick={() => {
                   if (codeSnippet.trim()) {
@@ -873,7 +873,7 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                   }
                   setShowCodeModal(null);
                 }} 
-                style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer' }}
+                style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 800, cursor: 'pointer' }}
               >
                 OK
               </button>
@@ -891,18 +891,18 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
     <div style={{ padding: '64px 32px', display: 'flex', justifyContent: 'center' }}>
        {confirmDialog}
        <div style={{ ...neuCard, maxWidth: '900px', width: '100%', textAlign: 'center' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#1e1e3a', marginBottom: '8px' }}>{exam.title}</h1>
-          <p style={{ color: '#6b6b8a', marginBottom: '24px' }}>{exam.course?.name}</p>
+          <h1 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '8px' }}>{exam.title}</h1>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>{exam.course?.name}</p>
 
           <div style={{ marginBottom: '24px' }}>
             <ExamTimingStatus startDate={exam.startDate} expiresAt={exam.expiresAt} />
           </div>
 
-          <div style={{ textAlign: 'left', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: exam.examType === 'FINAL_TEST' ? '#ef444410' : '#10b98110', borderLeft: `4px solid ${exam.examType === 'FINAL_TEST' ? '#ef4444' : '#10b981'}` }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 800, color: exam.examType === 'FINAL_TEST' ? '#ef4444' : '#10b981', marginBottom: '8px' }}>
+          <div style={{ textAlign: 'left', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: exam.examType === 'FINAL_TEST' ? '#ef444410' : '#10b98110', borderLeft: `4px solid ${exam.examType === 'FINAL_TEST' ? 'var(--danger)' : 'var(--success)'}` }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 800, color: exam.examType === 'FINAL_TEST' ? 'var(--danger)' : 'var(--success)', marginBottom: '8px' }}>
                       {isFinalTest(exam.examType) ? 'Final Test Rules' : 'General Test Rules'}
             </h3>
-            <ul style={{ fontSize: '13px', color: '#6b6b8a', paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <ul style={{ fontSize: '13px', color: 'var(--text-secondary)', paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {isFinalTest(exam.examType) ? (
                 <>
                   <li>Strict time limit enforced.</li>
@@ -920,13 +920,13 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
-             <div style={{ padding: '16px', borderRadius: '16px', background: '#fff', boxShadow: '3px 3px 6px #c5c7cf' }}>
-                <div style={{ fontSize: '10px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Questions</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a' }}>{exam.questions?.length}</div>
+             <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--surface)', boxShadow: '3px 3px 6px #c5c7cf' }}>
+                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Questions</div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>{exam.questions?.length}</div>
              </div>
-             <div style={{ padding: '16px', borderRadius: '16px', background: '#fff', boxShadow: '3px 3px 6px #c5c7cf' }}>
-                <div style={{ fontSize: '10px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase' }}>Duration</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a' }}>{exam.durationMinutes}m</div>
+             <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--surface)', boxShadow: '3px 3px 6px #c5c7cf' }}>
+                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Duration</div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>{exam.durationMinutes}m</div>
              </div>
           </div>
 
@@ -934,20 +934,20 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
              <>
                {latestAttempt.isPublished || exam.examType === 'GENERAL_TEST' ? (
                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                   <p style={{ fontSize: '14px', fontWeight: 700, color: '#10b981', margin: 0 }}>
+                   <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--success)', margin: 0 }}>
                      You scored {latestAttempt.totalMarks} points on your latest attempt.
                    </p>
                    <div style={{ display: 'flex', gap: '12px' }}>
                      <button
                         onClick={() => router.push(`/exams/${params.id}/result`)}
-                        style={{ flex: 1, padding: '16px', borderRadius: '50px', border: 'none', background: '#3636e8', color: '#fff', fontSize: '14px', fontWeight: 800, cursor: 'pointer', boxShadow: '4px 4px 10px rgba(54,54,232,0.35)' }}
+                        style={{ flex: 1, padding: '16px', borderRadius: '50px', border: 'none', background: 'var(--primary)', color: '#fff', fontSize: '14px', fontWeight: 800, cursor: 'pointer', boxShadow: '4px 4px 10px rgba(54,54,232,0.35)' }}
                      >
                        View Results
                      </button>
                      {allowsMultipleAttempts(exam.examType) && (
                        <button
                           onClick={() => router.push(`/exams/${params.id}/attempt`)}
-                          style={{ flex: 1, padding: '16px', borderRadius: '50px', border: '2px solid #3636e8', background: 'transparent', color: '#3636e8', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}
+                          style={{ flex: 1, padding: '16px', borderRadius: '50px', border: '2px solid #3636e8', background: 'transparent', color: 'var(--primary)', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}
                        >
                          Retry Exam
                        </button>
@@ -956,30 +956,30 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                  </div>
                ) : (
                  <div style={{ padding: '20px', borderRadius: '20px', background: '#f59e0b10', border: '2px dashed #f59e0b', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ color: '#f59e0b', fontWeight: 800, fontSize: '15px' }}>Assessment Submitted</div>
-                    <p style={{ fontSize: '13px', color: '#6b6b8a', margin: 0 }}>Your responses are being reviewed. Results will be visible once published by the instructor.</p>
+                    <div style={{ color: 'var(--warning)', fontWeight: 800, fontSize: '15px' }}>Assessment Submitted</div>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>Your responses are being reviewed. Results will be visible once published by the instructor.</p>
                  </div>
                )}
              </>
           ) : isUpcoming ? (
             <div style={{ padding: '20px', borderRadius: '20px', background: '#3636e810', border: '2px dashed #3636e8', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ color: '#3636e8', fontWeight: 800, fontSize: '15px' }}>Exam Not Started Yet</div>
-              <p style={{ fontSize: '13px', color: '#6b6b8a', margin: 0 }}>You will be able to start this exam when the countdown reaches zero.</p>
+              <div style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '15px' }}>Exam Not Started Yet</div>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>You will be able to start this exam when the countdown reaches zero.</p>
             </div>
           ) : isExpired ? (
-            <div style={{ padding: '16px', borderRadius: '50px', background: '#ef444410', color: '#ef4444', fontWeight: 700 }}>
+            <div style={{ padding: '16px', borderRadius: '50px', background: '#ef444410', color: 'var(--danger)', fontWeight: 700 }}>
               This exam has ended.
             </div>
           ) : (
             <button
                onClick={() => router.push(`/exams/${params.id}/attempt`)}
-               style={{ width: '100%', padding: '16px', borderRadius: '50px', border: 'none', background: '#3636e8', color: '#fff', fontSize: '16px', fontWeight: 800, cursor: 'pointer', boxShadow: '4px 4px 10px rgba(54,54,232,0.35)' }}
+               style={{ width: '100%', padding: '16px', borderRadius: '50px', border: 'none', background: 'var(--primary)', color: '#fff', fontSize: '16px', fontWeight: 800, cursor: 'pointer', boxShadow: '4px 4px 10px rgba(54,54,232,0.35)' }}
             >
               Start Exam Now
             </button>
           )}
 
-          <button onClick={() => router.push('/exams')} style={{ background: 'none', border: 'none', color: '#6b6b8a', fontWeight: 600, fontSize: '14px', marginTop: '20px', cursor: 'pointer' }}>Cancel</button>
+          <button onClick={() => router.push('/exams')} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '14px', marginTop: '20px', cursor: 'pointer' }}>Cancel</button>
        </div>
     </div>
   )

@@ -26,17 +26,17 @@ interface CourseItem {
 }
 
 const FILE_STYLES: Record<string, { color: string }> = {
-  PDF:  { color: '#EF4444' },
-  PPTX: { color: '#F59E0B' },
-  PPT:  { color: '#F59E0B' },
-  DOC:  { color: '#3B82F6' },
-  DOCX: { color: '#3B82F6' },
-  XLS:  { color: '#10B981' },
-  XLSX: { color: '#10B981' },
+  PDF:  { color: 'var(--danger)' },
+  PPTX: { color: 'var(--warning)' },
+  PPT:  { color: 'var(--warning)' },
+  DOC:  { color: 'var(--info)' },
+  DOCX: { color: 'var(--info)' },
+  XLS:  { color: 'var(--success)' },
+  XLSX: { color: 'var(--success)' },
   ZIP:  { color: '#8B5CF6' },
   PNG:  { color: '#EC4899' },
   JPG:  { color: '#EC4899' },
-  LINK: { color: '#0EA5E9' },
+  LINK: { color: 'var(--info)' },
 }
 
 function getFileType(url: string, explicitType?: string): string {
@@ -237,7 +237,7 @@ export default function StudyResourcesPage() {
               style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 padding: '11px 20px', borderRadius: '50px',
-                background: '#3636e8', color: '#ffffff',
+                background: 'var(--primary)', color: '#ffffff',
                 boxShadow: '4px 4px 10px rgba(54,54,232,0.35)',
                 border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '700',
                 transition: 'all 0.2s'
@@ -259,9 +259,9 @@ export default function StudyResourcesPage() {
               style={{
                 width: '100%', padding: '11px 18px',
                 border: 'none', borderRadius: '50px',
-                background: '#e8eaf0',
+                background: 'var(--surface-2)',
                 boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                color: '#1e1e3a', fontSize: '13px', outline: 'none',
+                color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
                 appearance: 'none', cursor: 'pointer'
               }}
             >
@@ -290,9 +290,9 @@ export default function StudyResourcesPage() {
               style={{
                 width: '100%', padding: '11px 18px 11px 42px',
                 border: 'none', borderRadius: '50px',
-                background: '#e8eaf0',
+                background: 'var(--surface-2)',
                 boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-                color: '#1e1e3a', fontSize: '13px', outline: 'none',
+                color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
               }}
             />
           </div>
@@ -302,7 +302,7 @@ export default function StudyResourcesPage() {
       {/* Materials list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {filteredData.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9999b0' }}>
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c5c7cf" strokeWidth="1.5" style={{ margin: '0 auto 12px', display: 'block' }}>
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
@@ -311,7 +311,7 @@ export default function StudyResourcesPage() {
         ) : (
           filteredData.map((mat: MaterialItem) => {
             const ft    = getFileType(mat.fileUrl, mat.fileType)
-            const style = FILE_STYLES[ft] || { color: '#6b6b8a' }
+            const style = FILE_STYLES[ft] || { color: 'var(--text-secondary)' }
             const dateObj = mat.createdAt ? new Date(mat.createdAt) : null
             const dateStr = (dateObj && !isNaN(dateObj.getTime())) 
               ? dateObj.toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' }) 
@@ -321,7 +321,7 @@ export default function StudyResourcesPage() {
               <div key={mat.id} style={{
                 display: 'flex', alignItems: 'center', gap: '18px',
                 padding: '16px 24px', borderRadius: '50px',
-                background: '#e8eaf0',
+                background: 'var(--surface-2)',
                 boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
                 transition: 'all 0.2s ease',
               }}
@@ -331,7 +331,7 @@ export default function StudyResourcesPage() {
                 {/* File type badge */}
                 <div style={{
                   width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0,
-                  background: '#e8eaf0', boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
+                  background: 'var(--surface-2)', boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '9px', fontWeight: '800', color: style.color, letterSpacing: '0.03em',
                 }}>
@@ -340,14 +340,14 @@ export default function StudyResourcesPage() {
 
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '14.5px', fontWeight: '700', color: '#1e1e3a', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '14.5px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {mat.title}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {mat.isGlobal ? (
                       <span style={{
                         padding: '1px 8px', borderRadius: '50px',
-                        background: '#e0e7ff', color: '#6366f1',
+                        background: 'var(--primary-light)', color: 'var(--accent)',
                         fontWeight: '700', fontSize: '10px', textTransform: 'uppercase'
                       }}>
                         Global
@@ -355,8 +355,8 @@ export default function StudyResourcesPage() {
                     ) : mat.course && (
                       <span style={{
                         padding: '1px 8px', borderRadius: '50px',
-                        background: (mat.course.color || '#6366f1') + '18',
-                        color: mat.course.color || '#6366f1',
+                        background: (mat.course.color || 'var(--accent)') + '18',
+                        color: mat.course.color || 'var(--accent)',
                         fontWeight: '700', fontSize: '10px',
                       }}>
                         {mat.course.name}
@@ -375,9 +375,9 @@ export default function StudyResourcesPage() {
                         onClick={() => handleEdit(mat)}
                         style={{
                           width: '38px', height: '38px', borderRadius: '50%', border: 'none',
-                          background: '#e8eaf0', boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
+                          background: 'var(--surface-2)', boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: 'pointer', color: '#6366f1', flexShrink: 0,
+                          cursor: 'pointer', color: 'var(--accent)', flexShrink: 0,
                         }}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -386,9 +386,9 @@ export default function StudyResourcesPage() {
                         onClick={() => handleDelete(mat.id, mat.title)}
                         style={{
                           width: '38px', height: '38px', borderRadius: '50%', border: 'none',
-                          background: '#e8eaf0', boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
+                          background: 'var(--surface-2)', boxShadow: '3px 3px 7px #c5c7cf, -3px -3px 7px #ffffff',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: 'pointer', color: '#ef4444', flexShrink: 0,
+                          cursor: 'pointer', color: 'var(--danger)', flexShrink: 0,
                         }}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
@@ -402,7 +402,7 @@ export default function StudyResourcesPage() {
                     rel="noopener noreferrer"
                     style={{
                       width: '42px', height: '42px', borderRadius: '50%', border: 'none',
-                      background: '#3636e8', color: '#ffffff',
+                      background: 'var(--primary)', color: '#ffffff',
                       boxShadow: '4px 4px 10px rgba(54,54,232,0.3)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
@@ -460,7 +460,7 @@ export default function StudyResourcesPage() {
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 700 }}>SOURCE TYPE *</label>
                   <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'FILE' ? '#6366f1' : '#e5e7eb'}`, background: sourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'FILE' ? 'var(--accent)' : 'var(--surface-2)'}`, background: sourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
                       <input
                         type="radio"
                         name="sourceType"
@@ -468,9 +468,9 @@ export default function StudyResourcesPage() {
                         onChange={() => setSourceType('FILE')}
                         style={{ cursor: 'pointer' }}
                       />
-                      <span style={{ fontSize: '13px', fontWeight: sourceType === 'FILE' ? '600' : '500', color: '#1e1e3a' }}>📄 Upload File</span>
+                      <span style={{ fontSize: '13px', fontWeight: sourceType === 'FILE' ? '600' : '500', color: 'var(--text-primary)' }}>📄 Upload File</span>
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'LINK' ? '#6366f1' : '#e5e7eb'}`, background: sourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'LINK' ? 'var(--accent)' : 'var(--surface-2)'}`, background: sourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
                       <input
                         type="radio"
                         name="sourceType"
@@ -478,7 +478,7 @@ export default function StudyResourcesPage() {
                         onChange={() => setSourceType('LINK')}
                         style={{ cursor: 'pointer' }}
                       />
-                      <span style={{ fontSize: '13px', fontWeight: sourceType === 'LINK' ? '600' : '500', color: '#1e1e3a' }}>🔗 External Link</span>
+                      <span style={{ fontSize: '13px', fontWeight: sourceType === 'LINK' ? '600' : '500', color: 'var(--text-primary)' }}>🔗 External Link</span>
                     </label>
                   </div>
                 </div>
@@ -499,8 +499,8 @@ export default function StudyResourcesPage() {
                           style={{
                             display: 'flex', alignItems: 'center', gap: '10px',
                             padding: '12px 20px', borderRadius: '14px',
-                            background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
-                            cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#6b6b8a'
+                            background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+                            cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)'
                           }}
                         >
                           {isUploading ? 'Uploading...' : fileUrl ? 'File selected' : 'Choose file...'}
@@ -509,7 +509,7 @@ export default function StudyResourcesPage() {
                       {fileUrl && (
                         <div style={{
                           padding: '12px 16px', borderRadius: '14px',
-                          background: '#e0e7ff', color: '#6366f1',
+                          background: 'var(--primary-light)', color: 'var(--accent)',
                           fontSize: '11px', fontWeight: '800'
                         }}>
                           {fileType}
@@ -538,18 +538,18 @@ export default function StudyResourcesPage() {
                         type="radio" 
                         checked={isGlobal} 
                         onChange={() => setIsGlobal(true)} 
-                        style={{ width: '18px', height: '18px', accentColor: '#3636e8' }}
+                        style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
                       />
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e1e3a' }}>Global (All Users)</span>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>Global (All Users)</span>
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
                       <input 
                         type="radio" 
                         checked={!isGlobal} 
                         onChange={() => setIsGlobal(false)}
-                        style={{ width: '18px', height: '18px', accentColor: '#3636e8' }}
+                        style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
                       />
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e1e3a' }}>Specific Course</span>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>Specific Course</span>
                     </label>
                     
                     {!isGlobal && (

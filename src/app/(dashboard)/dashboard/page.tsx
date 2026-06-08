@@ -66,7 +66,7 @@ export default function DashboardPage() {
           name: orderData.userName,
           email: orderData.userEmail,
         },
-        theme: { color: '#6366f1' },
+        theme: { color: 'var(--accent)' },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
           setIsProcessing(true)
           try {
@@ -238,30 +238,30 @@ export default function DashboardPage() {
       // For simplicity, we'll use solid colors or a gradient
       return 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' 
     }
-    return '#fef3c7' // Soft yellow
+    return 'var(--warning-light)' // Soft yellow
   }
 
 
   const statCards = [
-    { label: 'Total Courses', value: stats?.totalCourses ?? 0, color: '#6366f1', bg: '#e0e7ff', icon: (
+    { label: 'Total Courses', value: stats?.totalCourses ?? 0, color: 'var(--accent)', bg: 'var(--primary-light)', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
     )},
     { label: 'Lectures', value: stats?.totalLectures ?? 0, color: '#8b5cf6', bg: '#ede9fe', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
     )},
     ...(!isStudentView ? [{
-      label: 'Students Enrolled', value: stats?.totalStudents ?? 0, color: '#10b981', bg: '#d1fae5', icon: (
+      label: 'Students Enrolled', value: stats?.totalStudents ?? 0, color: 'var(--success)', bg: 'var(--success-light)', icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
       ),
     }] : [
-      { label: 'Upcoming Sessions', value: upNextCount, color: '#f59e0b', bg: '#fef3c7', icon: (
+      { label: 'Upcoming Sessions', value: upNextCount, color: 'var(--warning)', bg: 'var(--warning-light)', icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
       )},
     ]),
     { 
       label: examCountdown?.title || 'Exam Countdown', 
       value: `${examCountdown?.daysLeft ?? 0} Days`, 
-      color: (examCountdown?.daysLeft ?? 0) <= 3 && (examCountdown?.daysLeft ?? 0) > 0 ? '#ef4444' : '#f59e0b', 
+      color: (examCountdown?.daysLeft ?? 0) <= 3 && (examCountdown?.daysLeft ?? 0) > 0 ? 'var(--danger)' : 'var(--warning)', 
       bg: getTimerColor(examCountdown?.daysLeft ?? 0),
       isTimer: true,
       icon: (
@@ -285,7 +285,7 @@ export default function DashboardPage() {
       { 
         label: 'Support System', 
         value: dashboardData?.supportSummary?.isSupportActive ? 'Online' : 'Offline', 
-        color: '#3636e8', 
+        color: 'var(--primary)', 
         bg: '#ebebff', 
         isSupport: true,
         summary: dashboardData?.supportSummary,
@@ -419,7 +419,7 @@ export default function DashboardPage() {
             </div>
             <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
               <div className="stat-card-label" style={{
-                color: mobileHero ? '#6366f1' : (card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(0,0,0,0.5)' : undefined),
+                color: mobileHero ? 'var(--accent)' : (card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(0,0,0,0.5)' : undefined),
                 fontSize: mobileHero ? '10.5px' : undefined,
                 fontWeight: mobileHero ? 800 : undefined,
                 letterSpacing: mobileHero ? '0.08em' : undefined,
@@ -429,7 +429,7 @@ export default function DashboardPage() {
               <div className="stat-card-value" style={{
                 fontSize: mobileHero ? '26px' : undefined,
                 fontWeight: mobileHero ? 900 : undefined,
-                color: mobileHero ? '#1e1e3a' : undefined,
+                color: mobileHero ? 'var(--text-primary)' : undefined,
                 marginTop: mobileHero ? '4px' : undefined,
                 letterSpacing: mobileHero ? '-0.02em' : undefined,
               }}>
@@ -503,7 +503,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600' }}>
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>
                       {frontSession.time}
                     </span>
                     {liveSessions.length > 1 && (
@@ -511,7 +511,7 @@ export default function DashboardPage() {
                         onClick={handleNextLive}
                         style={{
                           width: '32px', height: '32px', borderRadius: '50%',
-                          background: '#e8eaf0',
+                          background: 'var(--surface-2)',
                           boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           border: 'none', cursor: 'pointer', transition: 'box-shadow 0.2s',
@@ -534,7 +534,7 @@ export default function DashboardPage() {
                     flex: 1
                   }}
                 >
-                  <div style={{ fontSize: '22px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.2', marginBottom: '8px' }}>
                     {frontSession.title}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -546,7 +546,7 @@ export default function DashboardPage() {
                         <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
                       </svg>
                     </div>
-                    <span style={{ fontSize: '14px', color: '#6b6b8a', fontWeight: '600' }}>
+                    <span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '600' }}>
                       {frontSession.instructor}{frontSession.course?.name ? ` · ${frontSession.course.name}` : ''}
                     </span>
                   </div>
@@ -563,7 +563,7 @@ export default function DashboardPage() {
                             width: i === activeCard ? '24px' : '8px',
                             height: '8px',
                             borderRadius: '4px',
-                            background: i === activeCard ? '#f43f5e' : '#e2e8f0',
+                            background: i === activeCard ? '#f43f5e' : 'var(--surface-2)',
                             transition: 'all 0.3s ease',
                             cursor: 'pointer',
                           }}
@@ -597,8 +597,8 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '16px', color: '#1e1e3a', fontWeight: '700' }}>No Active Sessions</div>
-                  <div style={{ fontSize: '13px', color: '#9999b0', marginTop: '4px' }}>All live courses are currently offline</div>
+                  <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: '700' }}>No Active Sessions</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>All live courses are currently offline</div>
                 </div>
               </div>
             )}
@@ -619,11 +619,11 @@ export default function DashboardPage() {
                 width: '44px',
                 height: '44px',
                 borderRadius: '12px',
-                background: '#fff',
+                background: 'var(--surface)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#3636e8',
+                color: 'var(--primary)',
                 boxShadow: '0 4px 12px rgba(54,54,232,0.1)'
               }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -633,7 +633,7 @@ export default function DashboardPage() {
               <div style={{
                 padding: '6px 12px',
                 borderRadius: '50px',
-                background: dashboardData?.supportSummary?.isSupportActive ? '#dcfce7' : '#fee2e2',
+                background: dashboardData?.supportSummary?.isSupportActive ? 'var(--success-light)' : 'var(--danger-light)',
                 color: dashboardData?.supportSummary?.isSupportActive ? '#15803d' : '#b91c1c',
                 fontSize: '11px',
                 fontWeight: '800',
@@ -645,13 +645,13 @@ export default function DashboardPage() {
             </div>
 
             <div style={{ margin: '20px 0' }}>
-              <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
                 Support System
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '900', color: '#1e1e3a' }}>
+              <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--text-primary)' }}>
                 {dashboardData?.supportSummary?.openTickets ?? 0}
               </div>
-              <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '600' }}>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>
                 Open Support Tickets
               </div>
             </div>
@@ -661,7 +661,7 @@ export default function DashboardPage() {
               alignItems: 'center',
               justifyContent: 'center',
               padding: '12px',
-              background: '#3636e8',
+              background: 'var(--primary)',
               color: '#fff',
               fontSize: '13px',
               fontWeight: '800',
@@ -746,15 +746,15 @@ export default function DashboardPage() {
                     }}>
                       <div style={{
                         width: '7px', height: '7px', borderRadius: '50%',
-                        background: '#10b981', flexShrink: 0,
+                        background: 'var(--success)', flexShrink: 0,
                         animation: 'greenPulse 1.5s infinite',
                       }} />
-                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         Active Now
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '12px', color: '#9999b0', fontWeight: '500' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '500' }}>
                         {frontSession.time}
                       </span>
                       {liveSessions.length > 1 && (
@@ -762,7 +762,7 @@ export default function DashboardPage() {
                           onClick={handleNextLive}
                           style={{
                             width: '30px', height: '30px', borderRadius: '50%',
-                            background: '#e8eaf0',
+                            background: 'var(--surface-2)',
                             boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
                             border: 'none', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -793,10 +793,10 @@ export default function DashboardPage() {
                     }}
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '22px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', marginBottom: '2px' }}>
+                      <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.2', marginBottom: '2px' }}>
                         {frontSession.title}
                       </div>
-                      <div style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '600' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>
                         {frontSession.instructor}{frontSession.course?.name ? ` · ${frontSession.course.name}` : ''}
                       </div>
                     </div>
@@ -848,7 +848,7 @@ export default function DashboardPage() {
                           display: 'flex', alignItems: 'center', gap: '8px',
                           padding: '14px 32px',
                           borderRadius: '14px',
-                          background: '#ef4444',
+                          background: 'var(--danger)',
                           color: '#ffffff', fontSize: '15px', fontWeight: '800',
                           textDecoration: 'none', letterSpacing: '0.01em',
                           animation: 'joinPulse 2s ease-in-out infinite, joinGlow 2.5s ease-in-out infinite',
@@ -884,7 +884,7 @@ export default function DashboardPage() {
                             width: i === activeCard ? '18px' : '6px',
                             height: '6px',
                             borderRadius: '3px',
-                            background: i === activeCard ? '#10b981' : '#c5c7cf',
+                            background: i === activeCard ? 'var(--success)' : '#c5c7cf',
                             transition: 'all 0.3s ease',
                             cursor: 'pointer',
                           }}
@@ -900,8 +900,8 @@ export default function DashboardPage() {
                       <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                     </svg>
                   </div>
-                  <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '500', textAlign: 'center' }}>No active courses right now</div>
-                  <Link href="/live" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>View schedule →</Link>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '500', textAlign: 'center' }}>No active courses right now</div>
+                  <Link href="/live" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: '600', textDecoration: 'none' }}>View schedule →</Link>
                 </div>
               )}
             </div>
@@ -909,13 +909,13 @@ export default function DashboardPage() {
             {/* Up Next panel */}
             <div className="card" style={{ padding: '20px', borderRadius: '20px', display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a' }}>Up Next</h3>
-                <Link href="/live" style={{ fontSize: '12px', color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>Up Next</h3>
+                <Link href="/live" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: '600', textDecoration: 'none' }}>
                   View All →
                 </Link>
               </div>
               {upNextSessions.length === 0 ? (
-                <div style={{ padding: '24px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
+                <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                   No upcoming sessions
                 </div>
               ) : (
@@ -945,34 +945,34 @@ export default function DashboardPage() {
                           display: 'flex', alignItems: 'center', gap: '12px',
                           padding: '13px 14px',
                           borderRadius: '14px',
-                          background: '#e8eaf0',
+                          background: 'var(--surface-2)',
                           boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                           transition: 'box-shadow 0.2s',
                         }}
                       >
                         <div style={{
                           width: '40px', height: '40px', borderRadius: '11px', flexShrink: 0,
-                          background: idx === 0 ? '#e0e7ff' : '#f3f4f8',
+                          background: idx === 0 ? 'var(--primary-light)' : '#f3f4f8',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={idx === 0 ? '#6366f1' : '#9999b0'} strokeWidth="2">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={idx === 0 ? 'var(--accent)' : 'var(--text-muted)'} strokeWidth="2">
                             <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                           </svg>
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           {idx === 0 && (
                             <div style={{
-                              display: 'inline-block', fontSize: '9.5px', fontWeight: '700', color: '#6366f1',
-                              background: '#e0e7ff', padding: '1px 7px', borderRadius: '20px',
+                              display: 'inline-block', fontSize: '9.5px', fontWeight: '700', color: 'var(--accent)',
+                              background: 'var(--primary-light)', padding: '1px 7px', borderRadius: '20px',
                               textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px',
                             }}>
                               Up Next
                             </div>
                           )}
-                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {session.title}
                           </div>
-                          <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                             {session.date} · {session.time}
                           </div>
                         </div>
@@ -997,14 +997,14 @@ export default function DashboardPage() {
             <div style={{ marginBottom: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '14px', padding: '0 4px', gap: '12px' }}>
                 <div style={{ minWidth: 0 }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1e1e3a', letterSpacing: '-0.02em', margin: 0 }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
                     Upcoming Session
                   </h3>
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#9999b0', marginTop: '2px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '2px' }}>
                     Your next live class
                   </div>
                 </div>
-                <Link href="/live" style={{ fontSize: '12px', color: '#6366f1', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <Link href="/live" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   View All →
                 </Link>
               </div>
@@ -1027,7 +1027,7 @@ export default function DashboardPage() {
                     display: 'flex', alignItems: 'center', gap: '14px',
                     padding: '18px',
                     borderRadius: '20px',
-                    background: '#ffffff',
+                    background: 'var(--surface)',
                     border: '1px solid rgba(15, 23, 42, 0.05)',
                     boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
                     cursor: 'pointer',
@@ -1045,14 +1045,14 @@ export default function DashboardPage() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', animation: 'redLivePulse 1.4s infinite' }} />
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: 800, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--danger)', animation: 'redLivePulse 1.4s infinite' }} />
                       LIVE NOW · {frontSession.time}
                     </div>
-                    <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {frontSession.title}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {frontSession.instructor}{frontSession.course?.name ? ` · ${frontSession.course.name}` : ''}
                     </div>
                   </div>
@@ -1102,7 +1102,7 @@ export default function DashboardPage() {
                     display: 'flex', alignItems: 'center', gap: '14px',
                     padding: '18px',
                     borderRadius: '20px',
-                    background: '#ffffff',
+                    background: 'var(--surface)',
                     border: '1px solid rgba(15, 23, 42, 0.05)',
                     boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
                     cursor: 'pointer',
@@ -1119,13 +1119,13 @@ export default function DashboardPage() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
                       UP NEXT · {upNextSessions[0].time}
                     </div>
-                    <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {upNextSessions[0].title}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, marginTop: '2px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                       {upNextSessions[0].date}
                     </div>
@@ -1136,14 +1136,14 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div style={{
-                  padding: '32px 16px', textAlign: 'center', color: '#9999b0', fontSize: '13px',
-                  background: '#ffffff', borderRadius: '20px',
+                  padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px',
+                  background: 'var(--surface)', borderRadius: '20px',
                   border: '1px solid rgba(15, 23, 42, 0.05)',
                 }}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.8" style={{ marginBottom: '8px' }}>
                     <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                   </svg>
-                  <div style={{ fontWeight: 700, color: '#6b6b8a' }}>No upcoming sessions</div>
+                  <div style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>No upcoming sessions</div>
                   <div style={{ fontSize: '11px', marginTop: '2px' }}>Check back later for live classes</div>
                 </div>
               )}
@@ -1154,25 +1154,25 @@ export default function DashboardPage() {
           <div className={isMobile ? '' : 'card'} style={isMobile ? { marginBottom: '24px' } : { padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isMobile ? '14px' : '18px', padding: isMobile ? '0 4px' : '0', gap: '12px' }}>
               <div style={{ minWidth: 0 }}>
-                <h3 style={{ fontSize: isMobile ? '18px' : '16px', fontWeight: isMobile ? 900 : 700, color: '#1e1e3a', letterSpacing: isMobile ? '-0.02em' : 'normal', margin: 0 }}>
+                <h3 style={{ fontSize: isMobile ? '18px' : '16px', fontWeight: isMobile ? 900 : 700, color: 'var(--text-primary)', letterSpacing: isMobile ? '-0.02em' : 'normal', margin: 0 }}>
                   Recent Lecture
                 </h3>
                 {isMobile && (
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#9999b0', marginTop: '2px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '2px' }}>
                     Pick up where you left off
                   </div>
                 )}
               </div>
               {recentViewedLecture && (
-                <Link href="/materials/recordings" style={{ fontSize: '12px', color: '#6366f1', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <Link href="/materials/recordings" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   View All →
                 </Link>
               )}
             </div>
             {!recentViewedLecture ? (
               <div style={{
-                padding: '32px 16px', textAlign: 'center', color: '#9999b0', fontSize: '13px',
-                background: '#ffffff', borderRadius: '20px',
+                padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px',
+                background: 'var(--surface)', borderRadius: '20px',
                 border: '1px solid rgba(15, 23, 42, 0.05)',
               }}>
                 No recent lectures
@@ -1181,14 +1181,14 @@ export default function DashboardPage() {
               <div style={{ display: 'flex' }}>
                 {(() => {
                   const lec = recentViewedLecture.content
-                  const accent = lec.topic?.course?.color || '#6366f1'
+                  const accent = lec.topic?.course?.color || 'var(--accent)'
                   return (
                     <div
                       key={lec.id}
                       style={{
                         padding: isMobile ? '18px' : '24px',
                         borderRadius: isMobile ? '20px' : '24px',
-                        background: isMobile ? '#ffffff' : '#e8eaf0',
+                        background: isMobile ? '#ffffff' : 'var(--surface-2)',
                         boxShadow: isMobile
                           ? '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)'
                           : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
@@ -1223,13 +1223,13 @@ export default function DashboardPage() {
                             {lec.topic?.course?.name || 'Course Lecture'}
                           </div>
                           <div style={{
-                            fontSize: isMobile ? '15.5px' : '18px', fontWeight: 800, color: '#1e1e3a',
+                            fontSize: isMobile ? '15.5px' : '18px', fontWeight: 800, color: 'var(--text-primary)',
                             lineHeight: '1.25', marginBottom: '4px',
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           }}>
                             {lec.title}
                           </div>
-                          <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#94a3b8', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'var(--text-muted)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             Last viewed on {formatISTDate(recentViewedLecture.updatedAt)}
                           </div>
@@ -1264,22 +1264,22 @@ export default function DashboardPage() {
           <div className={isMobile ? '' : 'card'} style={isMobile ? { marginBottom: '24px' } : { padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isMobile ? '14px' : '18px', padding: isMobile ? '0 4px' : '0', gap: '12px' }}>
               <div style={{ minWidth: 0 }}>
-                <h3 style={{ fontSize: isMobile ? '18px' : '16px', fontWeight: isMobile ? 900 : 700, color: '#1e1e3a', letterSpacing: isMobile ? '-0.02em' : 'normal', margin: 0 }}>
+                <h3 style={{ fontSize: isMobile ? '18px' : '16px', fontWeight: isMobile ? 900 : 700, color: 'var(--text-primary)', letterSpacing: isMobile ? '-0.02em' : 'normal', margin: 0 }}>
                   Upcoming Assessments
                 </h3>
                 {isMobile && (
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#9999b0', marginTop: '2px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '2px' }}>
                     Tests scheduled for you
                   </div>
                 )}
               </div>
-              <Link href="/exams" style={{ fontSize: '12px', color: '#6366f1', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              <Link href="/exams" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 View All →
               </Link>
             </div>
             {!dashboardData?.upcomingExams?.length ? (
               <div style={{
-                padding: '32px 16px', textAlign: 'center', color: '#9999b0', fontSize: '13px',
+                padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px',
                 background: isMobile ? '#ffffff' : 'transparent', borderRadius: '20px',
                 border: isMobile ? '1px solid rgba(15, 23, 42, 0.05)' : 'none',
               }}>
@@ -1288,14 +1288,14 @@ export default function DashboardPage() {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '12px' : '14px' }}>
                 {dashboardData.upcomingExams.map((exam: any) => {
-                  const accent = exam.course?.color || '#6366f1'
+                  const accent = exam.course?.color || 'var(--accent)'
                   return (
                     <div
                       key={exam.id}
                       style={{
                         padding: isMobile ? '18px' : '18px',
                         borderRadius: isMobile ? '20px' : '18px',
-                        background: isMobile ? '#ffffff' : '#e8eaf0',
+                        background: isMobile ? '#ffffff' : 'var(--surface-2)',
                         boxShadow: isMobile
                           ? '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)'
                           : '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
@@ -1324,24 +1324,24 @@ export default function DashboardPage() {
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{
-                          fontSize: '14px', fontWeight: '800', color: '#1e1e3a',
+                          fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)',
                           lineHeight: '1.3', marginBottom: '4px',
                           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                         }}>
                           {exam.title}
                         </div>
-                        <div style={{ fontSize: '11px', color: '#6b6b8a', fontWeight: '600' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>
                           {exam.course?.name}
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                           <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: '600' }}>
+                           <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600' }}>
                              {new Date(exam.startDate || exam.createdAt).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}
                            </span>
                          </div>
-                        <Link href={`/exams`} style={{ fontSize: '11px', fontWeight: '700', color: '#3636e8', textDecoration: 'none' }}>
+                        <Link href={`/exams`} style={{ fontSize: '11px', fontWeight: '700', color: 'var(--primary)', textDecoration: 'none' }}>
                           View Details
                         </Link>
                       </div>
@@ -1357,14 +1357,14 @@ export default function DashboardPage() {
       {/* ── Row 3: Announcements ── */}
       {announcements.length > 0 && (
         <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', maxWidth: '100%', overflow: 'hidden' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a', marginBottom: '16px' }}>Announcements</h3>
+          <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px' }}>Announcements</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '100%' }}>
             {announcements.map((a) => {
               const colors: Record<string, { border: string }> = {
-                info:    { border: '#3b82f6' },
-                warning: { border: '#f59e0b' },
-                success: { border: '#10b981' },
-                error:   { border: '#ef4444' },
+                info:    { border: 'var(--info)' },
+                warning: { border: 'var(--warning)' },
+                success: { border: 'var(--success)' },
+                error:   { border: 'var(--danger)' },
               }
               const c = colors[a.type] || colors.info
               const { body: parsedBody, metadata } = parseAnnouncementContent(a.content)
@@ -1373,17 +1373,17 @@ export default function DashboardPage() {
                 <div key={a.id} style={{
                   padding: '14px 18px',
                   borderRadius: '14px',
-                  background: '#e8eaf0',
+                  background: 'var(--surface-2)',
                   boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
                   borderLeft: `4px solid ${c.border}`,
                   wordBreak: 'break-word',
                   overflowWrap: 'break-word',
                   maxWidth: '100%',
                 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a', marginBottom: '4px', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '4px', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                     {a.title}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#6b6b8a', lineHeight: '1.55', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.55', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
                     {parsedBody}
                   </div>
                   {metadata.ctaText && metadata.ctaLink && (
@@ -1415,7 +1415,7 @@ export default function DashboardPage() {
                       </a>
                     </div>
                   )}
-                  <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '8px' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
                     {new Date(a.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })}
                   </div>
                 </div>
@@ -1476,7 +1476,7 @@ export default function DashboardPage() {
         padding: '20px'
       }} onClick={() => !upgrading && setUpgradeModalCourse(null)}>
         <div style={{
-          background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
+          background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
           boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
           animation: 'modalSlideUp 0.3s ease-out', position: 'relative'
         }} onClick={e => e.stopPropagation()}>
@@ -1485,8 +1485,8 @@ export default function DashboardPage() {
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', marginBottom: '24px' }}>
                 <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/>
               </svg>
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Processing Payment...</h2>
-              <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', textAlign: 'center' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '12px' }}>Processing Payment...</h2>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', textAlign: 'center' }}>
                 Please wait while we securely process your transaction.<br/>Do not close or refresh this page.
               </p>
               <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
@@ -1495,26 +1495,26 @@ export default function DashboardPage() {
             <div style={{ padding: '40px', textAlign: 'center' }}>
               <button
                 onClick={() => setUpgradeModalCourse(null)}
-                style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: '#94a3b8', cursor: 'pointer', lineHeight: 1 }}
+                style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: 'var(--text-muted)', cursor: 'pointer', lineHeight: 1 }}
               >&times;</button>
-              <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#ffffff', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+              <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'var(--surface)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               </div>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
-              <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
-              <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '32px' }}>
                 You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
               </p>
 
               <div style={{ background: '#f8faff', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid #e0e7ff' }}>
-                <div style={{ fontSize: '36px', fontWeight: '900', color: '#6366f1', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
-                <div style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '600' }}>One-time upgrade fee</div>
+                <div style={{ fontSize: '36px', fontWeight: '900', color: 'var(--accent)', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
+                <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600' }}>One-time upgrade fee</div>
               </div>
 
               <div style={{ display: 'flex', gap: '14px' }}>
                 <button
                   onClick={() => setUpgradeModalCourse(null)}
-                  style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'white', color: '#64748b', fontWeight: '700', cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
@@ -1532,7 +1532,7 @@ export default function DashboardPage() {
                 </button>
               </div>
 
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '24px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '24px' }}>
                 Course will be updated automatically after Payment
               </div>
             </div>
@@ -1550,21 +1550,21 @@ export default function DashboardPage() {
         padding: '20px'
       }} onClick={() => setUpgradeSuccessOrderId(null)}>
         <div style={{
-          background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
+          background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
           boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           padding: '40px', textAlign: 'center',
           animation: 'modalSlideUp 0.3s ease-out'
         }} onClick={e => e.stopPropagation()}>
           <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
-          <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Welcome to PRO!</h2>
-          <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Welcome to PRO!</h2>
+          <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
             Your upgrade was successful. You now have full access to live classes, mentorship, and priority support.
           </p>
           <div style={{ background: '#f0fdf4', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #bbf7d0' }}>
-            <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
+            <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
             <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
           </div>
-          <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
           <button
             onClick={() => setUpgradeSuccessOrderId(null)}
             style={{
@@ -1588,7 +1588,7 @@ export default function DashboardPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'center'
       }}>
         <div style={{
-          background: 'white', padding: '40px', borderRadius: '32px',
+          background: 'var(--surface)', padding: '40px', borderRadius: '32px',
           textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
           width: '320px'
         }}>
@@ -1598,8 +1598,8 @@ export default function DashboardPage() {
             margin: '0 auto 20px',
             animation: 'spin 1s linear infinite'
           }} />
-          <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Processing...</h3>
-          <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Please wait while we set up your course access.</p>
+          <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Processing...</h3>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>Please wait while we set up your course access.</p>
         </div>
       </div>
     )}
