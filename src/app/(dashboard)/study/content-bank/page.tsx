@@ -259,7 +259,7 @@ export default function ContentBankPage() {
               
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px', lineHeight: '1.4' }}><RichTextDisplay text={q.text} /></div>
               
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.4)', padding: '12px', borderRadius: '12px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--surface-2)', padding: '12px', borderRadius: '12px' }}>
                  <div style={{ fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '10px', marginBottom: '4px' }}>Type: {q.type}</div>
                  {q.options && (
                    <div style={{ marginTop: '4px' }}>
@@ -316,7 +316,7 @@ export default function ContentBankPage() {
       {/* Add Question Modal - Revamped to match Premium Design */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(232, 234, 240, 0.8)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-           <div style={{ ...neuCard, width: '100%', maxWidth: '750px', maxHeight: '90vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.8)', padding: '24px' }}>
+           <div style={{ ...neuCard, width: '100%', maxWidth: '750px', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border)', padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--primary)' }}>{editingQuestionId ? 'Edit Question' : 'New Question'}</h2>
                 <button onClick={() => {
@@ -372,7 +372,7 @@ export default function ContentBankPage() {
                       style={{ ...neuInput, height: '80px', resize: 'vertical' }} 
                     />
                     {form.text.includes('```') && (
-                      <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.6)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                      <div style={{ marginTop: '16px', background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>Code Preview</span>
                           <button 
@@ -392,7 +392,7 @@ export default function ContentBankPage() {
                  </div>
 
                  {/* Attachment */}
-                 <div style={{ background: 'rgba(255,255,255,0.4)', padding: '16px', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.6)' }}>
+                 <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '18px', border: '1px solid var(--border)' }}>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px' }}>Attachment (Optional)</label>
                     
                     {(form.imageUrl && form.text.includes('```')) && (
@@ -579,7 +579,7 @@ export default function ContentBankPage() {
               style={{ width: '100%', height: '300px', padding: '16px', borderRadius: '12px', border: '1px solid #cfd6e1', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical', background: 'var(--surface)' }}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-              <button onClick={() => setShowCodeModal(null)} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', background: '#f1f1f8', color: 'var(--text-secondary)', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => setShowCodeModal(null)} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', background: 'var(--surface-2)', color: 'var(--text-secondary)', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
               <button 
                 onClick={() => {
                   if (codeSnippet.trim()) {

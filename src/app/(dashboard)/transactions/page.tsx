@@ -57,7 +57,7 @@ export default function TransactionsPage() {
   const statusBadge = (status: string) => {
     const colors: Record<string, { bg: string; text: string }> = {
       SUCCESS: { bg: 'var(--success-light)', text: 'var(--success)' },
-      PENDING: { bg: '#fef9c3', text: '#ca8a04' },
+      PENDING: { bg: 'var(--warning-light)', text: 'var(--warning)' },
       FAILED: { bg: 'var(--danger-light)', text: 'var(--danger)' },
     }
     const c = colors[status] || { bg: 'var(--surface)', text: 'var(--text-secondary)' }
@@ -233,7 +233,7 @@ export default function TransactionsPage() {
                 </thead>
                 <tbody>
                   {filteredTransactions.map((tx, i) => (
-                    <tr key={tx.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? '#fff' : '#fafbfc' }}>
+                    <tr key={tx.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface-2)' }}>
                       <td style={{ padding: '14px 20px', fontSize: '13px', fontWeight: '700', color: 'var(--accent)', fontFamily: 'monospace' }}>{tx.orderId}</td>
                       <td style={{ padding: '14px 20px' }}>
                         <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{tx.user.name}</div>

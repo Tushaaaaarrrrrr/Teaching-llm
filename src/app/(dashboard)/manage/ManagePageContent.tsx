@@ -675,7 +675,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 display: 'flex', flexDirection: 'column', gap: '6px',
                 maxHeight: '220px', overflowY: 'auto',
                 padding: '10px', borderRadius: '8px',
-                background: '#f3f0ff', border: '1px solid #ddd6fe',
+                background: 'var(--primary-light)', border: '1px solid var(--border)',
               }}>
                 {courses.map((course: any) => (
                   <label key={course.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
@@ -867,7 +867,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             </div>
             <div className="form-group"><label className="form-label">Offering Name / Bundle Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="e.g. Full Stack Mastery" /></div>
             <div className="form-group"><label className="form-label">Thumbnail URL</label><input className="form-input" value={f.thumbnail || ''} onChange={e => set('thumbnail', e.target.value)} placeholder="https://... (optional image URL)" /></div>
-            <div style={{ border: '1px solid #ddd6fe', borderRadius: '12px', padding: '16px', background: '#faf5ff', marginBottom: '16px' }}>
+            <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', background: 'var(--primary-light)', marginBottom: '16px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <input type="checkbox" checked={!!f.hasRecorded} onChange={e => set('hasRecorded', e.target.checked)} />
                 <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>📹 Recorded (Basic) Access</span>
@@ -975,7 +975,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             </div>
 
             {/* Simulated Smartphone Preview Block */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f5f6f9', border: '1px solid #dcdde2', borderRadius: '24px', padding: '16px', minWidth: '250px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '24px', padding: '16px', minWidth: '250px' }}>
               <div style={{ fontSize: '10px', fontWeight: '800', color: '#909196', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '12px' }}>📱 Preview on Device</div>
               <div style={{
                 width: '240px', height: '390px', background: '#09080c', border: '6px solid #202022', borderRadius: '32px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 12px 24px rgba(0,0,0,0.2)'
@@ -1638,7 +1638,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                       setInlineNotif(p => ({ ...p, presetStyle: '' }))
                     }
                   }}
-                  style={{ border: '2px dashed #6366f1', background: '#fafcff' }}
+                  style={{ border: '2px dashed #6366f1', background: 'var(--surface-2)' }}
                 >
                   <option value="">-- Choose High-Converting Preset --</option>
                   <option value="PROMO">🏷️ Promotional Deal / Offer (Zomato Style)</option>
@@ -2014,7 +2014,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                       return (
                         <div key={item.id} className="history-item-card" style={{
                           borderLeft: `5px solid ${isSent ? 'var(--success)' : isPending ? 'var(--warning)' : 'var(--danger)'}`,
-                          background: isPending ? 'var(--warning-light)' : '#ffffff'
+                          background: isPending ? 'var(--warning-light)' : 'var(--surface)'
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -2342,7 +2342,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     {tab === 'offerings' && (
                       <div style={{ display: 'flex', gap: '6px' }}>
                         {item.hasRecorded && (
-                          <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#f3f0ff', color: 'var(--accent)', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: 'var(--primary-light)', color: 'var(--accent)', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
                             REC: ₹{item.recordedDiscountPrice}
                           </span>
                         )}
@@ -2562,7 +2562,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   }}
                   className="btn btn-sm"
                   style={{
-                    background: recentPhotosPage === 1 ? 'var(--surface)' : '#fff',
+                    background: recentPhotosPage === 1 ? 'var(--surface)' : 'var(--surface-2)',
                     color: recentPhotosPage === 1 ? 'var(--text-muted)' : 'var(--text-secondary)',
                     border: '1px solid #cbd5e1',
                     cursor: recentPhotosPage === 1 ? 'not-allowed' : 'pointer',
@@ -2583,7 +2583,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   }}
                   className="btn btn-sm"
                   style={{
-                    background: !recentPhotosHasNext ? 'var(--surface)' : '#fff',
+                    background: !recentPhotosHasNext ? 'var(--surface)' : 'var(--surface-2)',
                     color: !recentPhotosHasNext ? 'var(--text-muted)' : 'var(--text-secondary)',
                     border: '1px solid #cbd5e1',
                     cursor: !recentPhotosHasNext ? 'not-allowed' : 'pointer',
