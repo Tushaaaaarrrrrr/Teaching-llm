@@ -313,7 +313,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         <span style={{
                           display: 'inline-flex', alignItems: 'center', gap: '6px',
                           padding: '4px 12px', borderRadius: '20px',
-                          background: 'linear-gradient(135deg, #e8f0fe, #d2e3fc)',
+                          background: 'linear-gradient(135deg, var(--info-light), var(--border))',
                           border: '1px solid #c6d9f1',
                           fontSize: '10px', fontWeight: '700', color: '#4285f4'
                         }}>
@@ -329,7 +329,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                       {isRecentlyCreated && (
                         <span style={{
                           fontSize: '10px', fontWeight: '700', color: '#065f46',
-                          background: 'linear-gradient(135deg, #dcfce7, var(--border))', padding: '4px 12px', borderRadius: '20px',
+                          background: 'linear-gradient(135deg, var(--success-light), var(--border))', padding: '4px 12px', borderRadius: '20px',
                           border: '1px solid #86efac',
                         }}>
                           NEWBIE
@@ -430,9 +430,9 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 {user && 'enableDetailedLogs' in user && (
                   <div style={{
                     padding: '20px', borderRadius: '20px', marginTop: '24px',
-                    background: 'linear-gradient(135deg, var(--border), #f8fafc)',
+                    background: 'linear-gradient(135deg, var(--border), var(--surface-2))',
                     boxShadow: 'inset 4px 4px 10px var(--neu-dark), inset -4px -4px 10px var(--neu-light)',
-                    border: '1px solid rgba(255,255,255,0.6)'
+                    border: '1px solid var(--border)'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Stealth Tracking</div>
@@ -471,7 +471,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                         {bundles.filter(bundle => formData.bundleIds.includes(bundle.id)).map(bundle => (
                           <div key={bundle.id} style={{
-                            padding: '10px 18px', borderRadius: '16px', background: '#f3f0ff',
+                            padding: '10px 18px', borderRadius: '16px', background: 'var(--primary-light)',
                             boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                             display: 'flex', alignItems: 'center', gap: '10px'
                           }}>
@@ -493,7 +493,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                               }
                             }}
                             style={{
-                              padding: '10px 18px', borderRadius: '16px', border: '2px dashed #ddd6fe', background: 'rgba(255,255,255,0.3)',
+                              padding: '10px 18px', borderRadius: '16px', border: '2px dashed #ddd6fe', background: 'var(--surface-2)',
                               fontSize: '13px', fontWeight: '700', color: 'var(--accent)', cursor: 'pointer', appearance: 'none'
                             }}
                             value=""
@@ -532,7 +532,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                 style={{
                                   padding: '4px 10px', borderRadius: '20px', border: '1px solid ' + (isLive ? 'var(--border)' : 'var(--border)'),
                                   background: isLive
-                                    ? 'linear-gradient(135deg, #dcfce7, var(--border))'
+                                    ? 'linear-gradient(135deg, var(--success-light), var(--border))'
                                     : 'linear-gradient(135deg, var(--border), var(--border))',
                                   color: isLive ? 'var(--success)' : 'var(--warning)',
                                   fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em',
@@ -571,7 +571,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                   }
                                 }}
                               style={{
-                                padding: '10px 18px', borderRadius: '16px', border: '2px dashed var(--neu-dark)', background: 'rgba(255,255,255,0.3)',
+                                padding: '10px 18px', borderRadius: '16px', border: '2px dashed var(--neu-dark)', background: 'var(--surface-2)',
                                 fontSize: '13px', fontWeight: '700', color: 'var(--accent)', cursor: 'pointer', appearance: 'none'
                               }}
                               value=""
