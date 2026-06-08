@@ -50,19 +50,33 @@ export default function DynamicPromptBlocker() {
 
   const submitResponse = async (finalAnswers: Record<string, string>) => {
     setSubmitting(true)
+    setError('')
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 8000)
+
     try {
       const res = await fetch('/api/prompts/respond', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ promptId: prompt.id, answers: finalAnswers })
+        body: JSON.stringify({ promptId: prompt.id, answers: finalAnswers }),
+        signal: controller.signal
       })
+
+      clearTimeout(timeoutId)
 
       if (!res.ok) throw new Error('Failed to submit response')
       
       setPrompt(null) // Dismiss modal
       router.refresh()
-    } catch (err) {
-      setError('Something went wrong. Please try again.')
+    } catch (err: any) {
+      clearTimeout(timeoutId)
+      console.error('Prompt submit error:', err)
+      if (err.name === 'AbortError') {
+        setError('Request timed out. Please check your connection and try again.')
+      } else {
+        setError('Something went wrong. Please try again.')
+      }
       setSubmitting(false)
     }
   }

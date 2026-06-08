@@ -122,9 +122,9 @@ export default function LivePage() {
         },
       }
 
-      setIsProcessing(false)
       const rzp = new (window as unknown as { Razorpay: new (opts: typeof options) => { open: () => void } }).Razorpay(options)
       rzp.open()
+      setIsProcessing(false)
     } catch (e: any) {
       alert(e.message || 'Something went wrong')
       setIsProcessing(false)

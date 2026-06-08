@@ -360,16 +360,54 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
 
   // Listen for real-time ping to invalidate unread counts SWR cache
   useEffect(() => {
-    const es = new EventSource('/api/user/stream')
-    es.addEventListener('invalidate', (e) => {
+    let es: EventSource | null = null
+    let reconnectTimeout: NodeJS.Timeout | null = null
+    let active = true
+
+    function connect() {
+      if (!active) return
+      
       try {
-        const payload = JSON.parse(e.data)
-        if (payload.target === 'all' || payload.target === 'unread') {
-          mutateUnread()
+        es = new EventSource('/api/user/stream')
+        
+        es.addEventListener('invalidate', (e) => {
+          try {
+            const payload = JSON.parse(e.data)
+            if (payload.target === 'all' || payload.target === 'unread') {
+              mutateUnread()
+            }
+          } catch (err) {}
+        })
+
+        es.onerror = () => {
+          if (es) {
+            es.close()
+            es = null
+          }
+          // Retry after 30 seconds to avoid connection storms
+          if (active) {
+            reconnectTimeout = setTimeout(connect, 30000)
+          }
         }
-      } catch (err) {}
-    })
-    return () => es.close()
+      } catch (err) {
+        console.error('SSE Connection error:', err)
+        if (active) {
+          reconnectTimeout = setTimeout(connect, 30000)
+        }
+      }
+    }
+
+    connect()
+
+    return () => {
+      active = false
+      if (es) {
+        es.close()
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout)
+      }
+    }
   }, [mutateUnread])
 
   const visibleItems = NAV_ITEMS.filter(
@@ -400,6 +438,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   }, [visibleItems])
 
   async function handleLogout() {
+    setIsOpen(false)
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
     router.refresh()
@@ -517,6 +556,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 href={item.href}
                 style={getLinkStyle()}
                 className={isStore ? 'store-link' : ''}
+                onClick={() => setIsOpen(false)}
               >
                 {isStore && (
                   <style dangerouslySetInnerHTML={{__html: `

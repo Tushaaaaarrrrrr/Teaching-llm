@@ -217,9 +217,9 @@ export default function ExploreCoursesPage() {
         },
       }
 
-      setIsProcessing(false)
       const rzp = new (window as any).Razorpay(options)
       rzp.open()
+      setIsProcessing(false)
     } catch (e: any) {
       alert(e.message || 'Something went wrong')
       setIsProcessing(false)
@@ -303,9 +303,9 @@ export default function ExploreCoursesPage() {
         },
       }
 
-      setIsProcessing(false)
       const rzp = new (window as any).Razorpay(options)
       rzp.open()
+      setIsProcessing(false)
     } catch (err: any) {
       alert(err.message)
       setIsProcessing(false)
@@ -363,9 +363,9 @@ export default function ExploreCoursesPage() {
         },
         modal: { ondismiss: () => setIsProcessing(false) }
       }
-      setIsProcessing(false)
       const rzp = new (window as any).Razorpay(options)
       rzp.open()
+      setIsProcessing(false)
     } catch (err: any) {
       alert(err.message || 'Error processing')
       setIsProcessing(false)
@@ -1209,9 +1209,9 @@ export default function ExploreCoursesPage() {
                               },
                               modal: { ondismiss: () => setPurchasing(null) }
                             }
-                            setPurchasing(null)
                             const rzp = new (window as any).Razorpay(options)
                             rzp.open()
+                            setPurchasing(null)
                           } catch { alert('Error'); setPurchasing(null) }
                         }}
                         style={{ padding: '12px 24px', borderRadius: '12px', background: 'linear-gradient(135deg, #ec4899, #be185d)', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer', fontSize: '14px' }}
@@ -2411,9 +2411,9 @@ export default function ExploreCoursesPage() {
                                 },
                                 modal: { ondismiss: () => setIsProcessing(false) }
                               }
-                              setIsProcessing(false)
                               const rzp = new (window as any).Razorpay(options)
                               rzp.open()
+                              setIsProcessing(false)
                             } catch (err: any) { alert(err.message || 'Something went wrong'); setIsProcessing(false) }
                           }} 
                           style={{ 
@@ -4353,9 +4353,9 @@ export default function ExploreCoursesPage() {
                       },
                       modal: { ondismiss: () => setIsProcessing(false) }
                     }
-                    setIsProcessing(false)
                     const rzp = new (window as any).Razorpay(options)
                     rzp.open()
+                    setIsProcessing(false)
                   } catch (e: any) {
                     setIsProcessing(false)
                     alert(e.message || 'Error processing')

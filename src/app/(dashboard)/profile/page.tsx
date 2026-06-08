@@ -328,50 +328,6 @@ export default function ProfilePage() {
           {/* Profile-pic change disabled — predefined avatars only */}
         </div>
 
-        {/* ── Course Feedback Navigation Row ── */}
-        {user.role === 'STUDENT' && (
-          <div
-            onClick={() => router.push('/feedback')}
-            style={{
-              background: 'var(--surface)',
-              borderRadius: '24px',
-              padding: '16px 20px',
-              border: '1px solid rgba(15,23,42,0.05)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              transition: 'transform 0.2s ease',
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '12px',
-                background: '#ffeedd',
-                color: 'var(--warning)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                </svg>
-              </div>
-              <span style={{ fontSize: '15.5px', fontWeight: '800', color: 'var(--text-primary)', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
-                Course Feedback
-              </span>
-            </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </div>
-        )}
 
         {/* ── Personal Information + Account Details (side by side) ── */}
         <div className="responsive-two-column-grid">
