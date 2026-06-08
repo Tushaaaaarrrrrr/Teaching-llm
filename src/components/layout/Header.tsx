@@ -58,8 +58,8 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  INFO: '#3b82f6', SUCCESS: '#10b981', WARNING: '#f59e0b', ERROR: '#ef4444',
-  info: '#3b82f6', success: '#10b981', warning: '#f59e0b', error: '#ef4444',
+  INFO: 'var(--info)', SUCCESS: 'var(--success)', WARNING: 'var(--warning)', ERROR: 'var(--danger)',
+  info: 'var(--info)', success: 'var(--success)', warning: 'var(--warning)', error: 'var(--danger)',
 }
 
 export default function Header({ userName, userRole }: HeaderProps) {
@@ -271,10 +271,10 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   const neuIconStyle = {
     width: '40px', height: '40px', borderRadius: '50%',
-    background: '#e8eaf0',
-    boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+    background: 'var(--sidebar-bg)',
+    boxShadow: 'var(--shadow)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#6b6b8a', cursor: 'pointer',
+    color: 'var(--text-secondary)', cursor: 'pointer',
     transition: 'box-shadow 0.2s ease', border: 'none', flexShrink: 0,
     outline: 'none',
   } as React.CSSProperties
@@ -284,7 +284,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   return (
     <header style={{
-      height: showGreetingHeadline ? '140px' : '96px', background: '#e8eaf0',
+      height: showGreetingHeadline ? '140px' : '96px', background: 'var(--sidebar-bg)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
       transition: 'height 0.3s ease',
@@ -308,11 +308,11 @@ export default function Header({ userName, userRole }: HeaderProps) {
           <a href="/profile" className="mobile-header-greeting" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
             <div style={{
               width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
-              background: '#ffffff',
-              boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+              background: 'var(--surface)',
+              boxShadow: 'var(--shadow)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               overflow: 'hidden',
-              border: '2px solid #ffffff',
+              border: '2px solid var(--neu-light)',
             }}>
               <img
                 src={currentAvatar}
@@ -322,13 +322,13 @@ export default function Header({ userName, userRole }: HeaderProps) {
               />
             </div>
             <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '15px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.2px', display: 'flex', alignItems: 'baseline', gap: '5px', flexWrap: 'nowrap' }}>
+              <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.2px', display: 'flex', alignItems: 'baseline', gap: '5px', flexWrap: 'nowrap' }}>
                 {mounted ? getGreeting().heading : 'Welcome'},
-                <span style={{ fontSize: '17px', fontWeight: 700, color: '#3636e8', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+                <span style={{ fontSize: '17px', fontWeight: 700, color: 'var(--primary)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
                   {firstName}
                 </span>
               </span>
-              <span style={{ fontSize: '11.5px', fontWeight: 500, color: '#6b6b8a', lineHeight: 1.3, marginTop: '3px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+              <span style={{ fontSize: '11.5px', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.3, marginTop: '3px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
                 {mounted ? getGreeting().subtext : 'Loading your dashboard...'}
               </span>
             </div>
@@ -338,7 +338,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
         {/* Mobile-only title (shown on non-home pages) */}
         {!isHomePage && (
           <div className="mobile-header-back-title" style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.3px' }}>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.3px' }}>
               {pageInfo.title}
             </span>
           </div>
@@ -350,7 +350,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
             <h1 style={{
               fontSize: '56px',
               fontWeight: '900',
-              color: '#1e1e3a',
+              color: 'var(--text-primary)',
               lineHeight: '1.0',
               letterSpacing: '-1.5px',
               display: 'flex',
@@ -363,7 +363,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
               <span style={{
                 fontSize: '40px',
                 fontWeight: '700',
-                color: '#3636e8',
+                color: 'var(--primary)',
                 letterSpacing: '-0.8px',
                 opacity: 0.9,
                 fontFamily: "'Outfit', 'Nunito', sans-serif"
@@ -373,7 +373,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
             </h1>
             <p style={{
               fontSize: '16.5px',
-              color: '#6b6b8a',
+              color: 'var(--text-secondary)',
               marginTop: '6px',
               fontWeight: '500',
               letterSpacing: '0.01em',
@@ -385,11 +385,11 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </>
         ) : (
           <>
-            <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', letterSpacing: '-0.5px' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.2', letterSpacing: '-0.5px' }}>
               {pageInfo.title}
             </h1>
             {pageInfo.subtitle ? (
-              <p style={{ fontSize: '13.5px', color: '#6b6b8a', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', fontWeight: '500' }}>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', fontWeight: '500' }}>
                 {pageInfo.subtitle}
                 {matchedKey === '/courses/explore' && (
                   <a 
@@ -399,7 +399,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
                     style={{ 
                       color: '#fff', 
                       textDecoration: 'none', 
-                      backgroundColor: '#6366f1', 
+                      backgroundColor: 'var(--accent)', 
                       padding: '3px 10px', 
                       borderRadius: '6px', 
                       fontWeight: '600', 
@@ -444,8 +444,8 @@ export default function Header({ userName, userRole }: HeaderProps) {
           <button
             style={{ ...neuIconStyle, position: 'relative' }}
             onClick={() => setShowNotif(v => !v)}
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--shadow-sm)')}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = 'var(--shadow)')}
             title="Notifications & Announcements"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -456,7 +456,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
               <span style={{
                 position: 'absolute', top: '6px', right: '6px',
                 minWidth: '16px', height: '16px', borderRadius: '50%',
-                background: '#ef4444', border: '2px solid #e8eaf0',
+                background: 'var(--danger)', border: '2px solid var(--sidebar-bg)',
                 fontSize: '9px', fontWeight: '800', color: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
               }}>
@@ -471,23 +471,23 @@ export default function Header({ userName, userRole }: HeaderProps) {
               style={{
                 position: 'absolute', right: 0, top: 'calc(100% + 10px)',
                 width: 'min(340px, calc(100vw - 24px))', borderRadius: '20px',
-                background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
+                background: 'var(--sidebar-bg)', boxShadow: 'var(--shadow-lg)',
                 zIndex: 200, overflow: 'hidden',
               }}
             >
-              <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1.5px solid rgba(0,0,0,0.06)' }}>
-                <span style={{ fontWeight: '800', fontSize: '14px', color: '#1e1e3a' }}>
-                  Notifications {unreadCount > 0 && <span style={{ color: '#3636e8' }}>({unreadCount})</span>}
+              <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1.5px solid var(--border)' }}>
+                <span style={{ fontWeight: '800', fontSize: '14px', color: 'var(--text-primary)' }}>
+                  Notifications {unreadCount > 0 && <span style={{ color: 'var(--primary)' }}>({unreadCount})</span>}
                 </span>
                 {unreadCount > 0 && (
-                  <button onClick={markAllRead} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#3636e8', fontWeight: '700', fontFamily: 'inherit' }}>
+                  <button onClick={markAllRead} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--primary)', fontWeight: '700', fontFamily: 'inherit' }}>
                     Mark all read
                   </button>
                 )}
               </div>
               <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
                 {notifications.length === 0 ? (
-                  <div style={{ padding: '30px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
+                  <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                     No notifications yet
                   </div>
                 ) : notifications.slice(0, 15).map(n => (
@@ -496,7 +496,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
                     onClick={() => markRead(n.id, n.announcementId)}
                     style={{
                       padding: '12px 18px', cursor: 'pointer',
-                      borderBottom: '1px solid rgba(0,0,0,0.04)',
+                      borderBottom: '1px solid var(--border-light)',
                       background: n.isRead ? 'transparent' : 'rgba(54,54,232,0.04)',
                       transition: 'background 0.15s',
                       display: 'flex', gap: '12px', alignItems: 'flex-start',
@@ -506,19 +506,19 @@ export default function Header({ userName, userRole }: HeaderProps) {
                   >
                     <div style={{
                       width: '8px', height: '8px', borderRadius: '50%', marginTop: '5px', flexShrink: 0,
-                      background: n.isRead ? '#c5c7cf' : (TYPE_COLORS[n.type] || '#3b82f6'),
+                      background: n.isRead ? 'var(--text-muted)' : (TYPE_COLORS[n.type] || 'var(--info)'),
                     }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', fontWeight: n.isRead ? '500' : '700', color: '#1e1e3a', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '13px', fontWeight: n.isRead ? '500' : '700', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {n.title}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {(() => {
                           const cleanText = stripFcmMeta(n.content)
                           return cleanText.length > 60 ? cleanText.slice(0, 57) + '…' : cleanText
                         })()}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#b0b2ba', marginTop: '3px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
                         {new Date(n.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
@@ -532,16 +532,16 @@ export default function Header({ userName, userRole }: HeaderProps) {
         {/* User pill with dropdown */}
         <div ref={userMenuRef} className="header-profile" style={{ position: 'relative' }}>
           <div
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', cursor: 'pointer', transition: 'box-shadow 0.2s ease', outline: 'none' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: 'var(--sidebar-bg)', boxShadow: 'var(--shadow)', cursor: 'pointer', transition: 'box-shadow 0.2s ease', outline: 'none' }}
             onClick={() => setShowUserMenu(v => !v)}
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--shadow-sm)')}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = 'var(--shadow)')}
             title="My Account & Profile"
           >
             <div style={{
               width: '32px', height: '32px', borderRadius: '50%',
-              background: '#ffffff',
-              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+              background: 'var(--surface)',
+              boxShadow: 'var(--shadow-sm)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               overflow: 'hidden',
             }}>
@@ -553,8 +553,8 @@ export default function Header({ userName, userRole }: HeaderProps) {
               />
             </div>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1.2' }}>{currentUserName}</div>
-              <div style={{ fontSize: '11px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: '1.2' }}>{currentUserName}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
                 {currentUserRole.charAt(0) + currentUserRole.slice(1).toLowerCase()}
                 {currentUserRole !== 'STUDENT' && (
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
@@ -573,7 +573,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
             <div style={{
               position: 'absolute', right: 0, top: 'calc(100% + 10px)',
               width: '200px', borderRadius: '16px',
-              background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
+              background: 'var(--sidebar-bg)', boxShadow: 'var(--shadow-lg)',
               zIndex: 200, overflow: 'hidden', padding: '6px',
             }}>
               <button
@@ -582,7 +582,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
                   display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
                   padding: '10px 14px', borderRadius: '12px', border: 'none',
                   background: 'transparent', cursor: 'pointer', fontSize: '13px',
-                  fontWeight: '500', color: '#1e1e3a', fontFamily: 'inherit',
+                  fontWeight: '500', color: 'var(--text-primary)', fontFamily: 'inherit',
                   transition: 'background 0.15s',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(54,54,232,0.06)')}
@@ -600,7 +600,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
                   display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
                   padding: '10px 14px', borderRadius: '12px', border: 'none',
                   background: 'transparent', cursor: 'pointer', fontSize: '13px',
-                  fontWeight: '500', color: '#1e1e3a', fontFamily: 'inherit',
+                  fontWeight: '500', color: 'var(--text-primary)', fontFamily: 'inherit',
                   transition: 'background 0.15s',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(54,54,232,0.06)')}
@@ -612,14 +612,14 @@ export default function Header({ userName, userRole }: HeaderProps) {
                 </svg>
                 Settings
               </button>
-              <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)', margin: '4px 10px' }} />
+              <div style={{ height: '1px', background: 'var(--border)', margin: '4px 10px' }} />
               <button
                 onClick={() => { setShowUserMenu(false); handleLogout() }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
                   padding: '10px 14px', borderRadius: '12px', border: 'none',
                   background: 'transparent', cursor: 'pointer', fontSize: '13px',
-                  fontWeight: '500', color: '#ef4444', fontFamily: 'inherit',
+                  fontWeight: '500', color: 'var(--danger)', fontFamily: 'inherit',
                   transition: 'background 0.15s',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}

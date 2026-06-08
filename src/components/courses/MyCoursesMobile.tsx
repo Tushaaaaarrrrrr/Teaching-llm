@@ -72,10 +72,10 @@ export default function MyCoursesMobile() {
       {/* Title row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '16px', padding: '0 4px' }}>
         <div style={{ minWidth: 0 }}>
-          <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#1e1e3a', letterSpacing: '-0.02em', margin: 0, lineHeight: 1.05 }}>
+          <h1 style={{ fontSize: '26px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0, lineHeight: 1.05 }}>
             My Courses
           </h1>
-          <p style={{ fontSize: '12.5px', fontWeight: 600, color: '#9999b0', marginTop: '4px' }}>
+          <p style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '4px' }}>
             {enrolledCount} enrolled · pick up where you left off
           </p>
         </div>
@@ -83,8 +83,8 @@ export default function MyCoursesMobile() {
           aria-label="Filter"
           style={{
             width: '40px', height: '40px', borderRadius: '12px',
-            background: '#ffffff', border: 'none', cursor: 'pointer', flexShrink: 0,
-            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+            background: 'var(--surface)', border: 'none', cursor: 'pointer', flexShrink: 0,
+            boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
@@ -113,12 +113,12 @@ export default function MyCoursesMobile() {
             padding: '12px 18px 12px 44px',
             borderRadius: '50px',
             border: 'none',
-            background: '#ffffff',
-            boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff',
+            background: 'var(--surface)',
+            boxShadow: 'inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light)',
             outline: 'none',
             fontFamily: 'inherit',
             fontSize: '13.5px',
-            color: '#1e1e3a',
+            color: 'var(--text-primary)',
           }}
         />
       </div>
@@ -126,10 +126,10 @@ export default function MyCoursesMobile() {
       {/* All courses */}
       <div>
         <div style={{ padding: '0 4px', marginBottom: '12px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 900, color: '#1e1e3a', margin: 0, letterSpacing: '-0.01em' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
             All courses
           </h2>
-          <p style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: 600, marginTop: '2px' }}>
+          <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
             {enrolledCount} enrolled course{enrolledCount === 1 ? '' : 's'}
           </p>
         </div>
@@ -188,7 +188,7 @@ function CourseCard({
   hasFeedback: boolean
   onGiveFeedback: () => void
 }) {
-  const accent = course.color || '#6366f1'
+  const accent = course.color || 'var(--accent)'
   const mentorInitial = (course.teacherName || '?').trim().charAt(0).toUpperCase()
   const enrollmentBadge = course.enrollmentType === 'LIVE' ? 'LIVE BATCH'
     : course.enrollmentType === 'RECORDED' ? 'PRO BATCH'
@@ -203,7 +203,7 @@ function CourseCard({
       style={{
         display: 'block',
         borderRadius: '22px',
-        background: '#ffffff',
+        background: 'var(--surface)',
         boxShadow: '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
         border: '1px solid rgba(15, 23, 42, 0.05)',
         overflow: 'hidden',
@@ -266,13 +266,13 @@ function CourseCard({
           }}>
             {mentorInitial}
           </div>
-          <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {course.teacherName || 'Mentor'}
           </span>
-          <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#cbd5e1', flexShrink: 0 }} />
+          <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--text-muted)', flexShrink: 0 }} />
           <span style={{
             fontSize: '11px', fontWeight: 700,
-            color: expired ? '#ef4444' : accessDays !== null && accessDays <= 7 ? '#f59e0b' : '#94a3b8',
+            color: expired ? 'var(--danger)' : accessDays !== null && accessDays <= 7 ? 'var(--warning)' : 'var(--text-muted)',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {accessDays !== null
@@ -294,13 +294,13 @@ function CourseCard({
               padding: '10px 14px',
               borderRadius: '50px',
               border: 'none',
-              background: '#ffffff',
-              color: '#d97706',
+              background: 'var(--surface)',
+              color: 'var(--warning)',
               fontSize: '12.5px',
               fontWeight: '800',
               cursor: 'pointer',
               marginBottom: '14px',
-              boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+              boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -328,15 +328,15 @@ function CourseCard({
               style={{
                 padding: '12px 8px',
                 borderRadius: '16px',
-                background: '#e8eaf0',
-                boxShadow: '5px 5px 12px #c5c7cf, -5px -5px 12px #ffffff',
+                background: 'var(--surface-2)',
+                boxShadow: '5px 5px 12px var(--neu-dark), -5px -5px 12px var(--neu-light)',
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#1e1e3a', letterSpacing: '-0.02em', lineHeight: 1 }}>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
                 {s.value}
               </div>
-              <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#9999b0', marginTop: '5px', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', marginTop: '5px', letterSpacing: '0.04em' }}>
                 {s.label}
               </div>
             </div>
@@ -351,17 +351,17 @@ function EmptyState({ search }: { search: string }) {
   return (
     <div style={{
       padding: '40px 20px', textAlign: 'center',
-      background: '#ffffff', borderRadius: '20px',
+      background: 'var(--surface)', borderRadius: '20px',
       border: '1px solid rgba(15, 23, 42, 0.05)',
     }}>
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.6" style={{ marginBottom: '10px' }}>
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
       </svg>
-      <div style={{ fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '4px' }}>
+      <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px' }}>
         {search ? `No courses matching "${search}"` : 'No courses enrolled yet'}
       </div>
-      <div style={{ fontSize: '12px', color: '#9999b0' }}>
+      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
         {search ? 'Try a different keyword.' : 'Enrolled courses will show up here.'}
       </div>
     </div>

@@ -60,15 +60,15 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Write s
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: isActive ? '#3636e8' : 'transparent',
-        color: isActive ? '#ffffff' : '#6b6b8a',
+        background: isActive ? 'var(--primary)' : 'transparent',
+        color: isActive ? '#ffffff' : 'var(--text-secondary)',
         border: 'none',
         borderRadius: '6px',
         cursor: 'pointer',
         transition: 'all 0.2s',
       }}
       onMouseEnter={(e) => {
-        if (!isActive) e.currentTarget.style.background = '#e8eaf0'
+        if (!isActive) e.currentTarget.style.background = 'var(--surface-2)'
       }}
       onMouseLeave={(e) => {
         if (!isActive) e.currentTarget.style.background = 'transparent'
@@ -80,10 +80,10 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Write s
 
   return (
     <div style={{
-      border: '2px solid #e8eaf0',
+      border: '2px solid var(--border)',
       borderRadius: '16px',
       overflow: 'hidden',
-      background: '#ffffff',
+      background: 'var(--surface)',
       display: 'flex',
       flexDirection: 'column',
     }}>
@@ -93,8 +93,8 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Write s
         alignItems: 'center',
         gap: '6px',
         padding: '10px 14px',
-        background: '#f6f7fb',
-        borderBottom: '2px solid #e8eaf0',
+        background: 'var(--surface-2)',
+        borderBottom: '2px solid var(--border)',
         flexWrap: 'wrap'
       }}>
         <ToolbarButton title="Bold"
@@ -119,7 +119,7 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Write s
             </svg>
           } />
         
-        <div style={{ width: '1px', height: '24px', background: '#d1d3dd', margin: '0 4px' }} />
+        <div style={{ width: '1px', height: '24px', background: 'var(--border)', margin: '0 4px' }} />
 
         <ToolbarButton title="Heading 1"
           onClick={() => format('formatBlock', 'H1')}
@@ -128,7 +128,7 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Write s
           onClick={() => format('formatBlock', 'H2')}
           icon={<span style={{ fontWeight: 800, fontSize: '15px' }}>H2</span>} />
         
-        <div style={{ width: '1px', height: '24px', background: '#d1d3dd', margin: '0 4px' }} />
+        <div style={{ width: '1px', height: '24px', background: 'var(--border)', margin: '0 4px' }} />
 
         <ToolbarButton title="Bullet List"
           onClick={() => format('insertUnorderedList')}
@@ -155,7 +155,7 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Write s
           padding: '20px',
           minHeight,
           outline: 'none',
-          color: '#1e1e3a',
+          color: 'var(--text-primary)',
           fontSize: '15px',
           lineHeight: '1.6',
           wordBreak: 'break-word',

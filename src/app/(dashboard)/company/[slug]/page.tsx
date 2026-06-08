@@ -53,32 +53,32 @@ export default function CompanyPage() {
   }
 
   const neuCard: React.CSSProperties = {
-    borderRadius: '20px', background: '#e8eaf0',
-    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+    borderRadius: '20px', background: 'var(--surface-2)',
+    boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)',
     padding: 'clamp(20px, 5vw, 40px)',
     minHeight: '300px'
   }
   
   const neuButton: React.CSSProperties = {
     padding: '10px 24px', borderRadius: '50px', border: 'none',
-    background: '#3636e8', color: '#fff', fontSize: '14px', fontWeight: 700,
+    background: 'var(--primary)', color: '#fff', fontSize: '14px', fontWeight: 700,
     fontFamily: 'inherit', cursor: 'pointer',
-    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)',
+    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-glow)',
     transition: 'all 0.2s ease',
   }
 
   const neuButtonSecondary: React.CSSProperties = {
     padding: '10px 24px', borderRadius: '50px', border: 'none',
-    background: '#e8eaf0', color: '#6b6b8a', fontSize: '14px', fontWeight: 700,
+    background: 'var(--surface-2)', color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 700,
     fontFamily: 'inherit', cursor: 'pointer',
-    boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+    boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
     transition: 'all 0.2s ease',
   }
 
   // If the page-data fetch is still in flight, show a soft loader.
   // We still proceed to render with the default content as a safety net if the API ever fails.
   if (!pageData && !getDefaultCompanyContent(slug)) {
-     return <div style={{ padding: '32px', textAlign: 'center', color: '#9999b0', fontWeight: 600 }}>Loading {titleText}...</div>
+     return <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 600 }}>Loading {titleText}...</div>
   }
 
   // If pageData hasn't arrived yet but we have a default for this slug, render the default immediately.
@@ -107,7 +107,7 @@ export default function CompanyPage() {
               <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
             </svg>
           </button>
-          <h1 style={{ fontSize: 'clamp(20px, 5.5vw, 32px)', fontWeight: 800, color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px', wordBreak: 'normal', overflowWrap: 'break-word' }}>
+          <h1 style={{ fontSize: 'clamp(20px, 5.5vw, 32px)', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px', wordBreak: 'normal', overflowWrap: 'break-word' }}>
             {titleText}
           </h1>
         </div>
@@ -142,7 +142,7 @@ export default function CompanyPage() {
       <div style={neuCard}>
         {isEditing ? (
           <div>
-            <div style={{ marginBottom: '16px', fontSize: '13px', color: '#6b6b8a', fontWeight: 600 }}>
+            <div style={{ marginBottom: '16px', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>
               Use the toolbar below to format your content. Feel free to use bold, italics, or lists.
             </div>
             <RichTextEditor 
@@ -155,7 +155,7 @@ export default function CompanyPage() {
         ) : (
           <div
             className="custom-page-content"
-            style={{ color: '#4a4a68', lineHeight: '1.7', fontSize: 'clamp(14px, 3.6vw, 16px)' }}
+            style={{ color: 'var(--text-secondary)', lineHeight: '1.7', fontSize: 'clamp(14px, 3.6vw, 16px)' }}
             dangerouslySetInnerHTML={{ __html: displayContent || `<p style="color: #9999b0; font-style: italic; text-align: center; padding: 40px;">No content available for ${titleText}. ${isManager ? 'Click Edit to add something.' : ''}</p>` }}
           />
         )}
@@ -168,7 +168,7 @@ export default function CompanyPage() {
           flexDirection: 'column',
           gap: '16px',
         }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '8px' }}>Manage Policies</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>Manage Policies</h3>
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
             {[
               { href: '/company/privacy-policy', label: 'Privacy Policy' },
@@ -180,13 +180,13 @@ export default function CompanyPage() {
                 href={link.href} 
                 style={{ 
                   padding: '16px 24px', 
-                  background: '#e8eaf0', 
+                  background: 'var(--surface-2)', 
                   borderRadius: '16px',
-                  color: '#3636e8',
+                  color: 'var(--primary)',
                   textDecoration: 'none',
                   fontWeight: 700,
                   fontSize: '14px',
-                  boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                  boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '10px',
@@ -194,11 +194,11 @@ export default function CompanyPage() {
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff'
+                  e.currentTarget.style.boxShadow = '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)'
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff'
+                  e.currentTarget.style.boxShadow = '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)'
                 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

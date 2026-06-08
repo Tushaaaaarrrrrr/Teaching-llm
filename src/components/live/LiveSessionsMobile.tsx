@@ -26,11 +26,11 @@ interface Props {
 }
 
 const TIME_SLOT_COLORS: { bg: string; fg: string }[] = [
-  { bg: '#ede9fe', fg: '#6d28d9' }, // lavender
-  { bg: '#d1fae5', fg: '#047857' }, // green
-  { bg: '#fef3c7', fg: '#b45309' }, // amber
-  { bg: '#fee2e2', fg: '#b91c1c' }, // red
-  { bg: '#dbeafe', fg: '#1d4ed8' }, // blue
+  { bg: 'var(--primary-light)', fg: 'var(--accent)' }, // lavender
+  { bg: 'var(--success-light)', fg: 'var(--success)' }, // green
+  { bg: 'var(--warning-light)', fg: 'var(--warning)' }, // amber
+  { bg: 'var(--danger-light)', fg: 'var(--danger)' }, // red
+  { bg: 'var(--info-light)', fg: 'var(--info)' }, // blue
 ]
 
 export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) {
@@ -96,21 +96,21 @@ export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) 
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            background: '#ffffff',
+            background: 'var(--surface)',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
-            color: '#6b6b8a',
+            boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
+            color: 'var(--text-secondary)',
             flexShrink: 0,
             transition: 'all 0.2s',
           }}
           onMouseEnter={e => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#3636e8'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
           }}
           onMouseLeave={e => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#6b6b8a'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -123,7 +123,7 @@ export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) 
           <h1 style={{
             fontSize: '22px',
             fontWeight: 900,
-            color: '#1e1e3a',
+            color: 'var(--text-primary)',
             margin: 0,
             lineHeight: 1.1,
             letterSpacing: '-0.02em',
@@ -133,7 +133,7 @@ export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) 
           </h1>
           <p style={{
             fontSize: '12px',
-            color: '#6b6b8a',
+            color: 'var(--text-secondary)',
             fontWeight: 600,
             margin: '3px 0 0',
             fontFamily: "'Outfit', sans-serif"
@@ -147,16 +147,16 @@ export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) 
           aria-label="Search"
           style={{
             width: '40px', height: '40px', borderRadius: '50%',
-            background: showSearch ? '#3636e8' : '#ffffff',
+            background: showSearch ? 'var(--primary)' : '#ffffff',
             boxShadow: showSearch
               ? '0 6px 14px rgba(54,54,232,0.30)'
-              : '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+              : '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
             border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             transition: 'all 0.2s',
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={showSearch ? '#ffffff' : '#6b6b8a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={showSearch ? '#ffffff' : 'var(--text-secondary)'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
@@ -178,9 +178,9 @@ export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) 
               fontSize: '13.5px',
               fontFamily: 'inherit',
               outline: 'none',
-              color: '#1e1e3a',
-              background: '#ffffff',
-              boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff',
+              color: 'var(--text-primary)',
+              background: 'var(--surface)',
+              boxShadow: 'inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light)',
             }}
           />
         </div>
@@ -229,12 +229,12 @@ export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) 
         {hasAnySessions && !hasSearchResults && (
           <div style={{
             padding: '48px 24px', textAlign: 'center',
-            background: '#ffffff', borderRadius: '24px',
+            background: 'var(--surface)', borderRadius: '24px',
             border: '1px solid rgba(15, 23, 42, 0.05)',
             boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.10)',
           }}>
-            <div style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a', marginBottom: '4px' }}>No matches found</div>
-            <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: 600 }}>Try searching for another topic or course.</div>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>No matches found</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Try searching for another topic or course.</div>
           </div>
         )}
       </div>
@@ -287,8 +287,8 @@ function LiveSessionCard({ session, onUpgradeClick }: { session: CourseEvent; on
             border: '1px solid rgba(255,255,255,0.30)',
           }}>
             <span style={{
-              width: '6px', height: '6px', borderRadius: '50%', background: '#ffffff',
-              boxShadow: '0 0 6px #ffffff',
+              width: '6px', height: '6px', borderRadius: '50%', background: 'var(--surface)',
+              boxShadow: '0 0 6px var(--neu-light)',
               animation: 'liveDotPulse 1.5s ease-in-out infinite',
             }} />
             LIVE
@@ -306,7 +306,7 @@ function LiveSessionCard({ session, onUpgradeClick }: { session: CourseEvent; on
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
         <div style={{
           width: '24px', height: '24px', borderRadius: '50%',
-          background: '#ffffff', color: '#dc2626',
+          background: 'var(--surface)', color: 'var(--danger)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '11px', fontWeight: 900, flexShrink: 0,
         }}>{initial}</div>
@@ -325,7 +325,7 @@ function LiveSessionCard({ session, onUpgradeClick }: { session: CourseEvent; on
               flex: 1,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               padding: '13px 16px', borderRadius: '50px',
-              background: '#ffffff', color: '#dc2626',
+              background: 'var(--surface)', color: 'var(--danger)',
               fontSize: '14px', fontWeight: 800, textDecoration: 'none',
               boxShadow: '0 6px 14px rgba(0,0,0,0.10)',
             }}
@@ -347,7 +347,7 @@ function LiveSessionCard({ session, onUpgradeClick }: { session: CourseEvent; on
               flex: 1,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               padding: '13px 16px', borderRadius: '50px',
-              background: '#ffffff', color: '#dc2626',
+              background: 'var(--surface)', color: 'var(--danger)',
               fontSize: '14px', fontWeight: 800, border: 'none', cursor: 'pointer',
               boxShadow: '0 6px 14px rgba(0,0,0,0.10)',
               transition: 'all 0.2s',
@@ -416,7 +416,7 @@ function UpcomingSessionRow({ session, slotIdx }: { session: CourseEvent; slotId
       display: 'flex', alignItems: 'center', gap: '14px',
       padding: '14px 14px',
       borderRadius: '20px',
-      background: '#ffffff',
+      background: 'var(--surface)',
       boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.15), 0 2px 6px -2px rgba(15, 23, 42, 0.04)',
       border: '1px solid rgba(15, 23, 42, 0.05)',
     }}>
@@ -435,10 +435,10 @@ function UpcomingSessionRow({ session, slotIdx }: { session: CourseEvent; slotId
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
           {session.title}
         </div>
-        <div style={{ fontSize: '11.5px', color: '#6b6b8a', fontWeight: 600, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {subject} · {instructor}
         </div>
       </div>
@@ -456,9 +456,9 @@ function RemindButton() {
       style={{
         padding: '8px 14px',
         borderRadius: '50px',
-        border: reminded ? 'none' : '1.5px solid #e2e8f0',
-        background: reminded ? '#3636e8' : '#ffffff',
-        color: reminded ? '#ffffff' : '#3636e8',
+        border: reminded ? 'none' : '1.5px solid var(--border)',
+        background: reminded ? 'var(--primary)' : '#ffffff',
+        color: reminded ? '#ffffff' : 'var(--primary)',
         fontSize: '11.5px',
         fontWeight: 800,
         cursor: 'pointer',
@@ -498,7 +498,7 @@ function RecordedSessionRow({ session }: { session: CourseEvent }) {
       display: 'flex', alignItems: 'center', gap: '14px',
       padding: '14px',
       borderRadius: '20px',
-      background: '#ffffff',
+      background: 'var(--surface)',
       boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.15), 0 2px 6px -2px rgba(15, 23, 42, 0.04)',
       border: '1px solid rgba(15, 23, 42, 0.05)',
     }}>
@@ -515,10 +515,10 @@ function RecordedSessionRow({ session }: { session: CourseEvent }) {
         </svg>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {session.title}
         </div>
-        <div style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: 600, marginTop: '2px' }}>
+        <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
           {subject} · {instructor} · {date}
         </div>
       </div>
@@ -530,11 +530,11 @@ function RecordedSessionRow({ session }: { session: CourseEvent }) {
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div style={{ marginBottom: '14px', padding: '0 4px' }}>
-      <div style={{ fontSize: '17px', fontWeight: 900, color: '#1e1e3a', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+      <div style={{ fontSize: '17px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
         {title}
       </div>
       {subtitle && (
-        <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: 600, marginTop: '2px' }}>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
           {subtitle}
         </div>
       )}
@@ -546,15 +546,15 @@ function EmptyState({ icon, title, subtitle }: { icon: 'live' | 'upcoming' | 're
   return (
     <div style={{
       padding: '48px 24px', textAlign: 'center',
-      background: '#ffffff', borderRadius: '24px',
+      background: 'var(--surface)', borderRadius: '24px',
       border: '1px solid rgba(15, 23, 42, 0.05)',
       boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.10)',
     }}>
       <div style={{
         width: '52px', height: '52px', margin: '0 auto 12px',
         borderRadius: '16px',
-        background: icon === 'live' ? '#fee2e2' : icon === 'upcoming' ? '#ede9fe' : '#e0e7ff',
-        color: icon === 'live' ? '#dc2626' : icon === 'upcoming' ? '#6d28d9' : '#4338ca',
+        background: icon === 'live' ? 'var(--danger-light)' : icon === 'upcoming' ? 'var(--primary-light)' : 'var(--primary-light)',
+        color: icon === 'live' ? 'var(--danger)' : icon === 'upcoming' ? 'var(--accent)' : 'var(--primary-dark)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         {icon === 'live' ? (
@@ -576,8 +576,8 @@ function EmptyState({ icon, title, subtitle }: { icon: 'live' | 'upcoming' | 're
           </svg>
         )}
       </div>
-      <div style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a', marginBottom: '4px' }}>{title}</div>
-      <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: 600 }}>{subtitle}</div>
+      <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>{title}</div>
+      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{subtitle}</div>
     </div>
   )
 }

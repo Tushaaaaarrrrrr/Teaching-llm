@@ -107,10 +107,10 @@ export default function AcademicsPage() {
         marginBottom: '18px',
         padding: '4px 4px',
       }}>
-        <h1 style={{ fontSize: 'clamp(20px, 5.5vw, 26px)', fontWeight: 900, color: '#1e1e3a', margin: 0, letterSpacing: '-0.02em' }}>
+        <h1 style={{ fontSize: 'clamp(20px, 5.5vw, 26px)', fontWeight: 900, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
           Academics
         </h1>
-        <p style={{ fontSize: '13px', color: '#9999b0', fontWeight: 600, marginTop: '4px' }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '4px' }}>
           Everything for your learning journey
         </p>
       </div>
@@ -124,9 +124,9 @@ export default function AcademicsPage() {
               display: 'flex', alignItems: 'center', gap: '16px',
               padding: '18px 18px',
               borderRadius: '22px',
-              background: '#ffffff',
-              boxShadow: '6px 6px 16px #c5c7cf, -6px -6px 14px #ffffff',
-              textDecoration: 'none', color: '#1e1e3a',
+              background: 'var(--surface)',
+              boxShadow: '6px 6px 16px var(--neu-dark), -6px -6px 14px var(--neu-light)',
+              textDecoration: 'none', color: 'var(--text-primary)',
               transition: 'transform 0.2s ease, box-shadow 0.2s ease',
             }}
           >
@@ -139,10 +139,10 @@ export default function AcademicsPage() {
               {s.icon}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e1e3a', marginBottom: '3px' }}>
+              <div style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '3px' }}>
                 {s.title}
               </div>
-              <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {s.subtitle}
               </div>
             </div>

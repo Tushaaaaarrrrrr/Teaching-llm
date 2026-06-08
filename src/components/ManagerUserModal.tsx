@@ -232,21 +232,21 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
   const displayInitial = displayName.charAt(0).toUpperCase() || '?'
 
   const neuBox = {
-    background: '#ffffff',
+    background: 'var(--surface)',
     boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
     borderRadius: '16px',
     padding: '24px',
   }
 
   const neuInset = {
-    background: '#f8fafc',
+    background: 'var(--surface)',
     borderRadius: '12px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid var(--border)',
     padding: '10px 14px',
     outline: 'none',
     width: '100%',
     fontSize: '13px',
-    color: '#1e1e3a',
+    color: 'var(--text-primary)',
     fontFamily: 'inherit',
     transition: 'all 0.2s ease',
   }
@@ -273,8 +273,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             <button onClick={onClose} style={{
               position: 'absolute', top: '24px', right: '24px',
               width: '36px', height: '36px', borderRadius: '50%', border: 'none',
-              background: '#f1f5f9', 
-              cursor: 'pointer', color: '#6b6b8a', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'var(--surface)', 
+              cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 10
             }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -288,19 +288,19 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
                   <div style={{
                     width: '90px', height: '90px', borderRadius: '50%',
-                    background: '#f0f2f8', boxShadow: '4px 4px 10px #d1d9e6, -4px -4px 10px #ffffff',
+                    background: 'var(--surface)', boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                    border: '3px solid #fff', flexShrink: 0
+                    border: '3px solid var(--border)', flexShrink: 0
                   }}>
                     {user.avatar || user.gender ? (
                       <img src={user.avatar || getDefaultAvatar(formData.gender || user.gender)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ fontSize: '36px', fontWeight: '800', color: '#6366f1' }}>{displayInitial}</div>
+                      <div style={{ fontSize: '36px', fontWeight: '800', color: 'var(--accent)' }}>{displayInitial}</div>
                     )}
                   </div>
                   <div style={{ textAlign: 'left' }}>
-                    <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e1e3a', marginBottom: '4px' }}>{displayName}</h2>
-                    <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <h2 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px' }}>{displayName}</h2>
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       {(formData.role || user.role).charAt(0) + (formData.role || user.role).slice(1).toLowerCase()} Account
                       {(formData.role || user.role) !== 'STUDENT' && (
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
@@ -313,7 +313,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         <span style={{
                           display: 'inline-flex', alignItems: 'center', gap: '6px',
                           padding: '4px 12px', borderRadius: '20px',
-                          background: 'linear-gradient(135deg, #e8f0fe, #d2e3fc)',
+                          background: 'linear-gradient(135deg, var(--info-light), var(--border))',
                           border: '1px solid #c6d9f1',
                           fontSize: '10px', fontWeight: '700', color: '#4285f4'
                         }}>
@@ -329,7 +329,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                       {isRecentlyCreated && (
                         <span style={{
                           fontSize: '10px', fontWeight: '700', color: '#065f46',
-                          background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)', padding: '4px 12px', borderRadius: '20px',
+                          background: 'linear-gradient(135deg, var(--success-light), var(--border))', padding: '4px 12px', borderRadius: '20px',
                           border: '1px solid #86efac',
                         }}>
                           NEWBIE
@@ -341,43 +341,43 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                   <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Full Name</label>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Full Name</label>
                     <input style={neuInset} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Email Address</label>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Email Address</label>
                     <input style={neuInset} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                   <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>First Name</label>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>First Name</label>
                     <input style={neuInset} value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value, name: `${e.target.value} ${formData.lastName}`.trim()})} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Last Name</label>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Last Name</label>
                     <input style={neuInset} value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value, name: `${formData.firstName} ${e.target.value}`.trim()})} />
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '20px', marginBottom: '20px' }}>
                   <div style={{ gridColumn: 'span 2' }}>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Mobile Number</label>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Mobile Number</label>
                     <input style={neuInset} value={formData.mobileNumber} onChange={e => setFormData({...formData, mobileNumber: e.target.value})} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Age</label>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Age</label>
                     <input style={neuInset} type="number" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>State</label>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>State</label>
                     <input style={neuInset} value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
                   </div>
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Account Created</label>
+                  <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Account Created</label>
                   <div style={neuInset}>{createdAtLabel}</div>
                 </div>
 
@@ -388,21 +388,21 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
 
                 {/* Gender Preference */}
                 <div>
-                  <label style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Gender Preference</label>
+                  <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Gender Preference</label>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     {(['MALE', 'FEMALE', 'OTHER'] as const).map(g => (
                       <label key={g} style={{
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                         padding: '10px', borderRadius: '16px',
                         background: formData.gender === g
-                          ? g === 'MALE' ? '#e0e7ff' : g === 'FEMALE' ? '#fce7f3' : '#f3e8ff'
-                          : '#f0f2f8',
+                          ? g === 'MALE' ? 'var(--primary-light)' : g === 'FEMALE' ? '#fce7f3' : '#f3e8ff'
+                          : 'var(--surface)',
                         boxShadow: formData.gender === g
-                          ? g === 'MALE' ? 'inset 3px 3px 6px rgba(99,102,241,0.18), inset -3px -3px 6px #ffffff'
-                          : g === 'FEMALE' ? 'inset 3px 3px 6px rgba(236,72,153,0.14), inset -3px -3px 6px #ffffff'
-                          : 'inset 3px 3px 6px rgba(168,85,247,0.14), inset -3px -3px 6px #ffffff'
-                          : '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
-                        cursor: 'pointer', color: '#1e1e3a', fontSize: '13px', fontWeight: '700', transition: 'all 0.2s'
+                          ? g === 'MALE' ? 'inset 3px 3px 6px rgba(99,102,241,0.18), inset -3px -3px 6px var(--neu-light)'
+                          : g === 'FEMALE' ? 'inset 3px 3px 6px rgba(236,72,153,0.14), inset -3px -3px 6px var(--neu-light)'
+                          : 'inset 3px 3px 6px rgba(168,85,247,0.14), inset -3px -3px 6px var(--neu-light)'
+                          : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+                        cursor: 'pointer', color: 'var(--text-primary)', fontSize: '13px', fontWeight: '700', transition: 'all 0.2s'
                       }}>
                         <input type="radio" checked={formData.gender === g} onChange={() => setFormData({ ...formData, gender: g })} />
                         {g.charAt(0) + g.slice(1).toLowerCase()}
@@ -414,15 +414,15 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 {/* Security ID */}
                 <div style={{
                   padding: '20px', borderRadius: '20px',
-                  background: 'linear-gradient(135deg, #f0f2f8, #f8fafc)',
-                  boxShadow: 'inset 4px 4px 10px #d1d9e6, inset -4px -4px 10px #ffffff',
-                  border: '1px solid rgba(255,255,255,0.6)'
+                  background: 'linear-gradient(135deg, var(--surface-2), var(--surface))',
+                  boxShadow: 'inset 4px 4px 10px var(--neu-dark), inset -4px -4px 10px var(--neu-light)',
+                  border: '1px solid var(--border)'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Security Identification</div>
-                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#6366f1', background: '#e0e7ff', padding: '3px 10px', borderRadius: '50px' }}>SECURE ACCESS</span>
+                    <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Security Identification</div>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--accent)', background: 'var(--primary-light)', padding: '3px 10px', borderRadius: '50px' }}>SECURE ACCESS</span>
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
                     {user.securityNumber || 'NOT ASSIGNED'}
                   </div>
                 </div>
@@ -430,13 +430,13 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 {user && 'enableDetailedLogs' in user && (
                   <div style={{
                     padding: '20px', borderRadius: '20px', marginTop: '24px',
-                    background: 'linear-gradient(135deg, #f0f2f8, #f8fafc)',
-                    boxShadow: 'inset 4px 4px 10px #d1d9e6, inset -4px -4px 10px #ffffff',
-                    border: '1px solid rgba(255,255,255,0.6)'
+                    background: 'linear-gradient(135deg, var(--border), var(--surface-2))',
+                    boxShadow: 'inset 4px 4px 10px var(--neu-dark), inset -4px -4px 10px var(--neu-light)',
+                    border: '1px solid var(--border)'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <div style={{ fontSize: '10px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Stealth Tracking</div>
-                      <span style={{ fontSize: '9px', fontWeight: '800', color: '#6366f1', background: '#e0e7ff', padding: '3px 10px', borderRadius: '50px' }}>SUPER ADMIN</span>
+                      <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Stealth Tracking</div>
+                      <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--accent)', background: 'var(--primary-light)', padding: '3px 10px', borderRadius: '50px' }}>SUPER ADMIN</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -444,21 +444,21 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           <input type="checkbox" className="sr-only" checked={formData.enableDetailedLogs} onChange={e => setFormData({ ...formData, enableDetailedLogs: e.target.checked })} style={{ opacity: 0, width: 0, height: 0 }} />
                           <div style={{
                             display: 'block', width: '48px', height: '28px', borderRadius: '9999px',
-                            background: formData.enableDetailedLogs ? '#6366f1' : '#cbd5e1', transition: 'background 0.3s'
+                            background: formData.enableDetailedLogs ? 'var(--accent)' : 'var(--text-muted)', transition: 'background 0.3s'
                           }}></div>
                           <div style={{
                             position: 'absolute', top: '2px', left: '2px', width: '24px', height: '24px',
-                            backgroundColor: '#ffffff', borderRadius: '50%', transition: 'transform 0.3s',
+                            backgroundColor: 'var(--surface)', borderRadius: '50%', transition: 'transform 0.3s',
                             transform: formData.enableDetailedLogs ? 'translateX(20px)' : 'translateX(0)',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                           }}></div>
                         </div>
                       </label>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
                         {formData.enableDetailedLogs ? 'Detailed Tracking Enabled' : 'Normal Tracking'}
                       </div>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#6b6b8a', marginTop: '8px', lineHeight: 1.4 }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: 1.4 }}>
                       When enabled, this user's every click is silently logged and visible only to Super Admins.
                     </div>
                   </div>
@@ -467,18 +467,18 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 {formData.role !== 'MANAGER' ? (
                   <>
                     <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '11px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Subject Bundles</label>
+                      <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Subject Bundles</label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                         {bundles.filter(bundle => formData.bundleIds.includes(bundle.id)).map(bundle => (
                           <div key={bundle.id} style={{
-                            padding: '10px 18px', borderRadius: '16px', background: '#f3f0ff',
-                            boxShadow: '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
+                            padding: '10px 18px', borderRadius: '16px', background: 'var(--primary-light)',
+                            boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                             display: 'flex', alignItems: 'center', gap: '10px'
                           }}>
-                            <span style={{ fontSize: '13px', fontWeight: '700', color: '#6d28d9' }}>{bundle.name}</span>
+                            <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent)' }}>{bundle.name}</span>
                             <button
                               onClick={() => setFormData({...formData, bundleIds: formData.bundleIds.filter(id => id !== bundle.id)})}
-                              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#ef4444', display: 'flex' }}
+                              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--danger)', display: 'flex' }}
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                             </button>
@@ -493,8 +493,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                               }
                             }}
                             style={{
-                              padding: '10px 18px', borderRadius: '16px', border: '2px dashed #ddd6fe', background: 'rgba(255,255,255,0.3)',
-                              fontSize: '13px', fontWeight: '700', color: '#7c3aed', cursor: 'pointer', appearance: 'none'
+                              padding: '10px 18px', borderRadius: '16px', border: '2px dashed #ddd6fe', background: 'var(--surface-2)',
+                              fontSize: '13px', fontWeight: '700', color: 'var(--accent)', cursor: 'pointer', appearance: 'none'
                             }}
                             value=""
                           >
@@ -508,21 +508,21 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     </div>
 
                     <div style={{ flex: 1.5 }}>
-                      <label style={{ fontSize: '11px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Course Enrollments</label>
+                      <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Course Enrollments</label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                         {courses.filter(c => formData.courseIds.includes(c.id)).map(c => {
                           const enrollType = formData.enrollmentTypes[c.id] || 'LIVE'
                           const isLive = enrollType === 'LIVE'
                           return (
                           <div key={c.id} style={{
-                            padding: '10px 18px', borderRadius: '16px', background: '#f0f2f8',
-                            boxShadow: '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff',
+                            padding: '10px 18px', borderRadius: '16px', background: 'var(--surface)',
+                            boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                             display: 'flex', alignItems: 'center', gap: '10px'
                           }}>
                              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
-                             <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a' }}>{c.name}</span>
-                             {c.isExpired && <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>Expired</span>}
-                             {c.isEffectivelyDisabled && !c.isExpired && <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700', background: '#fee2e2', padding: '2px 8px', borderRadius: '20px' }}>Disabled</span>}
+                             <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.name}</span>
+                             {c.isExpired && <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>Expired</span>}
+                             {c.isEffectivelyDisabled && !c.isExpired && <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700', background: 'var(--danger-light)', padding: '2px 8px', borderRadius: '20px' }}>Disabled</span>}
                              {/* Live/Recorded Dropdown */}
                              <select
                                 value={enrollType}
@@ -530,14 +530,14 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                   setFormData({...formData, enrollmentTypes: {...formData.enrollmentTypes, [c.id]: e.target.value}})
                                 }}
                                 style={{
-                                  padding: '4px 10px', borderRadius: '20px', border: '1px solid ' + (isLive ? '#bbf7d0' : '#fde68a'),
+                                  padding: '4px 10px', borderRadius: '20px', border: '1px solid ' + (isLive ? 'var(--border)' : 'var(--border)'),
                                   background: isLive
-                                    ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)'
-                                    : 'linear-gradient(135deg, #fef3c7, #fde68a)',
-                                  color: isLive ? '#166534' : '#92400e',
+                                    ? 'linear-gradient(135deg, var(--success-light), var(--border))'
+                                    : 'linear-gradient(135deg, var(--border), var(--border))',
+                                  color: isLive ? 'var(--success)' : 'var(--warning)',
                                   fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em',
                                   cursor: 'pointer', transition: 'all 0.2s',
-                                  boxShadow: '2px 2px 4px #d1d9e6, -2px -2px 4px #ffffff',
+                                  boxShadow: '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
                                   outline: 'none',
                                 }}
                               >
@@ -550,7 +550,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                   delete newTypes[c.id]
                                   setFormData({...formData, courseIds: formData.courseIds.filter(id => id !== c.id), enrollmentTypes: newTypes})
                                 }}
-                                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#ef4444', display: 'flex' }}
+                                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--danger)', display: 'flex' }}
                              >
                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                              </button>
@@ -571,8 +571,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                   }
                                 }}
                               style={{
-                                padding: '10px 18px', borderRadius: '16px', border: '2px dashed #d1d9e6', background: 'rgba(255,255,255,0.3)',
-                                fontSize: '13px', fontWeight: '700', color: '#6366f1', cursor: 'pointer', appearance: 'none'
+                                padding: '10px 18px', borderRadius: '16px', border: '2px dashed var(--neu-dark)', background: 'var(--surface-2)',
+                                fontSize: '13px', fontWeight: '700', color: 'var(--accent)', cursor: 'pointer', appearance: 'none'
                               }}
                               value=""
                            >
@@ -585,7 +585,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         </div>
                       </div>
                       {bundledCourseIds.size > 0 && (
-                        <div style={{ marginTop: '14px', fontSize: '12px', color: '#7c3aed', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--accent)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                           Bundled courses are automatically handled.
                         </div>
@@ -593,11 +593,11 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     </div>
                   </>
                 ) : (
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', borderRadius: '24px', border: '2px dashed #e2e8f0', padding: '40px', textAlign: 'center' }}>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)', borderRadius: '24px', border: '2px dashed var(--border)', padding: '40px', textAlign: 'center' }}>
                     <div>
                       <div style={{ fontSize: '32px', marginBottom: '16px' }}>🛡️</div>
-                      <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px' }}>Manager Controls</div>
-                      <div style={{ fontSize: '13px', color: '#6b6b8a' }}>Managers have global access and don't require individual course enrollments.</div>
+                      <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>Manager Controls</div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Managers have global access and don't require individual course enrollments.</div>
                     </div>
                   </div>
                 )}
@@ -605,7 +605,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             </div>
 
             <div style={{ display: 'flex', gap: '20px', marginTop: '40px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '32px' }}>
-              <button onClick={onClose} style={{ flex: 1, padding: '16px', borderRadius: '20px', border: 'none', background: 'transparent', fontWeight: '700', color: '#6b6b8a', cursor: 'pointer', fontSize: '15px' }}>Cancel</button>
+              <button onClick={onClose} style={{ flex: 1, padding: '16px', borderRadius: '20px', border: 'none', background: 'transparent', fontWeight: '700', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '15px' }}>Cancel</button>
               <button 
                 onClick={handleUpdate}
                 disabled={saving}
@@ -620,7 +620,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 {saving ? 'Updating...' : <>Update Profile <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></>}
               </button>
             </div>
-            {error && <p style={{ color: '#ef4444', fontSize: '13px', textAlign: 'center', marginTop: '20px', fontWeight: '600' }}>{error}</p>}
+            {error && <p style={{ color: 'var(--danger)', fontSize: '13px', textAlign: 'center', marginTop: '20px', fontWeight: '600' }}>{error}</p>}
           </>
         )}
       </div>

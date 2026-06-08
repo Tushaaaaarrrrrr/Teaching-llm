@@ -76,21 +76,21 @@ function StudentFeedbackView({ userId }: { userId: string }) {
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            background: '#ffffff',
+            background: 'var(--surface)',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
-            color: '#6b6b8a',
+            boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
+            color: 'var(--text-secondary)',
             flexShrink: 0,
             transition: 'all 0.2s',
           }}
           onMouseEnter={e => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#3636e8'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
           }}
           onMouseLeave={e => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#6b6b8a'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -102,7 +102,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
           <h1 style={{
             fontSize: '22px',
             fontWeight: 900,
-            color: '#1e1e3a',
+            color: 'var(--text-primary)',
             margin: 0,
             lineHeight: 1.1,
             letterSpacing: '-0.02em',
@@ -112,7 +112,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
           </h1>
           <p style={{
             fontSize: '12px',
-            color: '#6b6b8a',
+            color: 'var(--text-secondary)',
             fontWeight: 600,
             margin: '3px 0 0',
             fontFamily: "'Outfit', sans-serif"
@@ -130,7 +130,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
             <div
               key={course.id}
               style={{
-                background: '#ffffff',
+                background: 'var(--surface)',
                 borderRadius: '24px',
                 padding: '24px 28px',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
@@ -138,25 +138,25 @@ function StudentFeedbackView({ userId }: { userId: string }) {
                 flexDirection: 'column',
                 alignItems: 'flex-start',
                 gap: '12px',
-                border: '1px solid #f1f5f9',
+                border: '1px solid var(--border)',
               }}
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{
-                  fontSize: '11px', fontWeight: '800', color: '#9999b0',
+                  fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)',
                   textTransform: 'uppercase', letterSpacing: '0.05em'
                 }}>
                   {course.subject}
                 </span>
-                <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>{course.name}</h3>
+                <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>{course.name}</h3>
               </div>
 
-              <p style={{ fontSize: '14px', color: submitted ? '#10b981' : '#94a3b8', fontWeight: '600', margin: 0 }}>
+              <p style={{ fontSize: '14px', color: submitted ? 'var(--success)' : 'var(--text-muted)', fontWeight: '600', margin: 0 }}>
                 {submitted ? '✓ Feedback submitted' : 'No feedback given yet'}
               </p>
 
               {submitted && feedbackObj && (
-                <div style={{ width: '100%', marginTop: '6px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ width: '100%', marginTop: '6px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px', marginBottom: '12px' }}>
                     {[
                       { label: 'Teacher', val: feedbackObj.teacherRating },
@@ -165,12 +165,12 @@ function StudentFeedbackView({ userId }: { userId: string }) {
                       { label: 'Recommend', val: feedbackObj.recommendScore },
                     ].map(r => (
                       <div key={r.label}>
-                        <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#9999b0', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
+                        <span style={{ fontSize: '10.5px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
                           {r.label}
                         </span>
                         <div style={{ display: 'flex', gap: '2px' }}>
                           {[1,2,3,4,5].map(s => (
-                            <svg key={s} width="11" height="11" viewBox="0 0 24 24" fill={s <= r.val ? '#fbbf24' : '#e2e8f0'}>
+                            <svg key={s} width="11" height="11" viewBox="0 0 24 24" fill={s <= r.val ? '#fbbf24' : 'var(--surface-2)'}>
                               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                             </svg>
                           ))}
@@ -179,8 +179,8 @@ function StudentFeedbackView({ userId }: { userId: string }) {
                     ))}
                   </div>
                   {feedbackObj.comment && (
-                    <div style={{ padding: '10px 14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                      <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: '1.4', margin: 0, fontStyle: 'italic' }}>
+                    <div style={{ padding: '10px 14px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                      <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0, fontStyle: 'italic' }}>
                         "{feedbackObj.comment}"
                       </p>
                     </div>
@@ -214,7 +214,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
         })}
 
         {courses.length === 0 && !isLoading && (
-          <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
+          <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
             <p>You are not enrolled in any courses yet.</p>
           </div>
         )}
@@ -278,21 +278,21 @@ function ManagerFeedbackView() {
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            background: '#ffffff',
+            background: 'var(--surface)',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
-            color: '#6b6b8a',
+            boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
+            color: 'var(--text-secondary)',
             flexShrink: 0,
             transition: 'all 0.2s',
           }}
           onMouseEnter={e => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#3636e8'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px #c5c7cf, -2px -2px 4px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
           }}
           onMouseLeave={e => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#6b6b8a'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -304,7 +304,7 @@ function ManagerFeedbackView() {
           <h1 style={{
             fontSize: '22px',
             fontWeight: 900,
-            color: '#1e1e3a',
+            color: 'var(--text-primary)',
             margin: 0,
             lineHeight: 1.1,
             letterSpacing: '-0.02em',
@@ -314,7 +314,7 @@ function ManagerFeedbackView() {
           </h1>
           <p style={{
             fontSize: '12px',
-            color: '#6b6b8a',
+            color: 'var(--text-secondary)',
             fontWeight: 600,
             margin: '3px 0 0',
             fontFamily: "'Outfit', sans-serif"
@@ -332,10 +332,10 @@ function ManagerFeedbackView() {
               style={{
                 padding: '10px 16px',
                 borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                background: 'white',
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
                 fontSize: '14px',
-                color: '#1e1e3a',
+                color: 'var(--text-primary)',
                 outline: 'none',
                 appearance: 'none',
                 minWidth: '200px',
@@ -355,8 +355,8 @@ function ManagerFeedbackView() {
             style={{
               padding: '10px 16px',
               borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              background: 'white',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
               fontSize: '14px',
               outline: 'none',
             }}
@@ -369,21 +369,21 @@ function ManagerFeedbackView() {
           <div 
             key={f.id}
             style={{
-              background: '#ffffff',
+              background: 'var(--surface)',
               borderRadius: '20px',
               padding: '24px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-              border: '1px solid #f1f5f9',
+              border: '1px solid var(--border)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'flex-start' }}>
               <div>
-                <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a', marginBottom: '2px' }}>{f.student.name}</h4>
-                <p style={{ fontSize: '12px', color: '#94a3b8' }}>{f.student.email} • {new Date(f.createdAt).toLocaleDateString('en-GB')}</p>
+                <h4 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '2px' }}>{f.student.name}</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{f.student.email} • {new Date(f.createdAt).toLocaleDateString('en-GB')}</p>
               </div>
               <div style={{ 
-                background: '#f8fafc', padding: '6px 14px', borderRadius: '50px', 
-                fontSize: '12px', fontWeight: '700', color: '#3636e8', border: '1px solid #e2e8f0' 
+                background: 'var(--surface)', padding: '6px 14px', borderRadius: '50px', 
+                fontSize: '12px', fontWeight: '700', color: 'var(--primary)', border: '1px solid var(--border)' 
               }}>
                 {f.course.name}
               </div>
@@ -397,10 +397,10 @@ function ManagerFeedbackView() {
                 { label: 'Recommend', val: f.recommendScore },
               ].map(r => (
                 <div key={r.label}>
-                  <p style={{ fontSize: '11px', fontWeight: '800', color: '#9999b0', textTransform: 'uppercase', marginBottom: '4px' }}>{r.label}</p>
+                  <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>{r.label}</p>
                   <div style={{ display: 'flex', gap: '2px' }}>
                     {[1,2,3,4,5].map(s => (
-                      <svg key={s} width="12" height="12" viewBox="0 0 24 24" fill={s <= r.val ? '#fbbf24' : '#e2e8f0'}>
+                      <svg key={s} width="12" height="12" viewBox="0 0 24 24" fill={s <= r.val ? '#fbbf24' : 'var(--surface-2)'}>
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                       </svg>
                     ))}
@@ -410,8 +410,8 @@ function ManagerFeedbackView() {
             </div>
 
             {f.comment && (
-              <div style={{ padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.5', margin: 0 }}>
+              <div style={{ padding: '14px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
                   "{f.comment}"
                 </p>
               </div>
@@ -420,7 +420,7 @@ function ManagerFeedbackView() {
         ))}
 
         {filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '100px', color: '#94a3b8' }}>
+          <div style={{ textAlign: 'center', padding: '100px', color: 'var(--text-muted)' }}>
             <p style={{ fontSize: '16px', fontWeight: '500' }}>No feedback entries found.</p>
           </div>
         )}

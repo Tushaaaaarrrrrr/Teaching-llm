@@ -88,8 +88,8 @@ export default function ImageCropper({ image, aspect = 16 / 9, onCropComplete, o
       </div>
 
       <div style={{ marginTop: '24px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', padding: '8px 16px', borderRadius: '50px' }}>
-          <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: 700 }}>Zoom</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--surface)', padding: '8px 16px', borderRadius: '50px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 700 }}>Zoom</span>
           <input
             type="range"
             value={zoom}
@@ -118,7 +118,7 @@ export default function ImageCropper({ image, aspect = 16 / 9, onCropComplete, o
             onClick={getCroppedImg}
             style={{
               padding: '10px 24px', borderRadius: '50px', border: 'none',
-              background: '#3636e8', color: '#fff',
+              background: 'var(--primary)', color: '#fff',
               fontSize: '14px', fontWeight: 700, cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(54,54,232,0.4)'
             }}

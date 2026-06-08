@@ -239,15 +239,15 @@ export default function ProfilePage() {
 
   const insetRow: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: isMobile ? '10px 14px' : '14px 18px', borderRadius: '14px', background: '#e8eaf0',
-    boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+    padding: isMobile ? '10px 14px' : '14px 18px', borderRadius: '14px', background: 'var(--surface-2)',
+    boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
     gap: '16px',
   }
 
   if (loading) {
     return (
       <div className="page-container fade-in">
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px', color: '#9999b0' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px', color: 'var(--text-muted)' }}>
           Loading profile...
         </div>
       </div>
@@ -257,7 +257,7 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="page-container fade-in">
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px', color: '#9999b0' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px', color: 'var(--text-muted)' }}>
           Unable to load profile
         </div>
       </div>
@@ -275,13 +275,13 @@ export default function ProfilePage() {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '8px',
               padding: '8px 16px', borderRadius: '50px',
-              background: '#e8eaf0', border: 'none', cursor: 'pointer',
-              boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
-              fontSize: '13px', fontWeight: '600', color: '#6b6b8a',
+              background: 'var(--surface-2)', border: 'none', cursor: 'pointer',
+              boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+              fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)',
               transition: 'color 0.2s ease',
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#3636e8' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#6b6b8a' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6"/>
@@ -298,7 +298,7 @@ export default function ProfilePage() {
               style={{
                 width: '100px', height: '100px', borderRadius: '50%',
                 background: 'transparent',
-                boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+                boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 overflow: 'hidden',
               }}
@@ -309,17 +309,17 @@ export default function ProfilePage() {
 
           {/* User info */}
           <div style={{ flex: 1, minWidth: '180px', width: isMobile ? '100%' : 'auto' }}>
-            <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px' }}>{user.name}</h2>
-            <p style={{ fontSize: '14px', color: '#9999b0', marginBottom: '6px' }}>{user.email}</p>
+            <h2 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>{user.name}</h2>
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '6px' }}>{user.email}</p>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
               <span className="badge" style={{
-                background: user.role === 'MANAGER' ? '#ede9fe' : user.role === 'ADMIN' ? '#dbeafe' : '#d1fae5',
-                color: user.role === 'MANAGER' ? '#7c3aed' : user.role === 'ADMIN' ? '#3b82f6' : '#10b981',
+                background: user.role === 'MANAGER' ? 'var(--primary-light)' : user.role === 'ADMIN' ? 'var(--info-light)' : 'var(--success-light)',
+                color: user.role === 'MANAGER' ? 'var(--accent)' : user.role === 'ADMIN' ? 'var(--info)' : 'var(--success)',
                 padding: '4px 12px', fontSize: '12px',
               }}>
                 {roleLabel}
               </span>
-              <span style={{ fontSize: '12px', color: '#9999b0' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                 Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </span>
             </div>
@@ -328,57 +328,13 @@ export default function ProfilePage() {
           {/* Profile-pic change disabled — predefined avatars only */}
         </div>
 
-        {/* ── Course Feedback Navigation Row ── */}
-        {user.role === 'STUDENT' && (
-          <div
-            onClick={() => router.push('/feedback')}
-            style={{
-              background: '#ffffff',
-              borderRadius: '24px',
-              padding: '16px 20px',
-              border: '1px solid rgba(15,23,42,0.05)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              transition: 'transform 0.2s ease',
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '12px',
-                background: '#ffeedd',
-                color: '#d97706',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                </svg>
-              </div>
-              <span style={{ fontSize: '15.5px', fontWeight: '800', color: '#1e1e3a', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
-                Course Feedback
-              </span>
-            </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </div>
-        )}
 
         {/* ── Personal Information + Account Details (side by side) ── */}
         <div className="responsive-two-column-grid">
 
           {/* ── Personal Information ── */}
           <div className="card" style={{ padding: isMobile ? '16px' : '28px', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
@@ -389,8 +345,8 @@ export default function ProfilePage() {
             {profileMsg.text && (
               <div style={{
                 padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '14px',
-                background: profileMsg.type === 'success' ? '#d1fae5' : profileMsg.type === 'error' ? '#fee2e2' : '#dbeafe',
-                color: profileMsg.type === 'success' ? '#065f46' : profileMsg.type === 'error' ? '#991b1b' : '#1e40af',
+                background: profileMsg.type === 'success' ? 'var(--success-light)' : profileMsg.type === 'error' ? 'var(--danger-light)' : 'var(--info-light)',
+                color: profileMsg.type === 'success' ? '#065f46' : profileMsg.type === 'error' ? 'var(--danger)' : 'var(--info)',
               }}>
                 {profileMsg.text}
               </div>
@@ -413,7 +369,7 @@ export default function ProfilePage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? '10px' : '12px' }}>
                 {/* Gender */}
                 <div style={{ ...insetRow, flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
-                  <span style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '500' }}>Gender</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500' }}>Gender</span>
                   {user.role === 'MANAGER' ? (
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                       {['MALE', 'FEMALE', 'OTHER'].map(g => (
@@ -424,7 +380,7 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   ) : (
-                    <span style={{ fontSize: '14px', color: '#1e1e3a', fontWeight: '600' }}>
+                    <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: '600' }}>
                       {user.gender ? (user.gender.charAt(0) + user.gender.slice(1).toLowerCase()) : '—'}
                     </span>
                   )}
@@ -432,7 +388,7 @@ export default function ProfilePage() {
 
                 {/* Age */}
                 <div style={{ ...insetRow, flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
-                  <span style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '500' }}>Age</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500' }}>Age</span>
                   {user.role === 'MANAGER' ? (
                     <input
                       type="number"
@@ -443,14 +399,14 @@ export default function ProfilePage() {
                       style={{ background: 'transparent', padding: '0', border: 'none', borderBottom: '2px solid rgba(0,0,0,0.1)', borderRadius: 0, width: '60px', fontSize: '14px', fontWeight: '600' }}
                     />
                   ) : (
-                    <span style={{ fontSize: '14px', color: '#1e1e3a', fontWeight: '600' }}>{user.age ?? '—'}</span>
+                    <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: '600' }}>{user.age ?? '—'}</span>
                   )}
                 </div>
               </div>
 
               {/* State — read-only for students */}
               <div style={insetRow}>
-                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>State / Territory</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>State / Territory</span>
                 {user.role === 'MANAGER' ? (
                   <input
                     type="text"
@@ -461,7 +417,7 @@ export default function ProfilePage() {
                     style={{ background: 'transparent', padding: '4px 0', border: 'none', borderBottom: '2px solid rgba(0,0,0,0.1)', borderRadius: 0, width: '140px', fontSize: '14px', fontWeight: '600', textAlign: 'right' }}
                   />
                 ) : (
-                  <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>{user.state || '—'}</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{user.state || '—'}</span>
                 )}
               </div>
 
@@ -469,7 +425,7 @@ export default function ProfilePage() {
               {user.role !== 'MANAGER' && (
                 <div style={{
                   padding: '12px 16px', borderRadius: '12px',
-                  background: '#f0f0ff', border: '1px solid #d4d4ff',
+                  background: 'var(--primary-light)', border: '1px solid #d4d4ff',
                   display: 'flex', gap: '10px', alignItems: 'flex-start', marginTop: '4px'
                 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ flexShrink: 0, marginTop: '1px' }}>
@@ -485,7 +441,7 @@ export default function ProfilePage() {
 
           {/* ── Account Details ── */}
           <div className="card" style={{ padding: isMobile ? '16px' : '28px', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="16" x2="12" y2="12"/>
@@ -497,22 +453,22 @@ export default function ProfilePage() {
 
               {/* Email */}
               <div style={insetRow}>
-                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Email Address</span>
-                <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600', maxWidth: isMobile ? '120px' : '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>Email Address</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600', maxWidth: isMobile ? '120px' : '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
               </div>
 
               {/* Mobile */}
               <div style={insetRow}>
-                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Mobile Number</span>
-                <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>{user.mobileNumber || '—'}</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>Mobile Number</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{user.mobileNumber || '—'}</span>
               </div>
 
               {/* Security Number */}
               <div style={insetRow}>
-                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Security Number</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>Security Number</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{
-                    fontSize: '13px', color: '#1e1e3a', fontWeight: '600',
+                    fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600',
                     fontFamily: 'monospace', letterSpacing: showSecurityNumber ? '0.5px' : '3px',
                   }}>
                     {user.securityNumber
@@ -524,7 +480,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => setShowSecurityNumber(v => !v)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0', display: 'flex', padding: '2px' }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: '2px' }}
                     >
                       {showSecurityNumber ? <EyeOffIcon /> : <EyeIcon />}
                     </button>
@@ -534,10 +490,10 @@ export default function ProfilePage() {
 
               {/* Role */}
               <div style={insetRow}>
-                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Role</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>Role</span>
                 <span className="badge" style={{
-                  background: user.role === 'MANAGER' ? '#ede9fe' : user.role === 'ADMIN' ? '#dbeafe' : '#d1fae5',
-                  color: user.role === 'MANAGER' ? '#7c3aed' : user.role === 'ADMIN' ? '#3b82f6' : '#10b981',
+                  background: user.role === 'MANAGER' ? 'var(--primary-light)' : user.role === 'ADMIN' ? 'var(--info-light)' : 'var(--success-light)',
+                  color: user.role === 'MANAGER' ? 'var(--accent)' : user.role === 'ADMIN' ? 'var(--info)' : 'var(--success)',
                   fontSize: '12px',
                 }}>
                   {roleLabel}
@@ -546,8 +502,8 @@ export default function ProfilePage() {
 
               {/* Member Since */}
               <div style={insetRow}>
-                <span style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: '500' }}>Member Since</span>
-                <span style={{ fontSize: '13px', color: '#1e1e3a', fontWeight: '600' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>Member Since</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>
                   {new Date(user.createdAt).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
               </div>
@@ -565,10 +521,10 @@ export default function ProfilePage() {
           gap: '10px',
           padding: isMobile ? '16px 12px' : '20px 24px',
           borderRadius: '24px',
-          background: 'rgba(232, 234, 240, 0.85)',
+          background: 'var(--surface-2)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.04), 6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+          boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.04), 6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
           flexDirection: 'row',
           position: 'sticky',
           bottom: isMobile ? 'max(12px, env(safe-area-inset-bottom))' : '20px',
@@ -586,7 +542,7 @@ export default function ProfilePage() {
               fontWeight: isMobile ? '600' : undefined,
               borderRadius: isMobile ? '50px' : undefined,
               border: isMobile ? '1.5px solid rgba(99,102,241,0.25)' : undefined,
-              color: isMobile ? '#6366f1' : undefined,
+              color: isMobile ? 'var(--accent)' : undefined,
               background: isMobile ? 'rgba(99,102,241,0.06)' : undefined,
             }}
           >
@@ -618,7 +574,7 @@ export default function ProfilePage() {
               <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Adjust Profile Picture</h3>
               <button 
                 onClick={() => setImageSrc(null)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b8a' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -642,7 +598,7 @@ export default function ProfilePage() {
             
             <div style={{ padding: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b6b8a' }}>Zoom</span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>Zoom</span>
                 <input
                   type="range"
                   value={zoom}

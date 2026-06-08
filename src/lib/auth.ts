@@ -135,6 +135,7 @@ export async function getFullSession(): Promise<FullSession | null> {
     user = await (prisma.user.findUnique as any)({
       where: { id: jwtPayload.userId },
       select: {
+        role: true,
         isTerminated: true,
         tokenVersion: true,
         isProfileComplete: true,
@@ -180,19 +181,21 @@ export async function getFullSession(): Promise<FullSession | null> {
   }
 
   const enrollments = (user.enrollments as { courseId: string; type: string }[] | undefined) ?? []
+  const userRole = user.role || jwtPayload.role
 
   return {
     ...jwtPayload,
+    role: userRole,
     isTerminated: user.isTerminated,
     isProfileComplete: user.isProfileComplete,
     enableDetailedLogs: user.enableDetailedLogs || false,
-    accessibleCourseIds: (jwtPayload.role === 'MANAGER') 
+    accessibleCourseIds: (userRole === 'MANAGER') 
       ? null 
       : enrollments.map(e => e.courseId),
-    enrollmentTypes: (jwtPayload.role === 'MANAGER')
+    enrollmentTypes: (userRole === 'MANAGER')
       ? {}
       : Object.fromEntries(enrollments.map(e => [e.courseId, e.type])),
-    isMaintenanceMode: settings?.maintenanceMode && (jwtPayload.role !== 'MANAGER')
+    isMaintenanceMode: settings?.maintenanceMode && (userRole !== 'MANAGER')
   }
 }
 
