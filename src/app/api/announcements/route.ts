@@ -4,7 +4,7 @@ import { getSession, isAdminOrManager, getAccessibleCourseIds, canCreateAnnounce
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { sseEmitter } from '@/lib/sse'
 import { sendPushToUsers, sendPushToAllStudents } from '@/lib/push'
-import { sendFcmToUsers, sendFcmToAllStudents } from '@/lib/fcm'
+import { sendFcmToUsers } from '@/lib/fcm'
 
 export async function GET() {
   try {
@@ -159,12 +159,29 @@ export async function POST(request: NextRequest) {
         sound,
       }
       
-      if (targetCourseId) {
-        sendPushToUsers(targetUserIds, pushPayload).catch(console.error)
-        sendFcmToUsers(targetUserIds, pushPayload).catch(console.error)
-      } else {
-        sendPushToAllStudents(pushPayload).catch(console.error)
-        sendFcmToAllStudents(pushPayload).catch(console.error)
+      // Per-user opt-out for the Announcements category. In-app notifications
+      // above still fire (the bell badge is the source of truth); only the
+      // push channel is filtered here so a muted user can still see history.
+      const subscribedUsers = await prisma.user.findMany({
+        where: {
+          id: { in: targetUserIds },
+          notifAnnouncementsEnabled: true,
+        },
+        select: { id: true },
+      })
+      const pushTargetIds = subscribedUsers.map(u => u.id)
+
+      if (pushTargetIds.length > 0) {
+        if (targetCourseId) {
+          sendPushToUsers(pushTargetIds, pushPayload).catch(console.error)
+          sendFcmToUsers(pushTargetIds, pushPayload).catch(console.error)
+        } else {
+          // Global announcement: web push still goes to all (no per-user pref
+          // wired on the web subscription table yet); FCM uses the filtered
+          // list so the Flutter toggle takes effect immediately.
+          sendPushToAllStudents(pushPayload).catch(console.error)
+          sendFcmToUsers(pushTargetIds, pushPayload).catch(console.error)
+        }
       }
     }
 

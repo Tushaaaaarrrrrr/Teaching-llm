@@ -1,0 +1,95 @@
+name: teaching_llm
+description: Native Android app for the GenZ IITian LMS — mirrors the mobile-web UX.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Routing
+  go_router: ^14.2.7
+
+  # Networking
+  dio: ^5.7.0
+
+  # Storage
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.3.2
+
+  # Auth
+  google_sign_in: ^6.2.2
+
+  # UI / media
+  cached_network_image: ^3.4.1
+  video_player: ^2.9.2
+  chewie: ^1.8.5
+  youtube_player_iframe: ^5.2.0
+
+  # Utilities
+  intl: ^0.19.0
+
+  # Fonts (Manrope is the design system's primary font)
+  google_fonts: ^6.2.1
+
+  # External-link fallback for unembedabble YouTube videos
+  url_launcher: ^6.3.0
+
+  # Direct WebView access for the custom YouTube player (modelled after
+  # PierfrancescoSoffritti/android-youtube-player) — gives us control over
+  # User-Agent + base URL so embed-restricted videos load.
+  webview_flutter: ^4.10.0
+  webview_flutter_android: ^4.0.0
+
+  # ToS-risky but necessary: scrape direct stream URLs from YouTube so
+  # videos with "embedding disabled" by the uploader (error 150/152) can
+  # still play in-app via video_player. Falls back to no-network errors
+  # the same way as a real network failure.
+  youtube_explode_dart: ^2.2.1
+
+  # PDF rendering for in-app lecture materials. Uses Android's native
+  # PdfRenderer + iOS PDFKit so it's small (4MB), fast, and supports
+  # pinch-zoom out of the box. Read-only — no annotations.
+  flutter_pdfview: ^1.3.2
+  # App-private cache dir for downloaded PDFs so adb pull can't grab them.
+  path_provider: ^2.1.4
+
+  # Razorpay checkout — implemented via the existing webview_flutter rather
+  # than the native razorpay_flutter package because the package's SDK
+  # ships split across two modules that share the `com.razorpay` namespace
+  # (AGP 9 rejects with a duplicate-namespace error). The WebView loads
+  # Razorpay's hosted Standard Checkout JS and posts the result back via
+  # a JavaScript bridge — same final HMAC-signature flow.
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/slides/
+  # Outfit fonts are optional brand polish; drop the .ttf files into
+  # assets/fonts/ and re-add the `fonts:` block below to enable. Without
+  # them, Flutter silently falls back to the system font (Roboto on Android).
+  #
+  # fonts:
+  #   - family: Outfit
+  #     fonts:
+  #       - asset: assets/fonts/Outfit-Regular.ttf
+  #       - asset: assets/fonts/Outfit-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Outfit-SemiBold.ttf
+  #         weight: 600
+  #       - asset: assets/fonts/Outfit-Bold.ttf
+  #         weight: 700
+  #       - asset: assets/fonts/Outfit-Black.ttf
+  #         weight: 900

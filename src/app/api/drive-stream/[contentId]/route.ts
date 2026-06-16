@@ -43,6 +43,9 @@ export async function GET(
         id: true,
         videoUrl: true,
         videoSource: true,
+        // JSON column added in 20260617090000_content_video_variants.
+        // Cast at the lib boundary because Prisma's JsonValue type is `any`.
+        videoVariants: true,
         topic: {
           select: {
             courseId: true,
@@ -65,6 +68,20 @@ export async function GET(
       )
     }
 
+    // Quality picker — when `?quality=720p` is present and matches a key in
+    // `videoVariants`, serve that file instead of the default. Unknown labels
+    // silently fall back to the default to keep playback robust if the
+    // manager later removes a variant.
+    const requested = (request.nextUrl.searchParams.get('quality') || '').trim()
+    let sourceUrl = content.videoUrl
+    if (requested) {
+      const variants = content.videoVariants as Record<string, string> | null
+      const variantId = variants?.[requested]
+      if (variantId && typeof variantId === 'string') {
+        sourceUrl = variantId
+      }
+    }
+
     // Access control — managers / admins / instructors get a pass
     const privileged = isAdminOrManager(session.role) || session.role === 'INSTRUCTOR'
     if (!privileged) {
@@ -81,7 +98,7 @@ export async function GET(
       }
     }
 
-    const fileId = extractDriveFileId(content.videoUrl)
+    const fileId = extractDriveFileId(sourceUrl)
     if (!fileId) {
       return NextResponse.json({ error: 'Could not extract a Drive file ID from videoUrl' }, { status: 400 })
     }

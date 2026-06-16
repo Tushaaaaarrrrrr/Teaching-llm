@@ -39,6 +39,10 @@ model User {
   isGoogleUser            Boolean                      @default(false)
   lastDailyDigestAt       DateTime?
   enableDetailedLogs      Boolean                      @default(false)
+  // Per-user push notification toggles. Default to true so existing users
+  // keep getting pushes; the Flutter app surfaces these as switches.
+  notifAnnouncementsEnabled Boolean                    @default(true)
+  notifCommunityEnabled   Boolean                      @default(true)
   activityLogs            ActivityLog[]
   announcements           Announcement[]               @relation("AnnouncementCreator")
   createdBundleOfferings  BundleOffering[]
@@ -363,6 +367,12 @@ model Content {
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
   videoSource     String               @default("GOOGLE_DRIVE")
+  // Optional per-quality Drive file IDs for the in-app quality picker. Shape:
+  //   { "360p": "<driveFileId>", "720p": "<driveFileId>", "1080p": "<driveFileId>" }
+  // Default playback uses `videoUrl`; the picker overlays this list when set.
+  // Stored as JSON to keep the schema flexible — labels are free-form strings
+  // so future formats (e.g. "2160p") don't need a migration.
+  videoVariants   Json?
   comments        Comment[]
   topic           Topic                @relation(fields: [topicId], references: [id], onDelete: Cascade)
   lectureProgress LectureProgress[]
