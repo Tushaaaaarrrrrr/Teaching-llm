@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 /**
- * GET /api/content/[contentId]/variants
+ * GET /api/content/[id]/variants
  *
  * Returns the per-quality Drive variants the Flutter player should expose in
  * its quality picker. Access mirrors /api/drive-stream — must be authenticated
@@ -22,16 +22,16 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ contentId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { contentId } = await params
+  const { id } = await params
   const content = await prisma.content.findUnique({
-    where: { id: contentId },
+    where: { id },
     select: {
       videoVariants: true,
       topic: { select: { courseId: true } },
