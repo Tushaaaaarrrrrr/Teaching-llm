@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import useSWR, { mutate } from 'swr'
 import { formatIST, formatISTDate, getEventStatus } from '@/lib/date-utils'
+import { normalizeMeetLink } from '@/lib/meet-link'
 import LiveSessionsMobile from '@/components/live/LiveSessionsMobile'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
@@ -267,7 +268,7 @@ export default function LivePage() {
               )
             })()
           ) : (isLive || (!isCompleted && !isCancelled && !isRescheduled)) && session.meetLink ? (
-            <a href={session.meetLink} target="_blank" rel="noopener noreferrer" style={{
+            <a href={normalizeMeetLink(session.meetLink) ?? '#'} target="_blank" rel="noopener noreferrer" style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '50px', flexShrink: 0,
               background: isLive ? '#16a34a' : '#3636e8', color: 'white', fontWeight: '600', fontSize: '14px', textDecoration: 'none',
               boxShadow: isLive

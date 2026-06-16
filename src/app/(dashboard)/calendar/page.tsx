@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import { normalizeMeetLink } from '@/lib/meet-link'
 
 interface CalEvent {
   id: string
@@ -852,7 +853,7 @@ function CalendarPageContent() {
               {selectedEvent.meetLink && (
                 <div>
                   <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Meet Link</div>
-                  <a href={selectedEvent.meetLink} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#2563eb', wordBreak: 'break-all' }}>
+                  <a href={normalizeMeetLink(selectedEvent.meetLink) ?? '#'} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#2563eb', wordBreak: 'break-all' }}>
                     {selectedEvent.meetLink}
                   </a>
                 </div>
@@ -1163,7 +1164,7 @@ function CalendarPageContent() {
                           {isManager && ev.meetLink && (
                             <div style={{ marginTop: '16px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                               <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Meeting Link (Manager Only)</div>
-                              <a href={ev.meetLink} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#2563eb', fontWeight: '600', wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <a href={normalizeMeetLink(ev.meetLink) ?? '#'} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#2563eb', fontWeight: '600', wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
                                 {ev.meetLink}
                               </a>

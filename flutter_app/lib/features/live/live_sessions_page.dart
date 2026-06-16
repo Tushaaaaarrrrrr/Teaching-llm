@@ -12,9 +12,33 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_typography.dart';
 import '../../shared/widgets/app_refresh.dart';
 
+/// Same normalisation as `src/lib/meet-link.ts` on the backend. Teachers
+/// sometimes paste Meet URLs with a `class.genziitian.in/` prefix that
+/// makes the browser interpret the href as relative; this strips that off
+/// and ensures we hand `launchUrl` a real absolute URL.
+String? _normalizeMeetLink(String? raw) {
+  if (raw == null) return null;
+  var s = raw.trim();
+  if (s.isEmpty) return null;
+  final prefix = RegExp(
+    r'^(?:https?:\/\/)?(?:www\.)?(?:class\.)?genziitian\.in\/+',
+    caseSensitive: false,
+  );
+  while (prefix.hasMatch(s)) {
+    s = s.replaceFirst(prefix, '');
+  }
+  s = s.trim();
+  if (s.isEmpty) return null;
+  if (!RegExp(r'^https?:\/\/', caseSensitive: false).hasMatch(s)) {
+    if (!s.contains('.')) return null;
+    s = 'https://$s';
+  }
+  return Uri.tryParse(s) == null ? null : s;
+}
+
 Future<void> _joinSession(BuildContext context, CourseEvent event) async {
-  final link = event.meetLink?.trim() ?? '';
-  if (link.isEmpty) {
+  final link = _normalizeMeetLink(event.meetLink);
+  if (link == null) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -23,16 +47,8 @@ Future<void> _joinSession(BuildContext context, CourseEvent event) async {
     }
     return;
   }
-  final uri = Uri.tryParse(link);
-  if (uri == null) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid meeting link.')),
-      );
-    }
-    return;
-  }
-  final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  final ok = await launchUrl(Uri.parse(link),
+      mode: LaunchMode.externalApplication);
   if (!ok && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Couldn't open the meeting link.")),

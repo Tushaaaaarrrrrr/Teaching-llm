@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { formatISTDate, getEventStatus } from '@/lib/date-utils'
+import { normalizeMeetLink } from '@/lib/meet-link'
 import HomeHeroSlider, { HeroSlide } from '@/components/home/HomeHeroSlider'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
@@ -473,7 +474,7 @@ export default function DashboardPage() {
                   ) : <div />}
 
                   <a
-                    href={frontSession.meetLink}
+                    href={normalizeMeetLink(frontSession.meetLink) ?? '#'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-primary"
@@ -702,7 +703,7 @@ export default function DashboardPage() {
                     </div>
 
                     <a
-                      href={frontSession.meetLink}
+                      href={normalizeMeetLink(frontSession.meetLink) ?? '#'}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -783,7 +784,7 @@ export default function DashboardPage() {
                   {upNextSessions.map((session, idx) => (
                     <a
                       key={session.id}
-                      href={session.meetLink}
+                      href={normalizeMeetLink(session.meetLink) ?? '#'}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ textDecoration: 'none' }}
@@ -858,7 +859,7 @@ export default function DashboardPage() {
               </div>
               {hasLive && frontSession ? (
                 <a
-                  href={frontSession.meetLink}
+                  href={normalizeMeetLink(frontSession.meetLink) ?? '#'}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -908,7 +909,7 @@ export default function DashboardPage() {
                 </a>
               ) : upNextSessions.length > 0 ? (
                 <a
-                  href={upNextSessions[0].meetLink}
+                  href={normalizeMeetLink(upNextSessions[0].meetLink) ?? '#'}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{

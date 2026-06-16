@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { formatIST, getEventStatus } from '@/lib/date-utils'
+import { normalizeMeetLink } from '@/lib/meet-link'
 
 interface CourseEvent {
   id: string
@@ -267,9 +268,9 @@ function LiveSessionCard({ session }: { session: CourseEvent }) {
       </div>
 
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-        {session.meetLink ? (
+        {normalizeMeetLink(session.meetLink) ? (
           <a
-            href={session.meetLink}
+            href={normalizeMeetLink(session.meetLink)!}
             target="_blank"
             rel="noopener noreferrer"
             style={{

@@ -5,6 +5,7 @@ import Script from 'next/script'
 import useSWR from 'swr'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { BookOpen, FileText, Users, ClipboardList, Trash2, Pencil, Sparkles, IndianRupee, Calendar, Plus, ExternalLink, HelpCircle, ChevronRight, X, Info, ArrowLeft } from 'lucide-react'
+import { normalizeMeetLink } from '@/lib/meet-link'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -1104,7 +1105,7 @@ export default function ExploreCoursesPage() {
                   {!isPast && (
                     <div style={{ marginTop: '4px' }}>
                       {booking.meetLink ? (
-                        <a href={booking.meetLink} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', padding: '12px', borderRadius: '12px', background: '#3636e8', color: '#fff', fontWeight: '800', textDecoration: 'none', fontSize: '14px' }}>
+                        <a href={normalizeMeetLink(booking.meetLink) ?? '#'} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', padding: '12px', borderRadius: '12px', background: '#3636e8', color: '#fff', fontWeight: '800', textDecoration: 'none', fontSize: '14px' }}>
                           Join Meeting →
                         </a>
                       ) : (
