@@ -88,14 +88,8 @@ class MorePage extends ConsumerWidget {
         soft: AppColors.brandSoft,
         onTap: () => context.push('/faq'),
       ),
-      _MoreTile(
-        title: 'Push settings',
-        sub: 'Announcements & community chats',
-        icon: Icons.tune,
-        tone: AppColors.brand,
-        soft: AppColors.brandSft2,
-        onTap: () => context.push('/settings/notifications'),
-      ),
+      // Push settings tile temporarily removed — the backend endpoint was
+      // rolled back. Re-add once /api/notification-preferences is live again.
       _MoreTile(
         title: 'Appearance',
         sub: 'Light / Dark / System',
