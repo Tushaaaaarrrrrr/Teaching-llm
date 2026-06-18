@@ -5,14 +5,12 @@ import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
 
-// react-pdf needs a PDF.js worker. We point it at a CDN copy pinned to the
-// exact pdfjs-dist version we installed — bundling the .mjs worker through
-// webpack/Terser fails because the worker uses top-level ES module syntax
-// that Terser can't parse in non-module mode. The CDN file is identical to
-// the one in node_modules; unpkg honours immutable caching so the round
-// trip happens once per user.
-pdfjs.GlobalWorkerOptions.workerSrc =
-  `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+// react-pdf needs a PDF.js worker. The worker is copied into /public on
+// `npm install` by scripts/copy-pdf-worker.js, so we point at the same
+// origin. Avoids the CDN MIME-type quirks that caused the viewer to fail
+// (browsers refuse .mjs served as application/octet-stream) and any CSP
+// that disallows third-party scripts.
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
 interface Props {
   fileUrl: string           // proxy URL: /api/drive-doc/<contentId>
