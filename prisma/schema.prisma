@@ -619,6 +619,7 @@ model CommunityMessage {
   createdAt       DateTime           @default(now())
   isSystemDeleted Boolean            @default(false)
   replyToId       String?
+  isPinned        Boolean            @default(false)
   course          Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
   replyTo         CommunityMessage?  @relation("CommunityMessageReplies", fields: [replyToId], references: [id])
   replies         CommunityMessage[] @relation("CommunityMessageReplies")
