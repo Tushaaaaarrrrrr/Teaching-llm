@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/academics/academics_page.dart';
 import '../../features/academics/calendar_page.dart';
+import '../../features/academics/free_materials_browse_page.dart';
 import '../../features/academics/free_resources_page.dart';
+import '../../features/academics/purchased_materials_page.dart';
 import '../../features/announcements/announcements_page.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/welcome_page.dart';
@@ -108,8 +110,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       // They have their own back chip, so they live outside the bottom-nav.
       GoRoute(path: '/calendar', builder: (_, __) => const CalendarPage()),
       GoRoute(
-          path: '/free-resources',
-          builder: (_, __) => const FreeResourcesPage()),
+        path: '/free-resources',
+        builder: (_, __) => const FreeResourcesPage(),
+        routes: [
+          GoRoute(
+            path: 'materials',
+            builder: (_, __) => const FreeMaterialsBrowsePage(),
+          ),
+          GoRoute(
+            path: 'purchased',
+            builder: (_, __) => const PurchasedMaterialsPage(),
+          ),
+        ],
+      ),
       GoRoute(
           path: '/announcements',
           builder: (_, __) => const AnnouncementsPage()),
