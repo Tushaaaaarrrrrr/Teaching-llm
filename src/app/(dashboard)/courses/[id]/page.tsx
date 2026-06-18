@@ -631,18 +631,15 @@ export default function CourseDetailPage() {
                           {/* Watch / Material buttons */}
                           <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                             {item.pptUrl && (
-                              <a
-                                href={item.pptUrl}
-                                download={item.pptUrl.startsWith('/api/files/materials/') ? true : undefined}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <Link
+                                href={`/material/${item.id}/view`}
                                 className="btn btn-ghost btn-sm"
                               >
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                                 </svg>
                                 View Material
-                              </a>
+                              </Link>
                             )}
                             {item.videoUrl && (
                               <Link
