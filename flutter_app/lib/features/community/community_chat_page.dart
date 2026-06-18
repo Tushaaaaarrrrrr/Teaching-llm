@@ -75,14 +75,19 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
     final myId = me?.id;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      // WhatsApp-style soft cream chat surface. The actual texture is the
+      // doodle pattern drawn under the messages list (see _ChatBackground).
+      backgroundColor: const Color(0xFFEFEAE2),
       body: SafeArea(
         child: Column(
           children: [
             _Header(courseAsync: courseAsync, courseId: widget.courseId),
             const _PinnedBanner(),
             Expanded(
-              child: messagesAsync.when(
+              child: Stack(
+                children: [
+                  const Positioned.fill(child: _ChatBackground()),
+                  messagesAsync.when(
                 loading: () =>
                     const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(
@@ -154,6 +159,8 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
                     ),
                   );
                 },
+              ),
+                ],
               ),
             ),
             _Composer(
@@ -610,5 +617,132 @@ class _Composer extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// WhatsApp-style chat doodle backdrop. Sparse scatter of small icons drawn
+/// at very low opacity so they sit behind message bubbles without competing
+/// for attention. The layout is seeded so it doesn't shimmer on rebuilds.
+class _ChatBackground extends StatelessWidget {
+  const _ChatBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: CustomPaint(
+        painter: _DoodlePainter(),
+        size: Size.infinite,
+      ),
+    );
+  }
+}
+
+class _DoodlePainter extends CustomPainter {
+  static const _doodles = <IconData>[
+    Icons.menu_book_outlined,
+    Icons.calculate_outlined,
+    Icons.lightbulb_outline,
+    Icons.science_outlined,
+    Icons.functions,
+    Icons.edit_outlined,
+    Icons.star_outline,
+    Icons.chat_bubble_outline,
+  ];
+
+  static List<_DoodleSpec>? _cached;
+
+  static List<_DoodleSpec> _layout() {
+    if (_cached != null) return _cached!;
+    final rng = _Mulberry32(31415);
+    final out = <_DoodleSpec>[];
+    const rows = 18;
+    const cols = 4;
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        final jitterX = (rng.next() - 0.5) * 0.4;
+        final jitterY = (rng.next() - 0.5) * 0.4;
+        final iconIdx =
+            (rng.next() * _doodles.length).floor().clamp(0, _doodles.length - 1);
+        final rotDeg = (rng.next() - 0.5) * 30;
+        final size = 22 + rng.next() * 10;
+        out.add(_DoodleSpec(
+          col: c + jitterX,
+          row: r + jitterY,
+          icon: _doodles[iconIdx],
+          rotation: rotDeg * 3.14159 / 180,
+          fontSize: size,
+        ));
+      }
+    }
+    _cached = out;
+    return out;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cellW = size.width / 4;
+    const cellH = 92.0;
+    final specs = _layout();
+    for (final s in specs) {
+      final dx = s.col * cellW + cellW / 2;
+      final dy = s.row * cellH + cellH / 2;
+      if (dy > size.height + 40) break;
+      _paintIcon(canvas, s, Offset(dx, dy));
+    }
+  }
+
+  void _paintIcon(Canvas canvas, _DoodleSpec s, Offset center) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(s.icon.codePoint),
+        style: TextStyle(
+          fontFamily: s.icon.fontFamily,
+          package: s.icon.fontPackage,
+          fontSize: s.fontSize,
+          color: const Color(0x14000000),
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(s.rotation);
+    canvas.translate(-tp.width / 2, -tp.height / 2);
+    tp.paint(canvas, Offset.zero);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _DoodlePainter oldDelegate) => false;
+}
+
+class _DoodleSpec {
+  const _DoodleSpec({
+    required this.col,
+    required this.row,
+    required this.icon,
+    required this.rotation,
+    required this.fontSize,
+  });
+  final double col;
+  final double row;
+  final IconData icon;
+  final double rotation;
+  final double fontSize;
+}
+
+/// Tiny deterministic PRNG so the doodle layout looks scattered but stays
+/// stable across rebuilds. Mulberry32, public-domain.
+class _Mulberry32 {
+  _Mulberry32(this._seed);
+  int _seed;
+  double next() {
+    _seed = (_seed + 0x6D2B79F5) & 0xFFFFFFFF;
+    var t = _seed;
+    t = ((t ^ (t >> 15)) * (t | 1)) & 0xFFFFFFFF;
+    t ^= t + (((t ^ (t >> 7)) * (t | 61)) & 0xFFFFFFFF);
+    t = t & 0xFFFFFFFF;
+    return ((t ^ (t >> 14)) & 0xFFFFFFFF) / 0x100000000;
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
 import 'config/api_config.dart';
+import 'features/auth/welcome_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +29,14 @@ void main() async {
   // very first auth call. We don't await — UI starts immediately.
   _warmupApi();
 
-  runApp(const ProviderScope(child: TeachingLlmApp()));
+  // Read the welcome-seen flag eagerly so the router's synchronous redirect
+  // can decide between /welcome and /login without flicker.
+  final welcomeSeen = await WelcomePage.hasBeenSeen();
+
+  runApp(ProviderScope(
+    overrides: [welcomeSeenProvider.overrideWith((_) => welcomeSeen)],
+    child: const TeachingLlmApp(),
+  ));
 }
 
 void _warmupApi() {
