@@ -835,8 +835,8 @@ export default function CourseEditPage() {
             {/* Topic Header */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: '12px',
-              padding: '14px 20px', borderBottom: expanded.has(topic.id) ? '1px solid #d8dae3' : 'none',
-              background: '#f0f1f5',
+              padding: '14px 20px', borderBottom: expanded.has(topic.id) ? '1px solid var(--border)' : 'none',
+              background: 'var(--surface-2)',
             }}>
               {/* Order controls */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
@@ -976,7 +976,7 @@ export default function CourseEditPage() {
 
                       <div style={{
                         width: '30px', height: '30px', borderRadius: '8px',
-                        background: item.videoUrl ? 'var(--primary-light)' : '#f0f0f5',
+                        background: item.videoUrl ? 'var(--primary-light)' : 'var(--surface-2)',
                         color: item.videoUrl ? 'var(--primary)' : 'var(--text-muted)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                       }}>
@@ -999,7 +999,7 @@ export default function CourseEditPage() {
                       </div>
                       <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', marginRight: '8px' }}>
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', background: '#f0f0f5', padding: '2px 6px', borderRadius: '4px', fontStyle: 'italic' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'var(--surface-2)', padding: '2px 6px', borderRadius: '4px', fontStyle: 'italic' }}>
                             ID: {item.id}
                           </div>
                           {item.createdAt && (
