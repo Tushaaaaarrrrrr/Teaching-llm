@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function CapacitorBridge() {
   const router = useRouter()
   const lastBackPressRef = useRef(0)
+  const [showBlockedModal, setShowBlockedModal] = useState(false)
 
   useEffect(() => {
     let cleanup: (() => void) | undefined
@@ -122,8 +123,27 @@ export default function CapacitorBridge() {
         }
       })
 
+      const handleGlobalClick = (e: MouseEvent) => {
+        let target = e.target as HTMLElement | null
+        while (target && target !== document.body) {
+          if (target.tagName === 'A' || target.getAttribute('href')) {
+            const href = target.getAttribute('href')
+            if (href && href.includes('/lectures/')) {
+              e.preventDefault()
+              e.stopPropagation()
+              setShowBlockedModal(true)
+              return
+            }
+          }
+          target = target.parentElement
+        }
+      }
+
+      window.addEventListener('click', handleGlobalClick, true)
+
       cleanup = () => {
         window.removeEventListener('themechange', onThemeChange)
+        window.removeEventListener('click', handleGlobalClick, true)
         backHandle.remove()
         stateHandle.remove()
         registrationHandle.remove()
@@ -135,5 +155,37 @@ export default function CapacitorBridge() {
     return () => { cleanup?.() }
   }, [router])
 
-  return null
+  return (
+    <>
+      {showBlockedModal && (
+        <div className="modal-overlay" style={{ background: 'rgba(15, 23, 42, 0.75)' }} onClick={() => setShowBlockedModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '360px', borderRadius: '24px', overflow: 'hidden' }}>
+            <div className="modal-body" style={{ padding: '32px 24px', textAlign: 'center' }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '50%',
+                background: 'var(--warning-light)', color: 'var(--warning)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 20px'
+              }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '10px', color: 'var(--text-primary)' }}>
+                App Player Offline
+              </h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
+                video player is not working in app Please use laptop
+              </p>
+              <button
+                onClick={() => setShowBlockedModal(false)}
+                className="btn btn-primary"
+                style={{ width: '100%', borderRadius: '50px', padding: '12px 20px', fontWeight: 700 }}
+              >
+                Okay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
 }

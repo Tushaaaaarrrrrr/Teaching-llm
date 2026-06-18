@@ -334,6 +334,38 @@ export default function LecturePage() {
     )
   }
 
+  if (isNativeApp) {
+    return (
+      <div className="modal-overlay" style={{ background: 'var(--background)' }}>
+        <div className="modal" style={{ maxWidth: '360px', borderRadius: '24px', margin: 'auto', border: '1px solid var(--border-light)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+          <div className="modal-body" style={{ padding: '32px 24px', textAlign: 'center' }}>
+            <div style={{
+              width: '56px', height: '56px', borderRadius: '50%',
+              background: 'var(--warning-light)', color: 'var(--warning)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 20px'
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '10px', color: 'var(--text-primary)' }}>
+              App Player Offline
+            </h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
+              video player is not working in app Please use laptop
+            </p>
+            <button
+              onClick={() => router.push(`/courses/${params.id}`)}
+              className="btn btn-primary"
+              style={{ width: '100%', borderRadius: '50px', padding: '12px 20px', fontWeight: 700 }}
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!content) return null
 
   const isLongDescription = content.description && content.description.length > 250
