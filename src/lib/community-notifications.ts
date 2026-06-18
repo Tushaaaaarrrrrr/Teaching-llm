@@ -25,8 +25,11 @@ export async function sendCommunityNotification(
   throttleMap.set(courseId, now)
 
   try {
-    // Fetch course name + enrolled users + muted prefs in parallel.
-    const [course, enrollments, mutedPrefs] = await Promise.all([
+    // Fetch course name + enrolled users + muted prefs + per-category opt-out
+    // in parallel. The category opt-out (`notifCommunityEnabled = false`) is
+    // the global switch from the Flutter Notification Settings page; the
+    // per-course mute is the existing inline mute on a specific community.
+    const [course, enrollments, mutedPrefs, optedOut] = await Promise.all([
       prisma.course.findUnique({
         where: { id: courseId },
         select: { name: true },
@@ -39,12 +42,22 @@ export async function sendCommunityNotification(
         where: { courseId, isMuted: true },
         select: { userId: true },
       }),
+      prisma.user.findMany({
+        where: { notifCommunityEnabled: false },
+        select: { id: true },
+      }),
     ])
 
     const mutedSet = new Set(mutedPrefs.map((m) => m.userId))
+    const optedOutSet = new Set(optedOut.map((u) => u.id))
     const recipientIds = enrollments
       .map((e) => e.userId)
-      .filter((id) => id !== sender.userId && !mutedSet.has(id))
+      .filter(
+        (id) =>
+          id !== sender.userId &&
+          !mutedSet.has(id) &&
+          !optedOutSet.has(id),
+      )
 
     if (recipientIds.length === 0) return
 
@@ -77,6 +90,13 @@ export async function sendDMNotification(
   message: { content: string; imageUrl?: string | null }
 ) {
   try {
+    // Respect the recipient's global community-category opt-out.
+    const recipient = await prisma.user.findUnique({
+      where: { id: recipientId },
+      select: { notifCommunityEnabled: true },
+    })
+    if (!recipient?.notifCommunityEnabled) return
+
     const body = message.content
       ? `${sender.name}: ${message.content.slice(0, 120)}`
       : `${sender.name} sent a photo`

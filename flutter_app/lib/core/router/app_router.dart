@@ -7,6 +7,7 @@ import '../../features/academics/calendar_page.dart';
 import '../../features/academics/free_resources_page.dart';
 import '../../features/announcements/announcements_page.dart';
 import '../../features/auth/login_page.dart';
+import '../../features/auth/welcome_page.dart';
 import '../../features/community/community_chat_page.dart';
 import '../../features/community/community_page.dart';
 import '../../features/courses/course_detail_page.dart';
@@ -38,12 +39,32 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: _AuthListenable(ref),
     redirect: (context, state) {
       final isSignedIn = auth.value != null;
-      final goingToLogin = state.matchedLocation == '/login';
-      if (!isSignedIn && !goingToLogin) return '/login';
-      if (isSignedIn && goingToLogin) return '/dashboard';
+      final loc = state.matchedLocation;
+      final inAuthFlow = loc == '/login' || loc == '/welcome';
+
+      if (isSignedIn) {
+        // Signed in but landed on a sign-in surface → push to the app.
+        if (inAuthFlow) return '/dashboard';
+        return null;
+      }
+
+      // Unsigned: first-launch users see /welcome, returning users go to /login.
+      final welcomeSeen = ref.read(welcomeSeenProvider);
+      if (loc == '/welcome') {
+        // Allow them to stay on /welcome; if they've already seen it,
+        // they shouldn't be there but be gentle and forward to /login.
+        return welcomeSeen ? '/login' : null;
+      }
+      if (!inAuthFlow) {
+        return welcomeSeen ? '/login' : '/welcome';
+      }
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/welcome',
+        builder: (_, __) => const WelcomePage(),
+      ),
       GoRoute(
         path: '/login',
         builder: (_, __) => const LoginPage(),
@@ -107,25 +128,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(
-        path: '/store',
-        builder: (_, __) => const StorePage(),
-        routes: [
-          GoRoute(
-            path: 'courses',
-            builder: (_, __) => const CourseOfferingsPage(),
-            routes: [
-              GoRoute(
-                path: ':id',
-                builder: (_, state) => CourseOfferingDetailPage(
-                  offeringId: state.pathParameters['id']!,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
       // Bottom-nav shell — Home / Courses / Academics(FAB) / Support / More.
+      // /store and its child pages also live here so the bottom nav stays
+      // visible when a student browses the store from the More menu.
       ShellRoute(
         builder: (context, state, child) => AppScaffold(
           currentLocation: state.matchedLocation,
@@ -159,6 +164,24 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/more',
             builder: (_, __) => const MorePage(),
+          ),
+          GoRoute(
+            path: '/store',
+            builder: (_, __) => const StorePage(),
+            routes: [
+              GoRoute(
+                path: 'courses',
+                builder: (_, __) => const CourseOfferingsPage(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (_, state) => CourseOfferingDetailPage(
+                      offeringId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
