@@ -4,6 +4,11 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import {
+  IITM_LEVELS,
+  IITM_SUBJECTS_BY_LEVEL,
+  IITM_ALL_SUBJECTS,
+} from '@/lib/iitm-taxonomy'
 
 export type Tab = 'courses' | 'offerings' | 'bundles' | 'lectures' | 'events' | 'materials' | 'announcements' | 'content-bank' | 'notifications' | 'home-slides'
 
@@ -858,17 +863,30 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     <label className="form-label">Level</label>
                     <input className="form-input" value={f.level || ''} onChange={e => set('level', e.target.value)} placeholder="e.g. Foundation / Diploma / Degree" list="level-options" />
                     <datalist id="level-options">
-                      <option value="Foundation" />
-                      <option value="Diploma" />
-                      <option value="Degree" />
-                      <option value="Qualifier" />
+                      {IITM_LEVELS.map(l => (<option key={l} value={l} />))}
                     </datalist>
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div className="form-group">
                     <label className="form-label">Subject</label>
-                    <input className="form-input" value={f.subject || ''} onChange={e => set('subject', e.target.value)} placeholder="e.g. Math 1, Stats 1, CT" />
+                    <input
+                      className="form-input"
+                      value={f.subject || ''}
+                      onChange={e => set('subject', e.target.value)}
+                      placeholder="e.g. Maths 1, Stats 1, MLF"
+                      list="subject-options"
+                    />
+                    {/* Narrow the suggestions to the chosen Level when set;
+                        show every curated IITM subject when not. Managers can
+                        still type a custom subject the curated list doesn't
+                        cover. */}
+                    <datalist id="subject-options">
+                      {(f.level && IITM_SUBJECTS_BY_LEVEL[f.level as keyof typeof IITM_SUBJECTS_BY_LEVEL]
+                        ? IITM_SUBJECTS_BY_LEVEL[f.level as keyof typeof IITM_SUBJECTS_BY_LEVEL]
+                        : IITM_ALL_SUBJECTS
+                      ).map(s => (<option key={s} value={s} />))}
+                    </datalist>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Term</label>

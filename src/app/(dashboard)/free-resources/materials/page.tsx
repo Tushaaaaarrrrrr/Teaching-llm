@@ -3,6 +3,11 @@
 import { ReactNode, useMemo, useState } from 'react'
 import useSWR, { mutate } from 'swr'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import {
+  IITM_LEVELS,
+  IITM_SUBJECTS_BY_LEVEL,
+  IITM_ALL_SUBJECTS,
+} from '@/lib/iitm-taxonomy'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -500,10 +505,9 @@ export default function FreeMaterialsPage() {
                     list="material-level-options"
                   />
                   <datalist id="material-level-options">
-                    <option value="Foundation" />
-                    <option value="Diploma" />
-                    <option value="Degree" />
-                    <option value="Qualifier" />
+                    {IITM_LEVELS.map(l => (
+                      <option key={l} value={l} />
+                    ))}
                   </datalist>
                 </div>
               </div>
@@ -515,8 +519,20 @@ export default function FreeMaterialsPage() {
                     className="form-input"
                     value={formData.subject || ''}
                     onChange={e => set('subject', e.target.value)}
-                    placeholder="e.g. Math 1, Stats 1"
+                    placeholder="e.g. Maths 1, Stats 1, MLF"
+                    list="material-subject-options"
                   />
+                  {/* Narrow the autocomplete list to the chosen Level when set,
+                      otherwise show every curated IITM subject. Managers can
+                      still type a custom subject the catalogue doesn't know. */}
+                  <datalist id="material-subject-options">
+                    {(formData.level && IITM_SUBJECTS_BY_LEVEL[formData.level as keyof typeof IITM_SUBJECTS_BY_LEVEL]
+                      ? IITM_SUBJECTS_BY_LEVEL[formData.level as keyof typeof IITM_SUBJECTS_BY_LEVEL]
+                      : IITM_ALL_SUBJECTS
+                    ).map(s => (
+                      <option key={s} value={s} />
+                    ))}
+                  </datalist>
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label">Term</label>
