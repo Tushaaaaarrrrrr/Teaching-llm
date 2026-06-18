@@ -4,6 +4,7 @@ import { getSession, isAdminOrManager, isManagerOrSuperAdmin } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
 import { queueExplicitGoogleGroupSyncJobs, validateGoogleGroupEmail } from '@/lib/google-group-sync'
+import { cleanupCourseEnrollmentsIfExpired } from '@/lib/expired-course-cleanup'
 
 export async function GET(
   request: NextRequest,
@@ -139,8 +140,8 @@ export async function GET(
       ...cData,
       courseEvents: filteredCourseEvents, // Use filtered events based on enrollment type
       enrollmentType: userEnrollmentType,
-      isExpired: hasManagerLevelAccess ? false : isCourseExpired(cData),
-      isEffectivelyDisabled: hasManagerLevelAccess ? false : isCourseEffectivelyDisabled(cData),
+      isExpired: isCourseExpired(cData),
+      isEffectivelyDisabled: isCourseEffectivelyDisabled(cData),
       _count: {
         ...cData._count,
         topics: topicsCount,
@@ -257,6 +258,9 @@ export async function PUT(
           }
         }
       }
+
+      // Clean up enrollments if the course has expired after update
+      await cleanupCourseEnrollmentsIfExpired(tx, id)
 
       return updated
     })

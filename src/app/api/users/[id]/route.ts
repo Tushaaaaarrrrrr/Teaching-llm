@@ -181,9 +181,13 @@ export async function PUT(
           ...bundleCourseRows.map(row => row.courseId),
         ]))
 
-        const blockedCourses = effectiveCourseIds.length > 0
+        const previousCourseIds = existingEnrollmentRows.map(row => row.courseId)
+        const addedCourseIds = effectiveCourseIds.filter(courseId => !previousCourseIds.includes(courseId))
+        const removedCourseIds = previousCourseIds.filter(courseId => !effectiveCourseIds.includes(courseId))
+
+        const blockedCourses = addedCourseIds.length > 0
           ? await (tx.course.findMany as any)({
-              where: { id: { in: effectiveCourseIds } },
+              where: { id: { in: addedCourseIds } },
               select: { name: true, isDisabled: true, expiresAt: true },
             })
           : []
@@ -191,10 +195,6 @@ export async function PUT(
         if (unavailableCourses.length > 0) {
           throw new Error(`Disabled or expired courses cannot be assigned: ${unavailableCourses.map(course => course.name).join(', ')}`)
         }
-
-        const previousCourseIds = existingEnrollmentRows.map(row => row.courseId)
-        const addedCourseIds = effectiveCourseIds.filter(courseId => !previousCourseIds.includes(courseId))
-        const removedCourseIds = previousCourseIds.filter(courseId => !effectiveCourseIds.includes(courseId))
 
         await tx.enrollment.deleteMany({ where: { userId: id } })
         if (effectiveCourseIds.length > 0) {
@@ -231,9 +231,16 @@ export async function PUT(
 
       // Handle instructor subject assignments (MANAGER only)
       if (nextAssignedCourseIds !== undefined) {
-        const blockedInstructorCourses = nextAssignedCourseIds.length > 0
+        const existingInstructorAssignments = await tx.instructorAssignment.findMany({
+          where: { instructorId: id },
+          select: { courseId: true },
+        })
+        const previousAssignedIds = existingInstructorAssignments.map(row => row.courseId)
+        const addedAssignedIds = nextAssignedCourseIds.filter(courseId => !previousAssignedIds.includes(courseId))
+
+        const blockedInstructorCourses = addedAssignedIds.length > 0
           ? await (tx.course.findMany as any)({
-              where: { id: { in: nextAssignedCourseIds } },
+              where: { id: { in: addedAssignedIds } },
               select: { name: true, isDisabled: true, expiresAt: true },
             })
           : []

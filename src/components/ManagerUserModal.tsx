@@ -193,7 +193,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             gender: formData.gender,
             age: formData.age ? parseInt(formData.age, 10) : null,
             state: formData.state,
-            courseIds: formData.courseIds,
+            courseIds: formData.courseIds.filter(id => {
+              const course = courses.find(c => c.id === id)
+              return !course?.isExpired
+            }),
             bundleIds: formData.bundleIds,
             enrollmentTypes: formData.enrollmentTypes,
             ...('enableDetailedLogs' in (user || {}) ? { enableDetailedLogs: formData.enableDetailedLogs } : {})
@@ -510,7 +513,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     <div style={{ flex: 1.5 }}>
                       <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Course Enrollments</label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                        {courses.filter(c => formData.courseIds.includes(c.id)).map(c => {
+                        {courses.filter(c => formData.courseIds.includes(c.id) && !c.isExpired).map(c => {
                           const enrollType = formData.enrollmentTypes[c.id] || 'LIVE'
                           const isLive = enrollType === 'LIVE'
                           return (

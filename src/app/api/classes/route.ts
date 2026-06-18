@@ -73,8 +73,8 @@ export async function GET() {
 
         return {
           ...course,
-          isExpired: isManager ? false : isCourseExpired(course),
-          isEffectivelyDisabled: isManager ? false : isCourseEffectivelyDisabled(course),
+          isExpired: isCourseExpired(course),
+          isEffectivelyDisabled: isCourseEffectivelyDisabled(course),
           hasUnread,
           isMuted,
         }
