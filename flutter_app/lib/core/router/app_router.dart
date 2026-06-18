@@ -106,44 +106,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/settings/notifications',
           builder: (_, __) => const NotificationSettingsPage()),
-      // Academics sub-pages — launched from the Academics hub tiles.
-      // They have their own back chip, so they live outside the bottom-nav.
-      GoRoute(path: '/calendar', builder: (_, __) => const CalendarPage()),
-      GoRoute(
-        path: '/free-resources',
-        builder: (_, __) => const FreeResourcesPage(),
-        routes: [
-          GoRoute(
-            path: 'materials',
-            builder: (_, __) => const FreeMaterialsBrowsePage(),
-          ),
-          GoRoute(
-            path: 'purchased',
-            builder: (_, __) => const PurchasedMaterialsPage(),
-          ),
-        ],
-      ),
-      GoRoute(
-          path: '/announcements',
-          builder: (_, __) => const AnnouncementsPage()),
-      GoRoute(
-          path: '/feedback', builder: (_, __) => const FeedbackPage()),
-      GoRoute(path: '/live', builder: (_, __) => const LiveSessionsPage()),
-      GoRoute(
-        path: '/community',
-        builder: (_, __) => const CommunityPage(),
-        routes: [
-          GoRoute(
-            path: ':courseId',
-            builder: (_, state) => CommunityChatPage(
-              courseId: state.pathParameters['courseId']!,
-            ),
-          ),
-        ],
-      ),
       // Bottom-nav shell — Home / Courses / Academics(FAB) / Support / More.
-      // /store and its child pages also live here so the bottom nav stays
-      // visible when a student browses the store from the More menu.
+      // Every tabbed-section destination lives inside this shell so the
+      // bottom nav stays visible on Free Resources, Announcements, Live,
+      // Community, Calendar, Feedback, Store, etc.
       ShellRoute(
         builder: (context, state, child) => AppScaffold(
           currentLocation: state.matchedLocation,
@@ -193,6 +159,50 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                 ],
+              ),
+            ],
+          ),
+          // Academics sub-pages — all inside the shell so the bottom nav
+          // stays visible (Home / Courses / Academics / Support / More).
+          GoRoute(
+            path: '/calendar',
+            builder: (_, __) => const CalendarPage(),
+          ),
+          GoRoute(
+            path: '/free-resources',
+            builder: (_, __) => const FreeResourcesPage(),
+            routes: [
+              GoRoute(
+                path: 'materials',
+                builder: (_, __) => const FreeMaterialsBrowsePage(),
+              ),
+              GoRoute(
+                path: 'purchased',
+                builder: (_, __) => const PurchasedMaterialsPage(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/announcements',
+            builder: (_, __) => const AnnouncementsPage(),
+          ),
+          GoRoute(
+            path: '/feedback',
+            builder: (_, __) => const FeedbackPage(),
+          ),
+          GoRoute(
+            path: '/live',
+            builder: (_, __) => const LiveSessionsPage(),
+          ),
+          GoRoute(
+            path: '/community',
+            builder: (_, __) => const CommunityPage(),
+            routes: [
+              GoRoute(
+                path: ':courseId',
+                builder: (_, state) => CommunityChatPage(
+                  courseId: state.pathParameters['courseId']!,
+                ),
               ),
             ],
           ),
