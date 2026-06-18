@@ -206,6 +206,7 @@ class _LevelSubjectPicker extends StatelessWidget {
         Expanded(
           child: _DropdownTile(
             label: 'Level',
+            icon: Icons.bar_chart_rounded, // stacked bars — matches web SVG
             value: level,
             options: levels,
             onChanged: onLevel,
@@ -216,6 +217,7 @@ class _LevelSubjectPicker extends StatelessWidget {
         Expanded(
           child: _DropdownTile(
             label: 'Subject',
+            icon: Icons.menu_book_outlined, // open book — matches web SVG
             value: subject,
             options: subjectsForLevel,
             onChanged: onSubject,
@@ -230,12 +232,14 @@ class _LevelSubjectPicker extends StatelessWidget {
 class _DropdownTile extends StatelessWidget {
   const _DropdownTile({
     required this.label,
+    required this.icon,
     required this.value,
     required this.options,
     required this.onChanged,
     required this.emptyHint,
   });
   final String label;
+  final IconData icon;
   final String? value;
   final List<String> options;
   final ValueChanged<String?> onChanged;
@@ -254,12 +258,18 @@ class _DropdownTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label,
-              style: AppTypography.uppercase.copyWith(
-                fontSize: 9.5,
-                color: AppColors.mute2,
-                letterSpacing: 0.6,
-              )),
+          Row(
+            children: [
+              Icon(icon, size: 11, color: AppColors.brand),
+              const SizedBox(width: 5),
+              Text(label,
+                  style: AppTypography.uppercase.copyWith(
+                    fontSize: 9.5,
+                    color: AppColors.mute2,
+                    letterSpacing: 0.6,
+                  )),
+            ],
+          ),
           DropdownButtonHideUnderline(
             child: DropdownButton<String?>(
               isExpanded: true,
@@ -412,12 +422,10 @@ class _MaterialRow extends StatelessWidget {
     final title = (material['title'] as String?) ?? 'Untitled';
     final term = (material['term'] as String?)?.trim();
     final subject = (material['subject'] as String?)?.trim();
+    final level = (material['level'] as String?)?.trim();
     final size = (material['fileSize'] as String?)?.trim();
-    final tags = [
-      if (subject != null && subject.isNotEmpty) subject,
-      if (term != null && term.isNotEmpty) term,
-      if (size != null && size.isNotEmpty) size,
-    ].join(' · ');
+    final fileType = (material['fileType'] as String?)?.trim();
+    final isPdf = fileType == null || fileType.toLowerCase().contains('pdf');
 
     return Material(
       color: AppColors.surface,
@@ -433,41 +441,97 @@ class _MaterialRow extends StatelessWidget {
             boxShadow: AppShadows.sm,
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: AppColors.brandSoft,
+                  color: isPdf ? AppColors.redSft : AppColors.brandSoft,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.picture_as_pdf,
-                    color: AppColors.brand, size: 20),
+                child: Icon(
+                  isPdf ? Icons.picture_as_pdf : Icons.description_outlined,
+                  color: isPdf ? AppColors.red : AppColors.brand,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style:
-                            AppTypography.title.copyWith(fontSize: 13.5)),
-                    if (tags.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(tags,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodyMuted
-                              .copyWith(fontSize: 11)),
-                    ],
+                        style: AppTypography.title.copyWith(fontSize: 13.5)),
+                    const SizedBox(height: 6),
+                    // Pills wrap nicely on narrow screens instead of overflowing.
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        if (subject != null && subject.isNotEmpty)
+                          _MiniPill(
+                            label: subject,
+                            fg: AppColors.brand,
+                            bg: AppColors.brandSoft,
+                          ),
+                        if (level != null && level.isNotEmpty)
+                          _MiniPill(
+                            label: level,
+                            fg: AppColors.amber,
+                            bg: AppColors.amberSft,
+                          ),
+                        if (term != null && term.isNotEmpty)
+                          _MiniPill(
+                            label: term,
+                            fg: AppColors.green,
+                            bg: AppColors.greenSft,
+                          ),
+                        if (size != null && size.isNotEmpty)
+                          _MiniPill(
+                            label: size,
+                            fg: AppColors.muted,
+                            bg: AppColors.line,
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.mute2),
+              const Padding(
+                padding: EdgeInsets.only(left: 6, top: 8),
+                child: Icon(Icons.chevron_right, color: AppColors.mute2),
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniPill extends StatelessWidget {
+  const _MiniPill({required this.label, required this.fg, required this.bg});
+  final String label;
+  final Color fg;
+  final Color bg;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: AppTypography.caption.copyWith(
+          fontSize: 10.5,
+          color: fg,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

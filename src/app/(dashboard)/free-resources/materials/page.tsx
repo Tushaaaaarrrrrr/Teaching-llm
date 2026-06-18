@@ -1,10 +1,71 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { ReactNode, useMemo, useState } from 'react'
 import useSWR, { mutate } from 'swr'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
+
+/**
+ * Reusable label + select pair with a left-side SVG glyph. Used for both
+ * the Level and Subject filters on the Free Materials page; kept as a small
+ * component so the styling stays consistent and the page body stays readable.
+ */
+function FilterSelect({
+  label, icon, value, onChange, options, placeholder,
+}: {
+  label: string
+  icon: ReactNode
+  value: string
+  onChange: (v: string) => void
+  options: string[]
+  placeholder: string
+}) {
+  return (
+    <div className="form-group" style={{ margin: 0 }}>
+      <label
+        className="form-label"
+        style={{
+          fontSize: '11px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          color: '#6b6b8a',
+        }}
+      >
+        <span style={{ color: '#4F46E5', display: 'inline-flex' }}>{icon}</span>
+        {label}
+      </label>
+      <div style={{ position: 'relative' }}>
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            left: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#9999b0',
+            pointerEvents: 'none',
+            display: 'inline-flex',
+          }}
+        >
+          {icon}
+        </span>
+        <select
+          className="form-input"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          style={{ paddingLeft: '34px' }}
+        >
+          <option value="">{placeholder}</option>
+          {options.map(o => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  )
+}
 
 type Category = 'ASSIGNMENT' | 'PYQ' | 'NOTE'
 const CATEGORIES: { value: Category; label: string; icon: string }[] = [
@@ -182,49 +243,52 @@ export default function FreeMaterialsPage() {
         )}
       </div>
 
-      {/* Filters: Level + Subject side-by-side */}
+      {/* Filters: Level + Subject — stack on phones, side-by-side from
+          480px up. Each select sits inside a relative-positioned wrapper
+          so a small SVG glyph can be absolutely positioned on the left. */}
       <div
         className="card"
         style={{
-          padding: '16px',
+          padding: '14px',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: '12px',
           marginBottom: '14px',
         }}
       >
-        <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label" style={{ fontSize: '11px' }}>LEVEL</label>
-          <select
-            className="form-input"
-            value={level}
-            onChange={e => {
-              setLevel(e.target.value)
-              setSubject('')
-            }}
-          >
-            <option value="">Any level</option>
-            {(options?.levels ?? []).map(l => (
-              <option key={l} value={l}>{l}</option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label" style={{ fontSize: '11px' }}>SUBJECT</label>
-          <select
-            className="form-input"
-            value={subject}
-            onChange={e => setSubject(e.target.value)}
-          >
-            <option value="">Any subject</option>
-            {subjectsForLevel.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
+        <FilterSelect
+          label="LEVEL"
+          icon={
+            // Stacked-bars "level" glyph — reads as a difficulty/level ramp.
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <line x1="4"  y1="20" x2="4"  y2="14" />
+              <line x1="10" y1="20" x2="10" y2="10" />
+              <line x1="16" y1="20" x2="16" y2="6"  />
+            </svg>
+          }
+          value={level}
+          onChange={v => { setLevel(v); setSubject('') }}
+          options={options?.levels ?? []}
+          placeholder="Any level"
+        />
+        <FilterSelect
+          label="SUBJECT"
+          icon={
+            // Open-book glyph — matches the FlutterMaterialBrowsePage "Notes"
+            // tab icon and reads as "subject / textbook".
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M2 3h7a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+              <path d="M22 3h-7a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h8z" />
+            </svg>
+          }
+          value={subject}
+          onChange={setSubject}
+          options={subjectsForLevel}
+          placeholder="Any subject"
+        />
       </div>
 
-      {/* Category tabs */}
+      {/* Category tabs — labels shrink on narrow screens via CSS clamp(). */}
       <div
         className="card"
         style={{
@@ -240,14 +304,16 @@ export default function FreeMaterialsPage() {
             <button
               key={c.value}
               onClick={() => setCategory(c.value)}
+              title={c.label}
               style={{
                 flex: 1,
-                padding: '10px',
+                minWidth: 0,
+                padding: '10px 8px',
                 border: 'none',
                 borderRadius: '10px',
                 background: active ? '#4F46E5' : 'transparent',
                 color: active ? '#ffffff' : '#6b6b8a',
-                fontSize: '13.5px',
+                fontSize: 'clamp(11px, 2.6vw, 13.5px)',
                 fontWeight: active ? 800 : 600,
                 cursor: 'pointer',
                 display: 'flex',
@@ -256,10 +322,12 @@ export default function FreeMaterialsPage() {
                 gap: '6px',
                 fontFamily: 'inherit',
                 transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
               }}
             >
               <span>{c.icon}</span>
-              <span>{c.label}</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.label}</span>
             </button>
           )
         })}
@@ -287,7 +355,7 @@ export default function FreeMaterialsPage() {
           </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '14px' }}>
           {materials.map(mat => (
             <div key={mat.id} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
