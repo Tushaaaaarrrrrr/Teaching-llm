@@ -333,13 +333,30 @@ class _TabBar extends StatelessWidget {
           fontWeight: FontWeight.w700,
         ),
         labelPadding: EdgeInsets.zero,
+        // indicatorSize: tab → pill spans the full tab cell minus
+        // indicatorPadding; the previous default (label) sized to the
+        // text width and overflowed the rightmost cell on narrow screens.
+        indicatorSize: TabBarIndicatorSize.tab,
         indicator: BoxDecoration(
           color: AppColors.brand,
-          borderRadius: BorderRadius.circular(11),
+          borderRadius: BorderRadius.circular(10),
         ),
         indicatorPadding: const EdgeInsets.all(4),
+        splashBorderRadius: BorderRadius.circular(10),
         dividerColor: Colors.transparent,
-        tabs: [for (final c in _Category.values) Tab(text: c.label)],
+        tabs: [
+          for (final c in _Category.values)
+            Tab(
+              height: 40,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(c.label),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
