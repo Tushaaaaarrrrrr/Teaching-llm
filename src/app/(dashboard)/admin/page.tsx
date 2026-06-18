@@ -160,7 +160,7 @@ export default function AdminPage() {
   const { data: bundlesData } = useSWR(userRole === 'MANAGER' ? '/api/course-bundles' : null, url => fetch(url).then(r => r.json()))
 
   const users = normalizeCollection<User>(usersData, 'users')
-  const isLimitedView = !debouncedSearchQuery
+  const isLimitedView = users.length >= 500 && !debouncedSearchQuery
   const bundles = normalizeCollection<CourseBundleInfo>(bundlesData, 'bundles')
   const managerCount = users.filter(u => u.role === 'MANAGER').length
   const bundledCourseIds = new Set(
@@ -341,10 +341,10 @@ export default function AdminPage() {
   }
 
   const roleColors: Record<string, { bg: string; color: string }> = {
-    MANAGER: { bg: '#ede9fe', color: '#7c3aed' },
-    ADMIN: { bg: '#dbeafe', color: '#3b82f6' },
-    INSTRUCTOR: { bg: '#fef3c7', color: '#d97706' },
-    STUDENT: { bg: '#d1fae5', color: '#10b981' },
+    MANAGER: { bg: 'var(--primary-light)', color: 'var(--accent)' },
+    ADMIN: { bg: 'var(--info-light)', color: 'var(--info)' },
+    INSTRUCTOR: { bg: 'var(--warning-light)', color: 'var(--warning)' },
+    STUDENT: { bg: 'var(--success-light)', color: 'var(--success)' },
   }
 
   // Filter users by role tab and course — server already handles search filtering
@@ -366,14 +366,14 @@ export default function AdminPage() {
   }
 
   const filterTabs = [
-    { label: 'All Users', key: 'all', color: '#6366f1', bg: '#e0e7ff' },
+    { label: 'All Users', key: 'all', color: 'var(--accent)', bg: 'var(--primary-light)' },
     ...(userRole === 'MANAGER' ? [
-      { label: 'Managers', key: 'MANAGER', color: '#7c3aed', bg: '#ede9fe' },
+      { label: 'Managers', key: 'MANAGER', color: 'var(--accent)', bg: 'var(--primary-light)' },
     ] : []),
     ...(userRole === 'MANAGER' ? [
-      { label: 'Admins', key: 'ADMIN', color: '#3b82f6', bg: '#dbeafe' },
+      { label: 'Admins', key: 'ADMIN', color: 'var(--info)', bg: 'var(--info-light)' },
     ] : []),
-    { label: 'Students', key: 'STUDENT', color: '#10b981', bg: '#d1fae5' },
+    { label: 'Students', key: 'STUDENT', color: 'var(--success)', bg: 'var(--success-light)' },
   ]
 
   return (
@@ -385,8 +385,8 @@ export default function AdminPage() {
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div style={{
           flex: 1, minWidth: '300px', display: 'flex', alignItems: 'center', gap: '12px',
-          padding: '10px 20px', borderRadius: '50px', background: '#e8eaf0',
-          boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+          padding: '10px 20px', borderRadius: '50px', background: 'var(--surface-2)',
+          boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2.5">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -398,11 +398,11 @@ export default function AdminPage() {
             onChange={e => setSearchQuery(e.target.value)}
             style={{
               background: 'none', border: 'none', width: '100%', outline: 'none',
-              fontSize: '14px', color: '#1e1e3a',
+              fontSize: '14px', color: 'var(--text-primary)',
             }}
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+            <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -416,8 +416,8 @@ export default function AdminPage() {
           gap: '10px',
           padding: '10px 18px',
           borderRadius: '50px',
-          background: '#e8eaf0',
-          boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
+          background: 'var(--surface-2)',
+          boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
         }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2">
             <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
@@ -431,7 +431,7 @@ export default function AdminPage() {
               width: '100%',
               outline: 'none',
               fontSize: '14px',
-              color: '#1e1e3a',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
             }}
           >
@@ -507,8 +507,8 @@ export default function AdminPage() {
               {counts[s.key as keyof typeof counts]}
             </div>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a' }}>{s.label}</div>
-              <div style={{ fontSize: '11px', color: '#9999b0' }}>
+              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{s.label}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                 {s.key === 'all' ? 'Total registered' : `${s.label} role`}
               </div>
             </div>
@@ -521,20 +521,20 @@ export default function AdminPage() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
           padding: '10px 18px', marginBottom: '12px', borderRadius: '12px',
-          background: 'linear-gradient(135deg, #eff6ff, #e0e7ff)',
-          border: '1px solid #c7d2fe', fontSize: '13px', color: '#3730a3',
+          background: 'linear-gradient(135deg, #eff6ff, var(--border))',
+          border: '1px solid var(--border)', fontSize: '13px', color: '#3730a3',
         }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
-          Showing 10 most recently enrolled users. <strong style={{ marginLeft: 4 }}>Search by name, email, or security number to find anyone.</strong>
+          Showing 500 most recently enrolled users. <strong style={{ marginLeft: 4 }}>Search by name, email, or security number to find anyone.</strong>
         </div>
       )}
 
       {/* Users List */}
       <div className="card" style={{ overflow: 'hidden' }}>
         {usersLoading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading users...</div>
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading users...</div>
         ) : (
           <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {filtered.map(user => {
@@ -555,36 +555,36 @@ export default function AdminPage() {
                   gap: '16px',
                   padding: '12px 20px',
                   borderRadius: '50px',
-                  background: user.isTerminated ? 'rgba(239,68,68,0.04)' : '#e8eaf0',
-                  boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+                  background: user.isTerminated ? 'rgba(239,68,68,0.04)' : 'var(--surface-2)',
+                  boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
                   transition: 'box-shadow 0.2s',
                   opacity: user.isTerminated ? 0.7 : 1,
                   flexWrap: 'nowrap',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff')}
-                onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff')}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)')}
                 >
                   <div style={{
-                    width: '40px', height: '40px', borderRadius: '50%', background: user.isTerminated ? '#fee2e2' : rc.bg,
+                    width: '40px', height: '40px', borderRadius: '50%', background: user.isTerminated ? 'var(--danger-light)' : rc.bg,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: user.isTerminated ? '#ef4444' : rc.color, fontSize: '13px', fontWeight: '600', flexShrink: 0,
-                    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                    color: user.isTerminated ? 'var(--danger)' : rc.color, fontSize: '13px', fontWeight: '600', flexShrink: 0,
+                    boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                   }}>
                     {initials}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div 
                       onClick={() => setSelectedUserId(user.id)}
-                      style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', textDecoration: 'underline' }}
+                      style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', textDecoration: 'underline' }}
                     >
                       {displayName}
                       {user.gender && (
-                        <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: '400' }}>({user.gender})</span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '400' }}>({user.gender})</span>
                       )}
                       {user.isSuperManager && (
                         <span style={{
-                          fontSize: '10px', fontWeight: '700', color: '#f59e0b',
-                          background: 'linear-gradient(135deg, #fef3c7, #fde68a)', padding: '2px 10px', borderRadius: '20px',
+                          fontSize: '10px', fontWeight: '700', color: 'var(--warning)',
+                          background: 'linear-gradient(135deg, var(--border), var(--border))', padding: '2px 10px', borderRadius: '20px',
                           border: '1px solid #fcd34d', letterSpacing: '0.5px',
                         }}>
                           ⭐ SYSTEM OWNER
@@ -592,19 +592,19 @@ export default function AdminPage() {
                       )}
                       {user.isTerminated && (
                         <span style={{
-                          fontSize: '10px', fontWeight: '700', color: '#ef4444',
-                          background: '#fee2e2', padding: '1px 8px', borderRadius: '20px',
+                          fontSize: '10px', fontWeight: '700', color: 'var(--danger)',
+                          background: 'var(--danger-light)', padding: '1px 8px', borderRadius: '20px',
                         }}>
                           TERMINATED
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
                       <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{user.email}</span>
                       {user.securityNumber && (
                         <>
-                          <span style={{ color: '#d1d5db' }}>•</span>
-                          <span style={{ color: '#6366f1', fontWeight: '600', letterSpacing: '0.05em', flexShrink: 0 }}>{user.securityNumber}</span>
+                          <span style={{ color: 'var(--border)' }}>•</span>
+                          <span style={{ color: 'var(--accent)', fontWeight: '600', letterSpacing: '0.05em', flexShrink: 0 }}>{user.securityNumber}</span>
                         </>
                       )}
                     </div>
@@ -621,7 +621,7 @@ export default function AdminPage() {
                           </span>
                         ))}
                         {user.enrollments.length > 3 && (
-                          <span style={{ fontSize: '10px', color: '#9999b0', paddingTop: '2px' }}>+{user.enrollments.length - 3}</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', paddingTop: '2px' }}>+{user.enrollments.length - 3}</span>
                         )}
                       </div>
                     )}
@@ -630,7 +630,7 @@ export default function AdminPage() {
                         {user.courseBundleAssignments.map(bundleAssignment => (
                           <span key={bundleAssignment.bundleId} style={{
                             padding: '2px 8px', borderRadius: '50px', fontSize: '10px', fontWeight: '700',
-                            background: '#ede9fe', color: '#7c3aed',
+                            background: 'var(--primary-light)', color: 'var(--accent)',
                             whiteSpace: 'nowrap',
                           }}>
                             Bundle: {bundleAssignment.bundle.name}
@@ -651,7 +651,7 @@ export default function AdminPage() {
                           </span>
                         ))}
                         {user.instructorAssignments.length > 3 && (
-                          <span style={{ fontSize: '10px', color: '#9999b0', paddingTop: '2px' }}>+{user.instructorAssignments.length - 3}</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', paddingTop: '2px' }}>+{user.instructorAssignments.length - 3}</span>
                         )}
                       </div>
                     )}
@@ -685,7 +685,7 @@ export default function AdminPage() {
                       {isNewUser && (
                         <span style={{
                           fontSize: '10px', fontWeight: '700', color: '#065f46',
-                          background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)', padding: '3px 10px', borderRadius: '20px',
+                          background: 'linear-gradient(135deg, #dcfce7, var(--border))', padding: '3px 10px', borderRadius: '20px',
                           border: '1px solid #86efac', letterSpacing: '0.5px',
                           display: 'inline-flex', alignItems: 'center', gap: '4px',
                         }}>
@@ -702,7 +702,7 @@ export default function AdminPage() {
                     </div>
                     
                     {/* Date Column */}
-                    <div style={{ width: '100px', flexShrink: 0, textAlign: 'right', fontSize: '12px', color: '#9999b0', fontWeight: '500' }}>
+                    <div style={{ width: '100px', flexShrink: 0, textAlign: 'right', fontSize: '12px', color: 'var(--text-muted)', fontWeight: '500' }}>
                       {createdAtLabel}
                     </div>
 
@@ -721,7 +721,7 @@ export default function AdminPage() {
                           disabled={togglingId === user.id}
                           className="btn btn-sm"
                           style={{
-                            color: user.isTerminated ? '#10b981' : '#ef4444',
+                            color: user.isTerminated ? 'var(--success)' : 'var(--danger)',
                             border: user.isTerminated ? '1px solid #d1fae5' : '1px solid #fee2e2',
                             background: user.isTerminated ? 'rgba(16,185,129,0.04)' : 'rgba(239,68,68,0.04)',
                             minWidth: '95px',
@@ -737,7 +737,7 @@ export default function AdminPage() {
                         </button>
                       )}
                       {!user.isSuperManager && userRole === 'MANAGER' && (
-                        <button onClick={() => handleDelete(user.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
+                        <button onClick={() => handleDelete(user.id)} className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid #fee2e2' }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                         </button>
                       )}
@@ -747,7 +747,7 @@ export default function AdminPage() {
               )
             })}
             {filtered.length === 0 && (
-              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9999b0' }}>No users found</div>
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>No users found</div>
             )}
           </div>
         )}
@@ -762,7 +762,7 @@ export default function AdminPage() {
               <h3 style={{ fontSize: '16px', fontWeight: '600' }}>
                 {editId ? 'Edit User' : 'Create New User'}
               </h3>
-              <button onClick={() => setShowModal(false)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
+              <button onClick={() => setShowModal(false)} style={{ color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
@@ -770,7 +770,7 @@ export default function AdminPage() {
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '70vh', overflowY: 'auto' }}>
               {error && (
-                <div style={{ background: '#fee2e2', color: '#991b1b', padding: '10px 14px', borderRadius: '8px', fontSize: '13px' }}>
+                <div style={{ background: 'var(--danger-light)', color: 'var(--danger)', padding: '10px 14px', borderRadius: '8px', fontSize: '13px' }}>
                   {error}
                 </div>
               )}
@@ -793,7 +793,7 @@ export default function AdminPage() {
               <div className="form-group">
                 <label className="form-label">Email *</label>
                 <input type="email" className="form-input" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="john@example.com" disabled={editingUserIsSuperManager} style={editingUserIsSuperManager ? { opacity: 0.6 } : {}} />
-                {editingUserIsSuperManager && <span style={{ fontSize: '10px', color: '#92400e' }}>Super Manager email cannot be changed</span>}
+                {editingUserIsSuperManager && <span style={{ fontSize: '10px', color: 'var(--warning)' }}>Super Manager email cannot be changed</span>}
               </div>
               <div className="form-group">
                 <label className="form-label">Mobile Number</label>
@@ -804,15 +804,15 @@ export default function AdminPage() {
                 <div className="form-group">
                   <label className="form-label">Password</label>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', color: '#6b7280' }}>Password is auto-generated. Use the button to reset.</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Password is auto-generated. Use the button to reset.</span>
                     <button
                       type="button"
                       onClick={() => setForm(p => ({ ...p, password: p.password === 'RESET' ? '' : 'RESET' }))}
                       className="btn btn-sm"
                       style={{
-                        color: form.password === 'RESET' ? '#ef4444' : '#3b82f6',
+                        color: form.password === 'RESET' ? 'var(--danger)' : 'var(--info)',
                         border: form.password === 'RESET' ? '1px solid #fee2e2' : '1px solid #dbeafe',
-                        background: form.password === 'RESET' ? '#fee2e2' : '#eff6ff',
+                        background: form.password === 'RESET' ? 'var(--danger-light)' : 'var(--info-light)',
                         fontSize: '11px',
                       }}
                     >
@@ -821,13 +821,9 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
-              {!editId && (
-                <div style={{ padding: '10px 14px', background: '#eff6ff', borderRadius: '8px', fontSize: '12px', color: '#3b82f6', border: '1px solid #dbeafe' }}>
-                  💡 Password will be auto-generated and shown once after creation.
-                </div>
-              )}
+
               {editingUserIsSuperManager && (
-                <div style={{ padding: '10px 14px', background: '#fef3c7', borderRadius: '8px', fontSize: '12px', color: '#92400e', border: '1px solid #fcd34d' }}>
+                <div style={{ padding: '10px 14px', background: 'var(--warning-light)', borderRadius: '8px', fontSize: '12px', color: 'var(--warning)', border: '1px solid #fcd34d' }}>
                   🔒 Super Manager credentials cannot be changed here.
                 </div>
               )}
@@ -899,20 +895,20 @@ export default function AdminPage() {
                       Female
                     </label>
                   </div>
-                  <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px', display: 'block' }}>Managers can update gender anytime.</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Managers can update gender anytime.</span>
                 </div>
               )}
               
               {/* Granular Permissions (MANAGER ONLY for ADMIN/INSTRUCTOR roles) */}
               {userRole === 'MANAGER' && (form.role === 'ADMIN' || form.role === 'INSTRUCTOR') && (
                 <div style={{
-                  background: '#f9fafb', padding: '12px', borderRadius: '10px',
-                  border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: '10px'
+                  background: 'var(--surface)', padding: '12px', borderRadius: '10px',
+                  border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '10px'
                 }}>
-                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '2px' }}>GRANULAR PERMISSIONS</div>
+                  <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '2px' }}>GRANULAR PERMISSIONS</div>
                   
                   <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                    <span style={{ fontSize: '13px', color: '#4b5563' }}>Allow User Termination</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Allow User Termination</span>
                     <div style={{ position: 'relative', display: 'inline-block', width: '36px', height: '20px' }}>
                       <input 
                         type="checkbox" 
@@ -922,20 +918,20 @@ export default function AdminPage() {
                       />
                       <span style={{
                         position: 'absolute', cursor: 'pointer', inset: 0,
-                        backgroundColor: form.canTerminate ? '#3b82f6' : '#d1d5db',
+                        backgroundColor: form.canTerminate ? 'var(--info)' : 'var(--border)',
                         borderRadius: '34px', transition: '.2s'
                       }}>
                         <span style={{
                           position: 'absolute', content: '""', height: '14px', width: '14px',
                           left: form.canTerminate ? '18px' : '3px', bottom: '3px',
-                          backgroundColor: 'white', borderRadius: '50%', transition: '.2s'
+                          backgroundColor: 'var(--surface)', borderRadius: '50%', transition: '.2s'
                         }} />
                       </span>
                     </div>
                   </label>
 
                   <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                    <span style={{ fontSize: '13px', color: '#4b5563' }}>Allow Student Creation</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Allow Student Creation</span>
                     <div style={{ position: 'relative', display: 'inline-block', width: '36px', height: '20px' }}>
                       <input 
                         type="checkbox" 
@@ -945,13 +941,13 @@ export default function AdminPage() {
                       />
                       <span style={{
                         position: 'absolute', cursor: 'pointer', inset: 0,
-                        backgroundColor: form.canCreateStudents ? '#3b82f6' : '#d1d5db',
+                        backgroundColor: form.canCreateStudents ? 'var(--info)' : 'var(--border)',
                         borderRadius: '34px', transition: '.2s'
                       }}>
                         <span style={{
                           position: 'absolute', content: '""', height: '14px', width: '14px',
                           left: form.canCreateStudents ? '18px' : '3px', bottom: '3px',
-                          backgroundColor: 'white', borderRadius: '50%', transition: '.2s'
+                          backgroundColor: 'var(--surface)', borderRadius: '50%', transition: '.2s'
                         }} />
                       </span>
                     </div>
@@ -986,7 +982,7 @@ export default function AdminPage() {
                               }}
                             />
                             <span style={{ fontSize: '13px', fontWeight: '600', color: '#5b21b6' }}>{bundle.name}</span>
-                            <span style={{ fontSize: '11px', color: '#8b5cf6' }}>
+                            <span style={{ fontSize: '11px', color: 'var(--accent)' }}>
                               ({bundle.courses?.length || 0} courses)
                             </span>
                           </label>
@@ -999,10 +995,10 @@ export default function AdminPage() {
                     display: 'flex', flexDirection: 'column', gap: '6px',
                     maxHeight: '200px', overflowY: 'auto',
                     padding: '10px', borderRadius: '8px',
-                    background: '#f3f4f6', border: '1px solid #e5e7eb',
+                    background: 'var(--bg)', border: '1px solid var(--border)',
                   }}>
                     {courses.length === 0 ? (
-                      <span style={{ fontSize: '12px', color: '#9999b0' }}>No courses available</span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>No courses available</span>
                     ) : (
                       courses.map(cls => (
                         <label key={cls.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
@@ -1025,16 +1021,16 @@ export default function AdminPage() {
                           }} />
                           <span style={{ fontSize: '13px' }}>{cls.name}</span>
                           {cls.subject && (
-                            <span style={{ fontSize: '11px', color: '#9999b0' }}>({cls.subject})</span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({cls.subject})</span>
                           )}
                           {cls.isExpired && (
-                            <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700' }}>Expired</span>
+                            <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700' }}>Expired</span>
                           )}
                           {cls.isEffectivelyDisabled && !cls.isExpired && (
-                            <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>
+                            <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700' }}>Disabled</span>
                           )}
                           {bundledCourseIds.has(cls.id) && (
-                            <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: '600' }}>Included by selected bundle</span>
+                            <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: '600' }}>Included by selected bundle</span>
                           )}
                           {form.courseIds.includes(cls.id) && !bundledCourseIds.has(cls.id) && (
                             <select
@@ -1045,8 +1041,8 @@ export default function AdminPage() {
                               }}
                               style={{
                                 marginLeft: 'auto', padding: '2px 8px', borderRadius: '4px',
-                                border: '1px solid #d1d5db', fontSize: '11px', background: '#fff',
-                                fontWeight: '600', color: '#374151', cursor: 'pointer'
+                                border: '1px solid var(--border)', fontSize: '11px', background: 'var(--surface)',
+                                fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer'
                               }}
                               onClick={e => e.stopPropagation()}
                             >
@@ -1064,17 +1060,17 @@ export default function AdminPage() {
               {form.role === 'INSTRUCTOR' && userRole === 'MANAGER' && (
                 <div className="form-group">
                   <label className="form-label">Assigned Subjects / Courses</label>
-                  <p style={{ fontSize: '11px', color: '#9999b0', marginBottom: '6px' }}>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
                     Select the subjects this instructor can manage content for.
                   </p>
                   <div style={{
                     display: 'flex', flexDirection: 'column', gap: '6px',
                     maxHeight: '200px', overflowY: 'auto',
                     padding: '10px', borderRadius: '8px',
-                    background: '#f3f4f6', border: '1px solid #e5e7eb',
+                    background: 'var(--bg)', border: '1px solid var(--border)',
                   }}>
                     {courses.length === 0 ? (
-                      <span style={{ fontSize: '12px', color: '#9999b0' }}>No courses available</span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>No courses available</span>
                     ) : (
                       courses.map(cls => (
                         <label key={cls.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
@@ -1097,13 +1093,13 @@ export default function AdminPage() {
                           }} />
                           <span style={{ fontSize: '13px' }}>{cls.name}</span>
                           {cls.subject && (
-                            <span style={{ fontSize: '11px', color: '#9999b0' }}>({cls.subject})</span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({cls.subject})</span>
                           )}
                           {cls.isExpired && (
-                            <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700' }}>Expired</span>
+                            <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700' }}>Expired</span>
                           )}
                           {cls.isEffectivelyDisabled && !cls.isExpired && (
-                            <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>
+                            <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700' }}>Disabled</span>
                           )}
                         </label>
                       ))
@@ -1128,21 +1124,21 @@ export default function AdminPage() {
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
             <div className="modal-header">
               <h3 style={{ fontSize: '16px', fontWeight: '600' }}>🔑 Generated Password</h3>
-              <button onClick={() => setShowPasswordModal(false)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
+              <button onClick={() => setShowPasswordModal(false)} style={{ color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
               </button>
             </div>
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ padding: '14px', background: '#fef3c7', borderRadius: '10px', fontSize: '12px', color: '#92400e', border: '1px solid #fcd34d' }}>
+              <div style={{ padding: '14px', background: 'var(--warning-light)', borderRadius: '10px', fontSize: '12px', color: 'var(--warning)', border: '1px solid #fcd34d' }}>
                 ⚠️ This password will only be shown <strong>once</strong>. Copy and store it securely. You can reveal it up to 2 more times, after which a reset will be required.
               </div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
                 padding: '14px 18px', borderRadius: '10px',
-                background: '#f0fdf4', border: '1px solid #bbf7d0',
-                fontFamily: 'monospace', fontSize: '15px', fontWeight: '600', color: '#166534',
+                background: 'var(--success-light)', border: '1px solid var(--border)',
+                fontFamily: 'monospace', fontSize: '15px', fontWeight: '600', color: 'var(--success)',
                 letterSpacing: '1px',
               }}>
                 <span style={{ flex: 1, wordBreak: 'break-all' }}>{generatedPassword}</span>
@@ -1150,9 +1146,9 @@ export default function AdminPage() {
                   onClick={copyPassword}
                   className="btn btn-sm"
                   style={{
-                    color: passwordCopied ? '#10b981' : '#3b82f6',
+                    color: passwordCopied ? 'var(--success)' : 'var(--info)',
                     border: passwordCopied ? '1px solid #d1fae5' : '1px solid #dbeafe',
-                    background: passwordCopied ? '#d1fae5' : '#eff6ff',
+                    background: passwordCopied ? 'var(--success-light)' : 'var(--info-light)',
                     flexShrink: 0,
                   }}
                 >

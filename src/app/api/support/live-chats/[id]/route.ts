@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { sendAgentJoinedChatNotification } from '@/lib/system-notifications'
 
 // Agent joins or closes a chat
 export async function PUT(
@@ -29,6 +30,10 @@ export async function PUT(
         agent: { select: { id: true, name: true, role: true } },
       },
     })
+
+    if (action === 'join' && isManager(session.role)) {
+      sendAgentJoinedChatNotification(chat.id, session.name).catch(console.error)
+    }
 
     logActivity({
       userId: session.userId,

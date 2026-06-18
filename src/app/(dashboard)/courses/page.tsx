@@ -100,7 +100,7 @@ export default function CoursesPage() {
           name: orderData.userName,
           email: orderData.userEmail,
         },
-        theme: { color: '#6366f1' },
+        theme: { color: 'var(--accent)' },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
           setIsProcessing(true)
           try {
@@ -136,9 +136,9 @@ export default function CoursesPage() {
         },
       }
 
-      setIsProcessing(false)
       const rzp = new (window as unknown as { Razorpay: new (opts: typeof options) => { open: () => void } }).Razorpay(options)
       rzp.open()
+      setIsProcessing(false)
     } catch (e: any) {
       alert(e.message || 'Something went wrong')
       setIsProcessing(false)
@@ -166,16 +166,16 @@ export default function CoursesPage() {
           style={{
             marginBottom: '16px',
             padding: '14px 18px',
-            border: '1px solid #fecaca',
-            color: '#b91c1c',
-            background: '#fff5f5',
+            border: '1px solid var(--border)',
+            color: 'var(--danger)',
+            background: 'var(--danger-light)',
           }}
         >
           Failed to load courses. {error.message}
         </div>
       ) : null}
       <div className="courses-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
-        <p style={{ fontSize: '13px', color: '#9999b0', margin: 0 }}>{courses.length} courses available</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{courses.length} courses available</p>
         <div className="courses-search-wrap" style={{ position: 'relative' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -306,7 +306,7 @@ export default function CoursesPage() {
           const getBatchBadge = () => {
             if (isFreeOrDemo) return { text: 'General Batch', color: '#bae6fd' }
             if (isLive) return { text: 'PRO Batch', color: '#fff' }
-            if (isRecorded) return { text: 'PLUS', color: '#fde68a' }
+            if (isRecorded) return { text: 'PLUS', color: '#ffffff' }
             return { text: 'General Batch', color: '#bae6fd' }
           }
           const batchBadge = getBatchBadge()
@@ -316,11 +316,11 @@ export default function CoursesPage() {
           const innerCard = (
             <div
               style={{
-                background: '#e8eaf0',
+                background: 'var(--surface-2)',
                 borderRadius: 'var(--course-card-radius, 28px)',
                 boxShadow: (isLive && !isCourseExpired)
-                  ? `8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, 0 0 0 2px ${course.color}40`
-                  : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${course.color}40`
+                  : '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)',
                 overflow: 'hidden',
                 cursor: isCourseExpired ? 'default' : 'pointer',
                 transition: 'all 0.25s ease',
@@ -335,16 +335,16 @@ export default function CoursesPage() {
                 if (isCourseExpired) return;
                 e.currentTarget.style.transform = 'translateY(-4px)'
                 e.currentTarget.style.boxShadow = isLive
-                  ? `12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff, 0 0 0 2px ${course.color}60`
-                  : '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
+                  ? `12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light), 0 0 0 2px ${course.color}60`
+                  : '12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light)'
                 if (!isFreeOrDemo && isRecorded) setShowUpgradeHint(course.id)
               }}
               onMouseLeave={e => {
                 if (isCourseExpired) return;
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.boxShadow = isLive
-                  ? `8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff, 0 0 0 2px ${course.color}40`
-                  : '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
+                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${course.color}40`
+                  : '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)'
                 setShowUpgradeHint(null)
               }}
             >
@@ -370,7 +370,7 @@ export default function CoursesPage() {
               {/* Gradient Banner */}
               <div style={{
                 height: 'var(--course-banner-height, 100px)',
-                background: isRecorded || isFreeOrDemo ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(135deg, ${course.color}ee, ${course.color}99)`,
+                background: isRecorded || isFreeOrDemo ? 'linear-gradient(135deg, #4b5563, #6b7280)' : `linear-gradient(135deg, ${course.color}ee, ${course.color}99)`,
                 position: 'relative',
                 overflow: 'hidden',
                 display: 'flex',
@@ -427,7 +427,7 @@ export default function CoursesPage() {
                         </button>
                         <div style={{
                           position: 'absolute', top: 'calc(100% + 8px)', right: '0',
-                          background: '#1e1e3a', color: '#fff', padding: '8px 14px', borderRadius: '12px',
+                          background: 'var(--primary)', color: '#fff', padding: '8px 14px', borderRadius: '12px',
                           fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
                           boxShadow: '0 8px 25px rgba(0,0,0,0.4)', pointerEvents: 'none',
                           opacity: showUpgradeHint === course.id ? 1 : 0, 
@@ -436,7 +436,7 @@ export default function CoursesPage() {
                           lineHeight: '1.4'
                         }}>
                           Click here to see difference between PLUS AND PRO batches
-                          <div style={{ position: 'absolute', bottom: '100%', right: '10px', border: '6px solid transparent', borderBottomColor: '#1e1e3a' }} />
+                          <div style={{ position: 'absolute', bottom: '100%', right: '10px', border: '6px solid transparent', borderBottomColor: 'var(--text-primary)' }} />
                         </div>
                       </div>
                     )}
@@ -447,7 +447,7 @@ export default function CoursesPage() {
                 <h3 style={{ 
                   fontSize: 'var(--course-title-size, 16px)', 
                   fontWeight: '700', 
-                  color: '#1e1e3a', 
+                  color: 'var(--text-primary)', 
                   marginBottom: '4px', 
                   lineHeight: '1.3',
                   display: '-webkit-box',
@@ -463,8 +463,8 @@ export default function CoursesPage() {
                     display: 'inline-block',
                     padding: '3px 12px',
                     borderRadius: '50px',
-                    background: isRecorded ? '#e5e7eb' : course.color + '18',
-                    color: isRecorded ? '#4b5563' : course.color,
+                    background: isRecorded ? 'var(--surface-2)' : course.color + '18',
+                    color: isRecorded ? 'var(--text-secondary)' : course.color,
                     fontSize: '12px',
                     fontWeight: '700',
                     marginBottom: '8px',
@@ -478,7 +478,7 @@ export default function CoursesPage() {
                 {(!isRecorded || isFreeOrDemo) && course.description && (
                   <p style={{
                     fontSize: '13px',
-                    color: '#6b6b8a',
+                    color: 'var(--text-secondary)',
                     lineHeight: '1.55',
                     marginBottom: '14px',
                     display: 'var(--course-desc-display, -webkit-box)',
@@ -501,7 +501,7 @@ export default function CoursesPage() {
                     }}>
                       {course.teacherName.charAt(0).toUpperCase()}
                     </div>
-                    <span style={{ fontSize: '12.5px', color: '#9999b0', fontWeight: '500' }}>
+                    <span style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: '500' }}>
                       {course.teacherName}
                     </span>
                   </div>
@@ -515,13 +515,13 @@ export default function CoursesPage() {
                       <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                         <div style={{
                           width: '20px', height: '20px', borderRadius: '50%',
-                          background: isRecorded ? '#e5e7eb' : course.color + '22',
+                          background: isRecorded ? 'var(--surface-2)' : course.color + '22',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '9px', fontWeight: '700', color: isRecorded ? '#4b5563' : course.color,
+                          fontSize: '9px', fontWeight: '700', color: isRecorded ? 'var(--text-secondary)' : course.color,
                         }}>
                           {course.teacherName.charAt(0).toUpperCase()}
                         </div>
-                        <span style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                           {course.teacherName}
                         </span>
                       </div>
@@ -533,7 +533,7 @@ export default function CoursesPage() {
                         padding: 'var(--course-upgrade-padding, 14px 16px)',
                         borderRadius: '50px',
                         border: 'none',
-                        background: '#1e1e3a',
+                        background: 'var(--primary)',
                         color: '#fff',
                         fontSize: 'var(--course-upgrade-font-size, 13px)',
                         fontWeight: '800',
@@ -593,14 +593,14 @@ export default function CoursesPage() {
                       padding: '10px 14px',
                       borderRadius: '50px',
                       border: 'none',
-                      background: '#ffffff',
-                      color: '#d97706',
+                      background: 'var(--surface)',
+                      color: 'var(--warning)',
                       fontSize: '12.5px',
                       fontWeight: '800',
                       cursor: 'pointer',
                       marginTop: '8px',
                       marginBottom: '10px',
-                      boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                      boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                       display: 'none',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -626,24 +626,24 @@ export default function CoursesPage() {
                 }}>
                   <div style={{
                     flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
-                    background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
+                    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.topics || 0}</div>
-                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: '#9999b0', fontWeight: '600' }}>Topics</div>
+                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.topics || 0}</div>
+                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: 'var(--text-muted)', fontWeight: '600' }}>Topics</div>
                   </div>
                   <div style={{
                     flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
-                    background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
+                    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.lectures || 0}</div>
-                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: '#9999b0', fontWeight: '600' }}>Lectures</div>
+                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.lectures || 0}</div>
+                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: 'var(--text-muted)', fontWeight: '600' }}>Lectures</div>
                   </div>
                   <div style={{
                     flex: 1, padding: 'var(--course-stats-padding, 8px 10px)', borderRadius: '14px',
-                    background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff', textAlign: 'center',
+                    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: '#1e1e3a' }}>{course._count?.materials || 0}</div>
-                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: '#9999b0', fontWeight: '600' }}>Materials</div>
+                    <div style={{ fontSize: 'var(--course-stats-font-size, 15px)', fontWeight: '800', color: 'var(--text-primary)' }}>{course._count?.materials || 0}</div>
+                    <div style={{ fontSize: 'var(--course-stats-label-size, 11px)', color: 'var(--text-muted)', fontWeight: '600' }}>Materials</div>
                   </div>
                 </div>
               </div>
@@ -665,9 +665,9 @@ export default function CoursesPage() {
           <a href={helpCard.redirectUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'flex' }}>
             <div
               style={{
-                background: '#e8eaf0',
+                background: 'var(--surface-2)',
                 borderRadius: '28px',
-                boxShadow: '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff',
+                boxShadow: '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)',
                 overflow: 'hidden',
                 cursor: 'pointer',
                 transition: 'all 0.25s ease',
@@ -678,11 +678,11 @@ export default function CoursesPage() {
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.transform = 'translateY(-4px)'
-                e.currentTarget.style.boxShadow = '12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff'
+                e.currentTarget.style.boxShadow = '12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light)'
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '8px 8px 16px #c5c7cf, -8px -8px 16px #ffffff'
+                e.currentTarget.style.boxShadow = '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)'
               }}
             >
               {/* Simple Gradient Banner */}
@@ -719,7 +719,7 @@ export default function CoursesPage() {
                 <h3 style={{ 
                   fontSize: '18px', 
                   fontWeight: '800', 
-                  color: '#1e1e3a', 
+                  color: 'var(--text-primary)', 
                   marginBottom: '20px', 
                   lineHeight: '1.3',
                 }}>
@@ -730,7 +730,7 @@ export default function CoursesPage() {
                   width: '100%',
                   padding: '12px',
                   borderRadius: '16px',
-                  background: '#6366f1',
+                  background: 'var(--accent)',
                   color: 'white',
                   border: 'none',
                   fontSize: '14px',
@@ -783,22 +783,22 @@ export default function CoursesPage() {
             }
           `}} />
           <div style={{
-            background: '#ffffff', borderRadius: '24px', width: '100%', maxWidth: '750px',
+            background: 'var(--surface)', borderRadius: '24px', width: '100%', maxWidth: '750px',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
             animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="batch-cmp-modal" style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
-              <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="batch-cmp-modal" style={{ background: 'linear-gradient(135deg, var(--surface-2), var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'var(--surface)', border: 'none', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
-              <h2 className="batch-cmp-title" style={{ fontWeight: '800', color: '#1e293b', marginBottom: '6px', paddingRight: '40px' }}>Batch Comparison</h2>
-              <p className="batch-cmp-sub" style={{ color: '#64748b', fontWeight: '500', margin: 0 }}>Choose the experience that fits your learning style</p>
+              <h2 className="batch-cmp-title" style={{ fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px', paddingRight: '40px' }}>Batch Comparison</h2>
+              <p className="batch-cmp-sub" style={{ color: 'var(--text-secondary)', fontWeight: '500', margin: 0 }}>Choose the experience that fits your learning style</p>
             </div>
 
             {/* Comparison Table */}
             <div className="batch-cmp-table-wrap">
-              <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1.5px solid #e2e8f0', background: '#fff' }}>
+              <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1.5px solid var(--border)', background: 'var(--surface)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
                   <colgroup>
                     <col style={{ width: '38%' }} />
@@ -806,12 +806,12 @@ export default function CoursesPage() {
                     <col style={{ width: '31%' }} />
                   </colgroup>
                   <thead>
-                    <tr style={{ background: '#f8fafc' }}>
-                      <th className="batch-cmp-th" style={{ color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Features</th>
-                      <th className="batch-cmp-th" style={{ color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center', wordBreak: 'break-word' }}>
+                    <tr style={{ background: 'var(--surface)' }}>
+                      <th className="batch-cmp-th" style={{ color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Features</th>
+                      <th className="batch-cmp-th" style={{ color: 'var(--warning)', fontWeight: '800', background: 'var(--warning-light)', textAlign: 'center', wordBreak: 'break-word' }}>
                         {infoModalCourse?.enrollmentType === 'FREE' || infoModalCourse?.enrollmentType === 'DEMO' ? 'General' : 'PLUS'}
                       </th>
-                      <th className="batch-cmp-th" style={{ color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO</th>
+                      <th className="batch-cmp-th" style={{ color: 'var(--primary-dark)', fontWeight: '800', background: 'var(--primary-light)', textAlign: 'center' }}>PRO</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -823,10 +823,10 @@ export default function CoursesPage() {
                       { f: 'Mentorship', g: '❌ No', p: '✅ Weekly' },
                       { f: 'Support', g: '❌ Basic', p: '✅ Priority' },
                     ].map((row, i) => (
-                      <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
-                        <td className="batch-cmp-td" style={{ color: '#334155', fontWeight: '600' }}>{row.f}</td>
-                        <td className="batch-cmp-td" style={{ color: '#92400e', textAlign: 'center', background: '#fffdf5' }}>{row.g}</td>
-                        <td className="batch-cmp-td" style={{ color: '#4338ca', fontWeight: '700', textAlign: 'center', background: '#f5f7ff' }}>{row.p}</td>
+                      <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
+                        <td className="batch-cmp-td" style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>{row.f}</td>
+                        <td className="batch-cmp-td" style={{ color: 'var(--warning)', textAlign: 'center', background: 'var(--warning-light)' }}>{row.g}</td>
+                        <td className="batch-cmp-td" style={{ color: 'var(--primary-dark)', fontWeight: '700', textAlign: 'center', background: 'var(--surface)' }}>{row.p}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -835,7 +835,7 @@ export default function CoursesPage() {
             </div>
 
             <div className="batch-cmp-footer" style={{ textAlign: 'center' }}>
-              <button onClick={() => setInfoModalCourse(null)} style={{ background: '#1e293b', color: 'white', padding: '12px 32px', borderRadius: '14px', fontSize: '14px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ background: 'var(--primary)', color: 'white', padding: '12px 32px', borderRadius: '14px', fontSize: '14px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 Got it, thanks!
               </button>
             </div>
@@ -856,8 +856,8 @@ export default function CoursesPage() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
-              boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
+              boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
               padding: '40px', textAlign: 'center', position: 'relative',
               animation: 'modalSlideUp 0.3s ease-out'
             }}
@@ -867,8 +867,8 @@ export default function CoursesPage() {
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', marginBottom: '24px' }}>
                   <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/>
                 </svg>
-                <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Processing Payment...</h2>
-                <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '12px' }}>Processing Payment...</h2>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
                   Please wait while we securely process your transaction.<br/>Do not close or refresh this page.
                 </p>
                 <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
@@ -877,28 +877,28 @@ export default function CoursesPage() {
               <>
                 <button 
                   onClick={() => setUpgradeModalCourse(null)}
-                  style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: '#94a3b8', cursor: 'pointer', lineHeight: 1 }}
+                  style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: 'var(--text-muted)', cursor: 'pointer', lineHeight: 1 }}
                 >&times;</button>
-                <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#ffffff', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'var(--surface)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 </div>
-                <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
-                <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
-                <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
+                <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
+                <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '32px' }}>
                   You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
                 </p>
 
-                <div style={{ background: '#f8faff', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid #e0e7ff' }}>
-                  <div style={{ fontSize: '36px', fontWeight: '900', color: '#6366f1', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '600' }}>One-time upgrade fee</div>
+                <div style={{ background: 'var(--surface)', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid var(--border)' }}>
+                  <div style={{ fontSize: '36px', fontWeight: '900', color: 'var(--accent)', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
+                  <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600' }}>One-time upgrade fee</div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '14px' }}>
                   <button
                     onClick={() => setUpgradeModalCourse(null)}
                     style={{
-                      flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'white',
-                      color: '#64748b', fontWeight: '700', cursor: 'pointer'
+                      flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid var(--border)', background: 'var(--surface)',
+                      color: 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer'
                     }}
                   >
                     Cancel
@@ -917,7 +917,7 @@ export default function CoursesPage() {
                   </button>
                 </div>
 
-                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '24px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '24px' }}>
                   Course will be updated automatically after Payment
                 </div>
               </>
@@ -934,21 +934,21 @@ export default function CoursesPage() {
           padding: '20px'
         }} onClick={() => setUpgradeSuccessOrderId(null)}>
           <div style={{
-            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
-            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px', textAlign: 'center',
             animation: 'modalSlideUp 0.3s ease-out'
           }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
-            <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Welcome to PRO!</h2>
-            <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Welcome to PRO!</h2>
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
               Your upgrade was successful. You now have full access to live classes, mentorship, and priority support.
             </p>
-            <div style={{ background: '#f0fdf4', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #bbf7d0' }}>
-              <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
-              <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
+            <div style={{ background: 'var(--success-light)', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid var(--border)' }}>
+              <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--success)', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
             </div>
-            <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
             <button
               onClick={() => setUpgradeSuccessOrderId(null)}
               style={{
@@ -972,7 +972,7 @@ export default function CoursesPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           <div style={{
-            background: 'white', padding: '40px', borderRadius: '32px',
+            background: 'var(--surface)', padding: '40px', borderRadius: '32px',
             textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
             width: '320px'
           }}>
@@ -981,8 +981,8 @@ export default function CoursesPage() {
               borderTop: '4px solid #6366f1', borderRadius: '50%',
               margin: '0 auto 20px'
             }} />
-            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Processing...</h3>
-            <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Please wait while we set up your course access.</p>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Processing...</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>Please wait while we set up your course access.</p>
           </div>
         </div>
       )}

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const role = session?.role
     
     let filteredOfferings = offerings
-    if (role !== 'MANAGER' && role !== 'SUPER_ADMIN') {
+    if (role !== 'MANAGER') {
       filteredOfferings = offerings.filter(o => !o.course.isDisabled)
     }
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
-    if (!session || (session.role !== 'MANAGER' && session.role !== 'SUPER_ADMIN')) {
+    if (!session || session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

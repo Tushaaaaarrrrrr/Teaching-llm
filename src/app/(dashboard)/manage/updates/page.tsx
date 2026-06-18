@@ -48,7 +48,7 @@ function Toggle({ value, onChange, disabled }: { value: boolean; onChange: (v: b
       style={{
         width: '50px', height: '26px', borderRadius: '13px', border: 'none',
         cursor: disabled ? 'default' : 'pointer',
-        background: value ? '#10b981' : '#d1d5db',
+        background: value ? 'var(--success)' : 'var(--border)',
         position: 'relative', transition: 'all 0.25s',
         opacity: disabled ? 0.5 : 1,
         boxShadow: value ? '0 4px 12px rgba(16,185,129,0.25)' : 'none',
@@ -56,7 +56,7 @@ function Toggle({ value, onChange, disabled }: { value: boolean; onChange: (v: b
       }}
     >
       <div style={{
-        width: '20px', height: '20px', borderRadius: '50%', background: '#fff',
+        width: '20px', height: '20px', borderRadius: '50%', background: 'var(--surface)',
         position: 'absolute', top: '3px',
         left: value ? '27px' : '3px',
         transition: 'left 0.25s',
@@ -71,11 +71,11 @@ function SectionHeader({ title, subtitle, enabled, onToggle }: { title: string; 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
       <div>
-        <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>{title}</h2>
-        <p style={{ fontSize: '12px', color: '#9999b0', margin: '2px 0 0' }}>{subtitle}</p>
+        <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{title}</h2>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>{subtitle}</p>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span style={{ fontSize: '11px', fontWeight: '700', color: enabled ? '#10b981' : '#9999b0', textTransform: 'uppercase' }}>
+        <span style={{ fontSize: '11px', fontWeight: '700', color: enabled ? 'var(--success)' : 'var(--text-muted)', textTransform: 'uppercase' }}>
           {enabled ? 'System ON' : 'System OFF'}
         </span>
         <Toggle value={enabled} onChange={onToggle} />
@@ -310,8 +310,8 @@ export default function ManageUpdatesPage() {
       <div style={{
         display: 'flex', alignItems: 'center', gap: '16px',
         padding: '14px 20px', borderRadius: '50px',
-        background: '#e8eaf0',
-        boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff',
+        background: 'var(--surface-2)',
+        boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
         opacity: u.isActive ? 1 : 0.55,
         transition: 'opacity 0.2s',
       }}>
@@ -319,18 +319,18 @@ export default function ManageUpdatesPage() {
         <div style={{
           padding: '4px 12px', borderRadius: '20px', fontSize: '10px',
           fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0,
-          background: isWelcome ? '#ede9fe' : '#dbeafe',
-          color: isWelcome ? '#7c3aed' : '#3b82f6',
+          background: isWelcome ? 'var(--primary-light)' : 'var(--info-light)',
+          color: isWelcome ? 'var(--accent)' : 'var(--info)',
         }}>
           {isWelcome ? 'Welcome' : 'Custom'}
         </div>
 
         {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {u.title}
           </div>
-          <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px', display: 'flex', gap: '8px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', gap: '8px' }}>
             <span>🎯 {targetLabel}</span>
             <span>🔁 {freqLabel}</span>
             <span>👁 {u._count.views}</span>
@@ -339,7 +339,7 @@ export default function ManageUpdatesPage() {
 
         {/* Toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <span style={{ fontSize: '10px', fontWeight: '700', color: u.isActive ? '#10b981' : '#9999b0', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '10px', fontWeight: '700', color: u.isActive ? 'var(--success)' : 'var(--text-muted)', textTransform: 'uppercase' }}>
             {u.isActive ? 'ON' : 'OFF'}
           </span>
           <Toggle value={u.isActive} onChange={() => toggleActive(u)} disabled={togglingId !== null} />
@@ -353,7 +353,7 @@ export default function ManageUpdatesPage() {
               <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
           </button>
-          <button onClick={() => handleDelete(u.id)} className="btn btn-sm" style={{ color: '#ef4444', border: '1px solid #fee2e2' }}>
+          <button onClick={() => handleDelete(u.id)} className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid #fee2e2' }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="3 6 5 6 21 6"/>
               <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
@@ -372,13 +372,13 @@ export default function ManageUpdatesPage() {
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '28px' }}>
         {[
-          { label: 'Welcome Msgs', value: welcomeUpdates.length, color: '#7c3aed' },
-          { label: 'Custom Msgs', value: customUpdates.length, color: '#3b82f6' },
-          { label: 'Active Custom', value: customUpdates.filter(u => u.isActive).length, color: '#10b981' },
-          { label: 'Total Views', value: allUpdates.reduce((s, u) => s + u._count.views, 0), color: '#f59e0b' },
+          { label: 'Welcome Msgs', value: welcomeUpdates.length, color: 'var(--accent)' },
+          { label: 'Custom Msgs', value: customUpdates.length, color: 'var(--info)' },
+          { label: 'Active Custom', value: customUpdates.filter(u => u.isActive).length, color: 'var(--success)' },
+          { label: 'Total Views', value: allUpdates.reduce((s, u) => s + u._count.views, 0), color: 'var(--warning)' },
         ].map(s => (
           <div key={s.label} className="card" style={{ padding: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
             <div style={{ fontSize: '24px', fontWeight: '800', color: s.color, marginTop: '4px' }}>{s.value}</div>
           </div>
         ))}
@@ -394,9 +394,9 @@ export default function ManageUpdatesPage() {
         />
 
         {isLoading ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#9999b0' }}>Loading…</div>
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>
         ) : welcomeUpdates.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#9999b0', fontSize: '13px', border: '2px dashed #e2e8f0', borderRadius: '12px' }}>
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '2px dashed var(--border)', borderRadius: '12px' }}>
             No welcome message yet.<br />
             <button onClick={() => openCreate('WELCOME')} className="btn btn-primary" style={{ marginTop: '12px', padding: '8px 20px', fontSize: '13px' }}>
               + Create Welcome Message
@@ -422,9 +422,9 @@ export default function ManageUpdatesPage() {
         />
 
         {isLoading ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#9999b0' }}>Loading…</div>
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>
         ) : customUpdates.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#9999b0', fontSize: '13px', border: '2px dashed #e2e8f0', borderRadius: '12px' }}>
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '2px dashed var(--border)', borderRadius: '12px' }}>
             No custom messages yet.
             <br />
             <button onClick={() => openCreate('CUSTOM')} className="btn btn-primary" style={{ marginTop: '12px', padding: '8px 20px', fontSize: '13px' }}>
@@ -452,10 +452,10 @@ export default function ManageUpdatesPage() {
                 {editId ? 'Edit' : 'Create'} {editType === 'WELCOME' ? 'Welcome Message' : 'Custom Message'}
               </h3>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={() => setShowPreview(true)} className="btn btn-sm" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569' }}>
+                <button onClick={() => setShowPreview(true)} className="btn btn-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                   👀 Preview
                 </button>
-                <button onClick={() => setShowModal(false)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
+                <button onClick={() => setShowModal(false)} style={{ color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
@@ -466,8 +466,8 @@ export default function ManageUpdatesPage() {
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1, padding: '24px' }}>
 
               {/* Type pill */}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', background: editType === 'WELCOME' ? '#ede9fe' : '#dbeafe', alignSelf: 'flex-start' }}>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: editType === 'WELCOME' ? '#7c3aed' : '#3b82f6', textTransform: 'uppercase' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', background: editType === 'WELCOME' ? 'var(--primary-light)' : 'var(--info-light)', alignSelf: 'flex-start' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: editType === 'WELCOME' ? 'var(--accent)' : 'var(--info)', textTransform: 'uppercase' }}>
                   {editType === 'WELCOME' ? '👋 Welcome Message — shown once per user lifetime' : '📢 Custom Message'}
                 </span>
               </div>
@@ -492,18 +492,18 @@ export default function ManageUpdatesPage() {
                     { cmd: 'strikeThrough', icon: 'S', style: { textDecoration: 'line-through' } },
                   ].map(b => (
                     <button key={b.cmd} type="button" onClick={() => execCmd(b.cmd)}
-                      style={{ width: '30px', height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '13px', color: '#1e1e3a', display: 'flex', alignItems: 'center', justifyContent: 'center', ...b.style }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#e0e7ff'}
+                      style={{ width: '30px', height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', ...b.style }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-light)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >{b.icon}</button>
                   ))}
                   <div style={{ width: '1px', background: '#d0d2d9', margin: '2px 4px' }} />
                   <button type="button" onClick={() => execCmd('insertUnorderedList')} style={{ width: '30px', height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '12px' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#e0e7ff'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-light)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >☰</button>
                   <button type="button" onClick={() => execCmd('insertOrderedList')} style={{ width: '30px', height: '28px', border: 'none', borderRadius: '6px', background: 'transparent', cursor: 'pointer', fontSize: '12px' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#e0e7ff'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-light)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >1.</button>
                   <div style={{ width: '1px', background: '#d0d2d9', margin: '2px 4px' }} />
@@ -517,10 +517,10 @@ export default function ManageUpdatesPage() {
                   style={{
                     minHeight: '140px', maxHeight: '260px', overflowY: 'auto',
                     padding: '14px', border: '1px solid #d0d2d9', borderRadius: '0 0 10px 10px',
-                    fontSize: '14px', lineHeight: '1.6', color: '#1e1e3a',
-                    outline: 'none', background: '#fff',
+                    fontSize: '14px', lineHeight: '1.6', color: 'var(--text-primary)',
+                    outline: 'none', background: 'var(--surface)',
                   }}
-                  onFocus={e => e.currentTarget.style.borderColor = '#6366f1'}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--accent)'}
                   onBlur={e => e.currentTarget.style.borderColor = '#d0d2d9'}
                 />
               </div>
@@ -528,24 +528,24 @@ export default function ManageUpdatesPage() {
               {/* Image */}
               <div className="form-group">
                 <label className="form-label">Attached Image (Optional)</label>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: 'var(--surface)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border)' }}>
                   <input type="file" ref={fileInputRef} accept="image/png,image/jpeg" onChange={handleImageSelect} style={{ display: 'none' }} />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-sm" style={{ background: '#fff', border: '1px solid #cbd5e1', fontSize: '12px' }}>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-sm" style={{ background: 'var(--surface)', border: '1px solid #cbd5e1', fontSize: '12px' }}>
                     {uploading ? 'Uploading…' : '📷 Choose Image'}
                   </button>
-                  <button type="button" onClick={() => { setRecentPhotosPage(1); fetchRecentPhotos(1); setShowRecentModal(true); }} className="btn btn-sm" style={{ background: '#fff', border: '1.5px solid #6366f1', color: '#6366f1', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                  <button type="button" onClick={() => { setRecentPhotosPage(1); fetchRecentPhotos(1); setShowRecentModal(true); }} className="btn btn-sm" style={{ background: 'var(--surface)', border: '1.5px solid #6366f1', color: 'var(--accent)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
                     🕒 Choose from Recent
                   </button>
                   {imageUrl ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <img src={imageUrl} alt="" style={{ height: '36px', width: '36px', borderRadius: '6px', objectFit: 'cover' }} />
-                      <button type="button" onClick={() => setImageUrl('')} style={{ color: '#ef4444', fontSize: '11px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer' }}>Remove</button>
+                      <button type="button" onClick={() => setImageUrl('')} style={{ color: 'var(--danger)', fontSize: '11px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer' }}>Remove</button>
                     </div>
                   ) : (
-                    <span style={{ fontSize: '11px', color: '#9999b0' }}>No image selected</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>No image selected</span>
                   )}
                 </div>
-                <p style={{ fontSize: '11px', color: '#64748b', marginTop: '6px', marginBottom: 0, lineHeight: '1.4' }}>
+                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '6px', marginBottom: 0, lineHeight: '1.4' }}>
                   💡 <strong>Recommended:</strong> 16:9 aspect ratio (e.g. <code>1200x675 px</code>). Compress under <code>100 KB</code> (WebP/JPG format) for blazing fast loading.
                 </p>
               </div>
@@ -567,8 +567,8 @@ export default function ManageUpdatesPage() {
                       style={{
                         padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: '600',
                         border: animation === anim.id ? '2px solid #6366f1' : '1px solid #cbd5e1',
-                        background: animation === anim.id ? '#eef2ff' : '#fff',
-                        color: animation === anim.id ? '#4f46e5' : '#475569',
+                        background: animation === anim.id ? 'var(--primary-light)' : '#fff',
+                        color: animation === anim.id ? 'var(--primary)' : 'var(--text-secondary)',
                         cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
                         transition: 'all 0.15s',
                       }}
@@ -600,12 +600,12 @@ export default function ManageUpdatesPage() {
                     <div className="form-group">
                       <label className="form-label">Start Date (Optional)</label>
                       <input type="date" className="form-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
-                      <p style={{ fontSize: '10px', color: '#9999b0', marginTop: '2px' }}>Message becomes active on this day</p>
+                      <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Message becomes active on this day</p>
                     </div>
                     <div className="form-group">
                       <label className="form-label">End Date (Optional)</label>
                       <input type="date" className="form-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
-                      <p style={{ fontSize: '10px', color: '#9999b0', marginTop: '2px' }}>Message expires at end of this day</p>
+                      <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Message expires at end of this day</p>
                     </div>
                   </div>
 
@@ -621,8 +621,8 @@ export default function ManageUpdatesPage() {
                           style={{
                             padding: '8px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: '600',
                             border: frequency === f ? '2px solid #6366f1' : '1px solid #cbd5e1',
-                            background: frequency === f ? '#eef2ff' : '#fff',
-                            color: frequency === f ? '#4f46e5' : '#475569',
+                            background: frequency === f ? 'var(--primary-light)' : '#fff',
+                            color: frequency === f ? 'var(--primary)' : 'var(--text-secondary)',
                             cursor: 'pointer',
                           }}
                         >
@@ -639,7 +639,7 @@ export default function ManageUpdatesPage() {
                         onChange={e => setIntervalDays(Number(e.target.value))}
                         style={{ maxWidth: '180px' }}
                       />
-                      <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                         Message will re-appear this many days after it was last seen.
                       </p>
                     </div>
@@ -650,14 +650,14 @@ export default function ManageUpdatesPage() {
                     <label className="form-label">Targeting</label>
                     <div style={{
                       padding: '14px', borderRadius: '12px',
-                      border: '1px solid #e2e8f0', background: '#f8fafc',
+                      border: '1px solid var(--border)', background: 'var(--surface)',
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '600', color: selectedCourses.length === 0 ? '#10b981' : '#64748b' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: selectedCourses.length === 0 ? 'var(--success)' : 'var(--text-secondary)' }}>
                           {selectedCourses.length === 0 ? '🌍 Global (all students)' : `📚 ${selectedCourses.length} course(s) selected`}
                         </span>
                         {selectedCourses.length > 0 && (
-                          <button type="button" onClick={() => setSelectedCourses([])} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', fontSize: '12px', fontWeight: '600' }}>
+                          <button type="button" onClick={() => setSelectedCourses([])} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: '12px', fontWeight: '600' }}>
                             Reset to Global
                           </button>
                         )}
@@ -667,17 +667,17 @@ export default function ManageUpdatesPage() {
                           {courses.map((c: any) => {
                             const checked = selectedCourses.includes(c.id)
                             return (
-                              <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', background: checked ? '#eef2ff' : 'transparent', transition: 'background 0.15s' }}>
+                              <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', background: checked ? 'var(--primary-light)' : 'transparent', transition: 'background 0.15s' }}>
                                 <input type="checkbox" checked={checked} onChange={() => {
                                   setSelectedCourses(prev => checked ? prev.filter(id => id !== c.id) : [...prev, c.id])
                                 }} style={{ width: '15px', height: '15px' }} />
-                                <span style={{ fontSize: '13px', color: '#334155', fontWeight: checked ? '600' : '400' }}>{c.name}</span>
+                                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: checked ? '600' : '400' }}>{c.name}</span>
                               </label>
                             )
                           })}
                         </div>
                       )}
-                      <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '8px' }}>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
                         If a student is enrolled in multiple selected courses, they will see this message only once.
                       </p>
                     </div>
@@ -688,25 +688,25 @@ export default function ManageUpdatesPage() {
                     <div className="form-group">
                       <label className="form-label">Priority</label>
                       <input type="number" className="form-input" value={priority} min={0} max={100} onChange={e => setPriority(Number(e.target.value))} />
-                      <p style={{ fontSize: '10px', color: '#9999b0', marginTop: '2px' }}>Higher = shown first</p>
+                      <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Higher = shown first</p>
                     </div>
                     <div className="form-group">
                       <label className="form-label">Show Delay (seconds)</label>
                       <input type="number" className="form-input" value={showDelay} min={0} onChange={e => setShowDelay(Number(e.target.value))} />
-                      <p style={{ fontSize: '10px', color: '#9999b0', marginTop: '2px' }}>Delay before message appears</p>
+                      <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Delay before message appears</p>
                     </div>
                   </div>
                 </>
               )}
             </div>
 
-            <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="modal-footer" style={{ borderTop: '1px solid var(--border)', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: isActive ? '#10b981' : '#64748b' }}>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: isActive ? 'var(--success)' : 'var(--text-secondary)' }}>
                   {isActive ? 'ACTIVE' : 'INACTIVE'}
                 </span>
                 <Toggle value={isActive} onChange={setIsActive} />
-                <span style={{ fontSize: '14px', fontWeight: '500', color: '#334155' }}>Update Status</span>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-secondary)' }}>Update Status</span>
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
@@ -729,7 +729,7 @@ export default function ManageUpdatesPage() {
           <div
             style={{
               maxWidth: '560px', width: '92%', borderRadius: '24px', overflow: 'hidden',
-              background: '#ffffff', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+              background: 'var(--surface)', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
               animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
               maxHeight: '85vh', display: 'flex', flexDirection: 'column',
             }}
@@ -747,7 +747,7 @@ export default function ManageUpdatesPage() {
                 </svg>
               </button>
               {editType === 'WELCOME' && (
-                <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: '#fff', margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+                <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'var(--surface)', margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
                   <span style={{ fontSize: '36px', lineHeight: '1' }}>👋</span>
                 </div>
               )}
@@ -761,19 +761,19 @@ export default function ManageUpdatesPage() {
               )}
             </div>
             {imageUrl && <img src={imageUrl} alt="" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', flexShrink: 0 }} />}
-            <div style={{ padding: '28px', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>
+            <div style={{ padding: '28px', overflowY: 'auto', flex: 1, background: 'var(--surface)' }}>
               <div
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editorRef.current?.innerHTML || '<p style="color:#9999b0">Content goes here…</p>') }}
-                style={{ fontSize: '15px', color: '#334155', lineHeight: '1.7', wordBreak: 'break-word' }}
+                style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.7', wordBreak: 'break-word' }}
               />
             </div>
-            <div style={{ padding: '20px 28px', textAlign: 'center', flexShrink: 0, borderTop: '1px solid #e2e8f0', background: '#fff', display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <div style={{ padding: '20px 28px', textAlign: 'center', flexShrink: 0, borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', gap: '12px', justifyContent: 'center' }}>
               {ctaText && ctaLink && (
-                <button style={{ background: '#3636e8', color: '#fff', border: 'none', padding: '14px 24px', borderRadius: '50px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', flex: 1, maxWidth: '200px' }}>
+                <button style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '14px 24px', borderRadius: '50px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', flex: 1, maxWidth: '200px' }}>
                   {ctaText}
                 </button>
               )}
-              <button onClick={() => setShowPreview(false)} style={{ background: ctaText ? '#f1f5f9' : '#1e293b', color: ctaText ? '#475569' : '#fff', border: 'none', padding: '14px 24px', borderRadius: '50px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', flex: 1, maxWidth: '200px' }}>
+              <button onClick={() => setShowPreview(false)} style={{ background: ctaText ? 'var(--surface)' : 'var(--text-primary)', color: ctaText ? 'var(--text-secondary)' : '#fff', border: 'none', padding: '14px 24px', borderRadius: '50px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', flex: 1, maxWidth: '200px' }}>
                 {editType === 'WELCOME' && !ctaText ? "Let's Get Started" : (ctaText ? 'Close' : 'Got It')}
               </button>
             </div>
@@ -794,7 +794,7 @@ export default function ManageUpdatesPage() {
           <div
             style={{
               maxWidth: '560px', width: '92%', borderRadius: '24px', overflow: 'hidden',
-              background: '#ffffff', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+              background: 'var(--surface)', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
               maxHeight: '85vh', display: 'flex', flexDirection: 'column',
               animation: 'bounceIn 0.3s ease-out',
             }}
@@ -815,17 +815,17 @@ export default function ManageUpdatesPage() {
               </button>
             </div>
 
-            <div style={{ padding: '24px', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>
+            <div style={{ padding: '24px', overflowY: 'auto', flex: 1, background: 'var(--surface)' }}>
               {recentPhotosLoading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '220px', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', border: '3px solid #e2e8f0', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>Loading recent photos…</span>
+                  <div style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>Loading recent photos…</span>
                 </div>
               ) : recentPhotos.length === 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '220px', gap: '8px', border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '20px' }}>
                   <span style={{ fontSize: '32px' }}>📷</span>
-                  <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '700' }}>No recently uploaded photos</span>
-                  <span style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center' }}>Upload a new photo using the &quot;Choose Image&quot; button to get started.</span>
+                  <span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '700' }}>No recently uploaded photos</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>Upload a new photo using the &quot;Choose Image&quot; button to get started.</span>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
@@ -845,11 +845,11 @@ export default function ManageUpdatesPage() {
                         border: '2px solid transparent',
                         boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
                         transition: 'all 0.2s ease',
-                        background: '#e2e8f0',
+                        background: 'var(--surface-2)',
                       }}
                       onMouseEnter={e => {
                         e.currentTarget.style.transform = 'translateY(-2px)'
-                        e.currentTarget.style.borderColor = '#6366f1'
+                        e.currentTarget.style.borderColor = 'var(--accent)'
                         e.currentTarget.style.boxShadow = '0 10px 15px rgba(99, 102, 241, 0.15)'
                       }}
                       onMouseLeave={e => {
@@ -865,8 +865,8 @@ export default function ManageUpdatesPage() {
               )}
             </div>
 
-            <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#64748b' }}>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>
                 Page {recentPhotosPage}
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -880,8 +880,8 @@ export default function ManageUpdatesPage() {
                   }}
                   className="btn btn-sm"
                   style={{
-                    background: recentPhotosPage === 1 ? '#f1f5f9' : '#fff',
-                    color: recentPhotosPage === 1 ? '#94a3b8' : '#475569',
+                    background: recentPhotosPage === 1 ? 'var(--surface)' : '#fff',
+                    color: recentPhotosPage === 1 ? 'var(--text-muted)' : 'var(--text-secondary)',
                     border: '1px solid #cbd5e1',
                     cursor: recentPhotosPage === 1 ? 'not-allowed' : 'pointer',
                     fontSize: '12px',
@@ -901,8 +901,8 @@ export default function ManageUpdatesPage() {
                   }}
                   className="btn btn-sm"
                   style={{
-                    background: !recentPhotosHasNext ? '#f1f5f9' : '#fff',
-                    color: !recentPhotosHasNext ? '#94a3b8' : '#475569',
+                    background: !recentPhotosHasNext ? 'var(--surface)' : '#fff',
+                    color: !recentPhotosHasNext ? 'var(--text-muted)' : 'var(--text-secondary)',
                     border: '1px solid #cbd5e1',
                     cursor: !recentPhotosHasNext ? 'not-allowed' : 'pointer',
                     fontSize: '12px',

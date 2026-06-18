@@ -74,7 +74,7 @@ export default function HomeHeroSlider({ slides, intervalMs = 4500 }: Props) {
         overflow: 'hidden',
         position: 'relative',
         boxShadow: '0 18px 36px -12px rgba(15, 23, 42, 0.25), 0 6px 12px -4px rgba(15, 23, 42, 0.08)',
-        background: '#0f172a',
+        background: 'var(--text-primary)',
       }}>
         {/* Stacked slides — translateX based on index for smooth slide animation */}
         <div style={{
@@ -124,7 +124,7 @@ export default function HomeHeroSlider({ slides, intervalMs = 4500 }: Props) {
               style={{
                 width: i === index ? '24px' : '6px',
                 height: '6px', borderRadius: '50px',
-                background: i === index ? '#3636e8' : '#cbd5e1',
+                background: i === index ? 'var(--primary)' : 'var(--text-muted)',
                 border: 'none', cursor: 'pointer',
                 transition: 'all 0.3s ease',
                 padding: 0,

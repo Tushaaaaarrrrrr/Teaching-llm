@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const filtered = bundles.map(b => ({
       ...b,
       courses: b.courses.filter(cc => {
-        if (role === 'MANAGER' || role === 'SUPER_ADMIN') return true
+        if (role === 'MANAGER') return true
         return !cc.course.isDisabled
       })
     }))
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
-    if (!session || (session.role !== 'MANAGER' && session.role !== 'SUPER_ADMIN')) {
+    if (!session || session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

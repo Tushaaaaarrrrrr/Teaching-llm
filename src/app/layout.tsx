@@ -4,9 +4,34 @@ import 'katex/dist/katex.min.css'
 import CsrfProvider from '@/components/CsrfProvider'
 import MobileBlocker from '@/components/layout/MobileBlocker'
 import CapacitorBridge from '@/components/CapacitorBridge'
+import AppUpdater from '@/components/AppUpdater'
+import { PostHogProvider } from '@/components/PostHogProvider'
+import { ThemeProvider } from '@/components/ThemeProvider'
+
+/**
+ * Anti-FOUC theme bootstrap. Runs synchronously in <head> BEFORE first paint so
+ * the correct light/dark palette is applied with no flash — critical for the
+ * Capacitor app on cold boot. Mirrors the logic in ThemeProvider.
+ */
+const THEME_INIT_SCRIPT = `
+(function(){
+  try {
+    var c = localStorage.getItem('theme');
+    var sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    var r = (c === 'dark' || c === 'light') ? c : sys;
+    var d = document.documentElement;
+    d.setAttribute('data-theme', r);
+    d.style.colorScheme = r;
+    var col = r === 'dark' ? '#161a23' : '#e8eaf0';
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (!m) { m = document.createElement('meta'); m.setAttribute('name','theme-color'); document.head.appendChild(m); }
+    m.setAttribute('content', col);
+  } catch (e) {}
+})();
+`
 
 export const metadata: Metadata = {
-  title: 'GENz IITIAN',
+  title: 'GenZ IITIAN',
   description: 'Upgrade How You Learn',
   manifest: '/site.webmanifest',
   icons: {
@@ -28,11 +53,19 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>
-        <MobileBlocker />
-        <CapacitorBridge />
-        <CsrfProvider>{children}</CsrfProvider>
+        <PostHogProvider>
+          <ThemeProvider>
+            <MobileBlocker />
+            <CapacitorBridge />
+            <AppUpdater />
+            <CsrfProvider>{children}</CsrfProvider>
+          </ThemeProvider>
+        </PostHogProvider>
       </body>
     </html>
   )

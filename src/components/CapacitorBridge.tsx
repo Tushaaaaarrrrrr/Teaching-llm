@@ -18,7 +18,7 @@ export default function CapacitorBridge() {
       document.documentElement.classList.add('is-native')
       document.documentElement.classList.add(`platform-${platform}`)
 
-      const [{ App }, { StatusBar, Style }, { SplashScreen }, { Keyboard, KeyboardResize }, { PushNotifications }] = await Promise.all([
+      const [{ App }, { StatusBar, Style }, { SplashScreen }, { Keyboard, KeyboardResize, KeyboardStyle }, { PushNotifications }] = await Promise.all([
         import('@capacitor/app'),
         import('@capacitor/status-bar'),
         import('@capacitor/splash-screen'),
@@ -26,14 +26,23 @@ export default function CapacitorBridge() {
         import('@capacitor/push-notifications'),
       ])
 
+      // Status bar follows the app theme (data-theme is set by ThemeProvider /
+      // the anti-FOUC script). Style.Dark = light text (for dark bg), Style.Light
+      // = dark text (for light bg).
       const applyStatusBarStyles = async () => {
         try {
-          await StatusBar.setStyle({ style: Style.Default })
-          await StatusBar.setBackgroundColor({ color: '#e8eaf0' })
+          const dark = document.documentElement.getAttribute('data-theme') === 'dark'
+          await StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light })
+          await StatusBar.setBackgroundColor({ color: dark ? '#161a23' : '#e8eaf0' })
+          try { await Keyboard.setStyle({ style: dark ? KeyboardStyle.Dark : KeyboardStyle.Light }) } catch {}
         } catch (e) { console.warn('StatusBar style application failed', e) }
       }
 
       await applyStatusBarStyles()
+
+      // Re-skin the status bar whenever the user switches theme.
+      const onThemeChange = () => { applyStatusBarStyles() }
+      window.addEventListener('themechange', onThemeChange)
 
       try {
         await Keyboard.setResizeMode({ mode: KeyboardResize.Body })
@@ -64,6 +73,29 @@ export default function CapacitorBridge() {
 
       // Early global push listeners to capture cold boots & foreground alerts
       console.log('[CapacitorBridge] Registering persistent PushNotification listeners...')
+
+      // 🔑 Token refresh listener — FCM periodically rotates device tokens.
+      // If we don't catch this, the old token stays in DB and notifications fail silently.
+      const registrationHandle = await PushNotifications.addListener('registration', async (token) => {
+        console.log('[CapacitorBridge] FCM token (re)issued:', token.value)
+        try {
+          const saved = localStorage.getItem('last_fcm_token')
+          if (saved === token.value) {
+            console.log('[CapacitorBridge] Token unchanged — skipping re-registration')
+            return
+          }
+          await fetch('/api/fcm/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token.value, platform: 'ANDROID' }),
+          })
+          localStorage.setItem('last_fcm_token', token.value)
+          console.log('[CapacitorBridge] FCM token refreshed & saved to backend')
+        } catch (err) {
+          console.error('[CapacitorBridge] Failed to refresh FCM token:', err)
+        }
+      })
+
       const receivedHandle = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
         console.log('[CapacitorBridge] "pushNotificationReceived" listener fired in foreground:', JSON.stringify(notification))
       })
@@ -91,8 +123,10 @@ export default function CapacitorBridge() {
       })
 
       cleanup = () => {
+        window.removeEventListener('themechange', onThemeChange)
         backHandle.remove()
         stateHandle.remove()
+        registrationHandle.remove()
         receivedHandle.remove()
         actionHandle.remove()
       }

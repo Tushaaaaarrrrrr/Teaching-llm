@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { formatIST, getEventStatus } from '@/lib/date-utils'
 import { normalizeMeetLink } from '@/lib/meet-link'
+import { useRouter } from 'next/navigation'
 
 interface CourseEvent {
   id: string
@@ -15,26 +16,26 @@ interface CourseEvent {
   status: string
   manualStatus: string
   courseId: string | null
-  course: { id: string; name: string; color: string; teacherName?: string | null } | null
+  course: { id: string; name: string; color: string; teacherName?: string | null; liveUpgradePrice?: number | null } | null
   instructor: { id: string; name: string } | null
+  isRecordedOnly?: boolean
 }
 
 interface Props {
   sessions: CourseEvent[]
+  onUpgradeClick?: (courseId: string, courseName: string, price: number) => void
 }
 
-type TabKey = 'live' | 'upcoming' | 'recorded'
-
 const TIME_SLOT_COLORS: { bg: string; fg: string }[] = [
-  { bg: '#ede9fe', fg: '#6d28d9' }, // lavender
-  { bg: '#d1fae5', fg: '#047857' }, // green
-  { bg: '#fef3c7', fg: '#b45309' }, // amber
-  { bg: '#fee2e2', fg: '#b91c1c' }, // red
-  { bg: '#dbeafe', fg: '#1d4ed8' }, // blue
+  { bg: 'var(--primary-light)', fg: 'var(--accent)' }, // lavender
+  { bg: 'var(--success-light)', fg: 'var(--success)' }, // green
+  { bg: 'var(--warning-light)', fg: 'var(--warning)' }, // amber
+  { bg: 'var(--danger-light)', fg: 'var(--danger)' }, // red
+  { bg: 'var(--info-light)', fg: 'var(--info)' }, // blue
 ]
 
-export default function LiveSessionsMobile({ sessions }: Props) {
-  const [tab, setTab] = useState<TabKey>('live')
+export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [showSearch, setShowSearch] = useState(false)
 
@@ -57,8 +58,6 @@ export default function LiveSessionsMobile({ sessions }: Props) {
     return { live, upcoming, recorded }
   }, [withStatus])
 
-  const counts = { live: buckets.live.length, upcoming: buckets.upcoming.length, recorded: buckets.recorded.length }
-
   const q = search.trim().toLowerCase()
   const filterByQuery = (s: CourseEvent) =>
     !q || s.title.toLowerCase().includes(q) || (s.course?.name || '').toLowerCase().includes(q) || (s.course?.teacherName || s.instructor?.name || '').toLowerCase().includes(q)
@@ -69,39 +68,96 @@ export default function LiveSessionsMobile({ sessions }: Props) {
 
   const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
 
+  const hasAnySessions = sessions.length > 0
+  const hasSearchResults = visibleLive.length > 0 || visibleUpcoming.length > 0 || visibleRecorded.length > 0
+
   return (
     <div className="live-sessions-mobile" style={{
       background: 'transparent',
-      padding: '4px 0 32px',
+      padding: '16px 16px 32px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px',
     }}>
-      {/* Page title row (sits below the dashboard "Welcome to Gen-Z IITian" header) */}
+      {/* Page Title Row (aligned with other premium sub-pages like Free Resources) */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: '12px',
-        padding: '4px 4px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        justifyContent: 'flex-start',
+        paddingBottom: '4px',
       }}>
+        <button
+          onClick={() => router.back()}
+          aria-label="Go Back"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'var(--surface)',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
+            color: 'var(--text-secondary)',
+            flexShrink: 0,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+          <h1 style={{
+            fontSize: '22px',
+            fontWeight: 900,
+            color: 'var(--text-primary)',
+            margin: 0,
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            fontFamily: "'Outfit', 'Nunito', sans-serif"
+          }}>
             Live Sessions
-          </div>
-          <div style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: 600, marginTop: '3px' }}>
+          </h1>
+          <p style={{
+            fontSize: '12px',
+            color: 'var(--text-secondary)',
+            fontWeight: 600,
+            margin: '3px 0 0',
+            fontFamily: "'Outfit', sans-serif"
+          }}>
             Join classes &amp; rewatch recordings
-          </div>
+          </p>
         </div>
+
         <button
           onClick={() => setShowSearch(s => !s)}
           aria-label="Search"
           style={{
-            width: '38px', height: '38px', borderRadius: '12px',
-            background: showSearch ? '#3636e8' : '#ffffff',
+            width: '40px', height: '40px', borderRadius: '50%',
+            background: showSearch ? 'var(--primary)' : '#ffffff',
             boxShadow: showSearch
               ? '0 6px 14px rgba(54,54,232,0.30)'
-              : '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+              : '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
             border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             transition: 'all 0.2s',
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={showSearch ? '#ffffff' : '#1e1e3a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={showSearch ? '#ffffff' : 'var(--text-secondary)'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
@@ -109,7 +165,7 @@ export default function LiveSessionsMobile({ sessions }: Props) {
       </div>
 
       {showSearch && (
-        <div style={{ padding: '0 4px 12px' }}>
+        <div style={{ padding: '0 4px 4px' }}>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -123,71 +179,64 @@ export default function LiveSessionsMobile({ sessions }: Props) {
               fontSize: '13.5px',
               fontFamily: 'inherit',
               outline: 'none',
-              color: '#1e1e3a',
-              background: '#ffffff',
-              boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff',
+              color: 'var(--text-primary)',
+              background: 'var(--surface)',
+              boxShadow: 'inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light)',
             }}
           />
         </div>
       )}
 
-      {/* Tabs */}
-      <div style={{
-        display: 'flex', gap: '8px',
-        padding: '4px 4px 18px',
-      }}>
-        {([
-          { key: 'live' as TabKey, label: 'Live', count: counts.live },
-          { key: 'upcoming' as TabKey, label: 'Upcoming', count: counts.upcoming },
-          { key: 'recorded' as TabKey, label: 'Recorded', count: counts.recorded },
-        ]).map(t => {
-          const active = tab === t.key
-          return (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              style={{
-                flex: 1,
-                padding: '9px 12px',
-                borderRadius: '50px',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: '13px',
-                fontWeight: 800,
-                background: active ? '#3636e8' : '#f3f4f8',
-                color: active ? '#ffffff' : '#6b6b8a',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                transition: 'all 0.2s',
-                boxShadow: active ? '0 6px 14px rgba(54,54,232,0.30)' : 'none',
-              }}
-            >
-              {t.label}
-              <span style={{
-                minWidth: '20px', padding: '1px 6px',
-                borderRadius: '50px',
-                background: active ? 'rgba(255,255,255,0.22)' : '#ffffff',
-                color: active ? '#ffffff' : '#6b6b8a',
-                fontSize: '11px', fontWeight: 800,
-                textAlign: 'center',
-              }}>{t.count}</span>
-            </button>
-          )
-        })}
-      </div>
+      {/* Unified Vertical Section List (Exactly like the website version) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* 1. Live now */}
+        {visibleLive.length > 0 && (
+          <div>
+            <SectionHeader title="Live now" subtitle={`${visibleLive.length} session${visibleLive.length === 1 ? '' : 's'} happening`} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {visibleLive.map(s => <LiveSessionCard key={s.id} session={s} onUpgradeClick={onUpgradeClick} />)}
+            </div>
+          </div>
+        )}
 
-      <div style={{ padding: '4px 0 0' }}>
-        {tab === 'live' && (
-          <LiveTab sessions={visibleLive} todayStr={todayStr} />
+        {/* 2. Coming up today */}
+        {visibleUpcoming.length > 0 && (
+          <div>
+            <SectionHeader title="Coming up today" subtitle={`${visibleUpcoming.length} session${visibleUpcoming.length === 1 ? '' : 's'} scheduled`} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[...visibleUpcoming]
+                .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+                .map((s, idx) => <UpcomingSessionRow key={s.id} session={s} slotIdx={idx} />)
+              }
+            </div>
+          </div>
         )}
-        {tab === 'upcoming' && (
-          <UpcomingTab sessions={visibleUpcoming} />
+
+        {/* 3. Recorded Sessions */}
+        {visibleRecorded.length > 0 && (
+          <div>
+            <SectionHeader title="Past sessions" subtitle={`${visibleRecorded.length} recording${visibleRecorded.length === 1 ? '' : 's'}`} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {visibleRecorded.map(s => <RecordedSessionRow key={s.id} session={s} />)}
+            </div>
+          </div>
         )}
-        {tab === 'recorded' && (
-          <RecordedTab sessions={visibleRecorded} />
+
+        {/* Empty States */}
+        {!hasAnySessions && (
+          <EmptyState icon="live" title="No live sessions" subtitle="When a class starts, it will appear here." />
+        )}
+
+        {hasAnySessions && !hasSearchResults && (
+          <div style={{
+            padding: '48px 24px', textAlign: 'center',
+            background: 'var(--surface)', borderRadius: '24px',
+            border: '1px solid rgba(15, 23, 42, 0.05)',
+            boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.10)',
+          }}>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>No matches found</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Try searching for another topic or course.</div>
+          </div>
         )}
       </div>
     </div>
@@ -210,7 +259,7 @@ function LiveTab({ sessions, todayStr }: { sessions: (CourseEvent & { derivedSta
   )
 }
 
-function LiveSessionCard({ session }: { session: CourseEvent }) {
+function LiveSessionCard({ session, onUpgradeClick }: { session: CourseEvent; onUpgradeClick?: (courseId: string, courseName: string, price: number) => void }) {
   const startedMin = Math.max(0, Math.floor((Date.now() - new Date(session.startTime).getTime()) / 60000))
   const startedLabel = startedMin === 0 ? 'just started' : `started ${formatRelativeMinutes(startedMin)} ago`
   const instructorName = session.course?.teacherName || session.instructor?.name || 'Faculty'
@@ -239,8 +288,8 @@ function LiveSessionCard({ session }: { session: CourseEvent }) {
             border: '1px solid rgba(255,255,255,0.30)',
           }}>
             <span style={{
-              width: '6px', height: '6px', borderRadius: '50%', background: '#ffffff',
-              boxShadow: '0 0 6px #ffffff',
+              width: '6px', height: '6px', borderRadius: '50%', background: 'var(--surface)',
+              boxShadow: '0 0 6px var(--neu-light)',
               animation: 'liveDotPulse 1.5s ease-in-out infinite',
             }} />
             LIVE
@@ -258,7 +307,7 @@ function LiveSessionCard({ session }: { session: CourseEvent }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
         <div style={{
           width: '24px', height: '24px', borderRadius: '50%',
-          background: '#ffffff', color: '#dc2626',
+          background: 'var(--surface)', color: 'var(--danger)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '11px', fontWeight: 900, flexShrink: 0,
         }}>{initial}</div>
@@ -277,7 +326,7 @@ function LiveSessionCard({ session }: { session: CourseEvent }) {
               flex: 1,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               padding: '13px 16px', borderRadius: '50px',
-              background: '#ffffff', color: '#dc2626',
+              background: 'var(--surface)', color: 'var(--danger)',
               fontSize: '14px', fontWeight: 800, textDecoration: 'none',
               boxShadow: '0 6px 14px rgba(0,0,0,0.10)',
             }}
@@ -288,6 +337,36 @@ function LiveSessionCard({ session }: { session: CourseEvent }) {
               <polyline points="12 5 19 12 12 19" />
             </svg>
           </a>
+        ) : session.isRecordedOnly ? (
+          <button
+            onClick={() => {
+              if (onUpgradeClick && session.courseId && session.course?.liveUpgradePrice) {
+                onUpgradeClick(session.courseId, session.course.name, session.course.liveUpgradePrice)
+              }
+            }}
+            style={{
+              flex: 1,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              padding: '13px 16px', borderRadius: '50px',
+              background: 'var(--surface)', color: 'var(--danger)',
+              fontSize: '14px', fontWeight: 800, border: 'none', cursor: 'pointer',
+              boxShadow: '0 6px 14px rgba(0,0,0,0.10)',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'
+              ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 18px rgba(0,0,0,0.15)'
+            }}
+            onMouseLeave={e => {
+              ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
+              ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 14px rgba(0,0,0,0.10)'
+            }}
+          >
+            Upgrade to join
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </button>
         ) : (
           <span style={{
             flex: 1,
@@ -338,7 +417,7 @@ function UpcomingSessionRow({ session, slotIdx }: { session: CourseEvent; slotId
       display: 'flex', alignItems: 'center', gap: '14px',
       padding: '14px 14px',
       borderRadius: '20px',
-      background: '#ffffff',
+      background: 'var(--surface)',
       boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.15), 0 2px 6px -2px rgba(15, 23, 42, 0.04)',
       border: '1px solid rgba(15, 23, 42, 0.05)',
     }}>
@@ -357,10 +436,10 @@ function UpcomingSessionRow({ session, slotIdx }: { session: CourseEvent; slotId
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
           {session.title}
         </div>
-        <div style={{ fontSize: '11.5px', color: '#6b6b8a', fontWeight: 600, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {subject} · {instructor}
         </div>
       </div>
@@ -378,9 +457,9 @@ function RemindButton() {
       style={{
         padding: '8px 14px',
         borderRadius: '50px',
-        border: reminded ? 'none' : '1.5px solid #e2e8f0',
-        background: reminded ? '#3636e8' : '#ffffff',
-        color: reminded ? '#ffffff' : '#3636e8',
+        border: reminded ? 'none' : '1.5px solid var(--border)',
+        background: reminded ? 'var(--primary)' : '#ffffff',
+        color: reminded ? '#ffffff' : 'var(--primary)',
         fontSize: '11.5px',
         fontWeight: 800,
         cursor: 'pointer',
@@ -420,7 +499,7 @@ function RecordedSessionRow({ session }: { session: CourseEvent }) {
       display: 'flex', alignItems: 'center', gap: '14px',
       padding: '14px',
       borderRadius: '20px',
-      background: '#ffffff',
+      background: 'var(--surface)',
       boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.15), 0 2px 6px -2px rgba(15, 23, 42, 0.04)',
       border: '1px solid rgba(15, 23, 42, 0.05)',
     }}>
@@ -437,10 +516,10 @@ function RecordedSessionRow({ session }: { session: CourseEvent }) {
         </svg>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {session.title}
         </div>
-        <div style={{ fontSize: '11.5px', color: '#9999b0', fontWeight: 600, marginTop: '2px' }}>
+        <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
           {subject} · {instructor} · {date}
         </div>
       </div>
@@ -452,11 +531,11 @@ function RecordedSessionRow({ session }: { session: CourseEvent }) {
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div style={{ marginBottom: '14px', padding: '0 4px' }}>
-      <div style={{ fontSize: '17px', fontWeight: 900, color: '#1e1e3a', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+      <div style={{ fontSize: '17px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
         {title}
       </div>
       {subtitle && (
-        <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: 600, marginTop: '2px' }}>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
           {subtitle}
         </div>
       )}
@@ -468,15 +547,15 @@ function EmptyState({ icon, title, subtitle }: { icon: 'live' | 'upcoming' | 're
   return (
     <div style={{
       padding: '48px 24px', textAlign: 'center',
-      background: '#ffffff', borderRadius: '24px',
+      background: 'var(--surface)', borderRadius: '24px',
       border: '1px solid rgba(15, 23, 42, 0.05)',
       boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.10)',
     }}>
       <div style={{
         width: '52px', height: '52px', margin: '0 auto 12px',
         borderRadius: '16px',
-        background: icon === 'live' ? '#fee2e2' : icon === 'upcoming' ? '#ede9fe' : '#e0e7ff',
-        color: icon === 'live' ? '#dc2626' : icon === 'upcoming' ? '#6d28d9' : '#4338ca',
+        background: icon === 'live' ? 'var(--danger-light)' : icon === 'upcoming' ? 'var(--primary-light)' : 'var(--primary-light)',
+        color: icon === 'live' ? 'var(--danger)' : icon === 'upcoming' ? 'var(--accent)' : 'var(--primary-dark)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         {icon === 'live' ? (
@@ -498,8 +577,8 @@ function EmptyState({ icon, title, subtitle }: { icon: 'live' | 'upcoming' | 're
           </svg>
         )}
       </div>
-      <div style={{ fontSize: '14px', fontWeight: 800, color: '#1e1e3a', marginBottom: '4px' }}>{title}</div>
-      <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: 600 }}>{subtitle}</div>
+      <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>{title}</div>
+      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{subtitle}</div>
     </div>
   )
 }

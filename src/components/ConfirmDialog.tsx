@@ -27,7 +27,7 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   if (!open) return null
 
-  const confirmBg = tone === 'danger' ? '#ef4444' : '#3636e8'
+  const confirmBg = tone === 'danger' ? 'var(--danger)' : 'var(--primary)'
   const confirmShadow = tone === 'danger'
     ? '4px 4px 10px rgba(239,68,68,0.28)'
     : '4px 4px 10px rgba(54,54,232,0.28)'
@@ -55,10 +55,10 @@ export default function ConfirmDialog({
         }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e1e3a', marginBottom: '8px' }}>
+        <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>
           {title}
         </div>
-        <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#6b6b8a', marginBottom: '22px' }}>
+        <p style={{ fontSize: '14px', lineHeight: '1.6', color: 'var(--text-secondary)', marginBottom: '22px' }}>
           {message}
         </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>

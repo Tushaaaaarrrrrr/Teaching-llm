@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import useSWR from 'swr'
+import { useRouter } from 'next/navigation'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 export default function FreeResourcesPage() {
+  const router = useRouter()
   const { data: courses } = useSWR<any[]>('/api/free-resources/courses', fetcher)
   const { data: materials } = useSWR<any[]>('/api/free-resources/materials', fetcher)
 
@@ -19,7 +21,7 @@ export default function FreeResourcesPage() {
       description: 'Browse and self-enroll in free courses with full content access.',
       count: freeCoursesCount,
       countLabel: 'courses available',
-      color: '#6366f1',
+      color: 'var(--accent)',
       gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
       icon: (
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -34,7 +36,7 @@ export default function FreeResourcesPage() {
       description: 'Download study materials available for free — no enrollment needed.',
       count: freeMaterialsCount,
       countLabel: 'materials available',
-      color: '#10b981',
+      color: 'var(--success)',
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       icon: (
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -48,7 +50,7 @@ export default function FreeResourcesPage() {
       description: 'Access your securely purchased study notes. Available for 30 days.',
       count: '30-day',
       countLabel: 'access expiry',
-      color: '#f59e0b',
+      color: 'var(--warning)',
       gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       icon: (
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -89,10 +91,6 @@ export default function FreeResourcesPage() {
             font-size: 11.5px !important;
             max-width: 100% !important;
           }
-          .free-resources-grid .free-res-badge {
-            padding: 5px 10px !important;
-            font-size: 10px !important;
-          }
           .free-resources-grid .free-res-explore {
             font-size: 11px !important;
           }
@@ -128,14 +126,64 @@ export default function FreeResourcesPage() {
             grid-row: 2 !important;
             display: flex !important;
             flex-direction: row !important;
-            justify-content: space-between !important;
+            justify-content: flex-end !important;
             align-items: center !important;
             width: 100% !important;
             margin-top: 4px !important;
             gap: 8px !important;
           }
         }
+        @media (min-width: 769px) {
+          .page-header {
+            display: none !important;
+          }
+        }
       `}</style>
+
+      {/* Premium Neumorphic Page Header */}
+      <div className="page-header" style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: '16px',
+        marginBottom: '32px',
+        justifyContent: 'flex-start'
+      }}>
+        <button
+          onClick={() => router.back()}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            background: 'var(--surface-2)',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+            color: 'var(--text-secondary)',
+            transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+          }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
+            ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+            ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)'
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+        <h1 className="page-title" style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Free Resources</h1>
+      </div>
+
       <div className="free-resources-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', width: '100%' }}>
         {cards.map(card => (
           <Link key={card.href} href={card.href} style={{ textDecoration: 'none' }}>
@@ -155,11 +203,11 @@ export default function FreeResourcesPage() {
             }}
               onMouseEnter={e => { 
                 e.currentTarget.style.transform = 'translateY(-10px) scale(1.02)' 
-                e.currentTarget.style.boxShadow = '20px 20px 40px #c5c7cf, -20px -20px 40px #ffffff'
+                e.currentTarget.style.boxShadow = '20px 20px 40px var(--neu-dark), -20px -20px 40px var(--neu-light)'
               }}
               onMouseLeave={e => { 
                 e.currentTarget.style.transform = 'translateY(0) scale(1)' 
-                e.currentTarget.style.boxShadow = '10px 10px 20px #c5c7cf, -10px -10px 20px #ffffff'
+                e.currentTarget.style.boxShadow = '10px 10px 20px var(--neu-dark), -10px -10px 20px var(--neu-light)'
               }}
             >
               {/* Icon Section */}
@@ -176,12 +224,12 @@ export default function FreeResourcesPage() {
 
               {/* Text Content */}
               <div className="free-res-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <h2 className="free-res-title" style={{ fontSize: '22px', fontWeight: '900', color: '#1e1e3a', margin: 0, letterSpacing: '-0.5px' }}>
+                <h2 className="free-res-title" style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px' }}>
                   {card.title}
                 </h2>
                 <p className="free-res-desc" style={{ 
                   fontSize: '14.5px', 
-                  color: '#6b6b8a', 
+                  color: 'var(--text-secondary)', 
                   margin: 0, 
                   lineHeight: '1.5',
                   maxWidth: '240px' 
@@ -198,18 +246,6 @@ export default function FreeResourcesPage() {
                 alignItems: 'center',
                 gap: '12px'
               }}>
-                <div className="free-res-badge" style={{
-                  padding: '8px 20px', borderRadius: '50px',
-                  background: `${card.color}12`,
-                  color: card.color,
-                  fontSize: '14px', fontWeight: '800',
-                  border: `1px solid ${card.color}20`,
-                  letterSpacing: '0.02em',
-                  textTransform: 'uppercase'
-                }}>
-                  {card.count} {card.countLabel}
-                </div>
-                
                 <div className="free-res-explore" style={{ 
                   display: 'flex', 
                   alignItems: 'center', 

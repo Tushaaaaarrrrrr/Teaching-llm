@@ -32,6 +32,7 @@
   --text-inverse: #ffffff;
   --neu-light: #ffffff;
   --neu-dark: #c5c7cf;
+  --neu-glow: rgba(255,255,255,0.7);
   --shadow-sm: 3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff;
   --shadow: 6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff;
   --shadow-md: 8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff;
@@ -44,7 +45,101 @@
   --radius-xl: 28px;
   --radius-pill: 50px;
   --transition: all 0.2s ease;
+  --scrollbar-thumb: #D1D5DB;
+  --scrollbar-thumb-hover: #9CA3AF;
+  --skeleton-base: #e8eaf0;
+  --skeleton-shine: #dddfe6;
 }
+
+/* ── Dark theme palette ──
+   Activated by <html data-theme="dark"> (set by ThemeProvider + the anti-FOUC
+   script in layout.tsx). Overrides the same tokens as :root, so every component
+   that uses var(--token) — and the whole class-based shell (.card/.btn/.sidebar/
+   tables/modals) — flips automatically. Hardcoded inline hex colors are migrated
+   to these tokens in later waves; until then they stay light. */
+:root[data-theme="dark"] {
+  --sidebar-bg: #161a23;
+  --bg: #0f1219;
+  --surface: #171b24;
+  --surface-2: #1f2430;
+  --border: rgba(255,255,255,0.08);
+  --border-light: rgba(255,255,255,0.05);
+  --primary: #6d6dff;
+  --primary-dark: #5757e8;
+  --primary-light: rgba(109,109,255,0.16);
+  --accent: #818cf8;
+  --success: #34d399;
+  --success-light: rgba(52,211,153,0.16);
+  --warning: #fbbf24;
+  --warning-light: rgba(251,191,36,0.16);
+  --danger: #f87171;
+  --danger-light: rgba(248,113,113,0.16);
+  --info: #60a5fa;
+  --info-light: rgba(96,165,250,0.16);
+  --text-primary: #e6e8f0;
+  --text-secondary: #a3a8bd;
+  --text-muted: #6f7488;
+  --text-inverse: #0f1219;
+  /* Flat drop shadows in dark — neumorphism's light offset reads as a boxy
+     frame on dark, so we drop it. --neu-light goes transparent so the inline
+     neumorphic pairs (…var(--neu-dark), …var(--neu-light)) the codemod produced
+     collapse to a single clean shadow with no box. --neu-dark is softened. */
+  --neu-light: transparent;
+  --neu-dark: #0b0e14;
+  --neu-glow: transparent;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.45);
+  --shadow: 0 2px 8px rgba(0,0,0,0.45);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.5);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.55);
+  --shadow-inset: inset 0 1px 3px rgba(0,0,0,0.45);
+  --scrollbar-thumb: #2f3645;
+  --scrollbar-thumb-hover: #3d4556;
+  --skeleton-base: #1f2430;
+  --skeleton-shine: #272d3b;
+  color-scheme: dark;
+}
+
+/* Dark-mode logo: dark plate + render the (dark-inked) logo as a clean white
+   silhouette so it reads on the dark sidebar instead of glowing as a white blob. */
+:root[data-theme="dark"] .sidebar-logo-plate {
+  background: var(--surface-2) !important;
+  box-shadow: var(--shadow) !important;
+}
+:root[data-theme="dark"] .sidebar-logo-img {
+  filter: brightness(0) invert(1);
+}
+
+/* Community chat wallpaper — light doodle by default, dark doodle in dark mode.
+   Save the dark doodle image to public/images/chat-wallpaper-dark.png. The dark
+   base color is a graceful fallback until that asset exists. */
+.chat-wallpaper {
+  background-image: url(/images/chat-wallpaper.png);
+  background-repeat: repeat;
+  background-size: 400px auto;
+  background-position: center top;
+}
+:root[data-theme="dark"] .chat-wallpaper {
+  background-color: #111317;
+  background-image: url(/images/chat-wallpaper-dark.png);
+}
+
+/* Rich-text page content (About Us / policies) — keep headings & links readable
+   on dark when the stored HTML doesn't carry its own color. */
+/* Stored HTML (About/Contact/policy pages) often has inline dark text colors
+   baked in by the manager, which vanish on dark. Force readable colors in dark
+   with !important so those inline styles can't make text invisible. Links and
+   headings/emphasis get their own readable tokens. */
+:root[data-theme="dark"] .custom-page-content,
+:root[data-theme="dark"] .custom-page-content * { color: var(--text-secondary) !important; }
+:root[data-theme="dark"] .custom-page-content h1,
+:root[data-theme="dark"] .custom-page-content h2,
+:root[data-theme="dark"] .custom-page-content h3,
+:root[data-theme="dark"] .custom-page-content h4,
+:root[data-theme="dark"] .custom-page-content h5,
+:root[data-theme="dark"] .custom-page-content h6,
+:root[data-theme="dark"] .custom-page-content strong,
+:root[data-theme="dark"] .custom-page-content b { color: var(--text-primary) !important; }
+:root[data-theme="dark"] .custom-page-content a { color: var(--accent) !important; }
 
 html {
   height: 100%;
@@ -93,12 +188,12 @@ img {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-::webkit-scrollbar-thumb {
-  background: #D1D5DB;
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
   border-radius: 10px;
 }
-::webkit-scrollbar-thumb:hover {
-  background: #9CA3AF;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Utility classes */
@@ -160,11 +255,11 @@ img {
 .btn-primary {
   background: var(--primary);
   color: white;
-  box-shadow: 4px 4px 8px rgba(54,54,232,0.3), -2px -2px 6px rgba(255,255,255,0.8);
+  box-shadow: 4px 4px 8px rgba(54,54,232,0.3), -2px -2px 6px var(--neu-glow);
 }
 .btn-primary:hover {
   background: var(--primary-dark);
-  box-shadow: 4px 4px 12px rgba(54,54,232,0.4), -2px -2px 6px rgba(255,255,255,0.8);
+  box-shadow: 4px 4px 12px rgba(54,54,232,0.4), -2px -2px 6px var(--neu-glow);
 }
 
 .btn-secondary {
@@ -273,7 +368,7 @@ img {
   padding: 24px;
   max-width: 1400px;
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .page-header {
@@ -405,7 +500,7 @@ img {
 
 /* Loading skeleton */
 .skeleton {
-  background: linear-gradient(90deg, #dddfe6 25%, #e8eaf0 50%, #dddfe6 75%);
+  background: linear-gradient(90deg, var(--skeleton-shine) 25%, var(--skeleton-base) 50%, var(--skeleton-shine) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;
   border-radius: var(--radius-sm);
@@ -544,10 +639,10 @@ tr:hover td {
     bottom: 0;
     z-index: 999;
     height: calc(64px + env(safe-area-inset-bottom, 0px));
-    background: #ffffff;
+    background: var(--sidebar-bg);
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.06);
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+    border-top: 1px solid var(--border);
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
   }
   .mobile-bottom-nav.hidden {
@@ -569,7 +664,7 @@ tr:hover td {
     flex: 1;
     height: 100%;
     text-decoration: none;
-    color: #9ca3af;
+    color: var(--text-muted);
     transition: all 0.25s ease;
     padding-bottom: 6px;
   }
@@ -594,11 +689,11 @@ tr:hover td {
     transition: all 0.2s ease;
   }
   .mobile-bottom-tab.active {
-    color: #1e1e3b;
+    color: var(--text-primary);
   }
   .mobile-bottom-tab.active .tab-label {
     font-weight: 700;
-    color: #1e1e3b;
+    color: var(--text-primary);
   }
 
   /* Academics Centered Floating Tab with Arc */
@@ -908,7 +1003,7 @@ tr:hover td {
 .stat-card-value {
   font-size: 26px;
   font-weight: 800;
-  color: #1e1e3a;
+  color: var(--text-primary);
   line-height: 1.1;
 }
 
@@ -999,11 +1094,11 @@ tr:hover td {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #e8eaf0;
-  box-shadow: 4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff;
+  background: var(--sidebar-bg);
+  box-shadow: var(--shadow-sm);
   align-items: center;
   justify-content: center;
-  color: #6b6b8a;
+  color: var(--text-secondary);
   cursor: pointer;
   border: none;
   flex-shrink: 0;
@@ -1012,11 +1107,11 @@ tr:hover td {
 
 .sidebar-toggle-btn:hover {
   color: var(--primary);
-  box-shadow: 2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff;
+  box-shadow: var(--shadow);
 }
 
 .sidebar-toggle-btn:active {
-  box-shadow: inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff;
+  box-shadow: var(--shadow-inset);
 }
 
 /* Drawer overlays on mobile */
@@ -1131,7 +1226,7 @@ tr:hover td {
   /* Mobile course detail breaks out of the dashboard container's padding so the purple hero is edge-to-edge.
      Match the page-container's mobile padding (16px) exactly so the hero spans full viewport width,
      and the hero's own 22px internal padding gives content proper breathing room. */
-  .course-detail-mobile-only { margin: -16px -16px 0; }
+  .course-detail-mobile-only { margin: 0; }
   /* The hero's content should never touch the screen edge — enforce a min inline padding here in case
      the inline style is overridden by inherited rules or the negative margin overshoots */
   .course-detail-mobile-only .mobile-course-detail > div:first-of-type { padding-left: 22px !important; padding-right: 22px !important; }
@@ -1183,12 +1278,12 @@ tr:hover td {
 .login-container {
   min-height: 100vh;
   display: flex;
-  background: #F3F4F6;
+  background: var(--bg);
 }
 
 .login-left-panel {
   flex: 0 0 42%;
-  background: #F3F4F6;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1200,10 +1295,12 @@ tr:hover td {
 .login-geometric-composition {
   display: flex;
   flex-wrap: wrap;
-  gap: 30px;
+  gap: 28px;
   align-items: center;
   justify-content: center;
   margin: 40px 0;
+  max-width: 420px;
+  width: 100%;
 }
 
 .login-footer-links {
@@ -1236,7 +1333,7 @@ tr:hover td {
 
 .login-right-panel {
   flex: 1;
-  background: #F3F4F6;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1248,7 +1345,68 @@ tr:hover td {
 .login-card-container {
   width: 100%;
   max-width: 480px;
-  padding: 52px;
+  padding: 56px 36px !important;
+  background: var(--surface) !important;
+  border-radius: 32px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  text-align: center;
+}
+
+.login-card-title {
+  font-size: 32px !important;
+  font-weight: 800 !important;
+  color: var(--text-primary) !important;
+  margin-top: 0 !important;
+  margin-bottom: 12px !important;
+  text-align: center !important;
+  letter-spacing: -0.02em !important;
+}
+
+.login-card-subtitle {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary) !important;
+  margin-top: 0 !important;
+  margin-bottom: 32px !important;
+  text-align: center !important;
+  line-height: 1.5 !important;
+}
+
+.login-terms-text {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--text-muted) !important;
+  margin-top: 24px !important;
+  text-align: center !important;
+  line-height: 1.6 !important;
+  white-space: nowrap !important;
+}
+
+.login-terms-text span {
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+}
+
+.login-explore-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 14px 32px !important;
+  background: var(--primary) !important; /* Premium dark navy */
+  color: #ffffff !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 25px rgba(35, 35, 71, 0.25) !important;
+  text-decoration: none !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.login-explore-btn:hover {
+  background: var(--primary-dark) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 14px 32px rgba(35, 35, 71, 0.35) !important;
 }
 
 .login-contact-developer {
@@ -1329,6 +1487,7 @@ tr:hover td {
 
   .login-terms-text {
     font-size: 10px !important;
+    white-space: normal !important;
   }
 
   .login-explore-btn {
@@ -1412,4 +1571,80 @@ tr:hover td {
     right: -10px !important;
   }
 }
+
+/* Download App Premium Button Styling */
+.download-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 8px 18px !important;
+  border-radius: 50px !important;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%) !important; /* Premium rich blue gradient */
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3), inset 0 1px 0 var(--neu-glow) !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  cursor: pointer !important;
+  font-family: 'Outfit', 'Nunito', sans-serif !important;
+  border: none !important;
+  position: relative !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+}
+
+/* Sliding shine / shimmer animation overlay */
+.download-btn::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -150% !important;
+  width: 50% !important;
+  height: 100% !important;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0) 100%
+  ) !important;
+  transform: skewX(-25deg) !important;
+  animation: download-shine 3.5s infinite ease-in-out !important;
+  pointer-events: none !important;
+}
+
+@keyframes download-shine {
+  0% {
+    left: -150%;
+  }
+  35% {
+    left: 150%;
+  }
+  100% {
+    left: 150%;
+  }
+}
+
+/* Interactive Hover / Active States */
+.download-btn:hover {
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.45), inset 0 1px 0 var(--neu-glow) !important;
+  background: linear-gradient(135deg, #4f87ff 0%, #2563eb 50%, #1d4ed8 100%) !important;
+}
+
+.download-btn:active {
+  transform: translateY(-0.5px) scale(0.99) !important;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3), inset 0 1px 0 var(--neu-glow) !important;
+}
+
+/* Responsive Collapsing for Mobile Devices (Desktop Only) */
+@media (max-width: 768px) {
+  .download-btn {
+    display: none !important;
+  }
+}
+
+
+
 

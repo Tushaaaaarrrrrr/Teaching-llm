@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { sendSupportReplyNotification } from '@/lib/system-notifications'
+import { sendSupportReplyNotification, sendTicketReplyNotificationToManagers } from '@/lib/system-notifications'
 
 export async function GET(
   _request: NextRequest,
@@ -51,6 +51,8 @@ export async function POST(
     // Trigger support reply notification (non-blocking)
     if (session.role !== 'STUDENT') {
       sendSupportReplyNotification(params.id, session.name, reply.content).catch(console.error)
+    } else {
+      sendTicketReplyNotificationToManagers(params.id, session.name, reply.content).catch(console.error)
     }
 
     logActivity({

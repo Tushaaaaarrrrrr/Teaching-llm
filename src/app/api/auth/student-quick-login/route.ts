@@ -23,9 +23,9 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: 'This account has been deactivated.' }, { status: 403 })
     }
 
-    const updated = await prisma.user.update({
+    // Read current tokenVersion (don't increment — allows multi-device sessions)
+    const currentUser = await prisma.user.findUnique({
       where: { id: user.id },
-      data: { tokenVersion: { increment: 1 } },
       select: { tokenVersion: true },
     })
 
@@ -36,7 +36,7 @@ export async function POST(_request: NextRequest) {
       name: user.name,
       canTerminate: user.canTerminate,
       canCreateStudents: user.canCreateStudents,
-      tokenVersion: updated.tokenVersion,
+      tokenVersion: currentUser?.tokenVersion ?? 0,
     })
 
     const { name: cookieName, options } = getCookieConfig()

@@ -35,12 +35,10 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    if (session.role === 'MANAGER') {
-      where.NOT = [
-        { actionDescription: { contains: 'direct', mode: 'insensitive' } },
-        { actionType: 'USER_CLICK' }
-      ]
-    }
+    where.NOT = [
+      { actionDescription: { contains: 'direct', mode: 'insensitive' } },
+      { actionType: 'USER_CLICK' }
+    ]
 
     if (userId) {
       where.userId = userId
@@ -48,8 +46,6 @@ export async function GET(request: NextRequest) {
 
     if (role) {
       where.userRole = role
-    } else if (session.role === 'MANAGER') {
-      where.userRole = { notIn: ['MANAGER', 'SUPER_ADMIN'] }
     } else {
       where.userRole = { not: 'MANAGER' }
     }

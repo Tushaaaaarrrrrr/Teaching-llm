@@ -3,6 +3,7 @@
 import { useState, Suspense, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import MobileLoginExperience from '@/components/auth/MobileLoginExperience'
+import posthog from 'posthog-js'
 
 function PoliciesDropdown({ 
   links, 
@@ -13,6 +14,16 @@ function PoliciesDropdown({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const openMenu = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current)
+    setIsOpen(true)
+  }
+
+  const scheduleClose = () => {
+    closeTimer.current = setTimeout(() => setIsOpen(false), 150)
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -21,28 +32,37 @@ function PoliciesDropdown({
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      if (closeTimer.current) clearTimeout(closeTimer.current)
+    }
   }, [])
 
   return (
-    <div ref={dropdownRef} className="policies-dropdown-container" style={{ position: 'relative', display: 'inline-block' }}>
+    <div 
+      ref={dropdownRef} 
+      className="policies-dropdown-container" 
+      style={{ position: 'relative', display: 'inline-block' }}
+      onMouseEnter={openMenu}
+      onMouseLeave={scheduleClose}
+    >
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="policies-dropdown-trigger"
         style={{
-          fontSize: '12px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600',
-          padding: '8px 16px', background: '#F3F4F6', borderRadius: '50px', border: 'none', cursor: 'pointer',
-          boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff', transition: 'all 0.2s ease',
+          fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600',
+          padding: '8px 16px', background: 'var(--surface-2)', borderRadius: '50px', border: 'none', cursor: 'pointer',
+          boxShadow: 'var(--shadow)', transition: 'all 0.2s ease',
           outline: 'none'
         }}
         onMouseOver={(e) => {
-          e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
-          e.currentTarget.style.color = '#3636e8';
+          e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+          e.currentTarget.style.color = 'var(--primary)';
         }}
         onMouseOut={(e) => {
           if (!isOpen) {
-            e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
-            e.currentTarget.style.color = '#9999b0';
+            e.currentTarget.style.boxShadow = 'var(--shadow)';
+            e.currentTarget.style.color = 'var(--text-muted)';
           }
         }}
       >
@@ -103,7 +123,7 @@ function PoliciesDropdown({
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.background = '#F3F4F6';
-                e.currentTarget.style.color = '#3636e8';
+                e.currentTarget.style.color = 'var(--primary)';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = 'none';
@@ -175,26 +195,26 @@ function LoginContent() {
             flexShrink: 0,
             width: '100%',
             maxWidth: '320px',
-            minHeight: '148px',
-            padding: '22px 22px 18px',
+            minHeight: '200px',
+            padding: '24px 22px 20px',
             borderRadius: '28px',
             background: '#ffffff',
             boxShadow: '0 8px 30px rgba(0,0,0,0.06)',
             cursor: 'default',
           }}>
             <img 
-              src="/logo.png" 
-              alt="GENz IITIAN Logo" 
+              src="/mobile-login-logo.png" 
+              alt="GenZ IITIAN Logo" 
               style={{ 
                 width: '100%',
                 maxWidth: '260px',
                 height: 'auto',
-                maxHeight: '84px',
+                maxHeight: '130px',
                 objectFit: 'contain',
                 display: 'block',
               }} 
             />
-            <p style={{ fontSize: '18px', color: '#6b6b8a', fontWeight: '500', letterSpacing: '0.02em', marginTop: '14px', textAlign: 'center' }}>
+            <p style={{ fontSize: '17px', color: '#6b6b8a', fontWeight: '600', letterSpacing: '0.02em', marginTop: '12px', textAlign: 'center' }}>
               Upgrade How You Learn
             </p>
           </div>
@@ -203,39 +223,47 @@ function LoginContent() {
           {/* Geometric Characters Composition */}
           <div className="login-geometric-composition">
             {/* Purple Rectangle */}
-            <div className="animate-float" style={{ width: '160px', height: '200px', background: '#8B5CF6', borderRadius: '24px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', animationDelay: '0s', boxShadow: '0 15px 35px rgba(139, 92, 246, 0.4)' }}>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%' }} />
-                <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%' }} />
+            <div className="animate-float" style={{ width: '160px', height: '200px', animationDelay: '0s', position: 'relative' }}>
+              <div style={{ width: '100%', height: '100%', background: '#8B5CF6', borderRadius: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 15px 35px rgba(139, 92, 246, 0.35)', transform: 'rotate(-8deg)', transformOrigin: 'center' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%' }} />
+                  <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%' }} />
+                </div>
+                <div style={{ width: '32px', height: '16px', border: '4px solid white', borderTop: 'none', borderRadius: '0 0 16px 16px', marginTop: '12px' }} />
               </div>
-              <div style={{ width: '32px', height: '16px', border: '4px solid white', borderTop: 'none', borderRadius: '0 0 16px 16px', marginTop: '12px' }} />
             </div>
 
             {/* Black Rounded Rectangle */}
-            <div className="animate-float" style={{ width: '180px', height: '220px', background: '#111827', borderRadius: '40px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', animationDelay: '2s', boxShadow: '0 15px 35px rgba(17, 24, 39, 0.4)' }}>
-              <div style={{ display: 'flex', gap: '14px' }}>
-                <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%' }} />
-                <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%' }} />
+            <div className="animate-float" style={{ width: '180px', height: '220px', animationDelay: '2s', position: 'relative' }}>
+              <div style={{ width: '100%', height: '100%', background: '#111827', borderRadius: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 15px 35px rgba(17, 24, 39, 0.35)', transform: 'rotate(4deg)', transformOrigin: 'center' }}>
+                <div style={{ display: 'flex', gap: '14px' }}>
+                  <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%' }} />
+                  <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%' }} />
+                </div>
+                <div style={{ width: '40px', height: '10px', background: 'white', borderRadius: '5px', marginTop: '16px' }} />
               </div>
-              <div style={{ width: '40px', height: '10px', background: 'white', borderRadius: '5px', marginTop: '16px' }} />
             </div>
 
             {/* Orange Semicircle */}
-            <div className="animate-float" style={{ width: '200px', height: '100px', background: '#F97316', borderRadius: '100px 100px 0 0', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: '16px', animationDelay: '4s', boxShadow: '0 15px 35px rgba(249, 115, 22, 0.4)' }}>
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '10px' }}>
-                <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%' }} />
-                <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%' }} />
+            <div className="animate-float" style={{ width: '200px', height: '100px', animationDelay: '4s', position: 'relative' }}>
+              <div style={{ width: '100%', height: '100%', background: '#F97316', borderRadius: '100px 100px 0 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: '16px', boxShadow: '0 15px 35px rgba(249, 115, 22, 0.35)' }}>
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '10px' }}>
+                  <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%' }} />
+                  <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%' }} />
+                </div>
+                <div style={{ width: '36px', height: '18px', border: '4px solid white', borderTop: 'none', borderRadius: '0 0 18px 18px' }} />
               </div>
-              <div style={{ width: '36px', height: '18px', border: '4px solid white', borderTop: 'none', borderRadius: '0 0 18px 18px' }} />
             </div>
 
             {/* Yellow Organic Blob */}
-            <div className="animate-float" style={{ width: '180px', height: '180px', background: '#FACC15', borderRadius: '50% 50% 30% 70% / 50% 50% 70% 30%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', animationDelay: '6s', boxShadow: '0 15px 35px rgba(250, 204, 21, 0.4)' }}>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ width: '14px', height: '14px', background: 'white', borderRadius: '50%' }} />
-                <div style={{ width: '14px', height: '14px', background: 'white', borderRadius: '50%' }} />
+            <div className="animate-float" style={{ width: '180px', height: '180px', animationDelay: '6s', position: 'relative' }}>
+              <div style={{ width: '100%', height: '100%', background: '#FACC15', borderRadius: '50% 50% 30% 70% / 50% 50% 70% 30%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 15px 35px rgba(250, 204, 21, 0.35)', transform: 'rotate(8deg)', transformOrigin: 'center' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '14px', height: '14px', background: 'white', borderRadius: '50%' }} />
+                  <div style={{ width: '14px', height: '14px', background: 'white', borderRadius: '50%' }} />
+                </div>
+                <div style={{ width: '32px', height: '3px', background: 'white', marginTop: '12px' }} />
               </div>
-              <div style={{ width: '32px', height: '3px', background: 'white', marginTop: '12px' }} />
             </div>
           </div>
         
@@ -296,28 +324,28 @@ function LoginContent() {
             className="login-contact-developer"
             style={{ 
               fontSize: '12px', 
-              color: '#9999b0', 
+              color: 'var(--text-muted)', 
               textDecoration: 'none', 
               display: 'flex', 
               alignItems: 'center', 
               gap: '8px', 
               fontWeight: '600',
               padding: '8px 16px',
-              background: '#F3F4F6',
+              background: 'var(--surface-2)',
               borderRadius: '50px',
-              boxShadow: '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff',
+              boxShadow: 'var(--shadow)',
               transition: 'all 0.2s ease'
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.boxShadow = '2px 2px 4px #d1d5db, -2px -2px 4px #ffffff';
-              e.currentTarget.style.color = '#3636e8';
+              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+              e.currentTarget.style.color = 'var(--primary)';
             }}
             onMouseOut={(e) => {
-              e.currentTarget.style.boxShadow = '4px 4px 8px #d1d5db, -4px -4px 8px #ffffff';
-              e.currentTarget.style.color = '#9999b0';
+              e.currentTarget.style.boxShadow = 'var(--shadow)';
+              e.currentTarget.style.color = 'var(--text-muted)';
             }}
           >
-            <span style={{ fontSize: '14px' }}>✉️</span><span>Contact Developer</span>
+            <span style={{ fontSize: '14px' }}>✉️</span><span>Contact Us</span>
           </a>
 
           <div className="mobile-only-policies-container">
@@ -333,7 +361,7 @@ function LoginContent() {
           close: () => setShowRefundPolicy(false), 
           title: 'Return & Refund Policy', 
           content: (
-            <div style={{ fontSize: '14px', color: '#555', lineHeight: '1.6' }}>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
               <p style={{ marginBottom: '12px' }}>At GenZ IITian, we provide 100% digital educational services in the form of online courses. There is no physical product, shipment, or delivery involved.</p>
               <p style={{ marginBottom: '12px' }}>Due to the nature of digital content, all purchases are final. We do not offer refunds, returns, or exchanges under any circumstances once a course has been purchased.</p>
               <p style={{ marginBottom: '12px' }}>We strongly recommend reviewing course details before making a purchase.</p>
@@ -347,11 +375,11 @@ function LoginContent() {
           close: () => setShowPrivacyPolicy(false), 
           title: 'Privacy Policy', 
           content: (
-            <div style={{ fontSize: '14px', color: '#555', lineHeight: '1.6' }}>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
               <p style={{ marginBottom: '12px' }}>At GenZ IITian, we respect your privacy and are committed to protecting your data.</p>
-              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '8px' }}>Information We Collect</h4>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px' }}>Information We Collect</h4>
               <p style={{ marginBottom: '12px' }}>We collect basic details such as your name, email, phone number, and device information to manage your registration, purchases, and account history.<br/>We also collect usage data to understand how you interact with our platform.</p>
-              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '8px' }}>How We Use Your Information</h4>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px' }}>How We Use Your Information</h4>
               <ul style={{ paddingLeft: '20px', marginBottom: '12px' }}>
                 <li>Provide and improve our courses and services</li>
                 <li>Personalize your learning experience</li>
@@ -359,9 +387,9 @@ function LoginContent() {
                 <li>Provide customer support</li>
                 <li>Ensure platform security and prevent misuse</li>
               </ul>
-              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '8px' }}>Changes to This Policy</h4>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px' }}>Changes to This Policy</h4>
               <p style={{ marginBottom: '12px' }}>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated effective date.</p>
-              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '8px' }}>Contact Us</h4>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px' }}>Contact Us</h4>
               <p>If you have any questions or concerns, you can contact us at:<br/>Email: help@genziitian.in</p>
             </div>
           )
@@ -371,19 +399,19 @@ function LoginContent() {
           close: () => setShowTermsConditions(false), 
           title: 'Terms & Conditions', 
           content: (
-            <div style={{ fontSize: '14px', color: '#555', lineHeight: '1.6' }}>
-              <p style={{ fontSize: '12px', color: '#9999b0', marginBottom: '16px' }}>Last Updated: April 2026</p>
-              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>01 Service Description</h4>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>Last Updated: April 2026</p>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '4px' }}>01 Service Description</h4>
               <p style={{ marginBottom: '12px' }}>Gen-Z IITian provides access to premium digital educational courses designed specifically for students. Our services are delivered entirely online. Access to the courses is granted immediately upon successful completion of the payment process.</p>
-              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>02 User Account & Security</h4>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '4px' }}>02 User Account & Security</h4>
               <p style={{ marginBottom: '12px' }}>To access our courses, users must sign in via their Google account. You are solely responsible for maintaining the confidentiality of your account information and for all activities that occur under your account. We reserve the right to terminate accounts that violate our security protocols.</p>
-              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>03 Course Access & Usage</h4>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '4px' }}>03 Course Access & Usage</h4>
               <p style={{ marginBottom: '12px' }}>Access is granted exclusively to the email address used during the purchase.<br/>Course access is non-transferable and intended for personal use only.<br/>Sharing account credentials or course content with third parties is strictly prohibited.</p>
-              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>04 Payment Terms</h4>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '4px' }}>04 Payment Terms</h4>
               <p style={{ marginBottom: '12px' }}>All prices are clearly displayed before the final checkout. By proceeding with the payment, you agree to the price and terms of the specific course. All payments are processed through secure third-party payment gateways (Razorpay, Stripe, or Cashfree).</p>
-              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>05 Prohibited Use & Copyright</h4>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '4px' }}>05 Prohibited Use & Copyright</h4>
               <p style={{ marginBottom: '12px' }}>All content on this platform, including videos, documents, and code samples, is the intellectual property of Gen-Z IITian. Any form of piracy, unauthorized redistribution, or commercial use of our content will result in legal action and immediate termination of access without notice.</p>
-              <h4 style={{ color: '#1e1e3a', fontWeight: '600', marginBottom: '4px' }}>06 Limitation of Liability</h4>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '4px' }}>06 Limitation of Liability</h4>
               <p>Gen-Z IITian is an educational platform. While we strive for excellence, we do not guarantee specific academic results or career outcomes. The platform is not responsible for any misuse of the information provided or for any technical issues arising from the user's internet connection or device.</p>
             </div>
           )
@@ -399,8 +427,8 @@ function LoginContent() {
         >
           <div className="modal" style={{ width: '100%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto', padding: '44px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>{modal.title}</h2>
-              <button onClick={modal.close} style={{ background: 'none', border: 'none', fontSize: '24px', color: '#9999b0', cursor: 'pointer', padding: '0 8px' }}>&times;</button>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{modal.title}</h2>
+              <button onClick={modal.close} style={{ background: 'none', border: 'none', fontSize: '24px', color: 'var(--text-muted)', cursor: 'pointer', padding: '0 8px' }}>&times;</button>
             </div>
             {modal.content}
           </div>
@@ -551,8 +579,19 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
       setGError(data.error || 'Google login failed')
+      // Track failed login
+      posthog.capture('login_failed', { method: 'google', error: data.error })
       return
     }
+    // Track successful login & identify user
+    if (data.user) {
+      posthog.identify(data.user.id, {
+        email: data.user.email,
+        name: data.user.name,
+        role: data.user.role,
+      })
+    }
+    posthog.capture('user_logged_in', { method: 'google', platform: isCapacitor ? 'app' : 'web' })
     router.push('/dashboard')
     router.refresh()
   }
@@ -582,7 +621,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
         Log in or create a new account with Google
       </p>
 
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', marginBottom: '16px' }}>
         {/* GSI hidden overlay — web only; the native plugin handles clicks inside Capacitor */}
         {!isCapacitor && (
           <div
@@ -593,7 +632,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
               left: 0,
               width: '100%',
               height: '100%',
-              opacity: 0.01,
+              opacity: 0.001,
               zIndex: 10,
               cursor: gsiReady ? 'pointer' : 'default',
               overflow: 'hidden'
@@ -608,9 +647,9 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
             width: '100%',
             padding: '14px 24px',
             borderRadius: '50px',
-            border: 'none',
+            border: '1px solid rgba(0,0,0,0.08)',
             background: '#ffffff',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
             cursor: (isCapacitor ? nativeReady : gsiReady) && !gLoading ? 'pointer' : 'default',
             display: 'flex',
             alignItems: 'center',
@@ -625,12 +664,12 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
           }}
           onMouseOver={(e) => {
             if ((isCapacitor ? nativeReady : gsiReady) && !gLoading) {
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.12)'
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.1)'
               e.currentTarget.style.transform = 'translateY(-1px)'
             }
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'
             e.currentTarget.style.transform = 'none'
           }}
         >
@@ -687,7 +726,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
               </>
             )}
           </button>
-          <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#9999b0', textAlign: 'center' }}>
+          <p style={{ margin: '8px 0 0', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
             Backup sign-in. Available when the server-side passcode is set.
           </p>
         </div>
@@ -805,7 +844,7 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
 
       <div style={{ marginTop: '16px' }}>
         <p className="login-terms-text">
-          By continuing, you agree to the <span onClick={onTermsClick} style={{ color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>Terms & Conditions</span> & <span onClick={onPrivacyClick} style={{ color: '#1e1e3a', cursor: 'pointer', textDecoration: 'underline' }}>privacy policy</span>
+          By continuing, you agree to the <span onClick={onTermsClick} style={{ color: 'var(--text-primary)', cursor: 'pointer', textDecoration: 'underline' }}>Terms & Conditions</span> & <span onClick={onPrivacyClick} style={{ color: 'var(--text-primary)', cursor: 'pointer', textDecoration: 'underline' }}>privacy policy</span>
         </p>
       </div>
     </div>
@@ -815,8 +854,8 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F3F4F6' }}>
-        <div style={{ color: '#9999b0', fontSize: '15px' }}>Loading...</div>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+        <div style={{ color: 'var(--text-muted)', fontSize: '15px' }}>Loading...</div>
       </div>
     }>
       <LoginContent />

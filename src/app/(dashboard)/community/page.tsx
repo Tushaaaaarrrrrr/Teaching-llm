@@ -1,8 +1,10 @@
 'use client'
 
 import React, { useEffect, useState, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import ManagerUserModal from '@/components/ManagerUserModal'
+import SwipeableMessage from './SwipeableMessage'
 
 interface ClassItem {
   id: string
@@ -75,6 +77,7 @@ function formatMessageDate(dateString: string) {
 }
 
 export default function CommunityPage() {
+  const router = useRouter()
   const { confirm, confirmDialog } = useConfirmDialog()
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null)
@@ -112,6 +115,7 @@ export default function CommunityPage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [replyingTo, setReplyingTo] = useState<CommMsg | null>(null)
+  const [selectedMessage, setSelectedMessage] = useState<CommMsg | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
   const loadMessages = useCallback(async (classId: string) => {
@@ -528,12 +532,12 @@ export default function CommunityPage() {
 
   const isDM = (cls: ClassItem | null) => cls?.isDirectChat === true
 
-  const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
-  const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
+  const neu = { background: 'var(--surface-2)', boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)' }
+  const neuInset = { background: 'var(--surface-2)', boxShadow: 'inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light)' }
 
 
   return (
-    <div className="page-container fade-in" style={isMobile ? { display: 'flex', gap: '0px', height: 'calc(100vh - 90px)', padding: '8px', overflow: 'hidden', position: 'relative' } : { display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
+    <div className="page-container fade-in" style={isMobile ? { display: 'flex', gap: '0px', height: '100%', padding: '8px', overflow: 'hidden', position: 'relative', boxSizing: 'border-box' } : { display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
       <style>{`
         .msg-row:hover .msg-actions { opacity: 1 !important; }
       `}</style>
@@ -548,9 +552,9 @@ export default function CommunityPage() {
             transform: 'translateX(-50%)',
             zIndex: 5,
             padding: '12px 16px',
-            border: '1px solid #fecaca',
-            color: '#b91c1c',
-            background: '#fff5f5',
+            border: '1px solid var(--border)',
+            color: 'var(--danger)',
+            background: 'var(--danger-light)',
           }}
         >
           Failed to load community data. {loadError}
@@ -559,8 +563,74 @@ export default function CommunityPage() {
 
       {/* Left: Class list */}
       <div style={{ width: isMobile ? '100%' : '230px', flexShrink: 0, display: (isMobile && selectedClass) ? 'none' : 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '8px', overflowY: 'auto', padding: isMobile ? '4px 2px 16px' : '0' }}>
+        {isMobile && (
+          /* Premium Neumorphic Page Header */
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            marginBottom: '10px',
+            padding: '0 4px',
+            justifyContent: 'flex-start'
+          }}>
+            <button
+              onClick={() => router.back()}
+              aria-label="Go Back"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'var(--surface)',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
+                color: 'var(--text-secondary)',
+                flexShrink: 0,
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => {
+                ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
+                ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
+              }}
+              onMouseLeave={e => {
+                ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+                ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+              </svg>
+            </button>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1 style={{
+                fontSize: '22px',
+                fontWeight: 900,
+                color: 'var(--text-primary)',
+                margin: 0,
+                lineHeight: 1.1,
+                letterSpacing: '-0.02em',
+                fontFamily: "'Outfit', 'Nunito', sans-serif"
+              }}>
+                Community
+              </h1>
+              <p style={{
+                fontSize: '12px',
+                color: 'var(--text-secondary)',
+                fontWeight: 600,
+                margin: '3px 0 0',
+                fontFamily: "'Outfit', sans-serif"
+              }}>
+                Connect with your coursemates
+              </p>
+            </div>
+          </div>
+        )}
         {/* Groups header */}
-        <div style={{ fontSize: '11px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: isMobile ? '6px' : '4px', padding: '0 6px' }}>
+        <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: isMobile ? '6px' : '4px', padding: '0 6px' }}>
           Communities
         </div>
         {classes.filter(cls => !cls.isDirectChat).map(cls => {
@@ -575,17 +645,17 @@ export default function CommunityPage() {
               borderRadius: isMobile ? '20px' : '18px', border: 'none',
               cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
               transition: 'all 0.2s',
-              background: active ? cls.color : (isMobile ? '#ffffff' : '#e8eaf0'),
-              color: active ? '#fff' : '#1e1e3a',
+              background: active ? cls.color : (isMobile ? '#ffffff' : 'var(--surface-2)'),
+              color: active ? '#fff' : 'var(--text-primary)',
               boxShadow: active
-                ? `5px 5px 14px ${cls.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
-                : (isMobile ? '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff' : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff'),
+                ? `5px 5px 14px ${cls.color}55, -3px -3px 8px var(--neu-glow)`
+                : (isMobile ? '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)' : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)'),
               position: 'relative',
               minHeight: isMobile ? '64px' : 'auto',
             }}
           >
             {cls.hasUnread && !active && (
-              <div style={{ position: 'absolute', top: '10px', right: '12px', width: '9px', height: '9px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
+              <div style={{ position: 'absolute', top: '10px', right: '12px', width: '9px', height: '9px', borderRadius: '50%', background: 'var(--danger)', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
             )}
             <div style={{
               width: isMobile ? '44px' : '34px', height: isMobile ? '44px' : '34px',
@@ -607,7 +677,7 @@ export default function CommunityPage() {
                 </div>
               )}
               {userRole === 'MANAGER' && cls.isCommunityActive === false && (
-                <div style={{ fontSize: '10px', fontWeight: '800', marginTop: '4px', color: active ? '#fff' : '#ef4444' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', marginTop: '4px', color: active ? '#fff' : 'var(--danger)' }}>
                   COMMUNITY OFF
                 </div>
               )}
@@ -629,7 +699,7 @@ export default function CommunityPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: active ? '#ffffff' : (cls.isMuted ? '#ef4444' : '#9999b0'),
+                color: active ? '#ffffff' : (cls.isMuted ? 'var(--danger)' : 'var(--text-muted)'),
                 opacity: cls.isMuted ? 1 : 0.4,
                 transition: 'opacity 0.2s, color 0.2s',
                 marginLeft: '4px',
@@ -660,7 +730,7 @@ export default function CommunityPage() {
             </button>
 
             {isMobile && (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? '#ffffff' : '#9999b0'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: '4px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? '#ffffff' : 'var(--text-muted)'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: '4px' }}>
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             )}
@@ -671,13 +741,13 @@ export default function CommunityPage() {
         {/* Direct Messages section — hidden for students with zero DMs */}
         {(userRole === 'MANAGER' || classes.some(cls => cls.isDirectChat)) && (
           <>
-            <div style={{ fontSize: '12px', fontWeight: '800', color: '#9999b0', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '12px 0 4px', padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '12px 0 4px', padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>Direct Messages</span>
               {userRole === 'MANAGER' && (
                 <button
                   onClick={() => setShowNewDMModal(true)}
                   title="New Direct Chat"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', display: 'flex', alignItems: 'center', padding: '2px' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', padding: '2px' }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
@@ -692,31 +762,31 @@ export default function CommunityPage() {
                   padding: '10px 14px', borderRadius: '18px', border: 'none',
                   cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
                   transition: 'all 0.2s',
-                  background: selectedClass?.id === cls.id ? '#3636e8' : '#e8eaf0',
-                  color: selectedClass?.id === cls.id ? '#fff' : '#1e1e3a',
+                  background: selectedClass?.id === cls.id ? 'var(--primary)' : 'var(--surface-2)',
+                  color: selectedClass?.id === cls.id ? '#fff' : 'var(--text-primary)',
                   boxShadow: selectedClass?.id === cls.id
-                    ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px rgba(255,255,255,0.6)'
-                    : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px var(--neu-glow)'
+                    : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                   opacity: cls.isDmDisabled ? 0.55 : 1,
                   position: 'relative'
                 }}
               >
                 {cls.hasUnread && selectedClass?.id !== cls.id && (
-                  <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
+                  <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--danger)', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
                 )}
                 <div style={{
                   width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-                  background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : '#3636e822',
+                  background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : 'var(--primary-light)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '12px', fontWeight: '800',
-                  color: selectedClass?.id === cls.id ? '#fff' : '#3636e8',
+                  color: selectedClass?.id === cls.id ? '#fff' : 'var(--primary)',
                 }}>
                   {cls.name.replace('Chat with ', '').charAt(0).toUpperCase()}
                 </div>
                   <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     {cls.name.replace('Chat with ', '')}
                     {cls.role && cls.role !== 'STUDENT' && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" style={{ color: selectedClass?.id === cls.id ? '#fff' : '#3636e8' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" style={{ color: selectedClass?.id === cls.id ? '#fff' : 'var(--primary)' }}>
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
                     )}
@@ -727,7 +797,7 @@ export default function CommunityPage() {
               </button>
             ))}
             {classes.filter(cls => cls.isDirectChat).length === 0 && (
-              <div style={{ color: '#9999b0', fontSize: '12px', textAlign: 'center', padding: '8px 10px' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center', padding: '8px 10px' }}>
                 {userRole === 'MANAGER' ? 'No active DMs — click + to start one' : 'No direct messages yet'}
               </div>
             )}
@@ -746,137 +816,300 @@ export default function CommunityPage() {
         minWidth: 0 
       }}>
         {!selectedClass ? (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', color: '#9999b0' }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', color: 'var(--text-muted)' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
             <p style={{ fontWeight: '700' }}>Select a community</p>
           </div>
         ) : (
           <>
             {/* Header */}
-            <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', flexWrap: 'wrap' }}>
-              <div style={{
-                width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px',
-                background: selectedClass.color + '22',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '13px', fontWeight: '800', color: selectedClass.color,
-                flexShrink: 0,
+            {selectedMessage ? (
+              <div style={{ 
+                padding: isMobile ? '12px 14px' : '16px 22px', 
+                borderBottom: '1.5px solid rgba(0,0,0,0.06)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px', 
+                background: 'var(--primary-light)', // Vibrant light indigo highlight for selection
+                transition: 'all 0.3s ease',
               }}>
-                {isDM(selectedClass)
-                  ? selectedClass.name.replace('Chat with ', '').charAt(0).toUpperCase()
-                  : selectedClass.name.substring(0, 2).toUpperCase()}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
+                <button
+                  onClick={() => setSelectedMessage(null)}
+                  title="Cancel selection"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '50%',
+                    background: 'var(--surface)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
+                    color: 'var(--primary)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: '850', fontSize: '16px', color: 'var(--text-primary)' }}>
+                    1 message selected
+                  </div>
                 </div>
-                {isDM(selectedClass) ? (
-                  <div style={{ fontSize: '11px', color: '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Direct Message</div>
-                ) : selectedClass.subject && (
-                  <div style={{ fontSize: '11px', color: '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedClass.subject} · Community Chat</div>
-                )}
-              </div>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
-                {!isDM(selectedClass) && selectedClass.isCommunityActive === false && (
-                  <span style={{ padding: '4px 10px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '11px', fontWeight: '700' }}>
-                    Off
-                  </span>
-                )}
-                {isDM(selectedClass) && selectedClass.isDmDisabled && (
-                  <span style={{ padding: '4px 10px', borderRadius: '50px', background: '#fef2f2', color: '#ef4444', fontSize: '11px', fontWeight: '700' }}>
-                    Hidden
-                  </span>
-                )}
-                <span style={{ padding: '4px 10px', borderRadius: '50px', background: selectedClass.color + '18', color: selectedClass.color, fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' }}>
-                  {messages.length}{isMobile ? '' : ` message${messages.length !== 1 ? 's' : ''}`}
-                </span>
-                {userRole === 'MANAGER' && (
-                  <>
-                    <button onClick={openTranscript} style={{ padding: '6px 12px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', ...neu, boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', color: '#3636e8' }}>
-                      Transcript
-                    </button>
-                    {!isDM(selectedClass) && (
-                      <button
-                        onClick={toggleCommunityStatus}
-                        disabled={managingCommunity}
-                        style={{
-                          padding: '6px 12px', borderRadius: '50px', border: 'none',
-                          cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                          background: selectedClass.isCommunityActive === false ? '#22c55e' : '#f59e0b',
-                          color: '#fff',
-                          boxShadow: selectedClass.isCommunityActive === false ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
-                          opacity: managingCommunity ? 0.6 : 1,
-                        }}
-                      >
-                        {selectedClass.isCommunityActive === false ? 'Enable' : 'Disable'}
-                      </button>
-                    )}
-                    {isDM(selectedClass) && (
-                      <button
-                        onClick={async () => {
-                          if (managingCommunity) return
-                          const action = selectedClass.isDmDisabled ? 'enable' : 'disable'
-                          const allowed = await confirm({
-                            title: action === 'disable' ? 'Hide Chat from Student?' : 'Show Chat to Student?',
-                            message: action === 'disable'
-                              ? 'This will hide the chat from the student. All messages are preserved and you can re-enable it anytime.'
-                              : 'This will make the chat visible to the student again.',
-                            confirmLabel: action === 'disable' ? 'Hide Chat' : 'Show Chat',
-                            tone: action === 'disable' ? 'danger' : 'default',
-                          })
-                          if (!allowed) return
-                          setManagingCommunity(true)
-                          try {
-                            const chatId = selectedClass.id.replace('dm_', '')
-                            const res = await fetch('/api/community/direct/toggle', {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ chatId, action }),
-                            })
-                            if (!res.ok) throw new Error('Failed to toggle chat')
-                            await loadClasses(selectedClass.id)
-                          } catch (error) {
-                            console.error(error)
-                            alert(error instanceof Error ? error.message : 'Failed to toggle chat')
-                          } finally {
-                            setManagingCommunity(false)
-                          }
-                        }}
-                        disabled={managingCommunity}
-                        style={{
-                          padding: '6px 12px', borderRadius: '50px', border: 'none',
-                          cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                          background: selectedClass.isDmDisabled ? '#22c55e' : '#f59e0b',
-                          color: '#fff',
-                          boxShadow: selectedClass.isDmDisabled ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
-                          opacity: managingCommunity ? 0.6 : 1,
-                        }}
-                      >
-                        {selectedClass.isDmDisabled ? 'Show to Student' : 'Hide from Student'}
-                      </button>
-                    )}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  {/* Reply Button */}
+                  <button
+                    onClick={() => {
+                      setReplyingTo(selectedMessage)
+                      setSelectedMessage(null)
+                    }}
+                    title="Reply to message"
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '50%',
+                      background: 'var(--surface)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '2px 2px 5px rgba(0,0,0,0.08), -2px -2px 5px var(--neu-light)',
+                      color: 'var(--primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'transform 0.2s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 17 4 12 9 7"/>
+                      <path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
+                    </svg>
+                  </button>
+
+                  {/* Copy Button */}
+                  {selectedMessage.content && (
                     <button
-                      onClick={clearCommunityMessages}
-                      disabled={managingCommunity || messages.length === 0}
-                      style={{
-                        padding: '6px 12px', borderRadius: '50px', border: 'none',
-                        cursor: managingCommunity || messages.length === 0 ? 'default' : 'pointer',
-                        fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                        background: '#ef4444', color: '#fff',
-                        boxShadow: '4px 4px 10px rgba(239,68,68,0.25)',
-                        opacity: managingCommunity || messages.length === 0 ? 0.5 : 1,
+                      onClick={() => {
+                        if (typeof window !== 'undefined') {
+                          navigator.clipboard.writeText(selectedMessage.content)
+                        }
+                        setSelectedMessage(null)
                       }}
+                      title="Copy content"
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        background: 'var(--surface)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '2px 2px 5px rgba(0,0,0,0.08), -2px -2px 5px var(--neu-light)',
+                        color: 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'transform 0.2s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                      Clear Chat
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                      </svg>
                     </button>
-                  </>
-                )}
+                  )}
+
+                  {/* Delete Button */}
+                  {(userRole === 'MANAGER' || selectedMessage.sender.id === userId) && !selectedMessage.id.startsWith('temp-') && (
+                    <button
+                      onClick={() => {
+                        deleteMessage(selectedMessage.id)
+                        setSelectedMessage(null)
+                      }}
+                      title="Delete message"
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        background: 'var(--danger-light)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '2px 2px 5px rgba(239,68,68,0.15), -2px -2px 5px var(--neu-light)',
+                        color: 'var(--danger)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'transform 0.2s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6"/>
+                        <path d="M14 11v6"/>
+                        <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', flexWrap: 'wrap' }}>
+                {isMobile && (
+                  <button
+                    onClick={() => setSelectedClass(null)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '34px',
+                      height: '34px',
+                      borderRadius: '50%',
+                      background: 'var(--surface)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
+                      color: 'var(--text-secondary)',
+                      marginRight: '4px',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="19" y1="12" x2="5" y2="12"/>
+                      <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                  </button>
+                )}
+                <div style={{
+                  width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px',
+                  background: selectedClass.color + '22',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '13px', fontWeight: '800', color: selectedClass.color,
+                  flexShrink: 0,
+                }}>
+                  {isDM(selectedClass)
+                    ? selectedClass.name.replace('Chat with ', '').charAt(0).toUpperCase()
+                    : selectedClass.name.substring(0, 2).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
+                  </div>
+                  {isDM(selectedClass) ? (
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Direct Message</div>
+                  ) : selectedClass.subject && (
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedClass.subject} · Community Chat</div>
+                  )}
+                </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
+                  {!isDM(selectedClass) && selectedClass.isCommunityActive === false && (
+                    <span style={{ padding: '4px 10px', borderRadius: '50px', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: '11px', fontWeight: '700' }}>
+                      Off
+                    </span>
+                  )}
+                  {isDM(selectedClass) && selectedClass.isDmDisabled && (
+                    <span style={{ padding: '4px 10px', borderRadius: '50px', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: '11px', fontWeight: '700' }}>
+                      Hidden
+                    </span>
+                  )}
+                  {userRole === 'MANAGER' && (
+                    <>
+                      <button onClick={openTranscript} style={{ padding: '6px 12px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', ...neu, boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)', color: 'var(--primary)' }}>
+                        Transcript
+                      </button>
+                      {!isDM(selectedClass) && (
+                        <button
+                          onClick={toggleCommunityStatus}
+                          disabled={managingCommunity}
+                          style={{
+                            padding: '6px 12px', borderRadius: '50px', border: 'none',
+                            cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                            background: selectedClass.isCommunityActive === false ? 'var(--success)' : 'var(--warning)',
+                            color: '#fff',
+                            boxShadow: selectedClass.isCommunityActive === false ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
+                            opacity: managingCommunity ? 0.6 : 1,
+                          }}
+                        >
+                          {selectedClass.isCommunityActive === false ? 'Enable' : 'Disable'}
+                        </button>
+                      )}
+                      {isDM(selectedClass) && (
+                        <button
+                          onClick={async () => {
+                            if (managingCommunity) return
+                            const action = selectedClass.isDmDisabled ? 'enable' : 'disable'
+                            const allowed = await confirm({
+                              title: action === 'disable' ? 'Hide Chat from Student?' : 'Show Chat to Student?',
+                              message: action === 'disable'
+                                ? 'This will hide the chat from the student. All messages are preserved and you can re-enable it anytime.'
+                                : 'This will make the chat visible to the student again.',
+                              confirmLabel: action === 'disable' ? 'Hide Chat' : 'Show Chat',
+                              tone: action === 'disable' ? 'danger' : 'default',
+                            })
+                            if (!allowed) return
+                            setManagingCommunity(true)
+                            try {
+                              const chatId = selectedClass.id.replace('dm_', '')
+                              const res = await fetch('/api/community/direct/toggle', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ chatId, action }),
+                              })
+                              if (!res.ok) throw new Error('Failed to toggle chat')
+                              await loadClasses(selectedClass.id)
+                            } catch (error) {
+                              console.error(error)
+                              alert(error instanceof Error ? error.message : 'Failed to toggle chat')
+                            } finally {
+                              setManagingCommunity(false)
+                            }
+                          }}
+                          disabled={managingCommunity}
+                          style={{
+                            padding: '6px 12px', borderRadius: '50px', border: 'none',
+                            cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                            background: selectedClass.isDmDisabled ? 'var(--success)' : 'var(--warning)',
+                            color: '#fff',
+                            boxShadow: selectedClass.isDmDisabled ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
+                            opacity: managingCommunity ? 0.6 : 1,
+                          }}
+                        >
+                          {selectedClass.isDmDisabled ? 'Show to Student' : 'Hide from Student'}
+                        </button>
+                      )}
+                      <button
+                        onClick={clearCommunityMessages}
+                        disabled={managingCommunity || messages.length === 0}
+                        style={{
+                          padding: '6px 12px', borderRadius: '50px', border: 'none',
+                          cursor: managingCommunity || messages.length === 0 ? 'default' : 'pointer',
+                          fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
+                          background: 'var(--danger)', color: '#fff',
+                          boxShadow: '4px 4px 10px rgba(239,68,68,0.25)',
+                          opacity: managingCommunity || messages.length === 0 ? 0.5 : 1,
+                        }}
+                      >
+                        Clear Chat
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="chat-wallpaper" style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {messages.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9999b0' }}>
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.4 }}>
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                   </svg>
@@ -902,7 +1135,7 @@ export default function CommunityPage() {
                         <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0 12px' }}>
                           <span style={{
                             padding: '4px 14px', borderRadius: '50px',
-                            background: 'rgba(0,0,0,0.04)', color: '#6b6b8a',
+                            background: 'rgba(0,0,0,0.04)', color: 'var(--text-secondary)',
                             fontSize: '11px', fontWeight: '700', textTransform: 'uppercase',
                           }}>
                             {formatMessageDate(msg.createdAt)}
@@ -913,11 +1146,11 @@ export default function CommunityPage() {
                         {!isMe && (
                           <div style={{
                             width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-                            background: '#e8eaf0',
-                            boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff',
+                            background: 'var(--surface-2)',
+                            boxShadow: '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
                             display: showAvatar ? 'flex' : 'none',
                             alignItems: 'center', justifyContent: 'center',
-                            fontSize: '11px', fontWeight: '800', color: '#9999b0',
+                            fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)',
                           }}>
                             {msg.sender.name.charAt(0).toUpperCase()}
                           </div>
@@ -926,8 +1159,8 @@ export default function CommunityPage() {
                         <div style={{
                           padding: '8px 14px', borderRadius: '14px',
                           background: 'transparent',
-                          border: '1.5px dashed #c5c7cf',
-                          color: '#9999b0', fontSize: '13px', fontStyle: 'italic',
+                          border: '1.5px dashed var(--neu-dark)',
+                          color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic',
                         }}>
                           Message deleted
                         </div>
@@ -942,7 +1175,7 @@ export default function CommunityPage() {
                       <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0 12px' }}>
                         <span style={{
                           padding: '4px 14px', borderRadius: '50px',
-                          background: 'rgba(0,0,0,0.04)', color: '#6b6b8a',
+                          background: 'rgba(0,0,0,0.04)', color: 'var(--text-secondary)',
                           fontSize: '11px', fontWeight: '700', textTransform: 'uppercase',
                         }}>
                           {formatMessageDate(msg.createdAt)}
@@ -956,12 +1189,12 @@ export default function CommunityPage() {
                           onClick={() => userRole === 'MANAGER' && setSelectedUserDetailsId(msg.sender.id)}
                           style={{
                             width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-                            background: isAdmin ? '#3636e8' : '#e8eaf0',
-                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                            background: isAdmin ? 'var(--primary)' : 'var(--surface-2)',
+                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                             display: showAvatar ? 'flex' : 'none',
                             alignItems: 'center', justifyContent: 'center',
                             fontSize: '11px', fontWeight: '800',
-                            color: isAdmin ? '#fff' : '#6b6b8a',
+                            color: isAdmin ? '#fff' : 'var(--text-secondary)',
                             cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
                           }}
                         >
@@ -972,125 +1205,141 @@ export default function CommunityPage() {
 
                       <div style={{ maxWidth: '75%', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
-                          <div style={{
-                            padding: msg.imageUrl ? '5px 5px 15px 5px' : '7px 12px 15px 12px',
-                            borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                            background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff',
-                            color: '#1e1e3a',
-                            fontSize: '14px', lineHeight: '1.5',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                            minWidth: '80px',
-                            border: isMe ? 'none' : '1px solid #e8eaf0',
-                            position: 'relative',
-                            transition: 'all 0.2s',
-                          }}>
-                            {/* Reply info */}
-                            {msg.replyTo && (
-                              <div 
-                                onClick={() => {
-                                  const el = document.getElementById(`msg-${msg.replyTo!.id}`)
-                                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                                }}
-                                style={{
-                                  background: isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)',
-                                  padding: '8px 12px',
-                                  borderRadius: '10px',
-                                  borderLeft: `4px solid ${isAdmin ? '#3636e8' : '#6b6b8a'}`,
-                                  marginBottom: '8px',
-                                  fontSize: '12px',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: '2px',
-                                  borderTop: '1px solid rgba(0,0,0,0.02)',
-                                  borderRight: '1px solid rgba(0,0,0,0.02)',
-                                  borderBottom: '1px solid rgba(0,0,0,0.02)',
-                                  transition: 'all 0.2s',
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.1)' : 'rgba(54,54,232,0.08)'}
-                                onMouseLeave={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)'}
-                              >
-                                <div style={{ fontWeight: '800', color: isAdmin ? '#3636e8' : '#6b6b8a', fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>{msg.replyTo.sender.name}</span>
-                                </div>
-                                <div style={{ color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '11.5px', lineHeight: '1.4' }}>
-                                  {msg.replyTo.content || (msg.replyTo.imageUrl ? '📷 Image' : 'Message')}
-                                </div>
-                              </div>
-                            )}
-                            {/* Name inside for group/staff */}
-                            {!isMe && showAvatar && (
-                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
-                                <span 
+                          <SwipeableMessage
+                            onSwipeTrigger={() => setReplyingTo(msg)}
+                            onLongPress={() => setSelectedMessage(msg)}
+                            isMe={isMe}
+                            disabled={msg.id.startsWith('temp-')}
+                          >
+                            <div style={{
+                              padding: msg.imageUrl ? '5px 5px 15px 5px' : '7px 12px 15px 12px',
+                              borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                              background: selectedMessage?.id === msg.id
+                                ? '#d0e1fd'
+                                : isMe ? '#dcf8c6' : isAdmin ? '#e0e7ff' : '#ffffff',
+                              // Bubbles stay light (WhatsApp-style) in both themes, so text is a
+                              // constant dark. (This file is in the codemod denylist so these
+                              // literals aren't reverted to var(--text-primary)/var(--primary-light).)
+                              color: '#1e1e3a',
+                              fontSize: '14px', lineHeight: '1.5',
+                              boxShadow: selectedMessage?.id === msg.id
+                                ? '0 0 0 2.5px #3636e8, 0 4px 12px rgba(54,54,232,0.2)'
+                                : '0 2px 4px rgba(0,0,0,0.05)',
+                              minWidth: '80px',
+                              border: selectedMessage?.id === msg.id
+                                ? 'none'
+                                : isMe ? 'none' : '1px solid #e8eaf0',
+                              position: 'relative',
+                              transition: 'all 0.2s',
+                            }}>
+                              {/* Reply info */}
+                              {msg.replyTo && (
+                                <div 
                                   onClick={() => {
-                                    if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
+                                    const el = document.getElementById(`msg-${msg.replyTo!.id}`)
+                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
                                   }}
-                                  style={{ 
-                                    fontSize: '11px', fontWeight: '800', 
-                                    color: isAdmin ? '#3636e8' : '#888',
-                                    cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
-                                    textTransform: 'uppercase',
+                                  style={{
+                                    background: isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)',
+                                    padding: '8px 12px',
+                                    borderRadius: '10px',
+                                    borderLeft: `4px solid ${isAdmin ? 'var(--primary)' : 'var(--text-secondary)'}`,
+                                    marginBottom: '8px',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '2px',
+                                    borderTop: '1px solid rgba(0,0,0,0.02)',
+                                    borderRight: '1px solid rgba(0,0,0,0.02)',
+                                    borderBottom: '1px solid rgba(0,0,0,0.02)',
+                                    transition: 'all 0.2s',
                                   }}
+                                  onMouseEnter={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.1)' : 'rgba(54,54,232,0.08)'}
+                                  onMouseLeave={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)'}
                                 >
-                                  {msg.sender.name}
-                                </span>
-                                {isAdmin && (
-                                  <span style={{ 
-                                    fontSize: '9px', 
-                                    background: 'linear-gradient(135deg, #3636e8, #6366f1)', 
-                                    color: '#fff', 
-                                    padding: '2px 8px', 
-                                    borderRadius: '50px', 
-                                    fontWeight: '800',
-                                    letterSpacing: '0.02em',
-                                    boxShadow: '0 2px 4px rgba(54,54,232,0.2)',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px',
-                                    textTransform: 'capitalize'
-                                  }}>
-                                    {msg.sender.role.toLowerCase()}
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                                      <polyline points="20 6 9 17 4 12"/>
-                                    </svg>
+                                  <div style={{ fontWeight: '800', color: isAdmin ? 'var(--primary)' : '#555', fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>{msg.replyTo.sender.name}</span>
+                                  </div>
+                                  <div style={{ color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '11.5px', lineHeight: '1.4' }}>
+                                    {msg.replyTo.content || (msg.replyTo.imageUrl ? '📷 Image' : 'Message')}
+                                  </div>
+                                </div>
+                              )}
+                              {/* Name inside for group/staff */}
+                              {!isMe && showAvatar && (
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
+                                  <span 
+                                    onClick={() => {
+                                      if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
+                                    }}
+                                    style={{ 
+                                      fontSize: '11px', fontWeight: '800', 
+                                      color: isAdmin ? 'var(--primary)' : '#888',
+                                      cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                                      textTransform: 'uppercase',
+                                    }}
+                                  >
+                                    {msg.sender.name}
                                   </span>
+                                  {isAdmin && (
+                                    <span style={{ 
+                                      fontSize: '9px', 
+                                      background: 'linear-gradient(135deg, #3636e8, #6366f1)', 
+                                      color: '#fff', 
+                                      padding: '2px 8px', 
+                                      borderRadius: '50px', 
+                                      fontWeight: '800',
+                                      letterSpacing: '0.02em',
+                                      boxShadow: '0 2px 4px rgba(54,54,232,0.2)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                      textTransform: 'capitalize'
+                                    }}>
+                                      {msg.sender.role.toLowerCase()}
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                      </svg>
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
+                              {msg.imageUrl && (
+                                <img
+                                  src={msg.imageUrl}
+                                  alt="Shared image"
+                                  onClick={() => setLightboxUrl(msg.imageUrl!)}
+                                  style={{
+                                    maxWidth: '100%', maxHeight: '240px',
+                                    borderRadius: '12px',
+                                    cursor: 'pointer', display: 'block',
+                                    objectFit: 'cover',
+                                    marginBottom: msg.content ? '6px' : '0',
+                                  }}
+                                />
+                              )}
+                              {msg.content && (
+                                <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                  {msg.content}
+                                </div>
+                              )}
+
+                              {/* Time inside bubble */}
+                              <div style={{ 
+                                position: 'absolute', bottom: '2px', right: '10px', 
+                                fontSize: '10px', color: isMe ? '#4a7c44' : 'var(--text-muted)', 
+                                display: 'flex', alignItems: 'center', gap: '3px',
+                                fontWeight: '600',
+                              }}>
+                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {isMe && (
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                                 )}
                               </div>
-                            )}
-
-                            {msg.imageUrl && (
-                              <img
-                                src={msg.imageUrl}
-                                alt="Shared image"
-                                onClick={() => setLightboxUrl(msg.imageUrl!)}
-                                style={{
-                                  maxWidth: '100%', maxHeight: '240px',
-                                  borderRadius: '12px',
-                                  cursor: 'pointer', display: 'block',
-                                  objectFit: 'cover',
-                                  marginBottom: msg.content ? '6px' : '0',
-                                }}
-                              />
-                            )}
-                            {msg.content && (
-                              <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                                {msg.content}
-                              </div>
-                            )}
-
-                            {/* Time inside bubble */}
-                            <div style={{ 
-                              position: 'absolute', bottom: '2px', right: '10px', 
-                              fontSize: '10px', color: isMe ? '#4a7c44' : '#999', 
-                              display: 'flex', alignItems: 'center', gap: '3px',
-                              fontWeight: '600',
-                            }}>
-                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              {isMe && (
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                              )}
                             </div>
-                          </div>
+                          </SwipeableMessage>
 
                           {/* Message Actions (Visible on Hover/Right Side) */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', opacity: 0, transition: 'opacity 0.2s' }} className="msg-actions">
@@ -1101,7 +1350,7 @@ export default function CommunityPage() {
                                 style={{
                                   width: '24px', height: '24px', borderRadius: '50%',
                                   border: 'none', cursor: 'pointer',
-                                  background: '#fff',
+                                  background: 'var(--surface)',
                                   boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 }}
@@ -1114,7 +1363,7 @@ export default function CommunityPage() {
                               style={{
                                 width: '24px', height: '24px', borderRadius: '50%',
                                 border: 'none', cursor: 'pointer',
-                                background: '#fff',
+                                background: 'var(--surface)',
                                 boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                               }}
@@ -1133,7 +1382,7 @@ export default function CommunityPage() {
 
             {/* Input — DMs are two-way: both sides can reply */}
             {(!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? (
-              <div style={{ padding: '14px 20px', borderTop: '1.5px solid rgba(0,0,0,0.06)', textAlign: 'center', color: '#9999b0', fontSize: '13px', fontStyle: 'italic' }}>
+              <div style={{ padding: '14px 20px', borderTop: '1.5px solid rgba(0,0,0,0.06)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle', marginRight: '6px', opacity: 0.6 }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 This community is currently disabled.
               </div>
@@ -1143,18 +1392,18 @@ export default function CommunityPage() {
               {replyingTo && (
                 <div style={{ 
                   marginBottom: '8px', padding: '10px 14px', 
-                  background: '#f0f0ff', borderRadius: '12px',
+                  background: 'var(--primary-light)', borderRadius: '12px',
                   borderLeft: '4px solid #3636e8',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   fontSize: '12px'
                 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: '800', color: '#3636e8', marginBottom: '2px' }}>Replying to {replyingTo.sender.name}</div>
-                    <div style={{ color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontWeight: '800', color: 'var(--primary)', marginBottom: '2px' }}>Replying to {replyingTo.sender.name}</div>
+                    <div style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {replyingTo.content || 'Image'}
                     </div>
                   </div>
-                  <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999' }}>
+                  <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                   </button>
                 </div>
@@ -1165,18 +1414,18 @@ export default function CommunityPage() {
                 <div style={{ 
                   marginBottom: '10px', position: 'relative', display: 'inline-flex', 
                   alignItems: 'flex-end', gap: '8px', padding: '10px 14px', 
-                  borderRadius: '16px', background: '#f0f0ff', 
+                  borderRadius: '16px', background: 'var(--primary-light)', 
                   border: '2px solid #3636e830',
                   boxShadow: '0 4px 12px rgba(54,54,232,0.1)',
                 }}>
                   <img src={pendingImagePreview} alt="Preview" style={{ maxHeight: '100px', maxWidth: '200px', borderRadius: '10px', objectFit: 'cover' }} />
-                  <div style={{ fontSize: '11px', color: '#3636e8', fontWeight: '600' }}>📎 Ready to send</div>
+                  <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '600' }}>📎 Ready to send</div>
                   <button
                     onClick={clearPendingImage}
                     style={{
                       position: 'absolute', top: '-8px', right: '-8px',
                       width: '24px', height: '24px', borderRadius: '50%',
-                      background: '#ef4444', color: '#fff', border: '2px solid #fff',
+                      background: 'var(--danger)', color: '#fff', border: '2px solid var(--border)',
                       cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)',
                     }}
@@ -1184,7 +1433,7 @@ export default function CommunityPage() {
                 </div>
               )}
               {uploadingImage && (
-                <div style={{ marginBottom: '8px', fontSize: '13px', color: '#3636e8', fontWeight: '600' }}>
+                <div style={{ marginBottom: '8px', fontSize: '13px', color: 'var(--primary)', fontWeight: '600' }}>
                   Uploading image...
                 </div>
               )}
@@ -1203,10 +1452,10 @@ export default function CommunityPage() {
                   style={{
                     width: '40px', height: '40px', borderRadius: '50%', border: 'none',
                     cursor: 'pointer', flexShrink: 0,
-                    background: pendingImage ? '#3636e818' : '#e8eaf0',
-                    boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    background: pendingImage ? 'var(--primary-light)' : 'var(--surface-2)',
+                    boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: pendingImage ? '#3636e8' : '#9999b0',
+                    color: pendingImage ? 'var(--primary)' : 'var(--text-muted)',
                     transition: 'all 0.2s',
                   }}
                 >
@@ -1233,7 +1482,7 @@ export default function CommunityPage() {
                       width: '100%', padding: '11px 16px', borderRadius: '50px',
                       border: 'none', outline: 'none',
                       fontFamily: 'inherit', fontSize: '14px',
-                      ...neuInset, color: '#1e1e3a',
+                      ...neuInset, color: 'var(--text-primary)',
                       opacity: (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? 0.6 : 1,
                     }}
                   />
@@ -1246,10 +1495,10 @@ export default function CommunityPage() {
                     width: pendingImage ? 'auto' : '44px',
                     padding: pendingImage ? '0 20px' : '0',
                     cursor: (input.trim() || pendingImage) ? 'pointer' : 'default',
-                    background: (input.trim() || pendingImage) ? selectedClass.color : '#e8eaf0',
-                    color: (input.trim() || pendingImage) ? '#fff' : '#9999b0',
+                    background: (input.trim() || pendingImage) ? selectedClass.color : 'var(--surface-2)',
+                    color: (input.trim() || pendingImage) ? '#fff' : 'var(--text-muted)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, gap: '6px',
-                    boxShadow: (input.trim() || pendingImage) ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    boxShadow: (input.trim() || pendingImage) ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                     transition: 'all 0.2s', fontWeight: '700', fontSize: '13px', fontFamily: 'inherit',
                   }}
                 >
@@ -1270,7 +1519,7 @@ export default function CommunityPage() {
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '900px' }}>
             <div className="modal-header">
               <h3 style={{ fontSize: '16px', fontWeight: '600' }}>{selectedClass.name} Transcript</h3>
-              <button onClick={() => setTranscriptOpen(false)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
+              <button onClick={() => setTranscriptOpen(false)} style={{ color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
@@ -1278,7 +1527,7 @@ export default function CommunityPage() {
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <div style={{ fontSize: '12px', color: '#6b6b8a' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                   Individual transcript for this community only. Deleted and active messages are both shown here.
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -1292,9 +1541,9 @@ export default function CommunityPage() {
 
               <div style={{ maxHeight: '60vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '4px' }}>
                 {loadingTranscript ? (
-                  <div style={{ fontSize: '13px', color: '#9999b0' }}>Loading transcript...</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Loading transcript...</div>
                 ) : transcriptMessages.length === 0 ? (
-                  <div style={{ fontSize: '13px', color: '#9999b0' }}>No transcript messages found for this group.</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No transcript messages found for this group.</div>
                 ) : (
                   transcriptMessages.map(msg => (
                     <div
@@ -1302,8 +1551,8 @@ export default function CommunityPage() {
                       style={{
                         padding: '12px 14px',
                         borderRadius: '14px',
-                        background: msg.isDeleted ? '#fff5f5' : '#f8fafc',
-                        border: msg.isDeleted ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                        background: msg.isDeleted ? 'var(--danger-light)' : 'var(--surface)',
+                        border: msg.isDeleted ? '1px solid var(--border)' : '1px solid var(--border)',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '6px', flexWrap: 'wrap' }}>
@@ -1313,7 +1562,7 @@ export default function CommunityPage() {
                               if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
                             }}
                             style={{ 
-                              fontSize: '12px', fontWeight: '700', color: '#1e1e3a',
+                              fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)',
                               cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
                               textDecoration: userRole === 'MANAGER' ? 'underline' : 'none',
                               textUnderlineOffset: '2px'
@@ -1339,22 +1588,22 @@ export default function CommunityPage() {
                             </svg>
                           </span>
                           {msg.sender.securityNumber && (
-                            <span style={{ fontSize: '10px', background: '#f59e0b22', color: '#f59e0b', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
+                            <span style={{ fontSize: '10px', background: 'var(--warning-light)', color: 'var(--warning)', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
                               {msg.sender.securityNumber}
                             </span>
                           )}
                           {msg.isDeleted && (
-                            <span style={{ fontSize: '10px', background: '#fee2e2', color: '#ef4444', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
+                            <span style={{ fontSize: '10px', background: 'var(--danger-light)', color: 'var(--danger)', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
                               Deleted
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: '11px', color: '#6b6b8a' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                           {new Date(msg.createdAt).toLocaleString()}
                           {msg.deletedAt ? ` • Deleted ${new Date(msg.deletedAt).toLocaleString()}` : ''}
                         </div>
                       </div>
-                      <div style={{ fontSize: '13px', color: '#1e1e3a', whiteSpace: 'pre-wrap' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
                         {msg.content || '[No visible content]'}
                       </div>
                     </div>
@@ -1383,12 +1632,12 @@ export default function CommunityPage() {
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
             <div className="modal-header">
               <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Start Direct Chat</h3>
-              <button onClick={() => { setShowNewDMModal(false); setDmSearch(''); setDmResults([]) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b8a' }}>
+              <button onClick={() => { setShowNewDMModal(false); setDmSearch(''); setDmResults([]) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <p style={{ fontSize: '13px', color: '#6b6b8a', margin: 0 }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
                 Search for a student or admin to start a private direct chat. They will see your messages in the Community tab.
               </p>
               <input
@@ -1401,7 +1650,7 @@ export default function CommunityPage() {
                   searchDMUsers(e.target.value)
                 }}
               />
-              {dmSearching && <div style={{ fontSize: '13px', color: '#9999b0' }}>Searching...</div>}
+              {dmSearching && <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Searching...</div>}
               {dmResults.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
                   {dmResults.map(u => (
@@ -1413,14 +1662,14 @@ export default function CommunityPage() {
                         display: 'flex', alignItems: 'center', gap: '12px',
                         padding: '10px 14px', borderRadius: '14px', border: 'none',
                         cursor: dmStarting ? 'default' : 'pointer', textAlign: 'left',
-                        background: '#e8eaf0', fontFamily: 'inherit',
-                        boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                        background: 'var(--surface-2)', fontFamily: 'inherit',
+                        boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                         transition: 'all 0.15s', opacity: dmStarting ? 0.6 : 1,
                       }}
-                      onMouseEnter={e => { if (!dmStarting) (e.currentTarget as HTMLButtonElement).style.background = '#3636e8'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#e8eaf0'; (e.currentTarget as HTMLButtonElement).style.color = '#1e1e3a' }}
+                      onMouseEnter={e => { if (!dmStarting) (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary)'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)' }}
                     >
-                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#3636e818', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', color: '#3636e8', flexShrink: 0 }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', color: 'var(--primary)', flexShrink: 0 }}>
                         {u.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -1432,7 +1681,7 @@ export default function CommunityPage() {
                 </div>
               )}
               {dmSearch.length >= 2 && !dmSearching && dmResults.length === 0 && (
-                <div style={{ fontSize: '13px', color: '#9999b0', textAlign: 'center', padding: '12px' }}>No users found matching "{dmSearch}"</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '12px' }}>No users found matching "{dmSearch}"</div>
               )}
             </div>
           </div>

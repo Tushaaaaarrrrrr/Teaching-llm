@@ -85,7 +85,7 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
       <div
         className="fade-in feedback-modal-box"
         style={{
-          background: '#ffffff',
+          background: 'var(--surface)',
           width: '100%',
           maxWidth: 'min(800px, calc(100vw - 24px))',
           borderRadius: 'clamp(20px, 4vw, 32px)',
@@ -103,35 +103,35 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
             position: 'absolute',
             top: '16px',
             right: '16px',
-            background: '#f8fafc',
+            background: 'var(--surface)',
             border: 'none',
             width: '36px',
             height: '36px',
             borderRadius: '50%',
             cursor: 'pointer',
-            color: '#64748b',
+            color: 'var(--text-secondary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.2s',
             zIndex: 5,
           }}
-          onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-          onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'var(--surface)'}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
 
-        <h2 style={{ fontSize: 'clamp(20px, 5.4vw, 26px)', fontWeight: '800', color: '#1e1e3a', marginBottom: '6px', paddingRight: '48px', lineHeight: 1.2 }}>
+        <h2 style={{ fontSize: 'clamp(20px, 5.4vw, 26px)', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px', paddingRight: '48px', lineHeight: 1.2 }}>
           Feedback for {courseName}
         </h2>
-        <p style={{ fontSize: 'clamp(13px, 3.4vw, 15px)', color: '#64748b', marginBottom: 'clamp(20px, 5vw, 32px)' }}>
+        <p style={{ fontSize: 'clamp(13px, 3.4vw, 15px)', color: 'var(--text-secondary)', marginBottom: 'clamp(20px, 5vw, 32px)' }}>
           {courseSubject}
         </p>
 
-        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 'clamp(20px, 5vw, 32px)' }}>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'clamp(20px, 5vw, 32px)' }}>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))',
@@ -140,7 +140,7 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
           }}>
             {CATEGORIES.map(cat => (
               <div key={cat.id}>
-                <p style={{ fontSize: 'clamp(13px, 3.6vw, 15px)', fontWeight: '700', color: '#1e1e3a', marginBottom: '10px' }}>{cat.label}</p>
+                <p style={{ fontSize: 'clamp(13px, 3.6vw, 15px)', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '10px' }}>{cat.label}</p>
                 <div className="feedback-stars" style={{ display: 'flex', gap: 'clamp(6px, 2vw, 10px)' }}>
                   {[1, 2, 3, 4, 5].map(star => (
                     <button
@@ -152,7 +152,7 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
                         border: 'none',
                         cursor: 'pointer',
                         padding: 0,
-                        color: ratings[cat.id] >= star ? '#fbbf24' : '#e2e8f0',
+                        color: ratings[cat.id] >= star ? '#fbbf24' : 'var(--surface-2)',
                         transition: 'transform 0.1s ease',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}
@@ -170,7 +170,7 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
           </div>
 
           <div>
-            <p style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', marginBottom: '12px' }}>Additional Comments</p>
+            <p style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px' }}>Additional Comments</p>
             <textarea
               placeholder="Tell us more about your experience..."
               value={comment}
@@ -180,25 +180,25 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
                 height: '120px',
                 padding: '20px',
                 borderRadius: '20px',
-                border: '2px solid #f1f5f9',
+                border: '2px solid var(--border)',
                 fontSize: '15px',
                 fontFamily: 'inherit',
                 resize: 'none',
                 outline: 'none',
                 transition: 'all 0.2s ease',
-                background: '#f8fafc',
+                background: 'var(--surface)',
               }}
               onFocus={e => {
-                e.currentTarget.style.borderColor = '#3636e8'
+                e.currentTarget.style.borderColor = 'var(--primary)'
                 e.currentTarget.style.background = '#fff'
               }}
               onBlur={e => {
-                e.currentTarget.style.borderColor = '#f1f5f9'
-                e.currentTarget.style.background = '#f8fafc'
+                e.currentTarget.style.borderColor = 'var(--surface)'
+                e.currentTarget.style.background = 'var(--surface)'
               }}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>{comment.length}/500</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>{comment.length}/500</span>
             </div>
           </div>
         </div>
@@ -206,17 +206,17 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
         <div style={{ 
           marginTop: '24px', 
           padding: '16px', 
-          background: '#f8fafc', 
+          background: 'var(--surface)', 
           borderRadius: '16px',
-          border: '1px solid #e2e8f0',
+          border: '1px solid var(--border)',
         }}>
-          <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.5' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>
             → Your feedback is completely private. Teachers cannot see your feedback or ratings.
           </p>
         </div>
 
         {error && (
-          <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '16px', fontWeight: '600' }}>{error}</p>
+          <p style={{ color: 'var(--danger)', fontSize: '13px', marginTop: '16px', fontWeight: '600' }}>{error}</p>
         )}
 
         <div className="feedback-modal-footer" style={{ display: 'flex', gap: '10px', marginTop: 'clamp(20px, 5vw, 32px)', flexWrap: 'wrap' }}>
@@ -227,8 +227,8 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
               padding: '14px',
               borderRadius: '50px',
               border: 'none',
-              background: '#f1f5f9',
-              color: '#475569',
+              background: 'var(--surface)',
+              color: 'var(--text-secondary)',
               fontWeight: '700',
               fontSize: '13.5px',
               cursor: 'pointer',
@@ -244,9 +244,9 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
                 flex: 1,
                 padding: '14px',
                 borderRadius: '50px',
-                border: '1px solid #e2e8f0',
-                background: 'white',
-                color: '#64748b',
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                color: 'var(--text-secondary)',
                 fontWeight: '700',
                 fontSize: '13.5px',
                 cursor: 'pointer',

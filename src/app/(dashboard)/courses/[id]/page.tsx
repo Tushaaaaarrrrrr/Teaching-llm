@@ -179,7 +179,7 @@ export default function CourseDetailPage() {
           name: orderData.userName,
           email: orderData.userEmail,
         },
-        theme: { color: '#6366f1' },
+        theme: { color: 'var(--accent)' },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
           // Step 3: Verify payment and upgrade
           setIsProcessing(true)
@@ -216,9 +216,9 @@ export default function CourseDetailPage() {
         },
       }
 
-      setIsProcessing(false)
       const rzp = new (window as unknown as { Razorpay: new (opts: typeof options) => { open: () => void } }).Razorpay(options)
       rzp.open()
+      setIsProcessing(false)
     } catch (e: any) {
       alert(e.message || 'Something went wrong')
       setIsProcessing(false)
@@ -256,16 +256,16 @@ export default function CourseDetailPage() {
   if (isCourseExpired && !isManager) {
     return (
       <div className="page-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <div style={{ textAlign: 'center', background: '#fff', padding: '40px', borderRadius: '32px', boxShadow: '0 20px 40px rgba(0,0,0,0.05)', maxWidth: '500px', width: '100%' }}>
-          <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+        <div style={{ textAlign: 'center', background: 'var(--surface)', padding: '40px', borderRadius: '32px', boxShadow: '0 20px 40px rgba(0,0,0,0.05)', maxWidth: '500px', width: '100%' }}>
+          <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--danger-light)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '16px' }}>Access Expired</h1>
-          <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '16px' }}>Access Expired</h1>
+          <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '32px' }}>
             Your access to <strong>{course.name}</strong> has expired. You can no longer view the course lectures or materials.
           </p>
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-            <Link href="/courses" className="btn btn-ghost" style={{ padding: '12px 24px', borderRadius: '16px', background: '#f1f5f9', color: '#475569', fontWeight: '700' }}>Back to Courses</Link>
+            <Link href="/courses" className="btn btn-ghost" style={{ padding: '12px 24px', borderRadius: '16px', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: '700' }}>Back to Courses</Link>
           </div>
         </div>
       </div>
@@ -284,6 +284,8 @@ export default function CourseDetailPage() {
         progressMap={progressMap}
         updateProgress={updateProgress}
         role={role}
+        setInfoModalCourse={setInfoModalCourse}
+        setUpgradeModalCourse={setUpgradeModalCourse}
       />
     </div>
     {/* Desktop layout */}
@@ -320,7 +322,7 @@ export default function CourseDetailPage() {
               </button>
               <div style={{
                 position: 'absolute', top: 'calc(100% + 8px)', right: '0',
-                background: '#1e1e3a', color: '#fff', padding: '8px 14px', borderRadius: '12px',
+                background: 'var(--text-primary)', color: '#fff', padding: '8px 14px', borderRadius: '12px',
                 fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
                 boxShadow: '0 8px 25px rgba(0,0,0,0.4)', pointerEvents: 'none',
                 opacity: showUpgradeHint ? 1 : 0, 
@@ -329,7 +331,7 @@ export default function CourseDetailPage() {
                 lineHeight: '1.4'
               }} className="info-tooltip">
                 Click here to see difference between PLUS AND PRO batches
-                <div style={{ position: 'absolute', bottom: '100%', right: '10px', border: '6px solid transparent', borderBottomColor: '#1e1e3a' }} />
+                <div style={{ position: 'absolute', bottom: '100%', right: '10px', border: '6px solid transparent', borderBottomColor: 'var(--text-primary)' }} />
               </div>
             </div>
           )}
@@ -391,14 +393,14 @@ export default function CourseDetailPage() {
                       onMouseEnter={() => setShowUpgradeHint(true)}
                       onMouseLeave={() => setShowUpgradeHint(false)}
                       style={{
-                        background: '#fff', color: '#1e1e3a', padding: '6px 16px', borderRadius: '50px',
+                        background: 'var(--surface)', color: 'var(--text-primary)', padding: '6px 16px', borderRadius: '50px',
                         fontSize: '12px', fontWeight: '800', border: 'none', cursor: 'pointer',
                         display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                         transition: 'all 0.2s',
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      <span style={{ fontSize: '8px', background: '#f3f4f6', padding: '1px 6px', borderRadius: '10px', color: '#6b6b8a' }}>OPTIONAL</span>
+                      <span style={{ fontSize: '8px', background: 'var(--bg)', padding: '1px 6px', borderRadius: '10px', color: 'var(--text-secondary)' }}>OPTIONAL</span>
                       ⚡ Upgrade to PRO
                     </button>
                   </div>
@@ -449,7 +451,7 @@ export default function CourseDetailPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ 
               width: '48px', height: '48px', borderRadius: '12px', 
-              background: '#f59e0b15', color: '#f59e0b',
+              background: 'var(--warning-light)', color: 'var(--warning)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0
             }}>
@@ -458,8 +460,8 @@ export default function CourseDetailPage() {
               </svg>
             </div>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#92400e', marginBottom: '2px' }}>Exam is Live</h3>
-              <p style={{ fontSize: '13px', color: '#b45309', opacity: 0.9 }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--warning)', marginBottom: '2px' }}>Exam is Live</h3>
+              <p style={{ fontSize: '13px', color: 'var(--warning)', opacity: 0.9 }}>
                 You have an active exam for this course: <strong>{activeExam.title}</strong>
               </p>
             </div>
@@ -467,7 +469,7 @@ export default function CourseDetailPage() {
           <Link 
             href={`/exams/${activeExam.id}`}
             style={{ 
-              background: '#f59e0b', color: 'white', padding: '10px 24px', 
+              background: 'var(--warning)', color: 'white', padding: '10px 24px', 
               borderRadius: '12px', fontSize: '14px', fontWeight: '600',
               border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
               boxShadow: '0 4px 12px rgba(245, 158, 11, 0.25)',
@@ -487,7 +489,7 @@ export default function CourseDetailPage() {
             <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
           </svg>
           <p style={{ fontSize: '15px', fontWeight: '500', marginBottom: '4px' }}>No content yet</p>
-          <p style={{ fontSize: '13px', color: '#9999b0' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
             {isManager ? 'Go to Manage Course to add topics and lectures.' : 'Content will appear here once the teacher adds it.'}
           </p>
           {isManager && (
@@ -519,8 +521,8 @@ export default function CourseDetailPage() {
                     {String(topicIdx + 1).padStart(2, '0')}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '15px', fontWeight: '600', color: '#1e1e3a' }}>{topic.title}</div>
-                    <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)' }}>{topic.title}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                       {topic.content.length} lecture{topic.content.length !== 1 ? 's' : ''}
                     </div>
                   </div>
@@ -537,7 +539,7 @@ export default function CourseDetailPage() {
               {expandedTopics.has(topic.id) && (
                 <div style={{ borderTop: '1px solid #d8dae3', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '60px' }}>
                   {topic.content.length === 0 ? (
-                    <div style={{ padding: '20px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
+                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                       No lectures in this topic yet
                     </div>
                   ) : (
@@ -549,8 +551,8 @@ export default function CourseDetailPage() {
                           display: 'flex', alignItems: 'center', gap: '14px',
                           padding: '12px 20px',
                           borderRadius: '24px',
-                          background: '#e8eaf0',
-                          boxShadow: '5px 5px 10px #c5c7cf, -5px -5px 10px #ffffff',
+                          background: 'var(--surface-2)',
+                          boxShadow: '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)',
                           transition: 'box-shadow 0.2s',
                           flexWrap: 'wrap',
                         }}
@@ -559,7 +561,7 @@ export default function CourseDetailPage() {
                         <div style={{
                           width: '32px', height: '32px', borderRadius: '8px',
                           background: item.videoUrl ? course.color + '12' : '#f0f0f5',
-                          color: item.videoUrl ? course.color : '#9999b0',
+                          color: item.videoUrl ? course.color : 'var(--text-muted)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         }}>
                           {item.videoUrl ? (
@@ -571,7 +573,7 @@ export default function CourseDetailPage() {
 
                         {/* Title + description */}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e1e3a', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
                             {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
                               <span style={{
@@ -586,7 +588,7 @@ export default function CourseDetailPage() {
                             )}
                           </div>
                           {item.description && (
-                            <p style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {item.description}
                             </p>
                           )}
@@ -601,8 +603,8 @@ export default function CourseDetailPage() {
                                 onClick={() => updateProgress(item.id, progressMap[item.id] === 'COMPLETED' ? 'NOT_STARTED' : 'COMPLETED')}
                                 style={{
                                   background: progressMap[item.id] === 'COMPLETED' ? '#22c55e20' : 'transparent',
-                                  color: progressMap[item.id] === 'COMPLETED' ? '#16a34a' : '#94a3b8',
-                                  border: `1px solid ${progressMap[item.id] === 'COMPLETED' ? '#22c55e' : '#cbd5e1'}`,
+                                  color: progressMap[item.id] === 'COMPLETED' ? 'var(--success)' : 'var(--text-muted)',
+                                  border: `1px solid ${progressMap[item.id] === 'COMPLETED' ? 'var(--success)' : 'var(--text-muted)'}`,
                                   padding: '6px 12px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
                                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
                                   transition: 'all 0.2s'
@@ -615,8 +617,8 @@ export default function CourseDetailPage() {
                                 onClick={() => updateProgress(item.id, progressMap[item.id] === 'REWATCH' ? 'NOT_STARTED' : 'REWATCH')}
                                 style={{
                                   background: progressMap[item.id] === 'REWATCH' ? '#eab30820' : 'transparent',
-                                  color: progressMap[item.id] === 'REWATCH' ? '#ca8a04' : '#94a3b8',
-                                  border: `1px solid ${progressMap[item.id] === 'REWATCH' ? '#eab308' : '#cbd5e1'}`,
+                                  color: progressMap[item.id] === 'REWATCH' ? '#ca8a04' : 'var(--text-muted)',
+                                  border: `1px solid ${progressMap[item.id] === 'REWATCH' ? '#eab308' : 'var(--text-muted)'}`,
                                   padding: '6px 12px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
                                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
                                   transition: 'all 0.2s'
@@ -673,30 +675,30 @@ export default function CourseDetailPage() {
           padding: '20px'
         }} onClick={() => setInfoModalCourse(null)}>
           <div style={{
-            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '750px',
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '750px',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
             animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '1.5px solid #e2e8f0', position: 'relative' }}>
-              <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '25px', right: '30px', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ padding: '30px 40px', background: 'linear-gradient(135deg, var(--surface-2), var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '25px', right: '30px', background: 'var(--surface)', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
-              <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Batch Comparison</h2>
-              <p style={{ fontSize: '15px', color: '#64748b', fontWeight: '500' }}>Choose the experience that fits your learning style</p>
+              <h2 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Batch Comparison</h2>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', fontWeight: '500' }}>Choose the experience that fits your learning style</p>
             </div>
 
             {/* Comparison Table */}
             <div style={{ padding: '30px 40px' }}>
-              <div style={{ borderRadius: '24px', overflow: 'hidden', border: '1.5px solid #e2e8f0', background: '#fff' }}>
+              <div style={{ borderRadius: '24px', overflow: 'hidden', border: '1.5px solid var(--border)', background: 'var(--surface)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
-                    <tr style={{ background: '#f8fafc' }}>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#92400e', fontWeight: '800', background: '#fffbeb', textAlign: 'center' }}>
+                    <tr style={{ background: 'var(--surface)' }}>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: 'var(--warning)', fontWeight: '800', background: 'var(--warning-light)', textAlign: 'center' }}>
                         {['FREE', 'DEMO'].includes(infoModalCourse?.enrollmentType || '') ? 'General Batch' : 'PLUS ( Recorded )'}
                       </th>
-                      <th style={{ padding: '18px 24px', fontSize: '13px', color: '#4338ca', fontWeight: '800', background: '#eef2ff', textAlign: 'center' }}>PRO ( LIVE )</th>
+                      <th style={{ padding: '18px 24px', fontSize: '13px', color: 'var(--primary-dark)', fontWeight: '800', background: 'var(--primary-light)', textAlign: 'center' }}>PRO ( LIVE )</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -708,10 +710,10 @@ export default function CourseDetailPage() {
                       { f: 'Weekly Mentorship', g: '❌ No', p: '✅ Every Sunday' },
                       { f: 'Priority Support', g: '❌ Standard', p: '✅ 24/7 Priority' },
                     ].map((row, i) => (
-                      <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#334155', fontWeight: '600' }}>{row.f}</td>
-                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#92400e', textAlign: 'center', background: '#fffdf5' }}>{row.g}</td>
-                        <td style={{ padding: '16px 24px', fontSize: '14px', color: '#4338ca', fontWeight: '700', textAlign: 'center', background: '#f5f7ff' }}>{row.p}</td>
+                      <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '600' }}>{row.f}</td>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: 'var(--warning)', textAlign: 'center', background: 'var(--warning-light)' }}>{row.g}</td>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '700', textAlign: 'center', background: 'var(--surface)' }}>{row.p}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -720,7 +722,7 @@ export default function CourseDetailPage() {
             </div>
 
             <div style={{ padding: '0 40px 40px', textAlign: 'center' }}>
-              <button onClick={() => setInfoModalCourse(null)} style={{ background: '#1e293b', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ background: 'var(--primary)', color: 'white', padding: '14px 40px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 Got it, thanks!
               </button>
             </div>
@@ -737,8 +739,8 @@ export default function CourseDetailPage() {
           padding: '20px'
         }} onClick={() => !upgrading && setUpgradeModalCourse(null)}>
           <div style={{
-            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
-            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
             animation: 'modalSlideUp 0.3s ease-out', position: 'relative'
           }} onClick={e => e.stopPropagation()}>
             {upgrading ? (
@@ -746,8 +748,8 @@ export default function CourseDetailPage() {
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', marginBottom: '24px' }}>
                   <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/>
                 </svg>
-                <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b', marginBottom: '12px' }}>Processing Payment...</h2>
-                <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '12px' }}>Processing Payment...</h2>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', textAlign: 'center' }}>
                   Please wait while we securely process your transaction.<br/>Do not close or refresh this page.
                 </p>
                 <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
@@ -756,26 +758,26 @@ export default function CourseDetailPage() {
               <div style={{ padding: '40px', textAlign: 'center' }}>
                 <button 
                   onClick={() => setUpgradeModalCourse(null)}
-                  style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: '#94a3b8', cursor: 'pointer', lineHeight: 1 }}
+                  style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: 'var(--text-muted)', cursor: 'pointer', lineHeight: 1 }}
                 >&times;</button>
-                <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#ffffff', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'var(--surface)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 </div>
-                <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
-                <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
-                <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '32px' }}>
+                <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
+                <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '32px' }}>
                   You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
                 </p>
                 
-                <div style={{ background: '#f8faff', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid #e0e7ff' }}>
-                  <div style={{ fontSize: '36px', fontWeight: '900', color: '#6366f1', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '600' }}>One-time upgrade fee</div>
+                <div style={{ background: 'var(--surface)', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid var(--border)' }}>
+                  <div style={{ fontSize: '36px', fontWeight: '900', color: 'var(--accent)', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
+                  <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600' }}>One-time upgrade fee</div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '14px' }}>
                   <button 
                     onClick={() => setUpgradeModalCourse(null)} 
-                    style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid #e2e8f0', background: 'white', color: '#64748b', fontWeight: '700', cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}
                   >
                     Cancel
                   </button>
@@ -793,7 +795,7 @@ export default function CourseDetailPage() {
                   </button>
                 </div>
                 
-                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '24px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '24px' }}>
                   Course will be updated automatically after Payment
                 </div>
               </div>
@@ -818,21 +820,21 @@ export default function CourseDetailPage() {
           padding: '20px'
         }} onClick={() => setUpgradeSuccessOrderId(null)}>
           <div style={{
-            background: '#ffffff', borderRadius: '32px', width: '100%', maxWidth: '440px',
-            boxShadow: '0 0 100px rgba(255, 255, 255, 0.4), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px', textAlign: 'center',
             animation: 'modalSlideUp 0.3s ease-out'
           }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
-            <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Welcome to PRO!</h2>
-            <p style={{ fontSize: '15px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Welcome to PRO!</h2>
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
               Your upgrade was successful. You now have full access to live classes, mentorship, and priority support.
             </p>
-            <div style={{ background: '#f0fdf4', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid #bbf7d0' }}>
-              <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
-              <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
+            <div style={{ background: 'var(--success-light)', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid var(--border)' }}>
+              <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--success)', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
             </div>
-            <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
             <button
               onClick={() => setUpgradeSuccessOrderId(null)}
               style={{
@@ -856,7 +858,7 @@ export default function CourseDetailPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           <div style={{
-            background: 'white', padding: '40px', borderRadius: '32px',
+            background: 'var(--surface)', padding: '40px', borderRadius: '32px',
             textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
             width: '320px'
           }}>
@@ -865,14 +867,222 @@ export default function CourseDetailPage() {
               borderTop: '4px solid #6366f1', borderRadius: '50%',
               margin: '0 auto 20px'
             }} />
-            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Processing...</h3>
-            <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Please wait while we set up your course access.</p>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Processing...</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>Please wait while we set up your course access.</p>
           </div>
         </div>
       )}
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>
+
+    {/* ── Modals (shared between mobile & desktop) ── */}
+      {/* Info Modal */}
+      {infoModalCourse && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          padding: '20px'
+        }} onClick={() => setInfoModalCourse(null)}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '750px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
+            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+          }} onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div style={{ padding: '24px 24px', background: 'linear-gradient(135deg, var(--surface-2), var(--border))', borderBottom: '1.5px solid var(--border)', position: 'relative' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'var(--surface)', border: 'none', width: '36px', height: '36px', borderRadius: '12px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px' }}>Batch Comparison</h2>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: '500' }}>Choose the experience that fits your learning style</p>
+            </div>
+
+            {/* Comparison Table wrapper with swipe-to-scroll for mobile */}
+            <div style={{ padding: '20px 20px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <div style={{ borderRadius: '20px', overflow: 'hidden', border: '1.5px solid var(--border)', background: 'var(--surface)', minWidth: '460px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--surface)' }}>
+                      <th style={{ padding: '14px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Features</th>
+                      <th style={{ padding: '14px 16px', fontSize: '12px', color: 'var(--warning)', fontWeight: '800', background: 'var(--warning-light)', textAlign: 'center' }}>
+                        {['FREE', 'DEMO'].includes(infoModalCourse?.enrollmentType || '') ? 'General Batch' : 'PLUS ( Recorded )'}
+                      </th>
+                      <th style={{ padding: '14px 16px', fontSize: '12px', color: 'var(--primary-dark)', fontWeight: '800', background: 'var(--primary-light)', textAlign: 'center' }}>PRO ( LIVE )</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { f: 'Course Lectures', g: '✅ Full Access', p: '✅ Full Access' },
+                      { f: 'Course Materials', g: '✅ Full Access', p: '✅ Full Access' },
+                      { f: 'Live Classes', g: '❌ No Access', p: '✅ Direct Entry' },
+                      { f: 'Direct Q&A with Teacher', g: '❌ No', p: '✅ Yes (Live)' },
+                      { f: 'Weekly Mentorship', g: '❌ No', p: '✅ Every Sunday' },
+                      { f: 'Priority Support', g: '❌ Standard', p: '✅ 24/7 Priority' },
+                    ].map((row, i) => (
+                      <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>{row.f}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--warning)', textAlign: 'center', background: 'var(--warning-light)' }}>{row.g}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--primary-dark)', fontWeight: '700', textAlign: 'center', background: 'var(--surface)' }}>{row.p}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={{ padding: '0 20px 24px', textAlign: 'center' }}>
+              <button onClick={() => setInfoModalCourse(null)} style={{ background: 'var(--primary)', color: 'white', padding: '12px 36px', borderRadius: '14px', fontSize: '14px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+                Got it, thanks!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Confirmation Modal */}
+      {upgradeModalCourse && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px'
+        }} onClick={() => !upgrading && setUpgradeModalCourse(null)}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
+            animation: 'modalSlideUp 0.3s ease-out', position: 'relative'
+          }} onClick={e => e.stopPropagation()}>
+            {upgrading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', marginBottom: '24px' }}>
+                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/>
+                </svg>
+                <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '12px' }}>Processing Payment...</h2>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', textAlign: 'center' }}>
+                  Please wait while we securely process your transaction.<br/>Do not close or refresh this page.
+                </p>
+                <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
+              </div>
+            ) : (
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <button
+                  onClick={() => setUpgradeModalCourse(null)}
+                  style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: 'var(--text-muted)', cursor: 'pointer', lineHeight: 1 }}
+                >&times;</button>
+                <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'var(--surface)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
+                <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '32px' }}>
+                  You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
+                </p>
+
+                <div style={{ background: 'var(--surface)', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid var(--border)' }}>
+                  <div style={{ fontSize: '36px', fontWeight: '900', color: 'var(--accent)', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
+                  <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600' }}>One-time upgrade fee</div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '14px' }}>
+                  <button
+                    onClick={() => setUpgradeModalCourse(null)}
+                    style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleUpgrade(upgradeModalCourse.id)}
+                    style={{
+                      flex: 1.5, padding: '16px', borderRadius: '18px', border: 'none',
+                      background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                      color: 'white', fontWeight: '700', cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                    }}
+                  >
+                    ✓ Confirm Upgrade
+                  </button>
+                </div>
+
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '24px' }}>
+                  Course will be updated automatically after Payment
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes modalSlideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}} />
+
+      {/* Upgrade Success Modal */}
+      {upgradeSuccessOrderId && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px'
+        }} onClick={() => setUpgradeSuccessOrderId(null)}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', textAlign: 'center',
+            animation: 'modalSlideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Welcome to PRO!</h2>
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
+              Your upgrade was successful. You now have full access to live classes, mentorship, and priority support.
+            </p>
+            <div style={{ background: 'var(--success-light)', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid var(--border)' }}>
+              <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--success)', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
+            <button
+              onClick={() => setUpgradeSuccessOrderId(null)}
+              style={{
+                width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+                background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
+              }}
+            >
+              Got it, let&apos;s go! 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Processing Modal */}
+      {isProcessing && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(8px)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'var(--surface)', padding: '40px', borderRadius: '32px',
+            textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+            width: '320px'
+          }}>
+            <div className="spinner" style={{
+              width: '40px', height: '40px', border: '4px solid #f3f3f3',
+              borderTop: '4px solid #6366f1', borderRadius: '50%',
+              margin: '0 auto 20px'
+            }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Processing...</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>Please wait while we set up your course access.</p>
+          </div>
+        </div>
+      )}
     </>
   )
 }

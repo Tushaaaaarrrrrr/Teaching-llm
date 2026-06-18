@@ -3,10 +3,10 @@ import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
   appId: 'com.teaching.lms',
-  appName: 'Teaching LMS',
+  appName: 'GenZ IITIAN',
   webDir: 'public',
   server: {
-    url: 'https://teaching-llm.onrender.com',
+    url: 'https://class.genziitian.in',
     androidScheme: 'https',
   },
   plugins: {
@@ -14,9 +14,9 @@ const config: CapacitorConfig = {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
     SplashScreen: {
-      launchShowDuration: 0,
-      launchAutoHide: false,
-      backgroundColor: '#e8eaf0',
+      launchShowDuration: 3000,
+      launchAutoHide: true,
+      backgroundColor: '#ffffff',
       androidSplashResourceName: 'splash',
       showSpinner: false,
     },

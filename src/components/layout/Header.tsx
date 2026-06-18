@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import useSWR from 'swr'
 import { getDefaultAvatar } from '@/lib/avatar'
@@ -22,7 +22,7 @@ interface Notification {
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/dashboard':  { title: 'Dashboard',        subtitle: 'Welcome back to your learning hub' },
-  '/courses/explore': { title: '',            subtitle: '' },
+  '/courses/explore': { title: 'GenZ IITian Official Store', subtitle: 'You can also buy courses from ' },
   '/courses':    { title: 'Courses',          subtitle: 'Manage your enrolled subjects and lectures' },
   '/academics':  { title: 'Academics',        subtitle: 'Everything for your learning journey' },
   '/menu':       { title: 'Profile',          subtitle: 'View and edit your personal information' },
@@ -33,11 +33,13 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
     '/community':  { title: 'Community',         subtitle: 'Connect with your coursemates' },
   '/announcements': { title: 'Announcements',  subtitle: 'Stay updated with the latest news' },
   '/support':    { title: 'Contact & Support', subtitle: 'Raise a ticket or chat with support' },
-  '/manage':     { title: 'Manage Content',    subtitle: 'Create and edit courses, lectures, and sessions' },
-  '/manage/prompts': { title: '', subtitle: '' },
-  '/manage/prompts/[id]/responses': { title: '', subtitle: '' },
+  '/manage/prompts/': { title: 'Prompt Responses', subtitle: 'View gathered feedback from users' },
+  '/manage/prompts': { title: 'User Prompts', subtitle: 'Create and manage quick feedback prompts for users' },
   '/manage/updates': { title: 'Update System', subtitle: 'Manage greetings, updates, and user messages' },
   '/manage/coupons': { title: 'Coupon Management', subtitle: 'Create and manage discount coupons' },
+  '/manage':     { title: 'Manage Content',    subtitle: 'Create and edit courses, lectures, and sessions' },
+  '/company/about-us': { title: 'About Us', subtitle: 'Learn more about GenZ IITian and our team' },
+  '/company/': { title: 'Company Policy', subtitle: 'View terms, privacy and company details' },
   '/admin':      { title: 'User Management',   subtitle: 'Manage platform accounts and permissions' },
   '/profile':    { title: 'My Profile',         subtitle: 'View and edit your personal information' },
   '/settings':   { title: 'Settings',          subtitle: 'Manage passwords, appearance, and notifications' },
@@ -56,13 +58,15 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  INFO: '#3b82f6', SUCCESS: '#10b981', WARNING: '#f59e0b', ERROR: '#ef4444',
-  info: '#3b82f6', success: '#10b981', warning: '#f59e0b', error: '#ef4444',
+  INFO: 'var(--info)', SUCCESS: 'var(--success)', WARNING: 'var(--warning)', ERROR: 'var(--danger)',
+  info: 'var(--info)', success: 'var(--success)', warning: 'var(--warning)', error: 'var(--danger)',
 }
 
 export default function Header({ userName, userRole }: HeaderProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const tab = searchParams.get('tab')
   // const [notifications, setNotifications] = useState<Notification[]>([]) - Removed in favor of SWR
   const [showNotif, setShowNotif] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -72,6 +76,12 @@ export default function Header({ userName, userRole }: HeaderProps) {
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   const fetcher = (url: string) => fetch(url).then(r => r.json())
+
+  const stripFcmMeta = (content: string): string => {
+    const metaRegex = /<!-- fcm_meta:({.*?}) -->$/
+    return content.replace(metaRegex, '').trim()
+  }
+
   const { data: notificationsData, mutate: mutateNotifications } = useSWR('/api/notifications', fetcher, {
     revalidateOnFocus: true,
   })
@@ -110,10 +120,30 @@ export default function Header({ userName, userRole }: HeaderProps) {
     .sort((a, b) => b.length - a.length)
     .find(key => key === pathname || (key !== '/dashboard' && pathname.startsWith(key)))
 
-  const pageInfo = matchedKey ? PAGE_TITLES[matchedKey] : { title: 'Dashboard', subtitle: '' }
+  let pageInfo = matchedKey ? { ...PAGE_TITLES[matchedKey] } : { title: 'Dashboard', subtitle: '' }
+
+  // Dynamic Tab Overrides for Manage Sub-dashboards
+  if (pathname === '/manage') {
+    const MANAGE_TAB_INFO: Record<string, { title: string; subtitle: string }> = {
+      courses: { title: 'Manage Courses', subtitle: 'Create and edit subjects and schedules' },
+      offerings: { title: 'Course Offerings', subtitle: 'Configure premium recorded and live access tiers' },
+      bundles: { title: 'Course Bundles', subtitle: 'Group multiple courses into packages' },
+      lectures: { title: 'Lectures Manager', subtitle: 'Upload and schedule course lecture videos' },
+      events: { title: 'Events & Live Sessions', subtitle: 'Create and manage online classes, exams and holidays' },
+      materials: { title: 'Study Materials', subtitle: 'Manage downloadable notes and PDFs for subjects' },
+      announcements: { title: 'Announcements Fan-Out', subtitle: 'Publish platform-wide announcements and update notifications' },
+      'content-bank': { title: 'Content Bank', subtitle: 'Global repository of exam questions and solutions' },
+      notifications: { title: 'Push Notifications', subtitle: 'Broadcast notifications and marketing campaigns to students' },
+      'home-slides': { title: 'Home Carousel Banners', subtitle: 'Manage promotional slides shown on student dashboard' },
+    }
+    const tabInfo = MANAGE_TAB_INFO[tab || 'courses']
+    if (tabInfo) {
+      pageInfo = tabInfo
+    }
+  }
 
   // Pages that get the time-based greeting headline on desktop instead of the page title.
-  const greetingPages = new Set(['/dashboard', '/courses'])
+  const greetingPages = new Set(['/dashboard'])
   const showGreetingHeadline = matchedKey ? greetingPages.has(matchedKey) : false
 
   const getGreeting = () => {
@@ -241,10 +271,10 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   const neuIconStyle = {
     width: '40px', height: '40px', borderRadius: '50%',
-    background: '#e8eaf0',
-    boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+    background: 'var(--sidebar-bg)',
+    boxShadow: 'var(--shadow)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#6b6b8a', cursor: 'pointer',
+    color: 'var(--text-secondary)', cursor: 'pointer',
     transition: 'box-shadow 0.2s ease', border: 'none', flexShrink: 0,
     outline: 'none',
   } as React.CSSProperties
@@ -254,7 +284,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   return (
     <header style={{
-      height: showGreetingHeadline ? '140px' : '96px', background: '#e8eaf0',
+      height: showGreetingHeadline ? '140px' : '96px', background: 'var(--sidebar-bg)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
       transition: 'height 0.3s ease',
@@ -278,11 +308,11 @@ export default function Header({ userName, userRole }: HeaderProps) {
           <a href="/profile" className="mobile-header-greeting" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
             <div style={{
               width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
-              background: '#ffffff',
-              boxShadow: '4px 4px 10px #c5c7cf, -4px -4px 10px #ffffff',
+              background: 'var(--surface)',
+              boxShadow: 'var(--shadow)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               overflow: 'hidden',
-              border: '2px solid #ffffff',
+              border: '2px solid var(--neu-light)',
             }}>
               <img
                 src={currentAvatar}
@@ -292,11 +322,14 @@ export default function Header({ userName, userRole }: HeaderProps) {
               />
             </div>
             <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '15px', fontWeight: 900, color: '#1e1e3a', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.2px' }}>
+              <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.2px', display: 'flex', alignItems: 'baseline', gap: '5px', flexWrap: 'nowrap' }}>
                 {mounted ? getGreeting().heading : 'Welcome'},
+                <span style={{ fontSize: '17px', fontWeight: 700, color: 'var(--primary)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+                  {firstName}
+                </span>
               </span>
-              <span style={{ fontSize: '20px', fontWeight: 700, color: '#3636e8', lineHeight: 1.15, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.4px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
-                {firstName}
+              <span style={{ fontSize: '11.5px', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.3, marginTop: '3px', fontFamily: "'Outfit', 'Nunito', sans-serif" }}>
+                {mounted ? getGreeting().subtext : 'Loading your dashboard...'}
               </span>
             </div>
           </a>
@@ -305,7 +338,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
         {/* Mobile-only title (shown on non-home pages) */}
         {!isHomePage && (
           <div className="mobile-header-back-title" style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: '18px', fontWeight: '800', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.3px' }}>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.3px' }}>
               {pageInfo.title}
             </span>
           </div>
@@ -317,7 +350,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
             <h1 style={{
               fontSize: '56px',
               fontWeight: '900',
-              color: '#1e1e3a',
+              color: 'var(--text-primary)',
               lineHeight: '1.0',
               letterSpacing: '-1.5px',
               display: 'flex',
@@ -330,7 +363,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
               <span style={{
                 fontSize: '40px',
                 fontWeight: '700',
-                color: '#3636e8',
+                color: 'var(--primary)',
                 letterSpacing: '-0.8px',
                 opacity: 0.9,
                 fontFamily: "'Outfit', 'Nunito', sans-serif"
@@ -340,7 +373,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
             </h1>
             <p style={{
               fontSize: '16.5px',
-              color: '#6b6b8a',
+              color: 'var(--text-secondary)',
               marginTop: '6px',
               fontWeight: '500',
               letterSpacing: '0.01em',
@@ -352,11 +385,36 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </>
         ) : (
           <>
-            <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e1e3a', lineHeight: '1.2', letterSpacing: '-0.5px' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.2', letterSpacing: '-0.5px' }}>
               {pageInfo.title}
             </h1>
             {pageInfo.subtitle ? (
-              <p style={{ fontSize: '13px', color: '#9999b0', marginTop: '2px' }}>{pageInfo.subtitle}</p>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', fontWeight: '500' }}>
+                {pageInfo.subtitle}
+                {matchedKey === '/courses/explore' && (
+                  <a 
+                    href="https://app.genziitian.in/courses" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ 
+                      color: '#fff', 
+                      textDecoration: 'none', 
+                      backgroundColor: 'var(--accent)', 
+                      padding: '3px 10px', 
+                      borderRadius: '6px', 
+                      fontWeight: '600', 
+                      cursor: 'pointer', 
+                      display: 'inline-flex', 
+                      alignItems: 'center',
+                      transition: 'all 0.2s', 
+                      fontSize: '11px',
+                      boxShadow: '0 2px 4px rgba(99, 102, 241, 0.2)'
+                    }}
+                  >
+                    Visit Here
+                  </a>
+                )}
+              </p>
             ) : null}
           </>
         )}
@@ -365,13 +423,29 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
 
+        {/* Download App Button — links to professional download page */}
+        <a
+          href="/download"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="download-btn"
+          title="Download Android APP"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span className="download-btn-text">Download APP</span>
+        </a>
+
         {/* Notification bell */}
         <div ref={notifRef} className="header-notif" style={{ position: 'relative' }}>
           <button
             style={{ ...neuIconStyle, position: 'relative' }}
             onClick={() => setShowNotif(v => !v)}
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--shadow-sm)')}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = 'var(--shadow)')}
             title="Notifications & Announcements"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -382,7 +456,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
               <span style={{
                 position: 'absolute', top: '6px', right: '6px',
                 minWidth: '16px', height: '16px', borderRadius: '50%',
-                background: '#ef4444', border: '2px solid #e8eaf0',
+                background: 'var(--danger)', border: '2px solid var(--sidebar-bg)',
                 fontSize: '9px', fontWeight: '800', color: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
               }}>
@@ -397,23 +471,23 @@ export default function Header({ userName, userRole }: HeaderProps) {
               style={{
                 position: 'absolute', right: 0, top: 'calc(100% + 10px)',
                 width: 'min(340px, calc(100vw - 24px))', borderRadius: '20px',
-                background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
+                background: 'var(--sidebar-bg)', boxShadow: 'var(--shadow-lg)',
                 zIndex: 200, overflow: 'hidden',
               }}
             >
-              <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1.5px solid rgba(0,0,0,0.06)' }}>
-                <span style={{ fontWeight: '800', fontSize: '14px', color: '#1e1e3a' }}>
-                  Notifications {unreadCount > 0 && <span style={{ color: '#3636e8' }}>({unreadCount})</span>}
+              <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1.5px solid var(--border)' }}>
+                <span style={{ fontWeight: '800', fontSize: '14px', color: 'var(--text-primary)' }}>
+                  Notifications {unreadCount > 0 && <span style={{ color: 'var(--primary)' }}>({unreadCount})</span>}
                 </span>
                 {unreadCount > 0 && (
-                  <button onClick={markAllRead} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#3636e8', fontWeight: '700', fontFamily: 'inherit' }}>
+                  <button onClick={markAllRead} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--primary)', fontWeight: '700', fontFamily: 'inherit' }}>
                     Mark all read
                   </button>
                 )}
               </div>
               <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
                 {notifications.length === 0 ? (
-                  <div style={{ padding: '30px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
+                  <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                     No notifications yet
                   </div>
                 ) : notifications.slice(0, 15).map(n => (
@@ -422,7 +496,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
                     onClick={() => markRead(n.id, n.announcementId)}
                     style={{
                       padding: '12px 18px', cursor: 'pointer',
-                      borderBottom: '1px solid rgba(0,0,0,0.04)',
+                      borderBottom: '1px solid var(--border-light)',
                       background: n.isRead ? 'transparent' : 'rgba(54,54,232,0.04)',
                       transition: 'background 0.15s',
                       display: 'flex', gap: '12px', alignItems: 'flex-start',
@@ -432,16 +506,19 @@ export default function Header({ userName, userRole }: HeaderProps) {
                   >
                     <div style={{
                       width: '8px', height: '8px', borderRadius: '50%', marginTop: '5px', flexShrink: 0,
-                      background: n.isRead ? '#c5c7cf' : (TYPE_COLORS[n.type] || '#3b82f6'),
+                      background: n.isRead ? 'var(--text-muted)' : (TYPE_COLORS[n.type] || 'var(--info)'),
                     }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', fontWeight: n.isRead ? '500' : '700', color: '#1e1e3a', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '13px', fontWeight: n.isRead ? '500' : '700', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {n.title}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {n.content.length > 60 ? n.content.slice(0, 57) + '…' : n.content}
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {(() => {
+                          const cleanText = stripFcmMeta(n.content)
+                          return cleanText.length > 60 ? cleanText.slice(0, 57) + '…' : cleanText
+                        })()}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#b0b2ba', marginTop: '3px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
                         {new Date(n.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
@@ -455,16 +532,16 @@ export default function Header({ userName, userRole }: HeaderProps) {
         {/* User pill with dropdown */}
         <div ref={userMenuRef} className="header-profile" style={{ position: 'relative' }}>
           <div
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: '#e8eaf0', boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff', cursor: 'pointer', transition: 'box-shadow 0.2s ease', outline: 'none' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: 'var(--sidebar-bg)', boxShadow: 'var(--shadow)', cursor: 'pointer', transition: 'box-shadow 0.2s ease', outline: 'none' }}
             onClick={() => setShowUserMenu(v => !v)}
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff')}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--shadow-sm)')}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = 'var(--shadow)')}
             title="My Account & Profile"
           >
             <div style={{
               width: '32px', height: '32px', borderRadius: '50%',
-              background: '#ffffff',
-              boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+              background: 'var(--surface)',
+              boxShadow: 'var(--shadow-sm)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               overflow: 'hidden',
             }}>
@@ -476,8 +553,8 @@ export default function Header({ userName, userRole }: HeaderProps) {
               />
             </div>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e1e3a', lineHeight: '1.2' }}>{currentUserName}</div>
-              <div style={{ fontSize: '11px', color: '#9999b0', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: '1.2' }}>{currentUserName}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
                 {currentUserRole.charAt(0) + currentUserRole.slice(1).toLowerCase()}
                 {currentUserRole !== 'STUDENT' && (
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
@@ -496,7 +573,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
             <div style={{
               position: 'absolute', right: 0, top: 'calc(100% + 10px)',
               width: '200px', borderRadius: '16px',
-              background: '#e8eaf0', boxShadow: '10px 10px 20px #bdbfc7, -10px -10px 20px #ffffff',
+              background: 'var(--sidebar-bg)', boxShadow: 'var(--shadow-lg)',
               zIndex: 200, overflow: 'hidden', padding: '6px',
             }}>
               <button
@@ -505,7 +582,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
                   display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
                   padding: '10px 14px', borderRadius: '12px', border: 'none',
                   background: 'transparent', cursor: 'pointer', fontSize: '13px',
-                  fontWeight: '500', color: '#1e1e3a', fontFamily: 'inherit',
+                  fontWeight: '500', color: 'var(--text-primary)', fontFamily: 'inherit',
                   transition: 'background 0.15s',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(54,54,232,0.06)')}
@@ -523,7 +600,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
                   display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
                   padding: '10px 14px', borderRadius: '12px', border: 'none',
                   background: 'transparent', cursor: 'pointer', fontSize: '13px',
-                  fontWeight: '500', color: '#1e1e3a', fontFamily: 'inherit',
+                  fontWeight: '500', color: 'var(--text-primary)', fontFamily: 'inherit',
                   transition: 'background 0.15s',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(54,54,232,0.06)')}
@@ -535,14 +612,14 @@ export default function Header({ userName, userRole }: HeaderProps) {
                 </svg>
                 Settings
               </button>
-              <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)', margin: '4px 10px' }} />
+              <div style={{ height: '1px', background: 'var(--border)', margin: '4px 10px' }} />
               <button
                 onClick={() => { setShowUserMenu(false); handleLogout() }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
                   padding: '10px 14px', borderRadius: '12px', border: 'none',
                   background: 'transparent', cursor: 'pointer', fontSize: '13px',
-                  fontWeight: '500', color: '#ef4444', fontFamily: 'inherit',
+                  fontWeight: '500', color: 'var(--danger)', fontFamily: 'inherit',
                   transition: 'background 0.15s',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}

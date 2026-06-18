@@ -94,7 +94,7 @@ export default function FreeMaterialsPage() {
   }
 
   if (isLoading) {
-    return <div className="page-container fade-in"><div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading Free Materials...</div></div>
+    return <div className="page-container fade-in"><div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading Free Materials...</div></div>
   }
 
   return (
@@ -113,7 +113,7 @@ export default function FreeMaterialsPage() {
       </div>
 
       {!materials || materials.length === 0 ? (
-        <div className="card" style={{ padding: '60px 20px', textAlign: 'center', color: '#6b6b8a' }}>
+        <div className="card" style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
           No free materials available yet.
         </div>
       ) : (
@@ -123,11 +123,11 @@ export default function FreeMaterialsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ fontSize: '28px' }}>{getFileIcon(mat.fileType)}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {mat.title}
                   </div>
                   {mat.description && (
-                    <div style={{ fontSize: '12px', color: '#6b6b8a', marginTop: '2px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                       {mat.description}
                     </div>
                   )}
@@ -135,13 +135,13 @@ export default function FreeMaterialsPage() {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: mat.sourceType === 'LINK' ? '#dbeafe' : '#d1fae5', color: mat.sourceType === 'LINK' ? '#0ea5e9' : '#10b981', fontWeight: '600' }}>
+                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: mat.sourceType === 'LINK' ? 'var(--info-light)' : 'var(--success-light)', color: mat.sourceType === 'LINK' ? 'var(--info)' : 'var(--success)', fontWeight: '600' }}>
                   {mat.sourceType === 'LINK' ? 'LINK' : (mat.fileType || 'File').toUpperCase()}
                 </span>
                 {mat.fileSize && (
-                  <span style={{ fontSize: '11px', color: '#9999b0' }}>{mat.fileSize}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{mat.fileSize}</span>
                 )}
-                <span style={{ fontSize: '11px', color: '#9999b0', marginLeft: 'auto' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
                   {new Date(mat.uploadedAt).toLocaleDateString('en-GB')}
                 </span>
               </div>
@@ -157,7 +157,7 @@ export default function FreeMaterialsPage() {
                   {mat.sourceType === 'LINK' ? 'Open Link' : 'Download / View'}
                 </a>
                 {canManage && (
-                  <button onClick={() => handleDelete(mat.id)} className="btn btn-ghost" style={{ padding: '0 12px', color: '#ef4444', borderColor: '#fee2e2' }}>
+                  <button onClick={() => handleDelete(mat.id)} className="btn btn-ghost" style={{ padding: '0 12px', color: 'var(--danger)', borderColor: 'var(--danger-light)' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
                   </button>
                 )}
@@ -173,7 +173,7 @@ export default function FreeMaterialsPage() {
           onClick={() => setShowModal(false)}
         >
           <div className="modal" style={{ width: '500px', maxWidth: '95vw', padding: '28px' }} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '20px', color: '#1e1e3a' }}>Add Free Material</h2>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '20px', color: 'var(--text-primary)' }}>Add Free Material</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group">
                 <label className="form-label">Title *</label>
@@ -189,7 +189,7 @@ export default function FreeMaterialsPage() {
               <div className="form-group">
                 <label className="form-label">Source Type *</label>
                 <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'FILE' ? '#6366f1' : '#e5e7eb'}`, background: sourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'FILE' ? 'var(--accent)' : 'var(--surface-2)'}`, background: sourceType === 'FILE' ? 'var(--primary-light)' : 'transparent' }}>
                     <input
                       type="radio"
                       name="sourceType"
@@ -198,9 +198,9 @@ export default function FreeMaterialsPage() {
                       onChange={() => setSourceType('FILE')}
                       style={{ cursor: 'pointer' }}
                     />
-                    <span style={{ fontSize: '14px', fontWeight: sourceType === 'FILE' ? '600' : '500', color: '#1e1e3a' }}>📄 Upload File</span>
+                    <span style={{ fontSize: '14px', fontWeight: sourceType === 'FILE' ? '600' : '500', color: 'var(--text-primary)' }}>📄 Upload File</span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'LINK' ? '#6366f1' : '#e5e7eb'}`, background: sourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${sourceType === 'LINK' ? 'var(--accent)' : 'var(--surface-2)'}`, background: sourceType === 'LINK' ? 'var(--primary-light)' : 'transparent' }}>
                     <input
                       type="radio"
                       name="sourceType"
@@ -209,7 +209,7 @@ export default function FreeMaterialsPage() {
                       onChange={() => setSourceType('LINK')}
                       style={{ cursor: 'pointer' }}
                     />
-                    <span style={{ fontSize: '14px', fontWeight: sourceType === 'LINK' ? '600' : '500', color: '#1e1e3a' }}>🔗 External Link</span>
+                    <span style={{ fontSize: '14px', fontWeight: sourceType === 'LINK' ? '600' : '500', color: 'var(--text-primary)' }}>🔗 External Link</span>
                   </label>
                 </div>
               </div>

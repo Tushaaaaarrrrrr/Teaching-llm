@@ -69,7 +69,7 @@ export function RichTextDisplay({ text }: { text: string | undefined | null }) {
   const parts = text.split(/(```[\s\S]*?```)/g);
 
   return (
-    <div style={{ wordBreak: 'break-word', color: '#1e1e3a' }}>
+    <div style={{ wordBreak: 'break-word', color: 'var(--text-primary)' }}>
       {parts.map((part, index) => {
         // CODE BLOCK RENDERING
         if (part.startsWith('```') && part.endsWith('```')) {
@@ -103,7 +103,7 @@ export function RichTextDisplay({ text }: { text: string | undefined | null }) {
               </pre>
             );
           }
-          return <pre key={index} style={{ background: '#f8f9fc', padding: '12px', borderRadius: '8px', fontFamily: 'monospace' }}><code>{part.replace(/```/g, '')}</code></pre>;
+          return <pre key={index} style={{ background: 'var(--surface-2)', padding: '12px', borderRadius: '8px', fontFamily: 'monospace' }}><code>{part.replace(/```/g, '')}</code></pre>;
         }
         
         // MATH & PLAIN TEXT RENDERING
