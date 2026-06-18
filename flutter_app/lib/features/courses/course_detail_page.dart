@@ -296,8 +296,8 @@ class _Hero extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      _CircleBtn(icon: Icons.bookmark_outline),
-                      const SizedBox(width: 8),
+                      // Bookmark removed — not wired to anything yet, was
+                      // clutter; share remains as a useful primary action.
                       _CircleBtn(icon: Icons.ios_share_outlined),
                     ],
                   ),
@@ -501,19 +501,9 @@ class _MentorRow extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text('Message',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.brandDk,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                )),
-          ),
+          // Message button removed — mentor messaging isn't wired yet, so
+          // showing it would be misleading. Mentor name + role chip alone
+          // is enough until the chat surface is built.
         ],
       ),
     );

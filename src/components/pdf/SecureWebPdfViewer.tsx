@@ -40,6 +40,10 @@ export default function SecureWebPdfViewer({
   const [numPages, setNumPages] = useState<number>(0)
   const [pageNumber, setPageNumber] = useState<number>(1)
   const [error, setError] = useState<string | null>(null)
+  // PDF.js fires onLoadProgress while the binary downloads. We surface that
+  // as a real percentage in the loading state so the student isn't staring
+  // at a static "Loading..." for big files.
+  const [loadProgress, setLoadProgress] = useState<number>(0)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [containerWidth, setContainerWidth] = useState<number>(800)
 
@@ -183,13 +187,23 @@ export default function SecureWebPdfViewer({
             <Document
               file={fileUrl}
               options={documentOptions}
-              onLoadSuccess={({ numPages: n }) => setNumPages(n)}
+              onLoadSuccess={({ numPages: n }) => {
+                setNumPages(n)
+                setLoadProgress(1) // pin to 100 once parse completes
+              }}
               onLoadError={e => setError(e?.message || 'Failed to load PDF')}
-              loading={
-                <div style={{ padding: '40px', color: 'rgba(255,255,255,0.7)' }}>
-                  Loading material…
-                </div>
-              }
+              onLoadProgress={({ loaded, total }) => {
+                // PDF.js sometimes reports total=0 when the server doesn't
+                // send Content-Length (range responses do). Show an
+                // indeterminate "loaded so far" hint in that case.
+                if (total && total > 0) {
+                  setLoadProgress(Math.min(1, loaded / total))
+                } else if (loaded > 0) {
+                  // Fake a slow ramp toward 90% so the user sees motion.
+                  setLoadProgress(p => Math.min(0.9, p + 0.05))
+                }
+              }}
+              loading={<LoadingState progress={loadProgress} />}
               error={null}
             >
               <Page
@@ -229,6 +243,84 @@ function pagerBtnStyle(disabled: boolean): React.CSSProperties {
     alignItems: 'center',
     justifyContent: 'center',
   }
+}
+
+/**
+ * Loading panel with a real percentage. PDF.js' onLoadProgress feeds the
+ * `progress` prop (0–1). Renders a thin circular ring + a percentage label
+ * so the user can see things are actually moving, not just sitting on
+ * a spinner.
+ */
+function LoadingState({ progress }: { progress: number }) {
+  const pct = Math.round(progress * 100)
+  // SVG circle progress ring: circumference = 2πr; offset shrinks as
+  // progress grows so the stroke "fills" clockwise from the top.
+  const size = 72
+  const stroke = 5
+  const r = (size - stroke) / 2
+  const circumference = 2 * Math.PI * r
+  const dashOffset = circumference * (1 - Math.max(0, Math.min(1, progress)))
+  return (
+    <div
+      style={{
+        padding: '60px 20px',
+        color: 'rgba(255,255,255,0.85)',
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '14px',
+      }}
+    >
+      <div style={{ position: 'relative', width: size, height: size }}>
+        <svg
+          width={size}
+          height={size}
+          style={{ transform: 'rotate(-90deg)' }}
+          aria-hidden
+        >
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="rgba(255,255,255,0.12)"
+            strokeWidth={stroke}
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="#4F46E5"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={dashOffset}
+            style={{ transition: 'stroke-dashoffset 220ms ease-out' }}
+          />
+        </svg>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '13px',
+            fontWeight: 800,
+            color: '#fff',
+            fontFeatureSettings: '"tnum"',
+          }}
+        >
+          {pct}%
+        </div>
+      </div>
+      <div style={{ fontSize: '13px', fontWeight: 600 }}>
+        {pct < 100 ? 'Loading material…' : 'Rendering page…'}
+      </div>
+    </div>
+  )
 }
 
 /**
