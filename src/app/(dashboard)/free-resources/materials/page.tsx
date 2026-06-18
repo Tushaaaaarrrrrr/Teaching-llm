@@ -397,15 +397,30 @@ export default function FreeMaterialsPage() {
               </div>
 
               <div style={{ marginTop: 'auto', display: 'flex', gap: '8px' }}>
-                <a
-                  href={mat.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-primary"
-                  style={{ flex: 1, textAlign: 'center', textDecoration: 'none', fontSize: '13px' }}
-                >
-                  {mat.sourceType === 'LINK' ? 'Open Link' : 'Download / View'}
-                </a>
+                {/* For PDFs we route through the watermarked in-browser
+                    viewer; everything else opens the raw URL in a new tab. */}
+                {mat.sourceType !== 'LINK' && (
+                  (mat.fileType || '').toLowerCase().includes('pdf') ||
+                  /\.pdf(\?|$)/i.test(mat.fileUrl)
+                ) ? (
+                  <a
+                    href={`/free-resources/materials/${mat.id}/view`}
+                    className="btn btn-primary"
+                    style={{ flex: 1, textAlign: 'center', textDecoration: 'none', fontSize: '13px' }}
+                  >
+                    Open Viewer
+                  </a>
+                ) : (
+                  <a
+                    href={mat.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-primary"
+                    style={{ flex: 1, textAlign: 'center', textDecoration: 'none', fontSize: '13px' }}
+                  >
+                    {mat.sourceType === 'LINK' ? 'Open Link' : 'Download / View'}
+                  </a>
+                )}
                 {canManage && (
                   <button onClick={() => handleDelete(mat.id)} className="btn btn-ghost" style={{ padding: '0 12px', color: '#ef4444', borderColor: '#fee2e2' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
