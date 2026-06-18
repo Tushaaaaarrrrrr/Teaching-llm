@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
@@ -98,6 +99,7 @@ class FreeResourcesPage extends ConsumerWidget {
                       exploreColor: AppColors.brand,
                       loading: coursesAsync.isLoading,
                       error: coursesAsync.hasError,
+                      onTap: () => context.push('/courses'),
                     ),
                     const SizedBox(height: 16),
                     _BigCard(
@@ -108,7 +110,7 @@ class FreeResourcesPage extends ConsumerWidget {
                       ],
                       title: 'Free Materials',
                       desc:
-                          'Download study materials available for free — no enrollment needed.',
+                          'Notes, PYQs, and assignments organised by level and subject.',
                       pillLabel: materialsCount == 0
                           ? '0 MATERIALS AVAILABLE'
                           : '$materialsCount ${materialsCount == 1 ? 'MATERIAL' : 'MATERIALS'} AVAILABLE',
@@ -117,6 +119,7 @@ class FreeResourcesPage extends ConsumerWidget {
                       exploreColor: AppColors.green,
                       loading: materialsAsync.isLoading,
                       error: materialsAsync.hasError,
+                      onTap: () => context.push('/free-resources/materials'),
                     ),
                     const SizedBox(height: 16),
                     _BigCard(
@@ -136,6 +139,7 @@ class FreeResourcesPage extends ConsumerWidget {
                       exploreColor: AppColors.amber,
                       loading: purchasedAsync.isLoading,
                       error: purchasedAsync.hasError,
+                      onTap: () => context.push('/free-resources/purchased'),
                     ),
                   ],
                 ),
@@ -160,6 +164,7 @@ class _BigCard extends StatelessWidget {
     required this.exploreColor,
     required this.loading,
     required this.error,
+    required this.onTap,
   });
   final IconData icon;
   final List<Color> iconBg;
@@ -171,13 +176,26 @@ class _BigCard extends StatelessWidget {
   final Color exploreColor;
   final bool loading;
   final bool error;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: _buildBody(),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.line),
         boxShadow: AppShadows.md,

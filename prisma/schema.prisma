@@ -271,11 +271,21 @@ model Material {
   updatedAt    DateTime @updatedAt
   isGlobal     Boolean  @default(false)
   isFree       Boolean  @default(false)
+  // Taxonomy for the free-resources browser. Students filter by level + subject
+  // and switch tabs (ASSIGNMENT / PYQ / NOTE / OTHER). Free-form strings on
+  // level + subject so we don't need a migration for each new term — values
+  // auto-populate the dropdowns from /api/free-resources/materials/options.
+  category     String   @default("NOTE")
+  level        String?
+  subject      String?
+  term         String?
   course       Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
   uploadedBy   User     @relation("MaterialUploader", fields: [uploadedById], references: [id])
 
   @@index([courseId])
   @@index([uploadedById])
+  @@index([category])
+  @@index([level, subject])
 }
 
 model CourseEvent {

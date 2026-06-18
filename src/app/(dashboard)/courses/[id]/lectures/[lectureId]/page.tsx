@@ -651,17 +651,15 @@ export default function LecturePage() {
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>PDF / Presentation / Notes</div>
                     </div>
                   </div>
-                  <a 
-                    href={content.pptUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    style={{ 
+                  <Link
+                    href={`/material/${content.id}/view`}
+                    style={{
                       background: 'var(--accent)', color: 'white', textDecoration: 'none', textAlign: 'center',
                       padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
                     }}
                   >
-                    Download Material
-                  </a>
+                    Open Viewer
+                  </Link>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
@@ -912,20 +910,18 @@ export default function LecturePage() {
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>PDF / Presentation / Notes</div>
                     </div>
                   </div>
-                  <a 
-                    href={content.pptUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    style={{ 
+                  <Link
+                    href={`/material/${content.id}/view`}
+                    style={{
                       background: 'var(--accent)', color: 'white', textDecoration: 'none', textAlign: 'center',
                       padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
                       transition: 'opacity 0.2s'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '0.9'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
                   >
-                    Download Material
-                  </a>
+                    Open Viewer
+                  </Link>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>

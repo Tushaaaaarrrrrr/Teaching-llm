@@ -4,6 +4,11 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import {
+  IITM_LEVELS,
+  IITM_SUBJECTS_BY_LEVEL,
+  IITM_ALL_SUBJECTS,
+} from '@/lib/iitm-taxonomy'
 
 export type Tab = 'courses' | 'offerings' | 'bundles' | 'lectures' | 'events' | 'materials' | 'announcements' | 'content-bank' | 'notifications' | 'home-slides'
 
@@ -418,7 +423,29 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           payload = { ...formData, sourceType: materialSourceType };
         }
 
-        const res = await fetch(url, {
+        // When the manager flags a material as a Free Resource, route the
+        // POST to /api/free-resources/materials so it's saved with
+        // isFree=true / courseId=null and gets indexed by the Flutter Free
+        // Materials browser. PUT (edit) still hits the regular endpoint
+        // because /api/materials/[id] handles both flavors via the body.
+        let postUrl = url
+        if (tab === 'materials' && !editId && (formData as any).isFreeResource) {
+          postUrl = '/api/free-resources/materials'
+          payload = {
+            title: formData.title,
+            description: formData.description,
+            fileUrl: formData.fileUrl,
+            fileType: formData.fileType,
+            fileSize: formData.fileSize,
+            sourceType: materialSourceType,
+            category: formData.category || 'NOTE',
+            level: formData.level || null,
+            subject: formData.subject || null,
+            term: formData.term || null,
+          }
+        }
+
+        const res = await fetch(postUrl, {
           method: editId ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -804,13 +831,78 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
       case 'materials':
         return (
           <>
+            {/* Free Resource toggle — when on, this material lands in the
+                Flutter Free Materials browser (Level → Subject → 3 tabs)
+                instead of being scoped to one course. */}
             <div className="form-group">
-              <label className="form-label">Subject *</label>
-              <select className="form-input" value={f.courseId || ''} onChange={e => set('courseId', e.target.value)}>
-                <option value="">Select subject...</option>
-                {courseOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '12px', borderRadius: '8px', border: `2px solid ${f.isFreeResource ? '#10b981' : '#e5e7eb'}`, background: f.isFreeResource ? '#ecfdf5' : 'transparent' }}>
+                <input
+                  type="checkbox"
+                  checked={!!f.isFreeResource}
+                  onChange={e => set('isFreeResource', e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e1e3a' }}>
+                  📂 Free Resource (visible in app's Free Materials browser)
+                </span>
+              </label>
             </div>
+            {f.isFreeResource ? (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Type *</label>
+                    <select className="form-input" value={f.category || 'NOTE'} onChange={e => set('category', e.target.value)}>
+                      <option value="NOTE">📘 Notes</option>
+                      <option value="PYQ">📝 PYQ</option>
+                      <option value="ASSIGNMENT">✍️ Assignment</option>
+                      <option value="OTHER">📁 Other</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Level</label>
+                    <input className="form-input" value={f.level || ''} onChange={e => set('level', e.target.value)} placeholder="e.g. Foundation / Diploma / Degree" list="level-options" />
+                    <datalist id="level-options">
+                      {IITM_LEVELS.map(l => (<option key={l} value={l} />))}
+                    </datalist>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Subject</label>
+                    <input
+                      className="form-input"
+                      value={f.subject || ''}
+                      onChange={e => set('subject', e.target.value)}
+                      placeholder="e.g. Maths 1, Stats 1, MLF"
+                      list="subject-options"
+                    />
+                    {/* Narrow the suggestions to the chosen Level when set;
+                        show every curated IITM subject when not. Managers can
+                        still type a custom subject the curated list doesn't
+                        cover. */}
+                    <datalist id="subject-options">
+                      {(f.level && IITM_SUBJECTS_BY_LEVEL[f.level as keyof typeof IITM_SUBJECTS_BY_LEVEL]
+                        ? IITM_SUBJECTS_BY_LEVEL[f.level as keyof typeof IITM_SUBJECTS_BY_LEVEL]
+                        : IITM_ALL_SUBJECTS
+                      ).map(s => (<option key={s} value={s} />))}
+                    </datalist>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Term</label>
+                    <input className="form-input" value={f.term || ''} onChange={e => set('term', e.target.value)} placeholder="e.g. Term 1 · 2024" />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="form-group">
+                <label className="form-label">Subject *</label>
+                <select className="form-input" value={f.courseId || ''} onChange={e => set('courseId', e.target.value)}>
+                  <option value="">Select subject...</option>
+                  {courseOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            )}
             <div className="form-group"><label className="form-label">Topic Name *</label><input className="form-input" value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="e.g. Week 1 Slides" /></div>
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} rows={2} style={{ resize: 'vertical' }} /></div>
 
