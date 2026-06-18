@@ -14,6 +14,7 @@ interface CourseInfo {
   isDisabled?: boolean
   isExpired?: boolean
   isEffectivelyDisabled?: boolean
+  expiresAt?: string | Date | null
 }
 
 interface CourseBundleInfo {
@@ -52,6 +53,12 @@ interface ManagerUserModalProps {
 export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerUserModalProps) {
   const { confirm, confirmDialog } = useConfirmDialog()
   const router = useRouter()
+
+  const isCourseExpiredClient = (course: CourseInfo) => {
+    if (!course.expiresAt) return false
+    const expiresAt = course.expiresAt instanceof Date ? course.expiresAt : new Date(course.expiresAt)
+    return expiresAt.getTime() <= Date.now()
+  }
   const [user, setUser] = useState<User|null>(null)
   const [courses, setCourses] = useState<CourseInfo[]>([])
   const [bundles, setBundles] = useState<CourseBundleInfo[]>([])
@@ -195,7 +202,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             state: formData.state,
             courseIds: formData.courseIds.filter(id => {
               const course = courses.find(c => c.id === id)
-              return !course?.isExpired
+              return course ? !isCourseExpiredClient(course) : true
             }),
             bundleIds: formData.bundleIds,
             enrollmentTypes: formData.enrollmentTypes,
@@ -513,7 +520,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     <div style={{ flex: 1.5 }}>
                       <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Course Enrollments</label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                        {courses.filter(c => formData.courseIds.includes(c.id) && !c.isExpired).map(c => {
+                        {courses.filter(c => formData.courseIds.includes(c.id) && !isCourseExpiredClient(c)).map(c => {
                           const enrollType = formData.enrollmentTypes[c.id] || 'LIVE'
                           const isLive = enrollType === 'LIVE'
                           return (
@@ -580,7 +587,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                               value=""
                            >
                              <option value="">+ Add Course</option>
-                             {courses.filter(c => !formData.courseIds.includes(c.id) && !bundledCourseIds.has(c.id) && !c.isEffectivelyDisabled).map(c => (
+                             {courses.filter(c => !formData.courseIds.includes(c.id) && !bundledCourseIds.has(c.id) && !c.isDisabled && !isCourseExpiredClient(c)).map(c => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
                              ))}
                            </select>

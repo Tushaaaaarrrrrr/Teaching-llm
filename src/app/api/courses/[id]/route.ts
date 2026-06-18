@@ -140,8 +140,8 @@ export async function GET(
       ...cData,
       courseEvents: filteredCourseEvents, // Use filtered events based on enrollment type
       enrollmentType: userEnrollmentType,
-      isExpired: isCourseExpired(cData),
-      isEffectivelyDisabled: isCourseEffectivelyDisabled(cData),
+      isExpired: hasManagerLevelAccess ? false : isCourseExpired(cData),
+      isEffectivelyDisabled: hasManagerLevelAccess ? false : isCourseEffectivelyDisabled(cData),
       _count: {
         ...cData._count,
         topics: topicsCount,
