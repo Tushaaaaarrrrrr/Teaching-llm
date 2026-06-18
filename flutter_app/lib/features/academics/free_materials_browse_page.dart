@@ -139,19 +139,19 @@ class _FreeMaterialsBrowsePageState
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: optionsAsync.when(
-                loading: () => const _PickerSkeleton(),
-                error: (_, __) => _PickerSkeleton(error: true),
-                data: (opts) => _LevelSubjectPicker(
-                  options: opts,
-                  level: _level,
-                  subject: _subject,
-                  onLevel: (l) => setState(() {
-                    _level = l;
-                    _subject = null; // reset subject when level changes
-                  }),
-                  onSubject: (s) => setState(() => _subject = s),
-                ),
+              // Always render the picker so the page never feels broken.
+              // When the options endpoint is loading or errored we just show
+              // empty dropdowns with the "Any" placeholder — the student can
+              // still browse all materials by leaving filters off.
+              child: _LevelSubjectPicker(
+                options: optionsAsync.valueOrNull ?? const {},
+                level: _level,
+                subject: _subject,
+                onLevel: (l) => setState(() {
+                  _level = l;
+                  _subject = null; // reset subject when level changes
+                }),
+                onSubject: (s) => setState(() => _subject = s),
               ),
             ),
             const SizedBox(height: 14),
@@ -295,32 +295,14 @@ class _DropdownTile extends StatelessWidget {
   }
 }
 
-class _PickerSkeleton extends StatelessWidget {
-  const _PickerSkeleton({this.error = false});
-  final bool error;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.line),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        error ? "Couldn't load filters" : 'Loading filters…',
-        style: AppTypography.bodyMuted.copyWith(fontSize: 12),
-      ),
-    );
-  }
-}
-
 class _TabBar extends StatelessWidget {
   const _TabBar({required this.controller});
   final TabController controller;
   @override
   Widget build(BuildContext context) {
+    // Single-line text labels (no inline icons) so they fit in narrow phone
+    // widths without the yellow overflow ribbon. The category icon still
+    // shows in the empty state body, which is plenty of context.
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
@@ -332,29 +314,22 @@ class _TabBar extends StatelessWidget {
         controller: controller,
         labelColor: AppColors.textInverse,
         unselectedLabelColor: AppColors.muted,
-        labelStyle:
-            AppTypography.title.copyWith(fontSize: 12.5, fontWeight: FontWeight.w800),
-        unselectedLabelStyle:
-            AppTypography.title.copyWith(fontSize: 12.5, fontWeight: FontWeight.w600),
+        labelStyle: AppTypography.title.copyWith(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w800,
+        ),
+        unselectedLabelStyle: AppTypography.title.copyWith(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
+        ),
+        labelPadding: EdgeInsets.zero,
         indicator: BoxDecoration(
           color: AppColors.brand,
           borderRadius: BorderRadius.circular(11),
         ),
         indicatorPadding: const EdgeInsets.all(4),
         dividerColor: Colors.transparent,
-        tabs: [
-          for (final c in _Category.values)
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(c.icon, size: 14),
-                  const SizedBox(width: 6),
-                  Text(c.label),
-                ],
-              ),
-            ),
-        ],
+        tabs: [for (final c in _Category.values) Tab(text: c.label)],
       ),
     );
   }
