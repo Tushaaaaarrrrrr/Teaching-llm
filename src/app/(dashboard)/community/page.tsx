@@ -528,8 +528,8 @@ export default function CommunityPage() {
 
   const isDM = (cls: ClassItem | null) => cls?.isDirectChat === true
 
-  const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
-  const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
+  const neu = { background: 'var(--community-item-bg)', boxShadow: '6px 6px 12px var(--community-item-shadow-dark), -6px -6px 12px var(--community-item-shadow-light)' }
+  const neuInset = { background: 'var(--community-item-bg)', boxShadow: 'inset 4px 4px 8px var(--community-item-shadow-dark), inset -4px -4px 8px var(--community-item-shadow-light)' }
 
 
   return (
@@ -575,11 +575,13 @@ export default function CommunityPage() {
               borderRadius: isMobile ? '20px' : '18px', border: 'none',
               cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
               transition: 'all 0.2s',
-              background: active ? cls.color : (isMobile ? '#ffffff' : '#e8eaf0'),
-              color: active ? '#fff' : '#1e1e3a',
+              background: active ? cls.color : (isMobile ? 'var(--community-item-bg-mobile)' : 'var(--community-item-bg)'),
+              color: active ? '#fff' : 'var(--community-item-text)',
               boxShadow: active
-                ? `5px 5px 14px ${cls.color}55, -3px -3px 8px rgba(255,255,255,0.6)`
-                : (isMobile ? '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff' : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff'),
+                ? `5px 5px 14px ${cls.color}55, -3px -3px 8px var(--community-item-shadow-light)`
+                : (isMobile
+                  ? '6px 6px 14px var(--community-item-shadow-dark), -6px -6px 14px var(--community-item-shadow-light)'
+                  : '4px 4px 8px var(--community-item-shadow-dark), -4px -4px 8px var(--community-item-shadow-light)'),
               position: 'relative',
               minHeight: isMobile ? '64px' : 'auto',
             }}
@@ -692,11 +694,11 @@ export default function CommunityPage() {
                   padding: '10px 14px', borderRadius: '18px', border: 'none',
                   cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
                   transition: 'all 0.2s',
-                  background: selectedClass?.id === cls.id ? '#3636e8' : '#e8eaf0',
-                  color: selectedClass?.id === cls.id ? '#fff' : '#1e1e3a',
+                  background: selectedClass?.id === cls.id ? '#3636e8' : 'var(--community-item-bg)',
+                  color: selectedClass?.id === cls.id ? '#fff' : 'var(--community-item-text)',
                   boxShadow: selectedClass?.id === cls.id
-                    ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px rgba(255,255,255,0.6)'
-                    : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                    ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px var(--community-item-shadow-light)'
+                    : '4px 4px 8px var(--community-item-shadow-dark), -4px -4px 8px var(--community-item-shadow-light)',
                   opacity: cls.isDmDisabled ? 0.55 : 1,
                   position: 'relative'
                 }}
@@ -766,7 +768,7 @@ export default function CommunityPage() {
                   : selectedClass.name.substring(0, 2).toUpperCase()}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
                 </div>
                 {isDM(selectedClass) ? (
@@ -1233,7 +1235,7 @@ export default function CommunityPage() {
                       width: '100%', padding: '11px 16px', borderRadius: '50px',
                       border: 'none', outline: 'none',
                       fontFamily: 'inherit', fontSize: '14px',
-                      ...neuInset, color: '#1e1e3a',
+                      ...neuInset, color: 'var(--text-primary)',
                       opacity: (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? 0.6 : 1,
                     }}
                   />
@@ -1313,7 +1315,7 @@ export default function CommunityPage() {
                               if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
                             }}
                             style={{ 
-                              fontSize: '12px', fontWeight: '700', color: '#1e1e3a',
+                              fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)',
                               cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
                               textDecoration: userRole === 'MANAGER' ? 'underline' : 'none',
                               textUnderlineOffset: '2px'
@@ -1354,7 +1356,7 @@ export default function CommunityPage() {
                           {msg.deletedAt ? ` • Deleted ${new Date(msg.deletedAt).toLocaleString()}` : ''}
                         </div>
                       </div>
-                      <div style={{ fontSize: '13px', color: '#1e1e3a', whiteSpace: 'pre-wrap' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
                         {msg.content || '[No visible content]'}
                       </div>
                     </div>
@@ -1413,12 +1415,12 @@ export default function CommunityPage() {
                         display: 'flex', alignItems: 'center', gap: '12px',
                         padding: '10px 14px', borderRadius: '14px', border: 'none',
                         cursor: dmStarting ? 'default' : 'pointer', textAlign: 'left',
-                        background: '#e8eaf0', fontFamily: 'inherit',
-                        boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                        background: 'var(--community-item-bg)', fontFamily: 'inherit',
+                        boxShadow: '4px 4px 8px var(--community-item-shadow-dark), -4px -4px 8px var(--community-item-shadow-light)',
                         transition: 'all 0.15s', opacity: dmStarting ? 0.6 : 1,
                       }}
                       onMouseEnter={e => { if (!dmStarting) (e.currentTarget as HTMLButtonElement).style.background = '#3636e8'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#e8eaf0'; (e.currentTarget as HTMLButtonElement).style.color = '#1e1e3a' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--community-item-bg)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--community-item-text)' }}
                     >
                       <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#3636e818', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', color: '#3636e8', flexShrink: 0 }}>
                         {u.name.charAt(0).toUpperCase()}
