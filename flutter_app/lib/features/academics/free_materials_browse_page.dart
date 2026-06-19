@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/auth_providers.dart';
@@ -424,9 +425,34 @@ class _MaterialRow extends StatelessWidget {
   Future<void> _open(BuildContext context) async {
     final url = material['fileUrl'] as String?;
     if (url == null || url.isEmpty) return;
-    final uri = Uri.tryParse(url);
-    if (uri == null) return;
-    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final id = material['id'] as String?;
+    final fileType = (material['fileType'] as String?)?.toLowerCase() ?? '';
+
+    // Drive-hosted files (any extension) route through the in-app viewer so
+    // the email watermark + FLAG_SECURE apply. Non-Drive links open
+    // externally — we don't proxy arbitrary URLs.
+    final isDrive = url.contains('drive.google.com') ||
+        url.contains('docs.google.com');
+    final looksPdf = fileType.contains('pdf') ||
+        RegExp(r'\.pdf(\?|$)', caseSensitive: false).hasMatch(url);
+
+    if (isDrive && id != null && id.isNotEmpty && (looksPdf || fileType.isEmpty)) {
+      // looksPdf true → definitely a PDF; fileType empty → optimistic try
+      // (the viewer will surface a clear error if the bytes aren't a PDF).
+      final title = (material['title'] as String?) ?? 'Material';
+      final uri = Uri(
+        path: '/material',
+        queryParameters: {'materialId': id, 'title': title},
+      );
+      context.push(uri.toString());
+      return;
+    }
+
+    // Non-Drive or non-PDF: fall back to external launch.
+    final external = Uri.tryParse(url);
+    if (external == null) return;
+    final ok =
+        await launchUrl(external, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Couldn't open this file.")),

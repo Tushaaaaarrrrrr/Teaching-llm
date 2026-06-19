@@ -29,11 +29,20 @@ class SecurePdfViewer extends StatefulWidget {
   const SecurePdfViewer({
     super.key,
     required this.contentId,
+    this.proxyEndpoint = 'drive-doc',
     this.title,
     this.watermark,
   });
 
   final String contentId;
+
+  /// API path segment for the auth proxy. Two flavors today:
+  ///   - `drive-doc`      → /api/drive-doc/<contentId>      (lecture pptUrl)
+  ///   - `drive-material` → /api/drive-material/<materialId> (free Material)
+  /// Both proxies enforce auth + enrollment server-side; the viewer doesn't
+  /// care which one — it just downloads PDF bytes.
+  final String proxyEndpoint;
+
   final String? title;
 
   /// Free-form text (typically the student's email) overlaid semi-
@@ -82,7 +91,8 @@ class _SecurePdfViewerState extends State<SecurePdfViewer> {
         } catch (_) {}
       }
 
-      final url = '${ApiConfig.baseUrl}/api/drive-doc/${widget.contentId}';
+      final url =
+          '${ApiConfig.baseUrl}/api/${widget.proxyEndpoint}/${widget.contentId}';
       final dio = Dio(BaseOptions(
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(minutes: 5),

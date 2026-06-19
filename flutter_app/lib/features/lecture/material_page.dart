@@ -8,20 +8,67 @@ import '../../shared/widgets/secure_window.dart';
 /// Wrapper route for the PDF viewer. Owns the FLAG_SECURE lifecycle and
 /// pulls the logged-in user's email so the watermark is anchored to a
 /// specific account — same shape as the WatchPage wraps the video player.
+///
+/// Accepts EITHER:
+///   - contentId  → reads Content.pptUrl via /api/drive-doc/<id>      (lectures)
+///   - materialId → reads Material.fileUrl via /api/drive-material/<id> (free res)
 class MaterialPage extends ConsumerStatefulWidget {
-  const MaterialPage({
+  const MaterialPage._({
     super.key,
-    required this.contentId,
+    required this.id,
+    required this.proxyEndpoint,
     this.title,
   });
 
-  final String contentId;
+  /// Lecture material flavor. `id` is a Content row id; the proxy reads
+  /// `Content.pptUrl` and streams the bytes.
+  factory MaterialPage.lecture({
+    Key? key,
+    required String contentId,
+    String? title,
+  }) =>
+      MaterialPage._(
+        key: key,
+        id: contentId,
+        proxyEndpoint: 'drive-doc',
+        title: title,
+      );
+
+  /// Free-resource material flavor. `id` is a Material row id; the proxy
+  /// reads `Material.fileUrl`.
+  factory MaterialPage.material({
+    Key? key,
+    required String materialId,
+    String? title,
+  }) =>
+      MaterialPage._(
+        key: key,
+        id: materialId,
+        proxyEndpoint: 'drive-material',
+        title: title,
+      );
+
+  final String id;
+  final String proxyEndpoint;
   final String? title;
 
+  /// Router glue: accepts `?materialId=<id>` (free-resources PDF) OR
+  /// `?contentId=<id>` / `?id=<id>` (lecture material). The materialId path
+  /// takes precedence when both are supplied.
   static MaterialPage? fromQuery(Map<String, String> query) {
-    final id = query['contentId'] ?? query['id'];
-    if (id == null || id.isEmpty) return null;
-    return MaterialPage(contentId: id, title: query['title']);
+    final materialId = query['materialId'];
+    if (materialId != null && materialId.isNotEmpty) {
+      return MaterialPage.material(
+        materialId: materialId,
+        title: query['title'],
+      );
+    }
+    final contentId = query['contentId'] ?? query['id'];
+    if (contentId == null || contentId.isEmpty) return null;
+    return MaterialPage.lecture(
+      contentId: contentId,
+      title: query['title'],
+    );
   }
 
   @override
@@ -44,11 +91,10 @@ class _MaterialPageState extends ConsumerState<MaterialPage> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authStateProvider).value;
-    // Watermark with the student's email if we have it, falling back to a
-    // generic label so the layer still discourages screen-photo leaks.
     final watermark = user?.email ?? user?.name ?? 'Gen-Z IITian';
     return SecurePdfViewer(
-      contentId: widget.contentId,
+      contentId: widget.id,
+      proxyEndpoint: widget.proxyEndpoint,
       title: widget.title,
       watermark: watermark,
     );
