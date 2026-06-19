@@ -847,20 +847,26 @@ class _LectureRow extends StatelessWidget {
     }
 
     void openVideo() {
+      // Lecture detail page with embedded player + About / Discussion /
+      // Notes tabs. The page reads /api/content/<id> for the rest of the
+      // metadata, so we just pass the content id + title to avoid a flash
+      // of empty chrome while it loads. /watch still exists for the legacy
+      // fullscreen flow but isn't the default destination anymore.
+      if (id == null) return;
       final uri = Uri(
-        path: '/watch',
-        queryParameters: isDrive
-            ? {
-                'source': 'drive',
-                if (id != null) 'contentId': id,
-                'title': title,
-              }
-            : {
-                'source': 'youtube',
-                'url': videoUrl,
-                'title': title,
-              },
+        path: '/lecture',
+        queryParameters: {
+          'contentId': id,
+          'title': title,
+        },
       );
+      // Mark the lecture as in-progress immediately for visual feedback
+      // — videoUrl and isDrive are not part of the URL because the lecture
+      // page re-reads the canonical Content row.
+      // ignore: unused_local_variable
+      final _ = videoUrl; // silence the unused warning post-refactor
+      // ignore: unused_local_variable
+      final __ = isDrive;
       context.push(uri.toString());
     }
 

@@ -16,6 +16,7 @@ import '../../features/courses/course_detail_page.dart';
 import '../../features/courses/courses_page.dart';
 import '../../features/dashboard/dashboard_page.dart';
 import '../../features/feedback/feedback_page.dart';
+import '../../features/lecture/lecture_page.dart';
 import '../../features/lecture/material_page.dart' as lecture_material;
 import '../../features/lecture/watch_page.dart';
 import '../../features/live/live_sessions_page.dart';
@@ -77,6 +78,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) =>
             WatchPage.fromQuery(state.uri.queryParameters) ??
             const MissingVideoPage(),
+      ),
+      // New lecture detail page — embedded player + About / Discussion /
+      // Notes tabs. The primary destination from the course catalogue;
+      // /watch still exists for the legacy fullscreen flow but new
+      // navigations should land here.
+      GoRoute(
+        path: '/lecture',
+        builder: (_, state) =>
+            LecturePage.fromQuery(state.uri.queryParameters) ??
+            const _MissingLecturePage(),
       ),
       // Fullscreen PDF / material viewer.
       GoRoute(
@@ -212,6 +223,25 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+/// Fallback for `/lecture` when the route is hit without a usable contentId.
+class _MissingLecturePage extends StatelessWidget {
+  const _MissingLecturePage();
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Missing lecture reference.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 /// Fallback for `/material` when the route is hit without a usable contentId.
 class _MissingMaterialPage extends StatelessWidget {
