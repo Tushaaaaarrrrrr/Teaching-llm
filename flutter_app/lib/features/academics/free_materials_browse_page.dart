@@ -459,17 +459,22 @@ class _MaterialRow extends StatelessWidget {
     final id = material['id'] as String?;
     final fileType = (material['fileType'] as String?)?.toLowerCase() ?? '';
 
-    // Drive-hosted files (any extension) route through the in-app viewer so
-    // the email watermark + FLAG_SECURE apply. Non-Drive links open
-    // externally — we don't proxy arbitrary URLs.
     final isDrive = url.contains('drive.google.com') ||
         url.contains('docs.google.com');
-    final looksPdf = fileType.contains('pdf') ||
-        RegExp(r'\.pdf(\?|$)', caseSensitive: false).hasMatch(url);
 
-    if (isDrive && id != null && id.isNotEmpty && (looksPdf || fileType.isEmpty)) {
-      // looksPdf true → definitely a PDF; fileType empty → optimistic try
-      // (the viewer will surface a clear error if the bytes aren't a PDF).
+    // Anything that is *definitely* not a PDF (PowerPoint, Word, video,
+    // image, etc.) — let the system handle it. Drive's proxy would force a
+    // pdf content-type on the response but the bytes wouldn't parse.
+    const nonPdfTypes = ['ppt', 'pptx', 'doc', 'docx', 'xls', 'xlsx',
+        'mp4', 'mp3', 'jpg', 'jpeg', 'png', 'gif', 'zip'];
+    final isExplicitlyNonPdf =
+        nonPdfTypes.any((t) => fileType.contains(t));
+
+    // Drive-hosted files route through the in-app watermarked viewer by
+    // default. The only exception is when the manager explicitly tagged
+    // the file as a non-PDF format (PowerPoint, Word, video, image, etc.)
+    // — those launch externally because PDF.js can't render them.
+    if (isDrive && id != null && id.isNotEmpty && !isExplicitlyNonPdf) {
       final title = (material['title'] as String?) ?? 'Material';
       final uri = Uri(
         path: '/material',
@@ -479,7 +484,7 @@ class _MaterialRow extends StatelessWidget {
       return;
     }
 
-    // Non-Drive or non-PDF: fall back to external launch.
+    // Non-Drive URL or explicitly non-PDF file: external launch.
     final external = Uri.tryParse(url);
     if (external == null) return;
     final ok =
