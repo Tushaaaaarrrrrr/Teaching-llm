@@ -14,38 +14,38 @@ import '../../theme/app_typography.dart';
 // with the server's NOTE/PYQ/ASSIGNMENT enum so we don't translate at the API
 // boundary. OTHER bucket exists server-side but not in the UI — anything
 // uncategorised falls through to NOTE for display purposes.
-enum _Category { assignment, pyq, note }
+enum FreeMaterialCategory { assignment, pyq, note }
 
-extension on _Category {
+extension on FreeMaterialCategory {
   String get apiValue {
     switch (this) {
-      case _Category.assignment:
+      case FreeMaterialCategory.assignment:
         return 'ASSIGNMENT';
-      case _Category.pyq:
+      case FreeMaterialCategory.pyq:
         return 'PYQ';
-      case _Category.note:
+      case FreeMaterialCategory.note:
         return 'NOTE';
     }
   }
 
   String get label {
     switch (this) {
-      case _Category.assignment:
+      case FreeMaterialCategory.assignment:
         return 'Assignments';
-      case _Category.pyq:
+      case FreeMaterialCategory.pyq:
         return 'PYQs';
-      case _Category.note:
+      case FreeMaterialCategory.note:
         return 'Notes';
     }
   }
 
   IconData get icon {
     switch (this) {
-      case _Category.assignment:
+      case FreeMaterialCategory.assignment:
         return Icons.edit_note;
-      case _Category.pyq:
+      case FreeMaterialCategory.pyq:
         return Icons.history_edu;
-      case _Category.note:
+      case FreeMaterialCategory.note:
         return Icons.menu_book_outlined;
     }
   }
@@ -78,7 +78,7 @@ class _MaterialQuery {
   const _MaterialQuery({this.level, this.subject, required this.category});
   final String? level;
   final String? subject;
-  final _Category category;
+  final FreeMaterialCategory category;
 
   @override
   bool operator ==(Object other) =>
@@ -93,8 +93,35 @@ class _MaterialQuery {
 
 /// Level → Subject → 3 category tabs. Tap a PDF row to launch the file in the
 /// system viewer (Material.fileUrl is a Drive URL the proxy can serve).
+///
+/// Optional [initialCategory] opens the page on a specific tab — used by the
+/// home Categories tiles (PYQs / Assignments / Notes) so the student lands
+/// straight on what they tapped.
 class FreeMaterialsBrowsePage extends ConsumerStatefulWidget {
-  const FreeMaterialsBrowsePage({super.key});
+  const FreeMaterialsBrowsePage({super.key, this.initialCategory});
+  final FreeMaterialCategory? initialCategory;
+
+  /// Convenience for the router: maps the `?tab=` query param to a category.
+  static FreeMaterialsBrowsePage fromQuery(Map<String, String> query) {
+    final raw = query['tab']?.toLowerCase();
+    FreeMaterialCategory? c;
+    switch (raw) {
+      case 'assignment':
+      case 'assignments':
+        c = FreeMaterialCategory.assignment;
+        break;
+      case 'pyq':
+      case 'pyqs':
+        c = FreeMaterialCategory.pyq;
+        break;
+      case 'note':
+      case 'notes':
+        c = FreeMaterialCategory.note;
+        break;
+    }
+    return FreeMaterialsBrowsePage(initialCategory: c);
+  }
+
   @override
   ConsumerState<FreeMaterialsBrowsePage> createState() =>
       _FreeMaterialsBrowsePageState();
@@ -110,7 +137,11 @@ class _FreeMaterialsBrowsePageState
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 3, vsync: this);
+    _tab = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialCategory?.index ?? 0,
+    );
     _tab.addListener(() {
       if (!_tab.indexIsChanging) setState(() {}); // refresh active body
     });
@@ -122,7 +153,7 @@ class _FreeMaterialsBrowsePageState
     super.dispose();
   }
 
-  _Category get _activeCategory => _Category.values[_tab.index];
+  FreeMaterialCategory get _activeCategory => FreeMaterialCategory.values[_tab.index];
 
   @override
   Widget build(BuildContext context) {
@@ -346,7 +377,7 @@ class _TabBar extends StatelessWidget {
         splashBorderRadius: BorderRadius.circular(10),
         dividerColor: Colors.transparent,
         tabs: [
-          for (final c in _Category.values)
+          for (final c in FreeMaterialCategory.values)
             Tab(
               height: 40,
               child: Padding(

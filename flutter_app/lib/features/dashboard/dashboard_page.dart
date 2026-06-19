@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/app_topbar.dart';
@@ -57,7 +58,19 @@ class DashboardPage extends ConsumerWidget {
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: HomeSlider(),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 18),
+
+          // ── Categories ─────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: const SectionHead(
+              title: 'Categories',
+              subtitle: 'Find a track that fits your goal',
+            ),
+          ),
+          const SizedBox(height: 12),
+          const _CategoriesRow(),
+          const SizedBox(height: 10),
 
           // ── Upcoming Session ───────────────────────────────
           Padding(
@@ -608,3 +621,133 @@ class _EmptyStateCard extends StatelessWidget {
   }
 }
 
+/// Four quick-access category tiles below the slider. Maps to the user's
+/// top entry points:
+///   - Buy Course        → genziitian.in/courses (external)
+///   - Qualifier PYQs    → Free Materials, opened on the PYQs tab
+///   - Graded Assignments → Free Materials, Assignments tab
+///   - Notes             → Free Materials, Notes tab
+/// Each tile is a square with a soft pastel background, accent-colored icon,
+/// and label below. Horizontally scrollable on narrow phones.
+class _CategoriesRow extends StatelessWidget {
+  const _CategoriesRow();
+
+  static const _tiles = <_CategorySpec>[
+    _CategorySpec(
+      label: 'Buy Course',
+      icon: Icons.shopping_bag_outlined,
+      iconColor: Color(0xFF8B5CF6),
+      bg: Color(0xFFF3EEFF),
+      external: 'https://genziitian.in/courses',
+    ),
+    _CategorySpec(
+      label: 'PYQs',
+      icon: Icons.history_edu_outlined,
+      iconColor: Color(0xFF10B981),
+      bg: Color(0xFFE6F8F1),
+      internal: '/free-resources/materials?tab=pyq',
+    ),
+    _CategorySpec(
+      label: 'Assignments',
+      icon: Icons.edit_note,
+      iconColor: Color(0xFFF59E0B),
+      bg: Color(0xFFFEF4E2),
+      internal: '/free-resources/materials?tab=assignment',
+    ),
+    _CategorySpec(
+      label: 'Notes',
+      icon: Icons.description_outlined,
+      iconColor: Color(0xFFEF4444),
+      bg: Color(0xFFFEECEC),
+      internal: '/free-resources/materials?tab=note',
+    ),
+  ];
+
+  Future<void> _open(BuildContext context, _CategorySpec t) async {
+    if (t.internal != null) {
+      context.push(t.internal!);
+      return;
+    }
+    final url = t.external;
+    if (url == null) return;
+    final ok = await launchUrl(Uri.parse(url),
+        mode: LaunchMode.externalApplication);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't open this link.")),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 100,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _tiles.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) {
+          final t = _tiles[i];
+          return SizedBox(
+            width: 78,
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                onTap: () => _open(context, t),
+                borderRadius: BorderRadius.circular(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: t.bg,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(t.icon, color: t.iconColor, size: 26),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      t.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.caption.copyWith(
+                        fontSize: 11.5,
+                        color: AppColors.ink,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CategorySpec {
+  const _CategorySpec({
+    required this.label,
+    required this.icon,
+    required this.iconColor,
+    required this.bg,
+    this.internal,
+    this.external,
+  }) : assert((internal == null) != (external == null),
+            'exactly one of internal / external must be set');
+  final String label;
+  final IconData icon;
+  final Color iconColor;
+  final Color bg;
+  final String? internal;
+  final String? external;
+}

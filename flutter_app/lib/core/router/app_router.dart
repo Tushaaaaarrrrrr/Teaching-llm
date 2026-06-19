@@ -174,7 +174,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: 'materials',
-                builder: (_, __) => const FreeMaterialsBrowsePage(),
+                builder: (_, state) =>
+                    FreeMaterialsBrowsePage.fromQuery(state.uri.queryParameters),
               ),
               GoRoute(
                 path: 'purchased',
