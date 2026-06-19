@@ -33,6 +33,16 @@ dependencies:
   chewie: ^1.8.5
   youtube_player_iframe: ^5.2.0
 
+  # libmpv-based player. video_player only uses the device's hardware codecs
+  # (no software fallback), so phone-recorded HEVC clips that the hardware
+  # can't decode crash with a MediaCodec error. media_kit ships libmpv with
+  # its own FFmpeg software decoders — universal codec coverage at the cost
+  # of ~20 MB APK growth. Used by SecureDrivePlayer; the YouTube player
+  # keeps video_player since YT streams are H.264.
+  media_kit: ^1.1.11
+  media_kit_video: ^1.2.5
+  media_kit_libs_video: ^1.0.5
+
   # Utilities
   intl: ^0.19.0
 

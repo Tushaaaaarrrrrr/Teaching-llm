@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:media_kit/media_kit.dart';
 
 import 'app.dart';
 import 'config/api_config.dart';
@@ -9,6 +10,10 @@ import 'features/auth/welcome_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Initialise the libmpv runtime once at app start — the Drive player uses
+  // media_kit so phone-recorded HEVC clips that ExoPlayer's hardware decoder
+  // can't handle still play via software decode.
+  MediaKit.ensureInitialized();
 
   // Lock to portrait for the mobile-first UX; the web app is mobile-portrait
   // by design and the Flutter app should match.

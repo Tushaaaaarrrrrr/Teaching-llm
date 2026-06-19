@@ -1,20 +1,17 @@
 import 'dart:async';
 
-import 'package:chewie/chewie.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:video_player/video_player.dart';
 
 import '../../../config/api_config.dart';
 import '../../../core/auth/token_storage.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 
-// Default quality preference key — kept distinct from the YouTube one so
-// they don't tread on each other. 'auto' = let the server pick (i.e. the
-// default videoUrl, which is whatever the manager set as the master file).
 const _kDriveQualityPrefKey = 'drive_quality_pref';
 const _kDriveQualityAuto = 'auto';
 
@@ -23,9 +20,10 @@ const _kDriveQualityAuto = 'auto';
 /// sees the underlying Drive URL; the proxy verifies their session +
 /// enrollment on every byte and Drive credentials never leave the server.
 ///
-/// Networking: ExoPlayer (Android) and AVPlayer (iOS) issue their own
-/// HTTP requests so we pass the JWT via [VideoPlayerController.networkUrl]'s
-/// `httpHeaders`. Range requests are handled natively, so seeking works.
+/// Migrated from video_player + chewie to media_kit (libmpv) so phone-
+/// recorded HEVC clips with profiles the device's hardware decoder doesn't
+/// understand still play via the bundled software decoders. APK grew
+/// ~20 MB as a result; the trade-off is universal codec coverage.
 class SecureDrivePlayer extends StatefulWidget {
   const SecureDrivePlayer({
     super.key,
@@ -47,18 +45,20 @@ class SecureDrivePlayer extends StatefulWidget {
 }
 
 class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
-  VideoPlayerController? _video;
-  ChewieController? _chewie;
+  Player? _player;
+  VideoController? _controller;
   String? _error;
+  bool _ready = false;
   bool _ended = false;
+  String? _token;
 
-  // Quality state — populated from /api/content/<id>/variants on first load.
-  // [_qualities] is the list of available labels from the manager (e.g.
-  // ['360p', '720p', '1080p']). [_currentQuality] is either 'auto' (i.e.
-  // the default videoUrl) or one of those labels. Empty list = no picker.
+  // Quality state — same shape as the previous implementation. Populated
+  // from /api/content/<id>/variants on first load.
   List<String> _qualities = const [];
   String _currentQuality = _kDriveQualityAuto;
-  String? _token; // cached so quality switches don't re-read secure storage
+
+  StreamSubscription<String>? _errorSub;
+  StreamSubscription<bool>? _completedSub;
 
   @override
   void initState() {
@@ -77,141 +77,111 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
       }
       _token = token;
 
-      // Fetch the variants list + saved preference in parallel so the picker
-      // is ready as soon as playback starts. Both are best-effort: a failure
-      // here just hides the picker rather than blocking playback.
-      final qualitiesFuture = _fetchAvailableQualities();
-      final savedPrefFuture = _loadQualityPref();
+      final qualities = await _fetchAvailableQualities();
+      final saved = await _loadQualityPref();
+      _qualities = qualities;
+      _currentQuality = qualities.contains(saved) ? saved : _kDriveQualityAuto;
 
-      // Resolve which quality to load first.
-      final saved = await savedPrefFuture;
-      final available = await qualitiesFuture;
-      _qualities = available;
-      _currentQuality = available.contains(saved) ? saved : _kDriveQualityAuto;
+      // Build the player + controller before opening media so the Video
+      // widget can attach as soon as we mount.
+      final player = Player(
+        configuration: const PlayerConfiguration(
+          // Keep titles short in libmpv's window-title prop (no-op on
+          // Android but tidy on desktop).
+          title: 'Gen-Z IITian',
+          // Enable hardware decoding when available; libmpv falls back to
+          // software when the hardware path can't handle the source.
+        ),
+      );
+      _player = player;
+      _controller = VideoController(player);
 
-      await _loadStreamForQuality(_currentQuality,
-          resume: Duration.zero, wasPlaying: widget.autoplay);
+      _errorSub = player.stream.error.listen((msg) {
+        if (!mounted || msg.isEmpty) return;
+        setState(() => _error = _humanize(msg));
+      });
+      _completedSub = player.stream.completed.listen((done) {
+        if (!mounted || !done || _ended) return;
+        _ended = true;
+        widget.onEnded?.call();
+      });
+
+      // Pre-flight probe so auth/Drive errors surface as clean strings
+      // rather than the player spinning indefinitely.
+      final probe = await _probeStream();
+      if (probe != null) {
+        if (mounted) setState(() => _error = probe);
+        return;
+      }
+
+      await _openForQuality(_currentQuality, resume: Duration.zero);
+
+      if (!mounted) return;
+      setState(() => _ready = true);
     } catch (e) {
       if (mounted) setState(() => _error = _humanize(e));
     }
   }
 
-  /// Builds the proxy URL for the chosen quality and re-creates the Chewie
-  /// controller. Used for both initial load and quality switches; [resume]
-  /// + [wasPlaying] are honored so switches don't lose the user's place.
-  Future<void> _loadStreamForQuality(
-    String quality, {
-    required Duration resume,
-    required bool wasPlaying,
-  }) async {
+  Future<void> _openForQuality(String quality, {required Duration resume}) async {
+    final p = _player;
+    if (p == null) return;
     final token = _token;
     if (token == null) return;
-
     final query = quality == _kDriveQualityAuto ? '' : '?quality=$quality';
-    final streamUrl =
+    final url =
         '${ApiConfig.baseUrl}/api/drive-stream/${widget.contentId}$query';
-    final headers = <String, String>{
-      'Authorization': 'Bearer $token',
-      'X-Requested-With': 'XMLHttpRequest',
-      'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.5',
-    };
-
-    // Probe only on the very first load — for switches we trust the original
-    // probe since auth/enrollment hasn't changed in the last few seconds.
-    if (_video == null) {
-      final probe = await _probeStream(streamUrl, headers);
-      if (probe != null) {
-        if (mounted) setState(() => _error = probe);
-        return;
-      }
-    }
-
-    final v = VideoPlayerController.networkUrl(
-      Uri.parse(streamUrl),
-      httpHeaders: headers,
-      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
+    await p.open(
+      Media(url, httpHeaders: {
+        'Authorization': 'Bearer $token',
+        'X-Requested-With': 'XMLHttpRequest',
+      }),
+      play: widget.autoplay || resume > Duration.zero,
     );
-
-    try {
-      await v.initialize().timeout(const Duration(seconds: 30));
-    } on TimeoutException {
-      await v.dispose();
-      if (mounted) {
-        setState(() => _error =
-            'Video took too long to load. Check your connection and try again.');
-      }
-      return;
-    }
-
-    if (resume > Duration.zero && resume < v.value.duration) {
-      await v.seekTo(resume);
-    }
-    v.addListener(_listener);
-
-    if (!mounted) {
-      await v.dispose();
-      return;
-    }
-
-    final c = _buildChewie(v, autoplay: wasPlaying);
-
-    // Tear down the old pair after the new one is live, so the user sees
-    // continuous video rather than a black frame during the swap.
-    final oldVideo = _video;
-    final oldChewie = _chewie;
-
-    setState(() {
-      _video = v;
-      _chewie = c;
-    });
-
-    if (oldVideo != null) {
-      oldVideo.removeListener(_listener);
-      Future.microtask(() {
-        oldChewie?.dispose();
-        oldVideo.dispose();
-      });
+    if (resume > Duration.zero) {
+      // Wait briefly for the player to settle, then seek.
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      await p.seek(resume);
     }
   }
 
-  ChewieController _buildChewie(VideoPlayerController v,
-      {required bool autoplay}) {
-    return ChewieController(
-      videoPlayerController: v,
-      aspectRatio: widget.aspectRatio,
-      autoPlay: autoplay,
-      looping: false,
-      allowFullScreen: true,
-      allowMuting: true,
-      allowPlaybackSpeedChanging: true,
-      playbackSpeeds: const [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0],
-      showControlsOnInitialize: true,
-      hideControlsTimer: const Duration(milliseconds: 2500),
-      progressIndicatorDelay: const Duration(milliseconds: 250),
-      materialProgressColors: ChewieProgressColors(
-        playedColor: AppColors.brand,
-        handleColor: AppColors.brand,
-        backgroundColor: const Color(0x33FFFFFF),
-        bufferedColor: const Color(0x66FFFFFF),
-      ),
-      placeholder: Container(color: Colors.black),
-      errorBuilder: (_, msg) => _ErrorView(message: msg),
-      // Adds a "Quality" row to Chewie's built-in options menu (the 3-dot
-      // icon in the controls bar). Hidden when only auto is available.
-      additionalOptions: _qualities.isEmpty
-          ? null
-          : (ctx) => [
-                OptionItem(
-                  onTap: (sheetCtx) async {
-                    // Pop Chewie's own options sheet first, then show ours.
-                    Navigator.of(sheetCtx, rootNavigator: true).pop();
-                    await _showQualitySheet(ctx);
-                  },
-                  iconData: Icons.high_quality_outlined,
-                  title: 'Quality (${_qualityDisplayLabel()})',
-                ),
-              ],
-    );
+  /// Quick auth/enrollment probe before we hand the URL to libmpv. Surfaces
+  /// 401/403/404/502 as clear strings; null when the proxy is healthy.
+  Future<String?> _probeStream() async {
+    try {
+      final token = _token ?? '';
+      final url =
+          '${ApiConfig.baseUrl}/api/drive-stream/${widget.contentId}';
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 25),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Range': 'bytes=0-0',
+        },
+        validateStatus: (_) => true,
+        responseType: ResponseType.bytes,
+      ));
+      final res = await dio.get<dynamic>(url);
+      final s = res.statusCode ?? 0;
+      if (s == 200 || s == 206) return null;
+      if (s == 401) return 'Session expired — please sign in again.';
+      if (s == 403) return "You don't have access to this lecture.";
+      if (s == 404) return 'Lecture video not found.';
+      if (s == 502) {
+        return "Couldn't reach Google Drive right now. Try again in a moment.";
+      }
+      return 'Video unavailable (status $s).';
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        return 'Server is taking too long. Check your connection and try again.';
+      }
+      return e.message ?? 'Network error.';
+    } catch (e) {
+      return _humanize(e);
+    }
   }
 
   Future<List<String>> _fetchAvailableQualities() async {
@@ -234,8 +204,6 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
       if (data is! Map) return const [];
       final variants = data['variants'];
       if (variants is! Map) return const [];
-      // Sort high → low using the numeric part of the label so "1080p"
-      // appears above "720p" without depending on map iteration order.
       final labels = variants.keys.cast<String>().toList()
         ..sort((a, b) => _resolutionRank(b).compareTo(_resolutionRank(a)));
       return labels;
@@ -271,6 +239,7 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
   }
 
   Future<void> _showQualitySheet(BuildContext context) async {
+    if (_qualities.isEmpty) return;
     final picked = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: const Color(0xEE0B1020),
@@ -288,75 +257,12 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
   }
 
   Future<void> _switchQuality(String label) async {
-    final v = _video;
-    final resume = v?.value.position ?? Duration.zero;
-    final wasPlaying = v?.value.isPlaying ?? true;
+    final p = _player;
+    if (p == null) return;
+    final resume = p.state.position;
     setState(() => _currentQuality = label);
     await _saveQualityPref(label);
-    await _loadStreamForQuality(label,
-        resume: resume, wasPlaying: wasPlaying);
-  }
-
-  /// Quick HEAD-ish range probe so we surface auth / not-found / Drive-side
-  /// errors as a clear message instead of an infinite black spinner. Returns
-  /// `null` when the proxy is healthy, or a human error string otherwise.
-  Future<String?> _probeStream(
-      String url, Map<String, String> headers) async {
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 25),
-        // Range: 0-0 → server replies 206 with just 1 byte, enough to
-        // validate auth + enrollment + the upstream Drive credentials.
-        headers: {...headers, 'Range': 'bytes=0-0'},
-        // Don't throw on non-2xx — we want to inspect the status ourselves.
-        validateStatus: (_) => true,
-        responseType: ResponseType.bytes,
-      ));
-      final res = await dio.get<dynamic>(url);
-      final s = res.statusCode ?? 0;
-      if (s == 200 || s == 206) return null;
-      if (s == 401) return 'Session expired — please sign in again.';
-      if (s == 403) return "You don't have access to this lecture.";
-      if (s == 404) return 'Lecture video not found.';
-      if (s == 502) {
-        return "Couldn't reach Google Drive right now. Try again in a moment.";
-      }
-      // Surface the server's error payload when present.
-      final body = res.data;
-      String? msg;
-      if (body is List<int>) {
-        try {
-          msg = body.isEmpty
-              ? null
-              : (body.length > 500 ? null : String.fromCharCodes(body));
-        } catch (_) {}
-      }
-      return 'Video unavailable (status $s)${msg != null ? ': $msg' : ''}.';
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        return 'Server is taking too long. Check your connection and try again.';
-      }
-      return e.message ?? 'Network error.';
-    } catch (e) {
-      return _humanize(e);
-    }
-  }
-
-  void _listener() {
-    final v = _video;
-    if (v == null || !mounted) return;
-    if (v.value.hasError) {
-      setState(() => _error = _humanize(v.value.errorDescription));
-      return;
-    }
-    final dur = v.value.duration;
-    final pos = v.value.position;
-    if (!_ended && dur.inMilliseconds > 0 && pos >= dur) {
-      _ended = true;
-      widget.onEnded?.call();
-    }
+    await _openForQuality(label, resume: resume);
   }
 
   String _humanize(Object? raw) {
@@ -369,27 +275,12 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
       return "You don't have access to this lecture.";
     }
     if (s.contains('404')) return 'Lecture video not found.';
-    // ExoPlayer's MediaCodec errors mean the phone's hardware decoder can't
-    // handle the source's codec/profile/resolution combo — common for
-    // manager-uploaded HEVC clips at non-standard resolutions. The fix is
-    // out of the player's hands; we suggest the Drive app which uses
-    // Google's transcoded MP4 stream.
-    if (lower.contains('mediacodec') ||
-        lower.contains('hevc') ||
-        lower.contains('videoerror') ||
-        lower.contains('codec')) {
-      return 'This video uses a format your phone can\'t play directly. '
-          'Open it in the Google Drive app — Drive will transcode it on the fly.';
-    }
     if (s.contains('502') || s.contains('Drive')) {
       return "Couldn't fetch the video from Drive. Try again in a moment.";
     }
     return s.length > 200 ? '${s.substring(0, 200)}…' : s;
   }
 
-  /// Fetches the raw Drive `videoUrl` for this lecture and opens it
-  /// externally (Google Drive app on Android, the browser otherwise). Used
-  /// as a fallback when ExoPlayer can't decode the source.
   Future<void> _openInDrive(BuildContext context) async {
     try {
       final token = _token ?? await const TokenStorage().read();
@@ -429,9 +320,9 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
 
   @override
   void dispose() {
-    _video?.removeListener(_listener);
-    _chewie?.dispose();
-    _video?.dispose();
+    _errorSub?.cancel();
+    _completedSub?.cancel();
+    _player?.dispose();
     super.dispose();
   }
 
@@ -446,12 +337,8 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
         ),
       );
     }
-    final c = _chewie;
-    if (c == null) {
-      // Initial pre-buffer state. A title + spinner reads as "we're loading
-      // YOUR lecture" rather than the dead-black slab a bare progress
-      // indicator would give. Same visual weight as the YouTube player's
-      // initial state, so transitions feel uniform across sources.
+    final c = _controller;
+    if (c == null || !_ready) {
       return AspectRatio(
         aspectRatio: widget.aspectRatio,
         child: Container(
@@ -486,14 +373,87 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
     }
     return AspectRatio(
       aspectRatio: widget.aspectRatio,
-      child: Chewie(controller: c),
+      child: MaterialVideoControlsTheme(
+        normal: MaterialVideoControlsThemeData(
+          seekBarPositionColor: AppColors.brand,
+          seekBarThumbColor: AppColors.brand,
+          buttonBarButtonSize: 24,
+          buttonBarHeight: 56,
+          speedUpFactor: 1.0,
+          // Surface the quality picker alongside the speed picker so
+          // students can switch resolution from the same controls strip.
+          topButtonBar: _qualities.isEmpty
+              ? const []
+              : [
+                  const Spacer(),
+                  _QualityButton(
+                    label: _qualityDisplayLabel(),
+                    onTap: () => _showQualitySheet(context),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+        ),
+        fullscreen: MaterialVideoControlsThemeData(
+          seekBarPositionColor: AppColors.brand,
+          seekBarThumbColor: AppColors.brand,
+          topButtonBar: _qualities.isEmpty
+              ? const []
+              : [
+                  const Spacer(),
+                  _QualityButton(
+                    label: _qualityDisplayLabel(),
+                    onTap: () => _showQualitySheet(context),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+        ),
+        child: Video(
+          controller: c,
+          aspectRatio: widget.aspectRatio,
+          controls: AdaptiveVideoControls,
+          fit: BoxFit.contain,
+        ),
+      ),
     );
   }
 }
 
-/// Drive quality picker sheet — mirrors the YouTube player's sheet visually
-/// so both players feel like the same product. Returns the picked label
-/// (or 'auto'); null when dismissed.
+class _QualityButton extends StatelessWidget {
+  const _QualityButton({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0x33000000),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.high_quality_outlined,
+                  color: Colors.white, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: AppTypography.caption.copyWith(
+                  color: Colors.white,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _DriveQualitySheet extends StatelessWidget {
   const _DriveQualitySheet({
     required this.current,
@@ -536,8 +496,7 @@ class _DriveQualitySheet extends StatelessWidget {
               label: 'Auto',
               sub: 'Manager-recommended default',
               selected: current == _kDriveQualityAuto,
-              onTap: () =>
-                  Navigator.of(context).pop(_kDriveQualityAuto),
+              onTap: () => Navigator.of(context).pop(_kDriveQualityAuto),
             ),
             for (final q in qualities)
               _SheetRow(
@@ -564,7 +523,6 @@ class _SheetRow extends StatelessWidget {
   final String sub;
   final bool selected;
   final VoidCallback onTap;
-
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -574,17 +532,12 @@ class _SheetRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             children: [
               Icon(
-                selected
-                    ? Icons.check_circle
-                    : Icons.radio_button_unchecked,
-                color: selected
-                    ? AppColors.brand
-                    : const Color(0x99FFFFFF),
+                selected ? Icons.check_circle : Icons.radio_button_unchecked,
+                color: selected ? AppColors.brand : const Color(0x99FFFFFF),
                 size: 18,
               ),
               const SizedBox(width: 12),
