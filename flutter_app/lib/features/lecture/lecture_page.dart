@@ -79,20 +79,23 @@ class _LecturePageState extends ConsumerState<LecturePage>
   @override
   Widget build(BuildContext context) {
     final lectureAsync = ref.watch(lectureProvider(widget.contentId));
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        bottom: false,
-        child: lectureAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => _ErrorState(message: e.toString()),
-          data: (lecture) => _Body(
-            contentId: widget.contentId,
-            lecture: lecture,
-            tab: _tab,
-          ),
-        ),
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final body = lectureAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => _ErrorState(message: e.toString()),
+      data: (lecture) => _Body(
+        contentId: widget.contentId,
+        lecture: lecture,
+        tab: _tab,
       ),
+    );
+    return Scaffold(
+      backgroundColor: isLandscape ? Colors.black : AppColors.bg,
+      // Skip the SafeArea entirely in landscape — the player needs every
+      // pixel and the status bar is hidden via SystemUiMode by the player
+      // when it goes fullscreen anyway.
+      body: isLandscape ? body : SafeArea(bottom: false, child: body),
     );
   }
 }
@@ -113,6 +116,8 @@ class _Body extends ConsumerWidget {
     final desc = (lecture['description'] as String?) ?? '';
     final videoUrl = lecture['videoUrl'] as String?;
     final pptUrl = lecture['pptUrl'] as String?;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
     final rawSource = (lecture['videoSource'] as String?)?.toUpperCase();
     final isDrive = rawSource == 'GOOGLE_DRIVE' ||
         (rawSource == null &&
@@ -125,6 +130,22 @@ class _Body extends ConsumerWidget {
         ref.watch(lectureCommentsProvider(contentId));
     final commentCount = commentsAsync.valueOrNull
         ?.fold<int>(0, (n, c) => n + 1 + ((c['replies'] as List?)?.length ?? 0));
+
+    // Landscape: drop the chrome and let the player consume the full
+    // viewport. Portrait keeps the back bar + tabs.
+    if (isLandscape) {
+      return Container(
+        color: Colors.black,
+        child: SizedBox.expand(
+          child: _Player(
+            isDrive: isDrive,
+            videoUrl: videoUrl,
+            contentId: contentId,
+            title: title,
+          ),
+        ),
+      );
+    }
 
     return Column(
       children: [
@@ -638,13 +659,15 @@ class _Composer extends StatelessWidget {
   final VoidCallback onSend;
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    // viewInsets.bottom is the keyboard; viewPadding.bottom is the system
+    // gesture bar. Pad for whichever is larger so the composer always sits
+    // above both, even on phones with a tall navigation bar.
+    final bottomInset = media.viewInsets.bottom > 0
+        ? media.viewInsets.bottom
+        : media.viewPadding.bottom;
     return Container(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        10,
-        16,
-        10 + MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding: EdgeInsets.fromLTRB(16, 10, 16, 10 + bottomInset),
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.line)),

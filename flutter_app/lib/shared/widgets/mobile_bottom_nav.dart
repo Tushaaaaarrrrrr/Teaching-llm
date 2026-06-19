@@ -33,7 +33,7 @@ class MobileBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 96, // bar (66) + extra room for the elevated FAB
+      height: 108, // bar (66) + room for the more-elevated FAB above
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
@@ -80,9 +80,11 @@ class MobileBottomNav extends StatelessWidget {
             ),
           ),
 
-          // The elevated Academics center button
+          // The elevated Academics center button — pushed up further so it
+          // reads as an above-bar tab indicator rather than overlapping the
+          // bar surface. Soft halo behind it to match the reference UI.
           Positioned(
-            bottom: 24,
+            bottom: 40,
             child: _CenterFab(active: _isActive(_center)),
           ),
         ],
@@ -130,28 +132,40 @@ class _CenterFab extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Material(
-          color: AppColors.brand,
-          shape: const CircleBorder(),
-          elevation: 8,
-          shadowColor: AppColors.brand.withOpacity(0.45),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: () => context.go('/academics'),
-            child: Container(
-              width: 56,
-              height: 56,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: AppShadows.pillGlow(AppColors.brand),
+        // Soft halo ring behind the FAB so it reads as floating above the
+        // bar rather than punched through it. Sized larger than the button
+        // and tinted to match the brand color.
+        Container(
+          width: 68,
+          height: 68,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.brand.withOpacity(0.10),
+          ),
+          alignment: Alignment.center,
+          child: Material(
+            color: AppColors.brand,
+            shape: const CircleBorder(),
+            elevation: 10,
+            shadowColor: AppColors.brand.withOpacity(0.55),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => context.go('/academics'),
+              child: Container(
+                width: 56,
+                height: 56,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: AppShadows.pillGlow(AppColors.brand),
+                ),
+                child: const Icon(Icons.school_outlined,
+                    color: AppColors.textInverse, size: 26),
               ),
-              child: const Icon(Icons.school_outlined,
-                  color: AppColors.textInverse, size: 26),
             ),
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 3),
         Text(
           'Academics',
           style: AppTypography.caption.copyWith(

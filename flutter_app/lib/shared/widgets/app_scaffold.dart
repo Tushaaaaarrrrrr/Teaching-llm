@@ -32,7 +32,16 @@ class AppScaffold extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.max,
         children: [
-          Expanded(child: child),
+          // Top safe-area only at the shell level so the dashboard greeting
+          // doesn't slide under the status bar. Inner pages that have their
+          // own Scaffold + SafeArea won't double-pad — SafeArea is a no-op
+          // when the inset has already been consumed.
+          Expanded(
+            child: SafeArea(
+              bottom: false,
+              child: child,
+            ),
+          ),
           MobileBottomNav(currentLocation: currentLocation),
         ],
       ),
