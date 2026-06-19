@@ -26,16 +26,30 @@ class CalendarPage extends ConsumerStatefulWidget {
   ConsumerState<CalendarPage> createState() => _CalendarPageState();
 }
 
+enum _CalendarView { week, month }
+
 class _CalendarPageState extends ConsumerState<CalendarPage> {
   late DateTime _focused = DateTime.now();
   late DateTime _selected = DateTime.now();
+  // Default to weekly — students typically care about "what's this week" more
+  // than scrolling through a full month. Toggle in the header switches back
+  // to the full grid when they want a bigger picture.
+  _CalendarView _view = _CalendarView.week;
 
-  void _prevMonth() {
-    setState(() => _focused = DateTime(_focused.year, _focused.month - 1, 1));
+  void _prev() {
+    setState(() {
+      _focused = _view == _CalendarView.week
+          ? _focused.subtract(const Duration(days: 7))
+          : DateTime(_focused.year, _focused.month - 1, 1);
+    });
   }
 
-  void _nextMonth() {
-    setState(() => _focused = DateTime(_focused.year, _focused.month + 1, 1));
+  void _next() {
+    setState(() {
+      _focused = _view == _CalendarView.week
+          ? _focused.add(const Duration(days: 7))
+          : DateTime(_focused.year, _focused.month + 1, 1);
+    });
   }
 
   String get _monthLabel {
@@ -44,6 +58,18 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       'July','August','September','October','November','December'
     ];
     return '${months[_focused.month - 1]} ${_focused.year}';
+  }
+
+  /// Week label like "Jun 16 – 22, 2026". Anchored to the Monday of the week
+  /// containing [d] so prev/next move by one full ISO week.
+  String _weekLabel(DateTime d) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final monday = d.subtract(Duration(days: (d.weekday - 1) % 7));
+    final sunday = monday.add(const Duration(days: 6));
+    if (monday.month == sunday.month) {
+      return '${months[monday.month - 1]} ${monday.day} – ${sunday.day}, ${sunday.year}';
+    }
+    return '${months[monday.month - 1]} ${monday.day} – ${months[sunday.month - 1]} ${sunday.day}, ${sunday.year}';
   }
 
   String _selectedLabel(DateTime d) {
@@ -107,14 +133,19 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _MonthSwitcher(
-                  label: _monthLabel,
-                  onPrev: _prevMonth,
-                  onNext: _nextMonth,
+                  label: _view == _CalendarView.week
+                      ? _weekLabel(_focused)
+                      : _monthLabel,
+                  onPrev: _prev,
+                  onNext: _next,
+                  view: _view,
+                  onView: (v) => setState(() => _view = v),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _CalendarGrid(
+                  view: _view,
                   focused: _focused,
                   selected: _selected,
                   events: allEvents,
@@ -200,11 +231,18 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 }
 
 class _MonthSwitcher extends StatelessWidget {
-  const _MonthSwitcher(
-      {required this.label, required this.onPrev, required this.onNext});
+  const _MonthSwitcher({
+    required this.label,
+    required this.onPrev,
+    required this.onNext,
+    required this.view,
+    required this.onView,
+  });
   final String label;
   final VoidCallback onPrev;
   final VoidCallback onNext;
+  final _CalendarView view;
+  final ValueChanged<_CalendarView> onView;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -218,13 +256,25 @@ class _MonthSwitcher extends StatelessWidget {
         children: [
           CircleIconBtn(icon: Icons.chevron_left, onTap: onPrev),
           const SizedBox(width: 8),
-          Text(label, style: AppTypography.title.copyWith(fontSize: 14)),
+          Expanded(
+            child: Text(label,
+                style: AppTypography.title.copyWith(fontSize: 14),
+                overflow: TextOverflow.ellipsis),
+          ),
           const SizedBox(width: 8),
           CircleIconBtn(icon: Icons.chevron_right, onTap: onNext),
-          const Spacer(),
-          _Seg(label: 'Month', active: true),
+          const SizedBox(width: 10),
+          _Seg(
+            label: 'Month',
+            active: view == _CalendarView.month,
+            onTap: () => onView(_CalendarView.month),
+          ),
           const SizedBox(width: 6),
-          _Seg(label: 'Week', active: false),
+          _Seg(
+            label: 'Week',
+            active: view == _CalendarView.week,
+            onTap: () => onView(_CalendarView.week),
+          ),
         ],
       ),
     );
@@ -232,34 +282,45 @@ class _MonthSwitcher extends StatelessWidget {
 }
 
 class _Seg extends StatelessWidget {
-  const _Seg({required this.label, required this.active});
+  const _Seg({required this.label, required this.active, required this.onTap});
   final String label;
   final bool active;
+  final VoidCallback onTap;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: active ? AppColors.ink : Colors.transparent,
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: active ? AppColors.ink : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(label,
+              style: AppTypography.caption.copyWith(
+                fontSize: 11.5,
+                color: active ? AppColors.textInverse : AppColors.muted,
+                fontWeight: FontWeight.w700,
+              )),
+        ),
       ),
-      child: Text(label,
-          style: AppTypography.caption.copyWith(
-            fontSize: 11.5,
-            color: active ? AppColors.textInverse : AppColors.muted,
-            fontWeight: FontWeight.w700,
-          )),
     );
   }
 }
 
 class _CalendarGrid extends StatelessWidget {
   const _CalendarGrid({
+    required this.view,
     required this.focused,
     required this.selected,
     required this.events,
     required this.onSelect,
   });
+  final _CalendarView view;
   final DateTime focused;
   final DateTime selected;
   final List<Map<String, dynamic>> events;
@@ -295,23 +356,36 @@ class _CalendarGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final first = DateTime(focused.year, focused.month, 1);
-    final daysInMonth =
-        DateTime(focused.year, focused.month + 1, 0).day;
-    final leading = (first.weekday + 6) % 7;
     const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     final now = DateTime.now();
     final dayDots = _byDay();
 
-    final cells = <Widget?>[
-      for (var i = 0; i < leading; i++) null,
-      for (var d = 1; d <= daysInMonth; d++)
-        _buildDay(
-          DateTime(focused.year, focused.month, d),
-          now,
-          dayDots,
-        ),
-    ];
+    // Week mode: render exactly 7 cells starting from Monday of the focused
+    // week. No leading nulls, no trailing nulls — a single tight row.
+    // Month mode: original behavior (leading nulls before day 1, then every
+    // day of the month, wrapping every 7 cells into a row).
+    final List<Widget?> cells;
+    if (view == _CalendarView.week) {
+      final monday =
+          focused.subtract(Duration(days: (focused.weekday - 1) % 7));
+      cells = [
+        for (var i = 0; i < 7; i++)
+          _buildDay(monday.add(Duration(days: i)), now, dayDots),
+      ];
+    } else {
+      final first = DateTime(focused.year, focused.month, 1);
+      final daysInMonth = DateTime(focused.year, focused.month + 1, 0).day;
+      final leading = (first.weekday + 6) % 7;
+      cells = [
+        for (var i = 0; i < leading; i++) null,
+        for (var d = 1; d <= daysInMonth; d++)
+          _buildDay(
+            DateTime(focused.year, focused.month, d),
+            now,
+            dayDots,
+          ),
+      ];
+    }
 
     final rows = <Widget>[];
     for (var i = 0; i < cells.length; i += 7) {
