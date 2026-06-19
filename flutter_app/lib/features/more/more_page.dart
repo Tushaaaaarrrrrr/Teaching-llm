@@ -161,28 +161,28 @@ class MorePage extends ConsumerWidget {
               icon: Icons.info_outline,
               tone: AppColors.brand,
               soft: AppColors.brandSoft,
-              url: '${ApiConfig.baseUrl}/company/about-us',
+              url: '/about',
             ),
             _Link(
               label: 'Privacy Policy',
               icon: Icons.shield_outlined,
               tone: AppColors.green,
               soft: AppColors.greenSft,
-              url: '${ApiConfig.baseUrl}/company/privacy-policy',
+              url: '/privacy',
             ),
             _Link(
               label: 'Terms & Conditions',
               icon: Icons.description_outlined,
               tone: AppColors.amber,
               soft: AppColors.amberSft,
-              url: '${ApiConfig.baseUrl}/company/terms-and-conditions',
+              url: '/terms',
             ),
             _Link(
               label: 'Refund Policy',
               icon: Icons.replay_outlined,
               tone: AppColors.red,
               soft: AppColors.redSft,
-              url: '${ApiConfig.baseUrl}/company/refund-policy',
+              url: '/refund',
             ),
           ]),
         ),
@@ -263,6 +263,12 @@ class _LinkList extends StatelessWidget {
   final List<_Link> items;
 
   Future<void> _open(BuildContext context, _Link item) async {
+    // Relative paths route in-app via go_router so legal pages render the
+    // bundled content with no network call; absolute URLs open externally.
+    if (item.url.startsWith('/')) {
+      context.push(item.url);
+      return;
+    }
     final ok = await launchUrl(
       Uri.parse(item.url),
       mode: LaunchMode.externalApplication,

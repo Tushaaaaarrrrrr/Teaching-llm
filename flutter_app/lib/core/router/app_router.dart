@@ -17,6 +17,7 @@ import '../../features/courses/courses_page.dart';
 import '../../features/dashboard/dashboard_page.dart';
 import '../../features/feedback/feedback_page.dart';
 import '../../features/lecture/lecture_page.dart';
+import '../../features/legal/legal_page.dart';
 import '../../features/lecture/material_page.dart' as lecture_material;
 import '../../features/lecture/watch_page.dart';
 import '../../features/live/live_sessions_page.dart';
@@ -105,6 +106,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/transactions',
           builder: (_, __) => const TransactionsPage()),
       GoRoute(path: '/faq', builder: (_, __) => const FaqPage()),
+      // Static legal pages — content lives in legal_page.dart so they ship
+      // offline. Mirrors the modal copy from the website's login page.
+      GoRoute(path: '/about', builder: (_, __) => LegalPage.about()),
+      GoRoute(
+          path: '/privacy', builder: (_, __) => LegalPage.privacy()),
+      GoRoute(path: '/terms', builder: (_, __) => LegalPage.terms()),
+      GoRoute(path: '/refund', builder: (_, __) => LegalPage.refund()),
       GoRoute(
         path: '/support/chat',
         builder: (_, state) => LiveChatPage(
