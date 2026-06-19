@@ -4,6 +4,7 @@ import 'package:chewie/chewie.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../../config/api_config.dart';
@@ -360,17 +361,70 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
 
   String _humanize(Object? raw) {
     final s = raw?.toString() ?? 'Playback failed';
-    if (s.contains('401') || s.toLowerCase().contains('unauthorized')) {
+    final lower = s.toLowerCase();
+    if (s.contains('401') || lower.contains('unauthorized')) {
       return 'Session expired — please sign in again.';
     }
-    if (s.contains('403') || s.toLowerCase().contains('not enrolled')) {
+    if (s.contains('403') || lower.contains('not enrolled')) {
       return "You don't have access to this lecture.";
     }
     if (s.contains('404')) return 'Lecture video not found.';
+    // ExoPlayer's MediaCodec errors mean the phone's hardware decoder can't
+    // handle the source's codec/profile/resolution combo — common for
+    // manager-uploaded HEVC clips at non-standard resolutions. The fix is
+    // out of the player's hands; we suggest the Drive app which uses
+    // Google's transcoded MP4 stream.
+    if (lower.contains('mediacodec') ||
+        lower.contains('hevc') ||
+        lower.contains('videoerror') ||
+        lower.contains('codec')) {
+      return 'This video uses a format your phone can\'t play directly. '
+          'Open it in the Google Drive app — Drive will transcode it on the fly.';
+    }
     if (s.contains('502') || s.contains('Drive')) {
       return "Couldn't fetch the video from Drive. Try again in a moment.";
     }
     return s.length > 200 ? '${s.substring(0, 200)}…' : s;
+  }
+
+  /// Fetches the raw Drive `videoUrl` for this lecture and opens it
+  /// externally (Google Drive app on Android, the browser otherwise). Used
+  /// as a fallback when ExoPlayer can't decode the source.
+  Future<void> _openInDrive(BuildContext context) async {
+    try {
+      final token = _token ?? await const TokenStorage().read();
+      if (token == null || token.isEmpty) return;
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        validateStatus: (_) => true,
+      ));
+      final res = await dio.get<dynamic>(
+        '${ApiConfig.baseUrl}/api/content/${widget.contentId}',
+      );
+      final raw =
+          (res.data is Map ? res.data['videoUrl'] : null) as String?;
+      if (raw == null || raw.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No Drive link on this lecture.')),
+          );
+        }
+        return;
+      }
+      final uri = Uri.tryParse(raw);
+      if (uri == null) return;
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn't open Drive.")),
+        );
+      }
+    } catch (_) {/* best effort */}
   }
 
   @override
@@ -386,7 +440,10 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
     if (_error != null) {
       return AspectRatio(
         aspectRatio: widget.aspectRatio,
-        child: _ErrorView(message: _error!),
+        child: _ErrorView(
+          message: _error!,
+          onOpenInDrive: () => _openInDrive(context),
+        ),
       );
     }
     final c = _chewie;
@@ -565,8 +622,9 @@ class _SheetRow extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message});
+  const _ErrorView({required this.message, this.onOpenInDrive});
   final String message;
+  final VoidCallback? onOpenInDrive;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -581,6 +639,35 @@ class _ErrorView extends StatelessWidget {
           Text(message,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: Colors.white)),
+          if (onOpenInDrive != null) ...[
+            const SizedBox(height: 14),
+            Material(
+              color: AppColors.brand,
+              borderRadius: BorderRadius.circular(10),
+              child: InkWell(
+                onTap: onOpenInDrive,
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 9),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.open_in_new,
+                          color: Colors.white, size: 15),
+                      const SizedBox(width: 6),
+                      Text('Open in Google Drive',
+                          style: AppTypography.title.copyWith(
+                            color: Colors.white,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                          )),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
