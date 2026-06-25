@@ -236,6 +236,7 @@ export default function SwipeableMessage({
         alignItems: 'center',
         justifyContent: isMe ? 'flex-end' : 'flex-start',
         width: '100%',
+        minWidth: 0,
         userSelect: 'none',
       }}
     >
@@ -341,6 +342,7 @@ export default function SwipeableMessage({
           position: 'relative',
           display: 'inline-flex',
           maxWidth: '100%',
+          minWidth: 0,
         }}
       >
         {/* The actual bubble which translates on swipe */}
@@ -350,6 +352,8 @@ export default function SwipeableMessage({
             width: '100%',
             display: 'inline-flex',
             willChange: 'transform',
+            maxWidth: '100%',
+            minWidth: 0,
           }}
         >
           {children}
