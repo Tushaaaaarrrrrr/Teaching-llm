@@ -376,6 +376,7 @@ model Content {
   title           String
   description     String?
   videoUrl        String?
+  youtubeUrl      String?
   pptUrl          String?
   isRecordingOnly Boolean              @default(false)
   order           Int                  @default(0)

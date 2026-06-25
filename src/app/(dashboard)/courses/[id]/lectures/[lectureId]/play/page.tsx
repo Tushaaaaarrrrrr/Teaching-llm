@@ -10,6 +10,7 @@ interface ContentItem {
   title: string
   description?: string
   videoUrl?: string
+  youtubeUrl?: string
   videoSource: string
   topic: {
     id: string
@@ -115,6 +116,17 @@ export default function PlayDriveVideoPage() {
     return /youtu\.?be|youtube(?:-nocookie)?\.com/i.test(url)
   }
 
+  const getYouTubeUrl = () => {
+    if (content?.youtubeUrl) return content.youtubeUrl
+    if (content?.videoUrl && /youtu\.?be/i.test(content.videoUrl)) return content.videoUrl
+    return null
+  }
+
+  const hasYouTubeLink = Boolean(
+    content?.youtubeUrl || 
+    (content?.videoUrl && (content?.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content?.videoUrl)))
+  )
+
   if (loading || (isNativeApp && content?.videoSource === 'GOOGLE_DRIVE' && tokenLoading)) {
     return (
       <div style={{
@@ -199,23 +211,65 @@ export default function PlayDriveVideoPage() {
         flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: '#000', width: '100%', minHeight: 0
       }}>
-        {isNativeApp && content.videoSource === 'GOOGLE_DRIVE' && streamToken ? (
-          <video
-            src={`/api/drive-stream/${params.lectureId}?token=${streamToken}`}
-            controls
-            autoPlay
-            playsInline
-            preload="metadata"
-            controlsList="nodownload"
-            onContextMenu={e => e.preventDefault()}
-            style={{ width: '100%', height: '100%', background: '#000', objectFit: 'contain' }}
-          />
+        {isNativeApp ? (
+          hasYouTubeLink ? (
+            (() => {
+              const ytUrl = getYouTubeUrl()
+              const ytId = ytUrl ? extractYouTubeId(ytUrl) : null
+              return ytId ? (
+                <SecureYouTubePlayer
+                  videoId={ytId}
+                  title={content.title}
+                  autoplay
+                  isLive={isLikelyYouTubeLive(ytUrl!)}
+                />
+              ) : (
+                <div style={{ color: '#ef4444', textAlign: 'center', padding: '24px' }}>
+                  <AlertCircle size={40} style={{ marginBottom: '12px', opacity: 0.8 }} />
+                  <span style={{ fontSize: '16px', fontWeight: '800', display: 'block', marginBottom: '8px' }}>
+                    Video not playing on app
+                  </span>
+                  <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, maxWidth: '280px' }}>
+                    Please use laptop or browser to watch this lecture.
+                  </p>
+                </div>
+              )
+            })()
+          ) : content.videoSource === 'GOOGLE_DRIVE' && streamToken ? (
+            <video
+              src={`/api/drive-stream/${params.lectureId}?token=${streamToken}`}
+              controls
+              autoPlay
+              playsInline
+              preload="metadata"
+              controlsList="nodownload"
+              onContextMenu={e => e.preventDefault()}
+              style={{ width: '100%', height: '100%', background: '#000', objectFit: 'contain' }}
+            />
+          ) : (
+            <div style={{ color: '#ef4444', textAlign: 'center', padding: '24px' }}>
+              <AlertCircle size={40} style={{ marginBottom: '12px', opacity: 0.8 }} />
+              <span style={{ fontSize: '16px', fontWeight: '800', display: 'block', marginBottom: '8px' }}>
+                Video not playing on app
+              </span>
+              <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, maxWidth: '280px' }}>
+                Please use laptop or browser to watch this lecture.
+              </p>
+            </div>
+          )
         ) : isYouTubeSource(content.videoUrl, content.videoSource) && extractYouTubeId(content.videoUrl) ? (
           <SecureYouTubePlayer
             videoId={extractYouTubeId(content.videoUrl)!}
             title={content.title}
             autoplay
             isLive={isLikelyYouTubeLive(content.videoUrl)}
+          />
+        ) : hasYouTubeLink && getYouTubeUrl() && extractYouTubeId(getYouTubeUrl()!) ? (
+          <SecureYouTubePlayer
+            videoId={extractYouTubeId(getYouTubeUrl()!)!}
+            title={content.title}
+            autoplay
+            isLive={isLikelyYouTubeLive(getYouTubeUrl()!)}
           />
         ) : embedUrl ? (
           <iframe

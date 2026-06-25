@@ -10,6 +10,7 @@ interface ContentItem {
   title: string
   description?: string
   videoUrl?: string
+  youtubeUrl?: string
   videoSource: string
   pptUrl?: string
   order: number
@@ -37,6 +38,7 @@ interface ContentForm {
   title: string
   description: string
   videoUrl: string
+  youtubeUrl: string
   videoSource: string
 }
 
@@ -68,7 +70,7 @@ interface RecordingItem {
   }
 }
 
-const emptyForm: ContentForm = { title: '', description: '', videoUrl: '', videoSource: 'GOOGLE_DRIVE' }
+const emptyForm: ContentForm = { title: '', description: '', videoUrl: '', youtubeUrl: '', videoSource: 'GOOGLE_DRIVE' }
 
 export default function CourseEditPage() {
   const { confirm, confirmDialog } = useConfirmDialog()
@@ -311,6 +313,7 @@ export default function CourseEditPage() {
       title: item.title,
       description: item.description || '',
       videoUrl: item.videoUrl || '',
+      youtubeUrl: item.youtubeUrl || '',
       videoSource: item.videoSource || 'GOOGLE_DRIVE',
     })
     setMaterialSourceType(hasUploadedMaterial ? 'FILE' : 'LINK')
@@ -391,6 +394,7 @@ export default function CourseEditPage() {
         ...contentForm,
         title: contentForm.title.trim(),
         videoUrl: contentForm.videoUrl.trim(),
+        youtubeUrl: contentForm.youtubeUrl.trim(),
         pptUrl: materialSourceType === 'LINK'
           ? trimmedMaterialLink
           : selectedMaterial?.fileUrl || '',
@@ -516,26 +520,24 @@ export default function CourseEditPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
-                    Video Source
-                  </label>
-                  <select
-                    value={contentForm.videoSource}
-                    onChange={e => setContentForm(f => ({ ...f, videoSource: e.target.value }))}
-                    className="form-input"
-                    style={{ width: '100%' }}
-                  >
-                    <option value="YOUTUBE">YouTube</option>
-                    <option value="GOOGLE_DRIVE">Google Drive</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
-                    Video URL *
+                    🎬 Google Drive URL
                   </label>
                   <input
                     value={contentForm.videoUrl}
                     onChange={e => setContentForm(f => ({ ...f, videoUrl: e.target.value }))}
-                    placeholder="YouTube URL or Google Drive file ID"
+                    placeholder="Google Drive video link"
+                    className="form-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+                    ▶️ YouTube URL
+                  </label>
+                  <input
+                    value={contentForm.youtubeUrl}
+                    onChange={e => setContentForm(f => ({ ...f, youtubeUrl: e.target.value }))}
+                    placeholder="YouTube video link"
                     className="form-input"
                     style={{ width: '100%' }}
                   />
