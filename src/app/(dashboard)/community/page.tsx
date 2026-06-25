@@ -122,7 +122,13 @@ export default function CommunityPage() {
   const imageInputRef = useRef<HTMLInputElement>(null)
 
   // Tagging state
-  const [staff, setStaff] = useState<{ id: string; name: string; role: string }[]>([])
+  const [staff, setStaff] = useState<{
+    id: string
+    name: string
+    role: string
+    enrollments?: { courseId: string }[]
+    instructorAssignments?: { courseId: string }[]
+  }[]>([])
   const [showTagSuggestions, setShowTagSuggestions] = useState(false)
   const [tagSearchQuery, setTagSearchQuery] = useState('')
   const [tagTriggerIndex, setTagTriggerIndex] = useState(0)
@@ -459,9 +465,23 @@ export default function CommunityPage() {
     }, 50)
   }
 
-  const filteredStaff = staff.filter(user =>
-    user.name.toLowerCase().includes(tagSearchQuery.toLowerCase())
-  )
+  const filteredStaff = staff.filter(user => {
+    if (!user.name.toLowerCase().includes(tagSearchQuery.toLowerCase())) {
+      return false
+    }
+    // Managers are global and show up in all groups
+    if (user.role === 'MANAGER') {
+      return true
+    }
+    // Admins must be part of the current course group (enrolled or assigned)
+    if (selectedClass && selectedClass.isDirectChat !== true) {
+      const courseId = selectedClass.id
+      const isEnrolled = user.enrollments?.some((e: any) => e.courseId === courseId)
+      const isAssigned = user.instructorAssignments?.some((a: any) => a.courseId === courseId)
+      return !!(isEnrolled || isAssigned)
+    }
+    return true
+  })
 
   function escapeRegExp(string: string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
