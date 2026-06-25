@@ -787,8 +787,8 @@ tr:hover td {
     width: 76px;
     height: 38px;
     border-radius: 38px 38px 0 0;
-    background: #ffffff;
-    border-top: 1px solid rgba(0, 0, 0, 0.04);
+    background: var(--sidebar-bg);
+    border-top: 1px solid var(--border);
     box-shadow: 0 -8px 10px rgba(0, 0, 0, 0.02);
     z-index: 1;
   }

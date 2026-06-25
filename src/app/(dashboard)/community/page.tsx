@@ -1496,7 +1496,7 @@ export default function CommunityPage() {
                       {!isMe && !showAvatar && <div style={{ width: '32px', flexShrink: 0 }} />}
 
                       <div style={{ maxWidth: '75%', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', flexDirection: isMe ? 'row-reverse' : 'row', width: '100%', maxWidth: '100%', minWidth: 0 }}>
                           <SwipeableMessage
                             onSwipeTrigger={() => setReplyingTo(msg)}
                             onLongPress={() => {
@@ -1521,6 +1521,7 @@ export default function CommunityPage() {
                                 ? '0 0 0 2.5px #3636e8, 0 4px 12px rgba(54,54,232,0.2)'
                                 : '0 2px 4px rgba(0,0,0,0.05)',
                               minWidth: '80px',
+                              maxWidth: '100%',
                               border: selectedMessage?.id === msg.id
                                 ? 'none'
                                 : isMe ? 'none' : '1px solid #e8eaf0',
@@ -1559,6 +1560,8 @@ export default function CommunityPage() {
                                     borderRight: '1px solid rgba(0,0,0,0.02)',
                                     borderBottom: '1px solid rgba(0,0,0,0.02)',
                                     transition: 'all 0.2s',
+                                    maxWidth: '100%',
+                                    minWidth: 0,
                                   }}
                                   onMouseEnter={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.1)' : 'rgba(54,54,232,0.08)'}
                                   onMouseLeave={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)'}
