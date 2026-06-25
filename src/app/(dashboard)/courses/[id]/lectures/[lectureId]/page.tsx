@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import SecureYouTubePlayer, { extractYouTubeId, isLikelyYouTubeLive } from '@/components/courses/SecureYouTubePlayer'
+import LectureVideoPlayer from '@/components/courses/LectureVideoPlayer'
 import { 
   Play, 
   ChevronLeft, 
@@ -94,95 +94,7 @@ export default function LecturePage() {
     return () => observer.disconnect()
   }, [])
 
-  // Dual-source: detect available links
-  const hasYouTubeLink = Boolean(
-    content?.youtubeUrl || 
-    (content?.videoUrl && (content?.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content?.videoUrl)))
-  )
-  const hasDriveLink = Boolean(
-    content?.videoUrl && !/youtu\.?be/i.test(content?.videoUrl)
-  )
-
-  useEffect(() => {
-    if (content) {
-      if (!hasDriveLink && hasYouTubeLink) {
-        setSelectedSource('YOUTUBE')
-      } else {
-        setSelectedSource('GOOGLE')
-      }
-    }
-  }, [content, hasDriveLink, hasYouTubeLink])
-
-  const showSourceToggle = !isNativeApp && hasDriveLink && hasYouTubeLink
-
-  const getYouTubeUrl = () => {
-    if (content?.youtubeUrl) return content.youtubeUrl
-    if (content?.videoUrl && /youtu\.?be/i.test(content.videoUrl)) return content.videoUrl
-    return null
-  }
-
-  const renderSourceToggle = () => {
-    if (!showSourceToggle) return null
-    return (
-      <div style={{ 
-        display: 'flex', 
-        gap: '8px', 
-        marginBottom: '14px', 
-        alignItems: 'center',
-        padding: '0 4px'
-      }}>
-        <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-          Source:
-        </span>
-        <div style={{
-          display: 'inline-flex',
-          background: 'var(--surface-2)',
-          padding: '3px',
-          borderRadius: '20px',
-          boxShadow: 'inset 2px 2px 5px var(--neu-dark), inset -2px -2px 5px var(--neu-light)'
-        }}>
-          <button
-            onClick={() => setSelectedSource('GOOGLE')}
-            style={{
-              border: 'none',
-              padding: '4px 14px',
-              borderRadius: '16px',
-              fontSize: '11px',
-              fontWeight: '800',
-              cursor: 'pointer',
-              background: selectedSource === 'GOOGLE' ? 'var(--accent)' : 'transparent',
-              color: selectedSource === 'GOOGLE' ? '#fff' : 'var(--text-secondary)',
-              transition: 'all 0.2s'
-            }}
-          >
-            GOOGLE
-          </button>
-          <button
-            onClick={() => setSelectedSource('YOUTUBE')}
-            style={{
-              border: 'none',
-              padding: '4px 14px',
-              borderRadius: '16px',
-              fontSize: '11px',
-              fontWeight: '800',
-              cursor: 'pointer',
-              background: selectedSource === 'YOUTUBE' ? 'var(--accent)' : 'transparent',
-              color: selectedSource === 'YOUTUBE' ? '#fff' : 'var(--text-secondary)',
-              transition: 'all 0.2s'
-            }}
-          >
-            YOUTUBE
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  function isDriveSource(url: string | undefined, source: string | undefined) {
-    if (source === 'GOOGLE_DRIVE') return true
-    if (!url) return false
-    return /drive\.google\.com|docs\.google\.com/i.test(url)
-  }
+  // Centralized playback helpers are now managed inside LectureVideoPlayer
 
   const fetchData = useCallback(async () => {
     try {
@@ -483,153 +395,16 @@ export default function LecturePage() {
         </div>
       )}
 
-      {/* Video Section */}
-      {isMobile ? (
-        <>
-        <div
-          ref={videoWrapperRef}
-          onContextMenu={e => e.preventDefault()}
-          className={`lecture-video-wrapper-mobile ${content.videoSource === 'GOOGLE_DRIVE' ? 'google-drive' : ''}`}
-          style={{
-            width: '100%',
-            paddingTop: '56.25%', // 16:9 aspect-ratio fallback (universally supported)
-            aspectRatio: '16 / 9',
-            borderRadius: '16px',
-            marginBottom: '10px',
-            position: 'relative',
-            overflow: 'hidden',
-            background: 'linear-gradient(135deg, #0f172a, #1e293b)',
-            boxShadow: '0 14px 32px -10px rgba(15, 23, 42, 0.40)',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-          }}
-        >
-          {(() => {
-            // 1. Capacitor Native App Mode
-            if (isNativeApp) {
-              if (hasYouTubeLink) {
-                const ytUrl = getYouTubeUrl()
-                const ytId = ytUrl ? extractYouTubeId(ytUrl) : null
-                if (ytId) {
-                  return (
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                      <SecureYouTubePlayer
-                        videoId={ytId}
-                        title={content.title}
-                        isLive={isLikelyYouTubeLive(ytUrl!)}
-                      />
-                    </div>
-                  )
-                }
-              }
-              // Error message for native app when YouTube link is not available
-              return (
-                <div style={{
-                  position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  background: 'linear-gradient(135deg, #1e1b4b, #0f172a)',
-                  color: '#fff', padding: '20px', textAlign: 'center'
-                }}>
-                  <div style={{
-                    width: '60px', height: '60px', borderRadius: '50%',
-                    background: 'rgba(239, 68, 68, 0.12)', backdropFilter: 'blur(8px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    marginBottom: '16px', border: '1px solid rgba(239, 68, 68, 0.25)',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
-                  }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                  </div>
-                  <span style={{ fontSize: '15px', fontWeight: '800', color: '#f87171', marginBottom: '8px' }}>
-                    Video not playing on app
-                  </span>
-                  <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, maxWidth: '280px', lineHeight: '1.4' }}>
-                    Please use laptop or browser to watch this lecture.
-                  </p>
-                </div>
-              )
-            }
+      {/* Centralized Video Section */}
+      <LectureVideoPlayer
+        videoUrl={content.videoUrl || undefined}
+        youtubeUrl={content.youtubeUrl || undefined}
+        videoSource={content.videoSource}
+        title={content.title}
+      />
 
-            // 2. Browser/Website Mode
-            if (selectedSource === 'YOUTUBE' && hasYouTubeLink) {
-              const ytUrl = getYouTubeUrl()
-              const ytId = ytUrl ? extractYouTubeId(ytUrl) : null
-              if (ytId) {
-                return (
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                    <SecureYouTubePlayer
-                      videoId={ytId}
-                      title={content.title}
-                      isLive={isLikelyYouTubeLive(ytUrl!)}
-                    />
-                  </div>
-                )
-              }
-            }
-
-            if (selectedSource === 'GOOGLE' && hasDriveLink) {
-              return (
-                <iframe
-                  ref={videoIframeRef}
-                  src={getEmbedUrl(content.videoUrl, 'GOOGLE_DRIVE')}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  allowFullScreen
-                  scrolling="no"
-                  onContextMenu={e => e.preventDefault()}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', overflow: 'hidden', background: '#000' }}
-                />
-              )
-            }
-
-            // Fallback: try drive, then youtube, then show no video
-            if (hasDriveLink) {
-              return (
-                <iframe
-                  ref={videoIframeRef}
-                  src={getEmbedUrl(content.videoUrl, 'GOOGLE_DRIVE')}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  allowFullScreen
-                  scrolling="no"
-                  onContextMenu={e => e.preventDefault()}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', overflow: 'hidden', background: '#000' }}
-                />
-              )
-            }
-
-            if (hasYouTubeLink) {
-              const ytUrl = getYouTubeUrl()
-              const ytId = ytUrl ? extractYouTubeId(ytUrl) : null
-              if (ytId) {
-                return (
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                    <SecureYouTubePlayer
-                      videoId={ytId}
-                      title={content.title}
-                      isLive={isLikelyYouTubeLive(ytUrl!)}
-                    />
-                  </div>
-                )
-              }
-            }
-
-            return (
-              <div style={{
-                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--text-secondary)', textAlign: 'center', padding: '20px'
-              }}>
-                <Play size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-                <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-muted)' }}>No video available</h3>
-                <p style={{ fontSize: '14px' }}>This lecture doesn't have a video attached.</p>
-              </div>
-            )
-          })()}
-        </div>
-
-        {/* Mobile lecture meta block — appears UNDER the video like inspiration */}
+      {isMobile && (
+        /* Mobile lecture meta block — appears UNDER the video like inspiration */
         <div style={{ padding: '0 4px', marginBottom: '18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
             <span style={{
@@ -645,87 +420,6 @@ export default function LecturePage() {
             {content.title}
           </h1>
         </div>
-        </>
-      ) : (
-        <>
-        {renderSourceToggle()}
-        <div style={{
-          background: 'var(--text-primary)', borderRadius: '24px', overflow: 'hidden',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.15)', marginBottom: '32px',
-          position: 'relative', paddingTop: '56.25%' // 16:9 Aspect Ratio
-        }}>
-          {(() => {
-            if (selectedSource === 'YOUTUBE' && hasYouTubeLink) {
-              const ytUrl = getYouTubeUrl()
-              const ytId = ytUrl ? extractYouTubeId(ytUrl) : null
-              if (ytId) {
-                return (
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                    <SecureYouTubePlayer
-                      videoId={ytId}
-                      title={content.title}
-                      isLive={isLikelyYouTubeLive(ytUrl!)}
-                    />
-                  </div>
-                )
-              }
-            }
-
-            if (selectedSource === 'GOOGLE' && hasDriveLink) {
-              return (
-                <iframe
-                  src={getEmbedUrl(content.videoUrl, 'GOOGLE_DRIVE')}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  onContextMenu={e => e.preventDefault()}
-                />
-              )
-            }
-
-            // Fallback
-            if (hasDriveLink) {
-              return (
-                <iframe
-                  src={getEmbedUrl(content.videoUrl, 'GOOGLE_DRIVE')}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  onContextMenu={e => e.preventDefault()}
-                />
-              )
-            }
-
-            if (hasYouTubeLink) {
-              const ytUrl = getYouTubeUrl()
-              const ytId = ytUrl ? extractYouTubeId(ytUrl) : null
-              if (ytId) {
-                return (
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                    <SecureYouTubePlayer
-                      videoId={ytId}
-                      title={content.title}
-                      isLive={isLikelyYouTubeLive(ytUrl!)}
-                    />
-                  </div>
-                )
-              }
-            }
-
-            return (
-              <div style={{
-                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--text-secondary)', textAlign: 'center', padding: '20px'
-              }}>
-                <Play size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-                <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-muted)' }}>No video available</h3>
-                <p style={{ fontSize: '14px' }}>This lecture doesn't have a video attached.</p>
-              </div>
-            )
-          })()}
-        </div>
-        </>
       )}
 
       {isMobile ? (

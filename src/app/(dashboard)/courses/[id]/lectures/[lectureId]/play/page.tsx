@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ChevronLeft, Loader2, AlertCircle } from 'lucide-react'
-import SecureYouTubePlayer, { extractYouTubeId, isLikelyYouTubeLive } from '@/components/courses/SecureYouTubePlayer'
+import LectureVideoPlayer from '@/components/courses/LectureVideoPlayer'
 
 interface ContentItem {
   id: string
@@ -97,35 +97,7 @@ export default function PlayDriveVideoPage() {
     fetchData()
   }, [fetchData])
 
-  const getEmbedUrl = (url: string | undefined, source: string) => {
-    if (!url) return ''
-    const u = url.trim()
-    const isDriveUrl = /drive\.google\.com|docs\.google\.com/i.test(u)
-    if (source === 'GOOGLE_DRIVE' || isDriveUrl) {
-      const fileIdMatch = u.match(/\/d\/([\w-]+)/) || u.match(/[?&]id=([\w-]+)/)
-      if (fileIdMatch) {
-        return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
-      }
-    }
-    return u
-  }
-
-  const isYouTubeSource = (url: string | undefined, source: string | undefined) => {
-    if (source === 'YOUTUBE') return true
-    if (!url) return false
-    return /youtu\.?be|youtube(?:-nocookie)?\.com/i.test(url)
-  }
-
-  const getYouTubeUrl = () => {
-    if (content?.youtubeUrl) return content.youtubeUrl
-    if (content?.videoUrl && /youtu\.?be/i.test(content.videoUrl)) return content.videoUrl
-    return null
-  }
-
-  const hasYouTubeLink = Boolean(
-    content?.youtubeUrl || 
-    (content?.videoUrl && (content?.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content?.videoUrl)))
-  )
+  // central player handles url conversion
 
   if (loading || (isNativeApp && content?.videoSource === 'GOOGLE_DRIVE' && tokenLoading)) {
     return (
@@ -164,8 +136,6 @@ export default function PlayDriveVideoPage() {
       </div>
     )
   }
-
-  const embedUrl = getEmbedUrl(content.videoUrl, content.videoSource)
 
   return (
     <div style={{
@@ -211,79 +181,13 @@ export default function PlayDriveVideoPage() {
         flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: '#000', width: '100%', minHeight: 0
       }}>
-        {isNativeApp ? (
-          hasYouTubeLink ? (
-            (() => {
-              const ytUrl = getYouTubeUrl()
-              const ytId = ytUrl ? extractYouTubeId(ytUrl) : null
-              return ytId ? (
-                <SecureYouTubePlayer
-                  videoId={ytId}
-                  title={content.title}
-                  autoplay
-                  isLive={isLikelyYouTubeLive(ytUrl!)}
-                />
-              ) : (
-                <div style={{ color: '#ef4444', textAlign: 'center', padding: '24px' }}>
-                  <AlertCircle size={40} style={{ marginBottom: '12px', opacity: 0.8 }} />
-                  <span style={{ fontSize: '16px', fontWeight: '800', display: 'block', marginBottom: '8px' }}>
-                    Video not playing on app
-                  </span>
-                  <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, maxWidth: '280px' }}>
-                    Please use laptop or browser to watch this lecture.
-                  </p>
-                </div>
-              )
-            })()
-          ) : content.videoSource === 'GOOGLE_DRIVE' && streamToken ? (
-            <video
-              src={`/api/drive-stream/${params.lectureId}?token=${streamToken}`}
-              controls
-              autoPlay
-              playsInline
-              preload="metadata"
-              controlsList="nodownload"
-              onContextMenu={e => e.preventDefault()}
-              style={{ width: '100%', height: '100%', background: '#000', objectFit: 'contain' }}
-            />
-          ) : (
-            <div style={{ color: '#ef4444', textAlign: 'center', padding: '24px' }}>
-              <AlertCircle size={40} style={{ marginBottom: '12px', opacity: 0.8 }} />
-              <span style={{ fontSize: '16px', fontWeight: '800', display: 'block', marginBottom: '8px' }}>
-                Video not playing on app
-              </span>
-              <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, maxWidth: '280px' }}>
-                Please use laptop or browser to watch this lecture.
-              </p>
-            </div>
-          )
-        ) : isYouTubeSource(content.videoUrl, content.videoSource) && extractYouTubeId(content.videoUrl) ? (
-          <SecureYouTubePlayer
-            videoId={extractYouTubeId(content.videoUrl)!}
-            title={content.title}
-            autoplay
-            isLive={isLikelyYouTubeLive(content.videoUrl)}
-          />
-        ) : hasYouTubeLink && getYouTubeUrl() && extractYouTubeId(getYouTubeUrl()!) ? (
-          <SecureYouTubePlayer
-            videoId={extractYouTubeId(getYouTubeUrl()!)!}
-            title={content.title}
-            autoplay
-            isLive={isLikelyYouTubeLive(getYouTubeUrl()!)}
-          />
-        ) : embedUrl ? (
-          <iframe
-            src={embedUrl}
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-            allowFullScreen
-          />
-        ) : (
-          <div style={{ color: '#94a3b8', textAlign: 'center', padding: '24px' }}>
-            <AlertCircle size={40} style={{ marginBottom: '12px', opacity: 0.6 }} />
-            <p>No video URL was provided for this lecture.</p>
-          </div>
-        )}
+        <LectureVideoPlayer
+          videoUrl={content.videoUrl || undefined}
+          youtubeUrl={content.youtubeUrl || undefined}
+          videoSource={content.videoSource}
+          title={content.title}
+          fill
+        />
       </div>
     </div>
   )
