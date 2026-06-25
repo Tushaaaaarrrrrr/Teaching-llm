@@ -456,6 +456,7 @@ export default function SecureYouTubePlayer({
       }}
     >
       <div
+        className="secure-yt-surface"
         style={{
           position: 'absolute',
           inset: 0,
@@ -464,7 +465,7 @@ export default function SecureYouTubePlayer({
           pointerEvents: 'none',
         }}
       >
-        <div ref={hostRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
+        <div ref={hostRef} className="secure-yt-host" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
       </div>
 
       <button
@@ -674,6 +675,16 @@ export default function SecureYouTubePlayer({
         }
         @keyframes secureYtSpin {
           to { transform: rotate(360deg); }
+        }
+        .secure-yt-surface :global(iframe),
+        .secure-yt-host :global(iframe) {
+          position: absolute !important;
+          inset: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          max-width: none !important;
+          max-height: none !important;
+          display: block !important;
         }
         .secure-yt-scrubber::-webkit-slider-thumb {
           -webkit-appearance: none;
