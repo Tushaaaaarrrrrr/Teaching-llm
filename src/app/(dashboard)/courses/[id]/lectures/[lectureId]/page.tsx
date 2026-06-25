@@ -484,6 +484,8 @@ export default function LecturePage() {
                   </div>
                   <Link
                     href={`/material/${content.id}/view`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                       background: 'var(--accent)', color: 'white', textDecoration: 'none', textAlign: 'center',
                       padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
@@ -743,6 +745,8 @@ export default function LecturePage() {
                   </div>
                   <Link
                     href={`/material/${content.id}/view`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                       background: 'var(--accent)', color: 'white', textDecoration: 'none', textAlign: 'center',
                       padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',

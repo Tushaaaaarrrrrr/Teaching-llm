@@ -413,6 +413,8 @@ export default function FreeMaterialsPage() {
                 ) ? (
                   <a
                     href={`/free-resources/materials/${mat.id}/view`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="btn btn-primary"
                     style={{ flex: 1, textAlign: 'center', textDecoration: 'none', fontSize: '13px' }}
                   >

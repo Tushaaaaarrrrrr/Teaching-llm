@@ -636,6 +636,8 @@ export default function CourseDetailPage() {
                             {item.pptUrl && (
                               <Link
                                 href={`/material/${item.id}/view`}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="btn btn-ghost btn-sm"
                               >
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
