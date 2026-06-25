@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isManagerOrSuperAdmin, getAccessibleCourseIds } from '@/lib/auth'
+import { getSession, getFullSession, isManagerOrSuperAdmin } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { sanitizeInput } from '@/lib/validation'
@@ -10,95 +10,119 @@ import { logCourseDataDiagnostics } from '@/lib/course-data-diagnostics'
 
 export async function GET() {
   try {
-    const session = await getSession()
+    const session = await getFullSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
 
     const where: any = {
       isGlobal: false,
     }
 
-    if (!isManagerOrSuperAdmin(session.role)) {
+    const isManager = isManagerOrSuperAdmin(session.role)
+    if (!isManager) {
       where.isDisabled = false
     }
 
-    if (accessibleCourseIds !== null) {
-      where.id = { in: accessibleCourseIds }
+    if (session.accessibleCourseIds !== null) {
+      where.id = { in: session.accessibleCourseIds }
     }
 
-    const courses = await prisma.course.findMany({
-      where,
-      include: {
-        createdBy: { select: { name: true } },
-        topics: {
-          include: {
-            content: {
-              select: {
-                videoUrl: true,
-                pptUrl: true,
-              },
-            },
-            sharedContentLinks: {
-              include: {
-                content: {
-                  select: {
-                    videoUrl: true,
-                    pptUrl: true,
-                  },
-                },
-              },
+    const courseFilter = {
+      isGlobal: false,
+      ...(isManager ? {} : { isDisabled: false }),
+      ...(session.accessibleCourseIds !== null ? { id: { in: session.accessibleCourseIds } } : {})
+    }
+
+    // Parallelize course fetch and minimal content counts queries
+    const [courses, directContents, sharedContents] = await Promise.all([
+      prisma.course.findMany({
+        where,
+        include: {
+          createdBy: { select: { name: true } },
+          _count: {
+            select: {
+              topics: true,
+              courseEvents: true,
             },
           },
         },
-        _count: {
-          select: {
-            courseEvents: true,
-          },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.content.findMany({
+        where: {
+          topic: {
+            course: courseFilter
+          }
         },
-      },
-      orderBy: { createdAt: 'desc' },
+        select: {
+          videoUrl: true,
+          pptUrl: true,
+          topic: {
+            select: { courseId: true }
+          }
+        }
+      }),
+      prisma.topicSharedContent.findMany({
+        where: {
+          topic: {
+            course: courseFilter
+          }
+        },
+        select: {
+          content: {
+            select: {
+              videoUrl: true,
+              pptUrl: true,
+            }
+          },
+          topic: {
+            select: { courseId: true }
+          }
+        }
+      })
+    ])
+
+    // Build count maps for O(1) lookups
+    const lectureCountMap = new Map<string, number>()
+    const materialCountMap = new Map<string, number>()
+
+    directContents.forEach(content => {
+      const courseId = content.topic?.courseId
+      if (!courseId) return
+      if (content.videoUrl) {
+        lectureCountMap.set(courseId, (lectureCountMap.get(courseId) || 0) + 1)
+      }
+      if (content.pptUrl) {
+        materialCountMap.set(courseId, (materialCountMap.get(courseId) || 0) + 1)
+      }
     })
 
-    // Fetch current user's enrollment types to attach to each course
-    const userEnrollments = await prisma.enrollment.findMany({
-      where: { userId: session.userId },
-      select: { courseId: true, type: true },
+    sharedContents.forEach(link => {
+      const courseId = link.topic?.courseId
+      if (!courseId) return
+      if (link.content?.videoUrl) {
+        lectureCountMap.set(courseId, (lectureCountMap.get(courseId) || 0) + 1)
+      }
+      if (link.content?.pptUrl) {
+        materialCountMap.set(courseId, (materialCountMap.get(courseId) || 0) + 1)
+      }
     })
-    const enrollmentTypeMap = new Map(userEnrollments.map(e => [e.courseId, e.type]))
 
     const nowTime = new Date().getTime()
-    const isManager = isManagerOrSuperAdmin(session.role)
 
     const coursesWithCounts = courses.map(course => {
-      const topicsCount = course.topics.length
-      let lecturesCount = 0
-      let materialsCount = 0
+      const topicsCount = course._count.topics
+      const lecturesCount = lectureCountMap.get(course.id) || 0
+      const materialsCount = materialCountMap.get(course.id) || 0
 
-      course.topics.forEach(topic => {
-        // Count direct content
-        topic.content.forEach(content => {
-          if (content.videoUrl) lecturesCount++
-          if (content.pptUrl) materialsCount++
-        })
-        // Count shared content from other courses/topics
-        topic.sharedContentLinks?.forEach(link => {
-          if (link.content?.videoUrl) lecturesCount++
-          if (link.content?.pptUrl) materialsCount++
-        })
-      })
-
-      // Remove topics to keep response size manageable
-      const { topics, ...rest } = course
       return {
-        ...rest,
+        ...course,
         isExpired: isManager ? false : isCourseExpired(course),
         isEffectivelyDisabled: isManager ? false : isCourseEffectivelyDisabled(course),
-        enrollmentType: course.isDemo ? 'DEMO' : course.isFree ? 'FREE' : (enrollmentTypeMap.get(course.id) || 'LIVE'),
+        enrollmentType: course.isDemo ? 'DEMO' : course.isFree ? 'FREE' : (session.enrollmentTypes[course.id] || 'LIVE'),
         _count: {
-          ...course._count,
+          courseEvents: course._count.courseEvents,
           topics: topicsCount,
           lectures: lecturesCount,
           materials: materialsCount,
@@ -107,15 +131,10 @@ export async function GET() {
     }).filter(course => {
       if (isManager) return true;
       if (course.isExpired && course.expiresAt) {
-        // 72-hour window starts at the END of the expiry date (11:59 PM IST = UTC+5:30)
-        // So if expiresAt is May 15, students see the grey card all of May 15 and 72 hours after midnight IST
         const expiryDate = new Date(course.expiresAt)
-        // Set to end of day in IST: add 1 day then subtract 1 second, accounting for IST offset
         const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000
         const expiryDateIST = new Date(expiryDate.getTime() + IST_OFFSET_MS)
-        // Set to end of day (23:59:59) in IST
         expiryDateIST.setUTCHours(23, 59, 59, 999)
-        // Convert back to UTC
         const endOfExpiryDayUTC = new Date(expiryDateIST.getTime() - IST_OFFSET_MS)
         const isPast72Hours = (nowTime - endOfExpiryDayUTC.getTime()) > 72 * 60 * 60 * 1000
         if (isPast72Hours) return false
@@ -132,7 +151,11 @@ export async function GET() {
       })
     }
 
-    return NextResponse.json(coursesWithCounts)
+    return NextResponse.json(coursesWithCounts, {
+      headers: {
+        'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+      }
+    })
   } catch (error) {
     console.error('Error fetching courses:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

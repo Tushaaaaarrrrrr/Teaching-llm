@@ -1,18 +1,46 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { verifyToken } from '@/lib/auth'
+import { cookies, headers } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { getUserAvatar } from '@/lib/avatar'
 
+const COOKIE_NAME = 'teaching_llm_token'
+
 export async function GET() {
-  const session = await getSession()
-  if (!session) {
+  // Step 1: Extract JWT token (same logic as getTokenFromRequest in auth.ts)
+  let token: string | undefined = undefined
+
+  try {
+    const cookieStore = await cookies()
+    token = cookieStore.get(COOKIE_NAME)?.value
+  } catch (e) {}
+
+  if (!token) {
+    try {
+      const headerStore = await headers()
+      const authHeader = headerStore.get('Authorization') || headerStore.get('authorization')
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.substring(7)
+      }
+    } catch (e) {}
+  }
+
+  if (!token) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
+  // Step 2: Verify JWT (no DB call)
+  const payload = verifyToken(token)
+  if (!payload) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  }
+
+  // Step 3: SINGLE DB query — covers auth checks + all user fields
   const user = await (prisma.user as any).findUnique({
-    where: { id: session.userId },
-    select: { 
-      id: true, name: true, email: true, role: true, avatar: true, gender: true, createdAt: true, 
+    where: { id: payload.userId },
+    select: {
+      id: true, name: true, email: true, role: true, avatar: true, gender: true, createdAt: true,
+      isTerminated: true, tokenVersion: true,
       canTerminate: true, canCreateStudents: true,
       isSuperManager: true,
       enrollments: {
@@ -36,11 +64,28 @@ export async function GET() {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
+  // Security: check termination + token version
+  if (user.isTerminated) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  }
+
+  if (payload.tokenVersion !== undefined && payload.tokenVersion !== user.tokenVersion) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  }
+
   user.avatar = getUserAvatar(user)
   const transformedUser = {
     ...user,
     isSuperManager: user.isSuperManager || user.email === 'lkiitmng2428@gmail.com',
   }
 
-  return NextResponse.json({ user: transformedUser })
+  // Remove internal fields from response
+  delete transformedUser.isTerminated
+  delete transformedUser.tokenVersion
+
+  return NextResponse.json({ user: transformedUser }, {
+    headers: {
+      'Cache-Control': 'private, max-age=10, stale-while-revalidate=30',
+    }
+  })
 }

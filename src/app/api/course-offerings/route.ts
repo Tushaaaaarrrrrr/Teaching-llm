@@ -5,6 +5,12 @@ import { logCourseDataDiagnostics } from '@/lib/course-data-diagnostics'
 
 export async function GET(request: NextRequest) {
   try {
+    // Auth FIRST — don't waste a DB query if user is unauthenticated
+    const session = await getSession()
+    const role = session?.role
+    const isManager = role === 'MANAGER'
+
+    // SQL-level filtering: non-managers never see disabled courses
     const offerings = await prisma.courseOffering.findMany({
       include: {
         course: {
@@ -19,19 +25,15 @@ export async function GET(request: NextRequest) {
           }
         }
       },
+      where: isManager ? {} : { course: { isDisabled: false } },
       orderBy: { createdAt: 'desc' }
     })
-    
-    // Filter out disabled courses for students, managers see all
-    const session = await getSession()
-    const role = session?.role
-    
-    let filteredOfferings = offerings
-    if (role !== 'MANAGER') {
-      filteredOfferings = offerings.filter(o => !o.course.isDisabled)
-    }
 
-    return NextResponse.json(filteredOfferings)
+    return NextResponse.json(offerings, {
+      headers: {
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
+      }
+    })
   } catch (error) {
     console.error('[course-offerings] GET Error:', error)
     return NextResponse.json({ error: 'Failed to fetch course offerings' }, { status: 500 })

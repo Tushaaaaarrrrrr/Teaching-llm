@@ -136,6 +136,13 @@
   --skeleton-base: #1f2430;
   --skeleton-shine: #272d3b;
   color-scheme: dark;
+
+  /* Community specific dark styles */
+  --community-item-bg: #131b2e;
+  --community-item-bg-mobile: #131b2e;
+  --community-item-text: #f8fafc;
+  --community-item-shadow-light: #1e293b;
+  --community-item-shadow-dark: #020617;
 }
 
 /* Dark-mode logo: dark plate + render the (dark-inked) logo as a clean white
@@ -1611,34 +1618,7 @@ tr:hover td {
   }
 }
 
-/* Dark theme overrides */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b0f19;
-    --surface: #131b2e;
-    --surface-2: #1e293b;
-    --border: rgba(255, 255, 255, 0.08);
-    --border-light: rgba(255, 255, 255, 0.04);
-    --sidebar-bg: #090d16;
-    --text-primary: #f8fafc;
-    --text-secondary: #cbd5e1;
-    --text-muted: #94a3b8;
-    --neu-light: #1e293b;
-    --neu-dark: #020617;
-    --shadow-sm: 2px 2px 5px #020617, -1px -1px 3px #1e293b;
-    --shadow: 4px 4px 10px #020617, -4px -4px 10px #1e293b;
-    --shadow-md: 6px 6px 15px #020617, -6px -6px 15px #1e293b;
-    --shadow-lg: 10px 10px 20px #020617, -10px -10px 20px #1e293b;
-    --shadow-inset: inset 3px 3px 6px #020617, inset -3px -3px 6px #1e293b;
 
-    /* Community dark styles */
-    --community-item-bg: #131b2e;
-    --community-item-bg-mobile: #131b2e;
-    --community-item-text: #f8fafc;
-    --community-item-shadow-light: #1e293b;
-    --community-item-shadow-dark: #020617;
-  }
-}
 
 /* Download App Premium Button Styling */
 .download-btn {

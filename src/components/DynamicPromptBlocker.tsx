@@ -13,10 +13,15 @@ export default function DynamicPromptBlocker() {
 
   useEffect(() => {
     async function checkActivePrompt() {
-      // Don't show if the user JUST completed their permanent profile in this session
-      if (typeof window !== 'undefined' && sessionStorage.getItem('profileJustCompleted') === 'true') {
-        setLoading(false)
-        return
+      // Don't show if checked in session or user just completed profile
+      if (typeof window !== 'undefined') {
+        if (
+          sessionStorage.getItem('profileJustCompleted') === 'true' ||
+          sessionStorage.getItem('prompts_checked_session') === 'true'
+        ) {
+          setLoading(false)
+          return
+        }
       }
 
       try {
@@ -25,6 +30,9 @@ export default function DynamicPromptBlocker() {
           const data = await res.json()
           if (data.prompt) {
             setPrompt(data.prompt)
+          }
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('prompts_checked_session', 'true')
           }
         }
       } catch (err) {

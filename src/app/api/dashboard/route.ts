@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getFullSession } from '@/lib/auth'
 import { getTodaySessionSnapshots } from '@/lib/daily-session-sync'
-import { processProgressQueue } from '@/lib/progress-processor'
 
 // Compute status dynamically
 // Status calculation now handled by getEventStatus in @/lib/date-utils
@@ -14,8 +13,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Process any pending progress updates before fetching dashboard data
-    await processProgressQueue().catch(err => console.error('Dashboard sync error:', err))
+    // NOTE: processProgressQueue() was removed from here — it was processing up to
+    // 100 batch writes on EVERY dashboard load, blocking the response. It now runs
+    // via the /api/sync-queue cron job instead (every 10 min via vercel.json).
 
     const { accessibleCourseIds } = session
     const courseFilter = accessibleCourseIds !== null
@@ -27,12 +27,20 @@ export async function GET() {
 
     const now = new Date()
 
-    const userDb = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { hasSeenWelcome: true }
-    })
-
-    const [totalCourses, totalLectures, totalStudents, totalMaterials] = await Promise.all([
+    const [
+      totalCourses,
+      totalLectures,
+      totalStudents,
+      totalMaterials,
+      syncedSessions,
+      recentViewedLecture,
+      announcements,
+      examCountdown,
+      upcomingExams,
+      openTicketsCount,
+      activeChatSessionsCount,
+      activeAgentsCount
+    ] = await Promise.all([
       prisma.course.count({ where: courseCountFilter }),
       prisma.content.count({ 
         where: { 
@@ -49,18 +57,6 @@ export async function GET() {
           NOT: { pptUrl: "" }
         } 
       }),
-    ])
-
-    const [
-      syncedSessions,
-      recentViewedLecture,
-      announcements,
-      examCountdown,
-      upcomingExams,
-      openTicketsCount,
-      activeChatSessionsCount,
-      activeAgentsCount
-    ] = await Promise.all([
       getTodaySessionSnapshots(session),
       prisma.lectureProgress.findFirst({
         where: {
@@ -150,7 +146,12 @@ export async function GET() {
         role: session.role,
         name: session.name,
         userId: session.userId,
-        hasSeenWelcome: userDb?.hasSeenWelcome || false,
+        hasSeenWelcome: session.hasSeenWelcome || false,
+      }
+    }, {
+      headers: {
+        // Allow browsers to cache for 30s; serve stale while revalidating for up to 60s
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
       }
     })
   } catch (error: any) {

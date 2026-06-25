@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import useSWR from 'swr'
+import { useUserData } from '@/components/UserDataProvider'
 import { getDefaultAvatar } from '@/lib/avatar'
 
 interface HeaderProps {
@@ -82,36 +82,15 @@ export default function Header({ userName, userRole }: HeaderProps) {
     return content.replace(metaRegex, '').trim()
   }
 
-  const { data: notificationsData, mutate: mutateNotifications } = useSWR('/api/notifications', fetcher, {
-    revalidateOnFocus: true,
-  })
+  // Use shared UserDataProvider instead of duplicate SWR/SSE calls
+  const { userData, notifications, mutateNotifications } = useUserData()
 
-  // Listen for real-time ping to invalidate notification SWR cache
-  useEffect(() => {
-    const es = new EventSource('/api/user/stream')
-    es.addEventListener('invalidate', (e) => {
-      try {
-        const payload = JSON.parse(e.data)
-        if (payload.target === 'all' || payload.target === 'notifications') {
-          mutateNotifications()
-        }
-      } catch (err) {}
-    })
-    return () => es.close()
-  }, [mutateNotifications])
-
-  // Fetch current user info for real-time reactivity
-  const { data: userData } = useSWR('/api/auth/me', fetcher, {
-    revalidateOnFocus: true,
-  })
-
+  // Fetch current user info from shared provider
   // Use SWR data if available, otherwise fall back to props
   const currentUserName = userData?.user?.name || userName
   const currentUserRole = userData?.user?.role || userRole
   // Always use the predefined gender-based avatar (custom upload disabled)
   const currentAvatar = getDefaultAvatar(userData?.user?.gender)
-
-  const notifications = Array.isArray(notificationsData) ? notificationsData : []
 
   const unreadCount = notifications.filter(n => !n.isRead).length
 

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendFcmToUsers } from '@/lib/fcm'
 
+export const dynamic = 'force-dynamic'
+
 // Expose CRON GET handler
 export async function GET(request: NextRequest) {
   try {

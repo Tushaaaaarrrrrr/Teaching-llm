@@ -31,6 +31,7 @@ export interface FullSession extends JWTPayload {
   isTerminated: boolean
   isProfileComplete: boolean
   enableDetailedLogs: boolean
+  hasSeenWelcome: boolean
   accessibleCourseIds: string[] | null // null = all courses (MANAGER)
   enrollmentTypes: Record<string, string> // courseId → 'LIVE' | 'RECORDED'
   isMaintenanceMode?: boolean
@@ -69,31 +70,40 @@ export function verifyStreamToken(token: string): StreamTokenPayload | null {
 
 
 
+/**
+ * Extracts the session token from the request cookies or Authorization header.
+ * Pure function — no DB calls, no side effects.
+ */
+async function getTokenFromRequest(): Promise<string | undefined> {
+  let token: string | undefined = undefined
+
+  // 1. Try to get token from cookies
+  try {
+    const cookieStore = await cookies()
+    token = cookieStore.get(COOKIE_NAME)?.value
+  } catch (e) {
+    // In some environments, cookies() might throw if called outside request context
+  }
+
+  // 2. Try to get token from Authorization header
+  if (!token) {
+    try {
+      const headerStore = await headers()
+      const authHeader = headerStore.get('Authorization') || headerStore.get('authorization')
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.substring(7)
+      }
+    } catch (e) {
+      // headers() might throw if called outside request context
+    }
+  }
+
+  return token
+}
+
 export async function getSession(): Promise<JWTPayload | null> {
   try {
-    let token: string | undefined = undefined
-    
-    // 1. Try to get token from cookies
-    try {
-      const cookieStore = await cookies()
-      token = cookieStore.get(COOKIE_NAME)?.value
-    } catch (e) {
-      // In some environments, cookies() might throw if called outside request context
-    }
-    
-    // 2. Try to get token from Authorization header
-    if (!token) {
-      try {
-        const headerStore = await headers()
-        const authHeader = headerStore.get('Authorization') || headerStore.get('authorization')
-        if (authHeader?.startsWith('Bearer ')) {
-          token = authHeader.substring(7)
-        }
-      } catch (e) {
-        // headers() might throw if called outside request context
-      }
-    }
-
+    const token = await getTokenFromRequest()
     if (!token) return null
     
     const payload = verifyToken(token)
@@ -119,83 +129,96 @@ export async function getSession(): Promise<JWTPayload | null> {
 }
 
 /**
- * Combined auth: decodes JWT + fetches user (isTerminated, enrollments) in ONE DB call.
- * Eliminates the need for separate getSession() + getAccessibleCourseIds() + isTerminated check.
+ * Combined auth: decodes JWT + fetches user (isTerminated, enrollments, settings)
+ * in ONE DB call (+ settings in parallel). Skips the redundant getSession() DB
+ * lookup — directly verifies JWT, then fetches everything needed in a single query.
  */
 export async function getFullSession(): Promise<FullSession | null> {
-  const jwtPayload = await getSession()
-  if (!jwtPayload) return null
-
-  // Fetch isTerminated, enrollments AND current tokenVersion in ONE query
-  const now = new Date()
-  let user: any = null;
-  let settings: any = null;
-
   try {
-    user = await (prisma.user.findUnique as any)({
-      where: { id: jwtPayload.userId },
-      select: {
-        role: true,
-        isTerminated: true,
-        tokenVersion: true,
-        isProfileComplete: true,
-        enableDetailedLogs: true,
-        enrollments: (jwtPayload.role !== 'MANAGER') ? {
-          where: {
-            course: {
-              isDisabled: false,
-                OR: [
-                  { expiresAt: null },
-                  { expiresAt: { gt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000) } },
-                ],
-            },
+    // Step 1: Extract and verify JWT (NO database call)
+    const token = await getTokenFromRequest()
+    if (!token) return null
+
+    const jwtPayload = verifyToken(token)
+    if (!jwtPayload) return null
+
+    // Step 2: Fetch user + settings in PARALLEL — ONE user query covers
+    // tokenVersion, isTerminated, enrollments, and profile state. This replaces
+    // the old flow where getSession() did a separate findUnique for just
+    // tokenVersion + isTerminated, followed by another findUnique here.
+    const now = new Date()
+    let user: any = null
+    let settings: any = null
+
+    try {
+      [user, settings] = await Promise.all([
+        (prisma.user.findUnique as any)({
+          where: { id: jwtPayload.userId },
+          select: {
+            role: true,
+            isTerminated: true,
+            tokenVersion: true,
+            isProfileComplete: true,
+            enableDetailedLogs: true,
+            hasSeenWelcome: true,
+            enrollments: (jwtPayload.role !== 'MANAGER') ? {
+              where: {
+                course: {
+                  isDisabled: false,
+                    OR: [
+                      { expiresAt: null },
+                      { expiresAt: { gt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000) } },
+                    ],
+                },
+              },
+              select: { courseId: true, type: true },
+            } : false,
           },
-          select: { courseId: true, type: true },
-        } : false,
-      },
-    })
-  } catch (error: any) {
-    console.error('\n[AUTH CRITICAL ERROR] User database lookup failed in getFullSession!')
-    console.error('This typically indicates the current production DB schema is missing tables or columns defined in code (e.g., Enrollment.type from previous migrations).')
-    console.error('Raw Error:', error?.message || error)
+        }),
+        prisma.updateSystemSettings.findUnique({
+          where: { id: 'singleton' }
+        }).catch((error: any) => {
+          console.error('\n[AUTH WARNING] UpdateSystemSettings lookup failed in getFullSession, defaulting to false.')
+          console.error('Raw Error:', error?.message || error)
+          return null
+        }),
+      ])
+    } catch (error: any) {
+      console.error('\n[AUTH CRITICAL ERROR] User database lookup failed in getFullSession!')
+      console.error('This typically indicates the current production DB schema is missing tables or columns defined in code (e.g., Enrollment.type from previous migrations).')
+      console.error('Raw Error:', error?.message || error)
+      return null
+    }
+
+    // Security Check: Token Version Invalidation
+    // If user has a tokenVersion in JWT, it MUST match the DB.
+    // Exception: If JWT is missing it (backward compatibility), allow it but next login will fix it.
+    if (!user || user.isTerminated) return null
+    
+    if (jwtPayload.tokenVersion !== undefined && jwtPayload.tokenVersion !== user.tokenVersion) {
+      return null
+    }
+
+    const enrollments = (user.enrollments as { courseId: string; type: string }[] | undefined) ?? []
+    const userRole = user.role || jwtPayload.role
+
+    return {
+      ...jwtPayload,
+      role: userRole,
+      isTerminated: user.isTerminated,
+      isProfileComplete: user.isProfileComplete,
+      enableDetailedLogs: user.enableDetailedLogs || false,
+      hasSeenWelcome: user.hasSeenWelcome || false,
+      accessibleCourseIds: (userRole === 'MANAGER') 
+        ? null 
+        : enrollments.map(e => e.courseId),
+      enrollmentTypes: (userRole === 'MANAGER')
+        ? {}
+        : Object.fromEntries(enrollments.map(e => [e.courseId, e.type])),
+      isMaintenanceMode: settings?.maintenanceMode && (userRole !== 'MANAGER')
+    }
+  } catch {
     return null
-  }
-
-  try {
-    settings = await prisma.updateSystemSettings.findUnique({
-      where: { id: 'singleton' }
-    })
-  } catch (error: any) {
-    console.error('\n[AUTH WARNING] UpdateSystemSettings lookup failed in getFullSession, defaulting to false.')
-    console.error('Raw Error:', error?.message || error)
-    settings = null
-  }
-
-  // Security Check: Token Version Invalidation
-  // If user has a tokenVersion in JWT, it MUST match the DB.
-  // Exception: If JWT is missing it (backward compatibility), allow it but next login will fix it.
-  if (!user || user.isTerminated) return null
-  
-  if (jwtPayload.tokenVersion !== undefined && jwtPayload.tokenVersion !== user.tokenVersion) {
-    return null
-  }
-
-  const enrollments = (user.enrollments as { courseId: string; type: string }[] | undefined) ?? []
-  const userRole = user.role || jwtPayload.role
-
-  return {
-    ...jwtPayload,
-    role: userRole,
-    isTerminated: user.isTerminated,
-    isProfileComplete: user.isProfileComplete,
-    enableDetailedLogs: user.enableDetailedLogs || false,
-    accessibleCourseIds: (userRole === 'MANAGER') 
-      ? null 
-      : enrollments.map(e => e.courseId),
-    enrollmentTypes: (userRole === 'MANAGER')
-      ? {}
-      : Object.fromEntries(enrollments.map(e => [e.courseId, e.type])),
-    isMaintenanceMode: settings?.maintenanceMode && (userRole !== 'MANAGER')
   }
 }
 

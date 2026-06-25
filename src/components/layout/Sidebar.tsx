@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import useSWR from 'swr'
+import { useUserData } from '@/components/UserDataProvider'
 
 interface NavItem {
   href: string
@@ -346,69 +346,12 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     setIsOpen(false)
   }, [pathname])
 
-  const { data: userData } = useSWR('/api/auth/me', (url) => fetch(url).then(r => r.json()), {
-    revalidateOnFocus: true
-  })
+  // Use shared UserDataProvider instead of duplicate SWR/SSE calls
+  const { userData, unreadCounts: unread } = useUserData()
 
   // Use SWR data if available, otherwise fall back to props
   const currentUserName = userData?.user?.name || userName
   const currentUserRole = userData?.user?.role || userRole
-
-  const { data: unread, mutate: mutateUnread } = useSWR('/api/unread', (url) => fetch(url).then(r => r.json()), {
-    revalidateOnFocus: true
-  })
-
-  // Listen for real-time ping to invalidate unread counts SWR cache
-  useEffect(() => {
-    let es: EventSource | null = null
-    let reconnectTimeout: NodeJS.Timeout | null = null
-    let active = true
-
-    function connect() {
-      if (!active) return
-      
-      try {
-        es = new EventSource('/api/user/stream')
-        
-        es.addEventListener('invalidate', (e) => {
-          try {
-            const payload = JSON.parse(e.data)
-            if (payload.target === 'all' || payload.target === 'unread') {
-              mutateUnread()
-            }
-          } catch (err) {}
-        })
-
-        es.onerror = () => {
-          if (es) {
-            es.close()
-            es = null
-          }
-          // Retry after 30 seconds to avoid connection storms
-          if (active) {
-            reconnectTimeout = setTimeout(connect, 30000)
-          }
-        }
-      } catch (err) {
-        console.error('SSE Connection error:', err)
-        if (active) {
-          reconnectTimeout = setTimeout(connect, 30000)
-        }
-      }
-    }
-
-    connect()
-
-    return () => {
-      active = false
-      if (es) {
-        es.close()
-      }
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout)
-      }
-    }
-  }, [mutateUnread])
 
   const visibleItems = NAV_ITEMS.filter(
     item => !item.roles || item.roles.includes(currentUserRole)
