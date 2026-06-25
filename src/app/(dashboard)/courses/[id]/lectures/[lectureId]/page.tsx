@@ -489,7 +489,7 @@ export default function LecturePage() {
                       padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
                     }}
                   >
-                    Open Viewer
+                    Download Notes
                   </Link>
                 </div>
               ) : (
@@ -751,7 +751,7 @@ export default function LecturePage() {
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '0.9'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
                   >
-                    Open Viewer
+                    Download Notes
                   </Link>
                 </div>
               ) : (

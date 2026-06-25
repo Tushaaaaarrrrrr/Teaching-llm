@@ -416,7 +416,7 @@ export default function FreeMaterialsPage() {
                     className="btn btn-primary"
                     style={{ flex: 1, textAlign: 'center', textDecoration: 'none', fontSize: '13px' }}
                   >
-                    Open Viewer
+                    Download Notes
                   </a>
                 ) : (
                   <a
