@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { normalizeMeetLink } from '@/lib/meet-link'
+import { formatTimeString12Hour } from '@/lib/date-utils'
 
 interface CalEvent {
   id: string
@@ -461,10 +462,10 @@ function CalendarPageContent() {
                     borderLeft: `5px solid ${tc.bg}`,
                   }}
                 >
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: '56px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e1e3a' }}>{ev.time || '—'}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: '76px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e1e3a' }}>{ev.time ? formatTimeString12Hour(ev.time) : '—'}</span>
                     {ev.endTime && (
-                      <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: 600 }}>to {ev.endTime}</span>
+                      <span style={{ fontSize: '10px', color: '#9999b0', fontWeight: 600 }}>to {formatTimeString12Hour(ev.endTime)}</span>
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -740,7 +741,7 @@ function CalendarPageContent() {
                       {ev.title}
                     </div>
                     <div style={{ fontSize: '12px', color: '#9999b0', fontWeight: '500' }}>
-                      {ev.time && `${ev.time}${ev.endTime ? ` - ${ev.endTime}` : ''} · `}
+                      {ev.time && `${formatTimeString12Hour(ev.time)}${ev.endTime ? ` - ${formatTimeString12Hour(ev.endTime)}` : ''} · `}
                       {ev.course?.name ? ev.course.name : ev.description || 'Global (All Users)'}
                     </div>
                   </div>
@@ -813,7 +814,7 @@ function CalendarPageContent() {
                   <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Time</div>
                   <div style={{ fontSize: '13px', color: '#1e1e3a' }}>
                     {selectedEvent.time
-                      ? `${selectedEvent.time}${selectedEvent.endTime ? ` - ${selectedEvent.endTime}` : ''}`
+                      ? `${formatTimeString12Hour(selectedEvent.time)}${selectedEvent.endTime ? ` - ${formatTimeString12Hour(selectedEvent.endTime)}` : ''}`
                       : '—'}
                   </div>
                 </div>
@@ -1133,7 +1134,7 @@ function CalendarPageContent() {
                                   {tc.label}
                                 </span>
                                 <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a' }}>
-                                  {ev.time ? `${ev.time}${ev.endTime ? ` - ${ev.endTime}` : ''}` : 'Time TBD'}
+                                  {ev.time ? `${formatTimeString12Hour(ev.time)}${ev.endTime ? ` - ${formatTimeString12Hour(ev.endTime)}` : ''}` : 'Time TBD'}
                                 </span>
                               </div>
                               <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#1e1e3a', margin: 0 }}>

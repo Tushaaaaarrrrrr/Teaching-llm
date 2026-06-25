@@ -378,8 +378,8 @@ export default function CourseEditPage() {
 
   const saveContent = async () => {
     if (!contentModal) return
-    if (!contentForm.title.trim() || !contentForm.videoUrl.trim()) {
-      alert('Lecture Title and Video URL are mandatory')
+    if (!contentForm.title.trim()) {
+      alert('Lecture Title is mandatory')
       return
     }
 
@@ -530,7 +530,7 @@ export default function CourseEditPage() {
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '600', color: '#6b6b8a', display: 'block', marginBottom: '6px' }}>
-                    Video URL *
+                    Video URL
                   </label>
                   <input
                     value={contentForm.videoUrl}
@@ -751,7 +751,7 @@ export default function CourseEditPage() {
                 <button onClick={() => setContentModal(null)} className="btn btn-ghost">Cancel</button>
                 <button
                   onClick={saveContent}
-                  disabled={saving || !contentForm.title.trim() || !contentForm.videoUrl.trim()}
+                  disabled={saving || !contentForm.title.trim()}
                   className="btn btn-primary"
                 >
                   {saving ? 'Saving...' : contentModal.mode === 'add' ? 'Add Lecture' : 'Save Changes'}

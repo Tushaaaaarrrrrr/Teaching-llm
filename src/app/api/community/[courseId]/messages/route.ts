@@ -4,7 +4,7 @@ import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { validateLength, sanitizeInput } from '@/lib/validation'
 import { sseEmitter } from '@/lib/sse'
-import { sendCommunityNotification, sendDMNotification } from '@/lib/community-notifications'
+import { sendCommunityNotification, sendDMNotification, sendTagNotification, sendReplyNotification } from '@/lib/community-notifications'
 
 // ─── DM helpers ─────────────────────────────────────────────────────────────
 
@@ -233,7 +233,7 @@ export async function POST(
 
     const course = await prisma.course.findUnique({
       where: { id: params.courseId },
-      select: { isCommunityActive: true },
+      select: { name: true, isCommunityActive: true },
     })
     if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     if (!course.isCommunityActive && session.role !== 'MANAGER') {
@@ -274,6 +274,62 @@ export async function POST(
     })
 
     sseEmitter.emit(`chat:${params.courseId}:message`, message)
+
+    // Parse tag notifications and reply notifications
+    const courseName = course?.name || 'Community'
+    let taggedUserIds: string[] = []
+
+    if (sanitizedContent) {
+      // Find all non-terminated admins/managers
+      const staff = await prisma.user.findMany({
+        where: {
+          role: { in: ['ADMIN', 'MANAGER'] },
+          isTerminated: false,
+        },
+        select: { id: true, name: true },
+      })
+      const taggedStaff = staff.filter(user => {
+        const tagStr = `@${user.name}`
+        return sanitizedContent.toLowerCase().includes(tagStr.toLowerCase())
+      })
+
+      // Notify tagged staff members (excluding the sender themselves)
+      const toNotify = taggedStaff.filter(user => user.id !== session.userId)
+      taggedUserIds = toNotify.map(user => user.id)
+
+      await Promise.all(
+        toNotify.map(user =>
+          sendTagNotification({
+            courseId: params.courseId,
+            courseName,
+            senderName: session.name,
+            senderId: session.userId,
+            recipientId: user.id,
+            messageContent: sanitizedContent,
+            messageId: message.id,
+          }).catch(console.error)
+        )
+      )
+    }
+
+    // Notify the original message sender if they were replied to
+    if (replyToId && message.replyTo) {
+      const originalSenderId = message.replyTo.sender.id
+      // Send a reply notification if:
+      // 1. The original sender is not the person replying
+      // 2. The original sender was not already notified as a tagged user in this message
+      if (originalSenderId !== session.userId && !taggedUserIds.includes(originalSenderId)) {
+        sendReplyNotification({
+          courseId: params.courseId,
+          courseName,
+          senderName: session.name,
+          senderId: session.userId,
+          recipientId: originalSenderId,
+          messageContent: sanitizedContent || 'sent a photo',
+          messageId: message.id,
+        }).catch(console.error)
+      }
+    }
 
     // Notify all enrolled, unmuted users (non-blocking)
     sendCommunityNotification(params.courseId, {
@@ -373,7 +429,6 @@ export async function DELETE(
       data: {
         isDeleted: true,
         deletedAt: new Date(),
-        content: session.role === 'MANAGER' ? '[Message deleted by manager]' : '[Message deleted by user]',
       },
     })
 
@@ -385,6 +440,7 @@ export async function DELETE(
       actionDescription: `${session.name} deleted a message in community chat`,
       moduleName: MODULE.COMMUNITY,
       targetId: messageId,
+      metadata: { originalContent: message.content },
     })
 
     sseEmitter.emit(`chat:${params.courseId}:delete`, messageId)

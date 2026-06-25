@@ -27,7 +27,9 @@ export default function SupportFloatingButton() {
     '/community',
     '/calendar',
     '/materials',
-    '/study/content-bank'
+    '/study/content-bank',
+    '/courses',
+    '/live'
   ]
 
   const isHidden = hiddenPaths.some(path => pathname === path || pathname.startsWith(path + '/'))

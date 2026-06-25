@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { sendFcmToUsers } from '@/lib/fcm'
+import { sseEmitter } from '@/lib/sse'
 
 // ─── Throttle: max 1 push per 3 seconds per group to prevent double-sends ────
 const throttleMap = new Map<string, number>()
@@ -112,5 +113,129 @@ export async function sendDMNotification(
     })
   } catch (err) {
     console.error('[community-notifications] Error sending DM push:', err)
+  }
+}
+
+/**
+ * Send FCM push, create in-app notification, and emit SSE to notify
+ * a user they have been tagged in a community chat.
+ */
+export async function sendTagNotification({
+  courseId,
+  courseName,
+  senderName,
+  senderId,
+  recipientId,
+  messageContent,
+  messageId,
+}: {
+  courseId: string
+  courseName: string
+  senderName: string
+  senderId: string
+  recipientId: string
+  messageContent: string
+  messageId: string
+}) {
+  try {
+    const truncatedContent = messageContent.length > 100
+      ? messageContent.slice(0, 97) + '...'
+      : messageContent
+
+    const title = `Tagged in ${courseName}`
+    const content = `${senderName} tagged you: ${truncatedContent}`
+
+    // 1. Create database notification
+    await prisma.notification.create({
+      data: {
+        userId: recipientId,
+        title,
+        content,
+        type: 'COMMUNITY',
+      },
+    })
+
+    // 2. Emit SSE to refresh SWR notifications on client
+    sseEmitter.emit(`user:${recipientId}:notify`)
+
+    // 3. Send FCM push (respecting global notification preferences)
+    const recipient = await prisma.user.findUnique({
+      where: { id: recipientId },
+      select: { notifCommunityEnabled: true },
+    })
+    if (recipient?.notifCommunityEnabled) {
+      await sendFcmToUsers([recipientId], {
+        title,
+        body: content,
+        url: `/community?course=${courseId}`,
+        tag: `tag_${messageId}`,
+        importance: 'high',
+        sound: 'default',
+      })
+    }
+  } catch (err) {
+    console.error('[community-notifications] Error sending tag notification:', err)
+  }
+}
+
+/**
+ * Send FCM push, create in-app notification, and emit SSE to notify
+ * a user that their message has been replied to.
+ */
+export async function sendReplyNotification({
+  courseId,
+  courseName,
+  senderName,
+  senderId,
+  recipientId,
+  messageContent,
+  messageId,
+}: {
+  courseId: string
+  courseName: string
+  senderName: string
+  senderId: string
+  recipientId: string
+  messageContent: string
+  messageId: string
+}) {
+  try {
+    const truncatedContent = messageContent.length > 100
+      ? messageContent.slice(0, 97) + '...'
+      : messageContent
+
+    const title = `Reply in ${courseName}`
+    const content = `${senderName} replied to your message: ${truncatedContent}`
+
+    // 1. Create database notification
+    await prisma.notification.create({
+      data: {
+        userId: recipientId,
+        title,
+        content,
+        type: 'COMMUNITY',
+      },
+    })
+
+    // 2. Emit SSE to refresh SWR notifications on client
+    sseEmitter.emit(`user:${recipientId}:notify`)
+
+    // 3. Send FCM push (respecting global notification preferences)
+    const recipient = await prisma.user.findUnique({
+      where: { id: recipientId },
+      select: { notifCommunityEnabled: true },
+    })
+    if (recipient?.notifCommunityEnabled) {
+      await sendFcmToUsers([recipientId], {
+        title,
+        body: content,
+        url: `/community?course=${courseId}`,
+        tag: `reply_${messageId}`,
+        importance: 'high',
+        sound: 'default',
+      })
+    }
+  } catch (err) {
+    console.error('[community-notifications] Error sending reply notification:', err)
   }
 }

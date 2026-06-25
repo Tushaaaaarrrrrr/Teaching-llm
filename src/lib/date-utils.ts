@@ -12,15 +12,75 @@ export function formatIST(date: string | Date, options: Intl.DateTimeFormatOptio
   try {
     const d = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(d.getTime())) return 'Invalid Date';
-    
-    return new Intl.DateTimeFormat('en-IN', {
-      ...options,
-      timeZone: 'Asia/Kolkata'
-    }).format(d);
+
+    const hasTime = options.hour !== undefined || options.minute !== undefined;
+    const isHour12 = options.hour12 !== false;
+
+    if (!hasTime) {
+      return new Intl.DateTimeFormat('en-IN', {
+        ...options,
+        timeZone: 'Asia/Kolkata'
+      }).format(d);
+    }
+
+    if (!isHour12) {
+      const formatOpts: Intl.DateTimeFormatOptions = {
+        ...options,
+        timeZone: 'Asia/Kolkata',
+        hour12: false
+      };
+      return new Intl.DateTimeFormat('en-IN', formatOpts).format(d);
+    }
+
+    // 12-hour AM/PM format (guaranteed to avoid system 24-hour setting override in WebViews)
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).formatToParts(d);
+
+    const hourStr = parts.find(p => p.type === 'hour')?.value || '00';
+    const minuteStr = parts.find(p => p.type === 'minute')?.value || '00';
+
+    let hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    hour = hour ? hour : 12;
+
+    const is2Digit = options.hour === '2-digit';
+    const formattedHour = is2Digit ? hour.toString().padStart(2, '0') : hour.toString();
+    const timePart = `${formattedHour}:${minuteStr} ${ampm}`;
+
+    const hasDate = options.month !== undefined || options.day !== undefined || options.year !== undefined;
+    if (hasDate) {
+      const datePart = new Intl.DateTimeFormat('en-IN', {
+        month: options.month,
+        day: options.day,
+        year: options.year,
+        timeZone: 'Asia/Kolkata'
+      }).format(d);
+      return `${datePart}, ${timePart}`;
+    }
+
+    return timePart;
   } catch (error) {
     console.error('Error formatting IST date:', error);
     return 'Invalid Date';
   }
+}
+
+export function formatTimeString12Hour(timeStr?: string | null): string {
+  if (!timeStr) return '';
+  const parts = timeStr.trim().split(':');
+  if (parts.length < 2) return timeStr;
+  let hour = parseInt(parts[0], 10);
+  const minute = parts[1];
+  if (isNaN(hour)) return timeStr;
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  hour = hour ? hour : 12;
+  return `${hour}:${minute} ${ampm}`;
 }
 
 export function formatISTDate(date: string | Date) {

@@ -53,6 +53,38 @@
   --community-item-shadow-dark: #c5c7cf;
 }
 
+/* Community Channel List Buttons */
+.community-channel-btn {
+  background: var(--community-item-bg);
+  box-shadow: 4px 4px 8px var(--community-item-shadow-dark), -4px -4px 8px var(--community-item-shadow-light);
+}
+
+@media (max-width: 768px) {
+  .community-channel-btn {
+    background: var(--community-item-bg-mobile);
+    box-shadow: 6px 6px 14px var(--community-item-shadow-dark), -6px -6px 14px var(--community-item-shadow-light);
+  }
+}
+
+/* DM Channel List Buttons */
+.dm-channel-btn {
+  background: var(--community-item-bg);
+  box-shadow: 4px 4px 8px var(--community-item-shadow-dark), -4px -4px 8px var(--community-item-shadow-light);
+}
+
+@media (max-width: 768px) {
+  .dm-channel-btn {
+    background: var(--community-item-bg-mobile);
+    box-shadow: 6px 6px 14px var(--community-item-shadow-dark), -6px -6px 14px var(--community-item-shadow-light);
+  }
+}
+
+/* DM Search Modal User Button */
+.modal-user-btn {
+  background: var(--community-item-bg);
+  box-shadow: 4px 4px 8px var(--community-item-shadow-dark), -4px -4px 8px var(--community-item-shadow-light);
+}
+
 html {
   height: 100%;
   overflow-x: hidden;

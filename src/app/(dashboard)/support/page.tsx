@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import { formatIST } from '@/lib/date-utils'
 import ManagerUserModal from '@/components/ManagerUserModal'
 
 interface Ticket {
@@ -821,7 +822,7 @@ export default function SupportPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px' }}>{new Date(t.updatedAt).toLocaleDateString('en-GB')}</span>
+                    <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px' }}>{formatIST(t.createdAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                     {userRole === 'MANAGER' && (
                       <button onClick={e => { e.stopPropagation(); deleteTicket(t.id) }}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '2px', display: 'flex' }} title="Delete ticket">
@@ -914,6 +915,7 @@ export default function SupportPage() {
                       color: userRole === 'MANAGER' ? '#3636e8' : 'inherit'
                     }}
                   >{selected.user.name}</span>
+                  {selected.createdAt && ` · Raised: ${formatIST(selected.createdAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}`}
                 </div>
                 <div style={{ fontSize: '13.5px', color: '#1e1e3a', lineHeight: '1.6' }}>{selected.description}</div>
               </div>
@@ -996,7 +998,7 @@ export default function SupportPage() {
                           
                           {/* Time inside bubble */}
                           <div style={{ position: 'absolute', bottom: '4px', right: '8px', fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            {new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {formatIST(r.createdAt, { hour: '2-digit', minute: '2-digit', hour12: true })}
                             {isMe && (
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                             )}
@@ -1148,7 +1150,7 @@ export default function SupportPage() {
                           )}
                         </div>
                         <div style={{ fontSize: '13.5px', lineHeight: '1.5' }}>{m.content}</div>
-                        <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div style={{ fontSize: '10px', marginTop: '4px', opacity: 0.6, textAlign: 'right' }}>{formatIST(m.createdAt, { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
                       </div>
                     </div>
                   )
@@ -1324,7 +1326,7 @@ export default function SupportPage() {
                             
                             {/* Time inside bubble */}
                             <div style={{ position: 'absolute', bottom: '2px', right: '8px', fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                              {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {formatIST(m.createdAt, { hour: '2-digit', minute: '2-digit', hour12: true })}
                               {isMe && (
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                               )}

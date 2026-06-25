@@ -5,8 +5,18 @@ import { getSession, isAdminOrManager } from '@/lib/auth'
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession()
-    if (!session || !isAdminOrManager(session.role)) {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const isStaff = isAdminOrManager(session.role)
+    const selectFields: any = {
+      id: true,
+      name: true,
+      role: true
+    }
+    if (isStaff) {
+      selectFields.email = true
     }
 
     const staff = await prisma.user.findMany({
@@ -14,12 +24,7 @@ export async function GET(request: NextRequest) {
         role: { in: ['ADMIN', 'MANAGER'] },
         isTerminated: false
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true
-      },
+      select: selectFields,
       orderBy: { name: 'asc' }
     })
 

@@ -330,7 +330,7 @@ function UpcomingSessionRow({ session, slotIdx }: { session: CourseEvent; slotId
   const slot = TIME_SLOT_COLORS[slotIdx % TIME_SLOT_COLORS.length]
   const instructor = session.course?.teacherName || session.instructor?.name || 'Faculty'
   const subject = session.course?.name || 'Class'
-  const start = formatIST(session.startTime, { hour: '2-digit', minute: '2-digit', hour12: false })
+  const start = formatIST(session.startTime, { hour: 'numeric', minute: '2-digit', hour12: true })
   const isToday = new Date(session.startTime).toDateString() === new Date().toDateString()
 
   return (
@@ -350,7 +350,7 @@ function UpcomingSessionRow({ session, slotIdx }: { session: CourseEvent; slotId
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         gap: '2px', flexShrink: 0,
       }}>
-        <div style={{ fontSize: '15px', fontWeight: 900, letterSpacing: '-0.02em' }}>{start}</div>
+        <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '-0.02em' }}>{start}</div>
         <div style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.08em' }}>
           {isToday ? 'TODAY' : new Date(session.startTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()}
         </div>

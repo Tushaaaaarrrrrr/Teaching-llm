@@ -114,6 +114,13 @@ export default function CommunityPage() {
   const [replyingTo, setReplyingTo] = useState<CommMsg | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
+  // Tagging state
+  const [staff, setStaff] = useState<{ id: string; name: string; role: string }[]>([])
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false)
+  const [tagSearchQuery, setTagSearchQuery] = useState('')
+  const [tagTriggerIndex, setTagTriggerIndex] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
+
   const loadMessages = useCallback(async (classId: string) => {
     const res = await fetch(`/api/community/${classId}/messages`)
     const data = await res.json().catch(() => ({}))
@@ -130,6 +137,12 @@ export default function CommunityPage() {
       setUserName(d.user?.name || '')
     })
     
+    // Fetch staff list for tagging
+    fetch('/api/users/staff')
+      .then(r => r.json())
+      .then(d => setStaff(Array.isArray(d.staff) ? d.staff : []))
+      .catch(console.error)
+    
     // Parse query params to auto-focus the channel (e.g. from push notifications)
     let preferredId: string | undefined = undefined
     if (typeof window !== 'undefined') {
@@ -144,6 +157,14 @@ export default function CommunityPage() {
     }
     loadClasses(preferredId)
   }, [])
+
+  // Close tag suggestions on click outside
+  useEffect(() => {
+    if (!showTagSuggestions) return
+    const close = () => setShowTagSuggestions(false)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [showTagSuggestions])
 
   async function loadClasses(preferredId?: string) {
     try {
@@ -335,6 +356,88 @@ export default function CommunityPage() {
     })
     setReplyingTo(null)
     loadMessages(selectedClass.id)
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setInput(val)
+
+    const cursor = e.target.selectionStart || 0
+    const textBeforeCursor = val.slice(0, cursor)
+    const lastWord = textBeforeCursor.split(/\s/).pop() || ''
+    if (lastWord.startsWith('@')) {
+      const query = lastWord.slice(1)
+      setShowTagSuggestions(true)
+      setTagSearchQuery(query)
+      setTagTriggerIndex(cursor - lastWord.length)
+    } else {
+      setShowTagSuggestions(false)
+    }
+  }
+
+  const selectTagUser = (user: { id: string; name: string }) => {
+    const val = input
+    const cursor = inputRef.current?.selectionStart || 0
+    const textBeforeTrigger = val.slice(0, tagTriggerIndex)
+    const textAfterCursor = val.slice(cursor)
+    
+    const newText = `${textBeforeTrigger}@${user.name} ${textAfterCursor}`
+    setInput(newText)
+    setShowTagSuggestions(false)
+    
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus()
+        const newCursorPos = tagTriggerIndex + user.name.length + 2 // trigger + name + space
+        inputRef.current.setSelectionRange(newCursorPos, newCursorPos)
+      }
+    }, 50)
+  }
+
+  const filteredStaff = staff.filter(user =>
+    user.name.toLowerCase().includes(tagSearchQuery.toLowerCase())
+  )
+
+  function escapeRegExp(string: string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+
+  const renderMessageContent = (content: string) => {
+    if (!content) return null
+    if (staff.length === 0) return content
+
+    const sortedStaff = [...staff].sort((a, b) => b.name.length - a.name.length)
+    let parts: (string | React.JSX.Element)[] = [content]
+
+    for (const member of sortedStaff) {
+      const tagStr = `@${member.name}`
+      const nextParts: (string | React.JSX.Element)[] = []
+
+      for (const part of parts) {
+        if (typeof part !== 'string') {
+          nextParts.push(part)
+          continue
+        }
+
+        const regex = new RegExp(`(${escapeRegExp(tagStr)})`, 'gi')
+        const splitPart = part.split(regex)
+
+        for (const subPart of splitPart) {
+          if (subPart.toLowerCase() === tagStr.toLowerCase()) {
+            nextParts.push(
+              <span key={`${member.id}-${Math.random()}`} style={{ color: '#3636e8', fontWeight: '800', cursor: 'pointer' }}>
+                {subPart}
+              </span>
+            )
+          } else {
+            nextParts.push(subPart)
+          }
+        }
+      }
+      parts = nextParts
+    }
+
+    return parts
   }
 
   async function toggleMuteCourse(courseId: string, currentMuted: boolean) {
@@ -569,26 +672,22 @@ export default function CommunityPage() {
           <button
             key={cls.id}
             onClick={() => setSelectedClass(cls)}
+            className={`community-channel-btn ${active ? 'active' : ''}`}
             style={{
               display: 'flex', alignItems: 'center', gap: isMobile ? '14px' : '12px',
               padding: isMobile ? '14px 16px' : '12px 16px',
               borderRadius: isMobile ? '20px' : '18px', border: 'none',
               cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
               transition: 'all 0.2s',
-              background: active ? cls.color : (isMobile ? 'var(--community-item-bg-mobile)' : 'var(--community-item-bg)'),
+              background: active ? cls.color : undefined,
               color: active ? '#fff' : 'var(--community-item-text)',
               boxShadow: active
                 ? `5px 5px 14px ${cls.color}55, -3px -3px 8px var(--community-item-shadow-light)`
-                : (isMobile
-                  ? '6px 6px 14px var(--community-item-shadow-dark), -6px -6px 14px var(--community-item-shadow-light)'
-                  : '4px 4px 8px var(--community-item-shadow-dark), -4px -4px 8px var(--community-item-shadow-light)'),
+                : undefined,
               position: 'relative',
               minHeight: isMobile ? '64px' : 'auto',
             }}
           >
-            {cls.hasUnread && !active && (
-              <div style={{ position: 'absolute', top: '10px', right: '12px', width: '9px', height: '9px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
-            )}
             <div style={{
               width: isMobile ? '44px' : '34px', height: isMobile ? '44px' : '34px',
               borderRadius: isMobile ? '14px' : '10px', flexShrink: 0,
@@ -689,23 +788,21 @@ export default function CommunityPage() {
               <button
                 key={cls.id}
                 onClick={() => setSelectedClass(cls)}
+                className={`dm-channel-btn ${selectedClass?.id === cls.id ? 'active' : ''}`}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
                   padding: '10px 14px', borderRadius: '18px', border: 'none',
                   cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
                   transition: 'all 0.2s',
-                  background: selectedClass?.id === cls.id ? '#3636e8' : 'var(--community-item-bg)',
+                  background: selectedClass?.id === cls.id ? '#3636e8' : undefined,
                   color: selectedClass?.id === cls.id ? '#fff' : 'var(--community-item-text)',
                   boxShadow: selectedClass?.id === cls.id
                     ? '5px 5px 12px rgba(54,54,232,0.35), -3px -3px 8px var(--community-item-shadow-light)'
-                    : '4px 4px 8px var(--community-item-shadow-dark), -4px -4px 8px var(--community-item-shadow-light)',
+                    : undefined,
                   opacity: cls.isDmDisabled ? 0.55 : 1,
                   position: 'relative'
                 }}
               >
-                {cls.hasUnread && selectedClass?.id !== cls.id && (
-                  <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
-                )}
                 <div style={{
                   width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
                   background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : '#3636e822',
@@ -897,7 +994,7 @@ export default function CommunityPage() {
                 
                 const showAvatar = idx === 0 || messages[idx - 1]?.sender.id !== msg.sender.id || showDateHeader
 
-                if (msg.isDeleted) {
+                if (msg.isDeleted && userRole !== 'MANAGER') {
                   return (
                     <React.Fragment key={msg.id}>
                       {showDateHeader && (
@@ -977,12 +1074,16 @@ export default function CommunityPage() {
                           <div style={{
                             padding: msg.imageUrl ? '5px 5px 15px 5px' : '7px 12px 15px 12px',
                             borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                            background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff',
+                            background: msg.isDeleted
+                              ? '#fff5f5'
+                              : isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff',
                             color: '#1e1e3a',
                             fontSize: '14px', lineHeight: '1.5',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                             minWidth: '80px',
-                            border: isMe ? 'none' : '1px solid #e8eaf0',
+                            border: msg.isDeleted
+                              ? '1px dashed #fecaca'
+                              : isMe ? 'none' : '1px solid #e8eaf0',
                             position: 'relative',
                             transition: 'all 0.2s',
                           }}>
@@ -1057,6 +1158,11 @@ export default function CommunityPage() {
                                     </svg>
                                   </span>
                                 )}
+                                {msg.isDeleted && (
+                                  <span style={{ fontSize: '9px', background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '50px', fontWeight: '800' }}>
+                                    Deleted
+                                  </span>
+                                )}
                               </div>
                             )}
 
@@ -1076,7 +1182,7 @@ export default function CommunityPage() {
                             )}
                             {msg.content && (
                               <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                                {msg.content}
+                                {renderMessageContent(msg.content)}
                               </div>
                             )}
 
@@ -1087,6 +1193,7 @@ export default function CommunityPage() {
                               display: 'flex', alignItems: 'center', gap: '3px',
                               fontWeight: '600',
                             }}>
+                              {msg.isDeleted && <span style={{ color: '#ef4444', marginRight: '4px' }}>[Deleted]</span>}
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               {isMe && (
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1096,7 +1203,7 @@ export default function CommunityPage() {
 
                           {/* Message Actions (Visible on Hover/Right Side) */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', opacity: 0, transition: 'opacity 0.2s' }} className="msg-actions">
-                            {(userRole === 'MANAGER' || isMe) && !msg.id.startsWith('temp-') && (
+                            {(userRole === 'MANAGER' || isMe) && !msg.isDeleted && !msg.id.startsWith('temp-') && (
                               <button
                                 onClick={() => deleteMessage(msg.id)}
                                 disabled={deletingId === msg.id}
@@ -1219,10 +1326,84 @@ export default function CommunityPage() {
                   </svg>
                 </button>
                 <div style={{ flex: 1, position: 'relative' }}>
+                  {showTagSuggestions && filteredStaff.length > 0 && !isDM(selectedClass) && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '100%',
+                      left: '12px',
+                      marginBottom: '8px',
+                      background: 'var(--community-item-bg)',
+                      border: '1.5px solid rgba(0,0,0,0.08)',
+                      borderRadius: '16px',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      zIndex: 10,
+                      width: '280px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}>
+                      {filteredStaff.map((user) => (
+                        <button
+                          key={user.id}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            selectTagUser(user)
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '10px 14px',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            width: '100%',
+                            color: 'var(--community-item-text)',
+                            borderBottom: '1px solid rgba(0,0,0,0.02)',
+                            transition: 'background 0.2s',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(54,54,232,0.08)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                        >
+                          <div style={{
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '50%',
+                            background: '#3636e822',
+                            color: '#3636e8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '11px',
+                            fontWeight: '800',
+                          }}>
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {user.name}
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#9999b0', textTransform: 'capitalize' }}>
+                              {user.role.toLowerCase()}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <input
+                    ref={inputRef}
                     value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                    onChange={handleInputChange}
+                    onKeyDown={e => {
+                      if (e.key === 'Escape') {
+                        setShowTagSuggestions(false)
+                      } else if (e.key === 'Enter' && !e.shiftKey) {
+                        sendMessage()
+                      }
+                    }}
                     placeholder={
                       !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER'
                         ? 'This community is disabled'
@@ -1411,16 +1592,16 @@ export default function CommunityPage() {
                       key={u.id}
                       onClick={() => startDM(u.id)}
                       disabled={dmStarting}
+                      className="modal-user-btn"
                       style={{
                         display: 'flex', alignItems: 'center', gap: '12px',
                         padding: '10px 14px', borderRadius: '14px', border: 'none',
                         cursor: dmStarting ? 'default' : 'pointer', textAlign: 'left',
-                        background: 'var(--community-item-bg)', fontFamily: 'inherit',
-                        boxShadow: '4px 4px 8px var(--community-item-shadow-dark), -4px -4px 8px var(--community-item-shadow-light)',
+                        fontFamily: 'inherit',
                         transition: 'all 0.15s', opacity: dmStarting ? 0.6 : 1,
                       }}
-                      onMouseEnter={e => { if (!dmStarting) (e.currentTarget as HTMLButtonElement).style.background = '#3636e8'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--community-item-bg)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--community-item-text)' }}
+                      onMouseEnter={e => { if (!dmStarting) { (e.currentTarget as HTMLButtonElement).style.background = '#3636e8'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; } }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = ''; }}
                     >
                       <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#3636e818', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', color: '#3636e8', flexShrink: 0 }}>
                         {u.name.charAt(0).toUpperCase()}
