@@ -38,6 +38,7 @@ interface ContentItem {
   title: string
   description?: string
   videoUrl?: string
+  youtubeUrl?: string
   videoSource: string
   pptUrl?: string
   topic: {
@@ -91,6 +92,39 @@ export default function LecturePage() {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
     return () => observer.disconnect()
   }, [])
+
+  const [selectedSource, setSelectedSource] = useState<'GOOGLE' | 'YOUTUBE'>('GOOGLE')
+
+  const hasYouTubeLink = Boolean(
+    content?.youtubeUrl || 
+    (content?.videoUrl && (content?.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content?.videoUrl)))
+  )
+  const hasDriveLink = Boolean(
+    content?.videoUrl && !/youtu\.?be/i.test(content?.videoUrl)
+  )
+
+  useEffect(() => {
+    if (content) {
+      if (!hasDriveLink && hasYouTubeLink) {
+        setSelectedSource('YOUTUBE')
+      } else {
+        setSelectedSource('GOOGLE')
+      }
+    }
+  }, [content, hasDriveLink, hasYouTubeLink])
+
+  const showSourceToggle = !isNativeApp && hasDriveLink && hasYouTubeLink
+
+  const getYouTubeId = () => {
+    if (!content) return null
+    if (content.youtubeUrl) {
+      return extractYouTubeId(content.youtubeUrl)
+    }
+    if (content.videoUrl && /youtu\.?be/i.test(content.videoUrl)) {
+      return extractYouTubeId(content.videoUrl)
+    }
+    return null
+  }
 
   function isDriveSource(url: string | undefined, source: string | undefined) {
     if (source === 'GOOGLE_DRIVE') return true
@@ -199,6 +233,175 @@ export default function LecturePage() {
     }
 
     return u
+  }
+
+  const renderVideoContent = () => {
+    if (!content) return null
+
+    // 1. Capacitor Native App Mode
+    if (isNativeApp) {
+      if (hasYouTubeLink) {
+        const ytId = getYouTubeId()
+        if (ytId) {
+          return (
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+              <CustomVideoPlayer source={{ type: 'youtube', videoId: ytId }} />
+            </div>
+          )
+        }
+      }
+      // Error message for native app when YouTube link is not available
+      return (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          background: 'linear-gradient(135deg, #1e1b4b, #0f172a)',
+          color: '#fff', padding: '20px', textAlign: 'center'
+        }}>
+          <div style={{
+            width: '60px', height: '60px', borderRadius: '50%',
+            background: 'rgba(239, 68, 68, 0.12)', backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '16px', border: '1px solid rgba(239, 68, 68, 0.25)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <span style={{ fontSize: '15px', fontWeight: '800', color: '#f87171', marginBottom: '8px' }}>
+            Video not playing on app
+          </span>
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, maxWidth: '280px', lineHeight: '1.4' }}>
+            Please use laptop or browser to watch this lecture.
+          </p>
+        </div>
+      )
+    }
+
+    // 2. Browser/Website Mode
+    if (selectedSource === 'YOUTUBE' && hasYouTubeLink) {
+      const ytId = getYouTubeId()
+      if (ytId) {
+        return (
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+            <CustomVideoPlayer source={{ type: 'youtube', videoId: ytId }} />
+          </div>
+        )
+      }
+    }
+
+    if (selectedSource === 'GOOGLE' && hasDriveLink) {
+      return (
+        <iframe
+          ref={videoIframeRef}
+          src={getEmbedUrl(content.videoUrl, 'GOOGLE_DRIVE')}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          allowFullScreen
+          scrolling="no"
+          onContextMenu={e => e.preventDefault()}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', overflow: 'hidden', background: '#000' }}
+        />
+      )
+    }
+
+    // Fallback if somehow selectedSource was Google but no drive link (or vice versa)
+    if (hasDriveLink) {
+      return (
+        <iframe
+          ref={videoIframeRef}
+          src={getEmbedUrl(content.videoUrl, 'GOOGLE_DRIVE')}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          allowFullScreen
+          scrolling="no"
+          onContextMenu={e => e.preventDefault()}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', overflow: 'hidden', background: '#000' }}
+        />
+      )
+    }
+
+    if (hasYouTubeLink) {
+      const ytId = getYouTubeId()
+      if (ytId) {
+        return (
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+            <CustomVideoPlayer source={{ type: 'youtube', videoId: ytId }} />
+          </div>
+        )
+      }
+    }
+
+    // No video available fallback
+    return (
+      <div style={{
+        position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--text-secondary)', textAlign: 'center', padding: '20px'
+      }}>
+        <Play size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+        <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-muted)' }}>No video available</h3>
+        <p style={{ fontSize: '14px' }}>This lecture doesn't have a video attached.</p>
+      </div>
+    )
+  }
+
+  const renderSourceToggle = () => {
+    if (!showSourceToggle) return null
+    return (
+      <div style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        marginBottom: '14px', 
+        alignItems: 'center',
+        padding: '0 4px'
+      }}>
+        <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+          Source:
+        </span>
+        <div style={{
+          display: 'inline-flex',
+          background: 'var(--surface-2)',
+          padding: '3px',
+          borderRadius: '20px',
+          boxShadow: 'inset 2px 2px 5px var(--neu-dark), inset -2px -2px 5px var(--neu-light)'
+        }}>
+          <button
+            onClick={() => setSelectedSource('GOOGLE')}
+            style={{
+              border: 'none',
+              padding: '4px 14px',
+              borderRadius: '16px',
+              fontSize: '11px',
+              fontWeight: '800',
+              cursor: 'pointer',
+              background: selectedSource === 'GOOGLE' ? 'var(--accent)' : 'transparent',
+              color: selectedSource === 'GOOGLE' ? '#fff' : 'var(--text-secondary)',
+              transition: 'all 0.2s'
+            }}
+          >
+            GOOGLE
+          </button>
+          <button
+            onClick={() => setSelectedSource('YOUTUBE')}
+            style={{
+              border: 'none',
+              padding: '4px 14px',
+              borderRadius: '16px',
+              fontSize: '11px',
+              fontWeight: '800',
+              cursor: 'pointer',
+              background: selectedSource === 'YOUTUBE' ? 'var(--accent)' : 'transparent',
+              color: selectedSource === 'YOUTUBE' ? '#fff' : 'var(--text-secondary)',
+              transition: 'all 0.2s'
+            }}
+          >
+            YOUTUBE
+          </button>
+        </div>
+      </div>
+    )
   }
 
   const handlePostComment = async (parentId: string | null = null) => {
@@ -400,10 +603,11 @@ export default function LecturePage() {
       {/* Video Section */}
       {isMobile ? (
         <>
+        {renderSourceToggle()}
         <div
           ref={videoWrapperRef}
           onContextMenu={e => e.preventDefault()}
-          className={`lecture-video-wrapper-mobile ${content.videoSource === 'GOOGLE_DRIVE' ? 'google-drive' : ''}`}
+          className={`lecture-video-wrapper-mobile ${selectedSource === 'GOOGLE' ? 'google-drive' : ''}`}
           style={{
             width: '100%',
             paddingTop: '56.25%', // 16:9 aspect-ratio fallback (universally supported)
@@ -418,84 +622,7 @@ export default function LecturePage() {
             WebkitUserSelect: 'none',
           }}
         >
-          {content.videoUrl ? (
-            <>
-              {isDriveSource(content.videoUrl, content.videoSource) && isNativeApp ? (
-                // App-only: Drive videos use our backend proxy player inside the WebView.
-                <div 
-                  onClick={() => router.push(`/courses/${params.id}/lectures/${params.lectureId}/play`)}
-                  style={{
-                    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    background: 'linear-gradient(135deg, #1e1b4b, #0f172a)',
-                    color: '#fff', cursor: 'pointer', padding: '20px',
-                    transition: 'opacity 0.2s'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = '0.95'}
-                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                >
-                  <div style={{
-                    width: '68px', height: '68px', borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.12)', backdropFilter: 'blur(8px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    marginBottom: '16px', border: '1px solid rgba(255, 255, 255, 0.25)',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-                    transition: 'transform 0.2s ease'
-                  }}>
-                    <Play size={28} color="#fff" fill="#fff" style={{ marginLeft: '4px' }} />
-                  </div>
-                  <span style={{
-                    fontSize: '15px', fontWeight: '700',
-                    background: 'linear-gradient(135deg, #a5b4fc, #c084fc)',
-                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                    display: 'flex', alignItems: 'center', gap: '6px'
-                  }}>
-                    Click here to play the video
-                    <ExternalLink size={14} color="#a5b4fc" />
-                  </span>
-                </div>
-              ) : isDriveSource(content.videoUrl, content.videoSource) ? (
-                // Website/mobile browser: keep Google Drive's native iframe player.
-                <iframe
-                  ref={videoIframeRef}
-                  src={getEmbedUrl(content.videoUrl, content.videoSource)}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  allowFullScreen
-                  scrolling="no"
-                  onContextMenu={e => e.preventDefault()}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', overflow: 'hidden', background: '#000' }}
-                />
-              ) : (content.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content.videoUrl || '')) && extractYouTubeId(content.videoUrl) ? (
-                // YouTube → unified player using IFrame API engine
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                  <CustomVideoPlayer source={{ type: 'youtube', videoId: extractYouTubeId(content.videoUrl)! }} />
-                </div>
-              ) : (
-                // Other iframe-friendly sources (Vimeo, generic embed)
-                <iframe
-                  ref={videoIframeRef}
-                  src={getEmbedUrl(content.videoUrl, content.videoSource)}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  allowFullScreen
-                  scrolling="no"
-                  onContextMenu={e => e.preventDefault()}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', overflow: 'hidden', background: '#000' }}
-                />
-              )}
-              {/* CustomVideoPlayer has its own fullscreen + speed + skip; no overlay button needed.
-                  The iframe fallback path uses the embed provider's own fullscreen affordance. */}
-            </>
-          ) : (
-            <div style={{
-              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--text-secondary)', textAlign: 'center', padding: '20px'
-            }}>
-              <Play size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-muted)' }}>No video available</h3>
-              <p style={{ fontSize: '14px' }}>This lecture doesn't have a video attached.</p>
-            </div>
-          )}
+          {renderVideoContent()}
         </div>
 
         {/* Mobile lecture meta block — appears UNDER the video like inspiration */}
@@ -516,47 +643,16 @@ export default function LecturePage() {
         </div>
         </>
       ) : (
+        <>
+        {renderSourceToggle()}
         <div style={{
           background: 'var(--text-primary)', borderRadius: '24px', overflow: 'hidden',
           boxShadow: '0 20px 40px rgba(0,0,0,0.15)', marginBottom: '32px',
           position: 'relative', paddingTop: '56.25%' // 16:9 Aspect Ratio
         }}>
-          {content.videoUrl ? (
-            isDriveSource(content.videoUrl, content.videoSource) ? (
-              // Drive → Google Drive iframe (since native proxy player fails/not preferred on desktop/tablet/laptop)
-              <iframe
-                src={getEmbedUrl(content.videoUrl, content.videoSource)}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                onContextMenu={e => e.preventDefault()}
-              />
-            ) : (content.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content.videoUrl || '')) && extractYouTubeId(content.videoUrl) ? (
-              // YouTube → unified player (IFrame API engine)
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                <CustomVideoPlayer source={{ type: 'youtube', videoId: extractYouTubeId(content.videoUrl)! }} />
-              </div>
-            ) : (
-              <iframe
-                src={getEmbedUrl(content.videoUrl, content.videoSource)}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                onContextMenu={e => e.preventDefault()}
-              />
-            )
-          ) : (
-            <div style={{
-              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--text-secondary)', textAlign: 'center', padding: '20px'
-            }}>
-              <Play size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-muted)' }}>No video available</h3>
-              <p style={{ fontSize: '14px' }}>This lecture doesn't have a video attached.</p>
-            </div>
-          )}
+          {renderVideoContent()}
         </div>
+        </>
       )}
 
       {isMobile ? (

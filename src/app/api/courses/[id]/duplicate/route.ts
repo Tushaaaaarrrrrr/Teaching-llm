@@ -87,6 +87,7 @@ export async function POST(
               title: content.title,
               description: content.description,
               videoUrl: content.videoUrl,      // Reuse video URL (don't re-upload)
+              youtubeUrl: content.youtubeUrl,
               pptUrl: content.pptUrl,          // Reuse PPT URL (don't re-upload)
               isRecordingOnly: content.isRecordingOnly,
               videoSource: content.videoSource,

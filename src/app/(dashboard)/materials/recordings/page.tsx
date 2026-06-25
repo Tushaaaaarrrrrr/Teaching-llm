@@ -9,6 +9,7 @@ interface ContentItem {
   title: string
   description?: string
   videoUrl: string
+  youtubeUrl?: string
   videoSource?: string
   pptUrl?: string
   createdAt: string
