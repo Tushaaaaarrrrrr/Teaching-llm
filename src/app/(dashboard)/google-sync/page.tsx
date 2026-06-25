@@ -69,7 +69,7 @@ export default function GoogleSyncPage() {
       {/* Summary Card */}
       {userRole === 'MANAGER' && (
         <div className="card" style={{ overflow: 'hidden', maxWidth: '100%', marginBottom: '20px' }}>
-          <div style={{ padding: '16px 18px', borderBottom: '1px solid #d8dae3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>Google Sync Status</div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -103,7 +103,8 @@ export default function GoogleSyncPage() {
                   alignItems: 'center',
                   padding: '10px 12px',
                   borderRadius: '14px',
-                  background: '#eef0f6',
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border-light)',
                 }}>
                   <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.userEmail}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -136,7 +137,7 @@ export default function GoogleSyncPage() {
         ) : (
           <div style={{ padding: '0' }}>
             {/* Header */}
-            <div style={{ padding: '16px 18px', borderBottom: '1px solid #d8dae3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>Google Sync Job Monitor</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -157,7 +158,7 @@ export default function GoogleSyncPage() {
             </div>
 
             {/* Filters */}
-            <div style={{ padding: '12px 18px', borderBottom: '1px solid #d8dae3', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <div>
                 <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', marginRight: '6px' }}>Status:</label>
                 <select
@@ -166,9 +167,10 @@ export default function GoogleSyncPage() {
                   style={{
                     padding: '6px 10px',
                     borderRadius: '6px',
-                    border: '1px solid var(--neu-dark)',
+                    border: '1px solid var(--border)',
                     fontSize: '12px',
-                    background: 'var(--surface)',
+                    background: 'var(--surface-2)',
+                    color: 'var(--text-primary)',
                     cursor: 'pointer',
                   }}
                 >
@@ -187,9 +189,10 @@ export default function GoogleSyncPage() {
                   style={{
                     padding: '6px 10px',
                     borderRadius: '6px',
-                    border: '1px solid var(--neu-dark)',
+                    border: '1px solid var(--border)',
                     fontSize: '12px',
-                    background: 'var(--surface)',
+                    background: 'var(--surface-2)',
+                    color: 'var(--text-primary)',
                     cursor: 'pointer',
                   }}
                 >
@@ -221,11 +224,12 @@ export default function GoogleSyncPage() {
                   gridTemplateColumns: 'minmax(150px, 1.2fr) minmax(100px, 0.8fr) minmax(140px, 1.1fr) 70px 90px 60px 120px 90px',
                   gap: '8px',
                   padding: '8px 12px',
-                  background: '#f3f0ff',
+                  background: 'var(--primary-light)',
+                  border: '1px solid var(--border-light)',
                   borderRadius: '8px',
                   fontSize: '11px',
                   fontWeight: '700',
-                  color: 'var(--text-secondary)',
+                  color: 'var(--primary)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.02em',
                 }}>
@@ -254,8 +258,8 @@ export default function GoogleSyncPage() {
                         gap: '8px',
                         padding: '10px 12px',
                         borderRadius: '8px',
-                        background: job.status === 'FAILED' ? 'var(--danger-light)' : '#f8f7ff',
-                        border: job.status === 'FAILED' ? '1px solid var(--border)' : '1px solid #ede9fe',
+                        background: job.status === 'FAILED' ? 'var(--danger-light)' : 'var(--surface-2)',
+                        border: job.status === 'FAILED' ? '1px solid var(--danger)' : '1px solid var(--border-light)',
                         alignItems: 'center',
                       }}
                     >
@@ -275,11 +279,11 @@ export default function GoogleSyncPage() {
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-              <div style={{ padding: '12px 18px', borderTop: '1px solid #d8dae3', display: 'flex', justifyContent: 'center', gap: '6px', alignItems: 'center' }}>
+              <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center', gap: '6px', alignItems: 'center' }}>
                 <button
                   onClick={() => setFilters({ ...filters, page: Math.max(1, filters.page - 1) })}
                   disabled={filters.page === 1}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--neu-dark)', background: 'var(--surface)', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === 1 ? '#ccc' : 'var(--accent)' }}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface-2)', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === 1 ? 'var(--text-muted)' : 'var(--accent)' }}
                 >
                   ← Prev
                 </button>
@@ -289,7 +293,7 @@ export default function GoogleSyncPage() {
                 <button
                   onClick={() => setFilters({ ...filters, page: Math.min(pagination.totalPages, filters.page + 1) })}
                   disabled={filters.page === pagination.totalPages}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--neu-dark)', background: 'var(--surface)', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === pagination.totalPages ? '#ccc' : 'var(--accent)' }}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface-2)', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === pagination.totalPages ? 'var(--text-muted)' : 'var(--accent)' }}
                 >
                   Next →
                 </button>

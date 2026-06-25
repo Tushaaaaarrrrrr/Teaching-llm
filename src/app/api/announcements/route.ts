@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     // Fan-out notifications: if targetCourseId is provided, notify only enrolled students;
     // otherwise notify all users
-    let targetUsers: { id: string }[]
+    let targetUsers: { id: string }[] = []
 
     if (targetCourseId) {
       // Notify only STUDENT-role users enrolled in the specified course
@@ -91,11 +91,29 @@ export async function POST(request: NextRequest) {
       targetUsers = enrollments.map(e => ({ id: e.userId }))
     } else {
       // Global announcement - notify all students
-      targetUsers = await prisma.user.findMany({
+      const students = await prisma.user.findMany({
         where: { role: 'STUDENT' },
         select: { id: true },
       })
+      targetUsers = students.map(s => ({ id: s.id }))
     }
+
+    // Also include all managers/super managers
+    const managers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { role: 'MANAGER' },
+          { isSuperManager: true },
+        ],
+      },
+      select: { id: true },
+    })
+
+    // De-duplicate users
+    const combinedMap = new Map<string, { id: string }>()
+    targetUsers.forEach(u => combinedMap.set(u.id, u))
+    managers.forEach(m => combinedMap.set(m.id, { id: m.id }))
+    targetUsers = Array.from(combinedMap.values())
 
     if (targetUsers.length > 0) {
       // Parse hidden metadata if any (for ctaText and ctaLink)

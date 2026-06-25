@@ -13,7 +13,7 @@ export async function sendLiveClassNotification(
   eventId?: string
 ) {
   try {
-    const [course, enrollments] = await Promise.all([
+    const [course, enrollments, managerIds] = await Promise.all([
       prisma.course.findUnique({
         where: { id: courseId },
         select: { name: true },
@@ -22,9 +22,13 @@ export async function sendLiveClassNotification(
         where: { courseId },
         select: { userId: true },
       }),
+      getManagerIds(),
     ])
 
-    const recipientIds = enrollments.map((e) => e.userId)
+    const recipientIds = Array.from(new Set([
+      ...enrollments.map((e) => e.userId),
+      ...managerIds
+    ]))
     if (recipientIds.length === 0) return
 
     const ctaLink = meetLink || (eventId ? `/courses/${courseId}/live/${eventId}` : `/live`)
@@ -52,7 +56,7 @@ export async function sendNewLectureNotification(
   lectureTitle: string
 ) {
   try {
-    const [course, enrollments] = await Promise.all([
+    const [course, enrollments, managerIds] = await Promise.all([
       prisma.course.findUnique({
         where: { id: courseId },
         select: { name: true },
@@ -61,9 +65,13 @@ export async function sendNewLectureNotification(
         where: { courseId },
         select: { userId: true },
       }),
+      getManagerIds(),
     ])
 
-    const recipientIds = enrollments.map((e) => e.userId)
+    const recipientIds = Array.from(new Set([
+      ...enrollments.map((e) => e.userId),
+      ...managerIds
+    ]))
     if (recipientIds.length === 0) return
 
     const title = `New Lecture Added! 📚`
@@ -117,21 +125,24 @@ export async function sendSupportReplyNotification(
 
     if (!ticket || !ticket.studentId) return
 
+    const managerIds = await getManagerIds()
+    const recipientIds = Array.from(new Set([ticket.studentId, ...managerIds]))
+
     const title = `Support Ticket Replied! 💬`
     const body = `${senderName}: ${replyContent.slice(0, 100)}`
 
-    // 1. Create database notification for student
-    await prisma.notification.create({
-      data: {
-        userId: ticket.studentId,
+    // 1. Create database notification for student and managers
+    await prisma.notification.createMany({
+      data: recipientIds.map(userId => ({
+        userId,
         title,
         content: body,
         type: 'INFO',
-      },
+      })),
     })
 
-    // 2. Notify connected client via SSE
-    sseEmitter.emit(`user:${ticket.studentId}:notify`)
+    // 2. Notify connected clients via SSE
+    recipientIds.forEach(userId => sseEmitter.emit(`user:${userId}:notify`))
 
     // 3. Send Web Push and FCM in parallel
     const pushPayload = {
@@ -144,8 +155,8 @@ export async function sendSupportReplyNotification(
     }
 
     await Promise.allSettled([
-      sendPushToUsers([ticket.studentId], pushPayload),
-      sendFcmToUsers([ticket.studentId], pushPayload),
+      sendPushToUsers(recipientIds, pushPayload),
+      sendFcmToUsers(recipientIds, pushPayload),
     ])
   } catch (err) {
     console.error('[system-notifications] Error sending support reply notification:', err)
@@ -167,21 +178,24 @@ export async function sendAgentJoinedChatNotification(
 
     if (!chat || !chat.studentId) return
 
+    const managerIds = await getManagerIds()
+    const recipientIds = Array.from(new Set([chat.studentId, ...managerIds]))
+
     const title = 'Agent Joined Chat 💬'
     const body = `${agentName} has joined your live chat support session.`
 
     // 1. Create database notification
-    await prisma.notification.create({
-      data: {
-        userId: chat.studentId,
+    await prisma.notification.createMany({
+      data: recipientIds.map(userId => ({
+        userId,
         title,
         content: body,
         type: 'SUCCESS',
-      },
+      })),
     })
 
     // 2. Notify connected client via SSE
-    sseEmitter.emit(`user:${chat.studentId}:notify`)
+    recipientIds.forEach(userId => sseEmitter.emit(`user:${userId}:notify`))
 
     // 3. Send Web Push and FCM in parallel
     const pushPayload = {
@@ -194,8 +208,8 @@ export async function sendAgentJoinedChatNotification(
     }
 
     await Promise.allSettled([
-      sendPushToUsers([chat.studentId], pushPayload),
-      sendFcmToUsers([chat.studentId], pushPayload),
+      sendPushToUsers(recipientIds, pushPayload),
+      sendFcmToUsers(recipientIds, pushPayload),
     ])
   } catch (err) {
     console.error('[system-notifications] Error sending agent joined chat notification:', err)
@@ -205,7 +219,7 @@ export async function sendAgentJoinedChatNotification(
 /**
  * Helper to fetch all manager and super-manager user IDs.
  */
-async function getManagerIds(): Promise<string[]> {
+export async function getManagerIds(): Promise<string[]> {
   const managers = await prisma.user.findMany({
     where: {
       OR: [
@@ -458,7 +472,7 @@ export async function sendClassScheduledNotification(
   eventId?: string
 ) {
   try {
-    const [course, enrollments] = await Promise.all([
+    const [course, enrollments, managerIds] = await Promise.all([
       prisma.course.findUnique({
         where: { id: courseId },
         select: { name: true },
@@ -467,9 +481,13 @@ export async function sendClassScheduledNotification(
         where: { courseId },
         select: { userId: true },
       }),
+      getManagerIds(),
     ])
 
-    const recipientIds = enrollments.map((e) => e.userId)
+    const recipientIds = Array.from(new Set([
+      ...enrollments.map((e) => e.userId),
+      ...managerIds
+    ]))
     if (recipientIds.length === 0) return
 
     // Format display date in Indian Standard Time (IST)

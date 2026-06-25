@@ -274,19 +274,34 @@ export async function POST(request: NextRequest) {
           select: { userId: true }
         })
 
-        if (enrollments.length > 0) {
+        const managers = await tx.user.findMany({
+          where: {
+            OR: [
+              { role: 'MANAGER' },
+              { isSuperManager: true },
+            ],
+          },
+          select: { id: true },
+        })
+        const managerIds = managers.map(m => m.id)
+
+        const recipientIds = Array.from(new Set([
+          ...enrollments.map(e => e.userId),
+          ...managerIds
+        ]))
+
+        if (recipientIds.length > 0) {
           await tx.notification.createMany({
-            data: enrollments.map(e => ({
-              userId: e.userId,
+            data: recipientIds.map(userId => ({
+              userId,
               title: 'New Exam Created',
               content: `A new exam "${sanitizedTitle}" has been added to your course. Check it in the Exams tab.`,
               type: 'INFO',
             }))
           })
 
-          // Send FCM push to enrolled students
-          const enrolledUserIds = enrollments.map(e => e.userId)
-          sendFcmToUsers(enrolledUserIds, {
+          // Send FCM push to recipients
+          sendFcmToUsers(recipientIds, {
             title: '📝 New Exam Created',
             body: `A new exam "${sanitizedTitle}" has been added. Check it in the Exams tab.`,
             url: '/exams',
@@ -300,19 +315,34 @@ export async function POST(request: NextRequest) {
           select: { userId: true }
         })
 
-        if (accesses.length > 0) {
+        const managers = await tx.user.findMany({
+          where: {
+            OR: [
+              { role: 'MANAGER' },
+              { isSuperManager: true },
+            ],
+          },
+          select: { id: true },
+        })
+        const managerIds = managers.map(m => m.id)
+
+        const recipientIds = Array.from(new Set([
+          ...accesses.map((a: any) => a.userId),
+          ...managerIds
+        ]))
+
+        if (recipientIds.length > 0) {
           await tx.notification.createMany({
-            data: accesses.map((a: any) => ({
-              userId: a.userId,
+            data: recipientIds.map((userId: string) => ({
+              userId,
               title: 'New Exam in Test Series',
               content: `A new exam "${sanitizedTitle}" has been added to your Test Series. Check it now!`,
               type: 'INFO',
             }))
           })
 
-          // Send FCM push to test series subscribers
-          const accessUserIds = accesses.map((a: any) => a.userId)
-          sendFcmToUsers(accessUserIds, {
+          // Send FCM push to recipients
+          sendFcmToUsers(recipientIds, {
             title: '📝 New Exam in Test Series',
             body: `A new exam "${sanitizedTitle}" has been added to your Test Series!`,
             url: '/exams',

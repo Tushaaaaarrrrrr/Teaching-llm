@@ -35,7 +35,7 @@ export async function sendCommunityNotification(
     // in parallel. The category opt-out (`notifCommunityEnabled = false`) is
     // the global switch from the Flutter Notification Settings page; the
     // per-course mute is the existing inline mute on a specific community.
-    const [course, enrollments, mutedPrefs, optedOut] = await Promise.all([
+    const [course, enrollments, mutedPrefs, optedOut, managers] = await Promise.all([
       prisma.course.findUnique({
         where: { id: courseId },
         select: { name: true },
@@ -52,18 +52,33 @@ export async function sendCommunityNotification(
         where: { notifCommunityEnabled: false },
         select: { id: true },
       }),
+      prisma.user.findMany({
+        where: {
+          OR: [
+            { role: 'MANAGER' },
+            { isSuperManager: true },
+          ],
+        },
+        select: { id: true },
+      }),
     ])
 
     const mutedSet = new Set(mutedPrefs.map((m) => m.userId))
     const optedOutSet = new Set(optedOut.map((u) => u.id))
-    const recipientIds = enrollments
-      .map((e) => e.userId)
-      .filter(
-        (id) =>
-          id !== sender.userId &&
-          (isManager || !mutedSet.has(id)) &&
-          !optedOutSet.has(id)
-      )
+    const managerIds = managers.map((m) => m.id)
+
+    const recipientIds = Array.from(new Set([
+      ...enrollments
+        .map((e) => e.userId)
+        .filter(
+          (id) =>
+            id !== sender.userId &&
+            (isManager || !mutedSet.has(id)) &&
+            !optedOutSet.has(id)
+        ),
+      ...managerIds
+        .filter((id) => id !== sender.userId && !optedOutSet.has(id))
+    ]))
 
     if (recipientIds.length === 0) return
 
