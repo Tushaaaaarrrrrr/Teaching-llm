@@ -123,24 +123,24 @@ export default function PromptsAdminPage() {
           <div style={{ marginTop: '24px' }}>
             <label className="form-label">Questions / CTAs (Max 3)</label>
             {questions.length === 0 && (
-              <div style={{ padding: '20px', textAlign: 'center', background: '#f8f9fa', borderRadius: '12px', border: '1px dashed #c5c7cf', color: '#9999b0', fontSize: '14px' }}>
+              <div style={{ padding: '20px', textAlign: 'center', background: 'var(--surface)', borderRadius: '12px', border: '1px dashed var(--neu-dark)', color: 'var(--text-muted)', fontSize: '14px' }}>
                 No questions added yet. Add one below. (Max 3)
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {questions.map((q, i) => (
-                <div key={q.id} style={{ background: '#f8f9fa', padding: '16px', borderRadius: '12px', position: 'relative' }}>
-                  <button onClick={() => removeQuestion(q.id)} style={{ position: 'absolute', top: '16px', right: '16px', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <div key={q.id} style={{ background: 'var(--surface)', padding: '16px', borderRadius: '12px', position: 'relative' }}>
+                  <button onClick={() => removeQuestion(q.id)} style={{ position: 'absolute', top: '16px', right: '16px', color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
                     <Trash size={18} />
                   </button>
-                  <div style={{ fontWeight: 600, fontSize: '13px', color: '#6366f1', marginBottom: '8px' }}>
+                  <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--accent)', marginBottom: '8px' }}>
                     {q.type === 'YES_NO' ? 'Yes / No Question' : q.type === 'MULTIPLE_CHOICE' ? 'Multiple Choice' : 'CTA Button'}
                   </div>
 
                   <input 
                     type="text" 
                     className="form-input" 
-                    style={{ marginBottom: '12px', background: '#fff' }}
+                    style={{ marginBottom: '12px', background: 'var(--surface)' }}
                     value={q.text} 
                     onChange={e => updateQuestion(q.id, { text: e.target.value })} 
                     placeholder={q.type === 'CTA_ONLY' ? "Message above button (e.g. Please click here to review us)" : "Question text..."}
@@ -148,11 +148,11 @@ export default function PromptsAdminPage() {
 
                   {q.type === 'MULTIPLE_CHOICE' && (
                     <div>
-                      <div style={{ fontSize: '12px', color: '#6b6b8a', marginBottom: '8px' }}>Options (Comma separated)</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Options (Comma separated)</div>
                       <input 
                         type="text" 
                         className="form-input" 
-                        style={{ background: '#fff' }}
+                        style={{ background: 'var(--surface)' }}
                         value={q.options.join(', ')} 
                         onChange={e => updateQuestion(q.id, { options: e.target.value.split(',').map(s => s.trim()) })} 
                         placeholder="e.g. Class 11, Class 12, Dropper"
@@ -163,12 +163,12 @@ export default function PromptsAdminPage() {
                   {q.type === 'CTA_ONLY' && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                       <div>
-                        <div style={{ fontSize: '12px', color: '#6b6b8a', marginBottom: '8px' }}>Button Text</div>
-                        <input type="text" className="form-input" style={{ background: '#fff' }} value={q.linkText} onChange={e => updateQuestion(q.id, { linkText: e.target.value })} placeholder="e.g. Give Feedback" />
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Button Text</div>
+                        <input type="text" className="form-input" style={{ background: 'var(--surface)' }} value={q.linkText} onChange={e => updateQuestion(q.id, { linkText: e.target.value })} placeholder="e.g. Give Feedback" />
                       </div>
                       <div>
-                        <div style={{ fontSize: '12px', color: '#6b6b8a', marginBottom: '8px' }}>URL</div>
-                        <input type="url" className="form-input" style={{ background: '#fff' }} value={q.link} onChange={e => updateQuestion(q.id, { link: e.target.value })} placeholder="https://..." />
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>URL</div>
+                        <input type="url" className="form-input" style={{ background: 'var(--surface)' }} value={q.link} onChange={e => updateQuestion(q.id, { link: e.target.value })} placeholder="https://..." />
                       </div>
                     </div>
                   )}
@@ -181,7 +181,7 @@ export default function PromptsAdminPage() {
               <button disabled={questions.length >= 3} onClick={() => addQuestion('MULTIPLE_CHOICE')} className="btn btn-ghost" style={{ fontSize: '13px', opacity: questions.length >= 3 ? 0.5 : 1 }}>+ Add Multiple Choice</button>
               <button disabled={questions.length >= 3} onClick={() => addQuestion('CTA_ONLY')} className="btn btn-ghost" style={{ fontSize: '13px', opacity: questions.length >= 3 ? 0.5 : 1 }}>+ Add CTA Button</button>
             </div>
-            {questions.length >= 3 && <p style={{ fontSize: '11px', color: '#ef4444', marginTop: '8px' }}>Maximum limit of 3 questions reached.</p>}
+            {questions.length >= 3 && <p style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '8px' }}>Maximum limit of 3 questions reached.</p>}
           </div>
 
           <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
@@ -192,11 +192,11 @@ export default function PromptsAdminPage() {
       )}
 
       {isLoading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading...</div>
+        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>
       ) : prompts.length === 0 ? (
         <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e1e3a', marginBottom: '8px' }}>No Prompts Found</h3>
-          <p style={{ color: '#6b6b8a', fontSize: '14px' }}>Create your first prompt to start collecting responses.</p>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>No Prompts Found</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Create your first prompt to start collecting responses.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -205,47 +205,47 @@ export default function PromptsAdminPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e1e3a', margin: 0 }}>{p.title}</h3>
+                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{p.title}</h3>
                     <span style={{ 
                       padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
-                      background: p.isActive ? '#dcfce7' : '#f3f4f8', 
-                      color: p.isActive ? '#15803d' : '#6b6b8a' 
+                      background: p.isActive ? 'var(--success-light)' : '#f3f4f8', 
+                      color: p.isActive ? 'var(--success)' : 'var(--text-secondary)' 
                     }}>
                       {p.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  {p.description && <p style={{ fontSize: '13px', color: '#6b6b8a', margin: 0 }}>{p.description}</p>}
+                  {p.description && <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>{p.description}</p>}
                 </div>
                 
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <button 
                     onClick={() => toggleActive(p.id, p.isActive)} 
                     className="btn btn-ghost"
-                    style={{ fontSize: '12px', padding: '6px 12px', fontWeight: 600, color: p.isActive ? '#f59e0b' : '#10b981' }}
+                    style={{ fontSize: '12px', padding: '6px 12px', fontWeight: 600, color: p.isActive ? 'var(--warning)' : 'var(--success)' }}
                   >
                     {p.isActive ? 'Deactivate' : 'Activate'}
                   </button>
                   <button 
                     onClick={() => startEdit(p)}
                     className="btn btn-ghost"
-                    style={{ fontSize: '12px', padding: '6px 12px', color: '#6366f1' }}
+                    style={{ fontSize: '12px', padding: '6px 12px', color: 'var(--accent)' }}
                   >
                     Edit
                   </button>
-                  <button onClick={() => deletePrompt(p.id)} className="btn btn-ghost" style={{ padding: '6px', color: '#ef4444' }}>
+                  <button onClick={() => deletePrompt(p.id)} className="btn btn-ghost" style={{ padding: '6px', color: 'var(--danger)' }}>
                     <Trash size={18} />
                   </button>
                 </div>
               </div>
 
               <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #f3f4f8', paddingTop: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6366f1', fontWeight: 600, fontSize: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)', fontWeight: 600, fontSize: '14px' }}>
                   <Users size={18} /> {p._count?.responses || 0} Responses
                 </div>
                 
                 <Link 
                   href={`/manage/prompts/${p.id}/responses`}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: '#6b6b8a', fontWeight: 600, fontSize: '13px' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px' }}
                 >
                   View All Responses
                   <ChevronDown size={16} style={{ transform: 'rotate(-90deg)' }}/>

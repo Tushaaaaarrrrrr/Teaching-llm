@@ -37,10 +37,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Increment tokenVersion
-    const updatedUser = await prisma.user.update({
+    // Read current tokenVersion (don't increment — allows multi-device sessions)
+    const currentUser = await prisma.user.findUnique({
       where: { id: user.id },
-      data: { tokenVersion: { increment: 1 } },
       select: { tokenVersion: true }
     })
 
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
       name: user.name,
       canTerminate: user.canTerminate,
       canCreateStudents: user.canCreateStudents,
-      tokenVersion: updatedUser.tokenVersion,
+      tokenVersion: currentUser?.tokenVersion ?? 0,
     })
 
     const { name: cookieName, options } = getCookieConfig()

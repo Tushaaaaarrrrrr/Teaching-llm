@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { formatIST } from '@/lib/date-utils'
 import ManagerUserModal from '@/components/ManagerUserModal'
@@ -48,10 +49,10 @@ interface Faq { id: string; question: string; answer: string; order: number }
 interface AdminUser { id: string; name: string; role: string }
 
 const STATUS_COLORS: Record<string, string> = {
-  OPEN: '#3b82f6', IN_PROGRESS: '#f59e0b', RESOLVED: '#10b981', CLOSED: '#9999b0',
+  OPEN: 'var(--info)', IN_PROGRESS: 'var(--warning)', RESOLVED: 'var(--success)', CLOSED: 'var(--text-muted)',
 }
 const PRIORITY_COLORS: Record<string, string> = {
-  LOW: '#10b981', MEDIUM: '#f59e0b', HIGH: '#ef4444',
+  LOW: 'var(--success)', MEDIUM: 'var(--warning)', HIGH: 'var(--danger)',
 }
 
 function pill(bg: string) {
@@ -93,7 +94,7 @@ function formatMessageDate(dateStr: string): string {
 }
 
 function TicketStatusIcon({ status }: { status: string }) {
-  const c = STATUS_COLORS[status] || '#9999b0'
+  const c = STATUS_COLORS[status] || 'var(--text-muted)'
   return (
     <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: c + '15', border: `1.5px solid ${c}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
       {status === 'RESOLVED' && <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>}
@@ -105,9 +106,9 @@ function TicketStatusIcon({ status }: { status: string }) {
 }
 
 function BackButton({ onClick }: { onClick: () => void }) {
-  const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
+  const neu = { background: 'var(--surface-2)', boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)' }
   return (
-    <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b8a', fontFamily: 'inherit', fontSize: '14px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '50px', ...neu }}>
+    <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'inherit', fontSize: '14px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '50px', ...neu }}>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
       Back
     </button>
@@ -126,7 +127,7 @@ function CreateTicketModal({
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Raise a Support Ticket</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
@@ -135,7 +136,7 @@ function CreateTicketModal({
             <label className="form-label">Issue Type</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               {['GENERAL', 'SUBJECT'].map(t => (
-                <button key={t} onClick={() => setForm((f: any) => ({ ...f, type: t }))} style={{ flex: 1, padding: '10px', borderRadius: '14px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', background: form.type === t ? '#3636e8' : '#e8eaf0', color: form.type === t ? '#fff' : '#6b6b8a', boxShadow: form.type === t ? '4px 4px 10px rgba(54,54,232,0.3)' : '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff' }}>
+                <button key={t} onClick={() => setForm((f: any) => ({ ...f, type: t }))} style={{ flex: 1, padding: '10px', borderRadius: '14px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', background: form.type === t ? 'var(--primary)' : 'var(--surface-2)', color: form.type === t ? '#fff' : 'var(--text-secondary)', boxShadow: form.type === t ? '4px 4px 10px rgba(54,54,232,0.3)' : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)' }}>
                   {t === 'GENERAL' ? '📋 General Support' : '📚 Subject Related'}
                 </button>
               ))}
@@ -165,7 +166,7 @@ function CreateTicketModal({
               <label className="form-label">Priority</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {['LOW', 'MEDIUM', 'HIGH'].map(p => (
-                  <button key={p} onClick={() => setForm((f: any) => ({ ...f, priority: p }))} style={{ flex: 1, padding: '8px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', background: form.priority === p ? PRIORITY_COLORS[p] : '#e8eaf0', color: form.priority === p ? '#fff' : '#6b6b8a', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff' }}>{p}</button>
+                  <button key={p} onClick={() => setForm((f: any) => ({ ...f, priority: p }))} style={{ flex: 1, padding: '8px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', background: form.priority === p ? PRIORITY_COLORS[p] : 'var(--surface-2)', color: form.priority === p ? '#fff' : 'var(--text-secondary)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)' }}>{p}</button>
                 ))}
               </div>
             </div>
@@ -190,12 +191,12 @@ function StartChatModal({
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Start Live Support Chat</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
         <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <p style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.5' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
             To help us assist you better, please describe your issue in detail before starting the chat.
           </p>
           <div className="form-group">
@@ -236,7 +237,7 @@ function FaqFormModal({
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3 style={{ fontSize: '16px', fontWeight: '800' }}>{editingFaq ? 'Edit FAQ' : 'Add FAQ Item'}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
@@ -260,6 +261,7 @@ function FaqFormModal({
 }
 
 export default function SupportPage() {
+  const router = useRouter()
   const { confirm, confirmDialog } = useConfirmDialog()
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
   useEffect(() => {
@@ -315,9 +317,9 @@ export default function SupportPage() {
   const chatImageRef = useRef<HTMLInputElement>(null)
   const replyImageRef = useRef<HTMLInputElement>(null)
 
-  const neu = { background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff' }
-  const neuInset = { background: '#e8eaf0', boxShadow: 'inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff' }
-  const card = { background: '#ffffff', borderRadius: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 6px 24px rgba(0,0,0,0.04)' }
+  const neu = { background: 'var(--surface-2)', boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)' }
+  const neuInset = { background: 'var(--surface-2)', boxShadow: 'inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light)' }
+  const card = { background: 'var(--surface)', borderRadius: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 6px 24px rgba(0,0,0,0.04)' }
 
   const loadTickets = useCallback(async () => {
     const [tr, cr] = await Promise.all([
@@ -593,15 +595,114 @@ export default function SupportPage() {
   // ══════════════════════════════════════════════════════════════════════════
   if (view === 'home') {
     return (
-      <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', overflowY: 'auto', padding: isMobile ? '12px' : '20px' }}>
+      <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', overflowY: 'auto', overflowX: 'hidden' }}>
+        <style>{`
+          .mobile-back-header {
+            display: none;
+          }
+          .support-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+            align-items: flex-start;
+          }
+          .faq-card-col {
+            display: flex;
+            flex-direction: column;
+            order: 0;
+            padding: 28px;
+          }
+          .chat-actions-col {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            order: 0;
+          }
+          .chat-box-pad {
+            padding: 28px;
+          }
+          .ticket-box-pad {
+            padding: 24px;
+          }
+          @media (max-width: 768px) {
+            .mobile-back-header {
+              display: flex !important;
+            }
+            .page-container {
+              padding: 16px 14px 24px !important;
+              overflow-x: hidden !important;
+            }
+            .support-grid {
+              grid-template-columns: 1fr !important;
+              gap: 16px !important;
+            }
+            .faq-card-col {
+              order: 2 !important;
+              padding: 16px !important;
+            }
+            .chat-actions-col {
+              order: 1 !important;
+              gap: 16px !important;
+            }
+            .chat-box-pad {
+              padding: 16px !important;
+            }
+            .ticket-box-pad {
+              padding: 16px !important;
+            }
+          }
+        `}</style>
         {confirmDialog}
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: isMobile ? '16px' : '24px', marginBottom: '24px', alignItems: 'flex-start' }}>
+        {/* Mobile-only Header with Back Button */}
+        <div className="mobile-back-header" style={{
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '20px',
+          padding: '8px 4px 16px',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+        }}>
+          <button
+            onClick={() => router.back()}
+            style={{
+              background: 'var(--surface-2)',
+              boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '38px',
+              height: '38px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--text-primary)',
+              transition: 'transform 0.15s ease',
+            }}
+            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <div>
+            <span style={{ display: 'block', fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.3px', lineHeight: '1.2' }}>
+              Contact & Support
+            </span>
+            <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Raise a ticket or chat with support
+            </span>
+          </div>
+        </div>
+
+        <div className="support-grid">
 
           {/* FAQ Card (Left Side on desktop, last on mobile) */}
-          <div style={{ ...card, padding: isMobile ? '16px' : '28px', display: 'flex', flexDirection: 'column', order: isMobile ? 2 : 0 }}>
+          <div className="faq-card-col" style={{ ...card }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f0f0fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" strokeWidth="2.5" strokeLinecap="round" />
                 </svg>
@@ -612,31 +713,31 @@ export default function SupportPage() {
                 </button>
               )}
             </div>
-            <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a', marginBottom: '6px' }}>Frequently Asked Questions</h2>
-            <p style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.6', marginBottom: '18px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px' }}>Frequently Asked Questions</h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '18px' }}>
               Instant answers to common queries. Browse our knowledge base for solutions.
             </p>
 
             {/* FAQ accordion */}
             <div style={{ flex: 1 }}>
               {faqs.length === 0 ? (
-                <p style={{ fontSize: '13px', color: '#9999b0', textAlign: 'center', padding: '20px 0' }}>No FAQs yet.</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>No FAQs yet.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {faqs.map(f => (
-                    <div key={f.id} style={{ borderRadius: '16px', border: '1.5px solid #f0f1f5', overflow: 'hidden' }}>
+                    <div key={f.id} style={{ borderRadius: '16px', border: '1.5px solid var(--border)', overflow: 'hidden' }}>
                       <div 
                         onClick={() => setExpandedFaq(expandedFaq === f.id ? null : f.id)}
-                        style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: expandedFaq === f.id ? '#f8f9ff' : '#fff', transition: 'background 0.2s' }}
+                        style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: expandedFaq === f.id ? 'var(--surface-2)' : 'var(--surface)', transition: 'background 0.2s' }}
                       >
-                        <span style={{ fontSize: '13.5px', fontWeight: '700', color: '#1e1e3a' }}>{f.question}</span>
+                        <span style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-primary)' }}>{f.question}</span>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           {userRole === 'MANAGER' && (
                             <>
-                              <button onClick={e => { e.stopPropagation(); setFaqForm({ question: f.question, answer: f.answer }); setEditingFaq(f); setShowFaqForm(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0', padding: '4px' }}>
+                              <button onClick={e => { e.stopPropagation(); setFaqForm({ question: f.question, answer: f.answer }); setEditingFaq(f); setShowFaqForm(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                               </button>
-                              <button onClick={e => { e.stopPropagation(); deleteFaq(f.id) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}>
+                              <button onClick={e => { e.stopPropagation(); deleteFaq(f.id) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: '4px' }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
                               </button>
                             </>
@@ -647,7 +748,7 @@ export default function SupportPage() {
                         </div>
                       </div>
                       {expandedFaq === f.id && (
-                        <div style={{ padding: '0 18px 16px', fontSize: '13px', color: '#6b6b8a', lineHeight: '1.6', background: '#f8f9ff', whiteSpace: 'pre-wrap' }}>
+                        <div style={{ padding: '0 18px 16px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6', background: 'var(--surface-2)', whiteSpace: 'pre-wrap' }}>
                           {f.answer}
                         </div>
                       )}
@@ -659,17 +760,17 @@ export default function SupportPage() {
           </div>
 
           {/* Right Column (Chat + Tickets) — first on mobile */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px', order: isMobile ? 1 : 0 }}>
+          <div className="chat-actions-col">
             
             {/* Live Chat Card */}
-            <div style={{ ...card, padding: isMobile ? '16px' : '28px', textAlign: 'center' }}>
-              <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f0f0fa', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <div className="chat-box-pad" style={{ ...card, textAlign: 'center' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2">
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                 </svg>
               </div>
-              <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a', marginBottom: '6px' }}>Live Support Chat</h2>
-              <p style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.6', marginBottom: '18px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px' }}>Live Support Chat</h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '18px' }}>
                 Chat with our team in real-time for immediate concerns.
               </p>
               <button
@@ -679,50 +780,50 @@ export default function SupportPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
                 {(userRole === 'STUDENT' || userRole === 'ADMIN') ? 'Start Live Chat' : 'Manage Live Chats'}
               </button>
-              <p style={{ fontSize: '12px', color: '#9999b0', marginTop: '4px' }}>Average response time: &lt; 2 minutes</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Average response time: &lt; 2 minutes</p>
             </div>
 
             {/* Raise a Ticket Box (History merged inside) */}
-            <div style={{ width: '100%', borderRadius: '24px', background: '#f7f7ff', border: '1.5px solid #d9dcff', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)', padding: isMobile ? '16px' : '24px', textAlign: 'left' }}>
+            <div className="ticket-box-pad" style={{ width: '100%', borderRadius: '24px', background: 'var(--surface-2)', border: '1.5px solid var(--border)', boxShadow: 'inset 0 1px 0 var(--neu-glow)', textAlign: 'left' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <div>
-                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#3636e8', letterSpacing: '0.03em', marginBottom: '4px', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.03em', marginBottom: '4px', textTransform: 'uppercase' }}>
                     Raise a Ticket
                   </div>
-                  <div style={{ fontSize: '13px', color: '#6b6b8a', lineHeight: '1.5' }}>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
                     Send a ticket for follow-up issues.
                   </div>
                 </div>
                 {(userRole === 'STUDENT' || userRole === 'ADMIN') ? (
                   <button onClick={() => setShowCreate(true)} className="btn btn-primary" style={{ borderRadius: '50px', padding: '10px 20px' }}>+ New Ticket</button>
                 ) : (
-                  <div style={{ fontSize: '11px', color: '#9999b0', fontWeight: '600' }}>Review tickets below</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>Review tickets below</div>
                 )}
               </div>
 
               {/* History Section inside the box */}
               <div style={{ marginTop: '20px', borderTop: '1px solid #d9dcff', paddingTop: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#1e1e3a' }}>Recent History</h3>
-                  <button onClick={() => { setSelected(null); setView('allTickets') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', fontSize: '12px', fontWeight: '700', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>Recent History</h3>
+                  <button onClick={() => { setSelected(null); setView('allTickets') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', fontSize: '12px', fontWeight: '700', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px' }}>
                     View All →
                   </button>
                 </div>
 
                 {tickets.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px 0', color: '#9999b0' }}>
+                  <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)' }}>
                     <p style={{ fontSize: '12px' }}>No tickets raised yet.</p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {tickets.slice(0, 5).map((t) => (
                       <div key={t.id} onClick={() => { setSelected(t); setView('allTickets') }}
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#fff', borderRadius: '16px', cursor: 'pointer', border: '1px solid #e8eaf0' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--surface)', borderRadius: '16px', cursor: 'pointer', border: '1px solid var(--border)' }}
                       >
                         <TicketStatusIcon status={t.status} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1e1e3a', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
-                          <div style={{ fontSize: '11px', color: '#9999b0' }}>{getRelativeTime(t.updatedAt, t.status)}</div>
+                          <div style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{getRelativeTime(t.updatedAt, t.status)}</div>
                         </div>
                         <span style={{ ...pill(STATUS_COLORS[t.status]), fontSize: '10px', padding: '2px 8px' }}>{t.status.replace('_', ' ')}</span>
                       </div>
@@ -733,7 +834,7 @@ export default function SupportPage() {
             </div>
 
             {userRole === 'MANAGER' && (
-              <button onClick={loadChatHistory} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3636e8', fontSize: '13px', fontWeight: '700', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: '4px', alignSelf: 'center' }}>
+              <button onClick={loadChatHistory} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', fontSize: '13px', fontWeight: '700', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: '4px', alignSelf: 'center' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                 View Chat History
               </button>
@@ -789,7 +890,7 @@ export default function SupportPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <BackButton onClick={() => { if (isMobile && selected) { setSelected(null) } else { setView('home'); setSelected(null) } }} />
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600' }}>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</span>
             {(userRole === 'STUDENT' || userRole === 'ADMIN') && <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-sm">+ New Ticket</button>}
           </div>
         </div>
@@ -801,20 +902,20 @@ export default function SupportPage() {
               <div className="empty-state">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                 <p style={{ fontWeight: '700', fontSize: '15px', marginBottom: '4px' }}>No tickets</p>
-                <p style={{ fontSize: '13px', color: '#9999b0' }}>{(userRole === 'STUDENT' || userRole === 'ADMIN') ? 'Create a ticket to get help. If assigned tickets, they will appear here.' : 'No tickets have been raised.'}</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{(userRole === 'STUDENT' || userRole === 'ADMIN') ? 'Create a ticket to get help. If assigned tickets, they will appear here.' : 'No tickets have been raised.'}</p>
               </div>
             ) : tickets.map(t => (
               <div key={t.id} onClick={() => setSelected(selected?.id === t.id ? null : t)}
                 style={{ padding: '14px 18px', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', ...neu, outline: selected?.id === t.id ? '2px solid #3636e8' : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '14.5px', fontWeight: '700', color: '#1e1e3a', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
+                    <div style={{ fontSize: '14.5px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                       <span style={pill(STATUS_COLORS[t.status])}>{t.status.replace('_', ' ')}</span>
                       <span style={pill(PRIORITY_COLORS[t.priority])}>{t.priority}</span>
                       {t.class && <span style={pill(t.class.color)}>{t.class.name}</span>}
                       {t.assignedTo && (
-                        <span style={{ ...pill('#3636e8'), display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <span style={{ ...pill('var(--primary)'), display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                           {t.assignedTo.name}
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </span>
@@ -822,16 +923,16 @@ export default function SupportPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: '11px', color: '#9999b0', marginTop: '2px' }}>{formatIST(t.createdAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{formatIST(t.createdAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                     {userRole === 'MANAGER' && (
                       <button onClick={e => { e.stopPropagation(); deleteTicket(t.id) }}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '2px', display: 'flex' }} title="Delete ticket">
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: '2px', display: 'flex' }} title="Delete ticket">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
                       </button>
                     )}
                   </div>
                 </div>
-                <div style={{ fontSize: '12.5px', color: '#9999b0', marginTop: '6px' }}>
+                <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '6px' }}>
                   {t.replies.length} repl{t.replies.length !== 1 ? 'ies' : 'y'} · by <span 
                     onClick={(e) => {
                       if (userRole === 'MANAGER') {
@@ -842,7 +943,7 @@ export default function SupportPage() {
                     style={{ 
                       cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
                       textDecoration: userRole === 'MANAGER' ? 'underline' : 'none',
-                      color: userRole === 'MANAGER' ? '#3636e8' : 'inherit'
+                      color: userRole === 'MANAGER' ? 'var(--primary)' : 'inherit'
                     }}
                   >{t.user.name}</span>
                 </div>
@@ -856,12 +957,12 @@ export default function SupportPage() {
               <div style={{ padding: '16px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.06)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e1e3a' }}>{selected.title}</div>
+                    <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>{selected.title}</div>
                     <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
                       <span style={pill(STATUS_COLORS[selected.status])}>{selected.status.replace('_', ' ')}</span>
                       <span style={pill(PRIORITY_COLORS[selected.priority])}>{selected.priority}</span>
                       {selected.assignedTo && (
-                        <span style={{ ...pill('#3636e8'), display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <span style={{ ...pill('var(--primary)'), display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                           → {selected.assignedTo.name}
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </span>
@@ -869,7 +970,7 @@ export default function SupportPage() {
                       {selected.class && userRole === 'MANAGER' && <span style={pill(selected.class.color)}>📚 {selected.class.name}</span>}
                     </div>
                   </div>
-                  <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+                  <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                   </button>
                 </div>
@@ -879,18 +980,18 @@ export default function SupportPage() {
                   <>
                     <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
                       {['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].map(s => (
-                        <button key={s} onClick={() => updateStatus(selected.id, s)} style={{ padding: '4px 10px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '11px', fontWeight: '700', background: selected.status === s ? STATUS_COLORS[s] : '#e8eaf0', color: selected.status === s ? '#fff' : '#9999b0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff' }}>
+                        <button key={s} onClick={() => updateStatus(selected.id, s)} style={{ padding: '4px 10px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '11px', fontWeight: '700', background: selected.status === s ? STATUS_COLORS[s] : 'var(--surface-2)', color: selected.status === s ? '#fff' : 'var(--text-muted)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)' }}>
                           {s.replace('_', ' ')}
                         </button>
                       ))}
                     </div>
                     {admins.length > 0 && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                        <span style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '600', flexShrink: 0 }}>Assign to:</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', flexShrink: 0 }}>Assign to:</span>
                         <select
                           value={selected.assignedTo?.id || ''}
                           onChange={e => assignTicket(selected.id, e.target.value)}
-                          style={{ flex: 1, padding: '6px 10px', borderRadius: '10px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '12.5px', background: '#e8eaf0', boxShadow: '2px 2px 5px #c5c7cf, -2px -2px 5px #ffffff', color: '#1e1e3a', cursor: 'pointer' }}
+                          style={{ flex: 1, padding: '6px 10px', borderRadius: '10px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '12.5px', background: 'var(--surface-2)', boxShadow: '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)', color: 'var(--text-primary)', cursor: 'pointer' }}
                         >
                           <option value="">Unassigned</option>
                           {admins.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -903,8 +1004,8 @@ export default function SupportPage() {
 
               </div>
 
-              <div style={{ padding: '14px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.05)', background: '#f0f1f5' }}>
-                <div style={{ fontSize: '12px', color: '#9999b0', marginBottom: '4px', fontWeight: '600' }}>
+              <div style={{ padding: '14px 20px', borderBottom: '1.5px solid var(--border)', background: 'var(--surface-2)' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: '600' }}>
                   Original request — <span 
                     onClick={() => {
                       if (userRole === 'MANAGER') setSelectedUserDetailsId(selected.user.id)
@@ -912,12 +1013,12 @@ export default function SupportPage() {
                     style={{ 
                       cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
                       textDecoration: userRole === 'MANAGER' ? 'underline' : 'none',
-                      color: userRole === 'MANAGER' ? '#3636e8' : 'inherit'
+                      color: userRole === 'MANAGER' ? 'var(--primary)' : 'inherit'
                     }}
                   >{selected.user.name}</span>
                   {selected.createdAt && ` · Raised: ${formatIST(selected.createdAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}`}
                 </div>
-                <div style={{ fontSize: '13.5px', color: '#1e1e3a', lineHeight: '1.6' }}>{selected.description}</div>
+                <div style={{ fontSize: '13.5px', color: 'var(--text-primary)', lineHeight: '1.6' }}>{selected.description}</div>
               </div>
 
               <div style={{ flex: 1, overflowY: 'auto', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -932,12 +1033,12 @@ export default function SupportPage() {
                           onClick={() => userRole === 'MANAGER' && setSelectedUserDetailsId(r.sender.id)}
                           style={{ 
                             width: '28px', height: '28px', borderRadius: '50%', 
-                            background: isAdmin ? '#3636e8' : '#e8eaf0', 
-                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '2px 2px 5px #c5c7cf', 
+                            background: isAdmin ? 'var(--primary)' : 'var(--surface-2)', 
+                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '2px 2px 5px var(--neu-dark)', 
                             display: showAvatar ? 'flex' : 'none', 
                             alignItems: 'center', justifyContent: 'center', 
                             fontSize: '10px', fontWeight: '700', 
-                            color: isAdmin ? '#fff' : '#6b6b8a', flexShrink: 0,
+                            color: isAdmin ? '#fff' : 'var(--text-secondary)', flexShrink: 0,
                             cursor: userRole === 'MANAGER' ? 'pointer' : 'default'
                           }}
                         >
@@ -949,14 +1050,14 @@ export default function SupportPage() {
                         <div style={{ 
                           padding: r.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px', 
                           borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', 
-                          background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff', 
+                          background: isMe ? '#dcf8c6' : isAdmin ? '#e0e7ff' : '#ffffff', 
                           boxShadow: '0 1px 2px rgba(0,0,0,0.1)', 
                           color: '#1e1e3a',
-                          border: isMe ? 'none' : '1px solid #e8eaf0',
+                          border: isMe ? 'none' : '1px solid var(--border)',
                           minWidth: '60px'
                         }}>
                           {!isMe && showAvatar && (
-                            <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '4px', color: isAdmin ? '#3636e8' : '#888', textTransform: 'uppercase' }}>
+                            <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '4px', color: isAdmin ? 'var(--primary)' : '#888', textTransform: 'uppercase' }}>
                               <span 
                                 onClick={() => {
                                   if (userRole === 'MANAGER') setSelectedUserDetailsId(r.sender.id)
@@ -997,7 +1098,7 @@ export default function SupportPage() {
                           {r.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{r.content}</div>}
                           
                           {/* Time inside bubble */}
-                          <div style={{ position: 'absolute', bottom: '4px', right: '8px', fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <div style={{ position: 'absolute', bottom: '4px', right: '8px', fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
                             {formatIST(r.createdAt, { hour: '2-digit', minute: '2-digit', hour12: true })}
                             {isMe && (
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1014,19 +1115,19 @@ export default function SupportPage() {
               {selected.status !== 'CLOSED' && (
                 <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)' }}>
                   {pendingReplyImagePreview && (
-                    <div style={{ marginBottom: '10px', position: 'relative', display: 'inline-flex', alignItems: 'flex-end', gap: '8px', padding: '10px 14px', borderRadius: '16px', background: '#f0f0ff', border: '2px solid #3636e830', boxShadow: '0 4px 12px rgba(54,54,232,0.1)' }}>
+                    <div style={{ marginBottom: '10px', position: 'relative', display: 'inline-flex', alignItems: 'flex-end', gap: '8px', padding: '10px 14px', borderRadius: '16px', background: 'var(--primary-light)', border: '2px solid #3636e830', boxShadow: '0 4px 12px rgba(54,54,232,0.1)' }}>
                       <img src={pendingReplyImagePreview} alt="Preview" style={{ maxHeight: '80px', maxWidth: '160px', borderRadius: '10px', objectFit: 'cover' }} />
-                      <div style={{ fontSize: '11px', color: '#3636e8', fontWeight: '600' }}>📎 Ready to send</div>
-                      <button onClick={clearReplyImage} style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: '#ef4444', color: '#fff', border: '2px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)' }}>✕</button>
+                      <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '600' }}>📎 Ready to send</div>
+                      <button onClick={clearReplyImage} style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: 'var(--danger)', color: '#fff', border: '2px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)' }}>✕</button>
                     </div>
                   )}
-                  {uploadingImage && <div style={{ marginBottom: '6px', fontSize: '12px', color: '#3636e8', fontWeight: '600' }}>Uploading...</div>}
+                  {uploadingImage && <div style={{ marginBottom: '6px', fontSize: '12px', color: 'var(--primary)', fontWeight: '600' }}>Uploading...</div>}
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input type="file" accept="image/jpeg,image/png,image/webp" ref={replyImageRef} onChange={handleReplyImageSelect} style={{ display: 'none' }} />
-                    <button onClick={() => replyImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingReplyImage ? '#3636e818' : '#e8eaf0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingReplyImage ? '#3636e8' : '#9999b0', flexShrink: 0 }}>
+                    <button onClick={() => replyImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingReplyImage ? 'var(--primary-light)' : 'var(--surface-2)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingReplyImage ? 'var(--primary)' : 'var(--text-muted)', flexShrink: 0 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
-                    <input value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendReply()} placeholder="Type your reply..." disabled={uploadingImage} style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: '#1e1e3a' }} />
+                    <input value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendReply()} placeholder="Type your reply..." disabled={uploadingImage} style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: 'var(--text-primary)' }} />
                     <button onClick={sendReply} disabled={(!replyText.trim() && !pendingReplyImage) || uploadingImage} className="btn btn-primary btn-sm" style={{ borderRadius: '50px', padding: '10px 18px', opacity: (!replyText.trim() && !pendingReplyImage) || uploadingImage ? 0.6 : 1 }}>Send</button>
                   </div>
                 </div>
@@ -1057,7 +1158,7 @@ export default function SupportPage() {
         {confirmDialog}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <BackButton onClick={() => { if (isMobile && selectedHistory) { setSelectedHistory(null) } else { setView('home'); setSelectedHistory(null) } }} />
-          <span style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600' }}>{historyChats.length} transcript{historyChats.length !== 1 ? 's' : ''}</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>{historyChats.length} transcript{historyChats.length !== 1 ? 's' : ''}</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : (selectedHistory ? '320px 1fr' : '1fr'), gap: '20px', flex: 1, minHeight: 0 }}>
@@ -1067,7 +1168,7 @@ export default function SupportPage() {
               <div className="empty-state">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                 <p style={{ fontWeight: '700', marginTop: '10px' }}>No chat history</p>
-                <p style={{ fontSize: '13px', color: '#9999b0' }}>Closed chat transcripts will appear here.</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Closed chat transcripts will appear here.</p>
               </div>
             ) : historyChats.map(c => (
               <div key={c.id}
@@ -1083,19 +1184,19 @@ export default function SupportPage() {
                         }
                       }}
                       style={{ 
-                        fontSize: '13.5px', fontWeight: '800', color: '#1e1e3a', marginBottom: '2px',
+                        fontSize: '13.5px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px',
                         cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
                         textDecoration: userRole === 'MANAGER' ? 'underline' : 'none'
                       }}
                     >{c.student.name}</div>
-                    <div style={{ fontSize: '12px', color: '#9999b0' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                       {c.agent ? `Agent: ${c.agent.name}` : 'No agent joined'}
                       {c._count && ` · ${c._count.messages} messages`}
                     </div>
-                    <div style={{ fontSize: '11.5px', color: '#9999b0', marginTop: '2px' }}>{new Date((c as ChatSession & { updatedAt?: string }).updatedAt || '').toLocaleString()}</div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>{new Date((c as ChatSession & { updatedAt?: string }).updatedAt || '').toLocaleString()}</div>
                   </div>
                   <button onClick={e => { e.stopPropagation(); deleteHistory(c.id) }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '2px', flexShrink: 0 }} title="Delete transcript">
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: '2px', flexShrink: 0 }} title="Delete transcript">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
                   </button>
                 </div>
@@ -1108,28 +1209,28 @@ export default function SupportPage() {
             <div style={{ borderRadius: '24px', ...neu, display: (isMobile && !selectedHistory) ? 'none' : 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontWeight: '800', fontSize: '15px', color: '#1e1e3a' }}>Chat with {selectedHistory.student.name}</div>
-                  <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
+                  <div style={{ fontWeight: '800', fontSize: '15px', color: 'var(--text-primary)' }}>Chat with {selectedHistory.student.name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                     {selectedHistory.agent ? `Agent: ${selectedHistory.agent.name}` : 'No agent'} · Transcript
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <span style={pill('#9999b0')}>Closed</span>
-                  <button onClick={() => { setSelectedHistory(null); setHistoryMsgs([]) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+                  <span style={pill('var(--text-muted)')}>Closed</span>
+                  <button onClick={() => { setSelectedHistory(null); setHistoryMsgs([]) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                   </button>
                 </div>
               </div>
               <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {historyMsgs.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: '#9999b0', fontSize: '13px', marginTop: '20px' }}>No messages in this transcript.</div>
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', marginTop: '20px' }}>No messages in this transcript.</div>
                 ) : historyMsgs.map(m => {
                   const isStudent = m.sender.role === 'STUDENT'
                   return (
                     <div key={m.id} style={{ display: 'flex', justifyContent: isStudent ? 'flex-start' : 'flex-end', gap: '8px', alignItems: 'flex-end' }}>
-                      {isStudent && <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#e8eaf0', boxShadow: '2px 2px 5px #c5c7cf', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: '#6b6b8a', flexShrink: 0 }}>{m.sender.name.charAt(0)}</div>}
-                      <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: isStudent ? '18px 18px 18px 4px' : '18px 18px 4px 18px', background: isStudent ? '#e8eaf0' : '#f0f0ff', boxShadow: '3px 3px 8px #c5c7cf, -3px -3px 8px #ffffff', color: '#1e1e3a' }}>
-                        <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isStudent ? '#9999b0' : '#3636e8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {isStudent && <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--surface-2)', boxShadow: '2px 2px 5px var(--neu-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: 'var(--text-secondary)', flexShrink: 0 }}>{m.sender.name.charAt(0)}</div>}
+                      <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: isStudent ? '18px 18px 18px 4px' : '18px 18px 4px 18px', background: isStudent ? 'var(--surface-2)' : 'var(--primary-light)', boxShadow: '3px 3px 8px var(--neu-dark), -3px -3px 8px var(--neu-light)', color: 'var(--text-primary)' }}>
+                        <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isStudent ? 'var(--text-muted)' : 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           {m.sender.name}
                           {!isStudent && (
                             <span style={{ 
@@ -1182,14 +1283,14 @@ export default function SupportPage() {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : (allChats.length > 0 || userRole !== 'STUDENT' ? '280px 1fr' : '1fr'), gap: '20px', flex: 1, minHeight: 0 }}>
         {/* Chat list */}
         <div style={{ display: (isMobile && activeChatId) ? 'none' : 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
-          <div style={{ fontSize: '13px', color: '#9999b0', fontWeight: '600', marginBottom: '4px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '4px' }}>
             {allChats.length} chat{allChats.length !== 1 ? 's' : ''}
           </div>
           {allChats.length === 0 ? (
             <div className="empty-state" style={{ padding: '40px 20px' }}>
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
               <p style={{ fontWeight: '700', marginTop: '10px' }}>No active chats</p>
-              {userRole === 'STUDENT' && <p style={{ fontSize: '13px', color: '#9999b0' }}>Click "+ New Chat" to start.</p>}
+              {userRole === 'STUDENT' && <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Click "+ New Chat" to start.</p>}
             </div>
           ) : allChats.map(c => {
             const expiresAt = c.expiresAt ? new Date(c.expiresAt) : null
@@ -1199,13 +1300,13 @@ export default function SupportPage() {
               <div key={c.id} onClick={() => setActiveChatId(c.id)}
                 style={{ padding: '12px 16px', borderRadius: '18px', cursor: 'pointer', ...neu, outline: activeChatId === c.id ? '2px solid #3636e8' : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: '700', fontSize: '14px', color: '#1e1e3a' }}>
+                  <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)' }}>
                     {userRole === 'STUDENT' ? 'Support Chat' : c.student.name}
                   </span>
-                  <span style={pill(c.status === 'WAITING' ? '#f59e0b' : '#10b981')}>{c.status}</span>
+                  <span style={pill(c.status === 'WAITING' ? 'var(--warning)' : 'var(--success)')}>{c.status}</span>
                 </div>
                 {hoursLeft !== null && (
-                  <div style={{ fontSize: '11px', color: hoursLeft < 2 ? '#ef4444' : '#9999b0', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '11px', color: hoursLeft < 2 ? 'var(--danger)' : 'var(--text-muted)', marginBottom: '6px' }}>
                     Expires in {hoursLeft}h
                   </div>
                 )}
@@ -1215,7 +1316,7 @@ export default function SupportPage() {
                   </button>
                 )}
                 {(userRole === 'MANAGER' || (userRole !== 'STUDENT' && c.status === 'ACTIVE')) && (
-                  <button onClick={e => { e.stopPropagation(); closeChat(c.id) }} style={{ width: '100%', marginTop: '4px', padding: '4px', borderRadius: '8px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '11px', color: '#9999b0', fontFamily: 'inherit' }}>
+                  <button onClick={e => { e.stopPropagation(); closeChat(c.id) }} style={{ width: '100%', marginTop: '4px', padding: '4px', borderRadius: '8px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'inherit' }}>
                     Close chat
                   </button>
                 )}
@@ -1228,11 +1329,11 @@ export default function SupportPage() {
         <div style={{ borderRadius: '24px', ...neu, display: (isMobile && !activeChatId) ? 'none' : 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {!activeChatId ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', gap: '16px' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#e8eaf0', boxShadow: '6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--surface-2)', boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
               </div>
-              <p style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a' }}>Live Support Chat</p>
-              <p style={{ fontSize: '13px', color: '#9999b0', textAlign: 'center' }}>
+              <p style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)' }}>Live Support Chat</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>
                 {userRole === 'STUDENT' ? 'Select a chat or start a new one.' : 'Select a chat from the list to respond.'}
               </p>
             </div>
@@ -1242,17 +1343,17 @@ export default function SupportPage() {
               <>
                 <div style={{ padding: '14px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontWeight: '800', fontSize: '15px', color: '#1e1e3a' }}>
+                    <div style={{ fontWeight: '800', fontSize: '15px', color: 'var(--text-primary)' }}>
                       {userRole === 'STUDENT' ? 'Support Chat' : activeChat?.student.name || 'Chat'}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                       {activeChat?.agent ? `Agent: ${activeChat.agent.name}` : 'Waiting for an agent...'}
                       {activeChat?.expiresAt && ` · Expires ${new Date(activeChat.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={pill('#10b981')}>Active</span>
-                    <button onClick={() => setActiveChatId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9999b0' }}>
+                    <span style={pill('var(--success)')}>Active</span>
+                    <button onClick={() => setActiveChatId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                     </button>
                   </div>
@@ -1260,7 +1361,7 @@ export default function SupportPage() {
 
                 <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {chatMsgs.length === 0 && (
-                    <div style={{ textAlign: 'center', color: '#9999b0', fontSize: '13px', marginTop: '20px' }}>Chat started. Waiting for messages...</div>
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', marginTop: '20px' }}>Chat started. Waiting for messages...</div>
                   )}
                   {chatMsgs.map((m, idx) => {
                     const isMe = m.sender.id === userId
@@ -1271,12 +1372,12 @@ export default function SupportPage() {
                         {!isMe && (
                           <div style={{ 
                             width: '28px', height: '28px', borderRadius: '50%', 
-                            background: isAdmin ? '#3636e8' : '#e8eaf0', 
-                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '2px 2px 5px #c5c7cf', 
+                            background: isAdmin ? 'var(--primary)' : 'var(--surface-2)', 
+                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '2px 2px 5px var(--neu-dark)', 
                             display: showAvatar ? 'flex' : 'none', 
                             alignItems: 'center', justifyContent: 'center', 
                             fontSize: '10px', fontWeight: '700', 
-                            color: isAdmin ? '#fff' : '#6b6b8a', flexShrink: 0 
+                            color: isAdmin ? '#fff' : 'var(--text-secondary)', flexShrink: 0 
                           }}>
                             {m.sender.name.charAt(0).toUpperCase()}
                           </div>
@@ -1286,14 +1387,14 @@ export default function SupportPage() {
                           <div style={{ 
                             padding: m.imageUrl ? '5px 5px 15px 5px' : '7px 12px 15px 12px', 
                             borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px', 
-                            background: isMe ? '#dcf8c6' : isAdmin ? '#f0f0ff' : '#ffffff', 
+                            background: isMe ? '#dcf8c6' : isAdmin ? '#e0e7ff' : '#ffffff', 
                             boxShadow: '0 1px 2px rgba(0,0,0,0.1)', 
                             color: '#1e1e3a',
-                            border: isMe ? 'none' : '1px solid #e8eaf0',
+                            border: isMe ? 'none' : '1px solid var(--border)',
                             minWidth: '60px'
                           }}>
                             {!isMe && showAvatar && (
-                              <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '4px', color: isAdmin ? '#3636e8' : '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '4px', color: isAdmin ? 'var(--primary)' : '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 {m.sender.name}
                                 {isAdmin && (
                                   <span style={{ 
@@ -1325,7 +1426,7 @@ export default function SupportPage() {
                             {m.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.content}</div>}
                             
                             {/* Time inside bubble */}
-                            <div style={{ position: 'absolute', bottom: '2px', right: '8px', fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <div style={{ position: 'absolute', bottom: '2px', right: '8px', fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
                               {formatIST(m.createdAt, { hour: '2-digit', minute: '2-digit', hour12: true })}
                               {isMe && (
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1341,19 +1442,19 @@ export default function SupportPage() {
 
                 <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)' }}>
                   {pendingChatImagePreview && (
-                    <div style={{ marginBottom: '10px', position: 'relative', display: 'inline-flex', alignItems: 'flex-end', gap: '8px', padding: '10px 14px', borderRadius: '16px', background: '#f0f0ff', border: '2px solid #3636e830', boxShadow: '0 4px 12px rgba(54,54,232,0.1)' }}>
+                    <div style={{ marginBottom: '10px', position: 'relative', display: 'inline-flex', alignItems: 'flex-end', gap: '8px', padding: '10px 14px', borderRadius: '16px', background: 'var(--primary-light)', border: '2px solid #3636e830', boxShadow: '0 4px 12px rgba(54,54,232,0.1)' }}>
                       <img src={pendingChatImagePreview} alt="Preview" style={{ maxHeight: '80px', maxWidth: '160px', borderRadius: '10px', objectFit: 'cover' }} />
-                      <div style={{ fontSize: '11px', color: '#3636e8', fontWeight: '600' }}>📎 Ready to send</div>
-                      <button onClick={clearChatImage} style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: '#ef4444', color: '#fff', border: '2px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)' }}>✕</button>
+                      <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '600' }}>📎 Ready to send</div>
+                      <button onClick={clearChatImage} style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: 'var(--danger)', color: '#fff', border: '2px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)' }}>✕</button>
                     </div>
                   )}
-                  {uploadingImage && <div style={{ marginBottom: '6px', fontSize: '12px', color: '#3636e8', fontWeight: '600' }}>Uploading...</div>}
+                  {uploadingImage && <div style={{ marginBottom: '6px', fontSize: '12px', color: 'var(--primary)', fontWeight: '600' }}>Uploading...</div>}
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input type="file" accept="image/jpeg,image/png,image/webp" ref={chatImageRef} onChange={handleChatImageSelect} style={{ display: 'none' }} />
-                    <button onClick={() => chatImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingChatImage ? '#3636e818' : '#e8eaf0', boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingChatImage ? '#3636e8' : '#9999b0', flexShrink: 0 }}>
+                    <button onClick={() => chatImageRef.current?.click()} disabled={uploadingImage} title="Attach image" style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: pendingChatImage ? 'var(--primary-light)' : 'var(--surface-2)', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingChatImage ? 'var(--primary)' : 'var(--text-muted)', flexShrink: 0 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
-                    <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMsg()} placeholder="Type a message..." disabled={uploadingImage} style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: '#1e1e3a' }} />
+                    <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMsg()} placeholder="Type a message..." disabled={uploadingImage} style={{ flex: 1, padding: '10px 16px', borderRadius: '50px', border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13.5px', ...neuInset, color: 'var(--text-primary)' }} />
                     <button onClick={sendChatMsg} disabled={(!chatInput.trim() && !pendingChatImage) || uploadingImage} className="btn btn-primary" style={{ borderRadius: pendingChatImage ? '50px' : '50%', padding: pendingChatImage ? '10px 20px' : '10px 13px', opacity: (!chatInput.trim() && !pendingChatImage) || uploadingImage ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
                       {pendingChatImage && <span style={{ fontWeight: '700', fontSize: '13px' }}>Send</span>}
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>

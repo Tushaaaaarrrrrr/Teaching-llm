@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { checkRateLimit, isMaintenanceModeActive } from '@/lib/ratelimit'
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated', '/api/maintenance-status', '/api/external-enroll', '/api/analytics/compute']
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated', '/api/maintenance-status', '/api/external-enroll', '/api/analytics/compute', '/api/app-version', '/download']
 const COOKIE_NAME = 'teaching_llm_token'
 const JWT_SECRET = process.env.JWT_SECRET?.trim() || ''
 
@@ -30,6 +30,14 @@ function getSessionToken(request: NextRequest): string | undefined {
   if (authHeader?.startsWith('Bearer ')) {
     return authHeader.substring(7)
   }
+
+  // Also check query param token for drive-stream requests
+  const pathname = request.nextUrl.pathname
+  if (pathname.startsWith('/api/drive-stream/')) {
+    const queryToken = request.nextUrl.searchParams.get('token')
+    if (queryToken) return queryToken
+  }
+
   return undefined
 }
 

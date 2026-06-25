@@ -175,7 +175,7 @@ export default function UpdateOverlay() {
       <div
         style={{
           maxWidth: '650px', width: '92%', borderRadius: '24px', overflow: 'hidden',
-          background: '#ffffff', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+          background: 'var(--surface)', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
           animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
           maxHeight: '90vh', minHeight: '460px', display: 'flex', flexDirection: 'column',
           position: 'relative',
@@ -191,7 +191,7 @@ export default function UpdateOverlay() {
         {hasImage && (
           <div style={{
             width: '100%', height: '320px',
-            background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden', flexShrink: 0
           }}>
             <img
@@ -206,14 +206,14 @@ export default function UpdateOverlay() {
 
         {/* Content Half */}
         <div style={{
-          flex: 1, display: 'flex', flexDirection: 'column', padding: '40px', background: '#ffffff',
+          flex: 1, display: 'flex', flexDirection: 'column', padding: '40px', background: 'var(--surface)',
           position: 'relative', overflowY: 'auto', alignItems: 'center', justifyContent: 'center',
           textAlign: 'center'
         }}>
           {/* Close Button */}
           <button onClick={dismiss} style={{
             position: 'absolute', top: '16px', right: '16px',
-            background: '#f1f5f9', border: 'none', color: '#1e293b',
+            background: 'var(--surface)', border: 'none', color: 'var(--text-primary)',
             width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 20, transition: 'all 0.2s',
@@ -225,7 +225,7 @@ export default function UpdateOverlay() {
 
           {/* Title */}
           <h2 style={{
-            fontSize: '26px', fontWeight: '800', color: '#1e293b', margin: '0 0 16px 0',
+            fontSize: '26px', fontWeight: '800', color: 'var(--text-primary)', margin: '0 0 16px 0',
             lineHeight: '1.3',
           }}>
             {currentUpdate.title}
@@ -235,7 +235,7 @@ export default function UpdateOverlay() {
           <div
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
             style={{ 
-              fontSize: '15px', color: '#64748b', lineHeight: '1.7', wordBreak: 'break-word',
+              fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.7', wordBreak: 'break-word',
               marginBottom: '32px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%'
             }}
           />
@@ -249,7 +249,7 @@ export default function UpdateOverlay() {
                 fetch(`/api/updates/${currentUpdate.id}/dismiss`, { method: 'POST' }).catch(console.error)
                 window.location.href = currentUpdate.ctaLink!
               }} style={{
-                background: '#3636e8', color: '#fff', border: 'none', padding: '14px',
+                background: 'var(--primary)', color: '#fff', border: 'none', padding: '14px',
                 borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
                 boxShadow: '0 4px 14px rgba(54,54,232,0.25)', width: '100%', transition: 'transform 0.1s'
               }}>
@@ -257,7 +257,7 @@ export default function UpdateOverlay() {
               </button>
             )}
             <button onClick={dismiss} style={{
-              background: '#f1f5f9', color: '#475569',
+              background: 'var(--surface)', color: 'var(--text-secondary)',
               border: 'none', padding: '14px',
               borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
               width: '100%', transition: 'background 0.2s'
@@ -289,7 +289,7 @@ export default function UpdateOverlay() {
           100% { transform: translateY(-800px) scale(1.5); opacity: 0; }
         }
         .close-btn-update:hover {
-          background: #e2e8f0 !important;
+          background: var(--border) !important;
         }
       `}</style>
     </div>

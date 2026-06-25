@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, isAdminOrManager, verifyStreamToken } from '@/lib/auth'
 import { extractDriveFileId, fetchDriveFileStream, getDriveAuthMode } from '@/lib/drive'
 
 // Node runtime — googleapis + Node streams aren't available on Edge
@@ -30,12 +30,27 @@ export async function GET(
   { params }: { params: Promise<{ contentId: string }> }
 ) {
   try {
-    const session = await getSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { contentId } = await params
+    const token = request.nextUrl.searchParams.get('token')
+
+    let userId: string
+    let role: string
+
+    if (token) {
+      const decoded = verifyStreamToken(token)
+      if (!decoded || decoded.lectureId !== contentId) {
+        return NextResponse.json({ error: 'Unauthorized stream token' }, { status: 401 })
+      }
+      userId = decoded.userId
+      role = decoded.role
+    } else {
+      const session = await getSession()
+      if (!session) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      userId = session.userId
+      role = session.role
+    }
 
     const content = await prisma.content.findUnique({
       where: { id: contentId },
@@ -83,12 +98,12 @@ export async function GET(
     }
 
     // Access control — managers / admins / instructors get a pass
-    const privileged = isAdminOrManager(session.role) || session.role === 'INSTRUCTOR'
+    const privileged = isAdminOrManager(role) || role === 'INSTRUCTOR'
     if (!privileged) {
       const enrollment = await prisma.enrollment.findUnique({
         where: {
           userId_courseId: {
-            userId: session.userId,
+            userId: userId,
             courseId: content.topic.courseId,
           },
         },

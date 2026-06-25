@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { sendNewTicketNotificationToManagers } from '@/lib/system-notifications'
 
 const ticketInclude = {
   user: { select: { id: true, name: true, role: true } },
@@ -71,6 +72,8 @@ export async function POST(request: NextRequest) {
       },
       include: ticketInclude,
     })
+
+    sendNewTicketNotificationToManagers(ticket.id, session.name, ticket.title).catch(console.error)
 
     logActivity({
       userId: session.userId,

@@ -17,7 +17,9 @@
     "db:cleanup": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/scripts/cleanup-logs.ts",
     "analytics:compute": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/scripts/compute-analytics.ts",
     "db:studio": "npx prisma studio",
-    "prepare": "husky install || true"
+    "prepare": "husky install || true",
+    "switch:test": "node scripts/switch-env.js test",
+    "switch:prod": "node scripts/switch-env.js prod"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -26,10 +28,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@capacitor-community/file-opener": "^8.0.1",
     "@capacitor/android": "^8.3.4",
     "@capacitor/app": "^8.1.0",
+    "@capacitor/browser": "^8.0.3",
     "@capacitor/cli": "^8.3.4",
     "@capacitor/core": "^8.3.4",
+    "@capacitor/filesystem": "^8.1.2",
     "@capacitor/keyboard": "^8.0.3",
     "@capacitor/push-notifications": "^8.1.1",
     "@capacitor/screen-orientation": "^8.0.1",
@@ -65,6 +70,7 @@
     "next-pwa": "^5.6.0",
     "nodemailer": "^8.0.8",
     "pdfjs-dist": "^4.10.38",
+    "posthog-js": "^1.381.0",
     "prisma": "5.22.0",
     "razorpay": "^2.9.6",
     "react": "^18.3.1",

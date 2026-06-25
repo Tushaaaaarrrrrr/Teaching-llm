@@ -16,7 +16,7 @@ function getJwtSecret(): string {
 export interface JWTPayload {
   userId: string
   email: string
-  role: 'MANAGER' | 'SUPER_ADMIN' | 'ADMIN' | 'STUDENT' | 'INSTRUCTOR'
+  role: 'MANAGER' | 'ADMIN' | 'STUDENT' | 'INSTRUCTOR'
   name: string
   canTerminate?: boolean
   canCreateStudents?: boolean
@@ -37,7 +37,7 @@ export interface FullSession extends JWTPayload {
 }
 
 export function signToken(payload: JWTPayload): string {
-  return jwt.sign(payload, getJwtSecret(), { expiresIn: '1d' })
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: '7d' })
 }
 
 export function verifyToken(token: string): JWTPayload | null {
@@ -45,6 +45,24 @@ export function verifyToken(token: string): JWTPayload | null {
     return jwt.verify(token, getJwtSecret()) as JWTPayload
   } catch (err) {
     // Silently handle expired/invalid tokens for getSession
+    return null
+  }
+}
+
+export interface StreamTokenPayload {
+  userId: string
+  lectureId: string
+  role: string
+}
+
+export function signStreamToken(userId: string, lectureId: string, role: string): string {
+  return jwt.sign({ userId, lectureId, role }, getJwtSecret(), { expiresIn: '4h' })
+}
+
+export function verifyStreamToken(token: string): StreamTokenPayload | null {
+  try {
+    return jwt.verify(token, getJwtSecret()) as StreamTokenPayload
+  } catch (err) {
     return null
   }
 }
@@ -117,11 +135,12 @@ export async function getFullSession(): Promise<FullSession | null> {
     user = await (prisma.user.findUnique as any)({
       where: { id: jwtPayload.userId },
       select: {
+        role: true,
         isTerminated: true,
         tokenVersion: true,
         isProfileComplete: true,
         enableDetailedLogs: true,
-        enrollments: (jwtPayload.role !== 'MANAGER' && jwtPayload.role !== 'SUPER_ADMIN') ? {
+        enrollments: (jwtPayload.role !== 'MANAGER') ? {
           where: {
             course: {
               isDisabled: false,
@@ -162,19 +181,21 @@ export async function getFullSession(): Promise<FullSession | null> {
   }
 
   const enrollments = (user.enrollments as { courseId: string; type: string }[] | undefined) ?? []
+  const userRole = user.role || jwtPayload.role
 
   return {
     ...jwtPayload,
+    role: userRole,
     isTerminated: user.isTerminated,
     isProfileComplete: user.isProfileComplete,
     enableDetailedLogs: user.enableDetailedLogs || false,
-    accessibleCourseIds: (jwtPayload.role === 'MANAGER' || jwtPayload.role === 'SUPER_ADMIN') 
+    accessibleCourseIds: (userRole === 'MANAGER') 
       ? null 
       : enrollments.map(e => e.courseId),
-    enrollmentTypes: (jwtPayload.role === 'MANAGER' || jwtPayload.role === 'SUPER_ADMIN')
+    enrollmentTypes: (userRole === 'MANAGER')
       ? {}
       : Object.fromEntries(enrollments.map(e => [e.courseId, e.type])),
-    isMaintenanceMode: settings?.maintenanceMode && (jwtPayload.role !== 'MANAGER' && jwtPayload.role !== 'SUPER_ADMIN')
+    isMaintenanceMode: settings?.maintenanceMode && (userRole !== 'MANAGER')
   }
 }
 
@@ -185,7 +206,7 @@ export function getCookieConfig() {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax' as const,
-      maxAge: 60 * 60 * 24 * 1, // 1 day — matches JWT expiry
+      maxAge: 60 * 60 * 24 * 7, // 7 days — matches JWT expiry
       path: '/',
     },
   }
@@ -196,11 +217,11 @@ export function isManager(role: string) {
 }
 
 export function isSuperAdmin(role: string) {
-  return role === 'SUPER_ADMIN'
+  return false
 }
 
 export function isManagerOrSuperAdmin(role: string) {
-  return role === 'MANAGER' || role === 'SUPER_ADMIN'
+  return role === 'MANAGER'
 }
 
 export function isAdminOrManager(role: string) {
@@ -228,7 +249,7 @@ export async function getAccessibleCourseIds(
   userId: string,
   role: string
 ): Promise<string[] | null> {
-  if (role === 'MANAGER' || role === 'SUPER_ADMIN') return null
+  if (role === 'MANAGER') return null
 
   const now = new Date()
 

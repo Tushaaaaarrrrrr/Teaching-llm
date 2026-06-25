@@ -167,42 +167,42 @@ export default function CreateTestSeriesPage() {
 
   // Shared Styles
   const neuCard: React.CSSProperties = {
-    borderRadius: '20px', background: '#e8eaf0',
-    boxShadow: '6px 6px 14px #c5c7cf, -6px -6px 14px #ffffff',
+    borderRadius: '20px', background: 'var(--surface-2)',
+    boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)',
     padding: '24px',
   }
   const neuInput: React.CSSProperties = {
     width: '100%', padding: '12px 16px', borderRadius: '14px', border: 'none',
-    background: '#e8eaf0', boxShadow: 'inset 3px 3px 6px #c5c7cf, inset -3px -3px 6px #ffffff',
-    fontSize: '14px', color: '#1e1e3a', outline: 'none',
+    background: 'var(--surface-2)', boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
+    fontSize: '14px', color: 'var(--text-primary)', outline: 'none',
   }
 
   const neuButton: React.CSSProperties = {
     padding: '12px 28px', borderRadius: '50px', border: 'none',
-    background: '#3636e8', color: '#fff', fontSize: '14px', fontWeight: 700,
+    background: 'var(--primary)', color: '#fff', fontSize: '14px', fontWeight: 700,
     cursor: 'pointer',
-    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px rgba(255,255,255,0.7)',
+    boxShadow: '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-glow)',
     transition: 'all 0.2s ease',
   }
 
   const secondaryButton: React.CSSProperties = {
     ...neuButton,
-    background: '#fff',
-    color: '#3636e8',
-    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+    background: 'var(--surface)',
+    color: 'var(--primary)',
+    boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
   }
 
   return (
     <div style={{ padding: '24px 32px 48px', maxWidth: '900px', margin: '0 auto' }}>
       <div style={{ marginBottom: '32px' }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', color: '#3636e8', fontWeight: 700, cursor: 'pointer', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
           ← Back to Exams
         </button>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a' }}>Create Test Series</h1>
+           <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>Create Test Series</h1>
            <div style={{ display: 'flex', gap: '8px' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: step === 1 ? '#3636e8' : '#c5c7cf' }} />
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: step === 2 ? '#3636e8' : '#c5c7cf' }} />
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: step === 1 ? 'var(--primary)' : 'var(--neu-dark)' }} />
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: step === 2 ? 'var(--primary)' : 'var(--neu-dark)' }} />
            </div>
         </div>
       </div>
@@ -210,15 +210,15 @@ export default function CreateTestSeriesPage() {
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {step === 1 && (
           <div style={neuCard}>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', marginBottom: '20px' }}>Step 1: General Information</h2>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '20px' }}>Step 1: General Information</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Test Series Title</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>Test Series Title</label>
                   <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Complete Physics Mock Series" style={neuInput} required />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Exam Type</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>Exam Type</label>
                   <select value={examType} onChange={e => setExamType(e.target.value)} style={neuInput}>
                     <option value="FINAL_TEST">Final Test (Strict Rules)</option>
                     <option value="PRACTICE_TEST">Practice Test (General)</option>
@@ -227,21 +227,21 @@ export default function CreateTestSeriesPage() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Price (₹)</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>Price (₹)</label>
                   <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0 for free" style={neuInput} required min="0" />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Validity (Days)</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>Validity (Days)</label>
                   <input type="number" value={validityDays} onChange={e => setValidityDays(e.target.value)} placeholder="365" style={neuInput} required min="1" />
                 </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Description</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>Description</label>
                 <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Brief overview of the test series..." rows={3} style={{ ...neuInput, resize: 'vertical' }} />
               </div>
 
               {isFinalTest(examType) && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', fontWeight: 700, color: '#6b6b8a' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>
                   <input
                     type="checkbox"
                     checked={useScheduleWindow}
@@ -251,11 +251,11 @@ export default function CreateTestSeriesPage() {
                 </label>
               )}
               
-              <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: examType === 'FINAL_TEST' ? '#ef444410' : '#10b98110', borderLeft: `4px solid ${examType === 'FINAL_TEST' ? '#ef4444' : '#10b981'}` }}>
-                <h3 style={{ fontSize: '14px', fontWeight: 800, color: examType === 'FINAL_TEST' ? '#ef4444' : '#10b981', marginBottom: '8px' }}>
+              <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: examType === 'FINAL_TEST' ? 'var(--danger-light)' : 'var(--success-light)', borderLeft: `4px solid ${examType === 'FINAL_TEST' ? 'var(--danger)' : 'var(--success)'}` }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 800, color: examType === 'FINAL_TEST' ? 'var(--danger)' : 'var(--success)', marginBottom: '8px' }}>
                   {examType === 'FINAL_TEST' ? 'Final Test Rules' : 'General Test Rules'}
                 </h3>
-                <ul style={{ fontSize: '13px', color: '#6b6b8a', paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <ul style={{ fontSize: '13px', color: 'var(--text-secondary)', paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {examType === 'FINAL_TEST' ? (
                     <>
                       <li>Strict time limit enforced.</li>
@@ -277,13 +277,13 @@ export default function CreateTestSeriesPage() {
                 {requiresSchedule && (
                   <>
                     <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
                         Start Date {isFinalTest(examType) ? '(Optional)' : ''}
                       </label>
                       <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} style={neuInput} required={!isFinalTest(examType)} />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
                         End Date {isFinalTest(examType) ? '(Optional)' : ''}
                       </label>
                       <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} style={neuInput} required={!isFinalTest(examType)} />
@@ -291,7 +291,7 @@ export default function CreateTestSeriesPage() {
                   </>
                 )}
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#6b6b8a', marginBottom: '6px' }}>Duration (min)</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>Duration (min)</label>
                   <input type="number" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value)} style={neuInput} required min="1" />
                 </div>
               </div>
@@ -320,30 +320,30 @@ export default function CreateTestSeriesPage() {
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a' }}>Step 2: Questions</h2>
+                <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>Step 2: Questions</h2>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button type="button" onClick={() => setStep(1)} style={secondaryButton}>Back</button>
-                  <button type="button" onClick={() => { setShowBank(true); fetchBankQuestions(bankSubjectFilter) }} style={{ ...secondaryButton, background: '#3636e815' }}>Browse Content Bank</button>
+                  <button type="button" onClick={() => { setShowBank(true); fetchBankQuestions(bankSubjectFilter) }} style={{ ...secondaryButton, background: 'var(--primary-light)' }}>Browse Content Bank</button>
                   <button type="button" onClick={handleAddQuestion} style={secondaryButton}>+ Add Question</button>
                 </div>
               </div>
 
               {/* Content Bank Picker Modal - Upgraded UI */}
               {showBank && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(232, 234, 240, 0.8)', backdropFilter: 'blur(10px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
                   <div style={{ ...neuCard, maxWidth: '1100px', width: '100%', maxHeight: '85vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.8)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
                        <div>
-                         <h3 style={{ fontSize: '22px', fontWeight: 900, color: '#3636e8' }}>Browse Content Bank</h3>
-                         <p style={{ fontSize: '13px', color: '#6b6b8a', fontWeight: 500, marginTop: '4px' }}>
+                         <h3 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--primary)' }}>Browse Content Bank</h3>
+                         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500, marginTop: '4px' }}>
                            {bankSubjectFilter ? (
-                             <>Showing questions for: <span style={{ color: '#1e1e3a', fontWeight: 800 }}>{bankSubjectFilter}</span></>
+                             <>Showing questions for: <span style={{ color: 'var(--text-primary)', fontWeight: 800 }}>{bankSubjectFilter}</span></>
                            ) : (
                              <>Please select a subject to view questions.</>
                            )}
                          </p>
                        </div>
-                       <button onClick={() => setShowBank(false)} style={{ background: '#ef444410', border: 'none', color: '#ef4444', padding: '8px 16px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>Close Bank</button>
+                       <button onClick={() => setShowBank(false)} style={{ background: 'var(--danger-light)', border: 'none', color: 'var(--danger)', padding: '8px 16px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>Close Bank</button>
                     </div>
 
                     <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
@@ -355,7 +355,7 @@ export default function CreateTestSeriesPage() {
                           onChange={e => setBankSearch(e.target.value)}
                           style={{ ...neuInput, paddingLeft: '44px' }}
                         />
-                        <svg style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9999b0' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
                         </svg>
                       </div>
@@ -371,13 +371,13 @@ export default function CreateTestSeriesPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                        {bankQuestions.filter(q => q.text.toLowerCase().includes(bankSearch.toLowerCase())).map(q => (
-                         <div key={q.id} style={{ padding: '20px', background: 'rgba(255,255,255,0.4)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
+                         <div key={q.id} style={{ padding: '20px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
                             <div style={{ flex: 1 }}>
                                <div style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
-                                 <span style={{ fontSize: '10px', fontWeight: 900, color: '#3636e8', background: '#3636e810', padding: '2px 8px', borderRadius: '6px' }}>{q.type}</span>
-                                 <span style={{ fontSize: '10px', fontWeight: 900, color: '#6b6b8a', background: '#00000005', padding: '2px 8px', borderRadius: '6px' }}>{q.marks || 1} Marks</span>
+                                 <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--primary)', background: 'var(--primary-light)', padding: '2px 8px', borderRadius: '6px' }}>{q.type}</span>
+                                 <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)', background: '#00000005', padding: '2px 8px', borderRadius: '6px' }}>{q.marks || 1} Marks</span>
                                </div>
-                               <div style={{ fontSize: '15px', fontWeight: 700, color: '#1e1e3a', lineHeight: '1.4' }}><RichTextDisplay text={q.text} /></div>
+                               <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: '1.4' }}><RichTextDisplay text={q.text} /></div>
                             </div>
                             <button 
                               type="button"
@@ -396,7 +396,7 @@ export default function CreateTestSeriesPage() {
                               }}
                               style={{ 
                                 padding: '10px 20px', borderRadius: '12px', border: 'none', 
-                                background: '#3636e8', color: '#fff', fontSize: '13px', fontWeight: 800, 
+                                background: 'var(--primary)', color: '#fff', fontSize: '13px', fontWeight: 800, 
                                 cursor: 'pointer', boxShadow: '0 4px 12px rgba(54,54,232,0.2)',
                                 transition: 'transform 0.2s'
                               }}
@@ -408,13 +408,13 @@ export default function CreateTestSeriesPage() {
                          </div>
                        ))}
                        {bankQuestions.length === 0 && bankSubjectFilter && (
-                         <div style={{ textAlign: 'center', padding: '40px', color: '#9999b0', background: 'rgba(0,0,0,0.02)', borderRadius: '16px' }}>
+                         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.02)', borderRadius: '16px' }}>
                            <p style={{ fontSize: '14px', fontWeight: 600 }}>No questions found in "{bankSubjectFilter}" bank.</p>
                            <p style={{ fontSize: '12px', marginTop: '4px' }}>Please go to the Content Bank page to add some questions first.</p>
                          </div>
                        )}
                        {bankQuestions.length === 0 && !bankSubjectFilter && (
-                         <div style={{ textAlign: 'center', padding: '40px', color: '#9999b0', background: 'rgba(0,0,0,0.02)', borderRadius: '16px' }}>
+                         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.02)', borderRadius: '16px' }}>
                            <p style={{ fontSize: '14px', fontWeight: 600 }}>Select a subject from the dropdown above to browse related content.</p>
                          </div>
                        )}
@@ -424,10 +424,10 @@ export default function CreateTestSeriesPage() {
               )}
 
               {questions.map((q, idx) => (
-                <div key={idx} style={{ ...neuCard, background: '#f8f9fc', border: '1px solid rgba(255,255,255,0.8)', padding: '24px', marginBottom: '32px' }}>
+                <div key={idx} style={{ ...neuCard, background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.8)', padding: '24px', marginBottom: '32px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                    <h4 style={{ fontSize: '18px', fontWeight: 900, color: '#3636e8', margin: 0 }}>Question #{idx + 1}</h4>
-                    <button type="button" onClick={() => handleRemoveQuestion(idx)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Remove</button>
+                    <h4 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--primary)', margin: 0 }}>Question #{idx + 1}</h4>
+                    <button type="button" onClick={() => handleRemoveQuestion(idx)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Remove</button>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -435,7 +435,7 @@ export default function CreateTestSeriesPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: '24px' }}>
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <label style={{ fontSize: '14px', fontWeight: 800, color: '#6b6b8a' }}>Question Text</label>
+                          <label style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-secondary)' }}>Question Text</label>
                         </div>
                         <textarea 
                           value={q.text.split('```')[0].trim()} 
@@ -454,16 +454,16 @@ export default function CreateTestSeriesPage() {
                           required 
                         />
                         {q.text.includes('```') && (
-                          <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.6)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                          <div style={{ marginTop: '16px', background: 'var(--surface)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 800, color: '#6b6b8a' }}>Code Preview</span>
+                              <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>Code Preview</span>
                               <button 
                                 type="button" 
                                 onClick={() => {
                                   const textOnly = q.text.split('```')[0].trim();
                                   handleQuestionChange(idx, 'text', textOnly);
                                 }}
-                                style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
+                                style={{ background: 'none', border: 'none', color: 'var(--danger)', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
                               >
                                 REMOVE CODE
                               </button>
@@ -473,7 +473,7 @@ export default function CreateTestSeriesPage() {
                         )}
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Type</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px' }}>Type</label>
                         <select value={q.type} onChange={e => handleQuestionChange(idx, 'type', e.target.value)} style={neuInput}>
                           <option value="MCQ">Multiple Choice</option>
                           <option value="MSQ">Multiple Select (MSQ)</option>
@@ -484,11 +484,11 @@ export default function CreateTestSeriesPage() {
                     </div>
 
                     {/* Attachment Row */}
-                    <div style={{ background: 'rgba(255,255,255,0.4)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.6)' }}>
-                       <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '10px' }}>Attachment (Optional)</label>
+                    <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.6)' }}>
+                       <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '10px' }}>Attachment (Optional)</label>
                        
                        {(q.imageUrl && q.text.includes('```')) && (
-                         <div style={{ padding: '8px 12px', background: '#FEF2F2', color: '#EF4444', borderRadius: '8px', fontSize: '12px', fontWeight: 700, marginBottom: '12px' }}>
+                         <div style={{ padding: '8px 12px', background: 'var(--danger-light)', color: 'var(--danger)', borderRadius: '8px', fontSize: '12px', fontWeight: 700, marginBottom: '12px' }}>
                            Please choose one: Question Image or Code
                          </div>
                        )}
@@ -496,7 +496,7 @@ export default function CreateTestSeriesPage() {
                        <div style={{ display: 'flex', gap: '32px' }}>
                          {/* Image Section */}
                          <div style={{ opacity: q.text.includes('```') ? 0.5 : 1, pointerEvents: q.text.includes('```') ? 'none' : 'auto' }}>
-                           <p style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '8px' }}>Image Upload</p>
+                           <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>Image Upload</p>
                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                              <label style={{ ...secondaryButton, padding: '8px 20px', fontSize: '13px', cursor: 'pointer', display: 'inline-block' }}>
                                Choose File
@@ -507,7 +507,7 @@ export default function CreateTestSeriesPage() {
                                   onChange={(e) => e.target.files?.[0] && handleImageUpload(idx, e.target.files[0])}
                                />
                              </label>
-                             <span style={{ fontSize: '13px', color: '#9999b0' }}>{q.imageUrl ? 'Image uploaded successfuly' : 'No file chosen'}</span>
+                             <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{q.imageUrl ? 'Image uploaded successfuly' : 'No file chosen'}</span>
                            </div>
                          </div>
 
@@ -516,7 +516,7 @@ export default function CreateTestSeriesPage() {
 
                          {/* Code Section */}
                          <div style={{ opacity: q.imageUrl ? 0.5 : 1, pointerEvents: q.imageUrl ? 'none' : 'auto' }}>
-                           <p style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a', marginBottom: '8px' }}>Code Block</p>
+                           <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>Code Block</p>
                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                              <select
                                onChange={(e) => {
@@ -534,7 +534,7 @@ export default function CreateTestSeriesPage() {
                                    e.target.value = '';
                                  }
                                }}
-                               style={{ padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: '#3636e8' }}
+                               style={{ padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: 'var(--surface)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--primary)' }}
                              >
                                <option value="">+ Add Code</option>
                                <option value="python">Python</option>
@@ -553,7 +553,7 @@ export default function CreateTestSeriesPage() {
                        {q.imageUrl && (
                          <div style={{ marginTop: '16px', position: 'relative', width: '200px' }}>
                             <img src={q.imageUrl} alt="Preview" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '14px', boxShadow: '4px 4px 12px rgba(0,0,0,0.1)' }} />
-                            <button type="button" onClick={() => handleQuestionChange(idx, 'imageUrl', '')} style={{ position: 'absolute', top: '-12px', right: '-12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>×</button>
+                            <button type="button" onClick={() => handleQuestionChange(idx, 'imageUrl', '')} style={{ position: 'absolute', top: '-12px', right: '-12px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>×</button>
                          </div>
                        )}
                     </div>
@@ -561,7 +561,7 @@ export default function CreateTestSeriesPage() {
                     {/* Options Logic */}
                     {(q.type === 'MCQ' || q.type === 'MSQ' || q.type === 'TRUE_FALSE') && (
                       <div>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '16px' }}>Options & Correct Answer</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '16px' }}>Options & Correct Answer</label>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                           {q.type === 'TRUE_FALSE' ? (
                             ['True', 'False'].map(opt => (
@@ -570,9 +570,9 @@ export default function CreateTestSeriesPage() {
                                   type="radio" 
                                   checked={q.correctAnswer === opt} 
                                   onChange={() => handleQuestionChange(idx, 'correctAnswer', opt)} 
-                                  style={{ width: '22px', height: '22px', accentColor: '#3636e8', cursor: 'pointer' }} 
+                                  style={{ width: '22px', height: '22px', accentColor: 'var(--primary)', cursor: 'pointer' }} 
                                 />
-                                <div style={{ ...neuInput, background: q.correctAnswer === opt ? '#3636e810' : '#e8eaf0', color: q.correctAnswer === opt ? '#3636e8' : '#1e1e3a', fontWeight: 700 }}>{opt}</div>
+                                <div style={{ ...neuInput, background: q.correctAnswer === opt ? 'var(--primary-light)' : 'var(--surface-2)', color: q.correctAnswer === opt ? 'var(--primary)' : 'var(--text-primary)', fontWeight: 700 }}>{opt}</div>
                               </div>
                             ))
                           ) : (
@@ -596,7 +596,7 @@ export default function CreateTestSeriesPage() {
                                       handleQuestionChange(idx, 'correctAnswer', opt);
                                     }
                                   }} 
-                                  style={{ width: '22px', height: '22px', accentColor: '#3636e8', cursor: 'pointer' }} 
+                                  style={{ width: '22px', height: '22px', accentColor: 'var(--primary)', cursor: 'pointer' }} 
                                 />
                                 <input 
                                   type="text" 
@@ -610,14 +610,14 @@ export default function CreateTestSeriesPage() {
                                   style={neuInput} 
                                 />
                                 {q.options.length > 2 && (
-                                  <button type="button" onClick={() => handleQuestionChange(idx, 'options', q.options.filter((_, i) => i !== oIdx))} style={{ position: 'absolute', right: '-30px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '20px', fontWeight: 300 }}>×</button>
+                                  <button type="button" onClick={() => handleQuestionChange(idx, 'options', q.options.filter((_, i) => i !== oIdx))} style={{ position: 'absolute', right: '-30px', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '20px', fontWeight: 300 }}>×</button>
                                 )}
                               </div>
                             ))
                           )}
                         </div>
                         {(q.type === 'MCQ' || q.type === 'MSQ') && q.options.length < 6 && (
-                          <button type="button" onClick={() => handleQuestionChange(idx, 'options', [...q.options, ''])} style={{ marginTop: '20px', background: 'none', border: '2px dashed #3636e8', color: '#3636e8', padding: '10px 24px', borderRadius: '14px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>+ Add Option</button>
+                          <button type="button" onClick={() => handleQuestionChange(idx, 'options', [...q.options, ''])} style={{ marginTop: '20px', background: 'none', border: '2px dashed #3636e8', color: 'var(--primary)', padding: '10px 24px', borderRadius: '14px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>+ Add Option</button>
                         )}
                       </div>
                     )}
@@ -625,7 +625,7 @@ export default function CreateTestSeriesPage() {
                     {/* Footer Row: Explanation & Marks */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '24px', alignItems: 'end' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Explanation (Optional)</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px' }}>Explanation (Optional)</label>
                         <input 
                           type="text" 
                           value={q.explanation} 
@@ -635,7 +635,7 @@ export default function CreateTestSeriesPage() {
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Marks</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px' }}>Marks</label>
                         <input 
                           type="number" 
                           value={q.marks || 1} 
@@ -648,14 +648,14 @@ export default function CreateTestSeriesPage() {
 
                     {q.type === 'NAT' && (
                       <div style={{ background: 'rgba(16,185,129,0.05)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(16,185,129,0.1)' }}>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#10b981', marginBottom: '8px' }}>Correct Numerical Answer</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: 'var(--success)', marginBottom: '8px' }}>Correct Numerical Answer</label>
                         <input 
                           type="number"
                           step="any"
                           value={q.correctAnswer} 
                           onChange={e => handleQuestionChange(idx, 'correctAnswer', e.target.value)} 
                           placeholder="e.g. 42.5" 
-                          style={{ ...neuInput, background: '#fff' }} 
+                          style={{ ...neuInput, background: 'var(--surface)' }} 
                         />
                       </div>
                     )}
@@ -673,16 +673,16 @@ export default function CreateTestSeriesPage() {
 
       {showCodeModal !== null && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', padding: '32px', borderRadius: '24px', width: '100%', maxWidth: '700px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1e1e3a', marginBottom: '16px', textTransform: 'capitalize' }}>Add Code ({showCodeModal.language})</h3>
+          <div style={{ background: 'var(--surface)', padding: '32px', borderRadius: '24px', width: '100%', maxWidth: '700px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '16px', textTransform: 'capitalize' }}>Add Code ({showCodeModal.language})</h3>
             <textarea
               value={codeSnippet}
               onChange={e => setCodeSnippet(e.target.value)}
               placeholder="Paste or write your code here..."
-              style={{ width: '100%', height: '300px', padding: '16px', borderRadius: '12px', border: '1px solid #cfd6e1', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical', background: '#f8f9fc' }}
+              style={{ width: '100%', height: '300px', padding: '16px', borderRadius: '12px', border: '1px solid #cfd6e1', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical', background: 'var(--surface)' }}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-              <button onClick={() => setShowCodeModal(null)} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', background: '#f1f1f8', color: '#6b6b8a', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => setShowCodeModal(null)} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', background: '#f1f1f8', color: 'var(--text-secondary)', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
               <button 
                 onClick={() => {
                   if (codeSnippet.trim()) {
@@ -693,7 +693,7 @@ export default function CreateTestSeriesPage() {
                   }
                   setShowCodeModal(null);
                 }} 
-                style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer' }}
+                style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 800, cursor: 'pointer' }}
               >
                 OK
               </button>

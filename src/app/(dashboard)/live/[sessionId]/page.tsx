@@ -59,8 +59,7 @@ export default function LiveSessionPage() {
     !!event && !!me?.user &&
     (
       (event.instructorId && event.instructorId === me.user.id) ||
-      me.user.role === 'MANAGER' ||
-      me.user.role === 'SUPER_ADMIN'
+      me.user.role === 'MANAGER'
     )
 
   // Cleanup helper — leave channel, stop + close local tracks.

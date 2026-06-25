@@ -543,7 +543,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
     { key: 'content-bank',  label: 'Content Bank',  count: bankQuestions.length },
   ]
 
-  const COLORS = ['#4F46E5', '#7C3AED', '#0EA5E9', '#F59E0B', '#10B981', '#EF4444', '#EC4899']
+  const COLORS = ['var(--primary)', 'var(--accent)', 'var(--info)', 'var(--warning)', 'var(--success)', 'var(--danger)', '#EC4899']
 
   function renderForm() {
     const f = formData
@@ -576,7 +576,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             {topicsForCourse.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
           </select>
           {f.courseId && !loadingTopics && topicsForCourse.length === 0 && (
-            <p style={{ fontSize: '11px', color: '#ef4444', marginTop: '4px' }}>
+            <p style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px' }}>
               No topics found. Add a topic in the Courses tab first.
             </p>
           )}
@@ -600,7 +600,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 onChange={e => set('googleGroupEmail', e.target.value.toLowerCase())}
                 placeholder="math1@yourdomain.com"
               />
-              <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 Optional. Must be a valid group email in your Google Workspace domain.
               </p>
             </div>
@@ -613,7 +613,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               /> 
               <span style={{fontSize: '13px'}}>Mark as Free Course</span>
               {editId && (
-                <span style={{ fontSize: '11px', color: '#6366f1', fontWeight: '800', marginLeft: 'auto' }}>🔒 FIXED AFTER CREATION</span>
+                <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: '800', marginLeft: 'auto' }}>🔒 FIXED AFTER CREATION</span>
               )}
             </label>
             <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -623,7 +623,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 onChange={e => setFormData(p => ({ ...p, isDisabled: e.target.checked as any }))}
               />
               <span style={{ fontSize: '13px' }}>Disable Course</span>
-              <span style={{ fontSize: '11px', color: '#9999b0', marginLeft: 'auto' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
                 Hidden from non-managers and blocked for new enrollment
               </span>
             </label>
@@ -639,7 +639,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 onChange={e => set('liveUpgradePrice', e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="e.g. 99 — leave empty to hide upgrade option"
               />
-              <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 If set, Recording-batch students will see an &quot;Upgrade to Live&quot; button on their course card at this price.
               </p>
             </div>
@@ -667,12 +667,12 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   type="button" 
                   onClick={() => set('expiresAt', '')}
                   className="btn btn-ghost btn-sm"
-                  style={{ color: '#ef4444' }}
+                  style={{ color: 'var(--danger)' }}
                 >
                   Clear
                 </button>
               </div>
-              <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 Access will be blocked for students after this date. (Allowed years: 2025, 2026, 2027)
               </p>
             </div>
@@ -702,7 +702,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 display: 'flex', flexDirection: 'column', gap: '6px',
                 maxHeight: '220px', overflowY: 'auto',
                 padding: '10px', borderRadius: '8px',
-                background: '#f3f0ff', border: '1px solid #ddd6fe',
+                background: 'var(--primary-light)', border: '1px solid var(--border)',
               }}>
                 {courses.map((course: any) => (
                   <label key={course.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
@@ -719,9 +719,9 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     />
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: course.color, flexShrink: 0 }} />
                     <span style={{ fontSize: '13px' }}>{course.name}</span>
-                    {course.subject && <span style={{ fontSize: '11px', color: '#9999b0' }}>({course.subject})</span>}
-                    {course.isExpired && <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '700' }}>Expired</span>}
-                    {course.isEffectivelyDisabled && !course.isExpired && <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700' }}>Disabled</span>}
+                    {course.subject && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({course.subject})</span>}
+                    {course.isExpired && <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700' }}>Expired</span>}
+                    {course.isEffectivelyDisabled && !course.isExpired && <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700' }}>Disabled</span>}
                   </label>
                 ))}
               </div>
@@ -910,7 +910,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             <div className="form-group">
               <label className="form-label">Source Type *</label>
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'FILE' ? '#6366f1' : '#e5e7eb'}`, background: materialSourceType === 'FILE' ? '#f0f4ff' : 'transparent' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'FILE' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'FILE' ? 'var(--primary-light)' : 'transparent' }}>
                   <input
                     type="radio"
                     name="materialSourceType"
@@ -919,9 +919,9 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     onChange={() => setMaterialSourceType('FILE')}
                     style={{ cursor: 'pointer' }}
                   />
-                  <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'FILE' ? '600' : '500', color: '#1e1e3a' }}>📄 Upload File</span>
+                  <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'FILE' ? '600' : '500', color: 'var(--text-primary)' }}>📄 Upload File</span>
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'LINK' ? '#6366f1' : '#e5e7eb'}`, background: materialSourceType === 'LINK' ? '#f0f4ff' : 'transparent' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, padding: '12px', borderRadius: '8px', border: `2px solid ${materialSourceType === 'LINK' ? 'var(--accent)' : 'var(--surface-2)'}`, background: materialSourceType === 'LINK' ? 'var(--primary-light)' : 'transparent' }}>
                   <input
                     type="radio"
                     name="materialSourceType"
@@ -930,7 +930,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     onChange={() => setMaterialSourceType('LINK')}
                     style={{ cursor: 'pointer' }}
                   />
-                  <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'LINK' ? '600' : '500', color: '#1e1e3a' }}>🔗 External Link</span>
+                  <span style={{ fontSize: '14px', fontWeight: materialSourceType === 'LINK' ? '600' : '500', color: 'var(--text-primary)' }}>🔗 External Link</span>
                 </label>
               </div>
             </div>
@@ -959,10 +959,10 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             </div>
             <div className="form-group"><label className="form-label">Offering Name / Bundle Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="e.g. Full Stack Mastery" /></div>
             <div className="form-group"><label className="form-label">Thumbnail URL</label><input className="form-input" value={f.thumbnail || ''} onChange={e => set('thumbnail', e.target.value)} placeholder="https://... (optional image URL)" /></div>
-            <div style={{ border: '1px solid #ddd6fe', borderRadius: '12px', padding: '16px', background: '#faf5ff', marginBottom: '16px' }}>
+            <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', background: 'var(--primary-light)', marginBottom: '16px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <input type="checkbox" checked={!!f.hasRecorded} onChange={e => set('hasRecorded', e.target.checked)} />
-                <span style={{ fontSize: '14px', fontWeight: '700', color: '#1e1e3a' }}>📹 Recorded (Basic) Access</span>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>📹 Recorded (Basic) Access</span>
               </label>
               {f.hasRecorded && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -971,10 +971,10 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 </div>
               )}
             </div>
-            <div style={{ border: '1px solid #c7d2fe', borderRadius: '12px', padding: '16px', background: '#eef2ff', marginBottom: '16px' }}>
+            <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', background: 'var(--primary-light)', marginBottom: '16px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <input type="checkbox" checked={!!f.hasLive} onChange={e => set('hasLive', e.target.checked)} />
-                <span style={{ fontSize: '14px', fontWeight: '700', color: '#1e1e3a' }}>🔴 Live (Pro) Access</span>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>🔴 Live (Pro) Access</span>
               </label>
               {f.hasLive && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -1067,7 +1067,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             </div>
 
             {/* Simulated Smartphone Preview Block */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f5f6f9', border: '1px solid #dcdde2', borderRadius: '24px', padding: '16px', minWidth: '250px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '24px', padding: '16px', minWidth: '250px' }}>
               <div style={{ fontSize: '10px', fontWeight: '800', color: '#909196', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '12px' }}>📱 Preview on Device</div>
               <div style={{
                 width: '240px', height: '390px', background: '#09080c', border: '6px solid #202022', borderRadius: '32px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 12px 24px rgba(0,0,0,0.2)'
@@ -1085,14 +1085,14 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: '#4F46E5', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '7px', fontWeight: '900' }}>G</div>
-                        <span style={{ fontSize: '8px', fontWeight: '700', color: '#1e293b' }}>GENz IITian</span>
+                        <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '7px', fontWeight: '900' }}>G</div>
+                        <span style={{ fontSize: '8px', fontWeight: '700', color: 'var(--text-primary)' }}>GENz IITian</span>
                       </div>
-                      <span style={{ fontSize: '8px', color: '#94a3b8' }}>now</span>
+                      <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>now</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                      <div style={{ fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{f.title || 'Campaign Title'}</div>
-                      <div style={{ fontSize: '8.5px', color: '#475569', lineHeight: '1.2' }}>{f.body || 'This is how your rich body message will look on students\' screens. Keep it highly engaging!'}</div>
+                      <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-primary)' }}>{f.title || 'Campaign Title'}</div>
+                      <div style={{ fontSize: '8.5px', color: 'var(--text-secondary)', lineHeight: '1.2' }}>{f.body || 'This is how your rich body message will look on students\' screens. Keep it highly engaging!'}</div>
                     </div>
                     {f.imageUrl && (
                       <div style={{
@@ -1101,7 +1101,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     )}
                     {f.ctaText && (
                       <div style={{
-                        width: '100%', padding: '5px', borderRadius: '6px', background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#4F46E5', fontSize: '8.5px', fontWeight: '700', textAlign: 'center', marginTop: '2px'
+                        width: '100%', padding: '5px', borderRadius: '6px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--primary)', fontSize: '8.5px', fontWeight: '700', textAlign: 'center', marginTop: '2px'
                       }}>{f.ctaText}</div>
                     )}
                   </div>
@@ -1130,12 +1130,12 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     type="button"
                     onClick={() => set('image', '')}
                     className="btn btn-ghost"
-                    style={{ color: '#ef4444', border: '1px solid #fee2e2', padding: '10px 14px', fontSize: '13px', cursor: 'pointer' }}
+                    style={{ color: 'var(--danger)', border: '1px solid #fee2e2', padding: '10px 14px', fontSize: '13px', cursor: 'pointer' }}
                   >
                     🗑️ Remove Photo
                   </button>
                 )}
-                <label className="btn btn-ghost" style={{ border: '1px solid #c5c7cf', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px' }}>
+                <label className="btn btn-ghost" style={{ border: '1px solid var(--neu-dark)', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px' }}>
                   📂 Upload File
                   <input
                     type="file"
@@ -1171,7 +1171,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   />
                 </label>
               </div>
-              <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 Upload a 16:9 ratio visual promotion slide (maximum 10MB).
               </p>
             </div>
@@ -1194,7 +1194,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 onChange={e => set('href', e.target.value)}
                 placeholder="e.g. /courses or https://youtube.com/..."
               />
-              <p style={{ fontSize: '11px', color: '#9999b0', marginTop: '4px' }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 Students will redirect to this page/URL when they click the banner slide.
               </p>
             </div>
@@ -1206,7 +1206,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   width: '100%',
                   aspectRatio: '16 / 9',
                   borderRadius: '14px',
-                  background: '#0f172a',
+                  background: 'var(--text-primary)',
                   backgroundImage: `url(${f.image})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
@@ -1221,9 +1221,9 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     display: 'flex',
                     gap: '6px'
                   }}>
-                    <div style={{ width: '20px', height: '6px', borderRadius: '50px', background: '#3636e8' }}></div>
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50px', background: '#e2e8f0' }}></div>
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50px', background: '#e2e8f0' }}></div>
+                    <div style={{ width: '20px', height: '6px', borderRadius: '50px', background: 'var(--primary)' }}></div>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50px', background: 'var(--surface-2)' }}></div>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50px', background: 'var(--surface-2)' }}></div>
                   </div>
                 </div>
               </div>
@@ -1257,9 +1257,9 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           style={{
             marginBottom: '16px',
             padding: '14px 18px',
-            border: '1px solid #fecaca',
-            color: '#b91c1c',
-            background: '#fff5f5',
+            border: '1px solid var(--border)',
+            color: 'var(--danger)',
+            background: 'var(--danger-light)',
           }}
         >
           Failed to load manage data. {loadError.message}
@@ -1280,14 +1280,14 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   a.click();
                 }} 
                 className="btn btn-ghost"
-                style={{ border: '1px solid #c5c7cf' }}
+                style={{ border: '1px solid var(--neu-dark)' }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                 </svg>
                 Export CSV
               </button>
-              <label className="btn btn-ghost" style={{ border: '1px solid #c5c7cf', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <label className="btn btn-ghost" style={{ border: '1px solid var(--neu-dark)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
@@ -1348,7 +1348,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
 
       {/* Tabs */}
       {!forcedTab && (
-        <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '1px solid #c5c7cf', paddingBottom: '0' }}>
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '1px solid var(--neu-dark)', paddingBottom: '0' }}>
           {tabs.map(t => (
             <button
               key={t.key}
@@ -1357,7 +1357,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 padding: '10px 18px',
                 fontSize: '13px',
                 fontWeight: '500',
-                color: tab === t.key ? '#6366f1' : '#6b6b8a',
+                color: tab === t.key ? 'var(--accent)' : 'var(--text-secondary)',
                 borderBottom: tab === t.key ? '2px solid #6366f1' : '2px solid transparent',
                 background: 'none',
                 cursor: 'pointer',
@@ -1371,8 +1371,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 borderRadius: '10px',
                 fontSize: '11px',
                 fontWeight: '600',
-                background: tab === t.key ? '#e0e7ff' : '#d0d2d9',
-                color: tab === t.key ? '#6366f1' : '#9999b0',
+                background: tab === t.key ? 'var(--primary-light)' : '#d0d2d9',
+                color: tab === t.key ? 'var(--accent)' : 'var(--text-muted)',
               }}>
                 {t.count}
               </span>
@@ -1401,7 +1401,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               }
             }
             .notif-glow-card {
-              background: #ffffff;
+              background: var(--surface);
               border: 1px solid rgba(226, 232, 240, 0.8);
               border-radius: 24px;
               box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
@@ -1418,13 +1418,13 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             .section-title {
               font-size: 18px;
               font-weight: 800;
-              color: #1e1e3a;
+              color: var(--text-primary);
               display: flex;
               align-items: center;
               gap: 8px;
               margin: 0;
               padding-bottom: 12px;
-              border-bottom: 1px solid #f1f5f9;
+              border-bottom: 1px solid var(--border);
             }
             .input-group {
               display: flex;
@@ -1435,7 +1435,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             .input-label {
               font-size: 12.5px;
               font-weight: 700;
-              color: #475569;
+              color: var(--text-secondary);
               display: flex;
               align-items: center;
               justify-content: space-between;
@@ -1443,22 +1443,22 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             .char-limit {
               font-size: 10.5px;
               font-weight: 500;
-              color: #94a3b8;
+              color: var(--text-muted);
             }
             .premium-input {
               width: 100%;
               padding: 12px 16px;
               border-radius: 12px;
-              border: 1.5px solid #e2e8f0;
-              background: #f8fafc;
+              border: 1.5px solid var(--border);
+              background: var(--surface-2);
               font-size: 14px;
-              color: #0f172a;
+              color: var(--text-primary);
               transition: all 0.2s ease;
             }
             .premium-input:focus {
               outline: none;
               border-color: #6366f1;
-              background: #ffffff;
+              background: var(--surface);
               box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
             }
             .chip-container {
@@ -1556,21 +1556,21 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             .push-app-name {
               font-size: 10.5px;
               font-weight: 800;
-              color: #1e293b;
+              color: var(--text-primary);
             }
             .push-time {
               font-size: 9.5px;
-              color: #94a3b8;
+              color: var(--text-muted);
             }
             .push-title {
               font-size: 12.5px;
               font-weight: 800;
-              color: #0f172a;
+              color: var(--text-primary);
               margin: 0;
             }
             .push-body {
               font-size: 10.5px;
-              color: #475569;
+              color: var(--text-secondary);
               line-height: 1.35;
               margin: 0;
             }
@@ -1587,8 +1587,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               width: 100%;
               padding: 8px;
               border-radius: 8px;
-              background: #f1f5f9;
-              border: 1px solid #e2e8f0;
+              background: var(--border);
+              border: 1px solid var(--border);
               color: #6366f1;
               font-size: 11px;
               font-weight: 800;
@@ -1603,8 +1603,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               width: 100%;
             }
             .metric-card {
-              background: #ffffff;
-              border: 1.5px solid #f1f5f9;
+              background: var(--surface);
+              border: 1.5px solid var(--border);
               border-radius: 16px;
               padding: 16px;
               text-align: center;
@@ -1620,13 +1620,13 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             .metric-label {
               font-size: 11px;
               font-weight: 700;
-              color: #64748b;
+              color: var(--text-secondary);
               text-transform: uppercase;
               letter-spacing: 0.05em;
             }
             .history-item-card {
-              background: #ffffff;
-              border: 1px solid #f1f5f9;
+              background: var(--surface);
+              border: 1px solid var(--border);
               border-radius: 18px;
               padding: 18px;
               box-shadow: 0 4px 10px rgba(0,0,0,0.01);
@@ -1645,15 +1645,15 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           {/* Quick Metrics Bar */}
           <div className="metric-bar">
             <div className="metric-card">
-              <div className="metric-num" style={{ color: '#6366f1' }}>{campaigns.filter(c => c.status === 'SENT').length}</div>
+              <div className="metric-num" style={{ color: 'var(--accent)' }}>{campaigns.filter(c => c.status === 'SENT').length}</div>
               <div className="metric-label">Delivered</div>
             </div>
             <div className="metric-card">
-              <div className="metric-num" style={{ color: '#f59e0b' }}>{campaigns.filter(c => c.status === 'PENDING').length}</div>
+              <div className="metric-num" style={{ color: 'var(--warning)' }}>{campaigns.filter(c => c.status === 'PENDING').length}</div>
               <div className="metric-label">Scheduled</div>
             </div>
             <div className="metric-card">
-              <div className="metric-num" style={{ color: '#10b981' }}>100%</div>
+              <div className="metric-num" style={{ color: 'var(--success)' }}>100%</div>
               <div className="metric-label">Channel Health</div>
             </div>
           </div>
@@ -1667,9 +1667,9 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
 
               {/* Presets Select */}
               <div className="input-group">
-                <label className="input-label" style={{ color: '#6366f1' }}>
+                <label className="input-label" style={{ color: 'var(--accent)' }}>
                   <span>🎨 Quick Swiggy / Zomato Presets</span>
-                  <span style={{ fontSize: '10px', background: '#e0e7ff', color: '#6366f1', padding: '2px 8px', borderRadius: '5px' }}>Engage instantly</span>
+                  <span style={{ fontSize: '10px', background: 'var(--primary-light)', color: 'var(--accent)', padding: '2px 8px', borderRadius: '5px' }}>Engage instantly</span>
                 </label>
                 <select
                   className="premium-input"
@@ -1730,7 +1730,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                       setInlineNotif(p => ({ ...p, presetStyle: '' }))
                     }
                   }}
-                  style={{ border: '2px dashed #6366f1', background: '#fafcff' }}
+                  style={{ border: '2px dashed #6366f1', background: 'var(--surface-2)' }}
                 >
                   <option value="">-- Choose High-Converting Preset --</option>
                   <option value="PROMO">🏷️ Promotional Deal / Offer (Zomato Style)</option>
@@ -1746,10 +1746,10 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 <label className="input-label">Category</label>
                 <div className="chip-container">
                   {[
-                    { key: 'PROMOTIONAL', label: '🏷️ Promo', bg: '#fee2e2', text: '#b91c1c', border: '#fecaca' },
-                    { key: 'ACADEMIC', label: '📚 Academic', bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe' },
-                    { key: 'ALERT', label: '🚨 System Alert', bg: '#fef3c7', text: '#92400e', border: '#fde68a' },
-                    { key: 'GENERAL', label: '📢 General Info', bg: '#d1fae5', text: '#065f46', border: '#a7f3d0' }
+                    { key: 'PROMOTIONAL', label: '🏷️ Promo', bg: 'var(--danger-light)', text: 'var(--danger)', border: 'var(--border)' },
+                    { key: 'ACADEMIC', label: '📚 Academic', bg: 'var(--primary-light)', text: '#3730a3', border: 'var(--border)' },
+                    { key: 'ALERT', label: '🚨 System Alert', bg: 'var(--warning-light)', text: 'var(--warning)', border: 'var(--border)' },
+                    { key: 'GENERAL', label: '📢 General Info', bg: 'var(--success-light)', text: '#065f46', border: '#a7f3d0' }
                   ].map(c => {
                     const isActive = inlineNotif.category === c.key
                     return (
@@ -1759,8 +1759,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                         onClick={() => setInlineNotif(p => ({ ...p, category: c.key }))}
                         className={`category-chip ${isActive ? 'active' : ''}`}
                         style={{
-                          background: isActive ? c.bg : '#f1f5f9',
-                          color: isActive ? c.text : '#475569',
+                          background: isActive ? c.bg : 'var(--surface)',
+                          color: isActive ? c.text : 'var(--text-secondary)',
                           borderColor: isActive ? c.border : 'transparent',
                         }}
                       >
@@ -1822,10 +1822,10 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     placeholder="https://example.com/banner.png"
                     style={{ flex: 1 }}
                   />
-                  <button type="button" onClick={() => { setRecentPhotosPage(1); fetchRecentPhotos(1); setShowRecentModal(true); }} className="btn btn-ghost" style={{ border: '1.5px solid #6366f1', color: '#6366f1', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px', cursor: 'pointer', background: '#fff' }}>
+                  <button type="button" onClick={() => { setRecentPhotosPage(1); fetchRecentPhotos(1); setShowRecentModal(true); }} className="btn btn-ghost" style={{ border: '1.5px solid #6366f1', color: 'var(--accent)', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px', cursor: 'pointer', background: 'var(--surface)' }}>
                     🕒 Choose from Recent
                   </button>
-                  <label className="btn btn-ghost" style={{ border: '1.5px solid #c5c7cf', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px', background: '#fff' }}>
+                  <label className="btn btn-ghost" style={{ border: '1.5px solid var(--neu-dark)', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '10px 14px', fontSize: '13px', background: 'var(--surface)' }}>
                     {isUploadingImage ? 'Uploading...' : '📂 Upload Banner'}
                     <input
                       type="file"
@@ -1839,7 +1839,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     />
                   </label>
                 </div>
-                <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', marginBottom: 0, lineHeight: '1.4' }}>
+                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', marginBottom: 0, lineHeight: '1.4' }}>
                   💡 <strong>Recommended:</strong> 2:1 or 16:9 aspect ratio (e.g. <code>1024x512 px</code> or <code>1200x675 px</code>) with main content centered. Compress under <code>80-100 KB</code> (WebP/JPG format) for fast loading.
                 </p>
               </div>
@@ -1964,7 +1964,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     value={inlineNotif.scheduledFor}
                     onChange={e => setInlineNotif(p => ({ ...p, scheduledFor: e.target.value }))}
                   />
-                  <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
                     Campaign will broadcast automatically to target audience at the specified local time.
                   </p>
                 </div>
@@ -2014,12 +2014,12 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {/* Smartphone Real-time Preview */}
               <div className="notif-glow-card" style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px', marginBottom: '16px' }}>
-                  <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
                     📱 Push Notification Live Preview
                   </h4>
-                  <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }}></span> Pushed Live
+                  <span style={{ fontSize: '11px', color: 'var(--success)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)' }}></span> Pushed Live
                   </span>
                 </div>
 
@@ -2034,7 +2034,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     <div className="push-header">
                       <div className="push-app-badge">
                         <div className="push-logo" style={{
-                          background: inlineNotif.category === 'ALERT' ? '#ea580c' : inlineNotif.category === 'ACADEMIC' ? '#1e1a3a' : '#6366f1'
+                          background: inlineNotif.category === 'ALERT' ? 'var(--warning)' : inlineNotif.category === 'ACADEMIC' ? '#1e1a3a' : 'var(--accent)'
                         }}>G</div>
                         <span className="push-app-name">GENz IITian</span>
                       </div>
@@ -2061,11 +2061,11 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
 
               {/* RIGHT COLUMN: Broadcast History */}
               <div className="notif-glow-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#1e1e3a', margin: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
                     📰 Broadcast Logs & Audit
                   </h3>
-                  <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: '6px', fontWeight: '700' }}>
+                  <span style={{ fontSize: '11px', background: 'var(--surface)', color: 'var(--text-secondary)', padding: '2px 8px', borderRadius: '6px', fontWeight: '700' }}>
                     Total: {campaigns.length}
                   </span>
                 </div>
@@ -2105,8 +2105,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                       const isPending = item.status === 'PENDING'
                       return (
                         <div key={item.id} className="history-item-card" style={{
-                          borderLeft: `5px solid ${isSent ? '#10b981' : isPending ? '#f59e0b' : '#ef4444'}`,
-                          background: isPending ? '#fffbeb' : '#ffffff'
+                          borderLeft: `5px solid ${isSent ? 'var(--success)' : isPending ? 'var(--warning)' : 'var(--danger)'}`,
+                          background: isPending ? 'var(--warning-light)' : 'var(--surface)'
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -2115,36 +2115,36 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                                 fontWeight: '900',
                                 padding: '2px 6px',
                                 borderRadius: '6px',
-                                background: isSent ? '#d1fae5' : isPending ? '#fef3c7' : '#fee2e2',
-                                color: isSent ? '#065f46' : isPending ? '#92400e' : '#991b1b',
+                                background: isSent ? 'var(--success-light)' : isPending ? 'var(--warning-light)' : 'var(--danger-light)',
+                                color: isSent ? '#065f46' : isPending ? 'var(--warning)' : 'var(--danger)',
                                 textTransform: 'uppercase'
                               }}>
                                 {item.status}
                               </span>
-                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '700' }}>
+                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '700' }}>
                                 Target: {item.targetType}
                               </span>
                             </div>
-                            <span style={{ fontSize: '9px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                            <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                               {item.id.slice(0, 8)}...
                             </span>
                           </div>
 
                           <div style={{ display: 'flex', gap: '12px' }}>
                             <div style={{ flex: 1 }}>
-                              <h4 style={{ fontSize: '12.5px', fontWeight: '800', color: '#1e293b', margin: 0 }}>
+                              <h4 style={{ fontSize: '12.5px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
                                 {item.title}
                               </h4>
-                              <p style={{ fontSize: '11px', color: '#475569', marginTop: '3px', lineHeight: '1.4', margin: '4px 0 0 0' }}>
+                              <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px', lineHeight: '1.4', margin: '4px 0 0 0' }}>
                                 {item.body}
                               </p>
                               {item.ctaText && (
                                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginTop: '6px' }}>
-                                  <span style={{ fontSize: '9px', fontWeight: '800', color: '#6366f1', background: '#e0e7ff', padding: '2px 6px', borderRadius: '4px' }}>
+                                  <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--accent)', background: 'var(--primary-light)', padding: '2px 6px', borderRadius: '4px' }}>
                                     CTA: {item.ctaText}
                                   </span>
                                   {item.ctaLink && (
-                                    <span style={{ fontSize: '9px', color: '#64748b', fontFamily: 'monospace' }}>
+                                    <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
                                       → {item.ctaLink}
                                     </span>
                                   )}
@@ -2169,7 +2169,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                             justifyContent: 'space-between',
                             alignItems: 'center',
                             fontSize: '10px',
-                            color: '#94a3b8',
+                            color: 'var(--text-muted)',
                             borderTop: '1px solid #f8fafc',
                             paddingTop: '6px',
                             marginTop: '2px'
@@ -2184,7 +2184,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                       )
                     })}
                   {campaigns.length === 0 && (
-                    <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
                       No sent notifications in log history.
                     </div>
                   )}
@@ -2196,9 +2196,9 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
       ) : (
         <div className="card" style={{ overflowX: 'auto', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
           {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading…</div>
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>
           ) : getItems().length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
               No {tab} yet. Click &quot;Create New&quot; to add one.
             </div>
           ) : (
@@ -2208,7 +2208,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 {slides.map((item: any, idx: number) => {
                   return (
                     <div key={item.id} style={{
-                      display: 'flex', gap: '16px', padding: '16px', borderRadius: '16px', background: '#f8fafc', alignItems: 'center', boxShadow: '2px 2px 5px rgba(0,0,0,0.03)'
+                      display: 'flex', gap: '16px', padding: '16px', borderRadius: '16px', background: 'var(--surface)', alignItems: 'center', boxShadow: '2px 2px 5px rgba(0,0,0,0.03)'
                     }}>
                       <div 
                         onClick={() => {
@@ -2218,19 +2218,19 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                         }}
                         title="Click to view full size"
                         style={{
-                          width: '120px', aspectRatio: '16/9', borderRadius: '10px', background: '#e2e8f0', backgroundImage: `url(${item.image})`, backgroundSize: 'cover', backgroundPosition: 'center', flexShrink: 0, cursor: 'pointer'
+                          width: '120px', aspectRatio: '16/9', borderRadius: '10px', background: 'var(--surface-2)', backgroundImage: `url(${item.image})`, backgroundSize: 'cover', backgroundPosition: 'center', flexShrink: 0, cursor: 'pointer'
                         }}
                       ></div>
                       
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           Alt: {item.alt || 'No alt description'}
                         </div>
-                        <div style={{ fontSize: '11px', color: '#6366f1', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          CTA Redirect: <a href={item.href} target="_blank" rel="noreferrer" style={{ color: '#6366f1', textDecoration: 'underline' }}>{item.href}</a>
+                        <div style={{ fontSize: '11px', color: 'var(--accent)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          CTA Redirect: <a href={item.href} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>{item.href}</a>
                         </div>
-                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>
-                          Display order position: <strong style={{ color: '#1e293b' }}>{idx + 1}</strong>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                          Display order position: <strong style={{ color: 'var(--text-primary)' }}>{idx + 1}</strong>
                         </div>
                       </div>
 
@@ -2302,7 +2302,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                             }
                           }}
                           className="btn btn-ghost btn-sm"
-                          style={{ padding: '6px', color: '#6366f1' }}
+                          style={{ padding: '6px', color: 'var(--accent)' }}
                           title="Preview Image"
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -2315,7 +2315,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                           </svg>
                         </button>
-                        <button onClick={() => handleDelete(item.id)} className="btn btn-ghost btn-sm" style={{ padding: '6px', color: '#ef4444' }} title="Delete">
+                        <button onClick={() => handleDelete(item.id)} className="btn btn-ghost btn-sm" style={{ padding: '6px', color: 'var(--danger)' }} title="Delete">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                           </svg>
@@ -2329,7 +2329,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               <>
                 {tab === 'courses' && (
                   <div style={{
-                    background: '#3636e8',
+                    background: 'var(--primary)',
                     borderRadius: '16px',
                     padding: '20px',
                     color: 'white',
@@ -2347,7 +2347,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     <button 
                       onClick={() => { navigator.clipboard.writeText('LMS-COURSE-global'); setCopiedId('global'); setTimeout(() => setCopiedId(null), 2000) }}
                       className="btn btn-sm"
-                      style={{ background: 'white', color: '#3636e8', fontWeight: '800', border: 'none', borderRadius: '50px', padding: '8px 16px' }}
+                      style={{ background: 'var(--surface)', color: 'var(--primary)', fontWeight: '800', border: 'none', borderRadius: '50px', padding: '8px 16px' }}
                     >
                       {copiedId === 'global' ? 'Copied!' : 'Copy ID'}
                     </button>
@@ -2386,36 +2386,36 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   gap: '12px',
                   padding: '8px 16px',
                   borderRadius: '50px',
-                  background: '#e8eaf0',
-                  boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+                  background: 'var(--surface-2)',
+                  boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                   transition: 'box-shadow 0.2s',
                   width: '100%',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = '6px 6px 12px #c2c4cc, -6px -6px 12px #ffffff')}
-                onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff')}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)')}
                 >
                   {/* Icon badge */}
                   <div style={{
                     width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
-                    background: '#e8eaf0',
-                    boxShadow: '3px 3px 6px #c5c7cf, -3px -3px 6px #ffffff',
+                    background: 'var(--surface-2)',
+                    boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#6366f1', fontSize: '13px', fontWeight: '700',
+                    color: 'var(--accent)', fontSize: '13px', fontWeight: '700',
                   }}>
                     {iconLabel}
                   </div>
 
                   {/* Main info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e1e3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.name || item.title}
                     </div>
                     {tab === 'courses' && (
-                      <div style={{ fontSize: '9px', fontFamily: 'monospace', color: '#6366f1', marginTop: '0px', fontWeight: '700', opacity: 0.7 }}>
+                      <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'var(--accent)', marginTop: '0px', fontWeight: '700', opacity: 0.7 }}>
                         ID: {item.id}
                       </div>
                     )}
-                    <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {subtitle}
                     </div>
                   </div>
@@ -2424,35 +2424,35 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {tab === 'courses' && (
                       <>
-                        <span style={{ fontSize: '11px', color: '#9999b0', marginRight: '4px' }}>{item._count?.lectures || 0}L</span>
-                        {item.isDemo && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#3636e8', color: 'white', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>DEMO</span>}
-                        {item.isFree && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#10b981', color: 'white', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>FREE</span>}
-                        {item.isExpired && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#fff7ed', color: '#ea580c', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>EXP</span>}
-                        {item.isEffectivelyDisabled && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#fee2e2', color: '#ef4444', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>DIS</span>}
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '4px' }}>{item._count?.lectures || 0}L</span>
+                        {item.isDemo && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: 'var(--primary)', color: 'white', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>DEMO</span>}
+                        {item.isFree && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: 'var(--success)', color: 'white', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>FREE</span>}
+                        {item.isExpired && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: 'var(--warning-light)', color: 'var(--warning)', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>EXP</span>}
+                        {item.isEffectivelyDisabled && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: 'var(--danger-light)', color: 'var(--danger)', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>DIS</span>}
                       </>
                     )}
                     {tab === 'offerings' && (
                       <div style={{ display: 'flex', gap: '6px' }}>
                         {item.hasRecorded && (
-                          <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#f3f0ff', color: '#6366f1', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: 'var(--primary-light)', color: 'var(--accent)', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
                             REC: ₹{item.recordedDiscountPrice}
                           </span>
                         )}
                         {item.hasLive && (
-                          <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#e0e7ff', color: '#3636e8', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: 'var(--primary-light)', color: 'var(--primary)', fontWeight: '900', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
                             LIVE: ₹{item.liveDiscountPrice}
                           </span>
                         )}
                       </div>
                     )}
                     {tab === 'bundles' && (
-                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#ede9fe', color: '#7c3aed', fontWeight: '700' }}>
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--primary-light)', color: 'var(--accent)', fontWeight: '700' }}>
                         {item._count?.courses || item.courses?.length || 0} courses
                       </span>
                     )}
                     {tab === 'events' && (
                       <>
-                        {item.isGlobal && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#3636e8', color: 'white', fontWeight: '900', letterSpacing: '0.05em', marginRight: '6px' }}>GLOBAL</span>}
+                        {item.isGlobal && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'var(--primary)', color: 'white', fontWeight: '900', letterSpacing: '0.05em', marginRight: '6px' }}>GLOBAL</span>}
                         <span className={`badge badge-${item.status === 'live' ? 'danger' : item.status === 'CANCELLED' ? 'warning' : item.status === 'RESCHEDULED' ? 'info' : 'success'}`}>
                           {item.status}
                         </span>
@@ -2461,15 +2461,15 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     {tab === 'lectures' && (
                       <div style={{ display: 'flex', gap: '6px' }}>
                         {item.videoUrl && (
-                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#e0e7ff', color: '#6366f1', fontWeight: '600' }}>Video</span>
+                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--primary-light)', color: 'var(--accent)', fontWeight: '600' }}>Video</span>
                         )}
                         {item.pptUrl && (
-                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#d1fae5', color: '#10b981', fontWeight: '600' }}>File</span>
+                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--success-light)', color: 'var(--success)', fontWeight: '600' }}>File</span>
                         )}
                       </div>
                     )}
                     {tab === 'materials' && (
-                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#d1fae5', color: '#10b981', fontWeight: '600' }}>Study Material</span>
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--success-light)', color: 'var(--success)', fontWeight: '600' }}>Study Material</span>
                     )}
                     {tab === 'announcements' && (
                       <span className={`badge badge-${item.type === 'warning' ? 'warning' : item.type === 'success' ? 'success' : 'info'}`}>
@@ -2489,7 +2489,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                           }} 
                           className="btn btn-ghost btn-sm" 
                           title={`Copy ID: ${item.id}`}
-                          style={{ ... (copiedId === item.id ? { color: '#10b981', borderColor: '#10b981' } : {}), padding: '6px' }}
+                          style={{ ... (copiedId === item.id ? { color: 'var(--success)', borderColor: 'var(--success)' } : {}), padding: '6px' }}
                         >
                           {copiedId === item.id ? (
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -2504,8 +2504,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                           className="btn btn-ghost btn-sm"
                           disabled={item.isExpired && !item.isDisabled}
                           style={{
-                            color: item.isDisabled ? '#10b981' : (item.isExpired ? '#9999b0' : '#ef4444'),
-                            border: `1px solid ${item.isDisabled ? '#d1fae5' : (item.isExpired ? '#e5e7eb' : '#fee2e2')}`,
+                            color: item.isDisabled ? 'var(--success)' : (item.isExpired ? 'var(--text-muted)' : 'var(--danger)'),
+                            border: `1px solid ${item.isDisabled ? 'var(--success-light)' : (item.isExpired ? 'var(--surface-2)' : 'var(--danger-light)')}`,
                             padding: '6px 10px',
                             fontSize: '11px',
                             cursor: (item.isExpired && !item.isDisabled) ? 'not-allowed' : 'pointer'
@@ -2521,7 +2521,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                           disabled={saving}
                           className="btn btn-ghost btn-sm"
                           style={{
-                            color: '#0ea5e9',
+                            color: 'var(--info)',
                             border: '1px solid #cffafe',
                             padding: '6px',
                           }}
@@ -2543,7 +2543,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                         disabled={item.isDemo}
                         title={item.isDemo ? "Cannot delete system demo course" : "Delete course"}
                         className="btn btn-sm" 
-                        style={{ color: item.isDemo ? '#d1d5db' : '#ef4444', border: `1px solid ${item.isDemo ? '#e5e7eb' : '#fee2e2'}`, cursor: item.isDemo ? 'not-allowed' : 'pointer' }}
+                        style={{ color: item.isDemo ? 'var(--border)' : 'var(--danger)', border: `1px solid ${item.isDemo ? 'var(--surface-2)' : 'var(--danger-light)'}`, cursor: item.isDemo ? 'not-allowed' : 'pointer' }}
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="3 6 5 6 21 6"/>
@@ -2568,7 +2568,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           <div
             style={{
               maxWidth: '560px', width: '92%', borderRadius: '24px', overflow: 'hidden',
-              background: '#ffffff', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+              background: 'var(--surface)', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
               maxHeight: '85vh', display: 'flex', flexDirection: 'column',
               animation: 'bounceIn 0.3s ease-out',
             }}
@@ -2589,17 +2589,17 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               </button>
             </div>
 
-            <div style={{ padding: '24px', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>
+            <div style={{ padding: '24px', overflowY: 'auto', flex: 1, background: 'var(--surface)' }}>
               {recentPhotosLoading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '220px', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', border: '3px solid #e2e8f0', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>Loading recent photos…</span>
+                  <div style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>Loading recent photos…</span>
                 </div>
               ) : recentPhotos.length === 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '220px', gap: '8px', border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '20px' }}>
                   <span style={{ fontSize: '32px' }}>📷</span>
-                  <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '700' }}>No recently uploaded photos</span>
-                  <span style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center' }}>Upload a new photo to get started.</span>
+                  <span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '700' }}>No recently uploaded photos</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>Upload a new photo to get started.</span>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
@@ -2619,11 +2619,11 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                         border: '2px solid transparent',
                         boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
                         transition: 'all 0.2s ease',
-                        background: '#e2e8f0',
+                        background: 'var(--surface-2)',
                       }}
                       onMouseEnter={e => {
                         e.currentTarget.style.transform = 'translateY(-2px)'
-                        e.currentTarget.style.borderColor = '#6366f1'
+                        e.currentTarget.style.borderColor = 'var(--accent)'
                         e.currentTarget.style.boxShadow = '0 10px 15px rgba(99, 102, 241, 0.15)'
                       }}
                       onMouseLeave={e => {
@@ -2639,8 +2639,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               )}
             </div>
 
-            <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#64748b' }}>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>
                 Page {recentPhotosPage}
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -2654,8 +2654,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   }}
                   className="btn btn-sm"
                   style={{
-                    background: recentPhotosPage === 1 ? '#f1f5f9' : '#fff',
-                    color: recentPhotosPage === 1 ? '#94a3b8' : '#475569',
+                    background: recentPhotosPage === 1 ? 'var(--surface)' : 'var(--surface-2)',
+                    color: recentPhotosPage === 1 ? 'var(--text-muted)' : 'var(--text-secondary)',
                     border: '1px solid #cbd5e1',
                     cursor: recentPhotosPage === 1 ? 'not-allowed' : 'pointer',
                     fontSize: '12px',
@@ -2675,8 +2675,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   }}
                   className="btn btn-sm"
                   style={{
-                    background: !recentPhotosHasNext ? '#f1f5f9' : '#fff',
-                    color: !recentPhotosHasNext ? '#94a3b8' : '#475569',
+                    background: !recentPhotosHasNext ? 'var(--surface)' : 'var(--surface-2)',
+                    color: !recentPhotosHasNext ? 'var(--text-muted)' : 'var(--text-secondary)',
                     border: '1px solid #cbd5e1',
                     cursor: !recentPhotosHasNext ? 'not-allowed' : 'pointer',
                     fontSize: '12px',
@@ -2706,7 +2706,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               <h3 style={{ fontSize: '16px', fontWeight: '600' }}>
                 {editId ? 'Edit' : 'Create'} {tab.slice(0, -1).charAt(0).toUpperCase() + tab.slice(1, -1)}
               </h3>
-              <button onClick={() => setShowModal(false)} style={{ color: '#9999b0', cursor: 'pointer', background: 'none', border: 'none' }}>
+              <button onClick={() => setShowModal(false)} style={{ color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
@@ -2733,8 +2733,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
 export default function ManagePage() {
   return (
     <Suspense fallback={
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#6366f1' }}>
-        <div className="animate-spin" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid #e0e7ff', borderTopColor: '#6366f1' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--accent)' }}>
+        <div className="animate-spin" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--accent)' }} />
       </div>
     }>
       <ManagePageInner />

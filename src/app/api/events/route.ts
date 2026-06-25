@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds, isManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { formatIST, getEventStatus } from '@/lib/date-utils'
+import { sendClassScheduledNotification } from '@/lib/system-notifications'
 
 function addDays(date: Date, days: number) {
   const next = new Date(date)
@@ -211,6 +212,17 @@ export async function POST(request: NextRequest) {
         streamProvider: normalizedProvider,
       },
     })
+
+    // Trigger "New Class Scheduled" notification to enrolled students
+    if (event.courseId) {
+      sendClassScheduledNotification(
+        event.courseId,
+        event.title,
+        event.startTime,
+        event.meetLink,
+        event.id
+      ).catch(console.error)
+    }
 
     // For Agora-backed events, deterministically derive the channel name from
     // the new event id so token/start/end endpoints can resolve it from just

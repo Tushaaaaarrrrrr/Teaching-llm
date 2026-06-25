@@ -57,8 +57,8 @@ export default function GoogleSyncPage() {
       <div className="page-container fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
         <div className="card" style={{ padding: '40px', textAlign: 'center', maxWidth: '400px' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
-          <div style={{ fontSize: '18px', fontWeight: '700', color: '#1e1e3a', marginBottom: '8px' }}>Access Denied</div>
-          <div style={{ fontSize: '13px', color: '#9999b0' }}>Only managers can access Google Sync monitoring.</div>
+          <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>Access Denied</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Only managers can access Google Sync monitoring.</div>
         </div>
       </div>
     )
@@ -71,8 +71,8 @@ export default function GoogleSyncPage() {
         <div className="card" style={{ overflow: 'hidden', maxWidth: '100%', marginBottom: '20px' }}>
           <div style={{ padding: '16px 18px', borderBottom: '1px solid #d8dae3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a' }}>Google Sync Status</div>
-              <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
+              <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>Google Sync Status</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                 Latest Google Group add/remove jobs for course enrollments
               </div>
             </div>
@@ -81,9 +81,9 @@ export default function GoogleSyncPage() {
               disabled={isResetting}
               className="btn btn-sm"
               style={{ 
-                background: '#fee2e2', 
-                color: '#ef4444', 
-                border: '1px solid #fecaca',
+                background: 'var(--danger-light)', 
+                color: 'var(--danger)', 
+                border: '1px solid var(--border)',
                 fontSize: '11px',
                 fontWeight: '700'
               }}
@@ -92,7 +92,7 @@ export default function GoogleSyncPage() {
             </button>
           </div>
           {jobs.length === 0 && !isLoading ? (
-            <div style={{ padding: '18px', fontSize: '12px', color: '#9999b0' }}>No sync jobs yet.</div>
+            <div style={{ padding: '18px', fontSize: '12px', color: 'var(--text-muted)' }}>No sync jobs yet.</div>
           ) : (
             <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {jobs.slice(0, 12).map((job: any) => (
@@ -105,22 +105,22 @@ export default function GoogleSyncPage() {
                   borderRadius: '14px',
                   background: '#eef0f6',
                 }}>
-                  <div style={{ fontSize: '12px', color: '#1e1e3a', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.userEmail}</div>
-                  <div style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    <div style={{ fontWeight: '600', color: '#1e1e3a' }}>{job.course?.name || job.courseId}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.userEmail}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{job.course?.name || job.courseId}</div>
                     <div>{job.courseId}</div>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.groupEmail}</div>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: job.action === 'ADD' ? '#10b981' : '#ef4444' }}>{job.action}</div>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: job.status === 'SUCCESS' ? '#10b981' : job.status === 'FAILED' ? '#ef4444' : '#f59e0b' }}>{job.status}</div>
-                  <div style={{ fontSize: '12px', color: '#6b6b8a' }}>{job.attemptCount}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.groupEmail}</div>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: job.action === 'ADD' ? 'var(--success)' : 'var(--danger)' }}>{job.action}</div>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: job.status === 'SUCCESS' ? 'var(--success)' : job.status === 'FAILED' ? 'var(--danger)' : 'var(--warning)' }}>{job.status}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{job.attemptCount}</div>
                   <div style={{ overflow: 'hidden' }}>
                     {getErrorLabel(job.lastError) && (
-                      <div style={{ fontSize: '10px', fontWeight: '700', color: '#ef4444', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--danger)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {getErrorLabel(job.lastError)}
                       </div>
                     )}
-                    <div style={{ fontSize: '11px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.lastError || '—'}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.lastError || '—'}</div>
                   </div>
                 </div>
               ))}
@@ -132,21 +132,21 @@ export default function GoogleSyncPage() {
       {/* Job Monitor Table */}
       <div className="card" style={{ overflow: 'hidden', maxWidth: '100%' }}>
         {isLoading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0' }}>Loading…</div>
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>
         ) : (
           <div style={{ padding: '0' }}>
             {/* Header */}
             <div style={{ padding: '16px 18px', borderBottom: '1px solid #d8dae3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e1e3a' }}>Google Sync Job Monitor</div>
-                <div style={{ fontSize: '12px', color: '#9999b0', marginTop: '2px' }}>
+                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>Google Sync Job Monitor</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                   Real-time visibility into Google Group sync activity ({pagination.total} total jobs)
                 </div>
               </div>
               <button
                 onClick={() => setRefreshKey(prev => prev + 1)}
                 className="btn btn-sm btn-ghost"
-                style={{ border: '1px solid #c5c7cf' }}
+                style={{ border: '1px solid var(--neu-dark)' }}
                 disabled={isLoading}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px', animation: isLoading ? 'spin 1s linear infinite' : 'none' }}>
@@ -159,16 +159,16 @@ export default function GoogleSyncPage() {
             {/* Filters */}
             <div style={{ padding: '12px 18px', borderBottom: '1px solid #d8dae3', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: '600', color: '#6b6b8a', marginRight: '6px' }}>Status:</label>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', marginRight: '6px' }}>Status:</label>
                 <select
                   value={filters.status}
                   onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
                   style={{
                     padding: '6px 10px',
                     borderRadius: '6px',
-                    border: '1px solid #c5c7cf',
+                    border: '1px solid var(--neu-dark)',
                     fontSize: '12px',
-                    background: 'white',
+                    background: 'var(--surface)',
                     cursor: 'pointer',
                   }}
                 >
@@ -180,16 +180,16 @@ export default function GoogleSyncPage() {
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: '600', color: '#6b6b8a', marginRight: '6px' }}>Action:</label>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', marginRight: '6px' }}>Action:</label>
                 <select
                   value={filters.action}
                   onChange={(e) => setFilters({ ...filters, action: e.target.value, page: 1 })}
                   style={{
                     padding: '6px 10px',
                     borderRadius: '6px',
-                    border: '1px solid #c5c7cf',
+                    border: '1px solid var(--neu-dark)',
                     fontSize: '12px',
-                    background: 'white',
+                    background: 'var(--surface)',
                     cursor: 'pointer',
                   }}
                 >
@@ -201,7 +201,7 @@ export default function GoogleSyncPage() {
               {(filters.status || filters.action) && (
                 <button
                   onClick={() => setFilters({ status: '', action: '', page: 1 })}
-                  style={{ fontSize: '11px', color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                  style={{ fontSize: '11px', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
                 >
                   Clear Filters
                 </button>
@@ -210,7 +210,7 @@ export default function GoogleSyncPage() {
 
             {/* Jobs Table */}
             {jobs.length === 0 ? (
-              <div style={{ padding: '40px 18px', textAlign: 'center', color: '#9999b0' }}>
+              <div style={{ padding: '40px 18px', textAlign: 'center', color: 'var(--text-muted)' }}>
                 No sync jobs {filters.status || filters.action ? 'matching filters' : 'yet'}.
               </div>
             ) : (
@@ -225,7 +225,7 @@ export default function GoogleSyncPage() {
                   borderRadius: '8px',
                   fontSize: '11px',
                   fontWeight: '700',
-                  color: '#6b6b8a',
+                  color: 'var(--text-secondary)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.02em',
                 }}>
@@ -242,8 +242,8 @@ export default function GoogleSyncPage() {
                 {/* Jobs */}
                 {jobs.map((job: any) => {
                   const createdDate = new Date(job.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                  const statusColor = job.status === 'SUCCESS' ? '#10b981' : job.status === 'FAILED' ? '#ef4444' : job.status === 'PROCESSING' ? '#f59e0b' : '#9999b0'
-                  const actionColor = job.action === 'ADD' ? '#10b981' : '#ef4444'
+                  const statusColor = job.status === 'SUCCESS' ? 'var(--success)' : job.status === 'FAILED' ? 'var(--danger)' : job.status === 'PROCESSING' ? 'var(--warning)' : 'var(--text-muted)'
+                  const actionColor = job.action === 'ADD' ? 'var(--success)' : 'var(--danger)'
 
                   return (
                     <div
@@ -254,19 +254,19 @@ export default function GoogleSyncPage() {
                         gap: '8px',
                         padding: '10px 12px',
                         borderRadius: '8px',
-                        background: job.status === 'FAILED' ? '#fee2e2' : '#f8f7ff',
-                        border: job.status === 'FAILED' ? '1px solid #fecaca' : '1px solid #ede9fe',
+                        background: job.status === 'FAILED' ? 'var(--danger-light)' : '#f8f7ff',
+                        border: job.status === 'FAILED' ? '1px solid var(--border)' : '1px solid #ede9fe',
                         alignItems: 'center',
                       }}
                     >
-                      <div style={{ fontSize: '11px', color: '#1e1e3a', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.userEmail}>{job.userEmail}</div>
-                      <div style={{ fontSize: '11px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }} title={job.courseId}>{job.courseId}</div>
-                      <div style={{ fontSize: '11px', color: '#6b6b8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.groupEmail}>{job.groupEmail}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-primary)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.userEmail}>{job.userEmail}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }} title={job.courseId}>{job.courseId}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.groupEmail}>{job.groupEmail}</div>
                       <div style={{ fontSize: '10px', fontWeight: '700', color: actionColor, textAlign: 'center' }}>{job.action}</div>
                       <div style={{ fontSize: '10px', fontWeight: '700', color: statusColor, textAlign: 'center' }}>{job.status}</div>
-                      <div style={{ fontSize: '11px', color: '#6b6b8a', textAlign: 'center' }}>{job.attemptCount}/3</div>
-                      <div style={{ fontSize: '10px', color: '#9999b0' }}>{createdDate}</div>
-                      <div style={{ fontSize: '9px', color: job.lastError ? '#ef4444' : '#9999b0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.lastError || ''}>{job.lastError ? getErrorLabel(job.lastError) || job.lastError.slice(0, 20) : '—'}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center' }}>{job.attemptCount}/3</div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{createdDate}</div>
+                      <div style={{ fontSize: '9px', color: job.lastError ? 'var(--danger)' : 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.lastError || ''}>{job.lastError ? getErrorLabel(job.lastError) || job.lastError.slice(0, 20) : '—'}</div>
                     </div>
                   )
                 })}
@@ -279,17 +279,17 @@ export default function GoogleSyncPage() {
                 <button
                   onClick={() => setFilters({ ...filters, page: Math.max(1, filters.page - 1) })}
                   disabled={filters.page === 1}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #c5c7cf', background: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === 1 ? '#ccc' : '#6366f1' }}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--neu-dark)', background: 'var(--surface)', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === 1 ? '#ccc' : 'var(--accent)' }}
                 >
                   ← Prev
                 </button>
-                <span style={{ fontSize: '12px', color: '#6b6b8a', fontWeight: '600' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>
                   Page {filters.page} of {pagination.totalPages}
                 </span>
                 <button
                   onClick={() => setFilters({ ...filters, page: Math.min(pagination.totalPages, filters.page + 1) })}
                   disabled={filters.page === pagination.totalPages}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #c5c7cf', background: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === pagination.totalPages ? '#ccc' : '#6366f1' }}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--neu-dark)', background: 'var(--surface)', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: filters.page === pagination.totalPages ? '#ccc' : 'var(--accent)' }}
                 >
                   Next →
                 </button>

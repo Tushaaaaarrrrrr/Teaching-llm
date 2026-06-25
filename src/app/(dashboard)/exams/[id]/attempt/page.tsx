@@ -100,7 +100,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
       
       if (timeTextRef.current) {
          timeTextRef.current.innerText = formatTime(remaining)
-         timeTextRef.current.style.color = remaining < 300 ? '#ef4444' : '#3636e8'
+         timeTextRef.current.style.color = remaining < 300 ? 'var(--danger)' : 'var(--primary)'
       }
 
     } catch (error) {
@@ -156,7 +156,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
         lastSecond = remainingSecs
         if (timeTextRef.current) {
           timeTextRef.current.innerText = formatTime(remainingSecs)
-          timeTextRef.current.style.color = remainingSecs < 300 ? '#ef4444' : '#3636e8'
+          timeTextRef.current.style.color = remainingSecs < 300 ? 'var(--danger)' : 'var(--primary)'
         }
       }
 
@@ -246,9 +246,9 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   if (!exam || !exam.questions || exam.questions.length === 0) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
-        <h2 style={{ color: '#ef4444' }}>Error Loading Assessment</h2>
+        <h2 style={{ color: 'var(--danger)' }}>Error Loading Assessment</h2>
         <p>The assessment details could not be loaded. Please try again later.</p>
-        <button onClick={() => router.push('/exams')} style={{ marginTop: '20px', padding: '10px 20px', borderRadius: '50px', background: '#3636e8', color: '#fff', border: 'none', cursor: 'pointer' }}>Go Back</button>
+        <button onClick={() => router.push('/exams')} style={{ marginTop: '20px', padding: '10px 20px', borderRadius: '50px', background: 'var(--primary)', color: '#fff', border: 'none', cursor: 'pointer' }}>Go Back</button>
       </div>
     )
   }
@@ -265,8 +265,8 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
   // Shared Styles
   const neuCard: React.CSSProperties = {
-    borderRadius: '24px', background: '#f0f2f8',
-    boxShadow: '8px 8px 16px #cfd6e1, -8px -8px 16px #ffffff',
+    borderRadius: '24px', background: 'var(--surface)',
+    boxShadow: '8px 8px 16px #cfd6e1, -8px -8px 16px var(--neu-light)',
     padding: '32px',
   }
 
@@ -275,7 +275,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
     height: '100vh',
     position: 'sticky',
     top: 0,
-    background: '#f0f2f8',
+    background: 'var(--surface)',
     borderRight: '1px solid #cfd6e1',
     display: 'flex',
     flexDirection: 'column',
@@ -289,7 +289,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
     height: '100vh',
     overflowY: 'auto',
     padding: '32px',
-    background: '#f0f2f8',
+    background: 'var(--surface)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center'
@@ -297,13 +297,13 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
   if (isMobile) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f0f2f8' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--surface)' }}>
         
         {/* Sticky Mobile Header */}
         <header style={{
           position: 'sticky',
           top: 0,
-          background: '#f0f2f8',
+          background: 'var(--surface)',
           borderBottom: '1px solid #cfd6e1',
           padding: '12px 16px',
           display: 'flex',
@@ -314,20 +314,20 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
         }}>
           {/* Progress */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '10px', fontWeight: 800, color: '#3636e8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Progress
             </span>
-            <span style={{ fontSize: '15px', fontWeight: 900, color: '#1e1e3a' }}>
+            <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-primary)' }}>
               Q{currentIdx + 1} of {exam?.questions.length}
             </span>
           </div>
 
           {/* Compact Timer Badge */}
           <div style={{
-            background: '#fff',
+            background: 'var(--surface)',
             padding: '6px 14px',
             borderRadius: '50px',
-            boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff',
+            boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)',
             display: 'flex',
             alignItems: 'center',
             gap: '6px'
@@ -335,7 +335,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2.5">
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
-            <div ref={timeTextRef} style={{ fontSize: '15px', fontWeight: 900, color: '#3636e8', fontVariantNumeric: 'tabular-nums' }}>
+            <div ref={timeTextRef} style={{ fontSize: '15px', fontWeight: 900, color: 'var(--primary)', fontVariantNumeric: 'tabular-nums' }}>
               --:--
             </div>
           </div>
@@ -348,12 +348,12 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                 padding: '8px 12px',
                 borderRadius: '12px',
                 border: 'none',
-                background: '#fff',
-                color: '#1e1e3a',
+                background: 'var(--surface)',
+                color: 'var(--text-primary)',
                 fontSize: '12px',
                 fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff',
+                boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px'
@@ -372,7 +372,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                 padding: '8px 14px',
                 borderRadius: '12px',
                 border: 'none',
-                background: '#ef4444',
+                background: 'var(--danger)',
                 color: '#fff',
                 fontSize: '12px',
                 fontWeight: 800,
@@ -396,8 +396,8 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
         }}>
           <div style={{ width: '100%' }}>
             <div style={{
-              borderRadius: '20px', background: '#f0f2f8',
-              boxShadow: '6px 6px 12px #cfd6e1, -6px -6px 12px #ffffff',
+              borderRadius: '20px', background: 'var(--surface)',
+              boxShadow: '6px 6px 12px #cfd6e1, -6px -6px 12px var(--neu-light)',
               padding: '20px',
             }}>
               
@@ -406,31 +406,31 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <span style={{ 
                       fontSize: '9px', fontWeight: 900, letterSpacing: '0.05em',
-                      background: '#3636e815', color: '#3636e8', padding: '4px 8px', borderRadius: '50px' 
+                      background: 'var(--primary-light)', color: 'var(--primary)', padding: '4px 8px', borderRadius: '50px' 
                   }}>
                     QUESTION {currentIdx + 1}
                   </span>
                   <span style={{ 
                       fontSize: '9px', fontWeight: 900, letterSpacing: '0.05em',
-                      background: '#1e1e3a10', color: '#1e1e3a', padding: '4px 8px', borderRadius: '50px' 
+                      background: '#1e1e3a10', color: 'var(--text-primary)', padding: '4px 8px', borderRadius: '50px' 
                   }}>
                     {currentQuestion?.type.replace('_', ' ')}
                   </span>
                   {isSaving && (
                     <span style={{ 
-                        fontSize: '9px', fontWeight: 800, color: '#10b981', 
+                        fontSize: '9px', fontWeight: 800, color: 'var(--success)', 
                         display: 'flex', alignItems: 'center', gap: '3px'
                     }}>
-                      <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10b981', animation: 'pulse 1.5s infinite' }} />
+                      <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--success)', animation: 'pulse 1.5s infinite' }} />
                       Saved
                     </span>
                   )}
                 </div>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b6b8a' }}>{currentQuestion?.marks} Marks</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>{currentQuestion?.marks} Marks</span>
               </div>
 
               {/* Question Text */}
-              <div style={{ fontSize: '18px', fontWeight: 800, color: '#1e1e3a', lineHeight: '1.4', marginBottom: '24px' }}>
+              <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.4', marginBottom: '24px' }}>
                 <RichTextDisplay text={currentQuestion?.text} />
               </div>
 
@@ -482,11 +482,11 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                           style={{
                             padding: '14px 16px', borderRadius: '16px', border: 'none',
                             textAlign: 'left', fontSize: '14px', fontWeight: 600,
-                            background: isSelected ? '#3636e8' : '#fff',
-                            color: isSelected ? '#fff' : '#1e1e3a',
+                            background: isSelected ? 'var(--primary)' : '#fff',
+                            color: isSelected ? '#fff' : 'var(--text-primary)',
                             boxShadow: isSelected 
                               ? 'inset 3px 3px 6px rgba(0,0,0,0.2)' 
-                              : '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff',
+                              : '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)',
                             cursor: 'pointer', transition: 'all 0.2s',
                             display: 'flex', alignItems: 'center', gap: '12px'
                           }}
@@ -501,7 +501,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                               isMSQ ? (
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                               ) : (
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#fff' }} />
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--surface)' }} />
                               )
                             )}
                           </div>
@@ -512,7 +512,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                   })()
                 ) : currentQuestion?.type === 'NAT' ? (
                   <div style={{ padding: '2px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#6b6b8a', marginBottom: '8px' }}>Your Numerical Answer:</label>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px' }}>Your Numerical Answer:</label>
                     <input 
                       type="number"
                       step="any"
@@ -521,8 +521,8 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                       placeholder="Enter numerical response..."
                       style={{
                         width: '100%', padding: '16px', borderRadius: '16px', border: 'none',
-                        background: '#f0f2f8', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px #ffffff',
-                        fontSize: '16px', fontWeight: 700, outline: 'none', color: '#1e1e3a',
+                        background: 'var(--surface)', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px var(--neu-light)',
+                        fontSize: '16px', fontWeight: 700, outline: 'none', color: 'var(--text-primary)',
                       }}
                     />
                   </div>
@@ -534,8 +534,8 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     rows={6}
                     style={{
                       width: '100%', padding: '16px', borderRadius: '16px', border: 'none',
-                      background: '#f0f2f8', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px #ffffff',
-                      fontSize: '14px', lineHeight: '1.6', outline: 'none', color: '#1e1e3a',
+                      background: 'var(--surface)', boxShadow: 'inset 4px 4px 8px #cfd6e1, inset -4px -4px 8px var(--neu-light)',
+                      fontSize: '14px', lineHeight: '1.6', outline: 'none', color: 'var(--text-primary)',
                       fontFamily: 'inherit'
                     }}
                   />
@@ -549,10 +549,10 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                   onClick={() => handleNavigate(currentIdx - 1)}
                   style={{ 
                     padding: '10px 20px', borderRadius: '50px', border: 'none', 
-                    background: '#fff', color: '#1e1e3a', fontWeight: 800, fontSize: '12px',
+                    background: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 800, fontSize: '12px',
                     cursor: currentIdx === 0 ? 'default' : 'pointer',
                     opacity: currentIdx === 0 ? 0.5 : 1,
-                    boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #ffffff'
+                    boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)'
                   }}
                 >
                   ← Prev
@@ -563,7 +563,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     onClick={() => setShowConfirmModal(true)}
                     style={{ 
                       padding: '10px 24px', borderRadius: '50px', border: 'none', 
-                      background: '#ef4444', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer',
+                      background: 'var(--danger)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer',
                       boxShadow: '0 4px 10px rgba(239,68,68,0.2)'
                     }}
                   >
@@ -574,7 +574,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     onClick={() => handleNavigate(currentIdx + 1)}
                     style={{ 
                       padding: '10px 24px', borderRadius: '50px', border: 'none', 
-                      background: '#3636e8', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer',
+                      background: 'var(--primary)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer',
                       boxShadow: '0 4px 10px rgba(54,54,232,0.2)'
                     }}
                   >
@@ -585,7 +585,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
             </div>
 
-            <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '11px', color: '#9999b0', fontWeight: 600 }}>
+            <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
               Auto-saved in real-time. Do not reload the page.
             </div>
 
@@ -614,7 +614,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
               bottom: 0,
               left: 0,
               right: 0,
-              background: '#f0f2f8',
+              background: 'var(--surface)',
               borderTopLeftRadius: '28px',
               borderTopRightRadius: '28px',
               boxShadow: '0 -8px 30px rgba(0, 0, 0, 0.15)',
@@ -638,10 +638,10 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
               {/* Title Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 800, color: '#1e1e3a' }}>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
                   Question Navigator
                 </span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#6b6b8a' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>
                   {answeredCount}/{exam?.questions.length} Answered
                 </span>
               </div>
@@ -654,19 +654,19 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                   const isVisited = visitedIndices.has(i)
                   
                   let bgColor = '#fff'
-                  let textColor = '#1e1e3a'
-                  let shadow = '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
+                  let textColor = 'var(--text-primary)'
+                  let shadow = '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)'
 
                   if (isCurrent) {
-                    bgColor = '#3636e8'
+                    bgColor = 'var(--primary)'
                     textColor = '#fff'
                     shadow = 'inset 2px 2px 5px rgba(0,0,0,0.2)'
                   } else if (isAnswered) {
-                    bgColor = '#10b981'
+                    bgColor = 'var(--success)'
                     textColor = '#fff'
                   } else if (!isVisited) {
                     bgColor = '#e0e0e0'
-                    textColor = '#999'
+                    textColor = 'var(--text-muted)'
                     shadow = 'none'
                   }
 
@@ -698,7 +698,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                   padding: '14px',
                   borderRadius: '16px',
                   border: 'none',
-                  background: '#1e1e3a',
+                  background: 'var(--text-primary)',
                   color: '#fff',
                   fontSize: '14px',
                   fontWeight: 800,
@@ -732,27 +732,27 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f2f8' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--surface)' }}>
       
       {/* LEFT PANEL - Fixed Sidebar */}
       <aside style={sidebarStyle}>
         
         {/* Exam Metadata */}
         <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 800, color: '#3636e8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
             {exam?.course?.name || 'Course'} • {exam?.course?.subject || 'Assessment'}
           </div>
-          <h1 style={{ fontSize: '22px', fontWeight: 900, color: '#1e1e3a', lineHeight: '1.2', marginBottom: '8px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: '1.2', marginBottom: '8px' }}>
             {exam?.title}
           </h1>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#6b6b8a' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>
               Total: {exam?.questions.reduce((acc, q) => acc + (q.marks || 0), 0)} Marks
             </span>
             <span style={{ 
                 fontSize: '11px', fontWeight: 800, 
-                background: isFinal ? '#ef444415' : '#3636e815', 
-                color: isFinal ? '#ef4444' : '#3636e8', 
+                background: isFinal ? 'var(--danger-light)' : 'var(--primary-light)', 
+                color: isFinal ? 'var(--danger)' : 'var(--primary)', 
                 padding: '4px 10px', borderRadius: '50px' 
             }}>
               {isFinal ? 'FINAL EXAM' : 'PRACTICE MODE'}
@@ -764,10 +764,10 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
         {/* Timer Section */}
         <div style={{ ...neuCard, padding: '20px', marginBottom: '24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '12px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', marginBottom: '4px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
             Time Remaining
           </div>
-          <div ref={timeTextRef} style={{ fontSize: '36px', fontWeight: 900, color: '#3636e8', fontVariantNumeric: 'tabular-nums', marginBottom: '12px' }}>
+          <div ref={timeTextRef} style={{ fontSize: '36px', fontWeight: 900, color: 'var(--primary)', fontVariantNumeric: 'tabular-nums', marginBottom: '12px' }}>
             --:--
           </div>
           
@@ -777,9 +777,9 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     onClick={() => setIsPaused(!isPaused)}
                     style={{ 
                         padding: '8px 16px', borderRadius: '50px', border: 'none',
-                        background: isPaused ? '#10b981' : '#fff', color: isPaused ? '#fff' : '#1e1e3a',
+                        background: isPaused ? 'var(--success)' : '#fff', color: isPaused ? '#fff' : 'var(--text-primary)',
                         fontSize: '12px', fontWeight: 800, cursor: 'pointer',
-                        boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
+                        boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)'
                     }}
                 >
                     {isPaused ? 'Resume' : 'Pause'}
@@ -788,9 +788,9 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     onClick={handleResetTimer}
                     style={{ 
                         padding: '8px 16px', borderRadius: '50px', border: 'none',
-                        background: '#fff', color: '#1e1e3a',
+                        background: 'var(--surface)', color: 'var(--text-primary)',
                         fontSize: '12px', fontWeight: 800, cursor: 'pointer',
-                        boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
+                        boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)'
                     }}
                 >
                     Reset
@@ -802,8 +802,8 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
         {/* Question Navigator */}
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e1e3a' }}>Question Navigator</span>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b6b8a' }}>{answeredCount}/{exam?.questions.length} Answered</span>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>Question Navigator</span>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>{answeredCount}/{exam?.questions.length} Answered</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
             {exam?.questions.map((q, i) => {
@@ -812,19 +812,19 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
               const isVisited = visitedIndices.has(i)
               
               let bgColor = '#fff'
-              let textColor = '#1e1e3a'
-              let shadow = '3px 3px 6px #cfd6e1, -3px -3px 6px #fff'
+              let textColor = 'var(--text-primary)'
+              let shadow = '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)'
 
               if (isCurrent) {
-                bgColor = '#3636e8'
+                bgColor = 'var(--primary)'
                 textColor = '#fff'
                 shadow = 'inset 2px 2px 5px rgba(0,0,0,0.2)'
               } else if (isAnswered) {
-                bgColor = '#10b981'
+                bgColor = 'var(--success)'
                 textColor = '#fff'
               } else if (!isVisited) {
                 bgColor = '#e0e0e0'
-                textColor = '#999'
+                textColor = 'var(--text-muted)'
                 shadow = 'none'
               }
 
@@ -854,7 +854,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
             style={{ 
                 marginTop: '24px',
                 padding: '16px', borderRadius: '16px', border: 'none', 
-                background: '#ef4444', color: '#fff', fontSize: '15px', fontWeight: 800, cursor: 'pointer',
+                background: 'var(--danger)', color: '#fff', fontSize: '15px', fontWeight: 800, cursor: 'pointer',
                 boxShadow: '0 8px 20px rgba(239,68,68,0.3)',
                 width: '100%'
             }}
@@ -875,31 +875,31 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <span style={{ 
                             fontSize: '10px', fontWeight: 900, letterSpacing: '0.05em',
-                            background: '#3636e815', color: '#3636e8', padding: '6px 12px', borderRadius: '50px' 
+                            background: 'var(--primary-light)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '50px' 
                         }}>
                           QUESTION {currentIdx + 1}
                         </span>
                         <span style={{ 
                             fontSize: '10px', fontWeight: 900, letterSpacing: '0.05em',
-                            background: '#1e1e3a10', color: '#1e1e3a', padding: '6px 12px', borderRadius: '50px' 
+                            background: '#1e1e3a10', color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '50px' 
                         }}>
                           {currentQuestion?.type.replace('_', ' ')}
                         </span>
                         {isSaving && (
                           <span style={{ 
-                              fontSize: '10px', fontWeight: 800, color: '#10b981', 
+                              fontSize: '10px', fontWeight: 800, color: 'var(--success)', 
                               display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px'
                           }}>
-                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', animation: 'pulse 1.5s infinite' }} />
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)', animation: 'pulse 1.5s infinite' }} />
                             Autosaving...
                           </span>
                         )}
                     </div>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#6b6b8a' }}>{currentQuestion?.marks} Marks</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>{currentQuestion?.marks} Marks</span>
                 </div>
 
                 {/* Question Text */}
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#1e1e3a', lineHeight: '1.4', marginBottom: '32px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.4', marginBottom: '32px' }}>
                     <RichTextDisplay text={currentQuestion?.text} />
                 </div>
 
@@ -951,11 +951,11 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                                   style={{
                                       padding: '20px 24px', borderRadius: '20px', border: 'none',
                                       textAlign: 'left', fontSize: '16px', fontWeight: 600,
-                                      background: isSelected ? '#3636e8' : '#fff',
-                                      color: isSelected ? '#fff' : '#1e1e3a',
+                                      background: isSelected ? 'var(--primary)' : '#fff',
+                                      color: isSelected ? '#fff' : 'var(--text-primary)',
                                       boxShadow: isSelected 
                                           ? 'inset 4px 4px 10px rgba(0,0,0,0.2)' 
-                                          : '4px 4px 10px #cfd6e1, -4px -4px 10px #ffffff',
+                                          : '4px 4px 10px #cfd6e1, -4px -4px 10px var(--neu-light)',
                                       cursor: 'pointer', transition: 'all 0.2s',
                                       display: 'flex', alignItems: 'center', gap: '16px'
                                   }}
@@ -969,7 +969,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                                         isMSQ ? (
                                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                         ) : (
-                                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fff' }} />
+                                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--surface)' }} />
                                         )
                                       )}
                                   </div>
@@ -980,7 +980,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                     })()
                     ) : currentQuestion?.type === 'NAT' ? (
                       <div style={{ padding: '4px' }}>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#6b6b8a', marginBottom: '12px' }}>Your Numerical Answer:</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '12px' }}>Your Numerical Answer:</label>
                         <input 
                           type="number"
                           step="any"
@@ -989,8 +989,8 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                           placeholder="Enter number (decimals allowed)..."
                           style={{
                               width: '100%', padding: '24px', borderRadius: '20px', border: 'none',
-                              background: '#f0f2f8', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px #ffffff',
-                              fontSize: '18px', fontWeight: 700, outline: 'none', color: '#1e1e3a',
+                              background: 'var(--surface)', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px var(--neu-light)',
+                              fontSize: '18px', fontWeight: 700, outline: 'none', color: 'var(--text-primary)',
                           }}
                         />
                       </div>
@@ -1002,8 +1002,8 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                         rows={10}
                         style={{
                             width: '100%', padding: '24px', borderRadius: '20px', border: 'none',
-                            background: '#f0f2f8', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px #ffffff',
-                            fontSize: '16px', lineHeight: '1.6', outline: 'none', color: '#1e1e3a',
+                            background: 'var(--surface)', boxShadow: 'inset 6px 6px 12px #cfd6e1, inset -6px -6px 12px var(--neu-light)',
+                            fontSize: '16px', lineHeight: '1.6', outline: 'none', color: 'var(--text-primary)',
                             fontFamily: 'inherit'
                         }}
                     />
@@ -1017,10 +1017,10 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                         onClick={() => handleNavigate(currentIdx - 1)}
                         style={{ 
                             padding: '14px 32px', borderRadius: '50px', border: 'none', 
-                            background: '#fff', color: '#1e1e3a', fontWeight: 800, 
+                            background: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 800, 
                             cursor: currentIdx === 0 ? 'default' : 'pointer',
                             opacity: currentIdx === 0 ? 0.5 : 1,
-                            boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px #ffffff'
+                            boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px var(--neu-light)'
                         }}
                     >
                         ← Previous
@@ -1031,7 +1031,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                             onClick={() => setShowConfirmModal(true)}
                             style={{ 
                                 padding: '14px 40px', borderRadius: '50px', border: 'none', 
-                                background: '#ef4444', color: '#fff', fontWeight: 800, cursor: 'pointer',
+                                background: 'var(--danger)', color: '#fff', fontWeight: 800, cursor: 'pointer',
                                 boxShadow: '0 8px 20px rgba(239,68,68,0.3)'
                             }}
                         >
@@ -1042,7 +1042,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                             onClick={() => handleNavigate(currentIdx + 1)}
                             style={{ 
                                 padding: '14px 40px', borderRadius: '50px', border: 'none', 
-                                background: '#3636e8', color: '#fff', fontWeight: 800, cursor: 'pointer',
+                                background: 'var(--primary)', color: '#fff', fontWeight: 800, cursor: 'pointer',
                                 boxShadow: '0 8px 20px rgba(54,54,232,0.3)'
                             }}
                         >
@@ -1054,7 +1054,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
             </div>
 
             {/* Bottom Info */}
-            <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '13px', color: '#9999b0', fontWeight: 600 }}>
+            <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>
                 Questions are auto-saved in real-time. Do not reload the page unless necessary.
             </div>
 
