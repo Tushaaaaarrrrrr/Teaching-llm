@@ -279,6 +279,45 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // 7b2. Create Order & Order Items (to enable Transaction page visibility)
+        const safeAmount = typeof finalPrice === 'number' && isFinite(finalPrice) ? finalPrice : 0
+        const safeCreatedAt = purchasedAt ? (() => { const d = new Date(purchasedAt); return isNaN(d.getTime()) ? new Date() : d })() : new Date()
+
+        let order = null
+        if (orderId && typeof orderId === 'string' && orderId.trim()) {
+          order = await tx.order.findUnique({
+            where: { razorpayOrderId: orderId.trim() },
+          })
+        }
+
+        if (!order) {
+          order = await tx.order.create({
+            data: {
+              userId: user.id,
+              amount: safeAmount,
+              status: 'SUCCESS',
+              isExternal: true,
+              razorpayOrderId: typeof orderId === 'string' && orderId.trim() ? orderId.trim() : null,
+              razorpayPaymentId: typeof paymentId === 'string' && paymentId.trim() ? paymentId.trim() : null,
+              createdAt: safeCreatedAt,
+            },
+          })
+
+          const pricePerCourse = normalizedCourseIds.length > 0 ? safeAmount / normalizedCourseIds.length : 0
+
+          for (const courseId of normalizedCourseIds) {
+            const accessType = classTypeMap.get(courseId) ?? 'LIVE'
+            await tx.orderItem.create({
+              data: {
+                orderId: order.id,
+                courseId,
+                accessType,
+                price: pricePerCourse,
+              },
+            })
+          }
+        }
+
         // 7c. Enroll in each purchased course (idempotent)
         const enrollmentResults: typeof result['enrollments'] = []
 

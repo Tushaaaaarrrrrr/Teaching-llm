@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth'
 import crypto from 'crypto'
 import { logActivity, MODULE, ACTION } from '@/lib/activity-log'
 import { sendCourseEnrollmentNotification } from '@/lib/system-notifications'
+import { sendEmailNotification } from '@/lib/email-service'
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +26,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment verification failed' }, { status: 400 })
     }
 
-    const order = await prisma.order.findUnique({ where: { razorpayOrderId }, include: { items: true } })
+    const order = await prisma.order.findUnique({
+      where: { razorpayOrderId },
+      include: {
+        items: {
+          include: {
+            course: true,
+          },
+        },
+      },
+    })
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     if (order.status === 'SUCCESS') return NextResponse.json({ error: 'Order already processed', orderId: order.id }, { status: 400 })
 
@@ -88,9 +98,8 @@ export async function POST(request: NextRequest) {
     await prisma.order.update({ where: { id: order.id }, data: { razorpayPaymentId, razorpaySignature, status: 'SUCCESS' } })
 
     // Trigger purchase confirmation email
-    const { sendEmailNotification } = require('@/lib/email-service')
     // Get item names for the email
-    const itemNames = order.items.map(i => i.courseId).join(', ') // Simplified for now
+    const itemNames = order.items.map(i => i.course.name).join(', ')
     
     sendEmailNotification('purchase', {
       userEmail: session.email,
