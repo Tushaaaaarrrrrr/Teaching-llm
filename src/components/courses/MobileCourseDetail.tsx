@@ -13,6 +13,7 @@ interface ContentItem {
   title: string
   description?: string
   videoUrl?: string
+  youtubeUrl?: string
   pptUrl?: string
   order: number
   durationMinutes?: number
@@ -615,11 +616,11 @@ function CurriculumTab({
                       ) : (
                         <div style={{
                           width: '26px', height: '26px', borderRadius: '8px', flexShrink: 0,
-                          background: item.videoUrl ? `${accent}10` : 'var(--surface)',
-                          color: item.videoUrl ? accent : 'var(--text-muted)',
+                          background: (item.videoUrl || item.youtubeUrl) ? `${accent}10` : 'var(--surface)',
+                          color: (item.videoUrl || item.youtubeUrl) ? accent : 'var(--text-muted)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          {item.videoUrl ? (
+                          {(item.videoUrl || item.youtubeUrl) ? (
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                           ) : (
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -647,7 +648,7 @@ function CurriculumTab({
                       </div>
 
                       {/* Action */}
-                      {item.videoUrl ? (
+                      {(item.videoUrl || item.youtubeUrl) ? (
                         <Link
                           href={`/courses/${courseId}/lectures/${item.id}`}
                           style={{

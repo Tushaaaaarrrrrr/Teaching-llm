@@ -68,6 +68,7 @@ export async function GET(
             content: {
               select: {
                 videoUrl: true,
+                youtubeUrl: true,
                 pptUrl: true,
               },
             },
@@ -76,6 +77,7 @@ export async function GET(
                 content: {
                   select: {
                     videoUrl: true,
+                    youtubeUrl: true,
                     pptUrl: true,
                   },
                 },
@@ -125,12 +127,12 @@ export async function GET(
     cData.topics.forEach((topic: any) => {
       // Count direct content
       topic.content.forEach((content: any) => {
-        if (content.videoUrl) lecturesCount++
+        if (content.videoUrl || content.youtubeUrl) lecturesCount++
         if (content.pptUrl) materialsCount++
       })
       // Count shared content
       topic.sharedContentLinks?.forEach((link: any) => {
-        if (link.content?.videoUrl) lecturesCount++
+        if (link.content?.videoUrl || link.content?.youtubeUrl) lecturesCount++
         if (link.content?.pptUrl) materialsCount++
       })
     })

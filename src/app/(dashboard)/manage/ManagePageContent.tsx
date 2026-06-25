@@ -2460,7 +2460,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                     )}
                     {tab === 'lectures' && (
                       <div style={{ display: 'flex', gap: '6px' }}>
-                        {item.videoUrl && (
+                        {(item.videoUrl || item.youtubeUrl) && (
                           <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--primary-light)', color: 'var(--accent)', fontWeight: '600' }}>Video</span>
                         )}
                         {item.pptUrl && (

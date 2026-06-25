@@ -57,6 +57,7 @@ export async function GET() {
         },
         select: {
           videoUrl: true,
+          youtubeUrl: true,
           pptUrl: true,
           topic: {
             select: { courseId: true }
@@ -73,6 +74,7 @@ export async function GET() {
           content: {
             select: {
               videoUrl: true,
+              youtubeUrl: true,
               pptUrl: true,
             }
           },
@@ -90,7 +92,7 @@ export async function GET() {
     directContents.forEach(content => {
       const courseId = content.topic?.courseId
       if (!courseId) return
-      if (content.videoUrl) {
+      if (content.videoUrl || content.youtubeUrl) {
         lectureCountMap.set(courseId, (lectureCountMap.get(courseId) || 0) + 1)
       }
       if (content.pptUrl) {
@@ -101,7 +103,7 @@ export async function GET() {
     sharedContents.forEach(link => {
       const courseId = link.topic?.courseId
       if (!courseId) return
-      if (link.content?.videoUrl) {
+      if (link.content?.videoUrl || link.content?.youtubeUrl) {
         lectureCountMap.set(courseId, (lectureCountMap.get(courseId) || 0) + 1)
       }
       if (link.content?.pptUrl) {

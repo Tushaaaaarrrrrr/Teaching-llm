@@ -34,7 +34,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (hasVideo === 'true') {
-      where.videoUrl = { not: null }
+      where.OR = [
+        { videoUrl: { not: null } },
+        { youtubeUrl: { not: null } }
+      ]
     }
 
     if (hasPpt === 'true') {

@@ -45,8 +45,16 @@ export async function GET() {
       prisma.content.count({ 
         where: { 
           topic: accessibleCourseIds !== null ? { courseId: { in: accessibleCourseIds } } : {},
-          videoUrl: { not: null },
-          NOT: { videoUrl: "" }
+          OR: [
+            {
+              videoUrl: { not: null },
+              NOT: { videoUrl: "" }
+            },
+            {
+              youtubeUrl: { not: null },
+              NOT: { youtubeUrl: "" }
+            }
+          ]
         } 
       }),
       prisma.user.count({ where: { role: 'STUDENT' } }),

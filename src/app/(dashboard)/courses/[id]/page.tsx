@@ -11,6 +11,7 @@ interface ContentItem {
   title: string
   description?: string
   videoUrl?: string
+  youtubeUrl?: string
   pptUrl?: string
   order: number
 }
@@ -560,11 +561,11 @@ export default function CourseDetailPage() {
                         {/* Lecture icon */}
                         <div style={{
                           width: '32px', height: '32px', borderRadius: '8px',
-                          background: item.videoUrl ? course.color + '12' : '#f0f0f5',
-                          color: item.videoUrl ? course.color : 'var(--text-muted)',
+                          background: (item.videoUrl || item.youtubeUrl) ? course.color + '12' : '#f0f0f5',
+                          color: (item.videoUrl || item.youtubeUrl) ? course.color : 'var(--text-muted)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         }}>
-                          {item.videoUrl ? (
+                          {(item.videoUrl || item.youtubeUrl) ? (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                           ) : (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -643,7 +644,7 @@ export default function CourseDetailPage() {
                                 View Material
                               </Link>
                             )}
-                            {item.videoUrl && (
+                            {(item.videoUrl || item.youtubeUrl) && (
                               <Link
                                 href={`/courses/${params.id}/lectures/${item.id}`}
                                 className="btn btn-primary btn-sm"

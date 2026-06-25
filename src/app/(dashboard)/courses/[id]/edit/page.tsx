@@ -978,11 +978,11 @@ export default function CourseEditPage() {
 
                       <div style={{
                         width: '30px', height: '30px', borderRadius: '8px',
-                        background: item.videoUrl ? 'var(--primary-light)' : 'var(--surface-2)',
-                        color: item.videoUrl ? 'var(--primary)' : 'var(--text-muted)',
+                        background: (item.videoUrl || item.youtubeUrl) ? 'var(--primary-light)' : 'var(--surface-2)',
+                        color: (item.videoUrl || item.youtubeUrl) ? 'var(--primary)' : 'var(--text-muted)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                       }}>
-                        {item.videoUrl
+                        {(item.videoUrl || item.youtubeUrl)
                           ? <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                           : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         }
@@ -995,7 +995,7 @@ export default function CourseEditPage() {
                           </p>
                         )}
                         <div style={{ display: 'flex', gap: '10px', marginTop: '3px' }}>
-                          {item.videoUrl && <span style={{ fontSize: '11px', color: 'var(--primary)' }}>📹 Video linked</span>}
+                          {(item.videoUrl || item.youtubeUrl) && <span style={{ fontSize: '11px', color: 'var(--primary)' }}>📹 Video linked</span>}
                           {item.pptUrl && <span style={{ fontSize: '11px', color: 'var(--success)' }}>📄 PPT linked</span>}
                         </div>
                       </div>
