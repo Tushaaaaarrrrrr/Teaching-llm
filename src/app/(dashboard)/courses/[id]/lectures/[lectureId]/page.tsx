@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import CustomVideoPlayer, { extractYouTubeId } from '@/components/courses/CustomVideoPlayer'
+import SecureYouTubePlayer, { extractYouTubeId, isLikelyYouTubeLive } from '@/components/courses/SecureYouTubePlayer'
 import { 
   Play, 
   ChevronLeft, 
@@ -466,9 +466,13 @@ export default function LecturePage() {
                   style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', overflow: 'hidden', background: '#000' }}
                 />
               ) : (content.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content.videoUrl || '')) && extractYouTubeId(content.videoUrl) ? (
-                // YouTube → unified player using IFrame API engine
+                // YouTube → Flutter-style secure player UI. Drive iframe path above is intentionally unchanged.
                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                  <CustomVideoPlayer source={{ type: 'youtube', videoId: extractYouTubeId(content.videoUrl)! }} />
+                  <SecureYouTubePlayer
+                    videoId={extractYouTubeId(content.videoUrl)!}
+                    title={content.title}
+                    isLive={isLikelyYouTubeLive(content.videoUrl)}
+                  />
                 </div>
               ) : (
                 // Other iframe-friendly sources (Vimeo, generic embed)
@@ -482,7 +486,7 @@ export default function LecturePage() {
                   style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', overflow: 'hidden', background: '#000' }}
                 />
               )}
-              {/* CustomVideoPlayer has its own fullscreen + speed + skip; no overlay button needed.
+              {/* SecureYouTubePlayer has its own fullscreen + skip controls; no overlay button needed.
                   The iframe fallback path uses the embed provider's own fullscreen affordance. */}
             </>
           ) : (
@@ -532,9 +536,13 @@ export default function LecturePage() {
                 onContextMenu={e => e.preventDefault()}
               />
             ) : (content.videoSource === 'YOUTUBE' || /youtu\.?be/i.test(content.videoUrl || '')) && extractYouTubeId(content.videoUrl) ? (
-              // YouTube → unified player (IFrame API engine)
+              // YouTube → Flutter-style secure player UI. Drive iframe path above is intentionally unchanged.
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                <CustomVideoPlayer source={{ type: 'youtube', videoId: extractYouTubeId(content.videoUrl)! }} />
+                <SecureYouTubePlayer
+                  videoId={extractYouTubeId(content.videoUrl)!}
+                  title={content.title}
+                  isLive={isLikelyYouTubeLive(content.videoUrl)}
+                />
               </div>
             ) : (
               <iframe

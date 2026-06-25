@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ChevronLeft, Loader2, AlertCircle } from 'lucide-react'
+import SecureYouTubePlayer, { extractYouTubeId, isLikelyYouTubeLive } from '@/components/courses/SecureYouTubePlayer'
 
 interface ContentItem {
   id: string
@@ -108,6 +109,12 @@ export default function PlayDriveVideoPage() {
     return u
   }
 
+  const isYouTubeSource = (url: string | undefined, source: string | undefined) => {
+    if (source === 'YOUTUBE') return true
+    if (!url) return false
+    return /youtu\.?be|youtube(?:-nocookie)?\.com/i.test(url)
+  }
+
   if (loading || (isNativeApp && content?.videoSource === 'GOOGLE_DRIVE' && tokenLoading)) {
     return (
       <div style={{
@@ -202,6 +209,13 @@ export default function PlayDriveVideoPage() {
             controlsList="nodownload"
             onContextMenu={e => e.preventDefault()}
             style={{ width: '100%', height: '100%', background: '#000', objectFit: 'contain' }}
+          />
+        ) : isYouTubeSource(content.videoUrl, content.videoSource) && extractYouTubeId(content.videoUrl) ? (
+          <SecureYouTubePlayer
+            videoId={extractYouTubeId(content.videoUrl)!}
+            title={content.title}
+            autoplay
+            isLive={isLikelyYouTubeLive(content.videoUrl)}
           />
         ) : embedUrl ? (
           <iframe
