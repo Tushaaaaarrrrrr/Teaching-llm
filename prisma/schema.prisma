@@ -90,6 +90,8 @@ model User {
   courseBundleAssignments UserCourseBundleAssignment[]
   communityMutePrefs      CommunityMutePreference[]
   scheduledNotifications  ScheduledUserNotification[]
+
+  @@index([role])  // Used by dashboard count: prisma.user.count({ where: { role: 'STUDENT' } })
 }
 
 model Course {
@@ -623,6 +625,7 @@ model CommunityMessage {
   replyTo         CommunityMessage?  @relation("CommunityMessageReplies", fields: [replyToId], references: [id])
   replies         CommunityMessage[] @relation("CommunityMessageReplies")
   sender          User               @relation("CommMsgSender", fields: [senderId], references: [id])
+  isPinned        Boolean            @default(false)
 
   @@index([courseId])
   @@index([senderId])
@@ -901,6 +904,7 @@ model LectureProgress {
   @@unique([userId, contentId])
   @@index([userId])
   @@index([contentId])
+  @@index([userId, updatedAt])  // Dashboard 'recentViewedLecture' query: findFirst orderBy updatedAt desc
 }
 
 model LectureProgressQueue {
@@ -913,6 +917,7 @@ model LectureProgressQueue {
 
   @@index([processed])
   @@index([userId])
+  @@index([processed, createdAt])  // processProgressQueue: findMany where processed=false orderBy createdAt
 }
 
 model CommunityReadState {

@@ -29,6 +29,7 @@ interface CommMsg {
   createdAt: string
   isDeleted?: boolean
   deletedAt?: string | null
+  isPinned?: boolean
   sender: {
     id: string
     name: string
@@ -116,6 +117,8 @@ export default function CommunityPage() {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [replyingTo, setReplyingTo] = useState<CommMsg | null>(null)
   const [selectedMessage, setSelectedMessage] = useState<CommMsg | null>(null)
+  const [pinnedMessage, setPinnedMessage] = useState<CommMsg | null>(null)
+  const [managerActionMessage, setManagerActionMessage] = useState<CommMsg | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
   // Tagging state
@@ -125,6 +128,21 @@ export default function CommunityPage() {
   const [tagTriggerIndex, setTagTriggerIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const loadPinnedMessage = useCallback(async (classId: string) => {
+    try {
+      const res = await fetch(`/api/community/${classId}/messages/pinned`)
+      if (res.ok) {
+        const data = await res.json()
+        setPinnedMessage(data?.pinnedMessage || null)
+      } else {
+        setPinnedMessage(null)
+      }
+    } catch (err) {
+      console.error('Failed to load pinned message', err)
+      setPinnedMessage(null)
+    }
+  }, [])
+
   const loadMessages = useCallback(async (classId: string) => {
     const res = await fetch(`/api/community/${classId}/messages`)
     const data = await res.json().catch(() => ({}))
@@ -132,7 +150,33 @@ export default function CommunityPage() {
       throw new Error(data?.error || 'Failed to load messages')
     }
     setMessages(Array.isArray(data) ? data : [])
-  }, [])
+    
+    // Fetch pinned message for community (non-blocking)
+    if (!classId.startsWith('dm_')) {
+      loadPinnedMessage(classId).catch(console.error)
+    } else {
+      setPinnedMessage(null)
+    }
+  }, [loadPinnedMessage])
+
+  const handlePinToggle = useCallback(async (messageId: string, pin: boolean) => {
+    if (!selectedClass) return
+    try {
+      const action = pin ? 'pin' : 'unpin'
+      const res = await fetch(`/api/community/${selectedClass.id}/messages/${messageId}/pin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data?.error || `Failed to ${action} message`)
+      }
+    } catch (err) {
+      console.error(err)
+      alert(err instanceof Error ? err.message : `Failed to ${pin ? 'pin' : 'unpin'} message`)
+    }
+  }, [selectedClass])
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.json()).then(d => {
@@ -279,8 +323,25 @@ export default function CommunityPage() {
       setMessages([])
     })
 
+    eventSource.addEventListener('pin', (e) => {
+      try {
+        const { messageId } = JSON.parse(e.data)
+        setMessages(prev => prev.map(m => ({
+          ...m,
+          isPinned: m.id === messageId
+        })))
+        if (!messageId) {
+          setPinnedMessage(null)
+        } else {
+          loadPinnedMessage(selectedClass.id).catch(console.error)
+        }
+      } catch (err) {
+        console.error('SSE Pin Error', err)
+      }
+    })
+
     return () => eventSource.close()
-  }, [selectedClass, loadMessages])
+  }, [selectedClass, loadMessages, loadPinnedMessage])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -1211,6 +1272,72 @@ export default function CommunityPage() {
               </div>
             )}
 
+            {/* Pinned Message Banner */}
+            {!isDM(selectedClass) && pinnedMessage && (
+              <div 
+                onClick={() => {
+                  const el = document.getElementById(`msg-${pinnedMessage.id}`)
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  } else {
+                    alert('Pinned message is older and not loaded. Scroll up to load older messages.')
+                  }
+                }}
+                style={{
+                  background: 'var(--surface)',
+                  borderBottom: '1px solid var(--border)',
+                  padding: '10px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  zIndex: 2,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-3)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'var(--surface)'}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5" style={{ flexShrink: 0, transform: 'rotate(45deg)' }}>
+                  <line x1="12" y1="17" x2="12" y2="22"/>
+                  <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.5A2 2 0 0 1 15 9.26V5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4.26a2 2 0 0 1-.78 1.24l-2.78 3.5a2 2 0 0 0-.44 1.24z"/>
+                </svg>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Pinned Message
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>
+                    <strong>{pinnedMessage.sender.name}: </strong>
+                    {pinnedMessage.content || (pinnedMessage.imageUrl ? '📷 Photo' : '')}
+                  </div>
+                </div>
+                {userRole === 'MANAGER' && (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      await handlePinToggle(pinnedMessage.id, false)
+                    }}
+                    title="Unpin message"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-muted)',
+                      padding: '4px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = 'var(--danger)'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Messages */}
             <div className="chat-wallpaper" style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {messages.length === 0 && (
@@ -1312,7 +1439,13 @@ export default function CommunityPage() {
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
                           <SwipeableMessage
                             onSwipeTrigger={() => setReplyingTo(msg)}
-                            onLongPress={() => setSelectedMessage(msg)}
+                            onLongPress={() => {
+                              if (userRole === 'MANAGER') {
+                                setManagerActionMessage(msg)
+                              } else {
+                                setSelectedMessage(msg)
+                              }
+                            }}
                             isMe={isMe}
                             disabled={msg.id.startsWith('temp-')}
                           >
@@ -1334,6 +1467,16 @@ export default function CommunityPage() {
                               position: 'relative',
                               transition: 'all 0.2s',
                             }}>
+                              {/* Pinned indicator inside bubble */}
+                              {msg.isPinned && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px', fontSize: '11px', color: 'var(--primary)', fontWeight: '700' }}>
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ transform: 'rotate(45deg)', flexShrink: 0 }}>
+                                    <line x1="12" y1="17" x2="12" y2="22"/>
+                                    <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.5A2 2 0 0 1 15 9.26V5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4.26a2 2 0 0 1-.78 1.24l-2.78 3.5a2 2 0 0 0-.44 1.24z"/>
+                                  </svg>
+                                  <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Pinned</span>
+                                </div>
+                              )}
                               {/* Reply info */}
                               {msg.replyTo && (
                                 <div 
@@ -1805,6 +1948,120 @@ export default function CommunityPage() {
             if (transcriptOpen) openTranscript()
           }}
         />
+      )}
+
+      {/* Manager Message Action Modal */}
+      {managerActionMessage && (
+        <div className="modal-overlay" onClick={() => setManagerActionMessage(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px', padding: '16px', borderRadius: '24px' }}>
+            <div className="modal-header" style={{ padding: '0 4px 12px 4px', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>Message Options</h3>
+              <button onClick={() => setManagerActionMessage(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 0 4px 0' }}>
+              {/* Pin / Unpin option */}
+              {!isDM(selectedClass) && (
+                <button
+                  onClick={async () => {
+                    const msg = managerActionMessage;
+                    setManagerActionMessage(null);
+                    await handlePinToggle(msg.id, !msg.isPinned);
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 14px', border: 'none', width: '100%',
+                    cursor: 'pointer', textAlign: 'left',
+                    borderRadius: '12px',
+                    background: 'transparent', fontFamily: 'inherit',
+                    fontSize: '14px', fontWeight: '700',
+                    color: 'var(--primary)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = 'var(--primary-light)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(45deg)' }}>
+                    <line x1="12" y1="17" x2="12" y2="22"/>
+                    <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.5A2 2 0 0 1 15 9.26V5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4.26a2 2 0 0 1-.78 1.24l-2.78 3.5a2 2 0 0 0-.44 1.24z"/>
+                  </svg>
+                  {managerActionMessage.isPinned ? 'Unpin Message' : 'Pin Message'}
+                </button>
+              )}
+
+              {/* Reply option */}
+              <button
+                onClick={() => {
+                  const msg = managerActionMessage;
+                  setManagerActionMessage(null);
+                  setReplyingTo(msg);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '12px 14px', border: 'none', width: '100%',
+                  cursor: 'pointer', textAlign: 'left',
+                  borderRadius: '12px',
+                  background: 'transparent', fontFamily: 'inherit',
+                  fontSize: '14px', fontWeight: '700',
+                  color: 'var(--text-primary)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = 'var(--surface-3)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 17 4 12 9 7"/>
+                  <path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
+                </svg>
+                Reply
+              </button>
+
+              {/* Delete option */}
+              {!managerActionMessage.id.startsWith('temp-') && (
+                <button
+                  onClick={async () => {
+                    const msgId = managerActionMessage.id;
+                    setManagerActionMessage(null);
+                    await deleteMessage(msgId);
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 14px', border: 'none', width: '100%',
+                    cursor: 'pointer', textAlign: 'left',
+                    borderRadius: '12px',
+                    background: 'transparent', fontFamily: 'inherit',
+                    fontSize: '14px', fontWeight: '700',
+                    color: 'var(--danger)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = 'var(--danger-light)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                  </svg>
+                  Delete Message
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* New Direct Chat Modal */}

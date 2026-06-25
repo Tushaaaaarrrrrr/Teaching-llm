@@ -99,15 +99,20 @@ export async function GET(
       const onClear = () => {
         controller.enqueue(`event: clear\ndata: {}\n\n`)
       }
+      const onPin = (pinData: { messageId: string | null }) => {
+        controller.enqueue(`event: pin\ndata: ${JSON.stringify(pinData)}\n\n`)
+      }
 
       sseEmitter.on(`chat:${courseId}:message`, onMessage)
       sseEmitter.on(`chat:${courseId}:delete`, onDelete)
       sseEmitter.on(`chat:${courseId}:clear`, onClear)
+      sseEmitter.on(`chat:${courseId}:pin`, onPin)
 
       request.signal.addEventListener('abort', () => {
         sseEmitter.off(`chat:${courseId}:message`, onMessage)
         sseEmitter.off(`chat:${courseId}:delete`, onDelete)
         sseEmitter.off(`chat:${courseId}:clear`, onClear)
+        sseEmitter.off(`chat:${courseId}:pin`, onPin)
       })
     }
   })
