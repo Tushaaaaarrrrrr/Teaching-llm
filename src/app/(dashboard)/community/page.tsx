@@ -467,9 +467,40 @@ export default function CommunityPage() {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   }
 
+  const linkifyText = (text: string) => {
+    if (!text) return []
+    const urlRegex = /(https?:\/\/[^\s]+)/gi
+    const splitParts = text.split(urlRegex)
+    
+    return splitParts.map((subPart, i) => {
+      if (subPart.match(urlRegex)) {
+        return (
+          <a
+            key={`link-${i}-${Math.random()}`}
+            href={subPart}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: 'var(--primary)',
+              textDecoration: 'underline',
+              fontWeight: '600',
+              cursor: 'pointer',
+              wordBreak: 'break-all'
+            }}
+          >
+            {subPart}
+          </a>
+        )
+      }
+      return subPart
+    })
+  }
+
   const renderMessageContent = (content: string) => {
     if (!content) return null
-    if (staff.length === 0) return content
+    if (staff.length === 0) {
+      return linkifyText(content)
+    }
 
     const sortedStaff = [...staff].sort((a, b) => b.name.length - a.name.length)
     let parts: (string | React.JSX.Element)[] = [content]
@@ -490,7 +521,7 @@ export default function CommunityPage() {
         for (const subPart of splitPart) {
           if (subPart.toLowerCase() === tagStr.toLowerCase()) {
             nextParts.push(
-              <span key={`${member.id}-${Math.random()}`} style={{ color: '#3636e8', fontWeight: '800', cursor: 'pointer' }}>
+              <span key={`${member.id}-${Math.random()}`} style={{ color: 'var(--primary)', fontWeight: '800', cursor: 'pointer' }}>
                 {subPart}
               </span>
             )
@@ -502,7 +533,16 @@ export default function CommunityPage() {
       parts = nextParts
     }
 
-    return parts
+    const finalParts: (string | React.JSX.Element)[] = []
+    for (const part of parts) {
+      if (typeof part !== 'string') {
+        finalParts.push(part)
+      } else {
+        finalParts.push(...linkifyText(part))
+      }
+    }
+
+    return finalParts
   }
 
   async function toggleMuteCourse(courseId: string, currentMuted: boolean) {
