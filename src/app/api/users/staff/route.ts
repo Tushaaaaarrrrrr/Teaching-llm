@@ -13,7 +13,17 @@ export async function GET(request: NextRequest) {
     const selectFields: any = {
       id: true,
       name: true,
-      role: true
+      role: true,
+      enrollments: {
+        select: {
+          courseId: true
+        }
+      },
+      instructorAssignments: {
+        select: {
+          courseId: true
+        }
+      }
     }
     if (isStaff) {
       selectFields.email = true
