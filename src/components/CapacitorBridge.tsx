@@ -18,12 +18,20 @@ export default function CapacitorBridge() {
       document.documentElement.classList.add('is-native')
       document.documentElement.classList.add(`platform-${platform}`)
 
-      const [{ App }, { StatusBar, Style }, { SplashScreen }, { Keyboard, KeyboardResize, KeyboardStyle }, { PushNotifications }] = await Promise.all([
+      const [
+        { App },
+        { StatusBar, Style },
+        { SplashScreen },
+        { Keyboard, KeyboardResize, KeyboardStyle },
+        { PushNotifications },
+        { ScreenOrientation }
+      ] = await Promise.all([
         import('@capacitor/app'),
         import('@capacitor/status-bar'),
         import('@capacitor/splash-screen'),
         import('@capacitor/keyboard'),
         import('@capacitor/push-notifications'),
+        import('@capacitor/screen-orientation'),
       ])
 
       // Status bar follows the app theme (data-theme is set by ThemeProvider /
@@ -47,6 +55,13 @@ export default function CapacitorBridge() {
       try {
         await Keyboard.setResizeMode({ mode: KeyboardResize.Body })
       } catch (e) { console.warn('Keyboard setup failed', e) }
+
+      try {
+        await ScreenOrientation.lock({ orientation: 'portrait' })
+        console.log('[CapacitorBridge] Locked screen orientation to portrait')
+      } catch (e) {
+        console.warn('ScreenOrientation locking to portrait failed', e)
+      }
 
       try {
         await SplashScreen.hide({ fadeOutDuration: 400 })

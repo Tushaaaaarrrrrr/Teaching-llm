@@ -299,9 +299,13 @@ export default function CustomVideoPlayer({ source, aspect = '16 / 9', onReady, 
       const el = (document.fullscreenElement || (document as any).webkitFullscreenElement)
       setIsFullscreen(!!el)
       if (!el) {
-        // Best-effort orientation unlock on exit. Capacitor plugin (if installed)
-        // is also called in toggleFullscreen.
+        // Lock orientation back to portrait on exit.
         try { (screen.orientation as any)?.unlock?.() } catch {}
+        try {
+          import('@capacitor/screen-orientation').then(async (mod) => {
+            await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
+          }).catch(() => {})
+        } catch {}
       }
     }
     document.addEventListener('fullscreenchange', onChange)
@@ -309,6 +313,17 @@ export default function CustomVideoPlayer({ source, aspect = '16 / 9', onReady, 
     return () => {
       document.removeEventListener('fullscreenchange', onChange)
       document.removeEventListener('webkitfullscreenchange', onChange as any)
+    }
+  }, [])
+
+  // ─── Cleanup orientation lock on unmount
+  useEffect(() => {
+    return () => {
+      try {
+        import('@capacitor/screen-orientation').then(async (mod) => {
+          await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
+        }).catch(() => {})
+      } catch {}
     }
   }, [])
 
@@ -427,10 +442,10 @@ export default function CustomVideoPlayer({ source, aspect = '16 / 9', onReady, 
     if (isFullscreen) {
       try { await (document.exitFullscreen?.() ?? (document as any).webkitExitFullscreen?.()) } catch {}
       try { (screen.orientation as any)?.unlock?.() } catch {}
-      // Capacitor plugin unlock (no-op outside native)
+      // Capacitor plugin lock to portrait (no-op outside native)
       try {
         const mod: any = await import('@capacitor/screen-orientation').catch(() => null)
-        await mod?.ScreenOrientation?.unlock?.()
+        await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
       } catch {}
       return
     }

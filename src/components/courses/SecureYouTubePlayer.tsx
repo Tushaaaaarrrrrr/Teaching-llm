@@ -303,6 +303,11 @@ export default function SecureYouTubePlayer({
       setIsFullscreen(Boolean(fsElement))
       if (!fsElement) {
         try { (screen.orientation as any)?.unlock?.() } catch {}
+        try {
+          import('@capacitor/screen-orientation').then(async (mod) => {
+            await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
+          }).catch(() => {})
+        } catch {}
       }
     }
     document.addEventListener('fullscreenchange', onFullscreenChange)
@@ -310,6 +315,17 @@ export default function SecureYouTubePlayer({
     return () => {
       document.removeEventListener('fullscreenchange', onFullscreenChange)
       document.removeEventListener('webkitfullscreenchange', onFullscreenChange as any)
+    }
+  }, [])
+
+  // ─── Cleanup orientation lock on unmount
+  useEffect(() => {
+    return () => {
+      try {
+        import('@capacitor/screen-orientation').then(async (mod) => {
+          await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
+        }).catch(() => {})
+      } catch {}
     }
   }, [])
 
@@ -389,7 +405,7 @@ export default function SecureYouTubePlayer({
       try { (screen.orientation as any)?.unlock?.() } catch {}
       try {
         const mod: any = await import('@capacitor/screen-orientation').catch(() => null)
-        await mod?.ScreenOrientation?.unlock?.()
+        await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
       } catch {}
       return
     }
