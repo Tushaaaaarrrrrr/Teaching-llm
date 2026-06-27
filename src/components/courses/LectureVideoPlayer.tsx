@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Play, AlertCircle, ExternalLink } from 'lucide-react'
+import { Play, AlertCircle } from 'lucide-react'
 import SecureYouTubePlayer, {
   extractYouTubeId,
   isLikelyYouTubeLive,
@@ -237,20 +237,6 @@ export default function LectureVideoPlayer({
             onContextMenu={e => e.preventDefault()}
             style={{ width: '100%', height: '100%', border: 'none', overflow: 'hidden', background: '#000' }}
           />
-          {/* Quick link switcher in case Google Drive fails to load or requires permissions */}
-          {hasYouTubeLink && (
-            <div style={{
-              position: 'absolute', bottom: '16px', right: '16px', zIndex: 10,
-              background: 'rgba(9, 13, 22, 0.85)', padding: '6px 12px', borderRadius: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.1)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 'bold'
-            }}
-            onClick={() => setSelectedSource('YOUTUBE')}
-            >
-              <span>Drive not loading? Play YouTube</span>
-              <ExternalLink size={12} />
-            </div>
-          )}
         </div>
       )
     }

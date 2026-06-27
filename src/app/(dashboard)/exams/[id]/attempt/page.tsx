@@ -53,6 +53,66 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // Force Light Theme during exam attempt
+  useEffect(() => {
+    const originalTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    
+    // Force light theme
+    document.documentElement.setAttribute('data-theme', 'light');
+    window.dispatchEvent(new CustomEvent('themechange', { detail: 'light' }));
+    
+    return () => {
+      // Restore original theme
+      document.documentElement.setAttribute('data-theme', originalTheme);
+      window.dispatchEvent(new CustomEvent('themechange', { detail: originalTheme }));
+    };
+  }, []);
+
+  // Prevent copying, selecting, right-clicking, and dragging
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+
+    const handleCopy = (e: ClipboardEvent) => {
+      e.preventDefault();
+      if (e.clipboardData) {
+        e.clipboardData.setData('text/plain', 'Copying questions is disabled during the exam.');
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent Ctrl+C or Cmd+C
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        e.preventDefault();
+      }
+      // Prevent Ctrl+U or Cmd+Option+U (view source)
+      if (((e.ctrlKey || e.metaKey) && e.key === 'u') || (e.metaKey && e.altKey && e.key === 'u')) {
+        e.preventDefault();
+      }
+      // Prevent F12 or Inspect element (Cmd+Option+I / Ctrl+Shift+I)
+      if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I')) {
+        e.preventDefault();
+      }
+    };
+
+    const handleDragStart = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('copy', handleCopy);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('dragstart', handleDragStart);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('copy', handleCopy);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('dragstart', handleDragStart);
+    };
+  }, []);
   
   // Timer State
   const [isPaused, setIsPaused] = useState(false)
@@ -297,7 +357,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
   if (isMobile) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--surface)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--surface)', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
         
         {/* Sticky Mobile Header */}
         <header style={{
@@ -433,6 +493,16 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
               <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.4', marginBottom: '24px' }}>
                 <RichTextDisplay text={currentQuestion?.text} />
               </div>
+
+              {currentQuestion?.imageUrl && (
+                <div style={{ marginBottom: '24px', maxWidth: '100%', borderRadius: '12px', overflow: 'hidden' }}>
+                  <img 
+                    src={currentQuestion.imageUrl} 
+                    alt="Question Graphic" 
+                    style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', borderRadius: '12px' }} 
+                  />
+                </div>
+              )}
 
               {/* Options */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
@@ -732,7 +802,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--surface)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--surface)', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
       
       {/* LEFT PANEL - Fixed Sidebar */}
       <aside style={sidebarStyle}>
@@ -902,6 +972,16 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                 <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.4', marginBottom: '32px' }}>
                     <RichTextDisplay text={currentQuestion?.text} />
                 </div>
+
+                {currentQuestion?.imageUrl && (
+                  <div style={{ marginBottom: '32px', maxWidth: '100%', borderRadius: '12px', overflow: 'hidden' }}>
+                    <img 
+                      src={currentQuestion.imageUrl} 
+                      alt="Question Graphic" 
+                      style={{ maxWidth: '100%', maxHeight: '350px', objectFit: 'contain', borderRadius: '12px' }} 
+                    />
+                  </div>
+                )}
 
                 {/* Options Area */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '40px' }}>

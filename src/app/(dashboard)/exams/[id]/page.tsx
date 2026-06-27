@@ -94,6 +94,25 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
     setShowExamEditor(true)
   }
 
+  const handleImageUpload = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', 'exams')
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+      const data = await res.json()
+      if (data.url) {
+        setQuestionForm(prev => ({ ...prev, imageUrl: data.url }))
+      }
+    } catch (error) {
+      console.error('Image upload failed', error)
+    }
+  }
+
   function openQuestionEditor(question?: any, index?: number) {
     let options = ['', '']
     if (question?.type === 'TRUE_FALSE') {
@@ -443,6 +462,11 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                       </div>
                     </div>
                     <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}><RichTextDisplay text={q.text} /></div>
+                    {q.imageUrl && (
+                      <div style={{ marginTop: '12px', marginBottom: '12px', maxWidth: '300px', borderRadius: '8px', overflow: 'hidden' }}>
+                        <img src={q.imageUrl} alt="Question Graphic" style={{ width: '100%', height: 'auto', maxHeight: '180px', objectFit: 'contain', borderRadius: '8px' }} />
+                      </div>
+                    )}
                     {q.options && (
                       <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '10px' }}>
                         Options: {(() => {
@@ -597,6 +621,11 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                                  )}
                               </div>
                               <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}><RichTextDisplay text={q.text} /></div>
+                              {q.imageUrl && (
+                                <div style={{ marginBottom: '16px', maxWidth: '300px', borderRadius: '8px', overflow: 'hidden' }}>
+                                  <img src={q.imageUrl} alt="Question Graphic" style={{ width: '100%', height: 'auto', maxHeight: '180px', objectFit: 'contain', borderRadius: '8px' }} />
+                                </div>
+                              )}
                               <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', marginBottom: '16px', borderLeft: '4px solid #3636e8' }}>
                                  <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Answer</div>
                                  <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}><RichTextDisplay text={resp?.answer || 'No answer'} /></div>
@@ -770,40 +799,73 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
                        <RichTextDisplay text={'```' + questionForm.text.split('```').slice(1).join('```')} />
                      </div>
                    )}
+                   <div style={{ marginTop: '16px', background: 'var(--surface)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)' }}>
+                       <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '10px' }}>Attachment (Optional)</label>
+                       
+                       {(questionForm.imageUrl && questionForm.text.includes('```')) && (
+                         <div style={{ padding: '8px 12px', background: 'var(--danger-light)', color: 'var(--danger)', borderRadius: '8px', fontSize: '11px', fontWeight: 700, marginBottom: '12px' }}>
+                           Please choose one: Question Image or Code
+                         </div>
+                       )}
 
-                    {/* Attachment Row */}
-                    <div style={{ marginTop: '16px', background: 'var(--surface)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.6)' }}>
-                       <div style={{ opacity: questionForm.imageUrl ? 0.5 : 1, pointerEvents: questionForm.imageUrl ? 'none' : 'auto' }}>
-                         <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>Code Block</p>
-                         <select
-                           onChange={(e) => {
-                             const lang = e.target.value;
-                             if (lang) {
-                               // Limit to 2 code blocks
-                               const existingBlocks = (questionForm.text.match(/```/g) || []).length;
-                               if (existingBlocks >= 4) {
-                                 alert("Maximum 2 code blocks per question allowed.");
+                       <div style={{ display: 'flex', gap: '24px' }}>
+                         <div style={{ opacity: questionForm.text.includes('```') ? 0.5 : 1, pointerEvents: questionForm.text.includes('```') ? 'none' : 'auto' }}>
+                           <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>Image Upload</p>
+                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                             <label style={{ padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: 'var(--surface)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--primary)', display: 'inline-block' }}>
+                               Choose File
+                               <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  hidden
+                                  onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+                               />
+                             </label>
+                             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{questionForm.imageUrl ? 'Uploaded successfully' : 'No file chosen'}</span>
+                           </div>
+                         </div>
+
+                         <div style={{ width: '1px', background: 'rgba(0,0,0,0.1)' }} />
+
+                         <div style={{ opacity: questionForm.imageUrl ? 0.5 : 1, pointerEvents: questionForm.imageUrl ? 'none' : 'auto' }}>
+                           <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>Code Block</p>
+                           <select
+                             value=""
+                             onChange={(e) => {
+                               const lang = e.target.value;
+                               if (lang) {
+                                 const existingBlocks = (questionForm.text.match(/```/g) || []).length;
+                                 if (existingBlocks >= 4) {
+                                   alert("Maximum 2 code blocks per question allowed.");
+                                   e.target.value = '';
+                                   return;
+                                 }
+                                 setShowCodeModal({ language: lang });
+                                 setCodeSnippet('');
                                  e.target.value = '';
-                                 return;
                                }
-                               setShowCodeModal({ language: lang });
-                               setCodeSnippet('');
-                               e.target.value = '';
-                             }
-                           }}
-                           style={{ padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: 'var(--surface)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--primary)' }}
-                         >
-                           <option value="">+ Add Code</option>
-                           <option value="python">Python</option>
-                           <option value="java">Java</option>
-                           <option value="cpp">C++</option>
-                           <option value="javascript">JavaScript</option>
-                           <option value="csharp">C#</option>
-                           <option value="html">HTML</option>
-                           <option value="css">CSS</option>
-                           <option value="sql">SQL</option>
-                         </select>
+                             }}
+                             style={{ padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: 'var(--surface)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--primary)' }}
+                           >
+                             <option value="">+ Add Code</option>
+                             <option value="python">Python</option>
+                             <option value="java">Java</option>
+                             <option value="cpp">C++</option>
+                             <option value="javascript">JavaScript</option>
+                             <option value="csharp">C#</option>
+                             <option value="html">HTML</option>
+                             <option value="css">CSS</option>
+                             <option value="sql">SQL</option>
+                           </select>
+                         </div>
                        </div>
+
+                       {questionForm.imageUrl && (
+                         <div style={{ marginTop: '16px', position: 'relative', width: '200px' }}>
+                            <img src={questionForm.imageUrl} alt="Preview" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '14px', boxShadow: '4px 4px 12px rgba(0,0,0,0.1)' }} />
+                            <button type="button" onClick={() => setQuestionForm(prev => ({ ...prev, imageUrl: '' }))} style={{ position: 'absolute', top: '-12px', right: '-12px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>×</button>
+                         </div>
+                       )}
                     </div>
                  </div>
                  {(questionForm.type === 'MCQ' || questionForm.type === 'TRUE_FALSE') && (

@@ -276,6 +276,16 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                   <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.4', marginBottom: '32px' }}>
                     <RichTextDisplay text={q.text} />
                   </div>
+
+                  {q.imageUrl && (
+                    <div style={{ marginBottom: '32px', maxWidth: '100%', borderRadius: '12px', overflow: 'hidden' }}>
+                      <img 
+                        src={q.imageUrl} 
+                        alt="Question Graphic" 
+                        style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', borderRadius: '12px' }} 
+                      />
+                    </div>
+                  )}
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <div style={{ 

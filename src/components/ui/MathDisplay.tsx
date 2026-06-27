@@ -92,19 +92,137 @@ function formatPlainTextMath(text: string): React.ReactNode[] {
   return result;
 }
 
+// Helper functions for preprocessing math
+
+function preprocessPlainTextSegment(segment: string): string {
+  let text = segment;
+
+  // 1. Wrap LaTeX environment blocks \begin{env} ... \end{env} in display math $$
+  text = text.replace(/\\begin\{([a-zA-Z*]+)\}([\s\S]*?)\\end\{\1\}/g, (match) => {
+    return `\n$$\n${match}\n$$\n`;
+  });
+
+  // 2. Convert plain text square root: sqrt(something) -> $\sqrt{something}$
+  let hasSqrt = true;
+  let limit = 0;
+  while (hasSqrt && limit < 15) {
+    const match = text.match(/sqrt\(([^()]+)\)/i);
+    if (match) {
+      text = text.replace(match[0], `$\\sqrt{${match[1]}}$`);
+      limit++;
+    } else {
+      hasSqrt = false;
+    }
+  }
+
+  // 3. Convert plain text square root with curly braces: sqrt{something} -> $\sqrt{something}$
+  text = text.replace(/sqrt\{([^{}]+)\}/gi, `$\\sqrt{$1}$`);
+
+  // 4. Convert Unicode root symbol with parenthesis or expression:
+  // e.g. √(x+1) -> $\sqrt{x+1}$
+  text = text.replace(/√\(([^()]+)\)/g, `$\\sqrt{$1}$`);
+  // e.g. √x -> $\sqrt{x}$, √25 -> $\sqrt{25}$
+  text = text.replace(/√([0-9a-zA-Z]+)/g, `$\\sqrt{$1}$`);
+
+  // 5. Convert standard function names to LaTeX upright font: sin, cos, tan, log, ln, lim, det
+  text = text.replace(/\b(sin|cos|tan|log|ln|lim|det)\(([^()]+)\)/gi, (match, func, arg) => {
+    return `$\\${func.toLowerCase()}(${arg})$`;
+  });
+
+  // 6. Convert simple fractions:
+  // (x+1)/(y-1) -> \frac{x+1}{y-1}
+  text = text.replace(/\(([^()]+)\)\/\(([^()]+)\)/g, `$\\frac{$1}{$2}$`);
+  // x/y or 3/4 (avoiding calendar dates like 12/05)
+  text = text.replace(/\b([a-zA-Z0-9]+)\/([a-zA-Z]+|[a-zA-Z0-9]+)\b/g, (match, num, den) => {
+    if (/^\d+$/.test(num) && /^\d+$/.test(den)) {
+      if (num.length <= 2 && den.length <= 2) return match;
+    }
+    return `$\\frac{${num}}{${den}}$`;
+  });
+
+  // 7. Convert simple math shorthands
+  text = text.replace(/-->|->/g, '$\\to$');
+  text = text.replace(/=>/g, '$\\Rightarrow$');
+  text = text.replace(/\+-/g, '$\\pm$');
+
+  // 8. Convert any general raw LaTeX commands (e.g. \alpha, \frac{a}{b}, \sum_{i=1}^n)
+  // Matches any backslash followed by a LaTeX command and its arguments.
+  const rawLatexRegex = /(\\[a-zA-Z*]+(?:\s*(?:\{[^{}]*\}|\[[^[\]]*\]|_[a-zA-Z0-9]|_\{[^{}]*\}|\^[a-zA-Z0-9]|\^\{[^{}]*\}|[a-zA-Z0-9+\-*/=<>(),._]))*)/g;
+  text = text.replace(rawLatexRegex, (match) => {
+    if (match === '\\') return match;
+    return `$${match}$`;
+  });
+
+  // 9. Convert exponents / subscripts (e.g. x^2, y_i, a^{n+1})
+  text = text.replace(/\b([a-zA-Z0-9]+(?:\^)(?:\{[^{}]+\}|[a-zA-Z0-9+\-*/()]+))\b/g, (match) => {
+    return `$${match}$`;
+  });
+  text = text.replace(/\b([a-zA-Z0-9]+(?:_)(?:\{[^{}]+\}|[0-9]+|[a-zA-Z]))\b/g, (match) => {
+    return `$${match}$`;
+  });
+
+  return text;
+}
+
+function preprocessMath(text: string): string {
+  if (!text) return '';
+
+  let processed = text;
+
+  // 1. Normalize LaTeX block delimiters:
+  // \[ ... \] -> $$ ... $$
+  // \( ... \) -> $ ... $
+  processed = processed.replace(/\\+\[([\s\S]*?)\\+\]/g, '$$$$$1$$$$');
+  processed = processed.replace(/\\+\(([\s\S]*?)\\+\)/g, '$$$1$$');
+
+  // 2. Tokenize the string by existing math delimiters: $$ ... $$ and $ ... $
+  // To avoid duplicate wrapping, we only preprocess plain-text segments.
+  const parts = processed.split(/(\$\$(?!\$)[^$]+\$\$|\$(?!\$)[^$]+\$)/g);
+  
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (!part.startsWith('$')) {
+      parts[i] = preprocessPlainTextSegment(part);
+    }
+  }
+
+  return parts.join('');
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export function MathDisplay({ text }: { text: string }) {
   if (!text) return null;
 
-  // Step 1: Split by inline LaTeX delimiters  $...$
-  // We use a regex that matches $...$ but NOT $$ (display mode) or escaped \$
-  const parts = text.split(/(\$(?!\$)[^$]+\$)/g);
+  // Preprocess the text to standardize math formatting and auto-wrap LaTeX/plain-text notation
+  const preprocessedText = preprocessMath(text);
+
+  // Split by math blocks: $$...$$ (display math) or $...$ (inline math)
+  const parts = preprocessedText.split(/(\$\$(?!\$)[^$]+\$\$|\$(?!\$)[^$]+\$)/g);
 
   return (
     <>
       {parts.map((part, index) => {
-        // Check if this part is a LaTeX expression: starts and ends with $
+        // Display math block: starts and ends with $$
+        if (part.startsWith('$$') && part.endsWith('$$') && part.length > 4) {
+          const latex = part.slice(2, -2);
+          const html = katex.renderToString(latex, {
+            throwOnError: false,
+            displayMode: true,
+            strict: false,
+            trust: true,
+          });
+          return (
+            <div
+              key={index}
+              className="katex-display"
+              dangerouslySetInnerHTML={{ __html: html }}
+              style={{ margin: '12px 0', overflowX: 'auto', overflowY: 'hidden' }}
+            />
+          );
+        }
+
+        // Inline math block: starts and ends with $
         if (part.startsWith('$') && part.endsWith('$') && part.length > 2) {
           const latex = part.slice(1, -1);
           const html = renderLatex(latex);
@@ -118,7 +236,7 @@ export function MathDisplay({ text }: { text: string }) {
           );
         }
 
-        // Plain text — apply superscript/subscript formatting
+        // Plain text (with fallback superscript/subscript formatting)
         return (
           <span key={index}>
             {formatPlainTextMath(part)}

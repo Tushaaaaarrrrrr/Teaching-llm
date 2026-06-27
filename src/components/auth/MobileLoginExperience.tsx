@@ -153,8 +153,8 @@ function OnboardingView({
         ))}
         <div style={{
           width: '240px', height: '240px', borderRadius: '50%',
-          background: 'var(--surface)',
-          boxShadow: '12px 12px 30px #c5c7cf, -12px -12px 30px #ffffff',
+          background: '#ffffff',
+          boxShadow: '12px 12px 30px var(--neu-dark), -12px -12px 30px var(--neu-light)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           position: 'relative',
           overflow: 'hidden',
@@ -430,7 +430,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
             background: 'var(--surface-2)', border: 'none', cursor: 'pointer', color: 'var(--text-primary)',
             width: '40px', height: '40px', borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+            boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
@@ -442,13 +442,18 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         <div style={{
           width: '110px', height: '110px', borderRadius: '28px',
           background: 'var(--surface)',
-          boxShadow: '10px 10px 24px #c5c7cf, -10px -10px 24px #ffffff',
+          boxShadow: '10px 10px 24px var(--neu-dark), -10px -10px 24px var(--neu-light)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginBottom: '18px',
           overflow: 'hidden',
           padding: '10px',
         }}>
-          <img src="/mobile-login-logo.png" alt="GenZ IITian" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          <img
+            src="/mobile-login-logo.png"
+            alt="GenZ IITian"
+            className="mobile-login-logo-img"
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          />
         </div>
         <h1 style={{
           fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em',
@@ -672,7 +677,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
             textDecoration: 'none',
             padding: '10px 18px', borderRadius: '50px',
             background: 'var(--surface-2)',
-            boxShadow: '4px 4px 8px #c5c7cf, -4px -4px 8px #ffffff',
+            boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
           }}
         >
           Explore Courses
@@ -691,6 +696,9 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
 
       <style jsx>{`
         @keyframes gSpin { to { transform: rotate(360deg); } }
+        :global([data-theme="dark"]) .mobile-login-logo-img {
+          filter: brightness(0) invert(1);
+        }
       `}</style>
     </div>
   )
