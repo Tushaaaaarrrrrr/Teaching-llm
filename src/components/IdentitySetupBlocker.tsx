@@ -103,12 +103,9 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
           </div>
-          <h1 style={{ fontSize: '21px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '21px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '0px', letterSpacing: '-0.02em' }}>
             UPDATE YOUR IDENTITY !
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.4, margin: 0 }}>
-            Help us customize your learning experience by confirming your IITM BS details.
-          </p>
         </div>
 
         {/* Error Alert */}
