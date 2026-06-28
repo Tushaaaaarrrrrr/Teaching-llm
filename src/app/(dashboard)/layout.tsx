@@ -7,6 +7,7 @@ import MobileBottomNav from '@/components/layout/MobileBottomNav'
 import UpdateOverlay from '@/components/UpdateOverlay'
 import SupportFloatingButton from '@/components/ui/SupportFloatingButton'
 import ProfileSetupBlocker from '@/components/ProfileSetupBlocker'
+import IdentitySetupBlocker from '@/components/IdentitySetupBlocker'
 import DynamicPromptBlocker from '@/components/DynamicPromptBlocker'
 import UserJourneyTracker from '@/components/UserJourneyTracker'
 import PushNotificationSetup from '@/components/PushNotificationSetup'
@@ -35,6 +36,10 @@ export default async function DashboardLayout({
 
   if (!session.isProfileComplete) {
     return <ProfileSetupBlocker user={session} />
+  }
+
+  if (!session.isIdentityUpdated) {
+    return <IdentitySetupBlocker user={session} />
   }
 
   return (

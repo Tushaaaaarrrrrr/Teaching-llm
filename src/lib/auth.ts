@@ -30,6 +30,11 @@ export interface JWTPayload {
 export interface FullSession extends JWTPayload {
   isTerminated: boolean
   isProfileComplete: boolean
+  isIdentityUpdated: boolean
+  iitmJoinYear: string | null
+  iitmJoinMonth: string | null
+  iitmLevel: string | null
+  iitmUserType: string | null
   enableDetailedLogs: boolean
   hasSeenWelcome: boolean
   accessibleCourseIds: string[] | null // null = all courses (MANAGER)
@@ -159,6 +164,11 @@ export async function getFullSession(): Promise<FullSession | null> {
             isTerminated: true,
             tokenVersion: true,
             isProfileComplete: true,
+            isIdentityUpdated: true,
+            iitmJoinYear: true,
+            iitmJoinMonth: true,
+            iitmLevel: true,
+            iitmUserType: true,
             enableDetailedLogs: true,
             hasSeenWelcome: true,
             enrollments: (jwtPayload.role !== 'MANAGER') ? {
@@ -207,6 +217,11 @@ export async function getFullSession(): Promise<FullSession | null> {
       role: userRole,
       isTerminated: user.isTerminated,
       isProfileComplete: user.isProfileComplete,
+      isIdentityUpdated: user.isIdentityUpdated || false,
+      iitmJoinYear: user.iitmJoinYear || null,
+      iitmJoinMonth: user.iitmJoinMonth || null,
+      iitmLevel: user.iitmLevel || null,
+      iitmUserType: user.iitmUserType || null,
       enableDetailedLogs: user.enableDetailedLogs || false,
       hasSeenWelcome: user.hasSeenWelcome || false,
       accessibleCourseIds: (userRole === 'MANAGER') 

@@ -27,6 +27,11 @@ model User {
   age                     Int?
   state                   String?
   isProfileComplete       Boolean                      @default(false)
+  iitmJoinYear            String?
+  iitmJoinMonth           String?
+  iitmLevel               String?
+  iitmUserType            String?
+  isIdentityUpdated       Boolean                      @default(false)
   blockedUntil            DateTime?
   hasSeenWelcome          Boolean                      @default(false)
   isSuperManager          Boolean                      @default(false)

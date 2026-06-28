@@ -71,7 +71,12 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     enrollmentTypes: {} as Record<string, string>, // courseId → 'LIVE' | 'RECORDED'
     age: '',
     state: '',
-    enableDetailedLogs: false
+    enableDetailedLogs: false,
+    iitmJoinYear: '',
+    iitmJoinMonth: '',
+    iitmLevel: '',
+    iitmUserType: '',
+    isIdentityUpdated: false
   })
   const bundledCourseIds = new Set(
     bundles
@@ -138,7 +143,12 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             enrollmentTypes: Object.fromEntries(
               normalizeCollection<any>(data?.enrollments).map((e: any) => [e.courseId, e.type || 'LIVE'])
             ),
-            enableDetailedLogs: data.enableDetailedLogs || false
+            enableDetailedLogs: data.enableDetailedLogs || false,
+            iitmJoinYear: data.iitmJoinYear || '',
+            iitmJoinMonth: data.iitmJoinMonth || '',
+            iitmLevel: data.iitmLevel || '',
+            iitmUserType: data.iitmUserType || '',
+            isIdentityUpdated: data.isIdentityUpdated || false
         })
       } else {
         setUser(null)
@@ -196,6 +206,11 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             courseIds: formData.courseIds,
             bundleIds: formData.bundleIds,
             enrollmentTypes: formData.enrollmentTypes,
+            iitmJoinYear: formData.iitmJoinYear || null,
+            iitmJoinMonth: formData.iitmJoinMonth || null,
+            iitmLevel: formData.iitmLevel || null,
+            iitmUserType: formData.iitmUserType || null,
+            isIdentityUpdated: formData.isIdentityUpdated,
             ...('enableDetailedLogs' in (user || {}) ? { enableDetailedLogs: formData.enableDetailedLogs } : {})
         }),
       })
@@ -373,6 +388,68 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   <div>
                     <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>State</label>
                     <input style={neuInset} value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
+                  </div>
+                </div>
+
+                {/* IITM Details Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '20px', marginBottom: '20px', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '20px' }}>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <h4 style={{ fontSize: '11px', fontWeight: '900', color: 'var(--text-primary)', textTransform: 'uppercase', margin: 0 }}>IITM Identity Details</h4>
+                  </div>
+                  
+                  <div>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Join Year</label>
+                    <select style={neuInset} value={formData.iitmJoinYear} onChange={e => setFormData({...formData, iitmJoinYear: e.target.value})}>
+                      <option value="">Select Year</option>
+                      <option value="2023">2023</option>
+                      <option value="2024">2024</option>
+                      <option value="2025">2025</option>
+                      <option value="2026">2026</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Join Month</label>
+                    <select style={neuInset} value={formData.iitmJoinMonth} onChange={e => setFormData({...formData, iitmJoinMonth: e.target.value})}>
+                      <option value="">Select Month</option>
+                      <option value="JAN">JAN</option>
+                      <option value="MAY">MAY</option>
+                      <option value="SEPT">SEPT</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>IITM Level</label>
+                    <select style={neuInset} value={formData.iitmLevel} onChange={e => setFormData({...formData, iitmLevel: e.target.value})}>
+                      <option value="">Select Level</option>
+                      <option value="Qualifier">Qualifier</option>
+                      <option value="Foundation">Foundation</option>
+                      <option value="Diploma">Diploma</option>
+                      <option value="Degree">Degree</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>IITM Category</label>
+                    <select style={neuInset} value={formData.iitmUserType} onChange={e => setFormData({...formData, iitmUserType: e.target.value})}>
+                      <option value="">Select Category</option>
+                      <option value="STANDALONE">STANDALONE</option>
+                      <option value="DUAL DEGREE">DUAL DEGREE</option>
+                      <option value="WORKING PROFESSIONAL">WORKING PROFESSIONAL</option>
+                    </select>
+                  </div>
+                  
+                  <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                    <input
+                      type="checkbox"
+                      id="isIdentityUpdated"
+                      checked={formData.isIdentityUpdated}
+                      onChange={e => setFormData({...formData, isIdentityUpdated: e.target.checked})}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <label htmlFor="isIdentityUpdated" style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                      Identity Questionnaire Completed (isIdentityUpdated)
+                    </label>
                   </div>
                 </div>
 

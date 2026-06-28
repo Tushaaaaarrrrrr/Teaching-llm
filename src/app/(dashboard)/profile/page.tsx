@@ -51,6 +51,11 @@ interface UserProfile {
   genderChangedAt?: string | null
   age?: number | null
   state?: string | null
+  isIdentityUpdated?: boolean
+  iitmJoinYear?: string | null
+  iitmJoinMonth?: string | null
+  iitmLevel?: string | null
+  iitmUserType?: string | null
   securityNumber: string | null
   createdAt: string
 }
@@ -419,6 +424,26 @@ export default function ProfilePage() {
                 ) : (
                   <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{user.state || '—'}</span>
                 )}
+              </div>
+
+              {/* IITM Join Cohort — Read-only for all */}
+              <div style={insetRow}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>IITM Join Cohort</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>
+                  {user.iitmJoinYear && user.iitmJoinMonth ? `${user.iitmJoinMonth} ${user.iitmJoinYear}` : '—'}
+                </span>
+              </div>
+
+              {/* IITM Level — Read-only for all */}
+              <div style={insetRow}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>IITM Level</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{user.iitmLevel || '—'}</span>
+              </div>
+
+              {/* IITM Student Type — Read-only for all */}
+              <div style={insetRow}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>IITM Category</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{user.iitmUserType || '—'}</span>
               </div>
 
               {/* Notice for non-managers */}

@@ -39,6 +39,11 @@ export async function GET(
         avatar: true,
         isGoogleUser: true,
         isTerminated: true,
+        isIdentityUpdated: true,
+        iitmJoinYear: true,
+        iitmJoinMonth: true,
+        iitmLevel: true,
+        iitmUserType: true,
         enrollments: {
           select: {
             courseId: true,
@@ -99,7 +104,7 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    const { name, firstName, lastName, mobileNumber, email, role, isTerminated, gender, age, state, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes } = body
+    const { name, firstName, lastName, mobileNumber, email, role, isTerminated, gender, age, state, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes, iitmJoinYear, iitmJoinMonth, iitmLevel, iitmUserType, isIdentityUpdated } = body
     const nextCourseIds = classIds !== undefined ? classIds : courseIds
     const nextAssignedCourseIds = assignedClassIds !== undefined ? assignedClassIds : assignedCourseIds
     const nextBundleIds = Array.isArray(bundleIds) ? Array.from(new Set(bundleIds.filter(Boolean))) : undefined
@@ -128,6 +133,11 @@ export async function PUT(
     if (typeof isTerminated === 'boolean') data.isTerminated = isTerminated
     if (age !== undefined) data.age = age
     if (state !== undefined) data.state = state
+    if (iitmJoinYear !== undefined) data.iitmJoinYear = iitmJoinYear
+    if (iitmJoinMonth !== undefined) data.iitmJoinMonth = iitmJoinMonth
+    if (iitmLevel !== undefined) data.iitmLevel = iitmLevel
+    if (iitmUserType !== undefined) data.iitmUserType = iitmUserType
+    if (typeof isIdentityUpdated === 'boolean') data.isIdentityUpdated = isIdentityUpdated
     
     // Manager can update gender anytime
     if (gender !== undefined) {
@@ -165,6 +175,11 @@ export async function PUT(
           state: true,
           isTerminated: true,
           createdAt: true,
+          isIdentityUpdated: true,
+          iitmJoinYear: true,
+          iitmJoinMonth: true,
+          iitmLevel: true,
+          iitmUserType: true,
         },
       })
 
@@ -281,6 +296,11 @@ export async function PUT(
           state: true,
           isTerminated: true,
           createdAt: true,
+          isIdentityUpdated: true,
+          iitmJoinYear: true,
+          iitmJoinMonth: true,
+          iitmLevel: true,
+          iitmUserType: true,
           enrollments: {
             select: {
               courseId: true,

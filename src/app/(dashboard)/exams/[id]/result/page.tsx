@@ -216,7 +216,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
               </div>
             </div>
 
-            <hr style={{ border: 'none', borderTop: '1px solid #cfd6e1', margin: '0' }} />
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '0' }} />
 
             {/* Modal Body - Question Content */}
             {(() => {
@@ -226,14 +226,31 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
               let isCorrect = false
               let studentDisplayAnswer = resp?.answer || 'No answer provided'
               let correctDisplayAnswer = q.correctAnswer || 'Not available'
+              let studentArr: string[] = []
+              let correctArr: string[] = []
 
               if (q.type === 'MCQ' || q.type === 'TRUE_FALSE') {
                 isCorrect = q.correctAnswer && resp?.answer === q.correctAnswer
+                correctArr = q.correctAnswer ? [q.correctAnswer] : []
+                studentArr = resp?.answer ? [resp.answer] : []
               } else if (q.type === 'MSQ') {
                 try {
-                  const correctArr = JSON.parse(q.correctAnswer || '[]').sort()
-                  const studentArr = JSON.parse(resp?.answer || '[]').sort()
-                  isCorrect = JSON.stringify(correctArr) === JSON.stringify(studentArr)
+                  const parsedCorrect = JSON.parse(q.correctAnswer || '[]')
+                  correctArr = Array.isArray(parsedCorrect) ? parsedCorrect : [q.correctAnswer]
+                } catch {
+                  correctArr = q.correctAnswer ? [q.correctAnswer] : []
+                }
+                try {
+                  const parsedStudent = JSON.parse(resp?.answer || '[]')
+                  studentArr = Array.isArray(parsedStudent) ? parsedStudent : (resp?.answer ? [resp.answer] : [])
+                } catch {
+                  studentArr = resp?.answer ? [resp.answer] : []
+                }
+                
+                try {
+                  const sortedCorrect = [...correctArr].sort()
+                  const sortedStudent = [...studentArr].sort()
+                  isCorrect = JSON.stringify(sortedCorrect) === JSON.stringify(sortedStudent)
                   
                   studentDisplayAnswer = studentArr.length > 0 ? studentArr.join(', ') : 'No options selected'
                   correctDisplayAnswer = correctArr.join(', ')
@@ -288,29 +305,163 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                   )}
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div style={{ 
-                      padding: '24px', borderRadius: '24px', 
-                      background: isCorrect ? 'var(--success-light)' : 'var(--danger-light)', 
-                      border: `1px solid ${isCorrect ? 'var(--success-light)' : 'var(--danger-light)'}`,
-                      boxShadow: 'inset 2px 2px 5px rgba(0,0,0,0.02)'
-                    }}>
-                      <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>Your Submission</div>
-                      <div style={{ fontSize: '17px', fontWeight: 700, color: isCorrect ? 'var(--success)' : 'var(--danger)', lineHeight: '1.5' }}>
-                        <RichTextDisplay text={studentDisplayAnswer} />
-                      </div>
-                    </div>
- 
-                    {q.correctAnswer && !isCorrect && (
-                      <div style={{ padding: '24px', background: 'var(--primary-light)', borderRadius: '24px', border: '1px solid #3636e820' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '12px' }}>Correct Solution</div>
-                        <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--primary)', lineHeight: '1.5' }}>
-                          <RichTextDisplay text={correctDisplayAnswer} />
+                    {!(q.type === 'MCQ' || q.type === 'MSQ' || q.type === 'TRUE_FALSE') ? (
+                      <>
+                        <div style={{ 
+                          padding: '24px', borderRadius: '24px', 
+                          background: isCorrect ? 'var(--success-light)' : 'var(--danger-light)', 
+                          border: `1px solid ${isCorrect ? 'var(--success-light)' : 'var(--danger-light)'}`,
+                          boxShadow: 'inset 2px 2px 5px rgba(0,0,0,0.02)'
+                        }}>
+                          <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>Your Submission</div>
+                          <div style={{ fontSize: '17px', fontWeight: 700, color: isCorrect ? 'var(--success)' : 'var(--danger)', lineHeight: '1.5' }}>
+                            <RichTextDisplay text={studentDisplayAnswer} />
+                          </div>
                         </div>
-                      </div>
+     
+                        {q.correctAnswer && !isCorrect && (
+                          <div style={{ padding: '24px', background: 'var(--primary-light)', borderRadius: '24px', border: '1px solid #3636e820' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '12px' }}>Correct Solution</div>
+                            <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--primary)', lineHeight: '1.5' }}>
+                              <RichTextDisplay text={correctDisplayAnswer} />
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      (() => {
+                        let opts: string[] = []
+                        try {
+                          let parsed = JSON.parse(q.options || '[]')
+                          if (typeof parsed === 'string') parsed = JSON.parse(parsed)
+                          opts = Array.isArray(parsed) ? parsed : []
+                        } catch { opts = [] }
+                        
+                        if (q.type === 'TRUE_FALSE') opts = ['True', 'False']
+
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '12px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                              Options & Review
+                            </div>
+                            {opts.filter(opt => typeof opt === 'string' && opt.trim()).map((opt: string) => {
+                              const isSelected = studentArr.includes(opt)
+                              const isOptCorrect = correctArr.includes(opt)
+
+                              let bg = 'var(--surface-2)'
+                              let border = '1px solid var(--border)'
+                              let color = 'var(--text-primary)'
+                              let icon = null
+                              let badge = null
+
+                              if (isSelected) {
+                                if (isOptCorrect) {
+                                  bg = 'var(--success)'
+                                  color = '#fff'
+                                  border = 'none'
+                                  icon = (
+                                    <div style={{ 
+                                      width: '24px', height: '24px', borderRadius: q.type === 'MSQ' ? '6px' : '50%', 
+                                      border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      flexShrink: 0
+                                    }}>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                      </svg>
+                                    </div>
+                                  )
+                                  badge = (
+                                    <span style={{ 
+                                      fontSize: '11px', fontWeight: 800, background: 'rgba(255,255,255,0.2)', 
+                                      color: '#fff', padding: '4px 10px', borderRadius: '50px', flexShrink: 0
+                                    }}>
+                                      Selected (Correct)
+                                    </span>
+                                  )
+                                } else {
+                                  bg = 'var(--danger)'
+                                  color = '#fff'
+                                  border = 'none'
+                                  icon = (
+                                    <div style={{ 
+                                      width: '24px', height: '24px', borderRadius: q.type === 'MSQ' ? '6px' : '50%', 
+                                      border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      flexShrink: 0
+                                    }}>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                      </svg>
+                                    </div>
+                                  )
+                                  badge = (
+                                    <span style={{ 
+                                      fontSize: '11px', fontWeight: 800, background: 'rgba(255,255,255,0.2)', 
+                                      color: '#fff', padding: '4px 10px', borderRadius: '50px', flexShrink: 0
+                                    }}>
+                                      Selected (Incorrect)
+                                    </span>
+                                  )
+                                }
+                              } else {
+                                if (isOptCorrect) {
+                                  bg = 'var(--success-light)'
+                                  color = 'var(--success)'
+                                  border = '2px solid var(--success)'
+                                  icon = (
+                                    <div style={{ 
+                                      width: '24px', height: '24px', borderRadius: q.type === 'MSQ' ? '6px' : '50%', 
+                                      border: '2px solid var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      flexShrink: 0
+                                    }}>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                      </svg>
+                                    </div>
+                                  )
+                                  badge = (
+                                    <span style={{ 
+                                      fontSize: '11px', fontWeight: 800, background: 'rgba(16,185,129,0.1)', 
+                                      color: 'var(--success)', padding: '4px 10px', borderRadius: '50px',
+                                      border: '1px solid rgba(16,185,129,0.2)', flexShrink: 0
+                                    }}>
+                                      Correct Solution
+                                    </span>
+                                  )
+                                } else {
+                                  icon = (
+                                    <div style={{ 
+                                      width: '24px', height: '24px', borderRadius: q.type === 'MSQ' ? '6px' : '50%', 
+                                      border: '2px solid var(--border)', flexShrink: 0
+                                    }} />
+                                  )
+                                }
+                              }
+
+                              return (
+                                <div
+                                  key={opt}
+                                  style={{
+                                    padding: '18px 24px', borderRadius: '20px', border: border,
+                                    background: bg, color: color,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
+                                    boxShadow: '2px 2px 6px rgba(0,0,0,0.02)'
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+                                    {icon}
+                                    <div style={{ flex: 1 }}><RichTextDisplay text={opt} /></div>
+                                  </div>
+                                  {badge}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )
+                      })()
                     )}
 
                     {q.explanation && (
-                      <div style={{ padding: '24px', background: 'var(--surface)', borderRadius: '24px', border: '1px solid #cfd6e1', boxShadow: '4px 4px 12px rgba(0,0,0,0.03)' }}>
+                      <div style={{ padding: '24px', background: 'var(--surface)', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: '4px 4px 12px rgba(0,0,0,0.03)' }}>
                         <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px' }}>Evaluation Notes & Explanation</div>
                         <div style={{ fontSize: '15px', color: 'var(--text-primary)', lineHeight: '1.6' }}><RichTextDisplay text={q.explanation} /></div>
                       </div>
@@ -321,7 +472,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
             })()}
 
             {/* Modal Footer - Navigation */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '24px', borderTop: '1px solid #cfd6e1' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
               <button 
                 disabled={currentIdx === 0}
                 onClick={() => setCurrentIdx(prev => prev - 1)}
