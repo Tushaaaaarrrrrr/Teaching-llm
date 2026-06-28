@@ -24,13 +24,13 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
 
     // Client-side validations
     if (!formData.iitmJoinYear) {
-      return setError('Please select the year you joined IITM BS Degree.')
+      return setError('Please select your joining year.')
     }
     if (!formData.iitmJoinMonth) {
-      return setError('Please select the month you joined IITM BS Degree.')
+      return setError('Please select your joining month.')
     }
     if (!formData.iitmLevel) {
-      return setError('Please select which level you are in.')
+      return setError('Please select your current level.')
     }
     if (!formData.iitmUserType) {
       return setError('Please select your category.')
@@ -49,7 +49,7 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
         throw new Error(data.error || 'Failed to update identity details.')
       }
 
-      // Success - show the welcome modal!
+      // Success - show welcome modal!
       setShowWelcomeModal(true)
     } catch (err: any) {
       console.error(err)
@@ -59,7 +59,6 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
   }
 
   const handleProceed = () => {
-    // Reload page to re-check session state and clear blockers
     window.location.reload()
   }
 
@@ -72,14 +71,14 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 9998,
-      padding: '20px',
+      padding: '16px',
       overflowY: 'auto'
     }}>
       <div className="fade-in" style={{
         background: 'var(--surface)',
         width: '100%',
-        maxWidth: '560px',
-        padding: '36px',
+        maxWidth: '680px',
+        padding: '24px 32px',
         borderRadius: '24px',
         boxShadow: '0 20px 45px rgba(0,0,0,0.08)',
         border: '1px solid rgba(255,255,255,0.7)',
@@ -87,27 +86,27 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
         margin: 'auto'
       }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '56px',
-            height: '56px',
-            borderRadius: '16px',
+            width: '44px',
+            height: '44px',
+            borderRadius: '12px',
             background: 'linear-gradient(135deg, #818cf8, #4f46e5)',
             color: '#fff',
-            marginBottom: '16px',
-            boxShadow: '0 8px 16px rgba(79,70,229,0.2)'
+            marginBottom: '10px',
+            boxShadow: '0 6px 12px rgba(79,70,229,0.15)'
           }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
           </div>
-          <h1 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '21px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.02em' }}>
             UPDATE YOUR IDENTITY !
           </h1>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.4, margin: 0 }}>
             Help us customize your learning experience by confirming your IITM BS details.
           </p>
         </div>
@@ -117,191 +116,216 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
           <div style={{
             background: 'var(--danger-light)',
             color: 'var(--danger)',
-            padding: '12px 16px',
-            borderRadius: '12px',
-            fontSize: '13px',
+            padding: '10px 14px',
+            borderRadius: '10px',
+            fontSize: '12.5px',
             fontWeight: 600,
-            marginBottom: '20px',
+            marginBottom: '16px',
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           
-          {/* Question 1: When you Join IITM BS DEGREE */}
+          {/* Question 1: When you Join IITM BS DEGREE (Horizontal Split) */}
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary)', marginBottom: '10px', display: 'block' }}>
+            <label className="form-label" style={{ fontWeight: 800, fontSize: '13.5px', color: 'var(--text-primary)', marginBottom: '8px', display: 'block' }}>
               When You Join IITM BS DEGREE
             </label>
             
-            {/* Year Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '10px' }}>
-              {['2023', '2024', '2025', '2026'].map(year => {
-                const isSelected = formData.iitmJoinYear === year
-                return (
-                  <button
-                    key={year}
-                    type="button"
-                    onClick={() => handleSelect('iitmJoinYear', year)}
-                    style={{
-                      padding: '12px 6px',
-                      borderRadius: '12px',
-                      border: isSelected ? '2px solid #6366f1' : '2px solid #e2e8f0',
-                      background: isSelected ? '#eff0fe' : 'var(--surface)',
-                      color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
-                      fontSize: '13.5px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      outline: 'none'
-                    }}
-                  >
-                    {year}
-                  </button>
-                )
-              })}
-            </div>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+              gap: '16px' 
+            }}>
+              {/* Year Selector */}
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'block' }}>
+                  Select Year
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                  {['2023', '2024', '2025', '2026'].map(year => {
+                    const isSelected = formData.iitmJoinYear === year
+                    return (
+                      <button
+                        key={year}
+                        type="button"
+                        onClick={() => handleSelect('iitmJoinYear', year)}
+                        style={{
+                          padding: '10px 4px',
+                          borderRadius: '10px',
+                          border: isSelected ? '2px solid #6366f1' : '2px solid #e2e8f0',
+                          background: isSelected ? '#eff0fe' : 'var(--surface)',
+                          color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
+                          fontSize: '13px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                          outline: 'none'
+                        }}
+                      >
+                        {year}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
 
-            {/* Month Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-              {['JAN', 'MAY', 'SEPT'].map(month => {
-                const isSelected = formData.iitmJoinMonth === month
-                return (
-                  <button
-                    key={month}
-                    type="button"
-                    onClick={() => handleSelect('iitmJoinMonth', month)}
-                    style={{
-                      padding: '12px 6px',
-                      borderRadius: '12px',
-                      border: isSelected ? '2px solid #6366f1' : '2px solid #e2e8f0',
-                      background: isSelected ? '#eff0fe' : 'var(--surface)',
-                      color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
-                      fontSize: '13.5px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      outline: 'none'
-                    }}
-                  >
-                    {month}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Question 2: Which Level are You in */}
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary)', marginBottom: '10px', display: 'block' }}>
-              Which Level are You in :
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-              {['Qualifier', 'Foundation', 'Diploma', 'Degree'].map(level => {
-                const isSelected = formData.iitmLevel === level
-                return (
-                  <button
-                    key={level}
-                    type="button"
-                    onClick={() => handleSelect('iitmLevel', level)}
-                    style={{
-                      padding: '14px 10px',
-                      borderRadius: '12px',
-                      border: isSelected ? '2px solid #6366f1' : '2px solid #e2e8f0',
-                      background: isSelected ? '#eff0fe' : 'var(--surface)',
-                      color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      textAlign: 'center',
-                      outline: 'none'
-                    }}
-                  >
-                    {level}
-                  </button>
-                )
-              })}
+              {/* Month Selector */}
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'block' }}>
+                  Select Term
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  {['JAN', 'MAY', 'SEPT'].map(month => {
+                    const isSelected = formData.iitmJoinMonth === month
+                    return (
+                      <button
+                        key={month}
+                        type="button"
+                        onClick={() => handleSelect('iitmJoinMonth', month)}
+                        style={{
+                          padding: '10px 4px',
+                          borderRadius: '10px',
+                          border: isSelected ? '2px solid #6366f1' : '2px solid #e2e8f0',
+                          background: isSelected ? '#eff0fe' : 'var(--surface)',
+                          color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
+                          fontSize: '13px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                          outline: 'none'
+                        }}
+                      >
+                        {month}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Question 3: Are You */}
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary)', marginBottom: '10px', display: 'block' }}>
-              Are You :
-            </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {[
-                { key: 'STANDALONE', label: 'STANDALONE' },
-                { key: 'DUAL DEGREE', label: 'DUAL DEGREE' },
-                { key: 'WORKING PROFESSIONAL', label: 'WORKING PROFESSIONAL' }
-              ].map(type => {
-                const isSelected = formData.iitmUserType === type.key
-                return (
-                  <button
-                    key={type.key}
-                    type="button"
-                    onClick={() => handleSelect('iitmUserType', type.key)}
-                    style={{
-                      padding: '14px 16px',
-                      borderRadius: '12px',
-                      border: isSelected ? '2px solid #6366f1' : '2px solid #e2e8f0',
-                      background: isSelected ? '#eff0fe' : 'var(--surface)',
-                      color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      textAlign: 'left',
-                      outline: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between'
-                    }}
-                  >
-                    <span>{type.label}</span>
-                    {isSelected && (
-                      <span style={{
-                        width: '18px',
-                        height: '18px',
-                        borderRadius: '50%',
-                        background: '#6366f1',
+          {/* Questions 2 & 3: Level & Category (Horizontal Split) */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+            gap: '20px',
+            borderTop: '1px solid rgba(0,0,0,0.06)',
+            paddingTop: '14px'
+          }}>
+            {/* Question 2: Which Level are You in */}
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontWeight: 800, fontSize: '13.5px', color: 'var(--text-primary)', marginBottom: '8px', display: 'block' }}>
+                Which Level are You in :
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                {['Qualifier', 'Foundation', 'Diploma', 'Degree'].map(level => {
+                  const isSelected = formData.iitmLevel === level
+                  return (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => handleSelect('iitmLevel', level)}
+                      style={{
+                        padding: '12px 6px',
+                        borderRadius: '10px',
+                        border: isSelected ? '2px solid #6366f1' : '2px solid #e2e8f0',
+                        background: isSelected ? '#eff0fe' : 'var(--surface)',
+                        color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        textAlign: 'center',
+                        outline: 'none'
+                      }}
+                    >
+                      {level}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Question 3: Are You */}
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontWeight: 800, fontSize: '13.5px', color: 'var(--text-primary)', marginBottom: '8px', display: 'block' }}>
+                Are You :
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {[
+                  { key: 'STANDALONE', label: 'STANDALONE' },
+                  { key: 'DUAL DEGREE', label: 'DUAL DEGREE' },
+                  { key: 'WORKING PROFESSIONAL', label: 'WORKING PROFESSIONAL' }
+                ].map(type => {
+                  const isSelected = formData.iitmUserType === type.key
+                  return (
+                    <button
+                      key={type.key}
+                      type="button"
+                      onClick={() => handleSelect('iitmUserType', type.key)}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        border: isSelected ? '2px solid #6366f1' : '2px solid #e2e8f0',
+                        background: isSelected ? '#eff0fe' : 'var(--surface)',
+                        color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        textAlign: 'left',
+                        outline: 'none',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#fff',
-                        fontSize: '10px'
-                      }}>✓</span>
-                    )}
-                  </button>
-                )
-              })}
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <span>{type.label}</span>
+                      {isSelected && (
+                        <span style={{
+                          width: '15px',
+                          height: '15px',
+                          borderRadius: '50%',
+                          background: '#6366f1',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff',
+                          fontSize: '9px'
+                        }}>✓</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Submit */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
             className="btn btn-primary"
             style={{
-              marginTop: '8px',
+              marginTop: '4px',
               width: '100%',
-              padding: '16px',
-              fontSize: '16px',
+              padding: '14px',
+              fontSize: '15px',
               fontWeight: 800,
-              boxShadow: '0 8px 20px rgba(99,102,241,0.25)',
+              boxShadow: '0 6px 16px rgba(99,102,241,0.2)',
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              borderRadius: '14px',
+              borderRadius: '12px',
               opacity: loading ? 0.7 : 1,
               cursor: loading ? 'not-allowed' : 'pointer',
               border: 'none',
@@ -336,29 +360,27 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
             width: '100%',
             boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
             textAlign: 'center',
-            border: '1px solid rgba(255,255,255,0.8)',
-            transform: 'scale(1)',
-            transition: 'transform 0.3s ease'
+            border: '1px solid rgba(255,255,255,0.8)'
           }}>
             {/* Celebration Icon */}
             <div style={{
-              width: '72px', height: '72px', borderRadius: '50%',
+              width: '64px', height: '64px', borderRadius: '50%',
               background: 'linear-gradient(135deg, #34d399, #059669)',
               display: 'flex',
               alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 24px',
-              boxShadow: '0 10px 20px rgba(5,150,105,0.25)',
+              margin: '0 auto 20px',
+              boxShadow: '0 8px 16px rgba(5,150,105,0.2)',
               color: '#fff'
             }}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
             </div>
 
-            <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '12px', letterSpacing: '-0.01em' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '10px', letterSpacing: '-0.01em' }}>
               Thank You!
             </h2>
-            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '32px' }}>
+            <p style={{ fontSize: '14.5px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '28px' }}>
               Your identity has been updated. Welcome to <strong style={{ color: '#4f46e5' }}>GenZ IITian</strong> family! Let's build something amazing together.
             </p>
 
@@ -367,11 +389,11 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
               className="btn btn-primary"
               style={{
                 width: '100%',
-                padding: '14px',
-                borderRadius: '12px',
-                fontSize: '15px',
+                padding: '13px',
+                borderRadius: '10px',
+                fontSize: '14.5px',
                 fontWeight: 800,
-                boxShadow: '0 8px 20px rgba(99,102,241,0.25)',
+                boxShadow: '0 6px 16px rgba(99,102,241,0.2)',
                 border: 'none',
                 background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                 color: '#ffffff',
