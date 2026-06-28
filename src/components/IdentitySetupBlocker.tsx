@@ -104,7 +104,7 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
             </svg>
           </div>
           <h1 style={{ fontSize: '21px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '0px', letterSpacing: '-0.02em' }}>
-            UPDATE YOUR IDENTITY !
+            Update Your Profile
           </h1>
         </div>
 
@@ -134,7 +134,7 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
           {/* Question 1: When you Join IITM BS DEGREE (Horizontal Split) */}
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label" style={{ fontWeight: 800, fontSize: '13.5px', color: 'var(--text-primary)', marginBottom: '8px', display: 'block' }}>
-              When You Join IITM BS DEGREE
+              When did you join IITM BS?
             </label>
             
             <div style={{ 
