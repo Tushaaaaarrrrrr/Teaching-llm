@@ -426,25 +426,27 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* IITM Join Cohort — Read-only for all */}
-              <div style={insetRow}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>IITM Join Cohort</span>
-                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>
-                  {user.iitmJoinYear && user.iitmJoinMonth ? `${user.iitmJoinMonth} ${user.iitmJoinYear}` : '—'}
-                </span>
-              </div>
+              {/* IITM identity fields — Only visible to managers */}
+              {user.role === 'MANAGER' && (
+                <>
+                  <div style={insetRow}>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>IITM Join Cohort</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>
+                      {user.iitmJoinYear && user.iitmJoinMonth ? `${user.iitmJoinMonth} ${user.iitmJoinYear}` : '—'}
+                    </span>
+                  </div>
 
-              {/* IITM Level — Read-only for all */}
-              <div style={insetRow}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>IITM Level</span>
-                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{user.iitmLevel || '—'}</span>
-              </div>
+                  <div style={insetRow}>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>IITM Level</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{user.iitmLevel || '—'}</span>
+                  </div>
 
-              {/* IITM Student Type — Read-only for all */}
-              <div style={insetRow}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>IITM Category</span>
-                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{user.iitmUserType || '—'}</span>
-              </div>
+                  <div style={insetRow}>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>IITM Category</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{user.iitmUserType || '—'}</span>
+                  </div>
+                </>
+              )}
 
               {/* Notice for non-managers */}
               {user.role !== 'MANAGER' && (
