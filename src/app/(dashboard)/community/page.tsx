@@ -121,6 +121,14 @@ export default function CommunityPage() {
   const [managerActionMessage, setManagerActionMessage] = useState<CommMsg | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
+  // Pagination & infinite scroll state
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const chatContainerRef = useRef<HTMLDivElement>(null)
+  const prevScrollHeightRef = useRef<number>(0)
+  const shouldRestoreScrollRef = useRef<boolean>(false)
+  const shouldScrollToBottomRef = useRef<boolean>(true)
+
   // Tagging state
   const [staff, setStaff] = useState<{
     id: string
@@ -150,12 +158,29 @@ export default function CommunityPage() {
   }, [])
 
   const loadMessages = useCallback(async (classId: string) => {
-    const res = await fetch(`/api/community/${classId}/messages`)
+    // Reset pagination states
+    setHasMore(true)
+    setLoadingMore(false)
+    shouldRestoreScrollRef.current = false
+    shouldScrollToBottomRef.current = true
+
+    const url = classId.startsWith('dm_')
+      ? `/api/community/${classId}/messages`
+      : `/api/community/${classId}/messages?limit=50`
+
+    const res = await fetch(url)
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
       throw new Error(data?.error || 'Failed to load messages')
     }
-    setMessages(Array.isArray(data) ? data : [])
+    const loaded = Array.isArray(data) ? data : []
+    setMessages(loaded)
+
+    if (classId.startsWith('dm_')) {
+      setHasMore(false)
+    } else {
+      setHasMore(loaded.length >= 50)
+    }
     
     // Fetch pinned message for community (non-blocking)
     if (!classId.startsWith('dm_')) {
@@ -164,6 +189,38 @@ export default function CommunityPage() {
       setPinnedMessage(null)
     }
   }, [loadPinnedMessage])
+
+  const handleScroll = async (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget
+    if (container.scrollTop === 0 && !loadingMore && hasMore && messages.length > 0 && selectedClass) {
+      if (messages[0].id.startsWith('temp-')) return
+
+      setLoadingMore(true)
+      prevScrollHeightRef.current = container.scrollHeight
+      shouldRestoreScrollRef.current = true
+      shouldScrollToBottomRef.current = false
+
+      try {
+        const oldestId = messages[0].id
+        const res = await fetch(`/api/community/${selectedClass.id}/messages?cursor=${oldestId}&limit=50`)
+        const data = await res.json().catch(() => ([]))
+        if (res.ok && Array.isArray(data)) {
+          if (data.length < 50) {
+            setHasMore(false)
+          }
+          if (data.length > 0) {
+            setMessages(prev => [...data, ...prev])
+          } else {
+            setHasMore(false)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load older messages', err)
+      } finally {
+        setLoadingMore(false)
+      }
+    }
+  }
 
   const handlePinToggle = useCallback(async (messageId: string, pin: boolean) => {
     if (!selectedClass) return
@@ -350,7 +407,15 @@ export default function CommunityPage() {
   }, [selectedClass, loadMessages, loadPinnedMessage])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (shouldRestoreScrollRef.current && chatContainerRef.current) {
+      const container = chatContainerRef.current
+      const newScrollHeight = container.scrollHeight
+      const diff = newScrollHeight - prevScrollHeightRef.current
+      container.scrollTop = diff
+      shouldRestoreScrollRef.current = false
+    } else if (shouldScrollToBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages])
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1399,7 +1464,17 @@ export default function CommunityPage() {
             )}
 
             {/* Messages */}
-            <div className="chat-wallpaper" style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div 
+              ref={chatContainerRef}
+              onScroll={handleScroll}
+              className="chat-wallpaper" 
+              style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
+              {loadingMore && (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0', fontSize: '13px', color: 'var(--text-muted)', fontWeight: '500' }}>
+                  Loading older messages...
+                </div>
+              )}
               {messages.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.4 }}>

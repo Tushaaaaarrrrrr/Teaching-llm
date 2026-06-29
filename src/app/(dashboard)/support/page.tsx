@@ -913,7 +913,15 @@ export default function SupportPage() {
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                       <span style={pill(STATUS_COLORS[t.status])}>{t.status.replace('_', ' ')}</span>
                       <span style={pill(PRIORITY_COLORS[t.priority])}>{t.priority}</span>
-                      {t.class && <span style={pill(t.class.color)}>{t.class.name}</span>}
+                      {userRole === 'MANAGER' ? (
+                        t.type === 'GENERAL' ? (
+                          <span style={pill('var(--info)')}>General</span>
+                        ) : (
+                          t.class && <span style={pill(t.class.color)}>{t.class.name}</span>
+                        )
+                      ) : (
+                        t.class && <span style={pill(t.class.color)}>{t.class.name}</span>
+                      )}
                       {t.assignedTo && (
                         <span style={{ ...pill('var(--primary)'), display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                           {t.assignedTo.name}
@@ -967,7 +975,15 @@ export default function SupportPage() {
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </span>
                       )}
-                      {selected.class && userRole === 'MANAGER' && <span style={pill(selected.class.color)}>📚 {selected.class.name}</span>}
+                      {userRole === 'MANAGER' ? (
+                        selected.type === 'GENERAL' ? (
+                          <span style={pill('var(--info)')}>📋 General</span>
+                        ) : (
+                          selected.class && <span style={pill(selected.class.color)}>📚 {selected.class.name}</span>
+                        )
+                      ) : (
+                        selected.class && <span style={pill(selected.class.color)}>📚 {selected.class.name}</span>
+                      )}
                     </div>
                   </div>
                   <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
@@ -1157,7 +1173,7 @@ export default function SupportPage() {
       <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', display: 'flex', flexDirection: 'column' }}>
         {confirmDialog}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <BackButton onClick={() => { if (isMobile && selectedHistory) { setSelectedHistory(null) } else { setView('home'); setSelectedHistory(null) } }} />
+          <BackButton onClick={() => { if (isMobile && selectedHistory) { setSelectedHistory(null) } else { setView('chat'); setSelectedHistory(null) } }} />
           <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>{historyChats.length} transcript{historyChats.length !== 1 ? 's' : ''}</span>
         </div>
 
@@ -1260,6 +1276,13 @@ export default function SupportPage() {
             </div>
           )}
         </div>
+        {selectedUserDetailsId && (
+          <ManagerUserModal 
+            userId={selectedUserDetailsId} 
+            onClose={() => setSelectedUserDetailsId(null)} 
+            onUpdate={loadTickets}
+          />
+        )}
       </div>
     )
   }
@@ -1277,6 +1300,12 @@ export default function SupportPage() {
         <BackButton onClick={() => { if (isMobile && activeChatId) { setActiveChatId(null) } else { setView('home'); setActiveChatId(null) } }} />
         {userRole === 'STUDENT' && (
           <button onClick={() => setShowChatStart(true)} className="btn btn-primary btn-sm" style={{ borderRadius: '50px' }}>+ New Chat</button>
+        )}
+        {userRole === 'MANAGER' && (
+          <button onClick={loadChatHistory} className="btn btn-ghost btn-sm" style={{ borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary)', fontWeight: '700' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+            View Chat History
+          </button>
         )}
       </div>
 
@@ -1300,7 +1329,21 @@ export default function SupportPage() {
               <div key={c.id} onClick={() => setActiveChatId(c.id)}
                 style={{ padding: '12px 16px', borderRadius: '18px', cursor: 'pointer', ...neu, outline: activeChatId === c.id ? '2px solid #3636e8' : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)' }}>
+                  <span 
+                    onClick={(e) => {
+                      if (userRole === 'MANAGER') {
+                        e.stopPropagation()
+                        setSelectedUserDetailsId(c.student.id)
+                      }
+                    }}
+                    style={{ 
+                      fontWeight: '700', 
+                      fontSize: '14px', 
+                      color: 'var(--text-primary)',
+                      cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                      textDecoration: userRole === 'MANAGER' ? 'underline' : 'none'
+                    }}
+                  >
                     {userRole === 'STUDENT' ? 'Support Chat' : c.student.name}
                   </span>
                   <span style={pill(c.status === 'WAITING' ? 'var(--warning)' : 'var(--success)')}>{c.status}</span>
@@ -1343,7 +1386,20 @@ export default function SupportPage() {
               <>
                 <div style={{ padding: '14px 20px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontWeight: '800', fontSize: '15px', color: 'var(--text-primary)' }}>
+                    <div 
+                      onClick={() => {
+                        if (userRole === 'MANAGER' && activeChat?.student.id) {
+                          setSelectedUserDetailsId(activeChat.student.id)
+                        }
+                      }}
+                      style={{ 
+                        fontWeight: '800', 
+                        fontSize: '15px', 
+                        color: 'var(--text-primary)',
+                        cursor: (userRole === 'MANAGER' && activeChat?.student.id) ? 'pointer' : 'default',
+                        textDecoration: (userRole === 'MANAGER' && activeChat?.student.id) ? 'underline' : 'none'
+                      }}
+                    >
                       {userRole === 'STUDENT' ? 'Support Chat' : activeChat?.student.name || 'Chat'}
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -1395,7 +1451,19 @@ export default function SupportPage() {
                           }}>
                             {!isMe && showAvatar && (
                               <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '4px', color: isAdmin ? 'var(--primary)' : '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                {m.sender.name}
+                                <span
+                                  onClick={() => {
+                                    if (userRole === 'MANAGER' && m.sender.role === 'STUDENT') {
+                                      setSelectedUserDetailsId(m.sender.id)
+                                    }
+                                  }}
+                                  style={{
+                                    cursor: (userRole === 'MANAGER' && m.sender.role === 'STUDENT') ? 'pointer' : 'default',
+                                    textDecoration: (userRole === 'MANAGER' && m.sender.role === 'STUDENT') ? 'underline' : 'none'
+                                  }}
+                                >
+                                  {m.sender.name}
+                                </span>
                                 {isAdmin && (
                                   <span style={{ 
                                     display: 'inline-flex', 
@@ -1518,6 +1586,13 @@ export default function SupportPage() {
             }}
           >✕</button>
         </div>
+      )}
+      {selectedUserDetailsId && (
+        <ManagerUserModal 
+          userId={selectedUserDetailsId} 
+          onClose={() => setSelectedUserDetailsId(null)} 
+          onUpdate={loadTickets}
+        />
       )}
     </div>
   )

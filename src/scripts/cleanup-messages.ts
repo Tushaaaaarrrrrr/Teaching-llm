@@ -14,37 +14,14 @@ function extractStoragePath(publicUrl: string): string | null {
 }
 
 async function cleanupMessages() {
-  const fifteenDaysAgo = new Date();
-  fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-
-  console.log(`Starting cleanup for messages older than ${fifteenDaysAgo.toISOString()}`);
+  console.log('Message cleanup is disabled by user request. Skipping CommunityMessage and ChatMessage database updates.');
 
   try {
-    // Cleanup CommunityMessages
-    const communityResult = await prisma.communityMessage.updateMany({
-      where: {
-        createdAt: { lt: fifteenDaysAgo },
-        isSystemDeleted: false,
-      },
-      data: {
-        isSystemDeleted: true,
-        deletedAt: new Date(),
-        content: '[System Auto-Deleted: 15-day limit reached]',
-      },
-    });
+    // Cleanup CommunityMessages - SKIPPED
+    const communityResult = { count: 0 };
 
-    // Cleanup ChatMessages
-    const chatResult = await prisma.chatMessage.updateMany({
-      where: {
-        createdAt: { lt: fifteenDaysAgo },
-        isSystemDeleted: false,
-      },
-      data: {
-        isSystemDeleted: true,
-        deletedAt: new Date(),
-        content: '[System Auto-Deleted: 15-day limit reached]',
-      },
-    });
+    // Cleanup ChatMessages - SKIPPED
+    const chatResult = { count: 0 };
 
     console.log(`Message cleanup complete.`);
     console.log(`- CommunityMessages marked: ${communityResult.count}`);

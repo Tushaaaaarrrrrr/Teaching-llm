@@ -98,7 +98,7 @@ export async function GET(
 
     const { searchParams } = new URL(_request.url)
     const cursor = searchParams.get('cursor')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const limit = parseInt(searchParams.get('limit') || '50')
 
     const messages = await prisma.communityMessage.findMany({
       where: { courseId },
