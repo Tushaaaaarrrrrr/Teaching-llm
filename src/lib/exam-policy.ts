@@ -21,6 +21,11 @@ export function shouldHideAnswersForStudent(
   isPublished: boolean,
   attemptIsPublished: boolean = false
 ) {
+  if (hasEnded) {
+    // Once the exam deadline has passed, always show answers to students
+    return false
+  }
+
   if (isFinalTest(examType)) {
     // Hide if hasn't ended OR isn't published OR the specific attempt results aren't published
     return !hasEnded || !isPublished || !attemptIsPublished
@@ -28,3 +33,4 @@ export function shouldHideAnswersForStudent(
 
   return !hasSubmitted
 }
+

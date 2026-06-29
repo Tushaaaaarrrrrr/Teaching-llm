@@ -358,6 +358,18 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   if (isMobile) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--surface)', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
+        <style dangerouslySetInnerHTML={{ __html: `
+          .sidebar-nav, .sidebar-overlay, .dashboard-header, .mobile-bottom-nav {
+            display: none !important;
+          }
+          .dashboard-main-container {
+            margin-left: 0 !important;
+            max-width: 100vw !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+          }
+        `}} />
         
         {/* Sticky Mobile Header */}
         <header style={{
@@ -440,7 +452,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                 boxShadow: '0 4px 10px rgba(239,68,68,0.2)'
               }}
             >
-              {submitting ? '...' : 'Finish'}
+              {submitting ? '...' : 'Exit & Submit'}
             </button>
           </div>
         </header>
@@ -803,6 +815,18 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--surface)', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .sidebar-nav, .sidebar-overlay, .dashboard-header, .mobile-bottom-nav {
+          display: none !important;
+        }
+        .dashboard-main-container {
+          margin-left: 0 !important;
+          max-width: 100vw !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          height: 100dvh !important;
+        }
+      `}} />
       
       {/* LEFT PANEL - Fixed Sidebar */}
       <aside style={sidebarStyle}>
@@ -938,6 +962,52 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
       <main style={mainContentStyle}>
         <div style={{ width: '100%', maxWidth: '900px' }}>
             
+            {/* Desktop Full-Screen Top Header Bar */}
+            <div style={{
+              width: '100%',
+              background: 'var(--surface)',
+              padding: '18px 28px',
+              borderRadius: '24px',
+              boxShadow: '4px 4px 12px var(--neu-dark), -4px -4px 12px var(--neu-light)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '32px',
+              border: '1px solid var(--border)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)' }}>
+                  {exam?.title}
+                </span>
+                <span style={{ 
+                    fontSize: '11px', fontWeight: 800, 
+                    background: isFinal ? 'var(--danger-light)' : 'var(--primary-light)', 
+                    color: isFinal ? 'var(--danger)' : 'var(--primary)', 
+                    padding: '4px 10px', borderRadius: '50px' 
+                }}>
+                  {isFinal ? 'FINAL EXAM' : 'PRACTICE MODE'}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowConfirmModal(true)}
+                disabled={submitting}
+                style={{
+                  padding: '12px 28px',
+                  borderRadius: '50px',
+                  border: 'none',
+                  background: 'var(--danger)',
+                  color: '#fff',
+                  fontSize: '14px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(239,68,68,0.3)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {submitting ? 'Submitting...' : 'Exit Exam & Submit'}
+              </button>
+            </div>
+
             <div style={neuCard}>
                 
                 {/* Question Info Bar */}

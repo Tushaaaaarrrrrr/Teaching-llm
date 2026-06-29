@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, getAccessibleCourseIds } from '@/lib/auth'
 import { EXAM_SUBMISSION_VISIBILITY_DELAY_MS, shouldHideAnswersForStudent } from '@/lib/exam-policy'
+import { checkAndAutoSubmitAttempts } from '@/lib/exam-db-utils'
 
 export async function GET(
   request: NextRequest,
@@ -24,6 +25,14 @@ export async function GET(
     if (!exam) {
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 })
     }
+
+    // Auto-submit expired/elapsed attempts
+    if (session.role === 'STUDENT') {
+      await checkAndAutoSubmitAttempts({ examId: params.id, userId: session.userId })
+    } else {
+      await checkAndAutoSubmitAttempts({ examId: params.id })
+    }
+
 
     // Role-based logic
     if (session.role === 'STUDENT') {

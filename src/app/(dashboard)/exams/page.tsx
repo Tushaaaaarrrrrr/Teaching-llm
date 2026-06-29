@@ -128,9 +128,26 @@ export default function ExamsPage() {
           <div style={{ display: 'flex', flexDirection: 'column' }}><span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Duration</span><span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 700 }}>{exam.durationMinutes}m</span></div>
           <div style={{ display: 'flex', flexDirection: 'column' }}><span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Questions</span><span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 700 }}>{exam._count.questions}</span></div>
         </div>
-        <button onClick={() => router.push(`/exams/${exam.id}`)} disabled={(isExpired || isUpcoming) && !isManager}
-          style={{ width: '100%', padding: '12px', borderRadius: '14px', border: 'none', background: (isExpired || isUpcoming) && !isManager ? 'var(--neu-dark)' : '#fff', color: (isExpired || isUpcoming) && !isManager ? 'var(--text-secondary)' : 'var(--primary)', fontSize: '14px', fontWeight: 700, cursor: (isExpired || isUpcoming) && !isManager ? 'default' : 'pointer', boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', transition: 'all 0.2s', marginTop: '4px' }}>
-          {isManager ? 'Manage Exam' : isUpcoming ? 'Not Started' : isExpired ? 'Expired' : 'Start Assessment'}
+        <button 
+          onClick={() => {
+            if (isExpired && !isManager) {
+              router.push(`/exams/${exam.id}/result`)
+            } else {
+              router.push(`/exams/${exam.id}`)
+            }
+          }}
+          disabled={isUpcoming && !isManager}
+          style={{ 
+            width: '100%', padding: '12px', borderRadius: '14px', border: 'none', 
+            background: isUpcoming && !isManager ? 'var(--neu-dark)' : '#fff', 
+            color: isUpcoming && !isManager ? 'var(--text-secondary)' : 'var(--primary)', 
+            fontSize: '14px', fontWeight: 700, 
+            cursor: isUpcoming && !isManager ? 'default' : 'pointer', 
+            boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)', 
+            transition: 'all 0.2s', marginTop: '4px' 
+          }}
+        >
+          {isManager ? 'Manage Exam' : isUpcoming ? 'Not Started' : isExpired ? 'Review Exam' : 'Start Assessment'}
         </button>
       </div>
     )

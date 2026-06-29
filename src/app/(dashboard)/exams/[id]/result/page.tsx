@@ -68,7 +68,27 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading results...</div>
 
-  const attempt = exam?.attempts?.slice().sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())?.[0]
+  const attemptData = exam?.attempts?.slice().sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())?.[0]
+  const isExpired = exam && new Date() > new Date(exam.expiresAt)
+  const isMockedAttempt = !attemptData && isExpired
+
+  useEffect(() => {
+    if (isMockedAttempt) {
+      setReviewMode(true)
+    }
+  }, [isMockedAttempt])
+
+  const attempt = isMockedAttempt ? {
+    id: 'dummy',
+    submittedAt: new Date(exam.expiresAt).toISOString(),
+    startedAt: new Date(exam.expiresAt).toISOString(),
+    isEvaluated: true,
+    isPublished: true,
+    totalMarks: 0,
+    bonusMarks: 0,
+    responses: []
+  } : attemptData
+
   if (!attempt || !attempt.submittedAt) {
     router.push(`/exams/${params.id}`)
     return null
@@ -95,27 +115,40 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
       </div>
 
       <div style={{ ...neuCard, textAlign: 'center', marginBottom: '40px' }}>
-        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Your Score</div>
-        {attempt.isEvaluated ? (
+        {isMockedAttempt ? (
           <div>
-            <div style={{ fontSize: '48px', fontWeight: 900, color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-              <span>{attempt.totalMarks}</span>
-              <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>/ {exam.questions.reduce((acc: number, q: any) => acc + q.marks, 0)}</span>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>
+              Review Mode
             </div>
-            <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 700, color: scorePercentage! >= 50 ? 'var(--success)' : 'var(--danger)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div>{scorePercentage?.toFixed(0)}% - {scorePercentage! >= 50 ? 'Passed' : 'Needs Improvement'}</div>
-              {attempt.bonusMarks > 0 && (
-                <div style={{ fontSize: '11px', color: 'var(--primary)', background: 'var(--primary-light)', padding: '4px 12px', borderRadius: '50px', alignSelf: 'center', marginTop: '8px' }}>
-                  Includes {attempt.bonusMarks} Bonus Points
-                </div>
-              )}
-            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 16px 0' }}>
+              This exam has ended. You can review all questions, options, and correct answers.
+            </p>
           </div>
         ) : (
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--primary)' }}>
-            Pending Manual Evaluation
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500, marginTop: '4px' }}>Some questions require instructor review.</p>
-          </div>
+          <>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Your Score</div>
+            {attempt.isEvaluated ? (
+              <div>
+                <div style={{ fontSize: '48px', fontWeight: 900, color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+                  <span>{attempt.totalMarks}</span>
+                  <span style={{ fontSize: '20px', color: 'var(--text-muted)' }}>/ {exam.questions.reduce((acc: number, q: any) => acc + q.marks, 0)}</span>
+                </div>
+                <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 700, color: scorePercentage! >= 50 ? 'var(--success)' : 'var(--danger)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div>{scorePercentage?.toFixed(0)}% - {scorePercentage! >= 50 ? 'Passed' : 'Needs Improvement'}</div>
+                  {attempt.bonusMarks > 0 && (
+                    <div style={{ fontSize: '11px', color: 'var(--primary)', background: 'var(--primary-light)', padding: '4px 12px', borderRadius: '50px', alignSelf: 'center', marginTop: '8px' }}>
+                      Includes {attempt.bonusMarks} Bonus Points
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--primary)' }}>
+                Pending Manual Evaluation
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500, marginTop: '4px' }}>Some questions require instructor review.</p>
+              </div>
+            )}
+          </>
         )}
 
         {!(exam?.examType === 'FINAL_TEST' && !attempt.isPublished) && (
@@ -177,16 +210,27 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
         <div 
           style={{ 
             position: 'fixed', inset: 0, zIndex: 3000, 
-            background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
+            background: 'var(--surface)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0px'
           }}
           onClick={() => setReviewMode(false)}
         >
+          <style dangerouslySetInnerHTML={{ __html: `
+            .sidebar-nav, .sidebar-overlay, .dashboard-header, .mobile-bottom-nav {
+              display: none !important;
+            }
+            .dashboard-main-container {
+              margin-left: 0 !important;
+              max-width: 100vw !important;
+              width: 100vw !important;
+              height: 100vh !important;
+              height: 100dvh !important;
+            }
+          `}} />
           <div 
             style={{ 
-              width: '100%', maxWidth: '1000px', maxHeight: '90vh', overflowY: 'auto',
-              background: 'var(--surface)', borderRadius: '32px', 
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              width: '100vw', height: '100vh', overflowY: 'auto',
+              background: 'var(--surface)', 
               position: 'relative', padding: '40px',
               display: 'flex', flexDirection: 'column', gap: '24px'
             }}
@@ -211,7 +255,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                     boxShadow: '4px 4px 8px #cfd6e1, -4px -4px 8px var(--neu-light)'
                   }}
                 >
-                  Close Review
+                  Exit Review Mode
                 </button>
               </div>
             </div>
@@ -319,7 +363,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                           </div>
                         </div>
      
-                        {q.correctAnswer && !isCorrect && (
+                        {q.correctAnswer && (
                           <div style={{ padding: '24px', background: 'var(--primary-light)', borderRadius: '24px', border: '1px solid #3636e820' }}>
                             <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '12px' }}>Correct Solution</div>
                             <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--primary)', lineHeight: '1.5' }}>

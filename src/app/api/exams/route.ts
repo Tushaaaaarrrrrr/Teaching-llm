@@ -7,6 +7,7 @@ import { sanitizeInput } from '@/lib/validation'
 import { DEFAULT_FINAL_TEST_WINDOW_MS, isFinalTest } from '@/lib/exam-policy'
 import { randomUUID } from 'crypto'
 import { sendFcmToUsers } from '@/lib/fcm'
+import { checkAndAutoSubmitAttempts } from '@/lib/exam-db-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,6 +15,11 @@ export async function GET(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    if (session.role === 'STUDENT') {
+      await checkAndAutoSubmitAttempts({ userId: session.userId })
+    }
+
 
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get('courseId')

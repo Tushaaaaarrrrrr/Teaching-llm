@@ -184,7 +184,6 @@ export async function GET(request: NextRequest) {
 
     let peerTopPerformers: any[] = []
     if (myCourseIds.length > 0) {
-      // Find all peer attempts in these courses
       const peerAttempts = await (prisma.examAttempt as any).findMany({
         where: {
           submittedAt: { not: null },
@@ -194,7 +193,15 @@ export async function GET(request: NextRequest) {
         include: { exam: { include: { questions: true } } }
       })
 
-      const peerUserIds = Array.from(new Set(peerAttempts.map((a: any) => a.userId))) as string[]
+      const now = new Date()
+      const filteredPeerAttempts = peerAttempts.filter((a: any) => {
+        if (a.exam.examType === 'FINAL_TEST') {
+          return now > new Date(a.exam.expiresAt)
+        }
+        return true
+      })
+
+      const peerUserIds = Array.from(new Set(filteredPeerAttempts.map((a: any) => a.userId))) as string[]
       const peers = await prisma.user.findMany({
         where: { id: { in: peerUserIds }, isTerminated: false },
         select: { id: true, name: true, email: true }
@@ -202,7 +209,7 @@ export async function GET(request: NextRequest) {
       const peerMap = new Map(peers.map(p => [p.id, p]))
 
       const peerStats: Record<string, { totalPercentage: number, count: number, name: string, email: string }> = {}
-      peerAttempts.forEach((a: any) => {
+      filteredPeerAttempts.forEach((a: any) => {
         const user = peerMap.get(a.userId)
         if (!user) return
 
@@ -216,6 +223,7 @@ export async function GET(request: NextRequest) {
         peerStats[a.userId].totalPercentage += percentage
         peerStats[a.userId].count += 1
       })
+
 
       peerTopPerformers = Object.entries(peerStats)
         .map(([id, s]) => ({

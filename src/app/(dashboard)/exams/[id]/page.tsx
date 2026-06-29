@@ -1029,8 +1029,16 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>You will be able to start this exam when the countdown reaches zero.</p>
             </div>
           ) : isExpired ? (
-            <div style={{ padding: '16px', borderRadius: '50px', background: 'var(--danger-light)', color: 'var(--danger)', fontWeight: 700 }}>
-              This exam has ended.
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+              <div style={{ padding: '16px', borderRadius: '50px', background: 'var(--danger-light)', color: 'var(--danger)', fontWeight: 700, textAlign: 'center' }}>
+                This exam has ended.
+              </div>
+              <button
+                 onClick={() => router.push(`/exams/${params.id}/result`)}
+                 style={{ width: '100%', padding: '16px', borderRadius: '50px', border: 'none', background: 'var(--primary)', color: '#fff', fontSize: '16px', fontWeight: 800, cursor: 'pointer', boxShadow: '4px 4px 10px rgba(54,54,232,0.35)' }}
+              >
+                Review Exam
+              </button>
             </div>
           ) : (
             <button
