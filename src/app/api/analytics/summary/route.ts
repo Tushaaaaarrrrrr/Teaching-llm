@@ -127,14 +127,68 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Parse latest topCourses, courseDistribution, demographics
+    // Parse latest topCourses, courseDistribution
     let topCourses = []
     let courseDistribution = []
     let demographics = null
     if (latest) {
       try { topCourses = JSON.parse(latest.topCourses || '[]') } catch {}
       try { courseDistribution = JSON.parse(latest.courseDistribution || '[]') } catch {}
-      try { demographics = JSON.parse(latest.demographics || 'null') } catch {}
+    }
+
+    // Compute live demographics to ensure up-to-the-minute correctness and include new fields
+    try {
+      const allUsers = await prisma.user.findMany({
+        where: { role: 'STUDENT', isTerminated: false },
+        select: { gender: true, state: true, age: true, iitmJoinYear: true, iitmJoinMonth: true, iitmLevel: true, iitmUserType: true }
+      })
+      
+      const liveDemographics: any = {
+        gender: { MALE: 0, FEMALE: 0, OTHER: 0, UNSPECIFIED: 0 },
+        state: {},
+        age: { 'Under 18': 0, '18-24': 0, '25-34': 0, '35+': 0, 'Unknown': 0 },
+        iitmJoinYear: {},
+        iitmJoinMonth: {},
+        iitmLevel: {},
+        iitmUserType: {}
+      }
+
+      for (const u of allUsers) {
+        const g = u.gender || 'UNSPECIFIED'
+        if (liveDemographics.gender[g] !== undefined) liveDemographics.gender[g]++
+        else liveDemographics.gender['UNSPECIFIED']++
+
+        const s = u.state || 'Unknown'
+        liveDemographics.state[s] = (liveDemographics.state[s] || 0) + 1
+
+        if (u.age) {
+          if (u.age < 18) liveDemographics.age['Under 18']++
+          else if (u.age <= 24) liveDemographics.age['18-24']++
+          else if (u.age <= 34) liveDemographics.age['25-34']++
+          else liveDemographics.age['35+']++
+        } else {
+          liveDemographics.age['Unknown']++
+        }
+
+        if (u.iitmJoinYear) {
+          liveDemographics.iitmJoinYear[u.iitmJoinYear] = (liveDemographics.iitmJoinYear[u.iitmJoinYear] || 0) + 1
+        }
+        if (u.iitmJoinMonth) {
+          liveDemographics.iitmJoinMonth[u.iitmJoinMonth] = (liveDemographics.iitmJoinMonth[u.iitmJoinMonth] || 0) + 1
+        }
+        if (u.iitmLevel) {
+          liveDemographics.iitmLevel[u.iitmLevel] = (liveDemographics.iitmLevel[u.iitmLevel] || 0) + 1
+        }
+        if (u.iitmUserType) {
+          liveDemographics.iitmUserType[u.iitmUserType] = (liveDemographics.iitmUserType[u.iitmUserType] || 0) + 1
+        }
+      }
+      demographics = liveDemographics
+    } catch (e) {
+      console.error('[Analytics Summary] Failed to compute live demographics, fallback to snapshot', e)
+      if (latest) {
+        try { demographics = JSON.parse(latest.demographics || 'null') } catch {}
+      }
     }
 
     // ─── Build daily trend data ──────────────────────────────────────

@@ -122,6 +122,15 @@ export default function AnalyticsDashboard() {
   const totalStateStudents = stateData.reduce((acc, d) => acc + d.value, 0) || 1
   const totalAgeStudents = ageData.reduce((acc, d) => acc + d.value, 0) || 1
 
+  // IITM Academic Data
+  const joinYearData = demographics && demographics.iitmJoinYear ? Object.entries(demographics.iitmJoinYear).map(([k, v]) => ({ name: k, value: v as number })).filter(d => d.value > 0).sort((a, b) => a.name.localeCompare(b.name)) : []
+  const joinMonthData = demographics && demographics.iitmJoinMonth ? Object.entries(demographics.iitmJoinMonth).map(([k, v]) => ({ name: k, value: v as number })).filter(d => d.value > 0) : []
+  const levelData = demographics && demographics.iitmLevel ? Object.entries(demographics.iitmLevel).map(([k, v]) => ({ name: k, value: v as number })).filter(d => d.value > 0) : []
+  const userTypeData = demographics && demographics.iitmUserType ? Object.entries(demographics.iitmUserType).map(([k, v]) => ({ name: k, value: v as number })).filter(d => d.value > 0) : []
+
+  const YEAR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899']
+  const MONTH_COLORS = ['#f59e0b', '#10b981', '#8b5cf6']
+
   const GENDER_CONFIG: Record<string, { color: string; icon: string }> = {
     MALE:        { color: '#3b82f6', icon: '♂' },
     FEMALE:      { color: '#ec4899', icon: '♀' },
@@ -447,6 +456,202 @@ export default function AnalyticsDashboard() {
                     </div>
                   )
                 })}
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+
+      {/* ─── IITM BS Degree Academic Distributions ─────────────────── */}
+      <div style={{ marginTop: '32px', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>🎓 IITM BS Academic Analysis</h2>
+            <p style={{ fontSize: '12px', color: '#9999b0', marginTop: '4px', fontWeight: 600 }}>Cohort year, term, levels and category distributions</p>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+          
+          {/* Cohort Year & Term Card */}
+          <div style={neuCard}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>📅 Admission Cohorts</h3>
+            {joinYearData.length === 0 && joinMonthData.length === 0 ? (
+              <div style={{ padding: '60px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No cohort data available</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Year Bar Chart */}
+                <div style={{ height: '150px', width: '100%' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Join Year Distribution</span>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={joinYearData} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                      <XAxis dataKey="name" stroke="#9999b0" fontSize={11} tickLine={false} />
+                      <YAxis stroke="#9999b0" fontSize={11} tickLine={false} />
+                      <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', background: 'var(--surface)', color: 'var(--text-primary)' }} />
+                      <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]}>
+                        {joinYearData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={YEAR_COLORS[index % YEAR_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Term Pie Chart */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', height: '100px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '12px' }}>
+                  <div style={{ height: '100%', width: '50%' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={joinMonthData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={25}
+                          outerRadius={38}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {joinMonthData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={MONTH_COLORS[index % MONTH_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', background: 'var(--surface)', color: 'var(--text-primary)' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div style={{ width: '50%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {joinMonthData.map((m, i) => {
+                      const total = joinMonthData.reduce((acc, curr) => acc + curr.value, 0) || 1
+                      const pct = Math.round((m.value / total) * 100)
+                      return (
+                        <div key={m.name} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: MONTH_COLORS[i % MONTH_COLORS.length] }} />
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{m.name}</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{m.value} ({pct}%)</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Current Level Card */}
+          <div style={neuCard}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>🎓 Program Levels</h3>
+            {levelData.length === 0 ? (
+              <div style={{ padding: '60px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No program level data available</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: 'calc(100% - 36px)' }}>
+                <div style={{ height: '160px', width: '100%' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={levelData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={35}
+                        outerRadius={55}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {levelData.map((entry, index) => {
+                          const levelColorMap: Record<string, string> = {
+                            Qualifier: '#6366f1',
+                            Foundation: '#3b82f6',
+                            Diploma: '#8b5cf6',
+                            Degree: '#ec4899',
+                          }
+                          const fillColor = levelColorMap[entry.name] || PIE_COLORS[index % PIE_COLORS.length]
+                          return <Cell key={`cell-${index}`} fill={fillColor} />
+                        })}
+                      </Pie>
+                      <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', background: 'var(--surface)', color: 'var(--text-primary)' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '12px' }}>
+                  {levelData.map((lvl, i) => {
+                    const total = levelData.reduce((acc, curr) => acc + curr.value, 0) || 1
+                    const pct = Math.round((lvl.value / total) * 100)
+                    const levelColorMap: Record<string, string> = {
+                      Qualifier: '#6366f1',
+                      Foundation: '#3b82f6',
+                      Diploma: '#8b5cf6',
+                      Degree: '#ec4899',
+                    }
+                    const badgeColor = levelColorMap[lvl.name] || PIE_COLORS[i % PIE_COLORS.length]
+                    return (
+                      <div key={lvl.name} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: badgeColor, flexShrink: 0 }} />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '11px', whiteSpace: 'nowrap' }}>{lvl.name}</span>
+                          <span style={{ color: '#9999b0', fontSize: '9px' }}>{lvl.value} ({pct}%)</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Student Category Card */}
+          <div style={neuCard}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>💼 Student Categories</h3>
+            {userTypeData.length === 0 ? (
+              <div style={{ padding: '60px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No student category data available</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: 'calc(100% - 36px)' }}>
+                <div style={{ height: '160px', width: '100%' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={userTypeData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={20}
+                        outerRadius={55}
+                        dataKey="value"
+                      >
+                        {userTypeData.map((entry, index) => {
+                          const typeColorMap: Record<string, string> = {
+                            STANDALONE: '#10b981',
+                            'DUAL DEGREE': '#06b6d4',
+                            'WORKING PROFESSIONAL': '#f59e0b',
+                          }
+                          const fillColor = typeColorMap[entry.name] || PIE_COLORS[index % PIE_COLORS.length]
+                          return <Cell key={`cell-${index}`} fill={fillColor} />
+                        })}
+                      </Pie>
+                      <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', background: 'var(--surface)', color: 'var(--text-primary)' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '10px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '12px' }}>
+                  {userTypeData.map((t, i) => {
+                    const total = userTypeData.reduce((acc, curr) => acc + curr.value, 0) || 1
+                    const pct = Math.round((t.value / total) * 100)
+                    const typeColorMap: Record<string, string> = {
+                      STANDALONE: '#10b981',
+                      'DUAL DEGREE': '#06b6d4',
+                      'WORKING PROFESSIONAL': '#f59e0b',
+                    }
+                    const badgeColor = typeColorMap[t.name] || PIE_COLORS[i % PIE_COLORS.length]
+                    return (
+                      <div key={t.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: badgeColor, flexShrink: 0 }} />
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize' }}>{t.name.toLowerCase()}</span>
+                        </div>
+                        <span style={{ color: '#9999b0', fontWeight: 600, fontSize: '10px' }}>{t.value} ({pct}%)</span>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>

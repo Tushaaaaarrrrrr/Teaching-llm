@@ -149,13 +149,17 @@ export async function computeDailyAnalytics(targetDate: Date): Promise<{
   // ─── 9.5 Audience Demographics ─────────────────────────────────────
   const allUsers = await (prisma.user as any).findMany({
     where: { role: 'STUDENT', isTerminated: false },
-    select: { gender: true, state: true, age: true }
+    select: { gender: true, state: true, age: true, iitmJoinYear: true, iitmJoinMonth: true, iitmLevel: true, iitmUserType: true }
   })
   
   const demographics: any = {
     gender: { MALE: 0, FEMALE: 0, OTHER: 0, UNSPECIFIED: 0 },
     state: {},
-    age: { 'Under 18': 0, '18-24': 0, '25-34': 0, '35+': 0, 'Unknown': 0 }
+    age: { 'Under 18': 0, '18-24': 0, '25-34': 0, '35+': 0, 'Unknown': 0 },
+    iitmJoinYear: {},
+    iitmJoinMonth: {},
+    iitmLevel: {},
+    iitmUserType: {}
   }
 
   for (const u of allUsers) {
@@ -173,6 +177,19 @@ export async function computeDailyAnalytics(targetDate: Date): Promise<{
       else demographics.age['35+']++
     } else {
       demographics.age['Unknown']++
+    }
+
+    if (u.iitmJoinYear) {
+      demographics.iitmJoinYear[u.iitmJoinYear] = (demographics.iitmJoinYear[u.iitmJoinYear] || 0) + 1
+    }
+    if (u.iitmJoinMonth) {
+      demographics.iitmJoinMonth[u.iitmJoinMonth] = (demographics.iitmJoinMonth[u.iitmJoinMonth] || 0) + 1
+    }
+    if (u.iitmLevel) {
+      demographics.iitmLevel[u.iitmLevel] = (demographics.iitmLevel[u.iitmLevel] || 0) + 1
+    }
+    if (u.iitmUserType) {
+      demographics.iitmUserType[u.iitmUserType] = (demographics.iitmUserType[u.iitmUserType] || 0) + 1
     }
   }
 
