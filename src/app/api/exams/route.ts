@@ -112,7 +112,13 @@ export async function GET(request: NextRequest) {
       include: {
         course: { select: { name: true, color: true } },
         testSeries: { select: { id: true, title: true } },
-        _count: { select: { questions: true } }
+        _count: { select: { questions: true } },
+        ...(session.role === 'STUDENT' ? {
+          attempts: {
+            where: { userId: session.userId },
+            select: { id: true, submittedAt: true, startedAt: true }
+          }
+        } : {})
       },
       orderBy: { createdAt: 'desc' }
     })

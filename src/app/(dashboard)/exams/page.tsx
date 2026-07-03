@@ -21,6 +21,7 @@ interface Exam {
   course: { name: string; color: string } | null
   testSeries?: { id: string; title: string } | null
   _count: { questions: number }
+  attempts?: Array<{ id: string; submittedAt: string | null; startedAt: string }>
 }
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
@@ -97,6 +98,10 @@ export default function ExamsPage() {
     const label = exam.course?.name || exam.testSeries?.title || 'Test Series'
     const color = exam.course?.color || 'var(--warning)'
 
+    const hasAttempt = exam.attempts && exam.attempts.length > 0
+    const latestAttempt = hasAttempt ? exam.attempts.slice().sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0] : null
+    const hasSubmitted = !!(latestAttempt && latestAttempt.submittedAt)
+
     return (
       <div key={exam.id} style={{ ...neu, display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -130,7 +135,7 @@ export default function ExamsPage() {
         </div>
         <button 
           onClick={() => {
-            if (isExpired && !isManager) {
+            if ((isExpired || hasSubmitted) && !isManager) {
               router.push(`/exams/${exam.id}/result`)
             } else {
               router.push(`/exams/${exam.id}`)
@@ -147,7 +152,13 @@ export default function ExamsPage() {
             transition: 'all 0.2s', marginTop: '4px' 
           }}
         >
-          {isManager ? 'Manage Exam' : isUpcoming ? 'Not Started' : isExpired ? 'Review Exam' : 'Start Assessment'}
+          {isManager 
+            ? 'Manage Exam' 
+            : isUpcoming 
+              ? 'Not Started' 
+              : isExpired || hasSubmitted 
+                ? 'Review Exam' 
+                : 'Start Assessment'}
         </button>
       </div>
     )

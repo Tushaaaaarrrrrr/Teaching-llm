@@ -13,6 +13,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
   const [reviewMode, setReviewMode] = useState(false)
   const [currentIdx, setCurrentIdx] = useState(0)
   const [cooldownSeconds, setCooldownSeconds] = useState(0)
+  const [revealedAnswers, setRevealedAnswers] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     let active = true
@@ -322,6 +323,8 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                 isCorrect = resp && resp.answer === q.correctAnswer
               }
               
+              const isRevealed = revealedAnswers[q.id] || false
+              
               return (
                 <div key={q.id}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -334,17 +337,60 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                       </span>
                       <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>{q.marks} Marks</span>
                     </div>
-                    {q.type !== 'SUBJECTIVE' && q.correctAnswer !== null && q.correctAnswer !== undefined && (
-                      <span style={{ 
-                        fontSize: '11px', fontWeight: 800, 
-                        color: isCorrect ? 'var(--success)' : 'var(--danger)',
-                        background: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                        padding: '6px 14px', borderRadius: '50px', 
-                        border: `1px solid ${isCorrect ? 'var(--success-light)' : 'var(--danger-light)'}`
-                      }}>
-                        {isCorrect ? '✓ Correct Answer' : '✗ Incorrect Answer'}
-                      </span>
-                    )}
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <button
+                        onClick={() => {
+                          setRevealedAnswers(prev => ({
+                            ...prev,
+                            [q.id]: !prev[q.id]
+                          }))
+                        }}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '50px',
+                          border: '1px solid var(--primary)',
+                          background: isRevealed ? 'var(--primary-light)' : 'transparent',
+                          color: 'var(--primary)',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.2s',
+                          boxShadow: '2px 2px 5px rgba(0,0,0,0.02)'
+                        }}
+                      >
+                        {isRevealed ? (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                              <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                            Hide Answer
+                          </>
+                        ) : (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            Reveal Answer
+                          </>
+                        )}
+                      </button>
+                      {q.type !== 'SUBJECTIVE' && q.correctAnswer !== null && q.correctAnswer !== undefined && (
+                        <span style={{ 
+                          fontSize: '11px', fontWeight: 800, 
+                          color: isCorrect ? 'var(--success)' : 'var(--danger)',
+                          background: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                          padding: '6px 14px', borderRadius: '50px', 
+                          border: `1px solid ${isCorrect ? 'var(--success-light)' : 'var(--danger-light)'}`
+                        }}>
+                          {isCorrect ? '✓ Correct Answer' : '✗ Incorrect Answer'}
+                        </span>
+                      )}
+                    </div>
                   </div>
  
                   <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.4', marginBottom: '32px' }}>
@@ -376,7 +422,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                           </div>
                         </div>
      
-                        {q.correctAnswer && (
+                        {q.correctAnswer && isRevealed && (
                           <div style={{ padding: '24px', background: 'var(--primary-light)', borderRadius: '24px', border: '1px solid #3636e820' }}>
                             <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '12px' }}>Correct Solution</div>
                             <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--primary)', lineHeight: '1.5' }}>
@@ -402,8 +448,8 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                               Options & Review
                             </div>
                             {opts.filter(opt => typeof opt === 'string' && opt.trim()).map((opt: string) => {
-                              const isSelected = studentArr.includes(opt)
-                              const isOptCorrect = correctArr.includes(opt)
+                              const isSelected = studentArr.some(s => typeof s === 'string' && typeof opt === 'string' && s.trim().toLowerCase() === opt.trim().toLowerCase())
+                              const isOptCorrect = correctArr.some(c => typeof c === 'string' && typeof opt === 'string' && c.trim().toLowerCase() === opt.trim().toLowerCase())
 
                               let bg = 'var(--surface-2)'
                               let border = '1px solid var(--border)'
@@ -460,7 +506,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                                   )
                                 }
                               } else {
-                                if (isOptCorrect) {
+                                if (isOptCorrect && isRevealed) {
                                   bg = 'var(--success-light)'
                                   color = 'var(--success)'
                                   border = '2px solid var(--success)'
@@ -481,7 +527,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                                       color: 'var(--success)', padding: '4px 10px', borderRadius: '50px',
                                       border: '1px solid rgba(16,185,129,0.2)', flexShrink: 0
                                     }}>
-                                      Correct Solution
+                                      Correct Option
                                     </span>
                                   )
                                 } else {
@@ -517,7 +563,7 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                       })()
                     )}
 
-                    {q.explanation && (
+                    {q.explanation && isRevealed && (
                       <div style={{ padding: '24px', background: 'var(--surface)', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: '4px 4px 12px rgba(0,0,0,0.03)' }}>
                         <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px' }}>Evaluation Notes & Explanation</div>
                         <div style={{ fontSize: '15px', color: 'var(--text-primary)', lineHeight: '1.6' }}><RichTextDisplay text={q.explanation} /></div>
