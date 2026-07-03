@@ -132,12 +132,30 @@ export default function ReportsPage() {
     transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
   }
 
+  const getLocalDateString = (dateObjOrStr: Date | string) => {
+    const d = new Date(dateObjOrStr)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const formatTooltipDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    const d = new Date(year, month - 1, day)
+    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  }
+
   const today = new Date()
-  const last30Days = Array.from({ length: 30 }, (_, i) => {
+  const last50Days = Array.from({ length: 50 }, (_, i) => {
     const d = new Date()
-    d.setDate(today.getDate() - (29 - i))
-    return d.toISOString().split('T')[0]
+    d.setDate(today.getDate() - (49 - i))
+    return getLocalDateString(d)
   })
+
+  const uniquePresenceDays = data?.attendance 
+    ? new Set(data.attendance.map((l: any) => getLocalDateString(l.timestamp))).size 
+    : 0
 
   return (
     <div style={{ padding: '24px 32px 48px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -504,7 +522,7 @@ export default function ReportsPage() {
                 <div style={{ ...neuCard, borderLeft: '5px solid var(--success)' }}>
                   <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Total Presence</div>
                   <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--success)' }}>
-                    {data.summary?.attendanceCount || 0} <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-muted)' }}>Days</span>
+                    {uniquePresenceDays} <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-muted)' }}>Days</span>
                   </div>
                 </div>
                 <div style={{ ...neuCard, borderLeft: '5px solid var(--primary)' }}>
@@ -580,14 +598,14 @@ export default function ReportsPage() {
 
               {/* Login Heatmap */}
               <div style={neuCard}>
-                <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '20px' }}>Attendance logs (Last 30 Days)</h2>
+                <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '20px' }}>Attendance logs (Last 50 Days)</h2>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {last30Days.map(date => {
-                       const hasLog = data.attendance?.some((l: any) => l.timestamp.split('T')[0] === date)
+                    {last50Days.map(date => {
+                       const hasLog = data.attendance?.some((l: any) => getLocalDateString(l.timestamp) === date)
                        return (
                          <div 
                            key={date} 
-                           title={date}
+                           title={`${formatTooltipDate(date)} - ${hasLog ? 'Present' : 'Absent'}`}
                            style={{ 
                              width: '26px', height: '26px', borderRadius: '8px', 
                              background: hasLog ? 'var(--success)' : 'var(--surface)',
