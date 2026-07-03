@@ -151,16 +151,25 @@ export default function AdminPage() {
     }
   }
 
-  // Build the SWR key: only add ?search= when there's a debounced query
-  const usersApiKey = debouncedSearchQuery
-    ? `/api/users?search=${encodeURIComponent(debouncedSearchQuery)}`
-    : '/api/users'
+  // Build the SWR key: include both search and courseId to fetch the correct data from the server
+  const getUsersApiKey = () => {
+    const params = new URLSearchParams()
+    if (debouncedSearchQuery) {
+      params.append('search', debouncedSearchQuery)
+    }
+    if (selectedCourseId !== 'all') {
+      params.append('courseId', selectedCourseId)
+    }
+    const query = params.toString()
+    return query ? `/api/users?${query}` : '/api/users'
+  }
+  const usersApiKey = getUsersApiKey()
 
   const { data: usersData, mutate: mutateUsers, isLoading: usersLoading } = useSWR(usersApiKey, url => fetch(url).then(r => r.json()))
   const { data: bundlesData } = useSWR(userRole === 'MANAGER' ? '/api/course-bundles' : null, url => fetch(url).then(r => r.json()))
 
   const users = normalizeCollection<User>(usersData, 'users')
-  const isLimitedView = users.length >= 500 && !debouncedSearchQuery
+  const isLimitedView = usersData?.limited ?? false
   const bundles = normalizeCollection<CourseBundleInfo>(bundlesData, 'bundles')
   const managerCount = users.filter(u => u.role === 'MANAGER').length
   const bundledCourseIds = new Set(
@@ -347,12 +356,15 @@ export default function AdminPage() {
     STUDENT: { bg: 'var(--success-light)', color: 'var(--success)' },
   }
 
-  // Filter users by role tab and course — server already handles search filtering
+  // Filter users by role tab and course — server already handles course/search filtering,
+  // but we keep a safeguard check for courseId to support immediate UI filter transitions.
   const visibleUsers = users
   const filtered = visibleUsers.filter(u => {
     if (filter !== 'all' && u.role !== filter) return false
-    if (selectedCourseId !== 'all' && !(u.enrollments || []).some(enrollment => enrollment.courseId === selectedCourseId)) {
-      return false
+    if (selectedCourseId !== 'all') {
+      const isEnrolled = (u.enrollments || []).some(e => e.courseId === selectedCourseId)
+      const isInstructor = (u.instructorAssignments || []).some(a => a.courseId === selectedCourseId)
+      if (!isEnrolled && !isInstructor) return false
     }
     return true
   })

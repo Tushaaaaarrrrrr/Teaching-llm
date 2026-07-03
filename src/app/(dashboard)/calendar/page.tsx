@@ -659,7 +659,8 @@ function CalendarPageContent() {
                 padding: '36px 8px 8px', // Extra top padding for the date number
                 borderBottom: '1px solid rgba(0,0,0,0.03)',
                 borderRight: (i + 1) % 7 !== 0 ? '1px solid rgba(0,0,0,0.03)' : 'none',
-                background: today ? 'rgba(59, 130, 246, 0.03)' : 'transparent',
+                background: today ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
+                boxShadow: today ? 'inset 0 0 0 1.5px var(--info)' : 'none',
                 transition: 'all 0.2s ease',
                 cursor: day ? 'pointer' : 'default',
                 position: 'relative',
@@ -670,14 +671,16 @@ function CalendarPageContent() {
               onMouseEnter={e => { 
                 if (day) {
                   e.currentTarget.style.background = 'var(--surface-2)';
-                  e.currentTarget.style.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.02)';
+                  e.currentTarget.style.boxShadow = today 
+                    ? 'inset 0 0 0 1.5px var(--info), inset 0 0 20px rgba(0,0,0,0.02)' 
+                    : 'inset 0 0 20px rgba(0,0,0,0.02)';
                   e.currentTarget.style.zIndex = '5';
                 }
               }}
               onMouseLeave={e => { 
                 if (day) {
-                  e.currentTarget.style.background = today ? 'rgba(59, 130, 246, 0.03)' : 'transparent';
-                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.background = today ? 'rgba(59, 130, 246, 0.08)' : 'transparent';
+                  e.currentTarget.style.boxShadow = today ? 'inset 0 0 0 1.5px var(--info)' : 'none';
                   e.currentTarget.style.zIndex = '1';
                 }
               }}
@@ -723,8 +726,8 @@ function CalendarPageContent() {
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
                             cursor: isManager ? 'pointer' : 'default',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                            border: '1px solid var(--border)'
+                            boxShadow: today ? '0 0 8px rgba(255, 255, 255, 0.35)' : '0 2px 4px rgba(0,0,0,0.05)',
+                            border: today ? '1.5px solid #ffffff' : '1px solid var(--border)'
                           }} title={`${ev.title}${ev.time ? ` ${ev.time}` : ''}`}>
                             {ev.title}
                           </div>
@@ -760,90 +763,132 @@ function CalendarPageContent() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {events.sort((a, b) => a.date.localeCompare(b.date)).map(ev => {
-              const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
-              return (
-                <div key={ev.id} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '16px 24px',
-                  gap: '16px',
-                  borderRadius: '24px',
-                  background: 'var(--surface)',
-                  boxShadow: '8px 8px 24px rgba(0,0,0,0.04), -8px -8px 24px var(--neu-glow)',
-                  transition: 'all 0.3s ease',
-                  border: '1px solid var(--border)'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = '12px 12px 32px rgba(0,0,0,0.06)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '8px 8px 24px rgba(0,0,0,0.04), -8px -8px 24px var(--neu-glow)'
-                }}
-                >
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '12px',
-                    background: tc.bg,
+            {(() => {
+              const todayDateObj = todayState || new Date()
+              const todayStr = `${todayDateObj.getFullYear()}-${String(todayDateObj.getMonth() + 1).padStart(2, '0')}-${String(todayDateObj.getDate()).padStart(2, '0')}`
+              
+              const todayEvents = events.filter(e => e.date === todayStr)
+              const otherEvents = events.filter(e => e.date !== todayStr)
+
+              const sortByDateAndTime = (a: CalEvent, b: CalEvent) => {
+                const dateCompare = a.date.localeCompare(b.date)
+                if (dateCompare !== 0) return dateCompare
+                return (a.time || '').localeCompare(b.time || '')
+              }
+
+              const sortedEvents = [
+                ...todayEvents.sort(sortByDateAndTime),
+                ...otherEvents.sort(sortByDateAndTime)
+              ]
+
+              return sortedEvents.map(ev => {
+                const tc = TYPE_COLORS[ev.type] || TYPE_COLORS.class
+                const isEventToday = ev.date === todayStr
+                return (
+                  <div key={ev.id} style={{
                     display: 'flex',
-                    flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                  }}>
-                    <span style={{ fontSize: '15px', fontWeight: '800', color: tc.color, lineHeight: 1 }}>
-                      {new Date(ev.date + 'T00:00:00').getDate()}
+                    padding: '16px 24px',
+                    gap: '16px',
+                    borderRadius: '24px',
+                    background: isEventToday 
+                      ? 'linear-gradient(135deg, var(--surface) 0%, rgba(59, 130, 246, 0.07) 100%)' 
+                      : 'var(--surface)',
+                    boxShadow: isEventToday
+                      ? '0 0 20px rgba(59, 130, 246, 0.12), 8px 8px 24px rgba(0,0,0,0.04)'
+                      : '8px 8px 24px rgba(0,0,0,0.04), -8px -8px 24px var(--neu-glow)',
+                    transition: 'all 0.3s ease',
+                    border: isEventToday ? '1.5px solid var(--info)' : '1px solid var(--border)'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                    e.currentTarget.style.boxShadow = isEventToday
+                      ? '0 0 25px rgba(59, 130, 246, 0.2), 12px 12px 32px rgba(0,0,0,0.06)'
+                      : '12px 12px 32px rgba(0,0,0,0.06)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = isEventToday
+                      ? '0 0 20px rgba(59, 130, 246, 0.12), 8px 8px 24px rgba(0,0,0,0.04)'
+                      : '8px 8px 24px rgba(0,0,0,0.04), -8px -8px 24px var(--neu-glow)'
+                  }}
+                  >
+                    <div style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '12px',
+                      background: tc.bg,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                    }}>
+                      <span style={{ fontSize: '15px', fontWeight: '800', color: tc.color, lineHeight: 1 }}>
+                        {new Date(ev.date + 'T00:00:00').getDate()}
+                      </span>
+                      <span style={{ fontSize: '9px', color: tc.color, fontWeight: '700', textTransform: 'uppercase', opacity: 0.9 }}>
+                        {new Date(ev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })}
+                      </span>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {ev.title}
+                        {isEventToday && (
+                          <span style={{
+                            fontSize: '9px',
+                            padding: '2px 8px',
+                            borderRadius: '50px',
+                            fontWeight: '800',
+                            background: 'var(--info)',
+                            color: '#ffffff',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                          }}>
+                            Today
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '500' }}>
+                        {ev.time && `${formatTimeString12Hour(ev.time)}${ev.endTime ? ` - ${formatTimeString12Hour(ev.endTime)}` : ''} · `}
+                        {ev.course?.name ? ev.course.name : ev.description || 'Global (All Users)'}
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: '10px', padding: '4px 12px', borderRadius: '50px', fontWeight: '700',
+                      background: 'var(--bg)',
+                      color: 'var(--text-secondary)',
+                    }}>
+                      {ev.course?.name || 'Global'}
                     </span>
-                    <span style={{ fontSize: '9px', color: tc.color, fontWeight: '700', textTransform: 'uppercase', opacity: 0.9 }}>
-                      {new Date(ev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })}
+                    <span style={{
+                      fontSize: '10px', padding: '4px 12px', borderRadius: '50px', fontWeight: '700',
+                      background: tc.bg + '20',
+                      color: tc.bg === '#FFC107' ? '#b48a04' : tc.bg, // Adjust contrast for yellow
+                    }}>
+                      {tc.label}
                     </span>
+                    {isManager && (
+                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                        <button onClick={() => openEdit(ev)} className="btn btn-ghost btn-sm" style={{ padding: '8px', boxShadow: 'none' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                        <button onClick={() => handleDelete(ev.id)} className="btn btn-sm" style={{ padding: '8px', color: 'var(--danger)', background: 'var(--danger-light)', boxShadow: 'none' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                          </svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '2px' }}>
-                      {ev.title}
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '500' }}>
-                      {ev.time && `${formatTimeString12Hour(ev.time)}${ev.endTime ? ` - ${formatTimeString12Hour(ev.endTime)}` : ''} · `}
-                      {ev.course?.name ? ev.course.name : ev.description || 'Global (All Users)'}
-                    </div>
-                  </div>
-                  <span style={{
-                    fontSize: '10px', padding: '4px 12px', borderRadius: '50px', fontWeight: '700',
-                    background: 'var(--bg)',
-                    color: 'var(--text-secondary)',
-                  }}>
-                    {ev.course?.name || 'Global'}
-                  </span>
-                  <span style={{
-                    fontSize: '10px', padding: '4px 12px', borderRadius: '50px', fontWeight: '700',
-                    background: tc.bg + '20',
-                    color: tc.bg === '#FFC107' ? '#b48a04' : tc.bg, // Adjust contrast for yellow
-                  }}>
-                    {tc.label}
-                  </span>
-                  {isManager && (
-                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                      <button onClick={() => openEdit(ev)} className="btn btn-ghost btn-sm" style={{ padding: '8px', boxShadow: 'none' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </button>
-                      <button onClick={() => handleDelete(ev.id)} className="btn btn-sm" style={{ padding: '8px', color: 'var(--danger)', background: 'var(--danger-light)', boxShadow: 'none' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <polyline points="3 6 5 6 21 6"/>
-                          <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+                )
+              })
+            })()}
           </div>
         )}
       </div>

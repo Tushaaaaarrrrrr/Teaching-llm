@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')?.trim() || ''
+    const courseId = searchParams.get('courseId')?.trim() || ''
 
     const userSelect = {
       id: true,
@@ -69,6 +70,20 @@ export async function GET(request: NextRequest) {
     // No search query: fetch all ADMIN, MANAGER, and INSTRUCTOR users,
     // plus the latest 500 STUDENT users, to avoid overloading.
     if (!search) {
+      if (courseId && courseId !== 'all') {
+        const users = await prisma.user.findMany({
+          where: {
+            OR: [
+              { enrollments: { some: { courseId } } },
+              { instructorAssignments: { some: { courseId } } },
+            ],
+          },
+          select: userSelect,
+          orderBy: { createdAt: 'desc' },
+        })
+        return NextResponse.json({ users, limited: false })
+      }
+
       const staffUsers = await prisma.user.findMany({
         where: {
           role: { in: ['ADMIN', 'MANAGER', 'INSTRUCTOR'] }
@@ -93,17 +108,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ users, limited: true })
     }
 
-    // Search query provided: search across all users
-    const users = await prisma.user.findMany({
-      where: {
+    // Search query provided: search across all users, optionally filtering by courseId
+    const whereClause: any = {
+      AND: [
+        {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+            { securityNumber: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      ]
+    }
+
+    if (courseId && courseId !== 'all') {
+      whereClause.AND.push({
         OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-          { securityNumber: { contains: search, mode: 'insensitive' } },
+          { enrollments: { some: { courseId } } },
+          { instructorAssignments: { some: { courseId } } },
         ],
-      },
+      })
+    }
+
+    const users = await prisma.user.findMany({
+      where: whereClause,
       select: userSelect,
       orderBy: { createdAt: 'desc' },
       take: 500,
