@@ -853,10 +853,10 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                   <div className="form-group">
                     <label className="form-label">Type *</label>
                     <select className="form-input" value={f.category || 'NOTE'} onChange={e => set('category', e.target.value)}>
-                      <option value="NOTE">📘 Notes</option>
-                      <option value="PYQ">📝 PYQ</option>
-                      <option value="ASSIGNMENT">✍️ Assignment</option>
-                      <option value="OTHER">📁 Other</option>
+                      <option value="NOTE">Notes</option>
+                      <option value="PYQ">PYQ</option>
+                      <option value="ASSIGNMENT">Assignment</option>
+                      <option value="OTHER">Other</option>
                     </select>
                   </div>
                   <div className="form-group">

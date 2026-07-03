@@ -221,16 +221,16 @@ export default function AnalyticsDashboard() {
       {/* ─── KPI Cards ──────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px' }}>
         {[
-          { label: 'Total Students', value: summary.totalUsers, color: '#3636e8', icon: '👥' },
-          { label: 'New Users', value: summary.newUsers, color: '#10b981', icon: '🆕' },
-          { label: 'Returning Users', value: summary.returningUsers, color: '#6366f1', icon: '🔄' },
-          { label: 'Active Users', value: summary.activeUsers, color: '#f59e0b', icon: '⚡' },
+          { label: 'Total Students', value: summary.totalUsers, color: '#3636e8' },
+          { label: 'New Users', value: summary.newUsers, color: '#10b981' },
+          { label: 'Returning Users', value: summary.returningUsers, color: '#6366f1' },
+          { label: 'Active Users', value: summary.activeUsers, color: '#f59e0b' },
         ].map((kpi, i) => (
           <div key={i} style={{ ...neuCard, position: 'relative', overflow: 'hidden' }}>
             <div style={kpiAccentBar(kpi.color)} />
             <div style={{ paddingLeft: '8px' }}>
               <div style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {kpi.icon} {kpi.label}
+                {kpi.label}
               </div>
               <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '8px' }}>
                 {typeof kpi.value === 'number' ? (
@@ -245,7 +245,7 @@ export default function AnalyticsDashboard() {
       {/* ─── Enrollment Trend (Area Chart) ──────────────────────────── */}
       <div style={neuCard}>
         <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>
-          📈 Enrollment Trend ({RANGE_LABELS[range]})
+          Enrollment Trend ({RANGE_LABELS[range]})
         </h3>
         {trendData.length === 0 ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>
@@ -365,7 +365,7 @@ export default function AnalyticsDashboard() {
         {/* Section heading */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>👥 Audience Demographics</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>Audience Demographics</h2>
             <p style={{ fontSize: '12px', color: '#9999b0', marginTop: '4px', fontWeight: 600 }}>Based on profile data from all active students</p>
           </div>
           {!demographics && (
@@ -380,7 +380,7 @@ export default function AnalyticsDashboard() {
 
           {/* ── Gender Card ── */}
           <div style={neuCard}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>⚧ Gender Split</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>Gender Split</h3>
             {!demographics || genderData.length === 0 ? (
               <div style={{ padding: '40px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No data yet</div>
             ) : (
@@ -393,7 +393,7 @@ export default function AnalyticsDashboard() {
                   return (
                     <div key={key}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{cfg.icon} {key.charAt(0) + key.slice(1).toLowerCase()}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{key.charAt(0) + key.slice(1).toLowerCase()}</span>
                         <span style={{ fontSize: '13px', fontWeight: 800, color: cfg.color }}>{count} <span style={{ fontSize: '11px', color: '#9999b0', fontWeight: 600 }}>({pct}%)</span></span>
                       </div>
                       <div style={{ height: '8px', borderRadius: '4px', background: '#e0e3ea', overflow: 'hidden' }}>
@@ -408,7 +408,7 @@ export default function AnalyticsDashboard() {
 
           {/* ── Age Card ── */}
           <div style={neuCard}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>🎂 Age Brackets</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>Age Brackets</h3>
             {!demographics || ageData.length === 0 ? (
               <div style={{ padding: '40px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No data yet</div>
             ) : (
@@ -433,7 +433,7 @@ export default function AnalyticsDashboard() {
 
           {/* ── State Distribution Card ── */}
           <div style={{ ...neuCard, maxHeight: '380px', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)', flexShrink: 0 }}>📍 State Distribution</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)', flexShrink: 0 }}>State Distribution</h3>
             {!demographics || stateData.length === 0 ? (
               <div style={{ padding: '40px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No location data yet</div>
             ) : (
@@ -467,7 +467,7 @@ export default function AnalyticsDashboard() {
       <div style={{ marginTop: '32px', marginBottom: '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>🎓 IITM BS Academic Analysis</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>IITM BS Academic Analysis</h2>
             <p style={{ fontSize: '12px', color: '#9999b0', marginTop: '4px', fontWeight: 600 }}>Cohort year, term, levels and category distributions</p>
           </div>
         </div>
@@ -476,7 +476,7 @@ export default function AnalyticsDashboard() {
           
           {/* Cohort Year & Term Card */}
           <div style={neuCard}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>📅 Admission Cohorts</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>Admission Cohorts</h3>
             {joinYearData.length === 0 && joinMonthData.length === 0 ? (
               <div style={{ padding: '60px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No cohort data available</div>
             ) : (
@@ -541,7 +541,7 @@ export default function AnalyticsDashboard() {
 
           {/* Current Level Card */}
           <div style={neuCard}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>🎓 Program Levels</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>Program Levels</h3>
             {levelData.length === 0 ? (
               <div style={{ padding: '60px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No program level data available</div>
             ) : (
@@ -601,7 +601,7 @@ export default function AnalyticsDashboard() {
 
           {/* Student Category Card */}
           <div style={neuCard}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>💼 Student Categories</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>Student Categories</h3>
             {userTypeData.length === 0 ? (
               <div style={{ padding: '60px 0', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No student category data available</div>
             ) : (

@@ -74,9 +74,9 @@ function FilterSelect({
 
 type Category = 'ASSIGNMENT' | 'PYQ' | 'NOTE'
 const CATEGORIES: { value: Category; label: string; icon: string }[] = [
-  { value: 'ASSIGNMENT', label: 'Assignments', icon: '✍️' },
-  { value: 'PYQ',        label: 'PYQs',        icon: '📝' },
-  { value: 'NOTE',       label: 'Notes',       icon: '📘' },
+  { value: 'ASSIGNMENT', label: 'Assignments', icon: '' },
+  { value: 'PYQ',        label: 'PYQs',        icon: '' },
+  { value: 'NOTE',       label: 'Notes',       icon: '' },
 ]
 
 interface Material {
@@ -137,6 +137,58 @@ export default function FreeMaterialsPage() {
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [sourceType, setSourceType] = useState<'FILE' | 'LINK'>('FILE')
   const [saving, setSaving] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('GRID')
+  const [uploading, setUploading] = useState(false)
+
+  const closeModal = () => {
+    setShowModal(false)
+    setEditId(null)
+    setFormData({})
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const data = new FormData()
+      data.append('file', file)
+      data.append('type', 'materials')
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: data,
+      })
+
+      if (res.ok) {
+        const json = await res.json()
+        set('fileUrl', json.url)
+        
+        const ext = file.name.split('.').pop() || ''
+        set('fileType', ext.toLowerCase())
+        
+        const sizeKB = file.size / 1024
+        const sizeStr = sizeKB > 1024 
+          ? `${(sizeKB / 1024).toFixed(1)} MB` 
+          : `${Math.round(sizeKB)} KB`
+        set('fileSize', sizeStr)
+        
+        if (!formData.title) {
+          const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name
+          set('title', nameWithoutExt)
+        }
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Upload failed')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Error uploading file')
+    }
+    setUploading(false)
+  }
 
   const set = (key: string, val: string) =>
     setFormData(prev => ({ ...prev, [key]: val }))
@@ -164,8 +216,13 @@ export default function FreeMaterialsPage() {
 
     setSaving(true)
     try {
-      const res = await fetch('/api/free-resources/materials', {
-        method: 'POST',
+      const url = editId
+        ? `/api/materials/${editId}`
+        : '/api/free-resources/materials'
+      const method = editId ? 'PUT' : 'POST'
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
@@ -174,20 +231,18 @@ export default function FreeMaterialsPage() {
         }),
       })
       if (res.ok) {
-        setShowModal(false)
-        setFormData({})
-        setSourceType('FILE')
+        closeModal()
         // Refresh both the list AND the options endpoint so a freshly
         // introduced level/subject value populates the dropdown right away.
         mutate(listUrl)
         mutate('/api/free-resources/materials/options')
       } else {
         const data = await res.json()
-        alert(data.error || 'Failed to create material')
+        alert(data.error || `Failed to ${editId ? 'update' : 'create'} material`)
       }
     } catch (e) {
       console.error(e)
-      alert('Error creating material')
+      alert(`Error ${editId ? 'updating' : 'creating'} material`)
     }
     setSaving(false)
   }
@@ -360,86 +415,277 @@ export default function FreeMaterialsPage() {
           </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '14px' }}>
-          {materials.map(mat => (
-            <div key={mat.id} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '28px' }}>{getFileIcon(mat.fileType)}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {mat.title}
-                  </div>
-                  {mat.description && (
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                      {mat.description}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: mat.sourceType === 'LINK' ? 'var(--info-light)' : 'var(--success-light)', color: mat.sourceType === 'LINK' ? 'var(--info)' : 'var(--success)', fontWeight: '600' }}>
-                  {mat.sourceType === 'LINK' ? 'LINK' : (mat.fileType || 'File').toUpperCase()}
-                </span>
-                {mat.subject && (
-                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--primary-light)', color: 'var(--accent)', fontWeight: 600 }}>
-                    {mat.subject}
-                  </span>
-                )}
-                {mat.level && (
-                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--warning-light)', color: 'var(--warning)', fontWeight: 600 }}>
-                    {mat.level}
-                  </span>
-                )}
-                {mat.term && (
-                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--success-light)', color: 'var(--success)', fontWeight: 600 }}>
-                    {mat.term}
-                  </span>
-                )}
-                {mat.fileSize && (
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{mat.fileSize}</span>
-                )}
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
-                  {new Date(mat.uploadedAt).toLocaleDateString('en-GB')}
-                </span>
-              </div>
-
-              <div style={{ marginTop: 'auto', display: 'flex', gap: '8px' }}>
-                {/* For PDFs we route through the watermarked in-browser
-                    viewer; everything else opens the raw URL in a new tab. */}
-                {mat.sourceType !== 'LINK' && (
-                  (mat.fileType || '').toLowerCase().includes('pdf') ||
-                  /\.pdf(\?|$)/i.test(mat.fileUrl)
-                ) ? (
-                  <a
-                    href={`/free-resources/materials/${mat.id}/view`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-primary"
-                    style={{ flex: 1, textAlign: 'center', textDecoration: 'none', fontSize: '13px' }}
-                  >
-                    Download Notes
-                  </a>
-                ) : (
-                  <a
-                    href={mat.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-primary"
-                    style={{ flex: 1, textAlign: 'center', textDecoration: 'none', fontSize: '13px' }}
-                  >
-                    {mat.sourceType === 'LINK' ? 'Open Link' : 'Download / View'}
-                  </a>
-                )}
-                {canManage && (
-                  <button onClick={() => handleDelete(mat.id)} className="btn btn-ghost" style={{ padding: '0 12px', color: 'var(--danger)', borderColor: 'var(--danger-light)' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                  </button>
-                )}
-              </div>
+        <>
+          {/* Layout selector and stats */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', padding: '0 4px', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+              {materials.length} {materials.length === 1 ? 'item' : 'items'} found
+            </span>
+            <div style={{ display: 'flex', background: 'var(--surface-2)', padding: '2px', borderRadius: '8px', border: '1px solid var(--surface-border)' }}>
+              <button
+                onClick={() => setViewMode('GRID')}
+                title="Square View"
+                style={{
+                  background: viewMode === 'GRID' ? 'var(--accent)' : 'transparent',
+                  color: viewMode === 'GRID' ? '#ffffff' : 'var(--text-secondary)',
+                  border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s ease', fontWeight: 700
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                <span>Square</span>
+              </button>
+              <button
+                onClick={() => setViewMode('LIST')}
+                title="List View"
+                style={{
+                  background: viewMode === 'LIST' ? 'var(--accent)' : 'transparent',
+                  color: viewMode === 'LIST' ? '#ffffff' : 'var(--text-secondary)',
+                  border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s ease', fontWeight: 700
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+                <span>List</span>
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+
+          {viewMode === 'GRID' ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '14px' }}>
+              {materials.map(mat => (
+                <div key={mat.id} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '28px' }}>{getFileIcon(mat.fileType)}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {mat.title}
+                      </div>
+                      {mat.description && (
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {mat.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: mat.sourceType === 'LINK' ? 'var(--info-light)' : 'var(--success-light)', color: mat.sourceType === 'LINK' ? 'var(--info)' : 'var(--success)', fontWeight: '600' }}>
+                      {mat.sourceType === 'LINK' ? 'LINK' : (mat.fileType || 'File').toUpperCase()}
+                    </span>
+                    {mat.subject && (
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--primary-light)', color: 'var(--accent)', fontWeight: 600 }}>
+                        {mat.subject}
+                      </span>
+                    )}
+                    {mat.level && (
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--warning-light)', color: 'var(--warning)', fontWeight: 600 }}>
+                        {mat.level}
+                      </span>
+                    )}
+                    {mat.term && (
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--success-light)', color: 'var(--success)', fontWeight: 600 }}>
+                        {mat.term}
+                      </span>
+                    )}
+                    {mat.fileSize && (
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{mat.fileSize}</span>
+                    )}
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                      {new Date(mat.uploadedAt).toLocaleDateString('en-GB')}
+                    </span>
+                  </div>
+
+                  <div style={{ marginTop: 'auto', display: 'flex', gap: '8px' }}>
+                    {mat.sourceType !== 'LINK' && (
+                      (mat.fileType || '').toLowerCase().includes('pdf') ||
+                      /\.pdf(\?|$)/i.test(mat.fileUrl)
+                    ) ? (
+                      <a
+                        href={`/free-resources/materials/${mat.id}/view`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary"
+                        style={{ flex: 1, textAlign: 'center', textDecoration: 'none', fontSize: '13px' }}
+                      >
+                        Download Notes
+                      </a>
+                    ) : (
+                      <a
+                        href={mat.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary"
+                        style={{ flex: 1, textAlign: 'center', textDecoration: 'none', fontSize: '13px' }}
+                      >
+                        {mat.sourceType === 'LINK' ? 'Open Link' : 'Download / View'}
+                      </a>
+                    )}
+                    {canManage && (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button
+                          onClick={() => {
+                            setFormData({
+                              title: mat.title || '',
+                              description: mat.description || '',
+                              category: mat.category || 'NOTE',
+                              level: mat.level || '',
+                              subject: mat.subject || '',
+                              term: mat.term || '',
+                              fileUrl: mat.fileUrl || '',
+                              fileType: mat.fileType || '',
+                            })
+                            setSourceType((mat.sourceType || 'FILE') as 'FILE' | 'LINK')
+                            setEditId(mat.id)
+                            setShowModal(true)
+                          }}
+                          className="btn btn-ghost"
+                          style={{ padding: '0 12px', color: 'var(--accent)', borderColor: 'var(--primary-light)' }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
+                          </svg>
+                        </button>
+                        <button onClick={() => handleDelete(mat.id)} className="btn btn-ghost" style={{ padding: '0 12px', color: 'var(--danger)', borderColor: 'var(--danger-light)' }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {materials.map(mat => (
+                <div
+                  key={mat.id}
+                  className="card"
+                  style={{
+                    padding: '16px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '16px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {/* Left Column: Icon + Text Content */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: '280px' }}>
+                    <span style={{ fontSize: '32px', flexShrink: 0 }}>{getFileIcon(mat.fileType)}</span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {mat.title}
+                      </div>
+                      {mat.description && (
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {mat.description}
+                        </div>
+                      )}
+                      {/* Badges/Tags */}
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', marginTop: '6px' }}>
+                        <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: mat.sourceType === 'LINK' ? 'var(--info-light)' : 'var(--success-light)', color: mat.sourceType === 'LINK' ? 'var(--info)' : 'var(--success)', fontWeight: '600' }}>
+                          {mat.sourceType === 'LINK' ? 'LINK' : (mat.fileType || 'File').toUpperCase()}
+                        </span>
+                        {mat.subject && (
+                          <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: 'var(--primary-light)', color: 'var(--accent)', fontWeight: 600 }}>
+                            {mat.subject}
+                          </span>
+                        )}
+                        {mat.level && (
+                          <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: 'var(--warning-light)', color: 'var(--warning)', fontWeight: 600 }}>
+                            {mat.level}
+                          </span>
+                        )}
+                        {mat.term && (
+                          <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: 'var(--success-light)', color: 'var(--success)', fontWeight: 600 }}>
+                            {mat.term}
+                          </span>
+                        )}
+                        {mat.fileSize && (
+                          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>{mat.fileSize}</span>
+                        )}
+                        <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                          • Uploaded: {new Date(mat.uploadedAt).toLocaleDateString('en-GB')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Actions */}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0 }}>
+                    {mat.sourceType !== 'LINK' && (
+                      (mat.fileType || '').toLowerCase().includes('pdf') ||
+                      /\.pdf(\?|$)/i.test(mat.fileUrl)
+                    ) ? (
+                      <a
+                        href={`/free-resources/materials/${mat.id}/view`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary"
+                        style={{ textAlign: 'center', textDecoration: 'none', fontSize: '13px', padding: '8px 16px' }}
+                      >
+                        Download Notes
+                      </a>
+                    ) : (
+                      <a
+                        href={mat.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary"
+                        style={{ textAlign: 'center', textDecoration: 'none', fontSize: '13px', padding: '8px 16px' }}
+                      >
+                        {mat.sourceType === 'LINK' ? 'Open Link' : 'Download / View'}
+                      </a>
+                    )}
+                    {canManage && (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button
+                          onClick={() => {
+                            setFormData({
+                              title: mat.title || '',
+                              description: mat.description || '',
+                              category: mat.category || 'NOTE',
+                              level: mat.level || '',
+                              subject: mat.subject || '',
+                              term: mat.term || '',
+                              fileUrl: mat.fileUrl || '',
+                              fileType: mat.fileType || '',
+                            })
+                            setSourceType((mat.sourceType || 'FILE') as 'FILE' | 'LINK')
+                            setEditId(mat.id)
+                            setShowModal(true)
+                          }}
+                          className="btn btn-ghost"
+                          style={{ padding: '8px 12px', color: 'var(--accent)', borderColor: 'var(--primary-light)' }}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
+                          </svg>
+                        </button>
+                        <button onClick={() => handleDelete(mat.id)} className="btn btn-ghost" style={{ padding: '8px 12px', color: 'var(--danger)', borderColor: 'var(--danger-light)' }}>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Create modal */}
@@ -450,7 +696,7 @@ export default function FreeMaterialsPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 1000, padding: '16px',
           }}
-          onClick={() => setShowModal(false)}
+          onClick={closeModal}
         >
           <div
             className="modal"
@@ -458,7 +704,7 @@ export default function FreeMaterialsPage() {
             onClick={e => e.stopPropagation()}
           >
             <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '20px', color: 'var(--text-primary)' }}>
-              Add Free Material
+              {editId ? 'Edit Free Material' : 'Add Free Material'}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group">
@@ -492,10 +738,10 @@ export default function FreeMaterialsPage() {
                     value={formData.category || 'NOTE'}
                     onChange={e => set('category', e.target.value)}
                   >
-                    <option value="NOTE">📘 Notes</option>
-                    <option value="PYQ">📝 PYQ</option>
-                    <option value="ASSIGNMENT">✍️ Assignment</option>
-                    <option value="OTHER">📁 Other</option>
+                    <option value="NOTE">Notes</option>
+                    <option value="PYQ">PYQ</option>
+                    <option value="ASSIGNMENT">Assignment</option>
+                    <option value="OTHER">Other</option>
                   </select>
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
@@ -580,22 +826,71 @@ export default function FreeMaterialsPage() {
               {sourceType === 'FILE' ? (
                 <>
                   <div className="form-group">
+                    <label className="form-label">Choose Local File</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        disabled={uploading}
+                        style={{ display: 'none' }}
+                        id="material-file-picker"
+                      />
+                      <label
+                        htmlFor="material-file-picker"
+                        className="btn btn-ghost"
+                        style={{
+                          flex: 1,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          cursor: uploading ? 'not-allowed' : 'pointer',
+                          padding: '12px',
+                          border: '2px dashed var(--accent)',
+                          color: 'var(--accent)',
+                          background: 'var(--primary-light)',
+                          borderRadius: '8px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        {uploading ? 'Uploading File...' : 'Choose File to Upload'}
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
                     <label className="form-label">File URL *</label>
                     <input
                       className="form-input"
                       value={formData.fileUrl || ''}
                       onChange={e => set('fileUrl', e.target.value)}
-                      placeholder="https://drive.google.com/file/d/.../view"
+                      placeholder="Upload a file above or paste a link (e.g. Google Drive)"
                     />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">File Type</label>
-                    <input
-                      className="form-input"
-                      value={formData.fileType || ''}
-                      onChange={e => set('fileType', e.target.value)}
-                      placeholder="e.g. pdf, pptx, docx"
-                    />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">File Type</label>
+                      <input
+                        className="form-input"
+                        value={formData.fileType || ''}
+                        onChange={e => set('fileType', e.target.value)}
+                        placeholder="e.g. pdf, pptx, docx"
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">File Size</label>
+                      <input
+                        className="form-input"
+                        value={formData.fileSize || ''}
+                        onChange={e => set('fileSize', e.target.value)}
+                        placeholder="e.g. 1.2 MB / 400 KB"
+                      />
+                    </div>
                   </div>
                 </>
               ) : (
@@ -612,9 +907,9 @@ export default function FreeMaterialsPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
+              <button onClick={closeModal} className="btn btn-ghost">Cancel</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-primary">
-                {saving ? 'Saving...' : 'Create Material'}
+                {saving ? 'Saving...' : editId ? 'Save Changes' : 'Create Material'}
               </button>
             </div>
           </div>
