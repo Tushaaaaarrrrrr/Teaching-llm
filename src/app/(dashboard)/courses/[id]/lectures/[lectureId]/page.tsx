@@ -401,6 +401,7 @@ export default function LecturePage() {
         youtubeUrl={content.youtubeUrl || undefined}
         videoSource={content.videoSource}
         title={content.title}
+        contentId={content.id}
       />
 
       {isMobile && (

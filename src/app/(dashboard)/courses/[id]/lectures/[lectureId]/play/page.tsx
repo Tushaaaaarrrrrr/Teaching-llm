@@ -186,6 +186,7 @@ export default function PlayDriveVideoPage() {
           youtubeUrl={content.youtubeUrl || undefined}
           videoSource={content.videoSource}
           title={content.title}
+          contentId={content.id}
           fill
         />
       </div>

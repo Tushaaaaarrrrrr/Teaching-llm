@@ -6,6 +6,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Circle,
+  Gauge,
   Loader2,
   Maximize,
   Minimize,
@@ -26,6 +27,9 @@ declare global {
 
 const YT_QUALITY_PREF_KEY = 'yt_quality_pref'
 const YT_QUALITY_AUTO = 'auto'
+const YT_SPEED_PREF_KEY = 'yt_speed_pref'
+const YT_POSITION_PREFIX = 'yt_pos_'
+const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 
 const QUALITY_LABELS: Record<string, string> = {
   highres: '2160p',
@@ -93,6 +97,7 @@ export function isLikelyYouTubeLive(input: string | null | undefined): boolean {
 
 interface Props {
   videoId: string
+  contentId?: string      // LectureProgress contentId — for server-side resume sync
   title?: string
   aspectRatio?: string
   autoplay?: boolean
@@ -103,6 +108,7 @@ interface Props {
 
 export default function SecureYouTubePlayer({
   videoId,
+  contentId,
   title,
   aspectRatio = '16 / 9',
   autoplay = false,
@@ -130,6 +136,8 @@ export default function SecureYouTubePlayer({
   const [availableQualities, setAvailableQualities] = useState<string[]>([])
   const [currentQuality, setCurrentQuality] = useState(YT_QUALITY_AUTO)
   const [showQualitySheet, setShowQualitySheet] = useState(false)
+  const [speed, setSpeed] = useState(1)
+  const [showSpeedSheet, setShowSpeedSheet] = useState(false)
 
   useEffect(() => { onProgressRef.current = onProgress }, [onProgress])
 
@@ -189,12 +197,17 @@ export default function SecureYouTubePlayer({
     setDuration(0)
     setIsLive(initialIsLive)
     setShowQualitySheet(false)
+    setShowSpeedSheet(false)
 
     loadYouTubeIframeApi().then(() => {
       if (destroyed || !hostRef.current || !window.YT?.Player) return
 
       const savedQuality = localStorage.getItem(YT_QUALITY_PREF_KEY) || YT_QUALITY_AUTO
       setCurrentQuality(savedQuality)
+
+      const savedSpeed = parseFloat(localStorage.getItem(YT_SPEED_PREF_KEY) || '1')
+      const validSpeed = SPEED_OPTIONS.includes(savedSpeed) ? savedSpeed : 1
+      setSpeed(validSpeed)
 
       playerRef.current = new window.YT.Player(hostRef.current, {
         videoId,
@@ -222,6 +235,37 @@ export default function SecureYouTubePlayer({
               setDuration(Number.isFinite(d) ? d : 0)
               updateQualities()
               if (savedQuality !== YT_QUALITY_AUTO) player?.setPlaybackQuality?.(savedQuality)
+              if (validSpeed !== 1) player?.setPlaybackRate?.(validSpeed)
+
+              // Resume from saved position
+              if (!live) {
+                try {
+                  // Instant resume from localStorage first
+                  const savedPos = parseFloat(localStorage.getItem(YT_POSITION_PREFIX + videoId) || '0')
+                  const totalDur = Number.isFinite(d) ? d : 0
+                  if (savedPos > 5 && totalDur > 0 && savedPos < totalDur - 30) {
+                    player?.seekTo?.(savedPos, true)
+                    setPosition(savedPos)
+                  }
+                  // Then fetch server position (may override if newer)
+                  if (contentId) {
+                    fetch(`/api/lectures/video-position?contentId=${contentId}`)
+                      .then(r => r.json())
+                      .then(data => {
+                        if (destroyed) return
+                        const serverPos = data?.position ?? 0
+                        const dur = playerRef.current?.getDuration?.() ?? totalDur
+                        if (serverPos > 5 && dur > 0 && serverPos < dur - 30 && serverPos > savedPos) {
+                          playerRef.current?.seekTo?.(serverPos, true)
+                          setPosition(serverPos)
+                          localStorage.setItem(YT_POSITION_PREFIX + videoId, String(serverPos))
+                        }
+                      })
+                      .catch(() => {})
+                  }
+                } catch {}
+              }
+
               if (autoplay) player?.playVideo?.()
             } catch {}
             setReady(true)
@@ -245,6 +289,15 @@ export default function SecureYouTubePlayer({
             if (state === window.YT.PlayerState.ENDED) {
               setEnded(true)
               setPlaying(false)
+              // Clear saved position — video fully watched, next open starts fresh
+              try { localStorage.removeItem(YT_POSITION_PREFIX + videoId) } catch {}
+              if (contentId) {
+                fetch('/api/lectures/video-position', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ contentId, position: 0 }),
+                }).catch(() => {})
+              }
               if (!progressFiredRef.current) {
                 progressFiredRef.current = true
                 try { onProgressRef.current?.() } catch {}
@@ -296,6 +349,38 @@ export default function SecureYouTubePlayer({
     }, 250)
     return () => clearInterval(timer)
   }, [duration, fireProgressIfPast90, playing])
+
+  // Save playback position to localStorage every 5 seconds
+  useEffect(() => {
+    if (!playing || isLive) return
+    const saveTimer = setInterval(() => {
+      try {
+        const current = playerRef.current?.getCurrentTime?.() ?? 0
+        if (current > 5) {
+          localStorage.setItem(YT_POSITION_PREFIX + videoId, String(Math.floor(current)))
+        }
+      } catch {}
+    }, 5000)
+    return () => clearInterval(saveTimer)
+  }, [playing, isLive, videoId])
+
+  // Sync playback position to server every 15 seconds (cross-device resume)
+  useEffect(() => {
+    if (!playing || isLive || !contentId) return
+    const syncTimer = setInterval(() => {
+      try {
+        const current = playerRef.current?.getCurrentTime?.() ?? 0
+        if (current > 5) {
+          fetch('/api/lectures/video-position', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contentId, position: Math.floor(current) }),
+          }).catch(() => {})
+        }
+      } catch {}
+    }, 15000)
+    return () => clearInterval(syncTimer)
+  }, [playing, isLive, contentId])
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -438,6 +523,14 @@ export default function SecureYouTubePlayer({
       }
     } catch {}
     setShowQualitySheet(false)
+    revealControls()
+  }
+
+  function pickSpeed(rate: number) {
+    setSpeed(rate)
+    localStorage.setItem(YT_SPEED_PREF_KEY, String(rate))
+    try { playerRef.current?.setPlaybackRate?.(rate) } catch {}
+    setShowSpeedSheet(false)
     revealControls()
   }
 
@@ -588,10 +681,32 @@ export default function SecureYouTubePlayer({
                 {isLive ? 'Live' : `${fmtTime(position)} / ${fmtTime(duration)}`}
               </span>
               <div style={{ flex: 1 }} />
+              {!isLive && (
+                <button
+                  type="button"
+                  onClick={() => { setShowSpeedSheet(true); setShowQualitySheet(false) }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    border: 0,
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    color: '#fff',
+                    background: 'rgba(0,0,0,0.32)',
+                    cursor: 'pointer',
+                    fontSize: '11.5px',
+                    fontWeight: 800,
+                  }}
+                >
+                  <Gauge size={16} />
+                  {speed === 1 ? 'Speed' : `${speed}×`}
+                </button>
+              )}
               {!isLive && availableQualities.length > 0 && qualityLabel && (
                 <button
                   type="button"
-                  onClick={() => setShowQualitySheet(true)}
+                  onClick={() => { setShowQualitySheet(true); setShowSpeedSheet(false) }}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -644,6 +759,38 @@ export default function SecureYouTubePlayer({
           >
             <RotateCcw size={56} fill="currentColor" />
           </button>
+        </div>
+      )}
+
+      {showSpeedSheet && (
+        <div
+          style={{ position: 'absolute', inset: 0, zIndex: 12, background: 'rgba(0,0,0,0.34)', display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => setShowSpeedSheet(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%',
+              background: 'rgba(11,16,32,0.96)',
+              borderTopLeftRadius: '20px',
+              borderTopRightRadius: '20px',
+              padding: '14px 20px 18px',
+              color: '#fff',
+              boxShadow: '0 -16px 36px rgba(0,0,0,0.36)',
+            }}
+          >
+            <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.34)', margin: '0 auto 12px' }} />
+            <div style={{ fontSize: '17px', fontWeight: 900, marginBottom: '10px' }}>Playback Speed</div>
+            {SPEED_OPTIONS.map(rate => (
+              <QualityRow
+                key={rate}
+                label={rate === 1 ? 'Normal' : `${rate}×`}
+                sub={rate === 1 ? 'Default speed' : rate < 1 ? 'Slower' : 'Faster'}
+                selected={speed === rate}
+                onClick={() => pickSpeed(rate)}
+              />
+            ))}
+          </div>
         </div>
       )}
 

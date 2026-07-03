@@ -13,6 +13,7 @@ interface LectureVideoPlayerProps {
   videoSource?: string    // Default source indicator (e.g., 'GOOGLE_DRIVE' or 'YOUTUBE')
   title: string           // Lecture/video title
   fill?: boolean          // If true, takes 100% height/width (no border radius/margins)
+  contentId?: string      // For server-side video resume (YouTube only)
 }
 
 export default function LectureVideoPlayer({
@@ -21,6 +22,7 @@ export default function LectureVideoPlayer({
   videoSource = 'GOOGLE_DRIVE',
   title,
   fill = false,
+  contentId,
 }: LectureVideoPlayerProps) {
   const [isNativeApp, setIsNativeApp] = useState(false)
   const [isMobileDevice, setIsMobileDevice] = useState(false)
@@ -172,6 +174,7 @@ export default function LectureVideoPlayer({
             <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
               <SecureYouTubePlayer
                 videoId={ytId}
+                contentId={contentId}
                 title={title}
                 isLive={isLikelyYouTubeLive(ytUrl!)}
               />
@@ -218,6 +221,7 @@ export default function LectureVideoPlayer({
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
             <SecureYouTubePlayer
               videoId={ytId}
+              contentId={contentId}
               title={title}
               isLive={isLikelyYouTubeLive(ytUrl!)}
             />
@@ -263,6 +267,7 @@ export default function LectureVideoPlayer({
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
             <SecureYouTubePlayer
               videoId={ytId}
+              contentId={contentId}
               title={title}
               isLive={isLikelyYouTubeLive(ytUrl!)}
             />

@@ -899,13 +899,14 @@ model AnalyticsConfig {
 }
 
 model LectureProgress {
-  id        String   @id @default(cuid())
-  userId    String
-  contentId String
-  status    String   @default("NOT_STARTED")
-  updatedAt DateTime @updatedAt
-  content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  userId        String
+  contentId     String
+  status        String   @default("NOT_STARTED")
+  videoPosition Int      @default(0)   // Playback resume position in seconds
+  updatedAt     DateTime @updatedAt
+  content       Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, contentId])
   @@index([userId])
