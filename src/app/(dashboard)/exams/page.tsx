@@ -164,7 +164,52 @@ export default function ExamsPage() {
     )
   }
 
-  if (loading) return <div style={{ padding: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}><div style={{ color: 'var(--text-muted)', fontSize: '15px' }}>Loading exams...</div></div>
+  if (loading) {
+    return (
+      <div className="page-container fade-in">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '32px', gap: '12px' }}>
+          <div className="skeleton" style={{ height: '40px', width: '130px', borderRadius: '50px' }} />
+          <div className="skeleton" style={{ height: '40px', width: '140px', borderRadius: '50px' }} />
+        </div>
+
+        <section style={{ marginBottom: '48px' }}>
+          <div className="skeleton" style={{ height: '24px', width: '150px', marginBottom: '20px', borderRadius: '6px' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '24px' }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{ ...neu, display: 'flex', flexDirection: 'column', gap: '16px', padding: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="skeleton" style={{ height: '18px', width: '80px', borderRadius: '50px' }} />
+                  <div className="skeleton" style={{ height: '18px', width: '50px', borderRadius: '50px' }} />
+                </div>
+                <div className="skeleton" style={{ height: '24px', width: '60%', borderRadius: '6px' }} />
+                <div className="skeleton" style={{ height: '14px', width: '90%', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '40px', width: '100%', borderRadius: '12px' }} />
+                <div className="skeleton" style={{ height: '42px', width: '100%', borderRadius: '14px', marginTop: 'auto' }} />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <div className="skeleton" style={{ height: '24px', width: '120px', marginBottom: '20px', borderRadius: '6px' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '24px' }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{ ...neu, display: 'flex', flexDirection: 'column', gap: '16px', padding: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="skeleton" style={{ height: '18px', width: '80px', borderRadius: '50px' }} />
+                  <div className="skeleton" style={{ height: '18px', width: '50px', borderRadius: '50px' }} />
+                </div>
+                <div className="skeleton" style={{ height: '24px', width: '70%', borderRadius: '6px' }} />
+                <div className="skeleton" style={{ height: '14px', width: '90%', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '40px', width: '100%', borderRadius: '12px' }} />
+                <div className="skeleton" style={{ height: '42px', width: '100%', borderRadius: '14px', marginTop: 'auto' }} />
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className="page-container fade-in">

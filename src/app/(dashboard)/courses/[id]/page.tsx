@@ -231,10 +231,148 @@ export default function CourseDetailPage() {
 
   if (loading) {
     return (
-      <div className="page-container">
-        <div className="skeleton" style={{ height: '120px', borderRadius: '12px', marginBottom: '20px' }} />
-        <div className="skeleton" style={{ height: '300px', borderRadius: '12px' }} />
-      </div>
+      <>
+        {/* Mobile Skeleton */}
+        <div className="course-detail-mobile-only" style={{ paddingBottom: '24px', background: 'var(--bg)', minHeight: '100vh' }}>
+          {/* Mobile Hero Cover Skeleton */}
+          <div style={{
+            height: '240px',
+            background: 'var(--skeleton-shine)',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            position: 'relative'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className="skeleton" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+              <div className="skeleton" style={{ width: '40px', height: '18px', borderRadius: '10px' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="skeleton" style={{ height: '22px', width: '80%', borderRadius: '4px' }} />
+              <div className="skeleton" style={{ height: '14px', width: '40%', borderRadius: '4px' }} />
+              <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+                <div className="skeleton" style={{ height: '12px', width: '60px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '12px', width: '80px', borderRadius: '4px' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Progress Card Skeleton */}
+          <div style={{ margin: '-20px 16px 20px', position: 'relative', zIndex: 10 }}>
+            <div style={{
+              background: 'var(--surface)',
+              borderRadius: '24px',
+              padding: '16px 20px',
+              boxShadow: '0 12px 30px -10px rgba(0,0,0,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px'
+            }}>
+              <div className="skeleton" style={{ width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <div className="skeleton" style={{ height: '12px', width: '60px', borderRadius: '4px' }} />
+                  <div className="skeleton" style={{ height: '12px', width: '30px', borderRadius: '4px' }} />
+                </div>
+                <div className="skeleton" style={{ height: '6px', width: '100%', borderRadius: '3px' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Tabs Skeleton */}
+          <div style={{
+            display: 'flex',
+            margin: '0 16px 20px',
+            borderRadius: '16px',
+            background: 'var(--surface-2)',
+            padding: '4px',
+            boxShadow: 'inset 2px 2px 5px var(--neu-dark), inset -2px -2px 5px var(--neu-light)'
+          }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{ flex: 1, padding: '12px', display: 'flex', justifyContent: 'center' }}>
+                <div className="skeleton" style={{ height: '14px', width: '60px', borderRadius: '4px' }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Curriculum List Skeleton */}
+          <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{
+                background: 'var(--surface)',
+                borderRadius: '24px',
+                padding: '16px 20px',
+                boxShadow: '0 8px 20px rgba(0,0,0,0.03)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                  <div className="skeleton" style={{ width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton" style={{ height: '14px', width: '70%', marginBottom: '4px', borderRadius: '4px' }} />
+                    <div className="skeleton" style={{ height: '10px', width: '40%', borderRadius: '4px' }} />
+                  </div>
+                </div>
+                <div className="skeleton" style={{ width: '14px', height: '14px', borderRadius: '50%' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Desktop Skeleton */}
+        <div className="page-container course-detail-desktop-only">
+          {/* Header Banner Skeleton */}
+          <div className="card" style={{ overflow: 'hidden', marginBottom: '20px' }}>
+            <div style={{ background: 'var(--skeleton-shine)', padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="skeleton" style={{ height: '12px', width: '100px', borderRadius: '4px', marginBottom: '12px' }} />
+              <div className="skeleton" style={{ height: '28px', width: '250px', borderRadius: '4px', marginBottom: '6px' }} />
+              <div className="skeleton" style={{ height: '14px', width: '450px', borderRadius: '4px', marginBottom: '14px' }} />
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div className="skeleton" style={{ height: '20px', width: '80px', borderRadius: '20px' }} />
+                <div className="skeleton" style={{ height: '12px', width: '150px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '20px', width: '180px', borderRadius: '20px' }} />
+                <div className="skeleton" style={{ height: '20px', width: '160px', borderRadius: '20px' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Topics List Skeleton */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card" style={{ overflow: 'hidden', padding: '0' }}>
+                {/* Topic Header Skeleton */}
+                <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', gap: '12px' }}>
+                  <div className="skeleton" style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton" style={{ height: '15px', width: '200px', borderRadius: '4px', marginBottom: '4px' }} />
+                    <div className="skeleton" style={{ height: '12px', width: '80px', borderRadius: '4px' }} />
+                  </div>
+                  <div className="skeleton" style={{ width: '16px', height: '16px', borderRadius: '50%' }} />
+                </div>
+
+                {/* Topic Expanded Content Skeleton */}
+                <div style={{ borderTop: '1px solid #d8dae3', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {[1, 2].map((j) => (
+                    <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 20px', borderRadius: '24px', background: 'var(--surface-2)' }}>
+                      <div className="skeleton" style={{ width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div className="skeleton" style={{ height: '14px', width: '180px', borderRadius: '4px', marginBottom: '6px' }} />
+                        <div className="skeleton" style={{ height: '11px', width: '240px', borderRadius: '4px' }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <div className="skeleton" style={{ height: '32px', width: '80px', borderRadius: '50px' }} />
+                        <div className="skeleton" style={{ height: '32px', width: '32px', borderRadius: '50%' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>
     )
   }
 

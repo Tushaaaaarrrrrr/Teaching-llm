@@ -149,9 +149,94 @@ export default function CoursesPage() {
   if (isLoading) {
     return (
       <div className="page-container">
+        <style>{`
+          :root {
+            --course-card-padding: 18px 20px 16px;
+            --course-banner-height: 100px;
+            --course-icon-size: 58px;
+            --course-card-radius: 28px;
+          }
+          @media (max-width: 768px) {
+            .grid-3 {
+              grid-template-columns: repeat(2, 1fr) !important;
+              gap: 12px !important;
+            }
+            :root {
+              --course-card-padding: 10px 10px 12px;
+              --course-banner-height: 70px;
+              --course-icon-size: 38px;
+              --course-card-radius: 20px;
+            }
+          }
+          @media (max-width: 600px) {
+            .courses-header-row { margin-bottom: 18px !important; }
+            .courses-search-wrap { width: 100%; }
+            .courses-search-input { width: 100% !important; }
+          }
+        `}</style>
+        
+        {/* Header and Filter Search Skeletons */}
+        <div className="courses-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
+          <div className="skeleton" style={{ height: '14px', width: '120px', borderRadius: '4px' }} />
+          <div className="courses-search-wrap" style={{ position: 'relative' }}>
+            <div className="skeleton courses-search-input" style={{ width: '260px', height: '40px', borderRadius: '50px' }} />
+          </div>
+        </div>
+
+        {/* Enhanced Card Grid Skeletons */}
         <div className="grid-3">
-          {[1,2,3,4,5,6].map(i => (
-            <div key={i} className="card skeleton" style={{ height: '260px', borderRadius: '28px' }} />
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div
+              key={i}
+              style={{
+                background: 'var(--surface-2)',
+                borderRadius: 'var(--course-card-radius, 28px)',
+                boxShadow: '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                height: '320px',
+                position: 'relative'
+              }}
+            >
+              {/* Banner Skeleton */}
+              <div style={{
+                height: 'var(--course-banner-height, 100px)',
+                background: 'var(--skeleton-shine)',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <div className="skeleton" style={{
+                  width: 'var(--course-icon-size, 58px)',
+                  height: 'var(--course-icon-size, 58px)',
+                  borderRadius: '50%'
+                }} />
+                <div className="skeleton" style={{
+                  position: 'absolute', top: '10px', left: '12px',
+                  height: '16px', width: '70px', borderRadius: '20px'
+                }} />
+              </div>
+
+              {/* Card Body Skeleton */}
+              <div style={{ padding: 'var(--course-card-padding, 18px 20px 16px)', display: 'flex', flexDirection: 'column', flex: 1, gap: '8px' }}>
+                <div className="skeleton" style={{ height: '18px', width: '80%', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '14px', width: '50%', borderRadius: '4px' }} />
+                
+                <div className="skeleton" style={{ height: '20px', width: '70px', borderRadius: '50px', marginTop: '4px' }} />
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', marginBottom: '8px' }}>
+                  <div className="skeleton" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
+                  <div className="skeleton" style={{ height: '12px', width: '90px', borderRadius: '4px' }} />
+                </div>
+
+                <div style={{ marginTop: 'auto' }}>
+                  <div className="skeleton" style={{ height: '42px', width: '100%', borderRadius: '50px' }} />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </div>

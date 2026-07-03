@@ -78,7 +78,27 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
     }
   }, [isMockedAttempt])
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading results...</div>
+  if (loading) {
+    return (
+      <div style={{ padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+          <div className="skeleton" style={{ height: '36px', width: '50%', margin: '0 auto 8px', borderRadius: '6px' }} />
+          <div className="skeleton" style={{ height: '18px', width: '30%', margin: '0 auto', borderRadius: '4px' }} />
+        </div>
+
+        <div style={{ borderRadius: '20px', background: 'var(--surface-2)', boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)', padding: '32px', textAlign: 'center', marginBottom: '40px' }}>
+          <div className="skeleton" style={{ height: '14px', width: '80px', margin: '0 auto 12px', borderRadius: '4px' }} />
+          <div className="skeleton" style={{ height: '48px', width: '120px', margin: '0 auto 16px', borderRadius: '8px' }} />
+          <div className="skeleton" style={{ height: '20px', width: '180px', margin: '0 auto', borderRadius: '50px' }} />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="skeleton" style={{ height: '45px', width: '100%', borderRadius: '14px' }} />
+          <div className="skeleton" style={{ height: '45px', width: '100%', borderRadius: '14px' }} />
+        </div>
+      </div>
+    )
+  }
 
   const attempt = isMockedAttempt ? {
     id: 'dummy',

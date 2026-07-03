@@ -116,8 +116,66 @@ export default function ReportsPage() {
 
   if (loading && !data && !isAdminOrManager) {
     return (
-      <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-        Loading Analytics...
+      <div style={{ padding: '24px 32px 48px', maxWidth: '1400px', margin: '0 auto' }}>
+        <div style={{ 
+          marginBottom: '36px', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          paddingBottom: '24px',
+          borderBottom: '1px solid var(--border)'
+        }}>
+          <div className="skeleton" style={{ height: '40px', width: '250px', borderRadius: '14px' }} />
+          <div className="skeleton" style={{ height: '40px', width: '180px', borderRadius: '14px' }} />
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '36px', width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} style={{ borderRadius: '24px', background: 'var(--surface-2)', padding: '28px', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="skeleton" style={{ height: '12px', width: '80px', borderRadius: '4px' }} />
+                  <div className="skeleton" style={{ height: '18px', width: '18px', borderRadius: '4px' }} />
+                </div>
+                <div className="skeleton" style={{ height: '32px', width: '120px', marginTop: '12px', borderRadius: '8px' }} />
+                <div className="skeleton" style={{ height: '11px', width: '140px', marginTop: '8px', borderRadius: '3px' }} />
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px' }}>
+            <div style={{ borderRadius: '24px', background: 'var(--surface-2)', padding: '28px', border: '1px solid var(--border)' }}>
+              <div className="skeleton" style={{ height: '18px', width: '150px', marginBottom: '24px', borderRadius: '4px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                    <div style={{ width: '40%' }}>
+                      <div className="skeleton" style={{ height: '14px', width: '100%', borderRadius: '4px' }} />
+                      <div className="skeleton" style={{ height: '10px', width: '60%', marginTop: '6px', borderRadius: '3px' }} />
+                    </div>
+                    <div className="skeleton" style={{ height: '18px', width: '60px', borderRadius: '6px' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ borderRadius: '24px', background: 'var(--surface-2)', padding: '28px', border: '1px solid var(--border)' }}>
+              <div className="skeleton" style={{ height: '18px', width: '130px', marginBottom: '24px', borderRadius: '4px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                    <div className="skeleton" style={{ width: '28px', height: '28px', borderRadius: '50%' }} />
+                    <div style={{ flex: 1 }}>
+                      <div className="skeleton" style={{ height: '14px', width: '50%', borderRadius: '4px' }} />
+                      <div className="skeleton" style={{ height: '10px', width: '70%', marginTop: '6px', borderRadius: '3px' }} />
+                    </div>
+                    <div className="skeleton" style={{ height: '16px', width: '40px', borderRadius: '4px' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -320,10 +378,52 @@ export default function ReportsPage() {
 
       {/* Main Page Rendering Slots */}
       {loading ? (
-        <div style={{ padding: '100px 40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
-          <style dangerouslySetInnerHTML={{ __html: '@keyframes spin { to { transform: rotate(360deg); } }' }} />
-          <div style={{ fontSize: '15px', fontWeight: 600 }}>Analyzing reports and auditing metrics...</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '36px', width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} style={{ borderRadius: '24px', background: 'var(--surface-2)', padding: '28px', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="skeleton" style={{ height: '12px', width: '80px', borderRadius: '4px' }} />
+                  <div className="skeleton" style={{ height: '18px', width: '18px', borderRadius: '4px' }} />
+                </div>
+                <div className="skeleton" style={{ height: '32px', width: '120px', marginTop: '12px', borderRadius: '8px' }} />
+                <div className="skeleton" style={{ height: '11px', width: '140px', marginTop: '8px', borderRadius: '3px' }} />
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px' }}>
+            <div style={{ borderRadius: '24px', background: 'var(--surface-2)', padding: '28px', border: '1px solid var(--border)' }}>
+              <div className="skeleton" style={{ height: '18px', width: '150px', marginBottom: '24px', borderRadius: '4px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                    <div style={{ width: '40%' }}>
+                      <div className="skeleton" style={{ height: '14px', width: '100%', borderRadius: '4px' }} />
+                      <div className="skeleton" style={{ height: '10px', width: '60%', marginTop: '6px', borderRadius: '3px' }} />
+                    </div>
+                    <div className="skeleton" style={{ height: '18px', width: '60px', borderRadius: '6px' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ borderRadius: '24px', background: 'var(--surface-2)', padding: '28px', border: '1px solid var(--border)' }}>
+              <div className="skeleton" style={{ height: '18px', width: '130px', marginBottom: '24px', borderRadius: '4px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                    <div className="skeleton" style={{ width: '28px', height: '28px', borderRadius: '50%' }} />
+                    <div style={{ flex: 1 }}>
+                      <div className="skeleton" style={{ height: '14px', width: '50%', borderRadius: '4px' }} />
+                      <div className="skeleton" style={{ height: '10px', width: '70%', marginTop: '6px', borderRadius: '3px' }} />
+                    </div>
+                    <div className="skeleton" style={{ height: '16px', width: '40px', borderRadius: '4px' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       ) : data?.type === 'MANAGER_OVERVIEW' ? (
         

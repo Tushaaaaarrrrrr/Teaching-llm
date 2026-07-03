@@ -326,8 +326,25 @@ export default function AnnouncementsPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <div style={{ color: 'var(--text-muted)', fontSize: '15px' }}>Loading announcements...</div>
+      <div className="announcements-page-container" style={{ padding: '24px 32px 48px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+          <div className="skeleton" style={{ height: '32px', width: '250px', borderRadius: '6px' }} />
+          <div className="skeleton" style={{ height: '40px', width: '150px', borderRadius: '50px' }} />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ borderRadius: '24px', background: 'var(--surface-2)', border: '1px solid var(--border)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: 'var(--shadow)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="skeleton" style={{ height: '20px', width: '40%', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '14px', width: '80px', borderRadius: '4px' }} />
+              </div>
+              <div className="skeleton" style={{ height: '12px', width: '90%', borderRadius: '3px' }} />
+              <div className="skeleton" style={{ height: '12px', width: '75%', borderRadius: '3px' }} />
+              <div className="skeleton" style={{ height: '12px', width: '50%', borderRadius: '3px' }} />
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

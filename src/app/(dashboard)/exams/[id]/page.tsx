@@ -357,7 +357,55 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
     padding: '32px',
   }
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading...</div>
+  if (loading) {
+    return (
+      <div style={{ padding: '32px' }}>
+         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+           <div style={{ width: '50%' }}>
+             <div className="skeleton" style={{ height: '32px', width: '80%', marginBottom: '12px', borderRadius: '6px' }} />
+             <div className="skeleton" style={{ height: '16px', width: '35%', borderRadius: '4px' }} />
+           </div>
+           <div style={{ display: 'flex', gap: '12px' }}>
+             <div className="skeleton" style={{ height: '40px', width: '100px', borderRadius: '50px' }} />
+             <div className="skeleton" style={{ height: '40px', width: '100px', borderRadius: '50px' }} />
+           </div>
+         </div>
+
+         <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px' }}>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+             <div style={{ ...neuCard, padding: '32px' }}>
+               <div className="skeleton" style={{ height: '24px', width: '40%', marginBottom: '20px', borderRadius: '6px' }} />
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                 <div className="skeleton" style={{ height: '14px', width: '100%', borderRadius: '4px' }} />
+                 <div className="skeleton" style={{ height: '14px', width: '90%', borderRadius: '4px' }} />
+                 <div className="skeleton" style={{ height: '14px', width: '85%', borderRadius: '4px' }} />
+                 <div className="skeleton" style={{ height: '14px', width: '95%', borderRadius: '4px' }} />
+               </div>
+             </div>
+             
+             <div style={{ ...neuCard, padding: '32px' }}>
+               <div className="skeleton" style={{ height: '24px', width: '35%', marginBottom: '20px', borderRadius: '6px' }} />
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                 {[1, 2, 3].map(i => (
+                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <div className="skeleton" style={{ height: '16px', width: '40%', borderRadius: '4px' }} />
+                     <div className="skeleton" style={{ height: '20px', width: '20%', borderRadius: '50px' }} />
+                   </div>
+                 ))}
+               </div>
+             </div>
+           </div>
+
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+             <div style={{ ...neuCard, padding: '32px' }}>
+               <div className="skeleton" style={{ height: '20px', width: '50%', marginBottom: '16px', borderRadius: '6px' }} />
+               <div className="skeleton" style={{ height: '48px', width: '100%', borderRadius: '12px' }} />
+             </div>
+           </div>
+         </div>
+      </div>
+    )
+  }
 
   if (isAdminOrManager) {
     return (

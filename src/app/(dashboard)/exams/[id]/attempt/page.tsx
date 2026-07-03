@@ -334,7 +334,69 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
     }
   }
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading assessment...</div>
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--surface)' }}>
+        <style dangerouslySetInnerHTML={{ __html: `
+          .sidebar-nav, .sidebar-overlay, .dashboard-header, .mobile-bottom-nav {
+            display: none !important;
+          }
+          main {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+        ` }} />
+        
+        {/* Shimmering Side Panel */}
+        <div style={{
+          width: '360px',
+          height: '100vh',
+          background: 'var(--surface)',
+          borderRight: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '24px',
+          gap: '20px'
+        }}>
+          <div className="skeleton" style={{ height: '32px', width: '60%', borderRadius: '6px' }} />
+          <div className="skeleton" style={{ height: '18px', width: '40%', borderRadius: '4px' }} />
+          <div style={{ borderBottom: '1px solid var(--border)', margin: '10px 0' }} />
+          <div className="skeleton" style={{ height: '40px', width: '100%', borderRadius: '12px' }} />
+          
+          <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+            {Array.from({ length: 15 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ aspectRatio: '1', borderRadius: '50%' }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Shimmering Main content */}
+        <div style={{ flex: 1, height: '100vh', padding: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--surface)' }}>
+          <div style={{ width: '100%', maxWidth: '800px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <div className="skeleton" style={{ height: '24px', width: '120px', borderRadius: '6px' }} />
+            <div className="skeleton" style={{ height: '40px', width: '150px', borderRadius: '50px' }} />
+          </div>
+
+          <div style={{ width: '100%', maxWidth: '800px', borderRadius: '24px', background: 'var(--surface)', border: '1px solid var(--border)', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px', boxShadow: '2px 2px 10px rgba(0,0,0,0.02)' }}>
+            <div className="skeleton" style={{ height: '30px', width: '80%', borderRadius: '6px' }} />
+            <div className="skeleton" style={{ height: '18px', width: '40%', borderRadius: '4px' }} />
+            <div style={{ margin: '10px 0' }} />
+            <div className="skeleton" style={{ height: '55px', width: '100%', borderRadius: '16px' }} />
+            <div className="skeleton" style={{ height: '55px', width: '100%', borderRadius: '16px' }} />
+            <div className="skeleton" style={{ height: '55px', width: '100%', borderRadius: '16px' }} />
+            <div className="skeleton" style={{ height: '55px', width: '100%', borderRadius: '16px' }} />
+          </div>
+
+          <div style={{ width: '100%', maxWidth: '800px', display: 'flex', justifyContent: 'space-between', marginTop: '32px' }}>
+            <div className="skeleton" style={{ height: '45px', width: '140px', borderRadius: '50px' }} />
+            <div className="skeleton" style={{ height: '45px', width: '140px', borderRadius: '50px' }} />
+          </div>
+        </div>
+      </div>
+    )
+  }
   if (!exam || !exam.questions || exam.questions.length === 0) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>

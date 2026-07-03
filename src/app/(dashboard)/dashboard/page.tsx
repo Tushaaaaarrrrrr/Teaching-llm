@@ -298,16 +298,160 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="page-container">
-        <div className="dashboard-stats-grid">
-          {[1,2,3,4].map(i => (
+        {/* Shimmering Stats Grid */}
+        <div
+          className="dashboard-stats-grid"
+          style={{
+            marginBottom: isMobile ? '16px' : '24px',
+            marginTop: isMobile ? '16px' : '24px',
+            display: 'grid',
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+            gap: isMobile ? '12px' : '20px'
+          }}
+        >
+          {[1, 2, 3, 4].map(i => (
             <div key={i} className="stat-card" style={{ background: 'var(--surface)' }}>
-              <div className="skeleton" style={{ height: '48px', width: '48px', borderRadius: '14px', flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <div className="skeleton" style={{ height: '14px', width: '80px', marginBottom: '8px' }} />
-                <div className="skeleton" style={{ height: '28px', width: '48px' }} />
+              <div className="skeleton" style={{ width: isMobile ? '36px' : '48px', height: isMobile ? '36px' : '48px', borderRadius: isMobile ? '10px' : '14px', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="skeleton" style={{ height: '12px', width: '60px', marginBottom: '6px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '22px', width: '40px', borderRadius: '4px' }} />
               </div>
             </div>
           ))}
+        </div>
+
+        {!isMobile && (
+          <>
+            {/* Hero Slider Skeleton */}
+            <div className="card" style={{ height: '240px', borderRadius: '24px', marginBottom: '24px', overflow: 'hidden' }}>
+              <div className="skeleton" style={{ width: '100%', height: '100%' }} />
+            </div>
+
+            {/* Row 1: Active Sessions + Up Next Panels */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '20px',
+              marginBottom: '20px'
+            }}>
+              {/* Active Session Skeleton */}
+              <div className="card" style={{ padding: '20px', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '16px', height: '200px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="skeleton" style={{ height: '24px', width: '120px', borderRadius: '20px' }} />
+                  <div className="skeleton" style={{ height: '18px', width: '60px' }} />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div className="skeleton" style={{ height: '24px', width: '70%', borderRadius: '4px' }} />
+                  <div className="skeleton" style={{ height: '14px', width: '40%', borderRadius: '4px' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                  <div className="skeleton" style={{ height: '8px', width: '40px', borderRadius: '4px' }} />
+                  <div className="skeleton" style={{ height: '42px', width: '140px', borderRadius: '14px' }} />
+                </div>
+              </div>
+
+              {/* Up Next Skeleton */}
+              <div className="card" style={{ padding: '20px', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '16px', height: '200px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="skeleton" style={{ height: '20px', width: '80px', borderRadius: '4px' }} />
+                  <div className="skeleton" style={{ height: '14px', width: '60px', borderRadius: '4px' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, justifyContent: 'center' }}>
+                  {[1, 2].map(i => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', borderRadius: '14px', background: 'var(--surface-2)' }}>
+                      <div className="skeleton" style={{ width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div className="skeleton" style={{ height: '14px', width: '60%', marginBottom: '4px', borderRadius: '4px' }} />
+                        <div className="skeleton" style={{ height: '10px', width: '40%', borderRadius: '4px' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {isMobile && (
+          /* Mobile-only Upcoming Session skeleton */
+          <div style={{ marginBottom: '24px' }}>
+            <div className="skeleton" style={{ height: '20px', width: '150px', marginBottom: '14px', borderRadius: '4px' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', borderRadius: '20px', background: 'var(--surface)' }}>
+              <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: '14px', flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div className="skeleton" style={{ height: '12px', width: '80px', marginBottom: '6px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '16.5px', width: '70%', marginBottom: '6px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '12px', width: '50%', borderRadius: '4px' }} />
+              </div>
+              <div className="skeleton" style={{ height: '32px', width: '70px', borderRadius: '50px', flexShrink: 0 }} />
+            </div>
+          </div>
+        )}
+
+        {/* Row 2: Recent Lecture Viewed */}
+        <div className={isMobile ? '' : 'card'} style={isMobile ? { marginBottom: '24px' } : { padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
+          <div className="skeleton" style={{ height: '20px', width: '150px', marginBottom: isMobile ? '14px' : '18px', borderRadius: '4px' }} />
+          <div style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'center',
+            gap: isMobile ? '16px' : '24px',
+            padding: isMobile ? '18px' : '24px',
+            borderRadius: isMobile ? '20px' : '24px',
+            background: isMobile ? 'var(--surface)' : 'var(--surface-2)',
+            width: '100%',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%' }}>
+              <div className="skeleton" style={{ width: isMobile ? '48px' : '56px', height: isMobile ? '48px' : '56px', borderRadius: isMobile ? '14px' : '16px', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="skeleton" style={{ height: '12px', width: '100px', marginBottom: '6px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '18px', width: '80%', marginBottom: '6px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '12px', width: '60%', borderRadius: '4px' }} />
+              </div>
+            </div>
+            <div className="skeleton" style={{ height: '44px', width: isMobile ? '100%' : '160px', borderRadius: isMobile ? '18px' : '50px', flexShrink: 0 }} />
+          </div>
+        </div>
+
+        {/* Row 3: Upcoming Assessments */}
+        <div className={isMobile ? '' : 'card'} style={isMobile ? { marginBottom: '24px' } : { padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '14px' : '18px' }}>
+            <div className="skeleton" style={{ height: '20px', width: '180px', borderRadius: '4px' }} />
+            <div className="skeleton" style={{ height: '14px', width: '60px', borderRadius: '4px' }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '12px' : '14px' }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{ padding: '18px', borderRadius: isMobile ? '20px' : '18px', background: isMobile ? 'var(--surface)' : 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '4px solid var(--skeleton-shine)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="skeleton" style={{ width: '36px', height: '36px', borderRadius: '10px' }} />
+                  <div className="skeleton" style={{ height: '14px', width: '60px', borderRadius: '6px' }} />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div className="skeleton" style={{ height: '16px', width: '90%', borderRadius: '4px' }} />
+                  <div className="skeleton" style={{ height: '12px', width: '60%', borderRadius: '4px' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                  <div className="skeleton" style={{ height: '12px', width: '60px', borderRadius: '4px' }} />
+                  <div className="skeleton" style={{ height: '12px', width: '80px', borderRadius: '4px' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Row 4: Announcements */}
+        <div className="card" style={{ padding: '22px 20px', borderRadius: '22px' }}>
+          <div className="skeleton" style={{ height: '20px', width: '140px', marginBottom: '16px', borderRadius: '4px' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {[1, 2].map(i => (
+              <div key={i} style={{ padding: '14px 18px', borderRadius: '14px', background: 'var(--surface-2)', borderLeft: '4px solid var(--skeleton-shine)' }}>
+                <div className="skeleton" style={{ height: '14px', width: '250px', marginBottom: '8px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '12px', width: '90%', marginBottom: '6px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '12px', width: '70%', marginBottom: '10px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ height: '10px', width: '80px', borderRadius: '4px' }} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     )
