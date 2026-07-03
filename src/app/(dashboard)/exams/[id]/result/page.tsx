@@ -400,7 +400,21 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                         )}
                       </button>
                       {q.type !== 'SUBJECTIVE' && q.correctAnswer !== null && q.correctAnswer !== undefined && (() => {
-                        const earned = resp?.marks ?? 0
+                        let earned = resp?.marks ?? 0
+                        if (q.type === 'MSQ' && (earned === null || earned === 0)) {
+                          try {
+                            const correctArr = JSON.parse(q.correctAnswer || '[]').map((s: string) => s.trim().toLowerCase())
+                            const studentArr = JSON.parse(resp?.answer || '[]').map((s: string) => s.trim().toLowerCase())
+                            if (studentArr.length > 0) {
+                              const hasIncorrect = studentArr.some((s: string) => !correctArr.includes(s))
+                              if (!hasIncorrect) {
+                                const numCorrectSelected = studentArr.length
+                                const totalCorrectOptions = correctArr.length
+                                earned = q.marks * (numCorrectSelected / totalCorrectOptions)
+                              }
+                            }
+                          } catch (e) {}
+                        }
                         const isPartiallyCorrect = earned > 0 && earned < q.marks
                         const isFullyCorrect = earned === q.marks || isCorrect
 
