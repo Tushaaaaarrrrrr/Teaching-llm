@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { EXAM_RESULT_REFRESH_INTERVAL_MS } from '@/lib/exam-policy'
+import { EXAM_RESULT_REFRESH_INTERVAL_MS, isFinalTest } from '@/lib/exam-policy'
 import { RichTextDisplay } from '@/components/ui/RichTextDisplay'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 export default function ExamResultPage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -66,8 +67,6 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
     }
   }, [reviewMode])
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading results...</div>
-
   const attemptData = exam?.attempts?.slice().sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())?.[0]
   const isExpired = exam && new Date() > new Date(exam.expiresAt)
   const isMockedAttempt = !attemptData && isExpired
@@ -77,6 +76,8 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
       setReviewMode(true)
     }
   }, [isMockedAttempt])
+
+  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading results...</div>
 
   const attempt = isMockedAttempt ? {
     id: 'dummy',
@@ -89,6 +90,14 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
     responses: []
   } : attemptData
 
+  if (!exam || exam.error || !exam.questions) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', color: 'var(--danger)' }}>
+        {exam?.error || 'Error loading assessment results. Please check your network or try again later.'}
+      </div>
+    )
+  }
+
   if (!attempt || !attempt.submittedAt) {
     router.push(`/exams/${params.id}`)
     return null
@@ -100,11 +109,15 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
     padding: '32px',
   }
 
-  const scorePercentage = attempt.totalMarks !== null 
-    ? (attempt.totalMarks / exam.questions.reduce((acc: number, q: any) => acc + q.marks, 0)) * 100 
+  const totalExamMarks = exam.questions.reduce((acc: number, q: any) => acc + (q.marks || 0), 0)
+  const scorePercentage = (attempt.totalMarks !== null && attempt.totalMarks !== undefined && totalExamMarks > 0)
+    ? (attempt.totalMarks / totalExamMarks) * 100 
     : null
 
   const isGeneralTest = exam?.examType === 'GENERAL_TEST'
+  const isFinal = isFinalTest(exam?.examType)
+  const isPublished = attempt?.isPublished || false
+  const isEvaluated = attempt?.isEvaluated || false
 
 
   return (
@@ -549,6 +562,34 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Pending Final Exam Modal */}
+      {isFinal && !isPublished && (
+        <ConfirmDialog
+          open={true}
+          title="Exam Submitted!"
+          message="Thank you for completing this final assessment. Your responses have been saved. Please wait until your mentor reviews your attempt and publishes the final results."
+          confirmLabel="Back to Exams"
+          cancelLabel="View Exam Info"
+          onConfirm={() => router.push('/exams')}
+          onCancel={() => router.push(`/exams/${params.id}`)}
+          tone="default"
+        />
+      )}
+
+      {/* Pending General Exam Modal */}
+      {!isFinal && !isEvaluated && (
+        <ConfirmDialog
+          open={true}
+          title="Calculating Your Result"
+          message="Please wait, our system is calculating your result. This page will automatically refresh once the calculation is completed."
+          confirmLabel="Back to Exams"
+          cancelLabel="View Exam Info"
+          onConfirm={() => router.push('/exams')}
+          onCancel={() => router.push(`/exams/${params.id}`)}
+          tone="default"
+        />
       )}
 
       <div style={{ marginTop: '40px', textAlign: 'center' }}>

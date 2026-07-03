@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { hasStrictTimer } from '@/lib/exam-policy'
 import ExamConfirmationModal from '@/components/exams/ExamConfirmationModal'
 import { RichTextDisplay } from '@/components/ui/RichTextDisplay'
+import ConfirmDialog from '@/components/ConfirmDialog'
+import Calculator from '@/components/exams/Calculator'
 
 interface Question {
   id: string
@@ -40,6 +42,8 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [showBackWarningModal, setShowBackWarningModal] = useState(false)
+  const [showCalculator, setShowCalculator] = useState(false)
 
   // Mobile responsiveness states
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
@@ -113,6 +117,34 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
       document.removeEventListener('dragstart', handleDragStart);
     };
   }, []);
+
+  // Back navigation warning & beforeunload block
+  useEffect(() => {
+    // Push dummy history entry
+    window.history.pushState(null, '', window.location.href)
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (submittingRef.current) return
+      // Push history state back so the user remains on the current screen
+      window.history.pushState(null, '', window.location.href)
+      setShowBackWarningModal(true)
+    }
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (submittingRef.current) return
+      e.preventDefault()
+      e.returnValue = ''
+      return ''
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [])
   
   // Timer State
   const [isPaused, setIsPaused] = useState(false)
@@ -413,7 +445,34 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={() => setShowCalculator(prev => !prev)}
+              style={{
+                padding: '8px',
+                borderRadius: '12px',
+                border: 'none',
+                background: 'var(--surface)',
+                color: 'var(--primary)',
+                cursor: 'pointer',
+                boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '34px',
+                height: '34px'
+              }}
+              title="Calculator"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+                <line x1="9" y1="9" x2="9.01" y2="9"/>
+                <line x1="15" y1="9" x2="15.01" y2="9"/>
+                <line x1="9" y1="13" x2="9.01" y2="13"/>
+                <line x1="15" y1="13" x2="15.01" y2="13"/>
+                <line x1="9" y1="17" x2="15" y2="17"/>
+              </svg>
+            </button>
             <button
               onClick={() => setShowMobileNavigator(true)}
               style={{
@@ -988,24 +1047,54 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
                   {isFinal ? 'FINAL EXAM' : 'PRACTICE MODE'}
                 </span>
               </div>
-              <button
-                onClick={() => setShowConfirmModal(true)}
-                disabled={submitting}
-                style={{
-                  padding: '12px 28px',
-                  borderRadius: '50px',
-                  border: 'none',
-                  background: 'var(--danger)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(239,68,68,0.3)',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {submitting ? 'Submitting...' : 'Exit Exam & Submit'}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <button
+                  onClick={() => setShowCalculator(prev => !prev)}
+                  style={{
+                    padding: '12px 20px',
+                    borderRadius: '50px',
+                    border: 'none',
+                    background: 'var(--surface)',
+                    color: 'var(--primary)',
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '3px 3px 6px #cfd6e1, -3px -3px 6px var(--neu-light)',
+                    marginRight: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+                    <line x1="9" y1="9" x2="9.01" y2="9"/>
+                    <line x1="15" y1="9" x2="15.01" y2="9"/>
+                    <line x1="9" y1="13" x2="9.01" y2="13"/>
+                    <line x1="15" y1="13" x2="15.01" y2="13"/>
+                    <line x1="9" y1="17" x2="15" y2="17"/>
+                  </svg>
+                  Calculator
+                </button>
+                <button
+                  onClick={() => setShowConfirmModal(true)}
+                  disabled={submitting}
+                  style={{
+                    padding: '12px 28px',
+                    borderRadius: '50px',
+                    border: 'none',
+                    background: 'var(--danger)',
+                    color: '#fff',
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(239,68,68,0.3)',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {submitting ? 'Submitting...' : 'Exit Exam & Submit'}
+                </button>
+              </div>
             </div>
 
             <div style={neuCard}>
@@ -1222,6 +1311,27 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
             submitting={submitting}
           />
       )}
+
+      {/* Back Warning Modal */}
+      {exam && (
+        <ConfirmDialog
+          open={showBackWarningModal}
+          title="Warning: Leaving Exam"
+          message="You are attempting to leave the exam page. Your progress so far is automatically saved, but you should submit your exam to record your attempt. Would you like to submit and exit, or cancel and stay?"
+          confirmLabel="Submit and Exit"
+          cancelLabel="Cancel"
+          onConfirm={handleSubmit}
+          onCancel={() => setShowBackWarningModal(false)}
+          loading={submitting}
+          tone="danger"
+        />
+      )}
+
+      {/* Calculator Modal */}
+      <Calculator
+        open={showCalculator}
+        onClose={() => setShowCalculator(false)}
+      />
 
     </div>
   )

@@ -66,13 +66,30 @@ export async function GET(request: NextRequest) {
       },
     }
 
-    // No search query: return latest 10 recently enrolled users (any role) to avoid overloading
+    // No search query: fetch all ADMIN, MANAGER, and INSTRUCTOR users,
+    // plus the latest 500 STUDENT users, to avoid overloading.
     if (!search) {
-      const users = await prisma.user.findMany({
+      const staffUsers = await prisma.user.findMany({
+        where: {
+          role: { in: ['ADMIN', 'MANAGER', 'INSTRUCTOR'] }
+        },
+        select: userSelect,
+        orderBy: { createdAt: 'desc' },
+      })
+
+      const studentUsers = await prisma.user.findMany({
+        where: {
+          role: 'STUDENT'
+        },
         select: userSelect,
         orderBy: { createdAt: 'desc' },
         take: 500,
       })
+
+      const users = [...staffUsers, ...studentUsers].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+
       return NextResponse.json({ users, limited: true })
     }
 
