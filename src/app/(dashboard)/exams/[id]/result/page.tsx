@@ -379,17 +379,49 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
                           </>
                         )}
                       </button>
-                      {q.type !== 'SUBJECTIVE' && q.correctAnswer !== null && q.correctAnswer !== undefined && (
-                        <span style={{ 
-                          fontSize: '11px', fontWeight: 800, 
-                          color: isCorrect ? 'var(--success)' : 'var(--danger)',
-                          background: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                          padding: '6px 14px', borderRadius: '50px', 
-                          border: `1px solid ${isCorrect ? 'var(--success-light)' : 'var(--danger-light)'}`
-                        }}>
-                          {isCorrect ? '✓ Correct Answer' : '✗ Incorrect Answer'}
-                        </span>
-                      )}
+                      {q.type !== 'SUBJECTIVE' && q.correctAnswer !== null && q.correctAnswer !== undefined && (() => {
+                        const earned = resp?.marks ?? 0
+                        const isPartiallyCorrect = earned > 0 && earned < q.marks
+                        const isFullyCorrect = earned === q.marks || isCorrect
+
+                        if (isFullyCorrect) {
+                          return (
+                            <span style={{ 
+                              fontSize: '11px', fontWeight: 800, 
+                              color: 'var(--success)',
+                              background: 'rgba(16,185,129,0.1)',
+                              padding: '6px 14px', borderRadius: '50px', 
+                              border: '1px solid var(--success-light)'
+                            }}>
+                              ✓ Correct Answer
+                            </span>
+                          )
+                        } else if (isPartiallyCorrect) {
+                          return (
+                            <span style={{ 
+                              fontSize: '11px', fontWeight: 800, 
+                              color: 'var(--warning)',
+                              background: 'rgba(245,158,11,0.1)',
+                              padding: '6px 14px', borderRadius: '50px', 
+                              border: '1px solid var(--warning-light)'
+                            }}>
+                              ⚠ Partially Correct (+{earned.toFixed(1)} / +{q.marks} Marks)
+                            </span>
+                          )
+                        } else {
+                          return (
+                            <span style={{ 
+                              fontSize: '11px', fontWeight: 800, 
+                              color: 'var(--danger)',
+                              background: 'rgba(239,68,68,0.1)',
+                              padding: '6px 14px', borderRadius: '50px', 
+                              border: '1px solid var(--danger-light)'
+                            }}>
+                              ✗ Incorrect Answer
+                            </span>
+                          )
+                        }
+                      })()}
                     </div>
                   </div>
  

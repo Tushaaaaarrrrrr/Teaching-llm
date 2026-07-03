@@ -62,21 +62,46 @@ export async function POST(
     for (const q of attempt.exam.questions) {
       const resp = responses.find(r => r.questionId === q.id)
       let isCorrect = false
+      let earnedMarks = 0
 
       if (q.type === 'MCQ' || q.type === 'TRUE_FALSE') {
-        isCorrect = resp && resp.answer === q.correctAnswer
+        isCorrect = !!(resp && resp.answer === q.correctAnswer)
+        earnedMarks = isCorrect ? q.marks : 0
       } else if (q.type === 'MSQ') {
         try {
-          const correctArr = JSON.parse(q.correctAnswer || '[]').sort()
-          const studentArr = JSON.parse(resp?.answer || '[]').sort()
-          isCorrect = JSON.stringify(correctArr) === JSON.stringify(studentArr)
+          const correctArr = JSON.parse(q.correctAnswer || '[]').map((s: string) => s.trim().toLowerCase())
+          const studentArr = JSON.parse(resp?.answer || '[]').map((s: string) => s.trim().toLowerCase())
+          
+          if (studentArr.length === 0) {
+            earnedMarks = 0
+            isCorrect = false
+          } else {
+            const hasIncorrect = studentArr.some((s: string) => !correctArr.includes(s))
+            if (hasIncorrect) {
+              earnedMarks = 0
+              isCorrect = false
+            } else {
+              const numCorrectSelected = studentArr.length
+              const totalCorrectOptions = correctArr.length
+              
+              if (numCorrectSelected === totalCorrectOptions) {
+                earnedMarks = q.marks
+                isCorrect = true
+              } else {
+                earnedMarks = q.marks * (numCorrectSelected / totalCorrectOptions)
+                isCorrect = false
+              }
+            }
+          }
         } catch {
+          earnedMarks = 0
           isCorrect = false
         }
       } else if (q.type === 'NAT') {
         if (resp && resp.answer && q.correctAnswer) {
           isCorrect = parseFloat(resp.answer) === parseFloat(q.correctAnswer)
         }
+        earnedMarks = isCorrect ? q.marks : 0
       } else {
         fullyAutoGraded = false
         continue // Skip mark update for non-auto-gradable
@@ -85,9 +110,9 @@ export async function POST(
       if (resp) {
         await prisma.examResponse.update({
           where: { id: resp.id },
-          data: { marks: isCorrect ? q.marks : 0 }
+          data: { marks: earnedMarks }
         })
-        if (isCorrect) totalMarks += q.marks
+        totalMarks += earnedMarks
       }
     }
 
