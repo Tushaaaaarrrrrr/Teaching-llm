@@ -21,8 +21,13 @@ export function shouldHideAnswersForStudent(
   isPublished: boolean,
   attemptIsPublished: boolean = false
 ) {
+  // Once the exam deadline has passed, always show answers to students
   if (hasEnded) {
-    // Once the exam deadline has passed, always show answers to students
+    return false
+  }
+
+  // If the student has submitted their attempt, always show answers (for review mode)
+  if (hasSubmitted) {
     return false
   }
 
