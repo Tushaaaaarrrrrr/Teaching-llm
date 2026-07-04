@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, isManagerOrSuperAdmin } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
-import { queueExplicitGoogleGroupSyncJobs, validateGoogleGroupEmail } from '@/lib/google-group-sync'
+import { queueExplicitGoogleGroupSyncJobs, validateGoogleGroupEmail, parseGoogleGroupEmails } from '@/lib/google-group-sync'
 
 export async function GET(
   request: NextRequest,
@@ -220,10 +220,15 @@ export async function PUT(
         },
       })
 
-      const wasInGroup = !existingCourse.isDisabled && !!existingCourse.googleGroupEmail;
-      const willBeInGroup = !updated.isDisabled && !!updated.googleGroupEmail;
+      // Diff old vs new group emails for sync
+      const oldEmails = !existingCourse.isDisabled ? parseGoogleGroupEmails(existingCourse.googleGroupEmail) : [];
+      const newEmails = !updated.isDisabled ? parseGoogleGroupEmails(updated.googleGroupEmail) : [];
+      const oldSet = new Set(oldEmails);
+      const newSet = new Set(newEmails);
+      const emailsToRemove = oldEmails.filter((e: string) => !newSet.has(e));
+      const emailsToAdd = newEmails.filter((e: string) => !oldSet.has(e));
 
-      if (wasInGroup || willBeInGroup) {
+      if (emailsToRemove.length > 0 || emailsToAdd.length > 0) {
         const enrollments = await tx.enrollment.findMany({
           where: { courseId: id },
           include: {
@@ -233,30 +238,28 @@ export async function PUT(
           },
         })
 
-        // 1. Remove from old group if we are no longer going to be in it, or if the email changed
-        if (wasInGroup && existingCourse.googleGroupEmail) {
-          const emailChanging = existingCourse.googleGroupEmail !== updated.googleGroupEmail;
-          if (!willBeInGroup || emailChanging) {
-            await queueExplicitGoogleGroupSyncJobs(tx, enrollments.map(enrollment => ({
+        // Remove users from groups that were removed
+        if (emailsToRemove.length > 0) {
+          await queueExplicitGoogleGroupSyncJobs(tx, emailsToRemove.flatMap((groupEmail: string) =>
+            enrollments.map(enrollment => ({
               userEmail: enrollment.user.email,
               courseId: id,
-              groupEmail: existingCourse.googleGroupEmail as string,
+              groupEmail,
               action: 'REMOVE' as const,
-            })))
-          }
+            }))
+          ))
         }
 
-        // 2. Add to new group if we are going to be in it, and we weren't before OR the email changed
-        if (willBeInGroup && updated.googleGroupEmail) {
-          const emailChanging = existingCourse.googleGroupEmail !== updated.googleGroupEmail;
-          if (!wasInGroup || emailChanging) {
-            await queueExplicitGoogleGroupSyncJobs(tx, enrollments.map(enrollment => ({
+        // Add users to newly added groups
+        if (emailsToAdd.length > 0) {
+          await queueExplicitGoogleGroupSyncJobs(tx, emailsToAdd.flatMap((groupEmail: string) =>
+            enrollments.map(enrollment => ({
               userEmail: enrollment.user.email,
               courseId: id,
-              groupEmail: updated.googleGroupEmail as string,
+              groupEmail,
               action: 'ADD' as const,
-            })))
-          }
+            }))
+          ))
         }
       }
 

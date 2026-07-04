@@ -592,16 +592,99 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             <div className="form-group"><label className="form-label">Subject</label><input className="form-input" value={f.subject || ''} onChange={e => set('subject', e.target.value)} placeholder="e.g. Computer Science" /></div>
             <div className="form-group"><label className="form-label">Teacher Name</label><input className="form-input" value={f.teacherName || ''} onChange={e => set('teacherName', e.target.value)} placeholder="Manual teacher name" /></div>
             <div className="form-group">
-              <label className="form-label">Google Group Email</label>
-              <input
-                className="form-input"
-                type="email"
-                value={f.googleGroupEmail || ''}
-                onChange={e => set('googleGroupEmail', e.target.value.toLowerCase())}
-                placeholder="math1@yourdomain.com"
-              />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>Google Group Email</span>
+                {(() => {
+                  const emails = (f.googleGroupEmail || '').split(',').filter((e: string) => e.trim());
+                  const count = Math.max(emails.length, 1);
+                  return count < 5 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = (f.googleGroupEmail || '').split(',').filter((e: string) => e.trim());
+                        if (current.length === 0) current.push('');
+                        current.push('');
+                        set('googleGroupEmail', current.join(','));
+                      }}
+                      style={{
+                        background: 'var(--accent)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '22px',
+                        height: '22px',
+                        fontSize: '16px',
+                        lineHeight: '1',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                      title="Add another Google Group Email (max 5)"
+                    >+</button>
+                  ) : null;
+                })()}
+              </label>
+              {(() => {
+                const raw = f.googleGroupEmail || '';
+                const emails = raw.split(',');
+                // Ensure at least one slot
+                if (emails.length === 0 || (emails.length === 1 && emails[0] === '')) {
+                  return (
+                    <input
+                      className="form-input"
+                      type="email"
+                      value=""
+                      onChange={e => set('googleGroupEmail', e.target.value.toLowerCase())}
+                      placeholder="math1@yourdomain.com"
+                    />
+                  );
+                }
+                return emails.map((email: string, idx: number) => (
+                  <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: idx < emails.length - 1 ? '6px' : '0' }}>
+                    <input
+                      className="form-input"
+                      type="email"
+                      value={email.trim()}
+                      onChange={e => {
+                        const updated = [...emails];
+                        updated[idx] = e.target.value.toLowerCase();
+                        set('googleGroupEmail', updated.join(','));
+                      }}
+                      placeholder={`group${idx + 1}@yourdomain.com`}
+                      style={{ flex: 1 }}
+                    />
+                    {emails.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = emails.filter((_: string, i: number) => i !== idx);
+                          set('googleGroupEmail', updated.length > 0 ? updated.join(',') : '');
+                        }}
+                        style={{
+                          background: 'transparent',
+                          color: 'var(--danger)',
+                          border: '1px solid var(--danger)',
+                          borderRadius: '50%',
+                          width: '22px',
+                          height: '22px',
+                          fontSize: '14px',
+                          lineHeight: '1',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                        title="Remove this email"
+                      >×</button>
+                    )}
+                  </div>
+                ));
+              })()}
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Optional. Must be a valid group email in your Google Workspace domain.
+                Optional. Up to 5 group emails in your Google Workspace domain. Each syncs independently.
               </p>
             </div>
             <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: editId ? 0.7 : 1 }}>

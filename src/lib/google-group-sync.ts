@@ -122,17 +122,38 @@ export function triggerGoogleGroupSyncProcessing(isChained = false): void {
 export function validateGoogleGroupEmail(rawEmail?: string | null) {
   if (!rawEmail || !rawEmail.trim()) return null
 
-  const email = normalizeEmail(rawEmail)
+  // Support comma-separated multiple emails (max 5)
+  const rawEmails = rawEmail.split(',').map(e => e.trim()).filter(e => e)
+  if (rawEmails.length === 0) return null
+  if (rawEmails.length > 5) {
+    throw new Error('Maximum 5 Google Group Emails allowed per course')
+  }
+
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailPattern.test(email)) {
-    throw new Error('Google Group Email must be a valid email address')
+  const validated: string[] = []
+
+  for (const raw of rawEmails) {
+    const email = normalizeEmail(raw)
+    if (!emailPattern.test(email)) {
+      throw new Error(`Google Group Email "${raw}" is not a valid email address`)
+    }
+    if (GOOGLE_WORKSPACE_DOMAIN && !email.endsWith(`@${GOOGLE_WORKSPACE_DOMAIN}`)) {
+      throw new Error(`Google Group Email "${raw}" must belong to @${GOOGLE_WORKSPACE_DOMAIN}`)
+    }
+    validated.push(email)
   }
 
-  if (GOOGLE_WORKSPACE_DOMAIN && !email.endsWith(`@${GOOGLE_WORKSPACE_DOMAIN}`)) {
-    throw new Error(`Google Group Email must belong to @${GOOGLE_WORKSPACE_DOMAIN}`)
-  }
+  // Deduplicate
+  const unique = [...new Set(validated)]
+  return unique.join(',')
+}
 
-  return email
+/**
+ * Parse a comma-separated googleGroupEmail string into an array of individual emails.
+ */
+export function parseGoogleGroupEmails(googleGroupEmail: string | null | undefined): string[] {
+  if (!googleGroupEmail) return []
+  return googleGroupEmail.split(',').map(e => e.trim()).filter(e => e)
 }
 
 export async function queueGoogleGroupSyncJobs(
@@ -182,13 +203,16 @@ export async function queueGoogleGroupSyncJobs(
   )
 
   const jobs = courses
-    .map((course: { id: string; googleGroupEmail: string | null }) => ({
-      userEmail: normalizedUserEmail,
-      courseId: course.id,
-      groupEmail: normalizeEmail(course.googleGroupEmail || ''),
-      action,
-      status: 'PENDING' as SyncStatus,
-    }))
+    .flatMap((course: { id: string; googleGroupEmail: string | null }) => {
+      const groupEmails = parseGoogleGroupEmails(course.googleGroupEmail)
+      return groupEmails.map(groupEmail => ({
+        userEmail: normalizedUserEmail,
+        courseId: course.id,
+        groupEmail: normalizeEmail(groupEmail),
+        action,
+        status: 'PENDING' as SyncStatus,
+      }))
+    })
     .filter(job => job.groupEmail && !pendingKeys.has(`${job.courseId}:${job.groupEmail}`))
 
   if (jobs.length === 0) return 0
