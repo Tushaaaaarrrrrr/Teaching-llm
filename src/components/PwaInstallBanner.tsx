@@ -29,11 +29,11 @@ export default function PwaInstallBanner() {
       if (pathname === '/dashboard' && !alreadyShown) {
         setIsVisible(true)
         
-        // Auto-dismiss after 5 seconds
+        // Auto-dismiss after 10 seconds
         const timer = setTimeout(() => {
           setIsVisible(false)
           sessionStorage.setItem('has_shown_install_banner', 'true')
-        }, 5000)
+        }, 10000)
 
         return () => clearTimeout(timer)
       }
@@ -47,7 +47,7 @@ export default function PwaInstallBanner() {
       const timer = setTimeout(() => {
         setIsVisible(false)
         sessionStorage.setItem('has_shown_install_banner', 'true')
-      }, 5000)
+      }, 10000)
       return () => clearTimeout(timer)
     }
 
