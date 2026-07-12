@@ -573,8 +573,15 @@ export default function Header({ userName, userRole }: HeaderProps) {
                       <Toggle 
                         checked={isSubscribed} 
                         onChange={async (v) => {
-                          if (v) await subscribe()
-                          else await unsubscribe()
+                          if (v) {
+                            if (typeof window !== 'undefined' && window.Notification?.permission === 'denied') {
+                              window.dispatchEvent(new CustomEvent('show-push-blocked-modal'))
+                              return
+                            }
+                            await subscribe()
+                          } else {
+                            await unsubscribe()
+                          }
                         }} 
                       />
                     )}
