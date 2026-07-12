@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_KEY || ''
+const KEY_PUSH_ENABLED = 'push_enabled'
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
@@ -26,34 +27,76 @@ export function usePushNotifications() {
     if (!VAPID_PUBLIC_KEY) return
 
     setIsSupported(true)
-    setPermissionState(Notification.permission as any)
+    const permission = Notification.permission
+    setPermissionState(permission as any)
 
-    // Check if user already has an active subscription
-    navigator.serviceWorker.ready.then(async (reg) => {
-      try {
-        const sub = await reg.pushManager.getSubscription()
-        setIsSubscribed(!!sub)
-      } catch (err) {
-        console.error('Error checking push subscription:', err)
-      }
-    })
+    const explicitlyDisabled = localStorage.getItem(KEY_PUSH_ENABLED) === 'false'
+
+    // If notifications are already allowed in browser and not explicitly toggled OFF by user
+    if (permission === 'granted' && !explicitlyDisabled) {
+      setIsSubscribed(true)
+      localStorage.setItem(KEY_PUSH_ENABLED, 'true')
+      
+      // Silently sync the subscription in the background
+      navigator.serviceWorker.ready.then(async (reg) => {
+        try {
+          let sub = await reg.pushManager.getSubscription()
+          if (!sub) {
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as any,
+            })
+          }
+          const json = sub.toJSON()
+          const p256dh = json.keys?.p256dh
+          const auth = json.keys?.auth
+          if (p256dh && auth) {
+            await fetch('/api/push/subscribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ endpoint: sub.endpoint, p256dh, auth }),
+            })
+          }
+        } catch (err) {
+          console.error('[usePushNotifications] Silent background auto-subscribe failed:', err)
+        }
+      })
+    } else {
+      // Otherwise, query active subscription state
+      navigator.serviceWorker.ready.then(async (reg) => {
+        try {
+          const sub = await reg.pushManager.getSubscription()
+          setIsSubscribed(!!sub && !explicitlyDisabled)
+        } catch (err) {
+          console.error('[usePushNotifications] Error checking push subscription:', err)
+        }
+      })
+    }
   }, [])
 
   const subscribe = useCallback(async () => {
     if (!isSupported || !VAPID_PUBLIC_KEY) return false
 
+    // Optimistically set states
+    if (Notification.permission === 'granted') {
+      setIsSubscribed(true)
+      localStorage.setItem(KEY_PUSH_ENABLED, 'true')
+    }
+
     try {
-      // This MUST be called directly from a user click handler
       const permission = await Notification.requestPermission()
       setPermissionState(permission as any)
 
       if (permission !== 'granted') {
+        setIsSubscribed(false)
+        localStorage.setItem(KEY_PUSH_ENABLED, 'false')
         return false
       }
 
-      // Use the already-registered PWA service worker (from next-pwa)
-      const reg = await navigator.serviceWorker.ready
+      setIsSubscribed(true)
+      localStorage.setItem(KEY_PUSH_ENABLED, 'true')
 
+      const reg = await navigator.serviceWorker.ready
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as any,
@@ -71,10 +114,16 @@ export function usePushNotifications() {
         body: JSON.stringify({ endpoint: subscription.endpoint, p256dh, auth }),
       })
 
-      setIsSubscribed(true)
       return true
     } catch (err) {
-      console.error('Failed to subscribe to push notifications:', err)
+      console.error('[usePushNotifications] Failed to subscribe to push notifications:', err)
+      if (Notification.permission === 'granted') {
+        setIsSubscribed(true)
+        localStorage.setItem(KEY_PUSH_ENABLED, 'true')
+      } else {
+        setIsSubscribed(false)
+        localStorage.setItem(KEY_PUSH_ENABLED, 'false')
+      }
       return false
     }
   }, [isSupported])
@@ -94,9 +143,10 @@ export function usePushNotifications() {
         })
       }
       setIsSubscribed(false)
+      localStorage.setItem(KEY_PUSH_ENABLED, 'false')
       return true
     } catch (err) {
-      console.error('Failed to unsubscribe from push notifications:', err)
+      console.error('[usePushNotifications] Failed to unsubscribe from push notifications:', err)
       return false
     }
   }, [isSupported])
