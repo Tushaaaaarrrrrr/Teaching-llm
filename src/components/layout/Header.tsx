@@ -4,6 +4,37 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { useUserData } from '@/components/UserDataProvider'
 import { getDefaultAvatar } from '@/lib/avatar'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div
+      onClick={(e) => {
+        e.stopPropagation()
+        onChange(!checked)
+      }}
+      style={{
+        width: '40px', height: '22px', borderRadius: '11px', flexShrink: 0,
+        background: checked ? 'var(--primary)' : 'var(--neu-dark)',
+        boxShadow: checked
+          ? 'inset 1px 1px 3px rgba(0,0,0,0.2)'
+          : 'inset 1px 1px 3px var(--neu-dark)',
+        position: 'relative', cursor: 'pointer',
+        transition: 'background 0.25s ease',
+      }}
+    >
+      <div style={{
+        position: 'absolute',
+        top: '3px',
+        left: checked ? '21px' : '3px',
+        width: '16px', height: '16px', borderRadius: '50%',
+        background: 'var(--surface)',
+        boxShadow: '1px 1px 3px rgba(0,0,0,0.2)',
+        transition: 'left 0.25s ease',
+      }} />
+    </div>
+  )
+}
 
 interface HeaderProps {
   userName: string
@@ -84,6 +115,24 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   // Use shared UserDataProvider instead of duplicate SWR/SSE calls
   const { userData, notifications, mutateNotifications } = useUserData()
+
+  // Push notifications hook & native status state
+  const { isSupported, isSubscribed, subscribe, unsubscribe } = usePushNotifications()
+  const [isNativeApp, setIsNativeApp] = useState(false)
+  const [nativeSubscribed, setNativeSubscribed] = useState(false)
+
+  useEffect(() => {
+    const checkNativeStatus = async () => {
+      const { isCapacitorNative, checkCapacitorPermission } = await import('@/lib/capacitor-push')
+      if (isCapacitorNative()) {
+        setIsNativeApp(true)
+        const perm = await checkCapacitorPermission()
+        const storedPref = localStorage.getItem('push_enabled')
+        setNativeSubscribed(perm === 'granted' && storedPref !== 'false')
+      }
+    }
+    checkNativeStatus()
+  }, [])
 
   // Fetch current user info from shared provider
   // Use SWR data if available, otherwise fall back to props
@@ -224,12 +273,32 @@ export default function Header({ userName, userRole }: HeaderProps) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  async function markRead(id: string, announcementId?: string | null) {
-    await fetch(`/api/notifications/${id}`, { method: 'PUT' })
+  async function markRead(n: Notification) {
+    await fetch(`/api/notifications/${n.id}`, { method: 'PUT' })
     mutateNotifications() // Refresh SWR data
-    if (announcementId) {
-      setShowNotif(false)
-      router.push(`/announcements?id=${announcementId}`)
+    setShowNotif(false)
+
+    if (n.announcementId) {
+      router.push(`/announcements?id=${n.announcementId}`)
+      return
+    }
+
+    const typeLower = (n.type || '').toLowerCase()
+    const titleLower = (n.title || '').toLowerCase()
+
+    if (typeLower === 'community') {
+      router.push('/community')
+    } else if (titleLower.includes('support ticket') || titleLower.includes('chat') || titleLower.includes('agent joined')) {
+      router.push('/support')
+    } else if (titleLower.includes('exam')) {
+      router.push('/exams')
+    } else if (titleLower.includes('lecture')) {
+      router.push('/courses')
+    } else if (titleLower.includes('course purchased') || titleLower.includes('new course purchase')) {
+      router.push(currentUserRole === 'STUDENT' ? '/courses' : '/admin')
+    } else {
+      // Default fallback
+      router.push('/dashboard')
     }
   }
 
@@ -464,15 +533,63 @@ export default function Header({ userName, userRole }: HeaderProps) {
                   </button>
                 )}
               </div>
+              {(isNativeApp || isSupported) && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px 18px',
+                  borderBottom: '1px solid var(--border)',
+                  background: 'rgba(54,54,232,0.02)',
+                }}>
+                  <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>Push notifications</div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Alerts even when the app is closed
+                    </div>
+                  </div>
+                  <div>
+                    {isNativeApp ? (
+                      <Toggle 
+                        checked={nativeSubscribed} 
+                        onChange={async (v) => {
+                          const { registerCapacitorPush, unregisterCapacitorPush } = await import('@/lib/capacitor-push')
+                          if (v) {
+                            const success = await registerCapacitorPush()
+                            if (success) {
+                              setNativeSubscribed(true)
+                              localStorage.setItem('push_enabled', 'true')
+                            } else {
+                              alert('Could not enable push notifications. Please check your system notification settings.')
+                            }
+                          } else {
+                            await unregisterCapacitorPush()
+                            setNativeSubscribed(false)
+                            localStorage.setItem('push_enabled', 'false')
+                          }
+                        }} 
+                      />
+                    ) : (
+                      <Toggle 
+                        checked={isSubscribed} 
+                        onChange={async (v) => {
+                          if (v) await subscribe()
+                          else await unsubscribe()
+                        }} 
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
               <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
                 {notifications.length === 0 ? (
                   <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                     No notifications yet
                   </div>
-                ) : notifications.slice(0, 15).map(n => (
+                ) : notifications.slice(0, 5).map(n => (
                   <div
                     key={n.id}
-                    onClick={() => markRead(n.id, n.announcementId)}
+                    onClick={() => markRead(n)}
                     style={{
                       padding: '12px 18px', cursor: 'pointer',
                       borderBottom: '1px solid var(--border-light)',
