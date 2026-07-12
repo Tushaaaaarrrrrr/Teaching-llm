@@ -12,6 +12,7 @@ import DynamicPromptBlocker from '@/components/DynamicPromptBlocker'
 import UserJourneyTracker from '@/components/UserJourneyTracker'
 import PushNotificationSetup from '@/components/PushNotificationSetup'
 import { UserDataProvider } from '@/components/UserDataProvider'
+import PwaInstallBanner from '@/components/PwaInstallBanner'
 
 export default async function DashboardLayout({
   children,
@@ -62,6 +63,7 @@ export default async function DashboardLayout({
         <DynamicPromptBlocker />
         <UserJourneyTracker enableDetailedLogs={session.enableDetailedLogs} />
         <PushNotificationSetup />
+        <PwaInstallBanner />
       </div>
     </UserDataProvider>
   )
