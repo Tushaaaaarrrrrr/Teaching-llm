@@ -298,6 +298,9 @@ export default function SettingsPage() {
                               window.dispatchEvent(new CustomEvent('show-push-blocked-modal'))
                               return
                             }
+                            if (typeof window !== 'undefined' && window.Notification?.permission === 'default') {
+                              window.dispatchEvent(new CustomEvent('show-push-pointer-overlay'))
+                            }
                             await subscribe()
                           } else {
                             await unsubscribe()

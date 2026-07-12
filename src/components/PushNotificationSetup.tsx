@@ -454,25 +454,33 @@ function WebPointerOverlay() {
         pointerEvents: 'auto',
       }}
     >
-      {/* Curved dashed line pointing to the center address bar prompt (starts around left: 140px, moved down to top: 110px) */}
-      <svg width="150" height="150" viewBox="0 0 150 150" fill="none" style={{ position: 'absolute', top: '110px', left: '110px' }}>
-        <path d="M30 120 C 30 75, 75 45, 110 20" stroke="#fff" strokeWidth="3.5" strokeDasharray="6,6" strokeLinecap="round"/>
-        <path d="M95 20 L 112 18 L 105 35" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-
+      {/* Content positioned to the right, below and clear of Chrome's native dialog */}
       <div style={{
         position: 'absolute',
-        top: '250px',
-        left: '130px',
-        color: '#ffffff',
+        top: '100px',
+        right: '80px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
         maxWidth: '340px',
-        fontFamily: "'Outfit', sans-serif",
       }}>
-        <div style={{ fontSize: '20px', fontWeight: '850', marginBottom: '8px', letterSpacing: '-0.3px' }}>
-          Almost there!
-        </div>
-        <div style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, fontWeight: '500' }}>
-          Please click on <strong style={{ color: '#6366f1' }}>&quot;Allow&quot;</strong> in the browser prompt next to the address bar to enable desktop notifications.
+        {/* Curved arrow pointing up-left toward the browser dialog */}
+        <svg width="160" height="100" viewBox="0 0 160 100" fill="none" style={{ marginBottom: '8px', marginLeft: '-20px' }}>
+          <path d="M20 90 C 20 50, 50 25, 90 12" stroke="#fff" strokeWidth="3.5" strokeDasharray="6,6" strokeLinecap="round"/>
+          {/* Arrowhead pointing up-left */}
+          <path d="M78 4 L 88 10 L 76 16" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </svg>
+
+        <div style={{
+          color: '#ffffff',
+          fontFamily: "'Outfit', sans-serif",
+        }}>
+          <div style={{ fontSize: '20px', fontWeight: '850', marginBottom: '8px', letterSpacing: '-0.3px' }}>
+            Almost there!
+          </div>
+          <div style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, fontWeight: '500' }}>
+            Please click on <strong style={{ color: '#6366f1' }}>&quot;Allow&quot;</strong> in the browser prompt to enable desktop notifications.
+          </div>
         </div>
       </div>
     </div>
@@ -638,6 +646,14 @@ export default function PushNotificationSetup() {
     }
     window.addEventListener('show-push-blocked-modal', handleShowBlocked)
 
+    // Listen for custom trigger to show pointer overlay (from Header toggle)
+    const handleShowPointer = () => {
+      setShowWebOverlay(true)
+      // Auto-hide after 8 seconds (browser prompt will have resolved by then)
+      setTimeout(() => setShowWebOverlay(false), 8000)
+    }
+    window.addEventListener('show-push-pointer-overlay', handleShowPointer)
+
     // Check if permission prompt is needed
     if (permissionState === 'default') {
       const interacted = localStorage.getItem(KEY_INTERACTED)
@@ -659,6 +675,7 @@ export default function PushNotificationSetup() {
         }, 2000)
         return () => {
           window.removeEventListener('show-push-blocked-modal', handleShowBlocked)
+          window.removeEventListener('show-push-pointer-overlay', handleShowPointer)
           clearTimeout(timer)
         }
       }
@@ -666,6 +683,7 @@ export default function PushNotificationSetup() {
 
     return () => {
       window.removeEventListener('show-push-blocked-modal', handleShowBlocked)
+      window.removeEventListener('show-push-pointer-overlay', handleShowPointer)
     }
   }, [isSupported, isSubscribed, permissionState])
 
