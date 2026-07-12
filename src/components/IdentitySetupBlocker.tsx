@@ -378,16 +378,19 @@ export default function IdentitySetupBlocker({ user }: { user: any }) {
               Thank You!
             </h2>
             <p style={{ fontSize: '14.5px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '28px' }}>
-              Your identity has been updated. Welcome to <strong style={{ color: '#4f46e5' }}>GenZ IITian</strong> family! Let's build something amazing together.
+              Your identity has been updated. Welcome to <strong style={{ color: '#4f46e5' }}>GenZ IITian</strong> family!
             </p>
 
             <button
               onClick={handleProceed}
               className="btn btn-primary"
               style={{
-                width: '100%',
-                padding: '13px',
-                borderRadius: '10px',
+                width: 'auto',
+                minWidth: '200px',
+                padding: '12px 24px',
+                margin: '0 auto',
+                display: 'inline-block',
+                borderRadius: '12px',
                 fontSize: '14.5px',
                 fontWeight: 800,
                 boxShadow: '0 6px 16px rgba(99,102,241,0.2)',
