@@ -18,43 +18,44 @@ export default function PwaInstallBanner() {
     if (typeof window === 'undefined') return
     if (isCapacitorNative()) return // No PWA banner inside Capacitor native apps
 
-    const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault()
-      // Stash the event so it can be triggered later.
-      setDeferredPrompt(e)
+    // 1. Check if the user is already running the installed standalone app
+    const isStandalone = 
+      window.matchMedia('(display-mode: standalone)').matches || 
+      (window.navigator as any).standalone === true
 
-      // Only show on the primary home dashboard and once per session
-      const alreadyShown = sessionStorage.getItem('has_shown_install_banner')
-      if (pathname === '/dashboard' && !alreadyShown) {
-        setIsVisible(true)
-        
-        // Auto-dismiss after 10 seconds
-        const timer = setTimeout(() => {
-          setIsVisible(false)
-          sessionStorage.setItem('has_shown_install_banner', 'true')
-        }, 10000)
-
-        return () => clearTimeout(timer)
-      }
+    if (isStandalone) {
+      console.log('[PWA Banner] Suppressed: User is already using the installed PWA app.')
+      return
     }
 
+    // 2. Set listener to grab the native beforeinstallprompt event when browser fires it
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 
-    // Automatically trigger visual sync if deferredPrompt is already caught and route is correct
-    if (deferredPrompt && pathname === '/dashboard' && !sessionStorage.getItem('has_shown_install_banner')) {
+    // 3. Immediately show the banner when landing on the dashboard, once per session
+    const alreadyShown = sessionStorage.getItem('has_shown_install_banner')
+    if (pathname === '/dashboard' && !alreadyShown) {
       setIsVisible(true)
+      
+      // Auto-dismiss after 10 seconds
       const timer = setTimeout(() => {
         setIsVisible(false)
         sessionStorage.setItem('has_shown_install_banner', 'true')
       }, 10000)
-      return () => clearTimeout(timer)
+
+      return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+        clearTimeout(timer)
+      }
     }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     }
-  }, [pathname, deferredPrompt])
+  }, [pathname])
 
   // Immediately close if the user navigates away from the dashboard page
   useEffect(() => {
@@ -64,23 +65,34 @@ export default function PwaInstallBanner() {
   }, [pathname])
 
   const handleDownload = async () => {
-    if (!deferredPrompt) {
-      // Fallback if browser does not support or hasn't fired beforeinstallprompt
-      alert('To install the app, look for the install button in your browser address bar (usually a computer icon with a down arrow).')
+    // If the browser natively fired the event, trigger it
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      console.log(`PWA install prompt outcome: ${outcome}`)
+      setDeferredPrompt(null)
       setIsVisible(false)
       sessionStorage.setItem('has_shown_install_banner', 'true')
       return
     }
 
-    // Show the native browser install prompt
-    deferredPrompt.prompt()
+    // Fallback: Custom browser guides when event is not ready/supported
+    if (typeof window !== 'undefined') {
+      const ua = window.navigator.userAgent
+      const isSafari = ua.includes('Safari') && !ua.includes('Chrome') && !ua.includes('Edg')
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice
-    console.log(`PWA install prompt user choice outcome: ${outcome}`)
+      if (isSafari || isIOS) {
+        alert(
+          'To install: Tap the "Share" button at the top or bottom of Safari, then select "Add to Home Screen" 📥'
+        )
+      } else {
+        alert(
+          'To install: Look for the install icon (a computer with a down arrow, or three dots -> Install) in your browser address bar at the top right 📥'
+        )
+      }
+    }
 
-    // We've used the prompt, and can't use it again
-    setDeferredPrompt(null)
     setIsVisible(false)
     sessionStorage.setItem('has_shown_install_banner', 'true')
   }
