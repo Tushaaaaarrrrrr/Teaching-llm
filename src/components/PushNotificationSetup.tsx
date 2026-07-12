@@ -454,33 +454,27 @@ function WebPointerOverlay() {
         pointerEvents: 'auto',
       }}
     >
-      {/* Content positioned to the right, below and clear of Chrome's native dialog */}
+      {/* Curved dashed arrow going UP from text to Chrome's native dialog above */}
+      <svg width="120" height="120" viewBox="0 0 120 120" fill="none" style={{ position: 'absolute', top: '140px', left: '100px' }}>
+        <path d="M60 110 C 60 70, 40 40, 50 15" stroke="#fff" strokeWidth="3.5" strokeDasharray="6,6" strokeLinecap="round"/>
+        {/* Arrowhead pointing UP */}
+        <path d="M40 22 L 50 10 L 58 24" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </svg>
+
+      {/* Text content positioned on the left side, below Chrome's dialog */}
       <div style={{
         position: 'absolute',
-        top: '100px',
-        right: '80px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
+        top: '270px',
+        left: '60px',
+        color: '#ffffff',
         maxWidth: '340px',
+        fontFamily: "'Outfit', sans-serif",
       }}>
-        {/* Curved arrow pointing up-left toward the browser dialog */}
-        <svg width="160" height="100" viewBox="0 0 160 100" fill="none" style={{ marginBottom: '8px', marginLeft: '-20px' }}>
-          <path d="M20 90 C 20 50, 50 25, 90 12" stroke="#fff" strokeWidth="3.5" strokeDasharray="6,6" strokeLinecap="round"/>
-          {/* Arrowhead pointing up-left */}
-          <path d="M78 4 L 88 10 L 76 16" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        </svg>
-
-        <div style={{
-          color: '#ffffff',
-          fontFamily: "'Outfit', sans-serif",
-        }}>
-          <div style={{ fontSize: '20px', fontWeight: '850', marginBottom: '8px', letterSpacing: '-0.3px' }}>
-            Almost there!
-          </div>
-          <div style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, fontWeight: '500' }}>
-            Please click on <strong style={{ color: '#6366f1' }}>&quot;Allow&quot;</strong> in the browser prompt to enable desktop notifications.
-          </div>
+        <div style={{ fontSize: '20px', fontWeight: '850', marginBottom: '8px', letterSpacing: '-0.3px' }}>
+          Almost there!
+        </div>
+        <div style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, fontWeight: '500' }}>
+          Please click on <strong style={{ color: '#6366f1' }}>&quot;Allow&quot;</strong> in the browser prompt above to enable desktop notifications.
         </div>
       </div>
     </div>
