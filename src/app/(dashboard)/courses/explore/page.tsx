@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Script from 'next/script'
 import useSWR from 'swr'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { BookOpen, FileText, Users, ClipboardList, Trash2, Pencil, Sparkles, IndianRupee, Calendar, Plus, ExternalLink, HelpCircle, ChevronRight, X, Info, ArrowLeft } from 'lucide-react'
+import { BookOpen, FileText, Users, ClipboardList, Trash2, Pencil, Sparkles, IndianRupee, Calendar, Plus, ExternalLink, HelpCircle, ChevronRight, X, Info, ArrowLeft, Upload } from 'lucide-react'
 import { normalizeMeetLink } from '@/lib/meet-link'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
@@ -124,6 +124,7 @@ export default function ExploreCoursesPage() {
   const [showCreateBundleModal, setShowCreateBundleModal] = useState(false)
   const [showCreateNoteModal, setShowCreateNoteModal] = useState(false)
   const [editingNote, setEditingNote] = useState<any>(null)
+  const [uploadingNoteFile, setUploadingNoteFile] = useState(false)
   const [showCreateMentorshipModal, setShowCreateMentorshipModal] = useState(false)
   const [editingMentorship, setEditingMentorship] = useState<any>(null)
 
@@ -311,6 +312,38 @@ export default function ExploreCoursesPage() {
       alert(err.message)
       setIsProcessing(false)
       setPurchasing(null)
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingNoteFile(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'store-notes')
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (res.ok) {
+        const json = await res.json()
+        const linkEl = document.getElementById('noteLinkInput') as HTMLInputElement
+        if (linkEl) {
+          linkEl.value = json.url
+        }
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Failed to upload file')
+      }
+    } catch {
+      alert('Error uploading file')
+    } finally {
+      setUploadingNoteFile(false)
     }
   }
 
@@ -894,17 +927,42 @@ export default function ExploreCoursesPage() {
         <div style={{ marginBottom: '18px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-primary)', margin: '6px 0 12px' }}>Study Notes</h2>
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
-            {storeNotesData.notes.map((n: any) => (
-              <div key={n.id} style={{ minWidth: '320px', background: 'var(--surface)', borderRadius: '16px', padding: '16px', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' }}>
-                <div style={{ fontSize: '16px', fontWeight: '900', marginBottom: '6px' }}>{n.title}</div>
-                {n.description && <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>{n.description}</div>}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
-                  <div style={{ fontWeight: '800', color: n.price > 0 ? 'var(--text-primary)' : 'var(--success)' }}>{n.price > 0 ? `₹${n.price}` : 'Free'}</div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => { n.price > 0 ? handleNotePurchase(n) : window.open(n.files?.[0]?.fileUrl, '_blank') }} style={{ flex: 1, padding: '10px 12px', borderRadius: '12px', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: '800' }}>
-                    {n.price > 0 ? 'Get Now' : 'Access Notes'}
-                  </button>
+            {storeNotesData.notes.map((n: any) => {
+              const currentUserId = userData?.user?.id
+              const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
+              const hasAccess = n.price === 0 || 
+                                isManager || 
+                                n.accesses?.some((acc: any) => acc.userId === currentUserId)
+
+              return (
+                <div key={n.id} style={{ minWidth: '320px', background: 'var(--surface)', borderRadius: '16px', padding: '16px', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '900', marginBottom: '6px' }}>{n.title}</div>
+                  {n.description && <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>{n.description}</div>}
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
+                    <div style={{ fontWeight: '800', color: n.price > 0 ? 'var(--text-primary)' : 'var(--success)' }}>{n.price > 0 ? `₹${n.price}` : 'Free'}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => {
+                        if (hasAccess) {
+                          window.open(`/api/store/notes/${n.id}/download`, '_blank')
+                        } else {
+                          handleNotePurchase(n)
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        background: hasAccess ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#3b82f6,#2563eb)',
+                        color: '#fff',
+                        fontWeight: '800',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {hasAccess ? 'Access Notes' : 'Get Now'}
+                    </button>
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
                     <>
                       <button onClick={(e) => {
@@ -934,7 +992,8 @@ export default function ExploreCoursesPage() {
                   )}
                 </div>
               </div>
-            ))}
+            )
+          })}
           </div>
         </div>
       )}
@@ -4022,7 +4081,33 @@ export default function ExploreCoursesPage() {
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Link (Google Drive, Notion, etc.)</label>
-              <input id="noteLinkInput" type="url" placeholder="https://..." style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input id="noteLinkInput" type="url" placeholder="https://..." style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
+                <label style={{
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  background: 'var(--surface-hover)',
+                  border: '1.5px dashed var(--border)',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  <Upload size={16} />
+                  {uploadingNoteFile ? 'Uploading...' : 'Upload Notes'}
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg,.zip"
+                    style={{ display: 'none' }}
+                    onChange={handleFileUpload}
+                    disabled={uploadingNoteFile}
+                  />
+                </label>
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '28px' }}>

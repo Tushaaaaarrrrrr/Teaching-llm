@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const s=require\\('./package.json'\\).scripts||{}; for\\(const k in s\\) console.log\\('  '+k+': '+s[k]\\)\")",
+      "Bash(ls node_modules/.bin/tsc)"
+    ]
+  }
+}

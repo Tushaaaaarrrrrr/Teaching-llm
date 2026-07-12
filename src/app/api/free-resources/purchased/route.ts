@@ -36,7 +36,7 @@ export async function GET() {
       noteId: acc.note.id,
       title: acc.note.title,
       description: acc.note.description,
-      fileUrl: acc.note.files?.[0]?.fileUrl,
+      fileUrl: '', // Hide raw file URL from JSON payload, client will request it via download endpoint
       purchasedAt: acc.createdAt,
       expiresAt: new Date(acc.createdAt.getTime() + 30 * 24 * 60 * 60 * 1000)
     }))

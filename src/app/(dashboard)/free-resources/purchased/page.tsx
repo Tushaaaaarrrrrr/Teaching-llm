@@ -44,7 +44,7 @@ export default function PurchasedMaterialsPage() {
                 {m.description && <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.5' }}>{m.description}</p>}
                 
                 <div style={{ marginTop: 'auto' }}>
-                  <button onClick={() => window.open(m.fileUrl, '_blank')} style={{ width: '100%', padding: '12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', transition: 'background 0.2s' }}>
+                  <button onClick={() => window.open(`/api/store/notes/${m.noteId}/download`, '_blank')} style={{ width: '100%', padding: '12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', transition: 'background 0.2s' }}>
                     Access Material
                   </button>
                 </div>

@@ -512,8 +512,24 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
         (window as any).google.accounts.id.initialize({
           client_id: GOOGLE_WEB_CLIENT_ID,
           callback: handleGoogleResponse,
+          auto_select: false,
+          itp_support: true,
         })
         setGsiReady(true)
+        // Prompt Google One Tap automatically for a premium sign-in experience
+        try {
+          (window as any).google.accounts.id.prompt((notification: any) => {
+            if (notification.isNotDisplayed()) {
+              console.log('[Google One Tap] Not displayed:', notification.getNotDisplayedReason())
+            } else if (notification.isSkippedMoment()) {
+              console.log('[Google One Tap] Skipped:', notification.getSkippedReason())
+            } else if (notification.isDismissedMoment()) {
+              console.log('[Google One Tap] Dismissed:', notification.getDismissedReason())
+            }
+          })
+        } catch (e) {
+          console.error('[Google One Tap] Failed to prompt:', e)
+        }
       }
     }
     document.body.appendChild(script)

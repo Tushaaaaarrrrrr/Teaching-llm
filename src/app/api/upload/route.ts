@@ -52,12 +52,27 @@ export async function POST(request: NextRequest) {
     const filename = `${secureId}.${normalizedExt}`
 
     const type = formData.get('type') as string || 'announcements'
-    const allowedTypes = ['announcements', 'exams', 'updates', 'materials']
+    const allowedTypes = ['announcements', 'exams', 'updates', 'materials', 'store-notes']
     const finalType = allowedTypes.includes(type) ? type : 'announcements'
 
-    // Upload to Supabase Storage (bucket: lms-uploads, path: {type}/{filename})
+    // Upload to Supabase Storage (bucket: lms-uploads or secure-notes)
     const supabase = getSupabaseAdmin()
-    const storagePath = `${finalType}/${filename}`
+    const isStoreNote = finalType === 'store-notes'
+    const bucketName = isStoreNote ? 'secure-notes' : 'lms-uploads'
+
+    if (isStoreNote) {
+      try {
+        const { data: buckets } = await supabase.storage.listBuckets()
+        const exists = buckets?.some(b => b.id === 'secure-notes')
+        if (!exists) {
+          await supabase.storage.createBucket('secure-notes', { public: false })
+        }
+      } catch (err) {
+        console.error('Failed to verify/create secure-notes bucket:', err)
+      }
+    }
+
+    const storagePath = isStoreNote ? filename : `${finalType}/${filename}`
 
     const contentTypeMap: Record<string, string> = {
       jpg: 'image/jpeg',
@@ -73,7 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { error: uploadError } = await supabase.storage
-      .from('lms-uploads')
+      .from(bucketName)
       .upload(storagePath, buffer, {
         contentType: contentTypeMap[normalizedExt] || 'application/octet-stream',
         upsert: false,
@@ -84,9 +99,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to upload file to storage' }, { status: 500 })
     }
 
-    // Get the permanent public URL
+    // Get the permanent public URL (for private buckets this acts as the base URL to identify the file)
     const { data: urlData } = supabase.storage
-      .from('lms-uploads')
+      .from(bucketName)
       .getPublicUrl(storagePath)
 
     return NextResponse.json({ url: urlData.publicUrl })
