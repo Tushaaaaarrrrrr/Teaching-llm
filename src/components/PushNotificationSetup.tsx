@@ -454,16 +454,16 @@ function WebPointerOverlay() {
         pointerEvents: 'auto',
       }}
     >
-      {/* Curved dashed line pointing to the center address bar prompt (starts around left: 140px) */}
-      <svg width="150" height="150" viewBox="0 0 150 150" fill="none" style={{ position: 'absolute', top: '15px', left: '100px' }}>
-        <path d="M40 130 C 40 80, 80 50, 110 30" stroke="#fff" strokeWidth="3.5" strokeDasharray="6,6" strokeLinecap="round"/>
-        <path d="M95 30 L 112 28 L 105 45" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Curved dashed line pointing to the center address bar prompt (starts around left: 140px, moved down to top: 110px) */}
+      <svg width="150" height="150" viewBox="0 0 150 150" fill="none" style={{ position: 'absolute', top: '110px', left: '110px' }}>
+        <path d="M30 120 C 30 75, 75 45, 110 20" stroke="#fff" strokeWidth="3.5" strokeDasharray="6,6" strokeLinecap="round"/>
+        <path d="M95 20 L 112 18 L 105 35" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
 
       <div style={{
         position: 'absolute',
-        top: '160px',
-        left: '120px',
+        top: '250px',
+        left: '130px',
         color: '#ffffff',
         maxWidth: '340px',
         fontFamily: "'Outfit', sans-serif",
