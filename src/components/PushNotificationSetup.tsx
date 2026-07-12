@@ -343,84 +343,80 @@ function WebPromptModal({
   onLater:  () => void
 }) {
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        background: 'rgba(15, 23, 42, 0.50)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px',
-      }}
-      onClick={onLater}
-    >
+    <>
       <style>{`
-        @keyframes wpSlideUp {
-          from { opacity: 0; transform: translateY(30px) scale(0.96); }
+        @keyframes wpSlideDown {
+          from { opacity: 0; transform: translateY(-30px) scale(0.96); }
           to   { opacity: 1; transform: translateY(0)   scale(1);    }
-        }
-        @keyframes wpPulse {
-          0%   { transform: scale(0.95); opacity: 0.8; }
-          50%  { transform: scale(1.18); opacity: 0.25; }
-          100% { transform: scale(0.95); opacity: 0.8; }
         }
       `}</style>
 
       <div
         style={{
-          width: '100%',
-          maxWidth: '400px',
-          background: 'var(--surface-2)',
-          borderRadius: '28px',
-          padding: '32px 28px 24px',
-          boxShadow: '0 24px 48px rgba(15,23,42,0.18), 0 8px 16px rgba(15,23,42,0.08), inset 0 1px 0 var(--neu-glow)',
-          border: '1px solid var(--border)',
+          position: 'fixed',
+          top: '24px',
+          left: '24px',
+          zIndex: 99999,
+          width: 'min(380px, calc(100vw - 48px))',
+          background: '#ffffff',
+          borderRadius: '20px',
+          padding: '24px 24px 20px',
+          boxShadow: '0 20px 48px rgba(15,23,42,0.14), 0 8px 16px rgba(15,23,42,0.06)',
+          border: '1.5px solid rgba(15,23,42,0.06)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          animation: 'wpSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          animation: 'wpSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ position: 'relative', marginBottom: '22px' }}>
-          <div style={{
-            position: 'absolute', inset: '-10px', borderRadius: '50%',
-            background: 'rgba(54,54,232,0.13)', animation: 'wpPulse 2.2s infinite',
-          }} />
-          <div style={{
-            width: '68px', height: '68px', borderRadius: '50%',
-            background: 'linear-gradient(135deg, #3636e8, #6366f1)',
-            boxShadow: '0 8px 20px rgba(54,54,232,0.28)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
-          }}>
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-          </div>
-        </div>
+        {/* Custom PWA Illustration Header */}
+        <svg width="220" height="85" viewBox="0 0 220 85" fill="none" style={{ marginBottom: '16px' }}>
+          {/* Sparkles/Stars */}
+          <path d="M42 18 L45 22 L49 23 L46 26 L47 30 L42 28 L37 30 L38 26 L35 23 L39 22 Z" fill="#fbbf24" opacity="0.6"/>
+          <path d="M185 30 L187 33 L190 34 L188 36 L189 39 L185 37.5 L181 39 L182 36 L180 34 L183 33 Z" fill="#fbbf24" opacity="0.6"/>
+          <circle cx="150" cy="12" r="3" fill="#fbbf24" opacity="0.6"/>
+          <circle cx="85" cy="22" r="2" fill="#fbbf24" opacity="0.6"/>
 
-        <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '10px', fontFamily: "'Outfit', sans-serif" }}>
-          Stay Updated with Live Alerts
+          {/* Green Discount/Offer Tag */}
+          <g transform="translate(62, 18) rotate(-15)">
+            <rect x="0" y="0" width="28" height="44" rx="5" fill="#4ade80" />
+            <circle cx="14" cy="8" r="2.5" fill="#fff" />
+            <text x="14" y="30" fill="#fff" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">%</text>
+          </g>
+
+          {/* Yellow Delivery Box */}
+          <g transform="translate(112, 24)">
+            <rect x="0" y="8" width="50" height="30" rx="3" fill="#fbbf24" />
+            <path d="M-2 8 L52 8 L52 13 L-2 13 Z" fill="#f59e0b" />
+            <path d="M25 16 L25 30 M20 21 L25 16 L30 21" stroke="#2563eb" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          </g>
+
+          {/* Central Blue Bell circle */}
+          <circle cx="106" cy="38" r="22" fill="#2563eb" stroke="#fff" strokeWidth="3.5" style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }} />
+          <path d="M106 25 A 5 5 0 0 0 101 30 C 101 36 98 38 98 38 L 114 38 C 114 38 111 36 111 30 A 5 5 0 0 0 106 25 Z" fill="#fff" />
+          <path d="M102 41 A 2 2 0 0 0 110 41 Z" fill="#fff" />
+          <path d="M96 28 A 12 12 0 0 0 96 40" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" opacity="0.35"/>
+          <path d="M116 28 A 12 12 0 0 1 116 40" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" opacity="0.35"/>
+        </svg>
+
+        <div style={{ fontSize: '15px', fontWeight: '850', color: '#0f172a', marginBottom: '8px', fontFamily: "'Outfit', sans-serif" }}>
+          Get updates on your desktop
         </div>
-        <p style={{ fontSize: '13.5px', lineHeight: '1.65', color: 'var(--text-secondary)', marginBottom: '26px', padding: '0 4px' }}>
-          Get instant updates for live sessions, subject blueprints, announcements, and study notes so you never miss a class.
+        <p style={{ fontSize: '12px', lineHeight: '1.6', color: '#64748b', marginBottom: '20px', padding: '0 4px', fontFamily: "'Outfit', sans-serif" }}>
+          Stay updated with live class alerts, blueprints, and announcements.
         </p>
 
-        <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+        <div style={{ display: 'flex', gap: '12px', width: '100%', justifyContent: 'center' }}>
           <button
             type="button"
             onClick={onLater}
             style={{
-              flex: 1, border: '1.5px solid var(--border)', background: 'transparent',
-              padding: '12px 20px', fontFamily: 'inherit', fontSize: '13.5px',
-              fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer', borderRadius: '50px',
-              transition: 'all 0.2s ease',
+              flex: 1, border: '1.5px solid #dadce0', background: 'transparent',
+              padding: '10px 18px', fontFamily: 'inherit', fontSize: '13px',
+              fontWeight: '700', color: '#5f6368', cursor: 'pointer', borderRadius: '8px',
+              transition: 'all 0.15s ease',
             }}
           >
             Later
@@ -429,19 +425,19 @@ function WebPromptModal({
             type="button"
             onClick={onEnable}
             style={{
-              flex: 1, border: 'none', borderRadius: '50px',
-              padding: '12px 20px', fontFamily: 'inherit', fontSize: '13.5px', fontWeight: '700',
+              flex: 1, border: 'none', borderRadius: '8px',
+              padding: '10px 18px', fontFamily: 'inherit', fontSize: '13px', fontWeight: '750',
               cursor: 'pointer', color: '#fff',
-              background: 'linear-gradient(135deg, #3636e8, #6366f1)',
-              boxShadow: '4px 4px 10px rgba(54,54,232,0.25), inset 1px 1px 0 var(--neu-glow)',
-              transition: 'all 0.2s ease',
+              background: '#1a73e8',
+              boxShadow: '0 4px 10px rgba(26,115,232,0.2)',
+              transition: 'all 0.15s ease',
             }}
           >
             Allow
           </button>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -458,18 +454,18 @@ function WebPointerOverlay() {
         pointerEvents: 'auto',
       }}
     >
-      {/* Curved dashed line pointing to the top-left corner */}
-      <svg width="120" height="120" viewBox="0 0 120 120" fill="none" style={{ position: 'absolute', top: '16px', left: '16px' }}>
-        <path d="M100 100 C 60 100, 30 70, 20 20" stroke="#fff" strokeWidth="3.5" strokeDasharray="6,6" strokeLinecap="round"/>
-        <path d="M10 35 L 20 20 L 35 30" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Curved dashed line pointing to the center address bar prompt (starts around left: 140px) */}
+      <svg width="150" height="150" viewBox="0 0 150 150" fill="none" style={{ position: 'absolute', top: '15px', left: '100px' }}>
+        <path d="M40 130 C 40 80, 80 50, 110 30" stroke="#fff" strokeWidth="3.5" strokeDasharray="6,6" strokeLinecap="round"/>
+        <path d="M95 30 L 112 28 L 105 45" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
 
       <div style={{
         position: 'absolute',
-        top: '120px',
-        left: '48px',
+        top: '160px',
+        left: '120px',
         color: '#ffffff',
-        maxWidth: '320px',
+        maxWidth: '340px',
         fontFamily: "'Outfit', sans-serif",
       }}>
         <div style={{ fontSize: '20px', fontWeight: '850', marginBottom: '8px', letterSpacing: '-0.3px' }}>
@@ -485,107 +481,71 @@ function WebPointerOverlay() {
 
 function WebBlockedModal({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        background: 'rgba(10, 10, 30, 0.60)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px',
-      }}
-      onClick={onDismiss}
-    >
+    <>
       <style>{`
-        @keyframes wbSlideUp {
-          from { opacity: 0; transform: translateY(40px) scale(0.94); }
+        @keyframes wpSlideDown {
+          from { opacity: 0; transform: translateY(-30px) scale(0.96); }
           to   { opacity: 1; transform: translateY(0)   scale(1);    }
         }
       `}</style>
 
       <div
         style={{
-          width: '100%',
-          maxWidth: '420px',
-          background: 'var(--surface-2)',
-          borderRadius: '28px',
-          padding: '32px 28px 24px',
-          boxShadow: '0 32px 64px rgba(0,0,0,0.3), inset 0 1px 0 var(--neu-glow)',
-          border: '1px solid var(--border)',
+          position: 'fixed',
+          top: '24px',
+          left: '24px',
+          zIndex: 99999,
+          width: 'min(380px, calc(100vw - 48px))',
+          background: '#ffffff',
+          borderRadius: '20px',
+          padding: '24px 24px 20px',
+          boxShadow: '0 20px 48px rgba(15,23,42,0.14), 0 8px 16px rgba(15,23,42,0.06)',
+          border: '1.5px solid rgba(15,23,42,0.06)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          animation: 'wbSlideUp 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          animation: 'wpSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{
-          width: '64px', height: '64px', borderRadius: '50%',
-          background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-          boxShadow: '0 8px 24px rgba(245,158,11,0.30)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: '20px',
-        }}>
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <line x1="12" y1="2" x2="12" y2="4" />
-            <line x1="12" y1="22" x2="12" y2="22" />
-          </svg>
+        {/* Custom Graphics Header with Red Slash/Blocked notification bell */}
+        <svg width="220" height="85" viewBox="0 0 220 85" fill="none" style={{ marginBottom: '16px' }}>
+          <rect x="68" y="24" width="28" height="40" rx="4" fill="#e2e8f0" />
+          <rect x="110" y="28" width="48" height="28" rx="3" fill="#e2e8f0" />
+          <circle cx="106" cy="38" r="22" fill="#ef4444" stroke="#fff" strokeWidth="3.5" style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }} />
+          <path d="M106 25 A 5 5 0 0 0 101 30 C 101 36 98 38 98 38 L 114 38 C 114 38 111 36 111 30 A 5 5 0 0 0 106 25 Z" fill="#fff" />
+          <path d="M102 41 A 2 2 0 0 0 110 41 Z" fill="#fff" />
+          <line x1="94" y1="26" x2="118" y2="50" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+
+        <div style={{ fontSize: '13.5px', lineHeight: '1.65', color: '#1e293b', fontWeight: '700', marginBottom: '18px', fontFamily: "'Outfit', sans-serif" }}>
+          Oops! It seems like you have blocked desktop notifications from GENz IITIAN. Please allow notification permission for GENz IITIAN
         </div>
 
-        <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px', fontFamily: "'Outfit', sans-serif" }}>
-          Notifications are Blocked 🔕
+        <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', fontFamily: "'Outfit', sans-serif" }}>
+          How to Unblock
         </div>
-        <p style={{ fontSize: '13px', lineHeight: '1.6', color: 'var(--text-muted)', marginBottom: '22px', padding: '0 4px' }}>
-          It seems like you have blocked desktop notifications from GENz IITIAN. Please unblock them to receive live class alerts.
-        </p>
-
-        {/* Step by step unblock guide */}
-        <div style={{
-          width: '100%',
-          background: 'rgba(54,54,232,0.03)',
-          border: '1px solid var(--border)',
-          borderRadius: '16px',
-          padding: '16px 18px',
-          marginBottom: '24px',
-          textAlign: 'left',
-        }}>
-          <div style={{ fontSize: '11px', fontWeight: '750', color: 'var(--text-muted)', letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: '10px' }}>
-            How to Unblock
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--text-primary)' }}>
-              <span style={{ fontSize: '15px' }}>🔒</span>
-              <span>Click the <strong>Lock icon</strong> next to the website URL in the address bar.</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--text-primary)' }}>
-              <span style={{ fontSize: '15px' }}>🔔</span>
-              <span>Find <strong>Notifications</strong> and change permission to <strong>Allow</strong>.</span>
-            </div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13.5px', fontWeight: '800', color: '#0f172a', fontFamily: "'Outfit', sans-serif", marginBottom: '20px' }}>
+          <span style={{ color: '#10b981', fontSize: '15px' }}>🎛️</span> &gt; Notifications &gt; Allow
         </div>
 
         <button
           type="button"
           onClick={onDismiss}
           style={{
-            width: '100%', border: 'none', borderRadius: '50px',
-            padding: '14px 20px', fontFamily: 'inherit', fontSize: '14px', fontWeight: '700',
+            width: '100%', border: 'none', borderRadius: '8px',
+            padding: '10px 18px', fontFamily: 'inherit', fontSize: '13px', fontWeight: '750',
             cursor: 'pointer', color: '#fff',
-            background: 'linear-gradient(135deg, #3636e8, #6366f1)',
-            boxShadow: '0 6px 20px rgba(54,54,232,0.25)',
-            transition: 'all 0.2s ease',
+            background: '#ef4444',
+            boxShadow: '0 4px 10px rgba(239,68,68,0.2)',
+            transition: 'all 0.15s ease',
           }}
         >
           Got it
         </button>
       </div>
-    </div>
+    </>
   )
 }
 
