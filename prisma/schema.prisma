@@ -96,6 +96,7 @@ model User {
   courseBundleAssignments UserCourseBundleAssignment[]
   communityMutePrefs      CommunityMutePreference[]
   scheduledNotifications  ScheduledUserNotification[]
+  featureRequests         FeatureRequest[]             @relation("FeatureRequestUser")
 
   @@index([role])  // Used by dashboard count: prisma.user.count({ where: { role: 'STUDENT' } })
 }
@@ -1317,5 +1318,21 @@ model ScheduledUserNotification {
 
   @@index([status])
   @@index([scheduledFor])
+}
+
+model FeatureRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String
+  imageUrls   String[] @default([])
+  status      String   @default("PENDING") // PENDING, REVIEWED, ACCEPTED, REJECTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation("FeatureRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
 }
 

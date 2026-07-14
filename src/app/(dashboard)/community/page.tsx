@@ -1142,7 +1142,8 @@ export default function CommunityPage() {
         )}
         {/* If Capacitor and Mobile, render grid */}
         {isCapacitor && isMobile ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', padding: '10px 4px 24px' }}>
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', padding: '10px 4px 24px' }}>
             {classes.filter(cls => !cls.isDirectChat).map((cls, idx) => {
               const style = getSubjectStyle(cls.name, idx)
               const isMuted = cls.isMuted || false
@@ -1390,6 +1391,7 @@ export default function CommunityPage() {
           }}>
             Please click on any course tab to chat with mentor &amp; your course mates
           </p>
+          </>
         ) : (
           <>
             {/* Groups header */}

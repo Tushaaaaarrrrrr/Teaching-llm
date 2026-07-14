@@ -47,6 +47,16 @@ interface ChatSession {
 interface ClassItem { id: string; name: string; color: string }
 interface Faq { id: string; question: string; answer: string; order: number }
 interface AdminUser { id: string; name: string; role: string }
+interface FeatureReq {
+  id: string
+  title: string
+  description: string
+  imageUrls: string[]
+  status: string
+  createdAt: string
+  updatedAt: string
+  user: { id: string; name: string; role: string; email: string; securityNumber?: string; avatar?: string }
+}
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: 'var(--info)', IN_PROGRESS: 'var(--warning)', RESOLVED: 'var(--success)', CLOSED: 'var(--text-muted)',
@@ -271,7 +281,7 @@ export default function SupportPage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const [view, setView] = useState<'home' | 'allTickets' | 'chat' | 'chatHistory'>('home')
+  const [view, setView] = useState<'home' | 'allTickets' | 'chat' | 'chatHistory' | 'featureRequests'>('home')
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [selected, setSelected] = useState<Ticket | null>(null)
@@ -307,6 +317,15 @@ export default function SupportPage() {
   const [chatInitText, setChatInitText] = useState('')
   const [selectedUserDetailsId, setSelectedUserDetailsId] = useState<string | null>(null)
   const [showManagerChatStart, setShowManagerChatStart] = useState(false)
+
+  // Feature Requests
+  const [featureRequests, setFeatureRequests] = useState<FeatureReq[]>([])
+  const [showFeatureModal, setShowFeatureModal] = useState(false)
+  const [featureForm, setFeatureForm] = useState({ title: '', description: '' })
+  const [featureImages, setFeatureImages] = useState<File[]>([])
+  const [featureImagePreviews, setFeatureImagePreviews] = useState<string[]>([])
+  const [submittingFeature, setSubmittingFeature] = useState(false)
+  const featureImageRef = useRef<HTMLInputElement>(null)
   // Image upload state
   const [pendingChatImage, setPendingChatImage] = useState<File | null>(null)
   const [pendingChatImagePreview, setPendingChatImagePreview] = useState<string | null>(null)
@@ -328,6 +347,8 @@ export default function SupportPage() {
     ])
     setTickets(Array.isArray(tr) ? tr : [])
     setClasses((cr.classes || cr || []).map((c: ClassItem) => ({ id: c.id, name: c.name, color: c.color })))
+    // Also load feature requests
+    fetch('/api/support/feature-requests').then(r => r.json()).then(fr => setFeatureRequests(Array.isArray(fr) ? fr : [])).catch(() => {})
   }, [])
 
   const loadFaqs = useCallback(async () => {
@@ -455,6 +476,61 @@ export default function SupportPage() {
     await fetch(`/api/support/tickets/${ticketId}`, { method: 'DELETE' })
     setTickets(prev => prev.filter(t => t.id !== ticketId))
     if (selected?.id === ticketId) setSelected(null)
+  }
+
+  // ── feature request actions ───────────────────────────────────────────
+  function handleFeatureImageAdd(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    if (featureImages.length + files.length > 5) { alert('Maximum 5 images allowed'); return }
+    setFeatureImages(prev => [...prev, ...files])
+    files.forEach(f => {
+      const reader = new FileReader()
+      reader.onload = () => setFeatureImagePreviews(prev => [...prev, reader.result as string])
+      reader.readAsDataURL(f)
+    })
+    if (featureImageRef.current) featureImageRef.current.value = ''
+  }
+
+  function removeFeatureImage(idx: number) {
+    setFeatureImages(prev => prev.filter((_, i) => i !== idx))
+    setFeatureImagePreviews(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  async function submitFeatureRequest() {
+    if (!featureForm.title.trim() || !featureForm.description.trim()) return
+    setSubmittingFeature(true)
+    try {
+      const uploadedUrls: string[] = []
+      for (const file of featureImages) {
+        const url = await uploadImage(file)
+        uploadedUrls.push(url)
+      }
+      await fetch('/api/support/feature-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: featureForm.title, description: featureForm.description, imageUrls: uploadedUrls }),
+      })
+      setShowFeatureModal(false)
+      setFeatureForm({ title: '', description: '' })
+      setFeatureImages([])
+      setFeatureImagePreviews([])
+      // Refresh list
+      const fresh = await fetch('/api/support/feature-requests').then(r => r.json())
+      setFeatureRequests(Array.isArray(fresh) ? fresh : [])
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to submit feature request')
+    }
+    setSubmittingFeature(false)
+  }
+
+  async function updateFeatureStatus(id: string, status: string) {
+    await fetch('/api/support/feature-requests', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    })
+    const fresh = await fetch('/api/support/feature-requests').then(r => r.json())
+    setFeatureRequests(Array.isArray(fresh) ? fresh : [])
   }
 
   // ── chat actions ────────────────────────────────────────────────────────
@@ -831,6 +907,40 @@ export default function SupportPage() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Request a Feature Box */}
+            <div className="ticket-box-pad" style={{ width: '100%', borderRadius: '24px', background: 'var(--surface-2)', border: '1.5px solid var(--border)', boxShadow: 'inset 0 1px 0 var(--neu-glow)', textAlign: 'left' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#8b5cf6', letterSpacing: '0.03em', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    💡 Request a Feature
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                    Have an idea? Tell us what you&apos;d love to see.
+                  </div>
+                </div>
+                <button onClick={() => setShowFeatureModal(true)} className="btn" style={{ borderRadius: '50px', padding: '10px 20px', background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>+ Request</button>
+              </div>
+              {featureRequests.length > 0 && (
+                <div style={{ marginTop: '16px', borderTop: '1px solid rgba(139,92,246,0.15)', paddingTop: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>Your Requests</span>
+                    <button onClick={() => setView('featureRequests')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8b5cf6', fontSize: '12px', fontWeight: '700', fontFamily: 'inherit' }}>View All →</button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {featureRequests.slice(0, 3).map(fr => (
+                      <div key={fr.id} onClick={() => setView('featureRequests')} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: 'var(--surface)', borderRadius: '14px', cursor: 'pointer', border: '1px solid var(--border)' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: fr.status === 'PENDING' ? '#f59e0b' : fr.status === 'ACCEPTED' ? '#10b981' : fr.status === 'REJECTED' ? '#ef4444' : '#6366f1', flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>{fr.title}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{fr.status} · {new Date(fr.createdAt).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {userRole === 'MANAGER' && (

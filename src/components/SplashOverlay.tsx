@@ -6,8 +6,9 @@ import { useLocalCachedAsset } from '@/hooks/useLocalCachedAsset'
 export default function SplashOverlay() {
   const [mounted, setMounted] = useState(false)
   const [show, setShow] = useState(true)
-  const [step, setStep] = useState(1) // 1 = Logo & Progress Bar, 2 = Mascot Image & Skip Button
+  const [step, setStep] = useState(1) // 1 = Logo & Progress Bar, 2 = Mascot Image & Skip Button (native only)
   const [progress, setProgress] = useState(0)
+  const [isNative, setIsNative] = useState(false)
 
   const logoSrc = useLocalCachedAsset('/mobile-login-logo.png')
   const splashSrc = useLocalCachedAsset('/splash-screen.png')
@@ -15,6 +16,8 @@ export default function SplashOverlay() {
   // Avoid hydration mismatch by waiting until client mount
   useEffect(() => {
     setMounted(true)
+    const w = window as any
+    setIsNative(!!(w?.Capacitor?.isNativePlatform?.() || w?.Capacitor?.isNative))
   }, [])
 
   // Step 1: Loading Progress Bar (1.5 seconds)
@@ -31,13 +34,17 @@ export default function SplashOverlay() {
 
       if (percent >= 100) {
         clearInterval(interval)
-        // Transition to Step 2
-        setStep(2)
+        // On native: show Step 2 (mascot image). On web: close immediately.
+        if (isNative) {
+          setStep(2)
+        } else {
+          setShow(false)
+        }
       }
     }, 30)
 
     return () => clearInterval(interval)
-  }, [mounted, step])
+  }, [mounted, step, isNative])
 
   // Step 2: Auto-close after 2.5 seconds (2500ms)
   useEffect(() => {
