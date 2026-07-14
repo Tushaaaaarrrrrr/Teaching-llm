@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">GenZ IITIAN Test</string>
-    <string name="title_activity_main">GenZ IITIAN Test</string>
-    <string name="package_name">com.teaching.lms.test</string>
-    <string name="custom_url_scheme">com.teaching.lms.test</string>
+    <string name="app_name">GenZ IITIAN</string>
+    <string name="title_activity_main">GenZ IITIAN</string>
+    <string name="package_name">com.teaching.lms</string>
+    <string name="custom_url_scheme">com.teaching.lms</string>
 </resources>
