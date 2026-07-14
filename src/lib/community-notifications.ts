@@ -289,3 +289,94 @@ export async function sendReplyNotification({
     console.error('[community-notifications] Error sending reply notification:', err)
   }
 }
+
+/**
+ * Send FCM push, create in-app notification, and emit SSE to notify
+ * everyone on a course that a new comment was posted on a lecture.
+ */
+export async function sendCommentNotification({
+  courseId,
+  courseName,
+  lectureId,
+  lectureTitle,
+  commentId,
+  sender,
+  commentText,
+}: {
+  courseId: string
+  courseName: string
+  lectureId: string
+  lectureTitle: string
+  commentId: string
+  sender: { userId: string; name: string }
+  commentText: string
+}) {
+  try {
+    const [enrollments, optedOut, managers] = await Promise.all([
+      prisma.enrollment.findMany({
+        where: { courseId },
+        select: { userId: true },
+      }),
+      prisma.user.findMany({
+        where: { notifCommunityEnabled: false },
+        select: { id: true },
+      }),
+      prisma.user.findMany({
+        where: {
+          OR: [
+            { role: 'MANAGER' },
+            { isSuperManager: true },
+          ],
+        },
+        select: { id: true },
+      }),
+    ])
+
+    const optedOutSet = new Set(optedOut.map((u) => u.id))
+    const managerIds = managers.map((m) => m.id)
+
+    const recipientIds = Array.from(new Set([
+      ...enrollments
+        .map((e) => e.userId)
+        .filter((id) => id !== sender.userId && !optedOutSet.has(id)),
+      ...managerIds
+        .filter((id) => id !== sender.userId && !optedOutSet.has(id))
+    ]))
+
+    if (recipientIds.length === 0) return
+
+    const title = `New Lecture Comment`
+    const truncatedText = commentText.length > 80 ? commentText.slice(0, 77) + '...' : commentText
+    const body = `${sender.name} commented on "${lectureTitle}": "${truncatedText}"`
+
+    await prisma.notification.createMany({
+      data: recipientIds.map((userId) => ({
+        userId,
+        title,
+        content: body,
+        type: 'COMMUNITY',
+      })),
+    })
+
+    recipientIds.forEach((userId) => {
+      sseEmitter.emit(`user:${userId}:notify`)
+    })
+
+    const pushPayload = {
+      title,
+      body,
+      url: `/courses/${courseId}/lectures/${lectureId}?commentId=${commentId}`,
+      tag: `comment_${commentId}`,
+      importance: 'high' as const,
+      sound: 'default' as const,
+    }
+
+    await Promise.allSettled([
+      sendPushToUsers(recipientIds, pushPayload),
+      sendFcmToUsers(recipientIds, pushPayload),
+    ])
+  } catch (err) {
+    console.error('[community-notifications] Error sending comment notification:', err)
+  }
+}
+

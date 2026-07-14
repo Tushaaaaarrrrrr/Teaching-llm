@@ -101,6 +101,24 @@ export async function POST(
       )
     }
 
+    const lecture = await prisma.content.findUnique({
+      where: { id: contentId },
+      include: {
+        topic: {
+          include: {
+            course: true,
+          },
+        },
+      },
+    })
+
+    if (!lecture || !lecture.topic?.course) {
+      return NextResponse.json({ error: 'Lecture or course not found' }, { status: 404 })
+    }
+
+    const courseId = lecture.topic.courseId
+    const courseName = lecture.topic.course.name
+
     const comment = await prisma.comment.create({
       data: {
         content: sanitized as string,
@@ -120,9 +138,65 @@ export async function POST(
       },
     })
 
+    // Create a special message in the community chat
+    const communityMessageContent = `${sanitized}\n[LECTURE_COMMENT_LINK:courseId=${courseId};lectureId=${contentId};commentId=${comment.id};lectureTitle=${encodeURIComponent(lecture.title)}]`
+
+    const communityMessage = await prisma.communityMessage.create({
+      data: {
+        courseId,
+        senderId: session.userId,
+        content: communityMessageContent,
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+            securityNumber: true,
+          },
+        },
+      },
+    })
+
+    // Update course lastMessageAt
+    await prisma.course.update({
+      where: { id: courseId },
+      data: { lastMessageAt: communityMessage.createdAt },
+    })
+
+    // Log action to activity logger
+    const { logActivity, ACTION, MODULE } = require('@/lib/activity-log')
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.MESSAGE_SENT,
+      actionDescription: `${session.name} commented on lecture ${lecture.title}`,
+      moduleName: MODULE.COMMUNITY,
+      targetId: communityMessage.id,
+    })
+
+    // Emit chat update in real-time
+    const { sseEmitter } = require('@/lib/sse')
+    sseEmitter.emit(`chat:${courseId}:message`, communityMessage)
+
+    // Trigger background notifications
+    const { sendCommentNotification } = require('@/lib/community-notifications')
+    sendCommentNotification({
+      courseId,
+      courseName,
+      lectureId: contentId,
+      lectureTitle: lecture.title,
+      commentId: comment.id,
+      sender: { userId: session.userId, name: session.name },
+      commentText: sanitized as string,
+    }).catch(console.error)
+
     return NextResponse.json(comment)
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+

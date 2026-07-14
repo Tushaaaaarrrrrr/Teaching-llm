@@ -178,6 +178,30 @@ function renderSubjectIcon(iconType: 'initials' | 'atom' | 'scroll' | 'leaf' | '
   }
 }
 
+const LECTURE_LINK_REGEX = /\[LECTURE_COMMENT_LINK:courseId=([^;]+);lectureId=([^;]+);commentId=([^;\]]+)(?:;lectureTitle=([^\]]+))?\]/
+
+function hasLectureLink(content: string): boolean {
+  if (!content) return false
+  return LECTURE_LINK_REGEX.test(content)
+}
+
+function cleanContent(content: string): string {
+  if (!content) return ''
+  return content.replace(LECTURE_LINK_REGEX, '').trim()
+}
+
+function parseLectureLink(content: string) {
+  if (!content) return null
+  const match = content.match(LECTURE_LINK_REGEX)
+  if (!match) return null
+  return {
+    courseId: match[1],
+    lectureId: match[2],
+    commentId: match[3],
+    lectureTitle: match[4] ? decodeURIComponent(match[4]) : 'Lecture'
+  }
+}
+
 export default function CommunityPage() {
   const router = useRouter()
   const { confirm, confirmDialog } = useConfirmDialog()
@@ -1710,7 +1734,7 @@ export default function CommunityPage() {
                   </div>
                   <div style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>
                     <strong>{pinnedMessage.sender.name}: </strong>
-                    {pinnedMessage.content || (pinnedMessage.imageUrl ? '📷 Photo' : '')}
+                    {hasLectureLink(pinnedMessage.content) ? `💬 Comment: ${cleanContent(pinnedMessage.content)}` : pinnedMessage.content || (pinnedMessage.imageUrl ? '📷 Photo' : '')}
                   </div>
                 </div>
                 {userRole === 'MANAGER' && (
@@ -1922,7 +1946,7 @@ export default function CommunityPage() {
                                     <span>{msg.replyTo.sender.name}</span>
                                   </div>
                                   <div style={{ color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '11.5px', lineHeight: '1.4' }}>
-                                    {msg.replyTo.content || (msg.replyTo.imageUrl ? '📷 Image' : 'Message')}
+                                    {hasLectureLink(msg.replyTo.content) ? `💬 Comment: ${cleanContent(msg.replyTo.content)}` : msg.replyTo.content || (msg.replyTo.imageUrl ? '📷 Image' : 'Message')}
                                   </div>
                                 </div>
                               )}
@@ -1981,8 +2005,72 @@ export default function CommunityPage() {
                                 />
                               )}
                               {msg.content && (
-                                <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                                  {renderMessageContent(msg.content)}
+                                <div>
+                                  {hasLectureLink(msg.content) ? (() => {
+                                    const parsed = parseLectureLink(msg.content)
+                                    if (!parsed) return null
+                                    const cleanedText = cleanContent(msg.content)
+                                    return (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingBottom: '8px' }}>
+                                        <div style={{ fontSize: '12px', color: 'rgba(30, 30, 58, 0.7)', fontWeight: '600' }}>
+                                          Commented on <strong>{parsed.lectureTitle}</strong>:
+                                        </div>
+                                        <div style={{
+                                          background: 'rgba(54, 54, 232, 0.05)',
+                                          borderLeft: '3px solid #3636e8',
+                                          padding: '8px 12px',
+                                          borderRadius: '6px',
+                                          fontSize: '13px',
+                                          lineHeight: '1.4',
+                                          color: '#1e1e3a',
+                                          fontStyle: 'italic',
+                                          wordBreak: 'break-word',
+                                          whiteSpace: 'pre-wrap',
+                                        }}>
+                                          "{cleanedText}"
+                                        </div>
+                                        <button
+                                          onClick={() => {
+                                            router.push(`/courses/${parsed.courseId}/lectures/${parsed.lectureId}?commentId=${parsed.commentId}`)
+                                          }}
+                                          style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            alignSelf: 'flex-start',
+                                            gap: '5px',
+                                            marginTop: '2px',
+                                            padding: '6px 12px',
+                                            borderRadius: '6px',
+                                            background: 'linear-gradient(135deg, #3636e8, #6366f1)',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            fontSize: '11px',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 3px 8px rgba(54,54,232,0.2)',
+                                            transition: 'all 0.2s',
+                                          }}
+                                          onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-1px)'
+                                            e.currentTarget.style.boxShadow = '0 5px 12px rgba(54,54,232,0.3)'
+                                          }}
+                                          onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)'
+                                            e.currentTarget.style.boxShadow = '0 3px 8px rgba(54,54,232,0.2)'
+                                          }}
+                                        >
+                                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                          </svg>
+                                          View Comments
+                                        </button>
+                                      </div>
+                                    )
+                                  })() : (
+                                    <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                      {renderMessageContent(msg.content)}
+                                    </div>
+                                  )}
                                 </div>
                               )}
 

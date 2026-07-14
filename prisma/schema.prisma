@@ -68,6 +68,7 @@ model User {
   syncedSessionEvents     DailySessionSnapshot[]       @relation("SnapshotInstructor")
   enrollments             Enrollment[]
   feedbacks               Feedback[]
+  appFeedbacks            AppFeedback[]
   instructorAssignments   InstructorAssignment[]
   uploadedLectures        Lecture[]                    @relation("LectureUploader")
   lectureProgress         LectureProgress[]
@@ -824,6 +825,18 @@ model Feedback {
   @@unique([studentId, courseId])
   @@index([studentId])
   @@index([courseId])
+}
+
+model AppFeedback {
+  id             String   @id @default(cuid())
+  studentId      String
+  rating         Int      // 1 to 5 stars
+  comment        String?
+  platform       String   // "APP" | "WEB"
+  createdAt      DateTime @default(now())
+  student        User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
 }
 
 model SyncQueue {

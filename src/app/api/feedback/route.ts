@@ -17,27 +17,81 @@ export async function GET(request: NextRequest) {
     const where: any = {}
     
     if (session.role === 'STUDENT') {
-      // Students can ONLY see their own feedback
       where.studentId = session.userId
     } else if (session.role === 'MANAGER') {
-      // Managers can see everything, optionally filtered
-      if (courseId) where.courseId = courseId
-      if (studentId) where.studentId = studentId
+      if (courseId && courseId !== 'APP' && courseId !== 'WEBSITE') {
+        where.courseId = courseId
+      }
+      if (studentId) {
+        where.studentId = studentId
+      }
     } else {
-      // Teachers and Admins are NOT allowed to see feedback
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const feedbacks = await prisma.feedback.findMany({
-      where,
-      include: {
-        student: { select: { name: true, email: true } },
-        course: { select: { id: true, name: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+    // Only load course feedback if courseId is NOT filtering for APP or WEBSITE specifically
+    let courseFeedbacks: any[] = []
+    if (!courseId || (courseId !== 'APP' && courseId !== 'WEBSITE')) {
+      courseFeedbacks = await prisma.feedback.findMany({
+        where,
+        include: {
+          student: { select: { id: true, name: true, email: true, securityNumber: true } },
+          course: { select: { id: true, name: true } },
+        },
+      })
+    }
 
-    return NextResponse.json(feedbacks)
+    // Load App/Website feedback only for manager and if filtering matches
+    let appFeedbacks: any[] = []
+    if (session.role === 'MANAGER') {
+      const appWhere: any = {}
+      if (studentId) appWhere.studentId = studentId
+      if (courseId === 'APP') appWhere.platform = 'APP'
+      if (courseId === 'WEBSITE') appWhere.platform = 'WEB'
+      
+      if (!courseId || courseId === 'APP' || courseId === 'WEBSITE') {
+        appFeedbacks = await (prisma as any).appFeedback.findMany({
+          where: appWhere,
+          include: {
+            student: { select: { id: true, name: true, email: true, securityNumber: true } },
+          },
+        })
+      }
+    }
+
+    const formattedCourse = courseFeedbacks.map(f => ({
+      id: f.id,
+      type: 'COURSE',
+      studentId: f.studentId,
+      student: f.student,
+      course: f.course,
+      teacherRating: f.teacherRating,
+      conceptRating: f.conceptRating,
+      materialRating: f.materialRating,
+      recommendScore: f.recommendScore,
+      comment: f.comment,
+      createdAt: f.createdAt,
+    }))
+
+    const formattedApp = appFeedbacks.map(f => ({
+      id: f.id,
+      type: f.platform === 'APP' ? 'APP' : 'WEBSITE',
+      studentId: f.studentId,
+      student: f.student,
+      course: { id: f.platform, name: f.platform === 'APP' ? 'App Feedback' : 'Website Feedback' },
+      teacherRating: f.rating,
+      conceptRating: f.rating,
+      materialRating: f.rating,
+      recommendScore: f.rating,
+      comment: f.comment,
+      createdAt: f.createdAt,
+    }))
+
+    const allFeedbacks = [...formattedCourse, ...formattedApp].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+
+    return NextResponse.json(allFeedbacks)
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

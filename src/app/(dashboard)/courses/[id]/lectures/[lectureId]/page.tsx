@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import LectureVideoPlayer from '@/components/courses/LectureVideoPlayer'
 import { 
@@ -55,6 +55,9 @@ interface ContentItem {
 export default function LecturePage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const commentIdParam = searchParams ? searchParams.get('commentId') : null
+  const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null)
   const [content, setContent] = useState<ContentItem | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
@@ -62,6 +65,28 @@ export default function LecturePage() {
   const [newComment, setNewComment] = useState('')
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
+
+  useEffect(() => {
+    if (commentIdParam && comments.length > 0) {
+      setActiveHighlightId(commentIdParam)
+      
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`comment-${commentIdParam}`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 500)
+
+      const fadeTimer = setTimeout(() => {
+        setActiveHighlightId(null)
+      }, 4500)
+
+      return () => {
+        clearTimeout(timer)
+        clearTimeout(fadeTimer)
+      }
+    }
+  }, [commentIdParam, comments])
   const [showFullDescription, setShowFullDescription] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const commentInputRef = useRef<HTMLTextAreaElement>(null)
@@ -222,104 +247,121 @@ export default function LecturePage() {
   }
 
   const renderComments = (commentList: Comment[], depth = 0) => {
-    return commentList.map(comment => (
-      <div key={comment.id} style={{ 
-        marginLeft: depth > 0 ? '40px' : '0', 
-        marginTop: '16px',
-        borderLeft: depth > 0 ? '2px solid var(--border)' : 'none',
-        paddingLeft: depth > 0 ? '16px' : '0'
-      }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-          <div style={{ 
-            width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', 
-            background: 'var(--surface-2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            {comment.user.avatar ? (
-              <img src={comment.user.avatar} alt={comment.user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <User size={20} color="#94a3b8" />
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{comment.user.name}</span>
-              {comment.user.role !== 'STUDENT' && (
-                <span style={{ 
-                  fontSize: '10px', 
-                  background: 'linear-gradient(135deg, #3636e8, #6366f1)', 
-                  color: '#fff', 
-                  padding: '1px 8px', 
-                  borderRadius: '50px', 
-                  fontWeight: '800',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '3px',
-                  textTransform: 'capitalize'
-                }}>
-                  {comment.user.role.toLowerCase()}
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </span>
+    return commentList.map(comment => {
+      const isHighlighted = activeHighlightId === comment.id
+      return (
+        <div 
+          key={comment.id} 
+          id={`comment-${comment.id}`}
+          style={{ 
+            marginLeft: depth > 0 ? '40px' : '0', 
+            marginTop: '16px',
+            borderLeft: isHighlighted 
+              ? '3px solid #3636e8' 
+              : depth > 0 
+                ? '2px solid var(--border)' 
+                : 'none',
+            paddingLeft: depth > 0 && !isHighlighted ? '16px' : isHighlighted ? '12px' : '0',
+            backgroundColor: isHighlighted ? 'rgba(54, 54, 232, 0.05)' : 'transparent',
+            paddingTop: isHighlighted ? '8px' : '0',
+            paddingBottom: isHighlighted ? '8px' : '0',
+            paddingRight: isHighlighted ? '12px' : '0',
+            borderRadius: isHighlighted ? '6px' : '0',
+            transition: 'all 0.4s ease',
+          }}
+        >
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+            <div style={{ 
+              width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', 
+              background: 'var(--surface-2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              {comment.user.avatar ? (
+                <img src={comment.user.avatar} alt={comment.user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <User size={20} color="#94a3b8" />
               )}
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                {new Date(comment.createdAt).toLocaleDateString('en-GB')}
-              </span>
             </div>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '4px 0' }}>{comment.content}</p>
-            <button 
-              onClick={() => {
-                setReplyTo(comment.id)
-                setReplyText('')
-              }}
-              style={{ 
-                background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', 
-                fontWeight: '600', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center', gap: '4px',
-                marginTop: '4px'
-              }}
-            >
-              <CornerDownRight size={12} />
-              Reply
-            </button>
-
-            {replyTo === comment.id && (
-              <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
-                <input 
-                  type="text" 
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Write a reply..."
-                  style={{ 
-                    flex: 1, padding: '8px 16px', borderRadius: '20px', border: '1px solid var(--border)',
-                    fontSize: '13px', outline: 'none'
-                  }}
-                  autoFocus
-                />
-                <button 
-                  onClick={() => handlePostComment(comment.id)}
-                  style={{ 
-                    background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '50px', 
-                    width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
-                  }}
-                >
-                  <Send size={16} />
-                </button>
-                <button 
-                  onClick={() => setReplyTo(null)}
-                  style={{ 
-                    background: 'var(--surface)', color: 'var(--text-secondary)', border: 'none', borderRadius: '50px', 
-                    padding: '0 12px', height: '36px', fontSize: '12px', fontWeight: '600', cursor: 'pointer'
-                  }}
-                >
-                  Cancel
-                </button>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{comment.user.name}</span>
+                {comment.user.role !== 'STUDENT' && (
+                  <span style={{ 
+                    fontSize: '10px', 
+                    background: 'linear-gradient(135deg, #3636e8, #6366f1)', 
+                    color: '#fff', 
+                    padding: '1px 8px', 
+                    borderRadius: '50px', 
+                    fontWeight: '800',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    textTransform: 'capitalize'
+                  }}>
+                    {comment.user.role.toLowerCase()}
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </span>
+                )}
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  {new Date(comment.createdAt).toLocaleDateString('en-GB')}
+                </span>
               </div>
-            )}
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '4px 0' }}>{comment.content}</p>
+              <button 
+                onClick={() => {
+                  setReplyTo(comment.id)
+                  setReplyText('')
+                }}
+                style={{ 
+                  background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', 
+                  fontWeight: '600', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center', gap: '4px',
+                  marginTop: '4px'
+                }}
+              >
+                <CornerDownRight size={12} />
+                Reply
+              </button>
+  
+              {replyTo === comment.id && (
+                <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                  <input 
+                    type="text" 
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Write a reply..."
+                    style={{ 
+                      flex: 1, padding: '8px 16px', borderRadius: '20px', border: '1px solid var(--border)',
+                      fontSize: '13px', outline: 'none'
+                    }}
+                    autoFocus
+                  />
+                  <button 
+                    onClick={() => handlePostComment(comment.id)}
+                    style={{ 
+                      background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '50px', 
+                      width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                    }}
+                  >
+                    <Send size={16} />
+                  </button>
+                  <button 
+                    onClick={() => setReplyTo(null)}
+                    style={{ 
+                      background: 'var(--surface)', color: 'var(--text-secondary)', border: 'none', borderRadius: '50px', 
+                      padding: '0 12px', height: '36px', fontSize: '12px', fontWeight: '600', cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+          {comment.replies && comment.replies.length > 0 && renderComments(comment.replies, depth + 1)}
         </div>
-        {comment.replies && comment.replies.length > 0 && renderComments(comment.replies, depth + 1)}
-      </div>
-    ))
+      )
+    })
   }
 
   if (loading) {
