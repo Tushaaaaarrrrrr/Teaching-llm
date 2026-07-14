@@ -133,7 +133,6 @@ https://class.genziitian.in/download`
         await Share.share({
           title: 'GenZ IITIAN',
           text: shareText,
-          url: 'https://class.genziitian.in/download',
           dialogTitle: 'Share GenZ IITIAN',
         })
         return
