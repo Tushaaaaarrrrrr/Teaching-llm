@@ -1388,7 +1388,7 @@ export default function CommunityPage() {
             lineHeight: 1.5,
             opacity: 0.7,
           }}>
-            Please click on any course tab to talk to mentor &amp; your course mates
+            Please click on any course tab to chat with mentor &amp; your course mates
           </p>
         ) : (
           <>
