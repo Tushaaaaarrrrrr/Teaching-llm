@@ -77,11 +77,176 @@ function formatMessageDate(dateString: string) {
   }
 }
 
+interface SubjectStyle {
+  gradient: string
+  shadow: string
+  iconType: 'initials' | 'atom' | 'scroll' | 'leaf' | 'flask'
+}
+
+function getSubjectStyle(name: string, index: number): SubjectStyle {
+  const norm = name.toLowerCase()
+  if (norm.includes('math')) {
+    return {
+      gradient: 'linear-gradient(135deg, #b58bfd 0%, #703bf7 100%)',
+      shadow: 'rgba(112, 59, 247, 0.35)',
+      iconType: 'initials',
+    }
+  }
+  if (norm.includes('physic')) {
+    return {
+      gradient: 'linear-gradient(135deg, #ff9575 0%, #ff5c4d 100%)',
+      shadow: 'rgba(255, 92, 77, 0.35)',
+      iconType: 'atom',
+    }
+  }
+  if (norm.includes('history') || norm.includes('histor')) {
+    return {
+      gradient: 'linear-gradient(135deg, #32e3a8 0%, #009688 100%)',
+      shadow: 'rgba(0, 150, 136, 0.35)',
+      iconType: 'scroll',
+    }
+  }
+  if (norm.includes('biolog')) {
+    return {
+      gradient: 'linear-gradient(135deg, #f43f5e 0%, #a855f7 100%)',
+      shadow: 'rgba(244, 63, 94, 0.35)',
+      iconType: 'leaf',
+    }
+  }
+  if (norm.includes('chemist') || norm.includes('chem')) {
+    return {
+      gradient: 'linear-gradient(135deg, #ffd000 0%, #ff9100 100%)',
+      shadow: 'rgba(255, 145, 0, 0.35)',
+      iconType: 'flask',
+    }
+  }
+  
+  // Default gradients based on index
+  const defaults: Omit<SubjectStyle, 'iconType'>[] = [
+    { gradient: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', shadow: 'rgba(29, 78, 216, 0.35)' },
+    { gradient: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', shadow: 'rgba(190, 24, 93, 0.35)' },
+    { gradient: 'linear-gradient(135deg, #10b981 0%, #047857 100%)', shadow: 'rgba(4, 120, 87, 0.35)' },
+    { gradient: 'linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%)', shadow: 'rgba(91, 33, 182, 0.35)' },
+    { gradient: 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)', shadow: 'rgba(180, 83, 9, 0.35)' },
+  ]
+  const d = defaults[index % defaults.length]
+  return {
+    ...d,
+    iconType: 'initials'
+  }
+}
+
+function renderSubjectIcon(iconType: 'initials' | 'atom' | 'scroll' | 'leaf' | 'flask', name: string) {
+  switch (iconType) {
+    case 'atom':
+      return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3" />
+          <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)" />
+          <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)" />
+        </svg>
+      )
+    case 'scroll':
+      return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <line x1="10" y1="9" x2="8" y2="9" />
+        </svg>
+      )
+    case 'leaf':
+      return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 22C2 22 2 18 6 14C10 10 14 10 14 10C14 10 14 14 10 18C6 22 2 22 2 22Z" />
+          <path d="M14 10L22 2" />
+        </svg>
+      )
+    case 'flask':
+      return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 3h12" />
+          <path d="M12 3v7" />
+          <path d="M9 10h6" />
+          <path d="M9 10L4 20a2 2 0 0 0 1.7 3h12.6a2 2 0 0 0 1.7-3L15 10" />
+        </svg>
+      )
+    case 'initials':
+    default:
+      return <span style={{ fontSize: '20px', fontWeight: '800' }}>{name.substring(0, 2).toUpperCase()}</span>
+  }
+}
+
 export default function CommunityPage() {
   const router = useRouter()
   const { confirm, confirmDialog } = useConfirmDialog()
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null)
+  
+  const [isCapacitor, setIsCapacitor] = useState<boolean>(false)
+  const [longPressedClass, setLongPressedClass] = useState<ClassItem | null>(null)
+  
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const hasLongPressedRef = useRef<boolean>(false)
+
+  useEffect(() => {
+    const check = () => {
+      const hasClass = document.documentElement.classList.contains('is-native')
+      const hasWindow = !!(window as any).Capacitor?.isNativePlatform?.()
+      if (hasClass || hasWindow) {
+        setIsCapacitor(true)
+        return true
+      }
+      return false
+    }
+
+    if (check()) return
+
+    import('@capacitor/core').then(({ Capacitor }) => {
+      if (Capacitor.isNativePlatform()) {
+        setIsCapacitor(true)
+      }
+    }).catch(() => {})
+
+    const intervalId = setInterval(() => {
+      if (check()) {
+        clearInterval(intervalId)
+      }
+    }, 100)
+
+    const timeoutId = setTimeout(() => {
+      clearInterval(intervalId)
+    }, 2000)
+
+    return () => {
+      clearInterval(intervalId)
+      clearTimeout(timeoutId)
+    }
+  }, [])
+
+  const handleTouchStart = (cls: ClassItem) => {
+    hasLongPressedRef.current = false
+    longPressTimerRef.current = setTimeout(() => {
+      hasLongPressedRef.current = true
+      setLongPressedClass(cls)
+    }, 600)
+  }
+
+  const handleTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
+  const handleCardClick = (cls: ClassItem) => {
+    if (hasLongPressedRef.current) {
+      hasLongPressedRef.current = false
+      return
+    }
+    setSelectedClass(cls)
+  }
   const [messages, setMessages] = useState<CommMsg[]>([])
   const [input, setInput] = useState('')
   const [userId, setUserId] = useState('')
@@ -918,115 +1083,227 @@ export default function CommunityPage() {
             </div>
           </div>
         )}
-        {/* Groups header */}
-        <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: isMobile ? '6px' : '4px', padding: '0 6px' }}>
-          Communities
-        </div>
-        {classes.filter(cls => !cls.isDirectChat).map(cls => {
-          const active = selectedClass?.id === cls.id
-          return (
-          <button
-            key={cls.id}
-            onClick={() => setSelectedClass(cls)}
-            className={`community-channel-btn ${active ? 'active' : ''}`}
-            style={{
-              display: 'flex', alignItems: 'center', gap: isMobile ? '14px' : '12px',
-              padding: isMobile ? '14px 16px' : '12px 16px',
-              borderRadius: isMobile ? '20px' : '18px', border: 'none',
-              cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
-              transition: 'all 0.2s',
-              background: active ? cls.color : undefined,
-              color: active ? '#fff' : 'var(--community-item-text)',
-              boxShadow: active
-                ? `5px 5px 14px ${cls.color}55, -3px -3px 8px var(--community-item-shadow-light)`
-                : undefined,
-              position: 'relative',
-              minHeight: isMobile ? '64px' : 'auto',
-            }}
-          >
-            {cls.hasUnread && !active && (
-              <div style={{ position: 'absolute', top: '10px', right: '12px', width: '9px', height: '9px', borderRadius: '50%', background: 'var(--danger)', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
-            )}
-            <div style={{
-              width: isMobile ? '44px' : '34px', height: isMobile ? '44px' : '34px',
-              borderRadius: isMobile ? '14px' : '10px', flexShrink: 0,
-              background: active ? 'rgba(255,255,255,0.25)' : cls.color + '22',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: isMobile ? '14px' : '12px', fontWeight: '800',
-              color: active ? '#fff' : cls.color,
-            }}>
-              {cls.name.substring(0, 2).toUpperCase()}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: isMobile ? '14.5px' : '13px', fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {cls.name}
-              </div>
-              {cls.subject && (
-                <div style={{ fontSize: isMobile ? '12px' : '11px', opacity: active ? 0.85 : 0.6, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
-                  {cls.subject}
-                </div>
-              )}
-              {userRole === 'MANAGER' && cls.isCommunityActive === false && (
-                <div style={{ fontSize: '10px', fontWeight: '800', marginTop: '4px', color: active ? '#fff' : 'var(--danger)' }}>
-                  COMMUNITY OFF
-                </div>
-              )}
-            </div>
-            
-            {/* Mute toggle button (bell icon) */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                toggleMuteCourse(cls.id, cls.isMuted || false)
-              }}
-              title={cls.isMuted ? 'Unmute Group' : 'Mute Group'}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '6px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: active ? '#ffffff' : (cls.isMuted ? 'var(--danger)' : 'var(--text-muted)'),
-                opacity: cls.isMuted ? 1 : 0.4,
-                transition: 'opacity 0.2s, color 0.2s',
-                marginLeft: '4px',
-              }}
-              onMouseEnter={(e) => {
-                if (!cls.isMuted) e.currentTarget.style.opacity = '1'
-              }}
-              onMouseLeave={(e) => {
-                if (!cls.isMuted) e.currentTarget.style.opacity = '0.4'
-              }}
-            >
-              {cls.isMuted ? (
-                // Muted Bell (crossed out)
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  <path d="M18.63 13A17.89 17.89 0 0 1 18 8" />
-                  <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8v7a3 3 0 0 1-3 3h15" />
-                  <path d="M18 8a6 6 0 0 0-9.33-5" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
-              ) : (
-                // Normal Bell
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8v7a3 3 0 0 1-3 3h18a3 3 0 0 1-3-3V8z" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-              )}
-            </button>
+        {/* If Capacitor and Mobile, render grid */}
+        {isCapacitor && isMobile ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', padding: '10px 4px 24px' }}>
+            {classes.filter(cls => !cls.isDirectChat).map((cls, idx) => {
+              const style = getSubjectStyle(cls.name, idx)
+              const isMuted = cls.isMuted || false
+              return (
+                <button
+                  key={cls.id}
+                  onTouchStart={() => handleTouchStart(cls)}
+                  onTouchEnd={handleTouchEnd}
+                  onMouseDown={() => handleTouchStart(cls)}
+                  onMouseUp={handleTouchEnd}
+                  onMouseLeave={handleTouchEnd}
+                  onClick={() => handleCardClick(cls)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '24px 16px 20px',
+                    borderRadius: '28px',
+                    border: 'none',
+                    background: 'var(--surface)',
+                    boxShadow: '0 12px 28px rgba(15, 23, 42, 0.04), 0 4px 10px rgba(15, 23, 42, 0.02)',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'all 0.15s ease',
+                    width: '100%',
+                  }}
+                >
+                  {cls.hasUnread && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '16px',
+                      right: '16px',
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      background: '#ef4444',
+                      boxShadow: '0 0 6px #ef4444'
+                    }} />
+                  )}
 
-            {isMobile && (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? '#ffffff' : 'var(--text-muted)'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: '4px' }}>
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            )}
-          </button>
-          )
-        })}
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: style.gradient,
+                    boxShadow: `0 10px 24px ${style.shadow}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff',
+                    marginBottom: '16px',
+                    position: 'relative'
+                  }}>
+                    {renderSubjectIcon(style.iconType, cls.name)}
+
+                    {cls.hasUnread && (
+                      <span style={{
+                        position: 'absolute',
+                        top: '0px',
+                        right: '0px',
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        background: '#ef4444',
+                        boxShadow: '0 0 6px #ef4444'
+                      }} />
+                    )}
+
+                    {isMuted && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '-2px',
+                        right: '-2px',
+                        background: 'rgba(239, 68, 68, 0.95)',
+                        borderRadius: '50%',
+                        width: '18px',
+                        height: '18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                      }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="1" y1="1" x2="23" y2="23" /><path d="M9 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h4l5-5v20z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  <span style={{
+                    fontSize: '14.5px',
+                    fontWeight: 800,
+                    color: 'var(--text-primary)',
+                    textAlign: 'center',
+                    lineHeight: 1.2,
+                    width: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {cls.name}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <>
+            {/* Groups header */}
+            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: isMobile ? '6px' : '4px', padding: '0 6px' }}>
+              Communities
+            </div>
+            {classes.filter(cls => !cls.isDirectChat).map(cls => {
+              const active = selectedClass?.id === cls.id
+              return (
+              <button
+                key={cls.id}
+                onClick={() => setSelectedClass(cls)}
+                className={`community-channel-btn ${active ? 'active' : ''}`}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: isMobile ? '14px' : '12px',
+                  padding: isMobile ? '14px 16px' : '12px 16px',
+                  borderRadius: isMobile ? '20px' : '18px', border: 'none',
+                  cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                  transition: 'all 0.2s',
+                  background: active ? cls.color : undefined,
+                  color: active ? '#fff' : 'var(--community-item-text)',
+                  boxShadow: active
+                    ? `5px 5px 14px ${cls.color}55, -3px -3px 8px var(--community-item-shadow-light)`
+                    : undefined,
+                  position: 'relative',
+                  minHeight: isMobile ? '64px' : 'auto',
+                }}
+              >
+                {cls.hasUnread && !active && (
+                  <div style={{ position: 'absolute', top: '10px', right: '12px', width: '9px', height: '9px', borderRadius: '50%', background: 'var(--danger)', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
+                )}
+                <div style={{
+                  width: isMobile ? '44px' : '34px', height: isMobile ? '44px' : '34px',
+                  borderRadius: isMobile ? '14px' : '10px', flexShrink: 0,
+                  background: active ? 'rgba(255,255,255,0.25)' : cls.color + '22',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: isMobile ? '14px' : '12px', fontWeight: '800',
+                  color: active ? '#fff' : cls.color,
+                }}>
+                  {cls.name.substring(0, 2).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: isMobile ? '14.5px' : '13px', fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {cls.name}
+                  </div>
+                  {cls.subject && (
+                    <div style={{ fontSize: isMobile ? '12px' : '11px', opacity: active ? 0.85 : 0.6, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                      {cls.subject}
+                    </div>
+                  )}
+                  {userRole === 'MANAGER' && cls.isCommunityActive === false && (
+                    <div style={{ fontSize: '10px', fontWeight: '800', marginTop: '4px', color: active ? '#fff' : 'var(--danger)' }}>
+                      COMMUNITY OFF
+                    </div>
+                  )}
+                </div>
+                
+                {/* Mute toggle button (bell icon) */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleMuteCourse(cls.id, cls.isMuted || false)
+                  }}
+                  title={cls.isMuted ? 'Unmute Group' : 'Mute Group'}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '6px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: active ? '#ffffff' : (cls.isMuted ? 'var(--danger)' : 'var(--text-muted)'),
+                    opacity: cls.isMuted ? 1 : 0.4,
+                    transition: 'opacity 0.2s, color 0.2s',
+                    marginLeft: '4px',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!cls.isMuted) e.currentTarget.style.opacity = '1'
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!cls.isMuted) e.currentTarget.style.opacity = '0.4'
+                  }}
+                >
+                  {cls.isMuted ? (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                      <path d="M18.63 13A17.89 17.89 0 0 1 18 8" />
+                      <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8v7a3 3 0 0 1-3 3h15" />
+                      <path d="M18 8a6 6 0 0 0-9.33-5" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8v7a3 3 0 0 1-3 3h18a3 3 0 0 1-3-3V8z" />
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  )}
+                </button>
+
+                {isMobile && (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? '#ffffff' : 'var(--text-muted)'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: '4px' }}>
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                )}
+              </button>
+              )
+            })}
+          </>
+        )}
 
         {/* Direct Messages section — hidden for students with zero DMs */}
         {(userRole === 'MANAGER' || classes.some(cls => cls.isDirectChat)) && (
@@ -2311,6 +2588,162 @@ export default function CommunityPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >✕</button>
+        </div>
+      )}
+
+      {longPressedClass && (
+        <div 
+          className="modal-overlay fade-in" 
+          onClick={() => setLongPressedClass(null)}
+          style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(15, 23, 42, 0.4)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+        >
+          <div 
+            className="bottom-sheet-content"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '450px',
+              background: 'var(--surface)',
+              borderRadius: '32px 32px 0 0',
+              padding: '24px 20px 40px',
+              boxShadow: '0 -10px 25px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            <div style={{ width: '36px', height: '4px', background: 'var(--text-muted)', opacity: 0.3, borderRadius: '2px', alignSelf: 'center', marginBottom: '8px' }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '18px',
+                background: getSubjectStyle(longPressedClass.name, 0).gradient,
+                boxShadow: `0 8px 20px ${getSubjectStyle(longPressedClass.name, 0).shadow}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: '18px',
+                fontWeight: '800'
+              }}>
+                {renderSubjectIcon(getSubjectStyle(longPressedClass.name, 0).iconType, longPressedClass.name)}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)' }}>{longPressedClass.name}</h4>
+                {longPressedClass.subject && <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>{longPressedClass.subject}</p>}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* Mute Notifications */}
+              <button
+                onClick={async () => {
+                  const isCurrentlyMuted = longPressedClass.isMuted || false
+                  await toggleMuteCourse(longPressedClass.id, isCurrentlyMuted)
+                  setLongPressedClass(null)
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '14px',
+                  padding: '16px', borderRadius: '20px', border: 'none',
+                  background: 'var(--surface-2)', color: 'var(--text-primary)',
+                  fontWeight: 700, fontSize: '14.5px', cursor: 'pointer',
+                  textAlign: 'left', width: '100%',
+                }}
+              >
+                <div style={{ color: longPressedClass.isMuted ? 'var(--success)' : 'var(--danger)', display: 'flex' }}>
+                  {longPressedClass.isMuted ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8v7a3 3 0 0 1-3 3h18a3 3 0 0 1-3-3V8z" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                      <path d="M18.63 13A17.89 17.89 0 0 1 18 8" />
+                      <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8v7a3 3 0 0 1-3 3h15" />
+                      <path d="M18 8a6 6 0 0 0-9.33-5" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  )}
+                </div>
+                <span>{longPressedClass.isMuted ? 'Unmute Notifications' : 'Mute Notifications'}</span>
+              </button>
+
+              {/* Mark all messages as read */}
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/community/${longPressedClass.id}/read`, { method: 'POST' })
+                    if (res.ok) {
+                      setClasses(prev => prev.map(c => c.id === longPressedClass.id ? { ...c, hasUnread: false } : c))
+                    }
+                  } catch (e) { console.error(e) }
+                  setLongPressedClass(null)
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '14px',
+                  padding: '16px', borderRadius: '20px', border: 'none',
+                  background: 'var(--surface-2)', color: 'var(--text-primary)',
+                  fontWeight: 700, fontSize: '14.5px', cursor: 'pointer',
+                  textAlign: 'left', width: '100%',
+                }}
+              >
+                <div style={{ color: 'var(--info)', display: 'flex' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                    <polyline points="20 12 13 19 8 14" />
+                  </svg>
+                </div>
+                <span>Mark all messages as read</span>
+              </button>
+
+              {/* View course materials */}
+              <button
+                onClick={() => {
+                  setLongPressedClass(null)
+                  router.push(`/courses/${longPressedClass.id}`)
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '14px',
+                  padding: '16px', borderRadius: '20px', border: 'none',
+                  background: 'var(--surface-2)', color: 'var(--text-primary)',
+                  fontWeight: 700, fontSize: '14.5px', cursor: 'pointer',
+                  textAlign: 'left', width: '100%',
+                }}
+              >
+                <div style={{ color: 'var(--accent)', display: 'flex' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                </div>
+                <span>View course materials</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setLongPressedClass(null)}
+              style={{
+                marginTop: '8px',
+                padding: '16px', borderRadius: '20px', border: '1px solid var(--border)',
+                background: 'var(--surface)', color: 'var(--text-secondary)',
+                fontWeight: 700, fontSize: '14.5px', cursor: 'pointer',
+                textAlign: 'center', width: '100%',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </div>
