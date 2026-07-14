@@ -1034,7 +1034,7 @@ export default function CommunityPage() {
 
 
   return (
-    <div className="page-container fade-in" style={isMobile ? { display: 'flex', gap: '0px', height: '100%', padding: '8px', overflow: 'hidden', position: 'relative', boxSizing: 'border-box' } : { display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
+    <div className="page-container fade-in" style={isMobile ? { display: 'flex', gap: '0px', height: '100%', padding: '12px', overflow: 'hidden', position: 'relative', boxSizing: 'border-box' } : { display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
       <style>{`
         .msg-row:hover .msg-actions { opacity: 1 !important; }
       `}</style>
@@ -1073,7 +1073,7 @@ export default function CommunityPage() {
       ) : null}
 
       {/* Left: Class list */}
-      <div style={{ width: isMobile ? '100%' : '230px', flexShrink: 0, display: (isMobile && selectedClass) ? 'none' : 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '8px', overflowY: 'auto', padding: isMobile ? '4px 2px 16px' : '0' }}>
+      <div style={{ width: isMobile ? '100%' : '230px', flexShrink: 0, display: (isMobile && selectedClass) ? 'none' : 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '8px', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '4px 4px 16px' : '0' }}>
         {isMobile && (
           /* Premium Neumorphic Page Header */
           <div style={{
@@ -1143,7 +1143,7 @@ export default function CommunityPage() {
         {/* If Capacitor and Mobile, render grid */}
         {isCapacitor && isMobile ? (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', padding: '10px 4px 24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', padding: '10px 2px 24px', overflow: 'hidden' }}>
             {classes.filter(cls => !cls.isDirectChat).map((cls, idx) => {
               const style = getSubjectStyle(cls.name, idx)
               const isMuted = cls.isMuted || false
@@ -1160,8 +1160,8 @@ export default function CommunityPage() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    padding: '28px 18px 22px',
-                    borderRadius: '28px',
+                    padding: '22px 10px 18px',
+                    borderRadius: '24px',
                     border: 'none',
                     background: 'var(--surface)',
                     boxShadow: '0 12px 28px rgba(15, 23, 42, 0.04), 0 4px 10px rgba(15, 23, 42, 0.02)',
@@ -1169,6 +1169,9 @@ export default function CommunityPage() {
                     position: 'relative',
                     transition: 'all 0.15s ease',
                     width: '100%',
+                    boxSizing: 'border-box',
+                    overflow: 'hidden',
+                    minWidth: 0,
                   }}
                 >
                   {cls.hasUnread && (
@@ -1238,7 +1241,8 @@ export default function CommunityPage() {
                           flexDirection: 'column',
                           gap: '4px',
                           zIndex: 1000,
-                          minWidth: '185px',
+                          minWidth: '160px',
+                          maxWidth: 'calc(100vw - 60px)',
                           alignItems: 'flex-start'
                         }}
                       >
@@ -1364,15 +1368,20 @@ export default function CommunityPage() {
                   </div>
 
                   <span style={{
-                    fontSize: '14.5px',
+                    fontSize: '13.5px',
                     fontWeight: 800,
                     color: 'var(--text-primary)',
                     textAlign: 'center',
-                    lineHeight: 1.2,
+                    lineHeight: 1.25,
                     width: '100%',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    minWidth: 0,
                   }}>
                     {cls.name}
                   </span>
