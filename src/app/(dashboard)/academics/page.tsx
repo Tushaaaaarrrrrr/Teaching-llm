@@ -226,6 +226,15 @@ export default function AcademicsPage() {
           }}>
             Academics
           </h1>
+          <p style={{ 
+            fontSize: '14px', 
+            color: 'var(--text-muted)', 
+            fontWeight: 600, 
+            marginTop: '4px',
+            letterSpacing: '-0.01em'
+          }}>
+            Everything for your learning journey
+          </p>
         </div>
 
         <div className="academic-grid">
