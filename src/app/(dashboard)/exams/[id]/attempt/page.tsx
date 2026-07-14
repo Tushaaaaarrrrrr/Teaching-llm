@@ -14,6 +14,7 @@ interface Question {
   type: string
   options: string | null
   marks: number
+  imageUrl?: string
 }
 
 interface Exam {

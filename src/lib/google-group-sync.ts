@@ -144,7 +144,7 @@ export function validateGoogleGroupEmail(rawEmail?: string | null) {
   }
 
   // Deduplicate
-  const unique = [...new Set(validated)]
+  const unique = validated.filter((value, index, self) => self.indexOf(value) === index)
   return unique.join(',')
 }
 
