@@ -9,6 +9,14 @@ interface FeedbackModalProps {
   courseSubject: string
   onClose: () => void
   onSuccess: () => void
+  existingFeedback?: {
+    id: string
+    teacherRating: number
+    conceptRating: number
+    materialRating: number
+    recommendScore: number
+    comment: string | null
+  }
 }
 
 const CATEGORIES = [
@@ -18,13 +26,13 @@ const CATEGORIES = [
   { id: 'recommendScore', label: 'Recommendation Score' },
 ]
 
-export default function FeedbackModal({ courseId, courseName, courseSubject, onClose, onSuccess }: FeedbackModalProps) {
+export default function FeedbackModal({ courseId, courseName, courseSubject, onClose, onSuccess, existingFeedback }: FeedbackModalProps) {
   const router = useRouter()
   const [ratings, setRatings] = useState<Record<string, number>>({
-    teacherRating: 0,
-    conceptRating: 0,
-    materialRating: 0,
-    recommendScore: 0,
+    teacherRating: existingFeedback?.teacherRating || 0,
+    conceptRating: existingFeedback?.conceptRating || 0,
+    materialRating: existingFeedback?.materialRating || 0,
+    recommendScore: existingFeedback?.recommendScore || 0,
   })
 
   const [isCapacitor, setIsCapacitor] = useState<boolean>(false)
@@ -63,7 +71,7 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
       clearTimeout(timeoutId)
     }
   }, [])
-  const [comment, setComment] = useState('')
+  const [comment, setComment] = useState(existingFeedback?.comment || '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -83,14 +91,19 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
     setError('')
 
     try {
+      const isEdit = !!existingFeedback
+      const body: any = {
+        courseId,
+        ...ratings,
+        comment,
+      }
+      if (isEdit) {
+        body.id = existingFeedback.id
+      }
       const res = await fetch('/api/feedback', {
-        method: 'POST',
+        method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courseId,
-          ...ratings,
-          comment,
-        }),
+        body: JSON.stringify(body),
       })
 
       if (!res.ok) {

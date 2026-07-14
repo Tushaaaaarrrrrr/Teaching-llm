@@ -96,6 +96,7 @@ export default function LecturePage() {
   const [isNativeApp, setIsNativeApp] = useState(false)
   const [activeTab, setActiveTab] = useState<'info' | 'qa'>('info')
   const [selectedSource, setSelectedSource] = useState<'GOOGLE' | 'YOUTUBE'>('GOOGLE')
+  const [downloadConfirmContentId, setDownloadConfirmContentId] = useState<string | null>(null)
 
   useEffect(() => {
     setIsMobile(window.innerWidth <= 768)
@@ -525,17 +526,30 @@ export default function LecturePage() {
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>PDF / Presentation / Notes</div>
                     </div>
                   </div>
-                  <Link
-                    href={`/material/${content.id}/view`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      background: 'var(--accent)', color: 'white', textDecoration: 'none', textAlign: 'center',
-                      padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
-                    }}
-                  >
-                    Download Notes
-                  </Link>
+                  {isNativeApp ? (
+                    <button
+                      onClick={() => setDownloadConfirmContentId(content.id)}
+                      style={{
+                        background: 'var(--accent)', color: 'white', border: 'none', textAlign: 'center',
+                        padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
+                        cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+                      }}
+                    >
+                      Download Notes
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/material/${content.id}/view`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        background: 'var(--accent)', color: 'white', textDecoration: 'none', textAlign: 'center',
+                        padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
+                      }}
+                    >
+                      Download Notes
+                    </Link>
+                  )}
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
@@ -786,20 +800,36 @@ export default function LecturePage() {
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>PDF / Presentation / Notes</div>
                     </div>
                   </div>
-                  <Link
-                    href={`/material/${content.id}/view`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      background: 'var(--accent)', color: 'white', textDecoration: 'none', textAlign: 'center',
-                      padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
-                      transition: 'opacity 0.2s'
-                    }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '0.9'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
-                  >
-                    Download Notes
-                  </Link>
+                  {isNativeApp ? (
+                    <button
+                      onClick={() => setDownloadConfirmContentId(content.id)}
+                      style={{
+                        background: 'var(--accent)', color: 'white', border: 'none', textAlign: 'center',
+                        padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
+                        cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+                        transition: 'opacity 0.2s'
+                      }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '0.9'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
+                    >
+                      Download Notes
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/material/${content.id}/view`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        background: 'var(--accent)', color: 'white', textDecoration: 'none', textAlign: 'center',
+                        padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
+                        transition: 'opacity 0.2s'
+                      }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '0.9'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
+                    >
+                      Download Notes
+                    </Link>
+                  )}
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
@@ -834,6 +864,77 @@ export default function LecturePage() {
                 </button>
               </div>
             </section>
+          </div>
+        </div>
+      )}
+
+      {downloadConfirmContentId && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px',
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            width: '100%',
+            maxWidth: '400px',
+            borderRadius: '24px',
+            padding: '24px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+            border: '1px solid var(--border)',
+            textAlign: 'center',
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '12px' }}>
+              Download Material
+            </h3>
+            <p style={{ fontSize: '14.5px', color: 'var(--text-secondary)', lineHeight: '1.5', marginBottom: '24px' }}>
+              Please Use your registered Mail to open or download this File
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setDownloadConfirmContentId(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '50px',
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface)',
+                  color: 'var(--text-secondary)',
+                  fontWeight: '700',
+                  fontSize: '13.5px',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const url = `/material/${downloadConfirmContentId}/view`
+                  window.open(url, '_blank')
+                  setDownloadConfirmContentId(null)
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '50px',
+                  border: 'none',
+                  background: 'var(--accent)',
+                  color: 'white',
+                  fontWeight: '700',
+                  fontSize: '13.5px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px var(--accent-light)',
+                }}
+              >
+                Download
+              </button>
+            </div>
           </div>
         </div>
       )}

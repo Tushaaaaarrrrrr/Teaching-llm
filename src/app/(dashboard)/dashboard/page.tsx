@@ -1904,7 +1904,7 @@ export default function DashboardPage() {
           className="modal scale-up"
           style={{
             width: '100%',
-            maxWidth: '420px',
+            maxWidth: '480px',
             background: 'var(--surface)',
             borderRadius: '24px',
             padding: '28px',

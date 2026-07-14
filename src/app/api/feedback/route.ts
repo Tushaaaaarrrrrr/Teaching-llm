@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Load App/Website feedback only for manager and if filtering matches
+    // Load App/Website feedback for manager, or for the student themselves
     let appFeedbacks: any[] = []
     if (session.role === 'MANAGER') {
       const appWhere: any = {}
@@ -57,6 +57,13 @@ export async function GET(request: NextRequest) {
           },
         })
       }
+    } else if (session.role === 'STUDENT') {
+      appFeedbacks = await (prisma as any).appFeedback.findMany({
+        where: { studentId: session.userId },
+        include: {
+          student: { select: { id: true, name: true, email: true, securityNumber: true } },
+        },
+      })
     }
 
     const formattedCourse = courseFeedbacks.map(f => ({
@@ -156,6 +163,61 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(feedback, { status: 201 })
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getSession()
+    if (!session || session.role !== 'STUDENT') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const {
+      id,
+      teacherRating,
+      conceptRating,
+      materialRating,
+      recommendScore,
+      comment,
+    } = await request.json()
+
+    if (!id || !teacherRating || !conceptRating || !materialRating || !recommendScore) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    if (comment && comment.length > 500) {
+      return NextResponse.json({ error: 'Comment too long' }, { status: 400 })
+    }
+
+    // Make sure this feedback belongs to the logged-in student
+    const existingFeedback = await prisma.feedback.findUnique({
+      where: { id }
+    })
+
+    if (!existingFeedback) {
+      return NextResponse.json({ error: 'Feedback not found' }, { status: 404 })
+    }
+
+    if (existingFeedback.studentId !== session.userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const updated = await prisma.feedback.update({
+      where: { id },
+      data: {
+        teacherRating,
+        conceptRating,
+        materialRating,
+        recommendScore,
+        comment,
+      }
+    })
+
+    return NextResponse.json(updated)
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

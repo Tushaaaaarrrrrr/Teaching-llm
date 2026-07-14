@@ -52,6 +52,26 @@ function StudentFeedbackView({ userId }: { userId: string }) {
   const submittedFeedbacks: any[] = Array.isArray(submittedFeedbacksRaw) ? submittedFeedbacksRaw : []
 
   const [selectedCourse, setSelectedCourse] = useState<CourseItem | null>(null)
+  const [selectedCourseForEdit, setSelectedCourseForEdit] = useState<{ course: CourseItem; feedback: any } | null>(null)
+  const [selectedPlatformFeedback, setSelectedPlatformFeedback] = useState<{ id?: string; type: 'APP' | 'WEBSITE'; rating: number; comment: string } | null>(null)
+
+  const [isNativeApp, setIsNativeApp] = useState(false)
+  useEffect(() => {
+    const detectNativeApp = () => {
+      const w = window as any
+      setIsNativeApp(
+        document.documentElement.classList.contains('is-native') ||
+        Boolean(w.Capacitor?.isNativePlatform?.() || w.Capacitor?.isNative)
+      )
+    }
+    detectNativeApp()
+    const observer = new MutationObserver(detectNativeApp)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
+
+  const platformFeedbackObj = submittedFeedbacks.find(f => f.type === 'APP' || f.type === 'WEBSITE')
+  const hasPlatformFeedback = !!platformFeedbackObj
 
   const isAlreadySubmitted = (courseId: string) => {
     return submittedFeedbacks.some(f => f.courseId === courseId)
@@ -126,6 +146,88 @@ function StudentFeedbackView({ userId }: { userId: string }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* App / Website Feedback Card */}
+        <div
+          style={{
+            background: 'var(--surface)',
+            borderRadius: '24px',
+            padding: '24px 28px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: '12px',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{
+              fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)',
+              textTransform: 'uppercase', letterSpacing: '0.05em'
+            }}>
+              Platform Feedback
+            </span>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+              {isNativeApp ? 'App Feedback' : 'Website Feedback'}
+            </h3>
+          </div>
+
+          <p style={{ fontSize: '14px', color: hasPlatformFeedback ? 'var(--success)' : 'var(--text-muted)', fontWeight: '600', margin: 0 }}>
+            {hasPlatformFeedback ? '✓ Feedback submitted' : 'No feedback given yet'}
+          </p>
+
+          {hasPlatformFeedback && platformFeedbackObj && (
+            <div style={{ width: '100%', marginTop: '6px', paddingTop: '12px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <span style={{ fontSize: '10.5px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
+                  Rating
+                </span>
+                <div style={{ display: 'flex', gap: '2px' }}>
+                  {[1,2,3,4,5].map(s => (
+                    <svg key={s} width="16" height="16" viewBox="0 0 24 24" fill={s <= platformFeedbackObj.teacherRating ? '#fbbf24' : 'var(--surface-2)'}>
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  ))}
+                </div>
+              </div>
+              {platformFeedbackObj.comment && (
+                <div style={{ padding: '10px 14px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                  <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0, fontStyle: 'italic' }}>
+                    "{platformFeedbackObj.comment}"
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              setSelectedPlatformFeedback({
+                id: platformFeedbackObj?.id,
+                type: isNativeApp ? 'APP' : 'WEBSITE',
+                rating: platformFeedbackObj?.teacherRating || 0,
+                comment: platformFeedbackObj?.comment || '',
+              })
+            }}
+            style={{
+              background: '#0a0a0a',
+              color: 'white',
+              padding: '12px 28px',
+              borderRadius: '50px',
+              border: 'none',
+              fontWeight: '700',
+              fontSize: '14px',
+              cursor: 'pointer',
+              transition: 'transform 0.2s ease',
+              marginTop: '4px'
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            {hasPlatformFeedback ? 'Edit Review' : 'Share Feedback'}
+          </button>
+        </div>
+
         {courses.map(course => {
           const submitted = isAlreadySubmitted(course.id)
           const feedbackObj = submittedFeedbacks.find(f => f.courseId === course.id)
@@ -159,8 +261,8 @@ function StudentFeedbackView({ userId }: { userId: string }) {
               </p>
 
               {submitted && feedbackObj && (
-                <div style={{ width: '100%', marginTop: '6px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px', marginBottom: '12px' }}>
+                <div style={{ width: '100%', marginTop: '6px', paddingTop: '12px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px', marginBottom: '4px' }}>
                     {[
                       { label: 'Teacher', val: feedbackObj.teacherRating },
                       { label: 'Concept', val: feedbackObj.conceptRating },
@@ -188,6 +290,25 @@ function StudentFeedbackView({ userId }: { userId: string }) {
                       </p>
                     </div>
                   )}
+                  <button
+                    onClick={() => setSelectedCourseForEdit({ course, feedback: feedbackObj })}
+                    style={{
+                      background: 'none',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-primary)',
+                      padding: '8px 16px',
+                      borderRadius: '50px',
+                      fontWeight: '700',
+                      fontSize: '12.5px',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s',
+                      alignSelf: 'flex-start',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                  >
+                    Edit Feedback
+                  </button>
                 </div>
               )}
 
@@ -231,7 +352,36 @@ function StudentFeedbackView({ userId }: { userId: string }) {
           onClose={() => setSelectedCourse(null)}
           onSuccess={() => {
             mutateFeedbacks()
-            // Optional: show a success toast or message
+          }}
+        />
+      )}
+
+      {selectedCourseForEdit && (
+        <FeedbackModal
+          courseId={selectedCourseForEdit.course.id}
+          courseName={selectedCourseForEdit.course.name}
+          courseSubject={selectedCourseForEdit.course.subject}
+          existingFeedback={{
+            id: selectedCourseForEdit.feedback.id,
+            teacherRating: selectedCourseForEdit.feedback.teacherRating,
+            conceptRating: selectedCourseForEdit.feedback.conceptRating,
+            materialRating: selectedCourseForEdit.feedback.materialRating,
+            recommendScore: selectedCourseForEdit.feedback.recommendScore,
+            comment: selectedCourseForEdit.feedback.comment,
+          }}
+          onClose={() => setSelectedCourseForEdit(null)}
+          onSuccess={() => {
+            mutateFeedbacks()
+          }}
+        />
+      )}
+
+      {selectedPlatformFeedback && (
+        <AppFeedbackModal
+          initialData={selectedPlatformFeedback}
+          onClose={() => setSelectedPlatformFeedback(null)}
+          onSuccess={() => {
+            mutateFeedbacks()
           }}
         />
       )}
@@ -489,6 +639,201 @@ function ManagerFeedbackView() {
       {selectedUserId && (
         <ManagerUserModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} onUpdate={() => {}} />
       )}
+    </div>
+  )
+}
+
+interface AppFeedbackModalProps {
+  initialData: { id?: string; type: 'APP' | 'WEBSITE'; rating: number; comment: string }
+  onClose: () => void
+  onSuccess: () => void
+}
+
+function AppFeedbackModal({ initialData, onClose, onSuccess }: AppFeedbackModalProps) {
+  const [rating, setRating] = useState(initialData.rating)
+  const [comment, setComment] = useState(initialData.comment)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async () => {
+    if (rating === 0) {
+      setError('Please select a rating')
+      return
+    }
+
+    setIsSubmitting(true)
+    setError('')
+
+    try {
+      const isEdit = !!initialData.id
+      const url = '/api/feedback/app'
+      const method = isEdit ? 'PUT' : 'POST'
+
+      const body: any = {
+        rating,
+        comment,
+      }
+
+      if (isEdit) {
+        body.id = initialData.id
+      } else {
+        body.platform = initialData.type === 'APP' ? 'APP' : 'WEB'
+      }
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to submit feedback')
+      }
+
+      onSuccess()
+      onClose()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0,0,0,0.4)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 2000,
+      padding: '20px',
+    }}>
+      <div style={{
+        background: 'var(--surface)',
+        width: '100%',
+        maxWidth: '450px',
+        borderRadius: '24px',
+        padding: '24px',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+        border: '1px solid var(--border)',
+        position: 'relative',
+      }}>
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '16px',
+            right: '16px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px' }}>
+          {initialData.type === 'APP' ? 'App Review' : 'Website Review'}
+        </h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+          Your review helps us improve the learning platform.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <p style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>Rating</p>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[1, 2, 3, 4, 5].map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setRating(s)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    color: s <= rating ? '#fbbf24' : 'var(--surface-2)',
+                    transition: 'transform 0.1s ease',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill={s <= rating ? '#fbbf24' : 'none'} stroke="currentColor" strokeWidth="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>Comments</p>
+            <textarea
+              placeholder="Tell us what you liked or how we can improve..."
+              value={comment}
+              onChange={e => setComment(e.target.value.slice(0, 500))}
+              style={{
+                width: '100%',
+                height: '100px',
+                padding: '12px',
+                borderRadius: '12px',
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                resize: 'none',
+                outline: 'none',
+              }}
+            />
+          </div>
+
+          {error && <p style={{ color: 'var(--danger)', fontSize: '12px', margin: 0 }}>{error}</p>}
+
+          <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+            <button
+              onClick={onClose}
+              style={{
+                flex: 1,
+                padding: '10px',
+                borderRadius: '50px',
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                color: 'var(--text-secondary)',
+                fontWeight: '700',
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              style={{
+                flex: 1.5,
+                padding: '10px',
+                borderRadius: '50px',
+                border: 'none',
+                background: '#0a0a0a',
+                color: 'white',
+                fontWeight: '700',
+                cursor: 'pointer',
+                opacity: isSubmitting ? 0.7 : 1,
+              }}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
