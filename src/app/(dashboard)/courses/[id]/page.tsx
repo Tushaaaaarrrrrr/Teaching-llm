@@ -74,6 +74,7 @@ export default function CourseDetailPage() {
   const [upgrading, setUpgrading] = useState(false)
   const [showUpgradeHint, setShowUpgradeHint] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isNative, setIsNative] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -129,6 +130,13 @@ export default function CourseDetailPage() {
   }, [params.id])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const w = window as any
+      setIsNative(!!(w.Capacitor?.isNativePlatform?.() || w.Capacitor?.isNative))
+    }
+  }, [])
 
   const updateProgress = async (contentId: string, status: string) => {
     setProgressMap(prev => ({ ...prev, [contentId]: status })) // Optimistic UI update
@@ -462,7 +470,7 @@ export default function CourseDetailPage() {
               </button>
               <div style={{
                 position: 'absolute', top: 'calc(100% + 8px)', right: '0',
-                background: 'var(--text-primary)', color: '#fff', padding: '8px 14px', borderRadius: '12px',
+                background: 'var(--text-primary)', color: 'var(--text-inverse)', padding: '8px 14px', borderRadius: '12px',
                 fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
                 boxShadow: '0 8px 25px rgba(0,0,0,0.4)', pointerEvents: 'none',
                 opacity: showUpgradeHint ? 1 : 0, 
@@ -688,33 +696,33 @@ export default function CourseDetailPage() {
                         key={item.id}
                         className="lecture-row"
                         style={{
-                          display: 'flex', alignItems: 'center', gap: '16px',
-                          padding: '18px 24px',
-                          borderRadius: '24px',
+                          display: 'flex', alignItems: 'center', gap: isNative ? '16px' : '12px',
+                          padding: isNative ? '18px 24px' : '10px 18px',
+                          borderRadius: isNative ? '24px' : '16px',
                           background: 'var(--surface-2)',
-                          boxShadow: '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)',
+                          boxShadow: isNative ? '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)' : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
                           transition: 'box-shadow 0.2s',
                           flexWrap: 'wrap',
-                          minHeight: '84px',
+                          minHeight: isNative ? '84px' : '52px',
                         }}
                       >
                         {/* Lecture icon */}
                         <div style={{
-                          width: '38px', height: '38px', borderRadius: '10px',
+                          width: isNative ? '38px' : '30px', height: isNative ? '38px' : '30px', borderRadius: isNative ? '10px' : '8px',
                           background: (item.videoUrl || item.youtubeUrl) ? colorWithOpacity(course.color, '12') : '#f0f0f5',
                           color: (item.videoUrl || item.youtubeUrl) ? extractHex(course.color) : 'var(--text-muted)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         }}>
                           {(item.videoUrl || item.youtubeUrl) ? (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <svg width={isNative ? "14" : "12"} height={isNative ? "14" : "12"} viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                           ) : (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            <svg width={isNative ? "14" : "12"} height={isNative ? "14" : "12"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                           )}
                         </div>
 
                         {/* Title + description */}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ fontSize: isNative ? '15px' : '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
                             {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
                               <span style={{
@@ -729,7 +737,7 @@ export default function CourseDetailPage() {
                             )}
                           </div>
                           {item.description && (
-                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                            <p style={{ fontSize: isNative ? '13px' : '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
                               {item.description}
                             </p>
                           )}
@@ -738,7 +746,7 @@ export default function CourseDetailPage() {
                         {/* Action Buttons Group */}
                         <div className="lecture-row-actions" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginLeft: 'auto', gap: '6px', flexWrap: 'wrap' }}>
                           {/* Progress actions for students */}
-                          {role === 'STUDENT' && (
+                          {role === 'STUDENT' && (item.videoUrl || item.youtubeUrl) && (
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginRight: '6px', paddingRight: '12px', borderRight: '1px solid #d8dae3' }}>
                               <button
                                 onClick={() => updateProgress(item.id, progressMap[item.id] === 'COMPLETED' ? 'NOT_STARTED' : 'COMPLETED')}
@@ -746,12 +754,12 @@ export default function CourseDetailPage() {
                                   background: progressMap[item.id] === 'COMPLETED' ? '#22c55e20' : 'transparent',
                                   color: progressMap[item.id] === 'COMPLETED' ? 'var(--success)' : 'var(--text-muted)',
                                   border: `1px solid ${progressMap[item.id] === 'COMPLETED' ? 'var(--success)' : 'var(--text-muted)'}`,
-                                  padding: '6px 12px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
+                                  padding: isNative ? '6px 12px' : '4px 10px', borderRadius: '50px', fontSize: isNative ? '11px' : '10px', fontWeight: '700',
                                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
                                   transition: 'all 0.2s'
                                 }}
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                                 Completed
                               </button>
                               <button
@@ -760,12 +768,12 @@ export default function CourseDetailPage() {
                                   background: progressMap[item.id] === 'REWATCH' ? '#eab30820' : 'transparent',
                                   color: progressMap[item.id] === 'REWATCH' ? '#ca8a04' : 'var(--text-muted)',
                                   border: `1px solid ${progressMap[item.id] === 'REWATCH' ? '#eab308' : 'var(--text-muted)'}`,
-                                  padding: '6px 12px', borderRadius: '50px', fontSize: '11px', fontWeight: '700',
+                                  padding: isNative ? '6px 12px' : '4px 10px', borderRadius: '50px', fontSize: isNative ? '11px' : '10px', fontWeight: '700',
                                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
                                   transition: 'all 0.2s'
                                 }}
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                                <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
                                 Rewatch
                               </button>
                             </div>
@@ -780,18 +788,18 @@ export default function CourseDetailPage() {
                                 rel="noopener noreferrer"
                                 className="btn btn-ghost"
                                 style={{
-                                  padding: '10px 18px',
-                                  fontSize: '13px',
+                                  padding: isNative ? '10px 18px' : '6px 14px',
+                                  fontSize: isNative ? '13px' : '12px',
                                   fontWeight: '800',
                                   borderRadius: '50px',
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '6px',
-                                  height: '40px',
+                                  height: isNative ? '40px' : '32px',
                                   border: '1.5px solid var(--border)',
                                 }}
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                                 </svg>
                                 Download Notes
@@ -802,17 +810,17 @@ export default function CourseDetailPage() {
                                 href={`/courses/${params.id}/lectures/${item.id}`}
                                 className="btn btn-primary"
                                 style={{
-                                  padding: '10px 20px',
-                                  fontSize: '13px',
+                                  padding: isNative ? '10px 20px' : '6px 14px',
+                                  fontSize: isNative ? '13px' : '12px',
                                   fontWeight: '800',
                                   borderRadius: '50px',
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '6px',
-                                  height: '40px',
+                                  height: isNative ? '40px' : '32px',
                                 }}
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                 Watch
                               </Link>
                             )}

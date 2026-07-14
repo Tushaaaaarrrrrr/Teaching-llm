@@ -587,7 +587,7 @@ function CurriculumTab({
                       position: 'relative',
                     }}>
                       {/* 3-state toggle button */}
-                      {isStudent ? (
+                      {isStudent && (item.videoUrl || item.youtubeUrl) ? (
                         <button
                           className="mcd-status-btn"
                           onClick={() => updateProgress(item.id, cycleStatus(currentStatus))}
