@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, canManageContent } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { sendNewLectureNotification } from '@/lib/system-notifications'
 
 export async function GET(
   request: NextRequest,
@@ -57,6 +58,10 @@ export async function PUT(
       where: { id },
       data: { courseId: courseId, title, description, videoUrl, notesUrl, duration, thumbnail },
     })
+
+    if (updatedLecture.courseId) {
+      sendNewLectureNotification(updatedLecture.courseId, updatedLecture.title).catch(console.error)
+    }
 
     logActivity({
       userId: session.userId,

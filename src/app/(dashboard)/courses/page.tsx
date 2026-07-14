@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Script from 'next/script'
 import useSWR, { mutate } from 'swr'
 import FeedbackModal from '@/components/FeedbackModal'
+import { extractHex, colorWithOpacity, getCourseBackground, isGradient } from '@/lib/color-utils'
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -404,7 +405,7 @@ export default function CoursesPage() {
                 background: 'var(--surface-2)',
                 borderRadius: 'var(--course-card-radius, 28px)',
                 boxShadow: (isLive && !isCourseExpired)
-                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${course.color}40`
+                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${colorWithOpacity(course.color, '40')}`
                   : '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)',
                 overflow: 'hidden',
                 cursor: isCourseExpired ? 'default' : 'pointer',
@@ -420,7 +421,7 @@ export default function CoursesPage() {
                 if (isCourseExpired) return;
                 e.currentTarget.style.transform = 'translateY(-4px)'
                 e.currentTarget.style.boxShadow = isLive
-                  ? `12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light), 0 0 0 2px ${course.color}60`
+                  ? `12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light), 0 0 0 2px ${colorWithOpacity(course.color, '60')}`
                   : '12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light)'
                 if (!isFreeOrDemo && isRecorded) setShowUpgradeHint(course.id)
               }}
@@ -428,7 +429,7 @@ export default function CoursesPage() {
                 if (isCourseExpired) return;
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.boxShadow = isLive
-                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${course.color}40`
+                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${colorWithOpacity(course.color, '40')}`
                   : '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)'
                 setShowUpgradeHint(null)
               }}
@@ -455,7 +456,7 @@ export default function CoursesPage() {
               {/* Gradient Banner */}
               <div style={{
                 height: 'var(--course-banner-height, 100px)',
-                background: isRecorded || isFreeOrDemo ? 'linear-gradient(135deg, #4b5563, #6b7280)' : `linear-gradient(135deg, ${course.color}ee, ${course.color}99)`,
+                background: isRecorded || isFreeOrDemo ? 'linear-gradient(135deg, #4b5563, #6b7280)' : (isGradient(course.color) ? course.color : `linear-gradient(135deg, ${extractHex(course.color)}ee, ${extractHex(course.color)}99)`),
                 position: 'relative',
                 overflow: 'hidden',
                 display: 'flex',
@@ -548,8 +549,8 @@ export default function CoursesPage() {
                     display: 'inline-block',
                     padding: '3px 12px',
                     borderRadius: '50px',
-                    background: isRecorded ? 'var(--surface-2)' : course.color + '18',
-                    color: isRecorded ? 'var(--text-secondary)' : course.color,
+                    background: isRecorded ? 'var(--surface-2)' : colorWithOpacity(course.color, '18'),
+                    color: isRecorded ? 'var(--text-secondary)' : extractHex(course.color),
                     fontSize: '12px',
                     fontWeight: '700',
                     marginBottom: '8px',
@@ -580,9 +581,9 @@ export default function CoursesPage() {
                   <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: 'var(--course-teacher-margin, 14px)' }}>
                     <div style={{
                       width: '24px', height: '24px', borderRadius: '50%',
-                      background: course.color + '22',
+                      background: colorWithOpacity(course.color, '22'),
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '10px', fontWeight: '700', color: course.color,
+                      fontSize: '10px', fontWeight: '700', color: extractHex(course.color),
                     }}>
                       {course.teacherName.charAt(0).toUpperCase()}
                     </div>
@@ -600,9 +601,9 @@ export default function CoursesPage() {
                       <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                         <div style={{
                           width: '20px', height: '20px', borderRadius: '50%',
-                          background: isRecorded ? 'var(--surface-2)' : course.color + '22',
+                          background: isRecorded ? 'var(--surface-2)' : colorWithOpacity(course.color, '22'),
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '9px', fontWeight: '700', color: isRecorded ? 'var(--text-secondary)' : course.color,
+                          fontSize: '9px', fontWeight: '700', color: isRecorded ? 'var(--text-secondary)' : extractHex(course.color),
                         }}>
                           {course.teacherName.charAt(0).toUpperCase()}
                         </div>

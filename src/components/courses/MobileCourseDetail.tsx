@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import FeedbackModal from '@/components/FeedbackModal'
+import { extractHex, isGradient, colorWithOpacity, getCourseBackground } from '@/lib/color-utils'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -71,7 +72,9 @@ export default function MobileCourseDetail({
   const submittedFeedbacks = Array.isArray(submittedFeedbacksRaw) ? submittedFeedbacksRaw : []
   const hasFeedback = submittedFeedbacks.some((f: any) => f.courseId === course.id)
 
-  const accent = course.color || 'var(--accent)'
+  const rawColor = course.color || '#6366F1'
+  const accent = extractHex(rawColor)
+  const accentOrGradient = rawColor
   const totalLectures = course._count?.lectures || topics.reduce((s, t) => s + (t.content?.length || 0), 0)
 
   const completedCount = useMemo(() => {
@@ -118,7 +121,7 @@ export default function MobileCourseDetail({
   const isManager = role === 'ADMIN' || role === 'MANAGER'
   const heroBg = isRecorded
     ? 'linear-gradient(135deg, #4b5563 0%, #374151 50%, #111827 100%)'
-    : `linear-gradient(135deg, ${accent} 0%, ${accent}dd 50%, #1e1e3a 100%)`
+    : isGradient(rawColor) ? rawColor : `linear-gradient(135deg, ${accent} 0%, ${accent}dd 50%, #1e1e3a 100%)`
   const badge = course.enrollmentType === 'LIVE' ? 'PRO'
     : course.enrollmentType === 'RECORDED' ? 'PLUS'
     : course.enrollmentType === 'FREE' ? 'FREE'

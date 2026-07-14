@@ -34,7 +34,7 @@ export async function sendLiveClassNotification(
     const ctaLink = meetLink || (eventId ? `/courses/${courseId}/live/${eventId}` : `/live`)
 
     await sendFcmToUsers(recipientIds, {
-      title: `Class is Live! 🔴`,
+      title: `Class is Live`,
       body: `"${eventTitle}" has started in ${course?.name || 'your class'}. Join now!`,
       url: ctaLink,
       ctaText: 'Join now',
@@ -74,7 +74,7 @@ export async function sendNewLectureNotification(
     ]))
     if (recipientIds.length === 0) return
 
-    const title = `New Lecture Added! 📚`
+    const title = `New Lecture Added`
     const body = `"${lectureTitle}" has been added to ${course?.name || 'your class'}.`
 
     // 1. Create database notifications in bulk
@@ -503,7 +503,7 @@ export async function sendClassScheduledNotification(
     const ctaLink = meetLink || (eventId ? `/courses/${courseId}/live/${eventId}` : `/live`)
 
     await sendFcmToUsers(recipientIds, {
-      title: `New Class Scheduled! 📅`,
+      title: `New Class Scheduled`,
       body: `"${eventTitle}" has been scheduled for ${formattedTime} in ${course?.name || 'your class'}.`,
       url: ctaLink,
       ctaText: 'View Details',
@@ -518,21 +518,137 @@ export async function sendClassScheduledNotification(
 }
 
 /**
- * Scans upcoming classes starting within the next 5 minutes and automatically
- * dispatches start alerts to enrolled students.
+ * Sends a push notification to all enrolled users when a class is RESCHEDULED.
+ */
+export async function sendClassRescheduledNotification(
+  courseId: string,
+  eventTitle: string,
+  startTime: Date,
+  meetLink?: string | null,
+  eventId?: string
+) {
+  try {
+    const [course, enrollments, managerIds] = await Promise.all([
+      prisma.course.findUnique({
+        where: { id: courseId },
+        select: { name: true },
+      }),
+      prisma.enrollment.findMany({
+        where: { courseId },
+        select: { userId: true },
+      }),
+      getManagerIds(),
+    ])
+
+    const recipientIds = Array.from(new Set([
+      ...enrollments.map((e) => e.userId),
+      ...managerIds
+    ]))
+    if (recipientIds.length === 0) return
+
+    // Format display date in Indian Standard Time (IST)
+    const formattedTime = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).format(new Date(startTime))
+
+    const ctaLink = meetLink || (eventId ? `/courses/${courseId}/live/${eventId}` : `/live`)
+
+    await sendFcmToUsers(recipientIds, {
+      title: `Class Rescheduled`,
+      body: `"${eventTitle}" in ${course?.name || 'your class'} has been rescheduled to ${formattedTime}.`,
+      url: ctaLink,
+      ctaText: 'View Details',
+      ctaLink: ctaLink,
+      tag: `rescheduled_event_${eventId || courseId}`,
+      importance: 'default',
+      sound: 'default',
+    })
+  } catch (err) {
+    console.error('[system-notifications] Error sending class rescheduled notification:', err)
+  }
+}
+
+/**
+ * Sends a push notification to all enrolled users when a class is CANCELED.
+ */
+export async function sendClassCanceledNotification(
+  courseId: string,
+  eventTitle: string,
+  startTime: Date,
+  eventId?: string
+) {
+  try {
+    const [course, enrollments, managerIds] = await Promise.all([
+      prisma.course.findUnique({
+        where: { id: courseId },
+        select: { name: true },
+      }),
+      prisma.enrollment.findMany({
+        where: { courseId },
+        select: { userId: true },
+      }),
+      getManagerIds(),
+    ])
+
+    const recipientIds = Array.from(new Set([
+      ...enrollments.map((e) => e.userId),
+      ...managerIds
+    ]))
+    if (recipientIds.length === 0) return
+
+    // Format display date in Indian Standard Time (IST)
+    const formattedTime = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).format(new Date(startTime))
+
+    await sendFcmToUsers(recipientIds, {
+      title: `Class Canceled`,
+      body: `The class "${eventTitle}" in ${course?.name || 'your class'} scheduled for ${formattedTime} has been canceled.`,
+      url: '/calendar',
+      tag: `canceled_event_${eventId || courseId}`,
+      importance: 'high',
+      sound: 'default',
+    })
+  } catch (err) {
+    console.error('[system-notifications] Error sending class canceled notification:', err)
+  }
+}
+
+/**
+ * Scans upcoming and ongoing classes within specific timing windows
+ * and automatically dispatches pre-start and post-start notifications.
  */
 export async function processScheduledClassStartAlerts() {
   try {
     const now = new Date()
-    // Find scheduled classes starting within the next 5 minutes that haven't been notified
-    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000)
+    // We scan classes from 20 minutes in the past up to 40 minutes in the future
+    const fortyMinutesFromNow = new Date(now.getTime() + 40 * 60 * 1000)
+    const twentyMinutesAgo = new Date(now.getTime() - 20 * 60 * 1000)
 
     const dueEvents = await prisma.courseEvent.findMany({
       where: {
         type: 'class',
         status: { in: ['SCHEDULED', 'LIVE'] },
-        notifiedStart: false,
-        startTime: { lte: fiveMinutesFromNow },
+        startTime: {
+          gte: twentyMinutesAgo,
+          lte: fortyMinutesFromNow,
+        },
+        OR: [
+          { notified30mBefore: false },
+          { notified10mBefore: false },
+          { notifiedAtStart: false },
+          { notified10mAfter: false },
+        ],
       },
       select: {
         id: true,
@@ -540,6 +656,10 @@ export async function processScheduledClassStartAlerts() {
         title: true,
         meetLink: true,
         startTime: true,
+        notified30mBefore: true,
+        notified10mBefore: true,
+        notifiedAtStart: true,
+        notified10mAfter: true,
       },
       take: 20, // process in small batches
     })
@@ -553,16 +673,101 @@ export async function processScheduledClassStartAlerts() {
         try {
           if (!event.courseId) return
 
-          // Send FCM alert to students
-          await sendLiveClassNotification(event.courseId, event.title, event.meetLink, event.id)
+          const [course, enrollments, managerIds] = await Promise.all([
+            prisma.course.findUnique({
+              where: { id: event.courseId },
+              select: { name: true },
+            }),
+            prisma.enrollment.findMany({
+              where: { courseId: event.courseId },
+              select: { userId: true },
+            }),
+            getManagerIds(),
+          ])
 
-          // Mark as notified in DB
-          await prisma.courseEvent.update({
-            where: { id: event.id },
-            data: { notifiedStart: true },
-          })
-          
-          console.log(`[Auto-Start-Alerts] Dispatched class start notification for event ${event.id}`)
+          const recipientIds = Array.from(new Set([
+            ...enrollments.map((e) => e.userId),
+            ...managerIds
+          ]))
+          if (recipientIds.length === 0) return
+
+          const ctaLink = event.meetLink || `/courses/${event.courseId}/live/${event.id}`
+          const diffMinutes = (event.startTime.getTime() - now.getTime()) / (60 * 1000)
+
+          const updateData: Record<string, any> = {}
+
+          // 1. 30 Minutes Before Start
+          if (diffMinutes <= 30 && diffMinutes > 10 && !event.notified30mBefore) {
+            await sendFcmToUsers(recipientIds, {
+              title: 'Class Starting Soon',
+              body: `Get ready! "${event.title}" starts in 30 minutes.`,
+              url: ctaLink,
+              ctaText: 'View Details',
+              ctaLink: ctaLink,
+              tag: `alert_30m_${event.id}`,
+              importance: 'default',
+              sound: 'default',
+            })
+            updateData.notified30mBefore = true
+            console.log(`[Auto-Start-Alerts] Sent 30m before alert for class: ${event.title}`)
+          }
+
+          // 2. 10 Minutes Before Start
+          if (diffMinutes <= 10 && diffMinutes > 0 && !event.notified10mBefore) {
+            await sendFcmToUsers(recipientIds, {
+              title: 'Class Starting in 10 Minutes',
+              body: `Class starts in 10 minutes. Please join the session.`,
+              url: ctaLink,
+              ctaText: 'Join Class',
+              ctaLink: ctaLink,
+              tag: `alert_10m_${event.id}`,
+              importance: 'high',
+              sound: 'default',
+            })
+            updateData.notified10mBefore = true
+            console.log(`[Auto-Start-Alerts] Sent 10m before alert for class: ${event.title}`)
+          }
+
+          // 3. At Class Start
+          if (diffMinutes <= 0 && diffMinutes > -10 && !event.notifiedAtStart) {
+            await sendFcmToUsers(recipientIds, {
+              title: 'Class Starting Now',
+              body: `Your instructor is here and "${event.title}" is starting now. Please join the session.`,
+              url: ctaLink,
+              ctaText: 'Join Now',
+              ctaLink: ctaLink,
+              tag: `alert_start_${event.id}`,
+              importance: 'high',
+              sound: 'default',
+            })
+            updateData.notifiedAtStart = true
+            updateData.notifiedStart = true // Keep compatibility with existing notifiedStart field
+            console.log(`[Auto-Start-Alerts] Sent at-start alert for class: ${event.title}`)
+          }
+
+          // 4. 10 Minutes After Class Start
+          if (diffMinutes <= -10 && diffMinutes > -20 && !event.notified10mAfter) {
+            await sendFcmToUsers(recipientIds, {
+              title: 'Class Already Running',
+              body: `"${event.title}" is already underway. Join the session now so you do not fall behind.`,
+              url: ctaLink,
+              ctaText: 'Join Now',
+              ctaLink: ctaLink,
+              tag: `alert_10m_after_${event.id}`,
+              importance: 'high',
+              sound: 'default',
+            })
+            updateData.notified10mAfter = true
+            console.log(`[Auto-Start-Alerts] Sent 10m after alert for class: ${event.title}`)
+          }
+
+          // Persist the updated notification flags to the database
+          if (Object.keys(updateData).length > 0) {
+            await prisma.courseEvent.update({
+              where: { id: event.id },
+              data: updateData,
+            })
+          }
         } catch (err) {
           console.error(`[Auto-Start-Alerts] Failed to send notification for event ${event.id}:`, err)
         }

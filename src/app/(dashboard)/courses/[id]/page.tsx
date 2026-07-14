@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Script from 'next/script'
 import MobileCourseDetail from '@/components/courses/MobileCourseDetail'
+import { getCourseBackground, getCourseTextColor, getCourseSecondaryTextColor, getCourseBadgeBg, getCourseBadgeText, getCourseDecorativeColor, colorWithOpacity, extractHex, isGradient } from '@/lib/color-utils'
 
 interface ContentItem {
   id: string
@@ -435,12 +436,12 @@ export default function CourseDetailPage() {
           onMouseEnter={() => setShowUpgradeHint(true)}
           onMouseLeave={() => setShowUpgradeHint(false)}
           style={{
-            background: ['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '') ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : `linear-gradient(135deg, ${course.color}, ${course.color}cc)`,
+            background: ['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '') ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : getCourseBackground(course.color),
             padding: '28px 24px', position: 'relative', overflow: 'hidden',
           }}
         >
-          <div style={{ position: 'absolute', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', top: '-60px', right: '40px' }} />
-          <div style={{ position: 'absolute', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', bottom: '-30px', right: '200px' }} />
+          <div style={{ position: 'absolute', width: '180px', height: '180px', borderRadius: '50%', background: getCourseDecorativeColor(course.color), top: '-60px', right: '40px' }} />
+          <div style={{ position: 'absolute', width: '100px', height: '100px', borderRadius: '50%', background: getCourseDecorativeColor(course.color), bottom: '-30px', right: '200px' }} />
 
           {/* Info Button for Recorded users (Top Right) */}
           {course.enrollmentType === 'RECORDED' && course.liveUpgradePrice && !isManager && (
@@ -479,22 +480,22 @@ export default function CourseDetailPage() {
             <div>
               <Link href="/courses" style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
-                color: 'rgba(255,255,255,0.7)', fontSize: '13px', marginBottom: '12px', textDecoration: 'none',
+                color: getCourseSecondaryTextColor(course.color), fontSize: '13px', marginBottom: '12px', textDecoration: 'none',
               }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
                 Back to Courses
               </Link>
-              <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'white', marginBottom: '6px' }}>{course.name}</h1>
+              <h1 style={{ fontSize: '24px', fontWeight: '700', color: getCourseTextColor(course.color), marginBottom: '6px' }}>{course.name}</h1>
               {course.description && (
-                <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '14px', maxWidth: '600px', lineHeight: '1.5' }}>{course.description}</p>
+                <p style={{ color: getCourseSecondaryTextColor(course.color), fontSize: '14px', maxWidth: '600px', lineHeight: '1.5' }}>{course.description}</p>
               )}
               <div style={{ display: 'flex', gap: '16px', marginTop: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
                 {course.subject && (
-                  <span style={{ background: 'rgba(255,255,255,0.15)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500' }}>
+                  <span style={{ background: getCourseBadgeBg(course.color), color: getCourseBadgeText(course.color), padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500' }}>
                     {course.subject}
                   </span>
                 )}
-                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ color: getCourseSecondaryTextColor(course.color), fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   {course._count?.topics || 0} topic{(course._count?.topics !== 1) ? 's' : ''} &middot; {course._count?.lectures || 0} lecture{(course._count?.lectures !== 1) ? 's' : ''} &middot; {course._count?.materials || 0} material{(course._count?.materials !== 1) ? 's' : ''}
                 </span>
                 {course.expiresAt && (
@@ -519,7 +520,7 @@ export default function CourseDetailPage() {
                     })()}
                   </span>
                 )}
-                  <span style={{ background: 'rgba(255,255,255,0.15)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ background: getCourseBadgeBg(course.color), color: getCourseBadgeText(course.color), padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     Teacher Name: {course.teacherName}
                   </span>
@@ -551,8 +552,8 @@ export default function CourseDetailPage() {
                 <button
                   onClick={() => router.push(`/courses/${params.id}/edit`)}
                   style={{
-                    background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',
-                    color: 'white', padding: '8px 16px', borderRadius: '20px',
+                    background: getCourseBadgeBg(course.color), border: `1px solid ${getCourseBadgeBg(course.color)}`,
+                    color: getCourseBadgeText(course.color), padding: '8px 16px', borderRadius: '20px',
                     fontSize: '13px', fontWeight: '500', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: '6px', backdropFilter: 'blur(4px)',
                     transition: 'all 0.15s',
@@ -653,7 +654,7 @@ export default function CourseDetailPage() {
                 >
                   <div style={{
                     width: '36px', height: '36px', borderRadius: '10px',
-                    background: course.color + '18', color: course.color,
+                    background: colorWithOpacity(course.color, '18'), color: extractHex(course.color),
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '13px', fontWeight: '700', flexShrink: 0,
                   }}>
@@ -699,8 +700,8 @@ export default function CourseDetailPage() {
                         {/* Lecture icon */}
                         <div style={{
                           width: '32px', height: '32px', borderRadius: '8px',
-                          background: (item.videoUrl || item.youtubeUrl) ? course.color + '12' : '#f0f0f5',
-                          color: (item.videoUrl || item.youtubeUrl) ? course.color : 'var(--text-muted)',
+                          background: (item.videoUrl || item.youtubeUrl) ? colorWithOpacity(course.color, '12') : '#f0f0f5',
+                          color: (item.videoUrl || item.youtubeUrl) ? extractHex(course.color) : 'var(--text-muted)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         }}>
                           {(item.videoUrl || item.youtubeUrl) ? (

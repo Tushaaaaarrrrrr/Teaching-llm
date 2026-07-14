@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import { SOLID_COLORS, GRADIENT_COLORS, isGradient } from '@/lib/color-utils'
 import {
   IITM_LEVELS,
   IITM_SUBJECTS_BY_LEVEL,
@@ -543,7 +544,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
     { key: 'content-bank',  label: 'Content Bank',  count: bankQuestions.length },
   ]
 
-  const COLORS = ['var(--primary)', 'var(--accent)', 'var(--info)', 'var(--warning)', 'var(--success)', 'var(--danger)', '#EC4899']
+  const ALL_COLORS = [...SOLID_COLORS, ...GRADIENT_COLORS]
 
   function renderForm() {
     const f = formData
@@ -761,12 +762,25 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             </div>
             <div className="form-group">
               <label className="form-label">Color</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {COLORS.map(c => (
+              <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '6px' }}>Solid</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                {SOLID_COLORS.map(c => (
                   <button key={c} type="button" onClick={() => set('color', c)} style={{
-                    width: '32px', height: '32px', borderRadius: '8px', background: c,
+                    width: '32px', height: '32px', borderRadius: '10px', background: c,
                     border: f.color === c ? '3px solid #1e1e3a' : '2px solid transparent',
                     cursor: 'pointer', transition: 'all 0.15s',
+                    boxShadow: f.color === c ? `0 0 0 2px var(--surface), 0 0 0 4px ${c}` : 'none',
+                  }} />
+                ))}
+              </div>
+              <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '6px' }}>Gradient</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {GRADIENT_COLORS.map(c => (
+                  <button key={c} type="button" onClick={() => set('color', c)} style={{
+                    width: '32px', height: '32px', borderRadius: '10px', background: c,
+                    border: f.color === c ? '3px solid #1e1e3a' : '2px solid transparent',
+                    cursor: 'pointer', transition: 'all 0.15s',
+                    boxShadow: f.color === c ? '0 0 0 2px var(--surface), 0 0 0 4px #6366f1' : 'none',
                   }} />
                 ))}
               </div>

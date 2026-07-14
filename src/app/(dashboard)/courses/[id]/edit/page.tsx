@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import { getCourseBackground, getCourseTextColor, getCourseSecondaryTextColor, getCourseDecorativeColor, getCourseBadgeBg, getCourseBadgeText, colorWithOpacity, extractHex } from '@/lib/color-utils'
 
 interface ContentItem {
   id: string
@@ -767,24 +768,24 @@ export default function CourseEditPage() {
       {/* Header */}
       <div className="card" style={{ overflow: 'hidden', marginBottom: '20px' }}>
         <div style={{
-          background: `linear-gradient(135deg, ${course.color}, ${course.color}cc)`,
+          background: getCourseBackground(course.color),
           padding: '24px', position: 'relative', overflow: 'hidden',
         }}>
-          <div style={{ position: 'absolute', width: '160px', height: '160px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', top: '-50px', right: '30px' }} />
+          <div style={{ position: 'absolute', width: '160px', height: '160px', borderRadius: '50%', background: getCourseDecorativeColor(course.color), top: '-50px', right: '30px' }} />
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
             <div>
               <Link href={`/courses/${params.id}`} style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
-                color: 'rgba(255,255,255,0.7)', fontSize: '13px', marginBottom: '10px', textDecoration: 'none',
+                color: getCourseSecondaryTextColor(course.color), fontSize: '13px', marginBottom: '10px', textDecoration: 'none',
               }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
                 Back to Course
               </Link>
-              <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'white', marginBottom: '4px' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: '700', color: getCourseTextColor(course.color), marginBottom: '4px' }}>
                 {course.name} — Manage Content
               </h1>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>
+              <p style={{ color: getCourseSecondaryTextColor(course.color), fontSize: '13px' }}>
                 {topics.length} topic{topics.length !== 1 ? 's' : ''} &middot; {topics.reduce((a, t) => a + t.content.length, 0)} lectures
               </p>
             </div>
@@ -816,8 +817,8 @@ export default function CourseEditPage() {
                 </button>
               )}
               <div style={{
-                background: 'rgba(255,255,255,0.12)', borderRadius: '12px', padding: '10px 16px',
-                border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.85)', fontSize: '12px',
+                background: getCourseBadgeBg(course.color), borderRadius: '12px', padding: '10px 16px',
+                border: `1px solid ${getCourseBadgeBg(course.color)}`, color: getCourseBadgeText(course.color), fontSize: '12px',
                 display: 'flex', alignItems: 'center', gap: '6px',
               }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -870,7 +871,7 @@ export default function CourseEditPage() {
 
               <div style={{
                 width: '32px', height: '32px', borderRadius: '8px',
-                background: course.color + '18', color: course.color,
+                background: colorWithOpacity(course.color, '18'), color: extractHex(course.color),
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '12px', fontWeight: '700', flexShrink: 0,
               }}>

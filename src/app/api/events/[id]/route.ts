@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
-import { sendLiveClassNotification } from '@/lib/system-notifications'
+import {
+  sendLiveClassNotification,
+  sendClassRescheduledNotification,
+  sendClassCanceledNotification,
+} from '@/lib/system-notifications'
 
 export async function GET(
   request: NextRequest,
@@ -70,8 +74,19 @@ export async function PUT(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
+    const isStartTimeChanged = startTime !== undefined && new Date(startTime).getTime() !== new Date(existingEvent.startTime).getTime()
+    const isStatusChangedToCancelled = status === 'CANCELLED' && existingEvent.status !== 'CANCELLED'
+    const isStatusChangedToRescheduled = status === 'RESCHEDULED' && existingEvent.status !== 'RESCHEDULED'
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: Record<string, any> = {}
+    if (isStartTimeChanged || isStatusChangedToRescheduled) {
+      data.notified30mBefore = false
+      data.notified10mBefore = false
+      data.notifiedAtStart = false
+      data.notifiedStart = false
+      data.notified10mAfter = false
+    }
     if (title !== undefined) data.title = title
     if (description !== undefined) data.description = description || null
     if (startTime !== undefined) data.startTime = new Date(startTime)
@@ -140,6 +155,14 @@ export async function PUT(
             endTime: shiftedEnd,
           }
 
+          if (isStartTimeChanged || isStatusChangedToRescheduled || startShiftMs !== 0) {
+            updateData.notified30mBefore = false
+            updateData.notified10mBefore = false
+            updateData.notifiedAtStart = false
+            updateData.notifiedStart = false
+            updateData.notified10mAfter = false
+          }
+
           if (event.id === chainRootId) {
             if (recurrence !== undefined) updateData.recurrence = recurrence
             if (interval !== undefined) updateData.interval = interval ? parseInt(interval as string) : null
@@ -163,6 +186,15 @@ export async function PUT(
     // Check if class status was transitioned to LIVE (non-blocking)
     if (updatedEvent && updatedEvent.status === 'LIVE' && existingEvent.status !== 'LIVE' && updatedEvent.courseId) {
       sendLiveClassNotification(updatedEvent.courseId, updatedEvent.title, updatedEvent.meetLink, updatedEvent.id).catch(console.error)
+    }
+
+    // Check if class was cancelled or rescheduled (non-blocking)
+    if (updatedEvent && updatedEvent.courseId) {
+      if (isStatusChangedToCancelled) {
+        sendClassCanceledNotification(updatedEvent.courseId, updatedEvent.title, updatedEvent.startTime, updatedEvent.id).catch(console.error)
+      } else if (isStartTimeChanged || isStatusChangedToRescheduled) {
+        sendClassRescheduledNotification(updatedEvent.courseId, updatedEvent.title, updatedEvent.startTime, updatedEvent.meetLink, updatedEvent.id).catch(console.error)
+      }
     }
 
     logActivity({
@@ -200,8 +232,21 @@ export async function DELETE(
 
     const existingEvent = await prisma.courseEvent.findUnique({
       where: { id },
-      select: { title: true },
+      select: { title: true, courseId: true, startTime: true },
     })
+
+    if (!existingEvent) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
+
+    if (existingEvent.courseId) {
+      await sendClassCanceledNotification(
+        existingEvent.courseId,
+        existingEvent.title,
+        existingEvent.startTime,
+        id
+      ).catch(console.error)
+    }
 
     await prisma.courseEvent.delete({ where: { id } })
 
