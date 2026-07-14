@@ -331,6 +331,25 @@ export default function CommunityPage() {
   const [tagTriggerIndex, setTagTriggerIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
+
+  const handleMarkAsRead = async (e: React.MouseEvent, classId: string) => {
+    e.stopPropagation()
+    setActiveMenuId(null)
+    try {
+      await fetch(`/api/community/${classId}/read`, { method: 'POST' })
+      setClasses(prev => prev.map(c => c.id === classId ? { ...c, hasUnread: false } : c))
+    } catch (err) {
+      console.error('Failed to mark community as read', err)
+    }
+  }
+
+  const handleOpenCoursePage = (e: React.MouseEvent, classId: string) => {
+    e.stopPropagation()
+    setActiveMenuId(null)
+    router.push(`/courses/${classId}`)
+  }
+
   const loadPinnedMessage = useCallback(async (classId: string) => {
     try {
       const res = await fetch(`/api/community/${classId}/messages/pinned`)
@@ -1020,6 +1039,20 @@ export default function CommunityPage() {
         .msg-row:hover .msg-actions { opacity: 1 !important; }
       `}</style>
       {confirmDialog}
+      {activeMenuId && (
+        <div
+          onClick={() => setActiveMenuId(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999,
+            background: 'transparent',
+          }}
+        />
+      )}
       {loadError ? (
         <div
           className="card"
@@ -1114,7 +1147,7 @@ export default function CommunityPage() {
               const style = getSubjectStyle(cls.name, idx)
               const isMuted = cls.isMuted || false
               return (
-                <button
+                <div
                   key={cls.id}
                   onTouchStart={() => handleTouchStart(cls)}
                   onTouchEnd={handleTouchEnd}
@@ -1140,15 +1173,144 @@ export default function CommunityPage() {
                   {cls.hasUnread && (
                     <span style={{
                       position: 'absolute',
-                      top: '16px',
-                      right: '16px',
+                      top: '14px',
+                      right: '36px',
                       width: '10px',
                       height: '10px',
                       borderRadius: '50%',
                       background: '#ef4444',
-                      boxShadow: '0 0 6px #ef4444'
+                      boxShadow: '0 0 6px #ef4444',
+                      zIndex: 9
                     }} />
                   )}
+
+                  <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveMenuId(activeMenuId === cls.id ? null : cls.id)
+                      }}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onTouchEnd={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onMouseUp={(e) => e.stopPropagation()}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '50%',
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'background 0.2s',
+                        width: '24px',
+                        height: '24px',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="5" r="2" />
+                        <circle cx="12" cy="12" r="2" />
+                        <circle cx="12" cy="19" r="2" />
+                      </svg>
+                    </button>
+                    {activeMenuId === cls.id && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseUp={(e) => e.stopPropagation()}
+                        style={{
+                          position: 'absolute',
+                          top: '28px',
+                          right: '0px',
+                          background: 'var(--surface)',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                          border: '1px solid rgba(0,0,0,0.06)',
+                          padding: '6px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                          zIndex: 1000,
+                          minWidth: '150px',
+                          alignItems: 'flex-start'
+                        }}
+                      >
+                        <button
+                          onClick={(e) => handleMarkAsRead(e, cls.id)}
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px',
+                            background: 'none',
+                            border: 'none',
+                            borderRadius: '8px',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: 'var(--text-primary)',
+                            transition: 'background 0.2s',
+                            fontFamily: 'inherit',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                        >
+                          Mark as read
+                        </button>
+                        <button
+                          onClick={(e) => handleOpenCoursePage(e, cls.id)}
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px',
+                            background: 'none',
+                            border: 'none',
+                            borderRadius: '8px',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: 'var(--text-primary)',
+                            transition: 'background 0.2s',
+                            fontFamily: 'inherit',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                        >
+                          Open course page
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleMuteCourse(cls.id, cls.isMuted || false)
+                            setActiveMenuId(null)
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px',
+                            background: 'none',
+                            border: 'none',
+                            borderRadius: '8px',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: 'var(--text-primary)',
+                            transition: 'background 0.2s',
+                            fontFamily: 'inherit',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                        >
+                          {cls.isMuted ? 'Unmute notification' : 'Mute notification'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   <div style={{
                     width: '64px',
@@ -1213,7 +1375,7 @@ export default function CommunityPage() {
                   }}>
                     {cls.name}
                   </span>
-                </button>
+                </div>
               )
             })}
           </div>
@@ -1694,6 +1856,125 @@ export default function CommunityPage() {
                       </button>
                     </>
                   )}
+                  <div style={{ position: 'relative', zIndex: 10 }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveMenuId(activeMenuId === 'active-header' ? null : 'active-header')
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '8px',
+                        borderRadius: '50%',
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'background 0.2s',
+                        width: '36px',
+                        height: '36px',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="5" r="2" />
+                        <circle cx="12" cy="12" r="2" />
+                        <circle cx="12" cy="19" r="2" />
+                      </svg>
+                    </button>
+                    {activeMenuId === 'active-header' && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          position: 'absolute',
+                          top: '40px',
+                          right: '0px',
+                          background: 'var(--surface)',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                          border: '1px solid rgba(0,0,0,0.06)',
+                          padding: '6px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                          zIndex: 1000,
+                          minWidth: '150px',
+                          alignItems: 'flex-start'
+                        }}
+                      >
+                        <button
+                          onClick={(e) => handleMarkAsRead(e, selectedClass.id)}
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px',
+                            background: 'none',
+                            border: 'none',
+                            borderRadius: '8px',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: 'var(--text-primary)',
+                            transition: 'background 0.2s',
+                            fontFamily: 'inherit',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                        >
+                          Mark as read
+                        </button>
+                        <button
+                          onClick={(e) => handleOpenCoursePage(e, selectedClass.id)}
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px',
+                            background: 'none',
+                            border: 'none',
+                            borderRadius: '8px',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: 'var(--text-primary)',
+                            transition: 'background 0.2s',
+                            fontFamily: 'inherit',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                        >
+                          Open course page
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleMuteCourse(selectedClass.id, selectedClass.isMuted || false)
+                            setActiveMenuId(null)
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px',
+                            background: 'none',
+                            border: 'none',
+                            borderRadius: '8px',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: 'var(--text-primary)',
+                            transition: 'background 0.2s',
+                            fontFamily: 'inherit',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                        >
+                          {selectedClass.isMuted ? 'Unmute notification' : 'Mute notification'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

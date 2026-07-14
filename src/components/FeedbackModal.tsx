@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface FeedbackModalProps {
@@ -26,6 +26,43 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
     materialRating: 0,
     recommendScore: 0,
   })
+
+  const [isCapacitor, setIsCapacitor] = useState<boolean>(false)
+
+  useEffect(() => {
+    const check = () => {
+      const hasClass = document.documentElement.classList.contains('is-native')
+      const hasWindow = !!(window as any).Capacitor?.isNativePlatform?.()
+      if (hasClass || hasWindow) {
+        setIsCapacitor(true)
+        return true
+      }
+      return false
+    }
+
+    if (check()) return
+
+    import('@capacitor/core').then(({ Capacitor }) => {
+      if (Capacitor.isNativePlatform()) {
+        setIsCapacitor(true)
+      }
+    }).catch(() => {})
+
+    const intervalId = setInterval(() => {
+      if (check()) {
+        clearInterval(intervalId)
+      }
+    }, 100)
+
+    const timeoutId = setTimeout(() => {
+      clearInterval(intervalId)
+    }, 2000)
+
+    return () => {
+      clearInterval(intervalId)
+      clearTimeout(timeoutId)
+    }
+  }, [])
   const [comment, setComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -83,7 +120,7 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
       padding: 'clamp(12px, 3vw, 20px)',
     }}>
       <div
-        className="fade-in feedback-modal-box"
+        className={`fade-in feedback-modal-box ${isCapacitor ? 'capacitor-mode' : ''}`}
         style={{
           background: 'var(--surface)',
           width: '100%',
@@ -159,7 +196,15 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
                       onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
                       onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                      <svg className="feedback-star-svg" width="34" height="34" viewBox="0 0 24 24" fill={ratings[cat.id] >= star ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                      <svg
+                        className="feedback-star-svg"
+                        width={isCapacitor ? "42" : "34"}
+                        height={isCapacitor ? "42" : "34"}
+                        viewBox="0 0 24 24"
+                        fill={ratings[cat.id] >= star ? 'currentColor' : 'none'}
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                       </svg>
                     </button>
@@ -290,7 +335,7 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
             .feedback-modal-box p {
               margin-bottom: 16px !important;
             }
-            .feedback-modal-box .feedback-stars svg {
+            .feedback-modal-box:not(.capacitor-mode) .feedback-stars svg {
               width: 26px !important;
               height: 26px !important;
             }

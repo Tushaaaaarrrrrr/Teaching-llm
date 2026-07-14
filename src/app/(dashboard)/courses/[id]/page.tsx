@@ -688,18 +688,19 @@ export default function CourseDetailPage() {
                         key={item.id}
                         className="lecture-row"
                         style={{
-                          display: 'flex', alignItems: 'center', gap: '14px',
-                          padding: '12px 20px',
+                          display: 'flex', alignItems: 'center', gap: '16px',
+                          padding: '18px 24px',
                           borderRadius: '24px',
                           background: 'var(--surface-2)',
                           boxShadow: '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)',
                           transition: 'box-shadow 0.2s',
                           flexWrap: 'wrap',
+                          minHeight: '84px',
                         }}
                       >
                         {/* Lecture icon */}
                         <div style={{
-                          width: '32px', height: '32px', borderRadius: '8px',
+                          width: '38px', height: '38px', borderRadius: '10px',
                           background: (item.videoUrl || item.youtubeUrl) ? colorWithOpacity(course.color, '12') : '#f0f0f5',
                           color: (item.videoUrl || item.youtubeUrl) ? extractHex(course.color) : 'var(--text-muted)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -713,7 +714,7 @@ export default function CourseDetailPage() {
 
                         {/* Title + description */}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
                             {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
                               <span style={{
@@ -728,7 +729,7 @@ export default function CourseDetailPage() {
                             )}
                           </div>
                           {item.description && (
-                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
                               {item.description}
                             </p>
                           )}
@@ -777,10 +778,21 @@ export default function CourseDetailPage() {
                                 href={`/material/${item.id}/view`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="btn btn-ghost btn-sm"
+                                className="btn btn-ghost"
+                                style={{
+                                  padding: '10px 18px',
+                                  fontSize: '13px',
+                                  fontWeight: '800',
+                                  borderRadius: '50px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  height: '40px',
+                                  border: '1.5px solid var(--border)',
+                                }}
                               >
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                                 </svg>
                                 Download Notes
                               </Link>
@@ -788,9 +800,19 @@ export default function CourseDetailPage() {
                             {(item.videoUrl || item.youtubeUrl) && (
                               <Link
                                 href={`/courses/${params.id}/lectures/${item.id}`}
-                                className="btn btn-primary btn-sm"
+                                className="btn btn-primary"
+                                style={{
+                                  padding: '10px 20px',
+                                  fontSize: '13px',
+                                  fontWeight: '800',
+                                  borderRadius: '50px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  height: '40px',
+                                }}
                               >
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                 Watch
                               </Link>
                             )}

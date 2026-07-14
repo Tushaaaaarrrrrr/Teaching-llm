@@ -518,7 +518,7 @@ function CurriculumTab({
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
                   <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    {topic.content.length} lecture{topic.content.length !== 1 ? 's' : ''}{durationLabel ? ` · ${durationLabel}` : ''}
+                    {topic.content.length} lecture{topic.content.length !== 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
@@ -578,9 +578,9 @@ function CurriculumTab({
                   const isRewatch = currentStatus === 'REWATCH'
                   return (
                     <div key={item.id} className="mcd-lecture-row" style={{
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                      padding: '11px 12px',
-                      borderRadius: '12px',
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      padding: '16px 16px',
+                      borderRadius: '16px',
                       background: 'var(--surface)',
                       border: '1px solid rgba(15,23,42,0.05)',
                       boxShadow: '0 2px 8px rgba(15,23,42,0.02)',
@@ -593,7 +593,7 @@ function CurriculumTab({
                           onClick={() => updateProgress(item.id, cycleStatus(currentStatus))}
                           aria-label={`Status: ${currentStatus}. Tap to change.`}
                           style={{
-                            width: '26px', height: '26px', borderRadius: '8px', flexShrink: 0,
+                            width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
                             background:
                               isCompleted ? 'var(--success)' :
                               isRewatch ? 'var(--warning)' : '#fff',
@@ -610,23 +610,23 @@ function CurriculumTab({
                           }}
                         >
                           {isCompleted && (
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                           )}
                           {isRewatch && (
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
                           )}
                         </button>
                       ) : (
                         <div style={{
-                          width: '26px', height: '26px', borderRadius: '8px', flexShrink: 0,
+                          width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
                           background: (item.videoUrl || item.youtubeUrl) ? `${accent}10` : 'var(--surface)',
                           color: (item.videoUrl || item.youtubeUrl) ? accent : 'var(--text-muted)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
                           {(item.videoUrl || item.youtubeUrl) ? (
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                           ) : (
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                           )}
                         </div>
                       )}
@@ -634,7 +634,7 @@ function CurriculumTab({
                       {/* Title + duration */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
-                          fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)',
+                          fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)',
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           textDecoration: isCompleted ? 'none' : 'none',
                           opacity: isCompleted ? 0.7 : 1,
@@ -642,7 +642,7 @@ function CurriculumTab({
                           {item.title}
                         </div>
                         {typeof item.durationMinutes === 'number' && item.durationMinutes > 0 && (
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '1px' }}>
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
                             {Math.floor(item.durationMinutes / 60) > 0
                               ? `${Math.floor(item.durationMinutes / 60)}h ${item.durationMinutes % 60}m`
                               : `${item.durationMinutes}m`}
@@ -655,12 +655,12 @@ function CurriculumTab({
                         <Link
                           href={`/courses/${courseId}/lectures/${item.id}`}
                           style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '4px',
-                            padding: '6px 12px', borderRadius: '50px',
+                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                            padding: '10px 18px', borderRadius: '50px',
                             background: isCompleted ? '#fff' : accent,
                             color: isCompleted ? accent : '#fff',
                             border: isCompleted ? `1.5px solid ${accent}25` : 'none',
-                            fontSize: '11px', fontWeight: 800,
+                            fontSize: '13px', fontWeight: 800,
                             textDecoration: 'none',
                             boxShadow: isCompleted ? 'none' : `0 2px 8px ${accent}35`,
                             flexShrink: 0,
@@ -669,12 +669,12 @@ function CurriculumTab({
                         >
                           {isCompleted ? (
                             <>
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
                               Rewatch
                             </>
                           ) : (
                             <>
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                               Watch
                             </>
                           )}
@@ -685,16 +685,16 @@ function CurriculumTab({
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '4px',
-                            padding: '6px 12px', borderRadius: '50px',
+                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                            padding: '10px 18px', borderRadius: '50px',
                             background: 'var(--surface)', color: 'var(--text-secondary)',
                             border: '1.5px solid var(--border)',
-                            fontSize: '11px', fontWeight: 800,
+                            fontSize: '13px', fontWeight: 800,
                             textDecoration: 'none',
                             flexShrink: 0,
                           }}
                         >
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                           Open
                         </a>
                       ) : (
