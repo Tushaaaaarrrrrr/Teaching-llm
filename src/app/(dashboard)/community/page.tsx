@@ -140,7 +140,7 @@ function renderSubjectIcon(iconType: 'initials' | 'atom' | 'scroll' | 'leaf' | '
   switch (iconType) {
     case 'atom':
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="3" />
           <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)" />
           <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)" />
@@ -148,7 +148,7 @@ function renderSubjectIcon(iconType: 'initials' | 'atom' | 'scroll' | 'leaf' | '
       )
     case 'scroll':
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
           <polyline points="14 2 14 8 20 8" />
           <line x1="16" y1="13" x2="8" y2="13" />
@@ -158,14 +158,14 @@ function renderSubjectIcon(iconType: 'initials' | 'atom' | 'scroll' | 'leaf' | '
       )
     case 'leaf':
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M2 22C2 22 2 18 6 14C10 10 14 10 14 10C14 10 14 14 10 18C6 22 2 22 2 22Z" />
           <path d="M14 10L22 2" />
         </svg>
       )
     case 'flask':
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 3h12" />
           <path d="M12 3v7" />
           <path d="M9 10h6" />
@@ -174,7 +174,7 @@ function renderSubjectIcon(iconType: 'initials' | 'atom' | 'scroll' | 'leaf' | '
       )
     case 'initials':
     default:
-      return <span style={{ fontSize: '20px', fontWeight: '800' }}>{name.substring(0, 2).toUpperCase()}</span>
+      return <span style={{ fontSize: '24px', fontWeight: '800' }}>{name.substring(0, 2).toUpperCase()}</span>
   }
 }
 
@@ -1159,7 +1159,7 @@ export default function CommunityPage() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    padding: '24px 16px 20px',
+                    padding: '28px 18px 22px',
                     borderRadius: '28px',
                     border: 'none',
                     background: 'var(--surface)',
@@ -1313,8 +1313,8 @@ export default function CommunityPage() {
                   </div>
 
                   <div style={{
-                    width: '64px',
-                    height: '64px',
+                    width: '76px',
+                    height: '76px',
                     borderRadius: '50%',
                     background: style.gradient,
                     boxShadow: `0 10px 24px ${style.shadow}`,
@@ -1379,6 +1379,17 @@ export default function CommunityPage() {
               )
             })}
           </div>
+          <p style={{
+            textAlign: 'center',
+            fontSize: '12.5px',
+            fontWeight: 600,
+            color: 'var(--text-muted)',
+            margin: '0 16px 8px',
+            lineHeight: 1.5,
+            opacity: 0.7,
+          }}>
+            Please click on any course tab to talk to mentor &amp; your course mates
+          </p>
         ) : (
           <>
             {/* Groups header */}
