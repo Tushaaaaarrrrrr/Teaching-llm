@@ -986,6 +986,250 @@ export default function SupportPage() {
             onUpdate={loadTickets}
           />
         )}
+        {showFeatureModal && (
+          <div onClick={() => setShowFeatureModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto', background: 'var(--surface)', borderRadius: '28px', padding: '28px 24px', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 900, margin: 0 }}>💡 Request a Feature</h2>
+                <button onClick={() => setShowFeatureModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>Feature Title *</label>
+                  <input
+                    value={featureForm.title}
+                    onChange={e => setFeatureForm(p => ({ ...p, title: e.target.value }))}
+                    placeholder="e.g. Dark mode for lectures"
+                    maxLength={120}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: '14px', border: '1.5px solid var(--border)', background: 'var(--surface-2)', fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>Description *</label>
+                  <textarea
+                    value={featureForm.description}
+                    onChange={e => setFeatureForm(p => ({ ...p, description: e.target.value }))}
+                    placeholder="Describe the feature you'd like to see..."
+                    rows={4}
+                    maxLength={2000}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: '14px', border: '1.5px solid var(--border)', background: 'var(--surface-2)', fontSize: '14px', fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>Screenshots (optional, max 5)</label>
+                  <input ref={featureImageRef} type="file" accept="image/*" multiple onChange={handleFeatureImageAdd} style={{ display: 'none' }} />
+                  <button onClick={() => featureImageRef.current?.click()} style={{ padding: '10px 16px', borderRadius: '12px', border: '1.5px dashed var(--border)', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', fontFamily: 'inherit', width: '100%' }}>
+                    📎 Add Photos ({featureImages.length}/5)
+                  </button>
+                  {featureImagePreviews.length > 0 && (
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                      {featureImagePreviews.map((src, i) => (
+                        <div key={i} style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '10px', overflow: 'hidden' }}>
+                          <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <button onClick={() => removeFeatureImage(i)} style={{ position: 'absolute', top: '2px', right: '2px', width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={submitFeatureRequest}
+                  disabled={!featureForm.title.trim() || !featureForm.description.trim() || submittingFeature}
+                  style={{ padding: '13px', borderRadius: '14px', background: (!featureForm.title.trim() || !featureForm.description.trim()) ? 'var(--text-muted)' : 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: '#fff', border: 'none', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', opacity: submittingFeature ? 0.6 : 1, marginTop: '4px' }}
+                >
+                  {submittingFeature ? 'Submitting...' : 'Submit Feature Request'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // FEATURE REQUESTS VIEW
+  // ══════════════════════════════════════════════════════════════════════════
+  if (view === 'featureRequests') {
+    return (
+      <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', display: 'flex', flexDirection: 'column', paddingBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <BackButton onClick={() => setView('home')} />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>
+              {featureRequests.length} feature request{featureRequests.length !== 1 ? 's' : ''}
+            </span>
+            {(userRole === 'STUDENT' || userRole === 'ADMIN') && (
+              <button onClick={() => setShowFeatureModal(true)} className="btn btn-primary btn-sm" style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', border: 'none', borderRadius: '50px', padding: '8px 16px' }}>
+                + Request
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
+          {featureRequests.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+              <p style={{ fontWeight: '700', fontSize: '16px', marginBottom: '4px' }}>No feature requests yet</p>
+              <p style={{ fontSize: '13px' }}>Be the first to share an idea with us!</p>
+            </div>
+          ) : (
+            featureRequests.map((fr) => (
+              <div key={fr.id} style={{ ...card, padding: '20px', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 6px', color: 'var(--text-primary)' }}>{fr.title}</h3>
+                    <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{fr.description}</p>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0 }}>
+                    {userRole === 'MANAGER' ? (
+                      <select
+                        value={fr.status}
+                        onChange={(e) => updateFeatureStatus(fr.id, e.target.value)}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          border: '1.5px solid var(--border)',
+                          background: 'var(--surface-2)',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          color: fr.status === 'PENDING' ? '#f59e0b' : fr.status === 'ACCEPTED' ? '#10b981' : fr.status === 'REJECTED' ? '#ef4444' : '#6366f1',
+                          outline: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <option value="PENDING">PENDING</option>
+                        <option value="REVIEWED">REVIEWED</option>
+                        <option value="ACCEPTED">ACCEPTED</option>
+                        <option value="REJECTED">REJECTED</option>
+                      </select>
+                    ) : (
+                      <span style={{
+                        ...pill(fr.status === 'PENDING' ? '#f59e0b' : fr.status === 'ACCEPTED' ? '#10b981' : fr.status === 'REJECTED' ? '#ef4444' : '#6366f1'),
+                        fontSize: '10px',
+                        padding: '2px 8px',
+                      }}>
+                        {fr.status}
+                      </span>
+                    )}
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{new Date(fr.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                {fr.imageUrls && fr.imageUrls.length > 0 && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+                    {fr.imageUrls.map((url, i) => (
+                      <div
+                        key={i}
+                        onClick={() => setLightboxUrl(url)}
+                        style={{ width: '80px', height: '80px', borderRadius: '12px', overflow: 'hidden', cursor: 'zoom-in', border: '1px solid var(--border)' }}
+                      >
+                        <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(0,0,0,0.05)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {fr.user.avatar ? (
+                        <img src={fr.user.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: '11px', fontWeight: 800 }}>{fr.user.name.substring(0, 2).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div>
+                      {userRole === 'MANAGER' ? (
+                        <button
+                          onClick={() => setSelectedUserDetailsId(fr.user.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0,
+                            color: 'var(--primary)',
+                            fontSize: '12px',
+                            fontWeight: 800,
+                            textAlign: 'left',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          {fr.user.name} ({fr.user.role})
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                          {fr.user.name} ({fr.user.role})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {userRole === 'MANAGER' && fr.user.email && (
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{fr.user.email}</span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {showFeatureModal && (
+          <div onClick={() => setShowFeatureModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto', background: 'var(--surface)', borderRadius: '28px', padding: '28px 24px', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 900, margin: 0 }}>💡 Request a Feature</h2>
+                <button onClick={() => setShowFeatureModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>Feature Title *</label>
+                  <input
+                    value={featureForm.title}
+                    onChange={e => setFeatureForm(p => ({ ...p, title: e.target.value }))}
+                    placeholder="e.g. Dark mode for lectures"
+                    maxLength={120}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: '14px', border: '1.5px solid var(--border)', background: 'var(--surface-2)', fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>Description *</label>
+                  <textarea
+                    value={featureForm.description}
+                    onChange={e => setFeatureForm(p => ({ ...p, description: e.target.value }))}
+                    placeholder="Describe the feature you'd like to see..."
+                    rows={4}
+                    maxLength={2000}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: '14px', border: '1.5px solid var(--border)', background: 'var(--surface-2)', fontSize: '14px', fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>Screenshots (optional, max 5)</label>
+                  <input ref={featureImageRef} type="file" accept="image/*" multiple onChange={handleFeatureImageAdd} style={{ display: 'none' }} />
+                  <button onClick={() => featureImageRef.current?.click()} style={{ padding: '10px 16px', borderRadius: '12px', border: '1.5px dashed var(--border)', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', fontFamily: 'inherit', width: '100%' }}>
+                    📎 Add Photos ({featureImages.length}/5)
+                  </button>
+                  {featureImagePreviews.length > 0 && (
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                      {featureImagePreviews.map((src, i) => (
+                        <div key={i} style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '10px', overflow: 'hidden' }}>
+                          <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <button onClick={() => removeFeatureImage(i)} style={{ position: 'absolute', top: '2px', right: '2px', width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={submitFeatureRequest}
+                  disabled={!featureForm.title.trim() || !featureForm.description.trim() || submittingFeature}
+                  style={{ padding: '13px', borderRadius: '14px', background: (!featureForm.title.trim() || !featureForm.description.trim()) ? 'var(--text-muted)' : 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: '#fff', border: 'none', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', opacity: submittingFeature ? 0.6 : 1, marginTop: '4px' }}
+                >
+                  {submittingFeature ? 'Submitting...' : 'Submit Feature Request'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
