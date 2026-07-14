@@ -113,21 +113,44 @@ export default function MobileMenuPage() {
   }
 
   async function handleShareApp() {
-    try {
-      const shareText = 'Hey! GenZ IITian has officially launched its own app! downlaod now :  https://zedmvgqhnapmpqpnzoqh.supabase.co/storage/v1/object/public/downloads/class%20genz.apk'
-      
-      const response = await fetch('/images/app-promo.jpg')
-      const blob = await response.blob()
-      const file = new File([blob], 'app-promo.jpg', { type: 'image/jpeg' })
+    const shareText = `Hey! I recently downloaded the **GenZ IITIAN** app, and honestly it's amazing.
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+It has everything an IIT Madras BS student needs in one place:
+• Free Classes
+• PYQs with Solutions
+• FREE Notes & PDFs
+• Doubt Support
+• Guidance from Seniors
+
+You should definitely try it yourself. Download it here:
+
+https://class.genziitian.in/download`
+
+    try {
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.isNativePlatform()) {
+        const { Share } = await import('@capacitor/share')
+        const canShare = await Share.canShare()
+        if (canShare.value) {
+          await Share.share({
+            title: 'GenZ IITIAN',
+            text: shareText,
+            url: 'https://class.genziitian.in/download',
+            dialogTitle: 'Share GenZ IITIAN',
+          })
+          return
+        }
+      }
+    } catch (e) {
+      console.warn('Native share failed, falling back to Web Share:', e)
+    }
+
+    try {
+      if (navigator.share) {
         await navigator.share({
-          files: [file],
+          title: 'GenZ IITIAN',
           text: shareText,
-        })
-      } else if (navigator.share) {
-        await navigator.share({
-          text: shareText,
+          url: 'https://class.genziitian.in/download',
         })
       } else {
         await navigator.clipboard.writeText(shareText)
@@ -136,11 +159,10 @@ export default function MobileMenuPage() {
     } catch (error) {
       console.error('Error sharing:', error)
       try {
-        const shareText = 'Hey! GenZ IITian has officially launched its own app! downlaod now :  https://zedmvgqhnapmpqpnzoqh.supabase.co/storage/v1/object/public/downloads/class%20genz.apk'
         await navigator.clipboard.writeText(shareText)
         alert('Share message and download link copied to clipboard!')
       } catch (clipErr) {
-        alert('Failed to share. Download URL: https://zedmvgqhnapmpqpnzoqh.supabase.co/storage/v1/object/public/downloads/class%20genz.apk')
+        alert('Failed to share. Download URL: https://class.genziitian.in/download')
       }
     }
   }
