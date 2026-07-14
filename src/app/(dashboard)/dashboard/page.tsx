@@ -38,6 +38,49 @@ export default function DashboardPage() {
   })
   
   const [upgradeModalCourse, setUpgradeModalCourse] = useState<{ id: string; name: string; liveUpgradePrice: number } | null>(null)
+
+  const { data: userData } = useSWR('/api/auth/me', fetcher)
+  const user = userData?.user
+
+  const [showRatingModal, setShowRatingModal] = useState(false)
+  const [rating, setRating] = useState(0)
+  const [ratingComment, setRatingComment] = useState('')
+  const [submittingRating, setSubmittingRating] = useState(false)
+
+  useEffect(() => {
+    if (!user || user.role !== 'STUDENT') return
+
+    // 1. Check if user is at least 7 days old
+    const registerDate = new Date(user.createdAt)
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    if (registerDate > sevenDaysAgo) return
+
+    // 2. Check snooze in localStorage
+    const snoozeUntil = localStorage.getItem('app_feedback_snooze_until')
+    if (snoozeUntil && new Date(snoozeUntil) > new Date()) return
+
+    // 3. Check submission via check API
+    fetch('/api/feedback/app/check')
+      .then(res => res.json())
+      .then(data => {
+        if (data.submitted) return
+
+        // 4. Delay show by 3s, checking for other active modals in DOM
+        const timer = setTimeout(() => {
+          const hasModal = !!document.querySelector('.modal-overlay') || 
+                           !!document.querySelector('.modal') || 
+                           !!document.querySelector('.blocker') || 
+                           !!document.querySelector('[class*="modal"]')
+          if (hasModal) return
+
+          setShowRatingModal(true)
+        }, 3000)
+
+        return () => clearTimeout(timer)
+      })
+      .catch(console.error)
+  }, [user])
   const [upgrading, setUpgrading] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
@@ -1838,6 +1881,189 @@ export default function DashboardPage() {
           }} />
           <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Processing...</h3>
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>Please wait while we set up your course access.</p>
+        </div>
+      </div>
+    )}
+
+    {/* App/Website Rating Modal */}
+    {showRatingModal && (
+      <div
+        className="modal-overlay fade-in"
+        style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.4)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }}
+      >
+        <div
+          className="modal scale-up"
+          style={{
+            width: '100%',
+            maxWidth: '420px',
+            background: 'var(--surface)',
+            borderRadius: '24px',
+            padding: '28px',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+            border: '1px solid var(--border)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'var(--primary-light)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--primary)',
+            marginBottom: '18px',
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </div>
+
+          <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 10px', fontFamily: "'Outfit', sans-serif" }}>
+            {typeof document !== 'undefined' && document.documentElement.classList.contains('is-native') 
+              ? 'Liked our App? Please rate us so we know!' 
+              : 'Liked our Website? Please rate us so we know!'}
+          </h3>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 20px', lineHeight: 1.4 }}>
+            Your feedback helps us improve your learning journey.
+          </p>
+
+          {/* Stars selection */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+            {[1, 2, 3, 4, 5].map(s => {
+              const active = s <= rating
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setRating(s)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    color: active ? '#fbbf24' : 'var(--text-muted)',
+                    transition: 'transform 0.15s ease',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill={active ? '#fbbf24' : 'none'} stroke="currentColor" strokeWidth="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Comment Text Box */}
+          <textarea
+            placeholder="Tell us what you liked or how we can improve (optional)..."
+            value={ratingComment}
+            onChange={e => setRatingComment(e.target.value)}
+            maxLength={500}
+            style={{
+              width: '100%',
+              minHeight: '80px',
+              padding: '12px',
+              borderRadius: '12px',
+              border: '1px solid var(--border)',
+              background: 'var(--surface-2)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              outline: 'none',
+              resize: 'none',
+              marginBottom: '20px',
+              fontFamily: 'inherit',
+            }}
+          />
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+            <button
+              type="button"
+              disabled={rating === 0 || submittingRating}
+              onClick={async () => {
+                setSubmittingRating(true)
+                try {
+                  const isNative = typeof document !== 'undefined' && document.documentElement.classList.contains('is-native')
+                  const res = await fetch('/api/feedback/app', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      rating,
+                      comment: ratingComment.trim() || null,
+                      platform: isNative ? 'APP' : 'WEB',
+                    })
+                  })
+                  if (res.ok) {
+                    setShowRatingModal(false)
+                  } else {
+                    const data = await res.json()
+                    alert(data.error || 'Failed to submit rating')
+                  }
+                } catch (e) {
+                  console.error(e)
+                  alert('Something went wrong')
+                } finally {
+                  setSubmittingRating(false)
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '14px',
+                border: 'none',
+                background: rating === 0 ? 'var(--text-muted)' : 'var(--primary)',
+                color: rating === 0 ? 'var(--text-secondary)' : '#ffffff',
+                fontWeight: '700',
+                fontSize: '14px',
+                cursor: rating === 0 ? 'default' : 'pointer',
+                opacity: rating === 0 ? 0.5 : 1,
+                transition: 'all 0.2s',
+              }}
+            >
+              {submittingRating ? 'Submitting...' : 'Submit'}
+            </button>
+
+            <button
+              type="button"
+              disabled={submittingRating}
+              onClick={() => {
+                const sevenDaysLater = new Date()
+                sevenDaysLater.setDate(sevenDaysLater.getDate() + 7)
+                localStorage.setItem('app_feedback_snooze_until', sevenDaysLater.toISOString())
+                setShowRatingModal(false)
+              }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '14px',
+                border: '1px solid var(--border)',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                fontWeight: '700',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              Remind me after 7 days
+            </button>
+          </div>
         </div>
       </div>
     )}

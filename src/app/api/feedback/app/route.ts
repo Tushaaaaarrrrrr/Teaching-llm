@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     // Rate Limiting
     const ip = request.ip ?? '127.0.0.1'
-    const { success } = await checkRateLimit(`${session.userId}_${ip}`, 'app-feedback')
+    const { success } = await checkRateLimit(`${session.userId}_${ip}`, 'feedback')
     if (!success) {
       return NextResponse.json({ error: 'Too many submissions. Please try again later.' }, { status: 429 })
     }

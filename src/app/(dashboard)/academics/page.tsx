@@ -81,7 +81,7 @@ const SECTIONS: Section[] = [
   },
   {
     href: '/feedback',
-    title: 'Course Feedback',
+    title: 'Feedback',
     subtitle: 'Ratings & student reviews',
     gradient: 'linear-gradient(135deg, #f59e0b, #eab308)',
     shadow: 'rgba(245, 158, 11, 0.25)',

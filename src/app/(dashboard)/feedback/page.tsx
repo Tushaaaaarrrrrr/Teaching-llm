@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import FeedbackModal from '@/components/FeedbackModal'
+import ManagerUserModal from '@/components/ManagerUserModal'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -16,13 +17,15 @@ interface CourseItem {
 
 interface FeedbackItem {
   id: string
+  type: 'COURSE' | 'APP' | 'WEBSITE'
+  studentId: string
   teacherRating: number
   conceptRating: number
   materialRating: number
   recommendScore: number
   comment: string
   createdAt: string
-  student: { name: string; email: string }
+  student: { id: string; name: string; email: string; securityNumber?: string | null }
   course: { id: string; name: string }
 }
 
@@ -108,7 +111,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
             letterSpacing: '-0.02em',
             fontFamily: "'Outfit', 'Nunito', sans-serif"
           }}>
-            Course Feedback
+            Feedback
           </h1>
           <p style={{
             fontSize: '12px',
@@ -247,9 +250,20 @@ function ManagerFeedbackView() {
 
   const [filterCourse, setFilterCourse] = useState('')
   const [searchStudent, setSearchStudent] = useState('')
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
   const filtered = feedbacks.filter(f => {
-    const matchCourse = !filterCourse || f.course.id === filterCourse
+    let matchCourse = true
+    if (filterCourse === 'COURSE_ONLY') {
+      matchCourse = f.course.id !== 'APP' && f.course.id !== 'WEB'
+    } else if (filterCourse === 'APP') {
+      matchCourse = f.course.id === 'APP'
+    } else if (filterCourse === 'WEB') {
+      matchCourse = f.course.id === 'WEB'
+    } else if (filterCourse) {
+      matchCourse = f.course.id === filterCourse
+    }
+
     const matchStudent = !searchStudent || 
       f.student.name.toLowerCase().includes(searchStudent.toLowerCase()) ||
       f.student.email.toLowerCase().includes(searchStudent.toLowerCase())
@@ -310,7 +324,7 @@ function ManagerFeedbackView() {
             letterSpacing: '-0.02em',
             fontFamily: "'Outfit', 'Nunito', sans-serif"
           }}>
-            Course Feedback
+            Feedback
           </h1>
           <p style={{
             fontSize: '12px',
@@ -319,7 +333,7 @@ function ManagerFeedbackView() {
             margin: '3px 0 0',
             fontFamily: "'Outfit', sans-serif"
           }}>
-            Ratings &amp; student reviews
+            Student reviews &amp; platform feedback
           </p>
         </div>
       </div>
@@ -341,7 +355,10 @@ function ManagerFeedbackView() {
                 minWidth: '200px',
               }}
             >
-              <option value="">All Courses</option>
+              <option value="">All Feedback</option>
+              <option value="COURSE_ONLY">Course Feedback</option>
+              <option value="APP">App Feedback</option>
+              <option value="WEB">Website Feedback</option>
               {courses.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -365,59 +382,102 @@ function ManagerFeedbackView() {
       </div>
 
       <div style={{ display: 'grid', gap: '16px' }}>
-        {filtered.map(f => (
-          <div 
-            key={f.id}
-            style={{
-              background: 'var(--surface)',
-              borderRadius: '20px',
-              padding: '24px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'flex-start' }}>
-              <div>
-                <h4 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '2px' }}>{f.student.name}</h4>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{f.student.email} • {new Date(f.createdAt).toLocaleDateString('en-GB')}</p>
-              </div>
-              <div style={{ 
-                background: 'var(--surface)', padding: '6px 14px', borderRadius: '50px', 
-                fontSize: '12px', fontWeight: '700', color: 'var(--primary)', border: '1px solid var(--border)' 
-              }}>
-                {f.course.name}
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '20px' }}>
-              {[
-                { label: 'Teacher', val: f.teacherRating },
-                { label: 'Concept', val: f.conceptRating },
-                { label: 'Materials', val: f.materialRating },
-                { label: 'Recommend', val: f.recommendScore },
-              ].map(r => (
-                <div key={r.label}>
-                  <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>{r.label}</p>
-                  <div style={{ display: 'flex', gap: '2px' }}>
-                    {[1,2,3,4,5].map(s => (
-                      <svg key={s} width="12" height="12" viewBox="0 0 24 24" fill={s <= r.val ? '#fbbf24' : 'var(--surface-2)'}>
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                      </svg>
-                    ))}
-                  </div>
+        {filtered.map(f => {
+          const isAppOrWeb = f.course.id === 'APP' || f.course.id === 'WEB'
+          return (
+            <div 
+              key={f.id}
+              style={{
+                background: 'var(--surface)',
+                borderRadius: '20px',
+                padding: '24px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'flex-start' }}>
+                <div>
+                  <button
+                    onClick={() => setSelectedUserId(f.studentId)}
+                    title="View Student Profile"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      color: 'var(--primary)',
+                      fontWeight: '700',
+                      fontSize: '16px',
+                      marginBottom: '2px',
+                      display: 'inline-block',
+                      fontFamily: 'inherit',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                    onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                  >
+                    {f.student.name}
+                  </button>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    ID: {(f.student as any).securityNumber || 'N/A'} • {f.student.email} • {new Date(f.createdAt).toLocaleDateString('en-GB')}
+                  </p>
                 </div>
-              ))}
-            </div>
-
-            {f.comment && (
-              <div style={{ padding: '14px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
-                  "{f.comment}"
-                </p>
+                <div style={{ 
+                  background: isAppOrWeb ? 'rgba(54,54,232,0.05)' : 'var(--surface)', 
+                  padding: '6px 14px', borderRadius: '50px', 
+                  fontSize: '12px', fontWeight: '700', 
+                  color: f.course.id === 'APP' ? '#3636e8' : f.course.id === 'WEB' ? '#10b981' : 'var(--primary)', 
+                  border: '1px solid var(--border)' 
+                }}>
+                  {f.course.name}
+                </div>
               </div>
-            )}
-          </div>
-        ))}
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                {isAppOrWeb ? (
+                  <div>
+                    <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                      Rating
+                    </p>
+                    <div style={{ display: 'flex', gap: '2px' }}>
+                      {[1,2,3,4,5].map(s => (
+                        <svg key={s} width="12" height="12" viewBox="0 0 24 24" fill={s <= f.teacherRating ? '#fbbf24' : 'var(--surface-2)'}>
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  [
+                    { label: 'Teacher', val: f.teacherRating },
+                    { label: 'Concept', val: f.conceptRating },
+                    { label: 'Materials', val: f.materialRating },
+                    { label: 'Recommend', val: f.recommendScore },
+                  ].map(r => (
+                    <div key={r.label}>
+                      <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>{r.label}</p>
+                      <div style={{ display: 'flex', gap: '2px' }}>
+                        {[1,2,3,4,5].map(s => (
+                          <svg key={s} width="12" height="12" viewBox="0 0 24 24" fill={s <= r.val ? '#fbbf24' : 'var(--surface-2)'}>
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {f.comment && (
+                <div style={{ padding: '14px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                    "{f.comment}"
+                  </p>
+                </div>
+              )}
+            </div>
+          )
+        })}
 
         {filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '100px', color: 'var(--text-muted)' }}>
@@ -425,6 +485,10 @@ function ManagerFeedbackView() {
           </div>
         )}
       </div>
+
+      {selectedUserId && (
+        <ManagerUserModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} onUpdate={() => {}} />
+      )}
     </div>
   )
 }

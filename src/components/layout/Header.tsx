@@ -80,7 +80,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/data-analysis': { title: 'Data Analysis',      subtitle: 'Production-level insights and student behavior metrics' },
   '/exams':      { title: 'Exams',             subtitle: 'Manage and participate in assessments' },
   '/study/content-bank': { title: 'Content Bank', subtitle: 'Global repository of exam questions and resources' },
-  '/feedback':   { title: 'Course Feedback',    subtitle: 'Average ratings and student reviews.' },
+  '/feedback':   { title: 'Feedback',           subtitle: 'Average ratings and student reviews.' },
   '/free-resources/courses': { title: 'Free Courses', subtitle: 'Browse and self-enroll in free courses' },
   '/free-resources/materials': { title: 'Free Materials', subtitle: 'Download study materials available for free' },
   '/free-resources': { title: 'Free Resources', subtitle: 'Access free courses and study materials' },

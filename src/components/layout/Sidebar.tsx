@@ -184,7 +184,7 @@ const NAV_ITEMS: NavItem[] = [
   
   {
     href: '/feedback',
-    label: 'Course Feedback',
+    label: 'Feedback',
     roles: ['STUDENT', 'MANAGER'],
     desktopOnly: true,
     icon: (

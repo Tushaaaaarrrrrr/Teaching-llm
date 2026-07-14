@@ -31,6 +31,8 @@ export default function AnalyticsDashboard() {
     { refreshInterval: 0 }
   )
 
+  const { data: feedbackStats } = useSWR('/api/analytics/feedback', fetcher)
+
   // ─── Timer Logic ───────────────────────────────────────────────────
   const isUpdatingRef = useRef(false)
 
@@ -710,6 +712,98 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
+      {/* ─── App & Website Feedback Stats ────────────────────────── */}
+      {feedbackStats && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', marginTop: '12px' }}>
+          <div style={neuCard}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>📱 App & Website Feedback Statistics</span>
+            </h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+              {/* App Feedback Stats Card */}
+              <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(54, 54, 232, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3636e8', fontSize: '20px' }}>
+                  📱
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>App Feedback</h4>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+                    <span style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)' }}>
+                      {feedbackStats.appAvg ? feedbackStats.appAvg.toFixed(1) : '0.0'}
+                    </span>
+                    <span style={{ fontSize: '14px', color: '#fbbf24', fontWeight: '700' }}>★</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>({feedbackStats.appCount} reviews)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Website Feedback Stats Card */}
+              <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', fontSize: '20px' }}>
+                  💻
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Website Feedback</h4>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+                    <span style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)' }}>
+                      {feedbackStats.webAvg ? feedbackStats.webAvg.toFixed(1) : '0.0'}
+                    </span>
+                    <span style={{ fontSize: '14px', color: '#fbbf24', fontWeight: '700' }}>★</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>({feedbackStats.webCount} reviews)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Rating distribution charts */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+              {/* App Distribution */}
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '12px' }}>App Star Distribution</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[5, 4, 3, 2, 1].map(stars => {
+                    const val = feedbackStats.appDist?.[stars] || 0
+                    const total = feedbackStats.appCount || 1
+                    const pct = Math.round((val / total) * 100)
+                    return (
+                      <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px' }}>
+                        <span style={{ width: '40px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>{stars} ★</span>
+                        <div style={{ flex: 1, height: '8px', background: 'var(--surface-2)', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: '#fbbf24', borderRadius: '4px' }} />
+                        </div>
+                        <span style={{ width: '55px', color: 'var(--text-muted)', fontWeight: 600 }}>{val} ({pct}%)</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Website Distribution */}
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '12px' }}>Website Star Distribution</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[5, 4, 3, 2, 1].map(stars => {
+                    const val = feedbackStats.webDist?.[stars] || 0
+                    const total = feedbackStats.webCount || 1
+                    const pct = Math.round((val / total) * 100)
+                    return (
+                      <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px' }}>
+                        <span style={{ width: '40px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>{stars} ★</span>
+                        <div style={{ flex: 1, height: '8px', background: 'var(--surface-2)', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: '#fbbf24', borderRadius: '4px' }} />
+                        </div>
+                        <span style={{ width: '55px', color: 'var(--text-muted)', fontWeight: 600 }}>{val} ({pct}%)</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   )
