@@ -519,11 +519,13 @@ function CalendarPageContent() {
               return (
                 <div
                   key={ev.id}
-                  onClick={() => setSelectedEvent(ev)}
+                  onClick={() => {
+                    if (isManager) setSelectedEvent(ev)
+                  }}
                   style={{
                     display: 'flex', alignItems: 'stretch', gap: '14px',
                     padding: '14px 16px', borderRadius: '20px',
-                    background: 'var(--surface)', cursor: 'pointer',
+                    background: 'var(--surface)', cursor: isManager ? 'pointer' : 'default',
                     boxShadow: '6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light)',
                     borderLeft: `5px solid ${tc.bg}`,
                   }}
