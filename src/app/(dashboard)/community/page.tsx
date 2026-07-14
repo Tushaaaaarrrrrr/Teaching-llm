@@ -1584,12 +1584,13 @@ export default function CommunityPage() {
       {/* Right: Chat area */}
       <div style={{ 
         flex: 1, 
-        borderRadius: '24px', 
-        ...neu, 
+        borderRadius: isMobile ? '0' : '24px', 
+        ...(isMobile ? {} : neu), 
         display: (isMobile && !selectedClass) ? 'none' : 'flex', 
         flexDirection: 'column', 
         overflow: 'hidden', 
-        minWidth: 0 
+        minWidth: 0,
+        ...(isMobile ? { height: '100vh', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, background: 'var(--surface)' } : {}),
       }}>
         {!selectedClass ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', color: 'var(--text-muted)' }}>
