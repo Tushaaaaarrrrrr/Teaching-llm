@@ -1034,7 +1034,7 @@ export default function CommunityPage() {
 
 
   return (
-    <div className="page-container fade-in" style={isMobile ? { display: 'flex', flexDirection: 'column', gap: '0px', padding: '12px', position: 'relative', boxSizing: 'border-box' } : { display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
+    <div className="page-container fade-in" style={isMobile ? { display: 'flex', flexDirection: 'column', gap: '0px', padding: '12px', position: 'relative', boxSizing: 'border-box', overflowX: 'hidden' } : { display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
       <style>{`
         .msg-row:hover .msg-actions { opacity: 1 !important; }
       `}</style>
