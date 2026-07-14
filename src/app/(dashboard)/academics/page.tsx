@@ -120,7 +120,38 @@ export default function AcademicsPage() {
   const [isCapacitor, setIsCapacitor] = useState<boolean>(false)
 
   useEffect(() => {
-    setIsCapacitor(isCapacitorNative())
+    const check = () => {
+      const hasClass = document.documentElement.classList.contains('is-native')
+      const hasWindow = !!(window as any).Capacitor?.isNativePlatform?.()
+      if (hasClass || hasWindow) {
+        setIsCapacitor(true)
+        return true
+      }
+      return false
+    }
+
+    if (check()) return
+
+    import('@capacitor/core').then(({ Capacitor }) => {
+      if (Capacitor.isNativePlatform()) {
+        setIsCapacitor(true)
+      }
+    }).catch(() => {})
+
+    const intervalId = setInterval(() => {
+      if (check()) {
+        clearInterval(intervalId)
+      }
+    }, 100)
+
+    const timeoutId = setTimeout(() => {
+      clearInterval(intervalId)
+    }, 2000)
+
+    return () => {
+      clearInterval(intervalId)
+      clearTimeout(timeoutId)
+    }
   }, [])
 
   if (isCapacitor) {

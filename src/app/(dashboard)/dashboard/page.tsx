@@ -1393,92 +1393,212 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* ── Row 3: Upcoming Assessments ── */}
-          <div className={isMobile ? '' : 'card'} style={isMobile ? { marginBottom: '24px' } : { padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isMobile ? '14px' : '18px', padding: isMobile ? '0 4px' : '0', gap: '12px' }}>
-              <div style={{ minWidth: 0 }}>
-                <h3 style={{ fontSize: isMobile ? '18px' : '16px', fontWeight: isMobile ? 900 : 700, color: 'var(--text-primary)', letterSpacing: isMobile ? '-0.02em' : 'normal', margin: 0 }}>
-                  Upcoming Assessments
-                </h3>
+          {/* ── Row 3: Action Buttons (Mobile) or Upcoming Assessments (Desktop) ── */}
+          {isMobile ? (
+            <div style={{ marginBottom: '24px', padding: '0 4px' }}>
+              <style dangerouslySetInnerHTML={{__html: `
+                .quick-actions-bar {
+                  display: flex;
+                  flex-direction: row;
+                  justify-content: space-around;
+                  align-items: center;
+                  padding: 20px 12px;
+                  border-radius: 26px;
+                  background: #ffffff;
+                  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.025), 0 2px 4px rgba(0, 0, 0, 0.015);
+                  border: 1px solid rgba(0, 0, 0, 0.01);
+                  margin-bottom: 24px;
+                }
+                :root[data-theme="dark"] .quick-actions-bar {
+                  background: var(--surface-2);
+                  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+                  border: 1px solid rgba(255, 255, 255, 0.01);
+                }
+                .quick-action-item {
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  text-decoration: none;
+                  width: 22%;
+                  transition: transform 0.15s ease;
+                }
+                .quick-action-item:active {
+                  transform: scale(0.92);
+                }
+                .quick-action-icon-box {
+                  width: 54px;
+                  height: 54px;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  color: #ffffff;
+                  margin-bottom: 8px;
+                }
+                .quick-action-name {
+                  font-size: 11.5px;
+                  font-weight: 700;
+                  color: var(--text-secondary);
+                  text-align: center;
+                  line-height: 1.2;
+                }
+                :root[data-theme="dark"] .quick-action-name {
+                  color: var(--text-muted);
+                }
+              `}} />
+              <div className="quick-actions-bar">
+                <Link href="/community" className="quick-action-item">
+                  <div 
+                    className="quick-action-icon-box" 
+                    style={{ 
+                      background: 'linear-gradient(135deg, #f43f5e, #a855f7)',
+                      boxShadow: '0 6px 14px rgba(244, 63, 94, 0.3)'
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                  </div>
+                  <span className="quick-action-name">Community</span>
+                </Link>
+                <Link href="/calendar" className="quick-action-item">
+                  <div 
+                    className="quick-action-icon-box" 
+                    style={{ 
+                      background: 'linear-gradient(135deg, #b58bfd, #703bf7)',
+                      boxShadow: '0 6px 14px rgba(112, 59, 247, 0.3)'
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                      <line x1="16" x2="16" y1="2" y2="6"/>
+                      <line x1="8" x2="8" y1="2" y2="6"/>
+                      <line x1="3" x2="21" y1="10" y2="10"/>
+                    </svg>
+                  </div>
+                  <span className="quick-action-name">Calendar</span>
+                </Link>
+                <Link href="/courses/explore" className="quick-action-item">
+                  <div 
+                    className="quick-action-icon-box" 
+                    style={{ 
+                      background: 'linear-gradient(135deg, #ffd000, #ff9100)',
+                      boxShadow: '0 6px 14px rgba(255, 145, 0, 0.3)'
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                      <path d="M3 6h18"/>
+                      <path d="M16 10a4 4 0 0 1-8 0"/>
+                    </svg>
+                  </div>
+                  <span className="quick-action-name">Store</span>
+                </Link>
+                <Link href="/settings" className="quick-action-item">
+                  <div 
+                    className="quick-action-icon-box" 
+                    style={{ 
+                      background: 'linear-gradient(135deg, #60a5fa, #3b82f6)',
+                      boxShadow: '0 6px 14px rgba(59, 130, 246, 0.3)'
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 1 1 2 0l.43.25a2 2 0 1 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 1 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </div>
+                  <span className="quick-action-name">Settings</span>
+                </Link>
               </div>
-              <Link href="/exams" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                View All →
-              </Link>
             </div>
-            {!dashboardData?.upcomingExams?.length ? (
-              <div style={{
-                padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px',
-                background: isMobile ? 'var(--surface)' : 'transparent', borderRadius: '20px',
-                border: isMobile ? '1px solid rgba(15, 23, 42, 0.05)' : 'none',
-              }}>
-                No upcoming exams or tests
+          ) : (
+            <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '18px', gap: '12px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                    Upcoming Assessments
+                  </h3>
+                </div>
+                <Link href="/exams" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  View All →
+                </Link>
               </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '12px' : '14px' }}>
-                {dashboardData.upcomingExams.map((exam: any) => {
-                  const accent = exam.course?.color || 'var(--accent)'
-                  return (
-                    <div
-                      key={exam.id}
-                      style={{
-                        padding: isMobile ? '18px' : '18px',
-                        borderRadius: isMobile ? '20px' : '18px',
-                        background: isMobile ? 'var(--surface)' : 'var(--surface-2)',
-                        boxShadow: isMobile
-                          ? '0 14px 30px -12px rgba(15, 23, 42, 0.15), 0 4px 8px -2px rgba(15, 23, 42, 0.04)'
-                          : '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)',
-                        border: isMobile ? '1px solid rgba(15, 23, 42, 0.05)' : undefined,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '12px',
-                        transition: 'all 0.2s',
-                        borderTop: `4px solid ${accent}`,
-                        position: 'relative', overflow: 'hidden',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{
-                          width: '36px', height: '36px', borderRadius: '10px',
-                          background: accent + '15',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5">
-                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/>
-                          </svg>
+              {!dashboardData?.upcomingExams?.length ? (
+                <div style={{
+                  padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px',
+                  background: 'transparent', borderRadius: '20px',
+                  border: 'none',
+                }}>
+                  No upcoming exams or tests
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+                  {dashboardData.upcomingExams.map((exam: any) => {
+                    const accent = exam.course?.color || 'var(--accent)'
+                    return (
+                      <div
+                        key={exam.id}
+                        style={{
+                          padding: '18px',
+                          borderRadius: '18px',
+                          background: 'var(--surface-2)',
+                          boxShadow: '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '12px',
+                          transition: 'all 0.2s',
+                          borderTop: `4px solid ${accent}`,
+                          position: 'relative', overflow: 'hidden',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div style={{
+                            width: '36px', height: '36px', borderRadius: '10px',
+                            background: accent + '15',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5">
+                              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                          </div>
+                          <span style={{ fontSize: '10px', fontWeight: '800', color: accent, background: accent + '10', padding: '2px 8px', borderRadius: '6px' }}>
+                            {exam.examType === 'FINAL_TEST' ? 'FINAL' : 'PRACTICE'}
+                          </span>
                         </div>
-                        <span style={{ fontSize: '10px', fontWeight: '800', color: accent, background: accent + '10', padding: '2px 8px', borderRadius: '6px' }}>
-                          {exam.examType === 'FINAL_TEST' ? 'FINAL' : 'PRACTICE'}
-                        </span>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)',
-                          lineHeight: '1.3', marginBottom: '4px',
-                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                        }}>
-                          {exam.title}
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)',
+                            lineHeight: '1.3', marginBottom: '4px',
+                            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                          }}>
+                            {exam.title}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                            {exam.course?.name}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                          {exam.course?.name}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
+                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                             <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                               {new Date(exam.startDate || exam.createdAt).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}
+                             </span>
+                           </div>
+                          <Link href={`/exams`} style={{ fontSize: '11px', fontWeight: '700', color: 'var(--primary)', textDecoration: 'none' }}>
+                            View Details
+                          </Link>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9999b0" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                           <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                             {new Date(exam.startDate || exam.createdAt).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}
-                           </span>
-                         </div>
-                        <Link href={`/exams`} style={{ fontSize: '11px', fontWeight: '700', color: 'var(--primary)', textDecoration: 'none' }}>
-                          View Details
-                        </Link>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
