@@ -130,16 +130,13 @@ https://class.genziitian.in/download`
       const { Capacitor } = await import('@capacitor/core')
       if (Capacitor.isNativePlatform()) {
         const { Share } = await import('@capacitor/share')
-        const canShare = await Share.canShare()
-        if (canShare.value) {
-          await Share.share({
-            title: 'GenZ IITIAN',
-            text: shareText,
-            url: 'https://class.genziitian.in/download',
-            dialogTitle: 'Share GenZ IITIAN',
-          })
-          return
-        }
+        await Share.share({
+          title: 'GenZ IITIAN',
+          text: shareText,
+          url: 'https://class.genziitian.in/download',
+          dialogTitle: 'Share GenZ IITIAN',
+        })
+        return
       }
     } catch (e) {
       console.warn('Native share failed, falling back to Web Share:', e)
