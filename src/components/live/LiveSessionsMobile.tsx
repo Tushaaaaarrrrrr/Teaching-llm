@@ -193,11 +193,8 @@ export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* 1. Live now */}
         {visibleLive.length > 0 && (
-          <div>
-            <SectionHeader title="Live now" subtitle={`${visibleLive.length} session${visibleLive.length === 1 ? '' : 's'} happening`} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {visibleLive.map(s => <LiveSessionCard key={s.id} session={s} onUpgradeClick={onUpgradeClick} />)}
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {visibleLive.map(s => <LiveSessionCard key={s.id} session={s} onUpgradeClick={onUpgradeClick} />)}
           </div>
         )}
 
@@ -306,17 +303,7 @@ function LiveSessionCard({ session, onUpgradeClick }: { session: CourseEvent; on
         {session.title}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-        <div style={{
-          width: '24px', height: '24px', borderRadius: '50%',
-          background: 'var(--surface)', color: 'var(--danger)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '11px', fontWeight: 900, flexShrink: 0,
-        }}>{initial}</div>
-        <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'rgba(255,255,255,0.95)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {instructorName} <span style={{ opacity: 0.7, fontWeight: 600 }}>· {subject}</span>
-        </div>
-      </div>
+
 
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
         {normalizeMeetLink(session.meetLink) ? (

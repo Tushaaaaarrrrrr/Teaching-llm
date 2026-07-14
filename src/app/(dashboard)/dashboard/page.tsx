@@ -1289,28 +1289,18 @@ export default function DashboardPage() {
           )}
 
           {/* ── Row 2: Recent Lecture Viewed ── */}
-          <div className={isMobile ? '' : 'card'} style={isMobile ? { marginBottom: '24px' } : { padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isMobile ? '14px' : '18px', padding: isMobile ? '0 4px' : '0', gap: '12px' }}>
-              <div style={{ minWidth: 0 }}>
-                <h3 style={{ fontSize: isMobile ? '18px' : '16px', fontWeight: isMobile ? 900 : 700, color: 'var(--text-primary)', letterSpacing: isMobile ? '-0.02em' : 'normal', margin: 0 }}>
-                  Recent Lecture
-                </h3>
-              </div>
-              {recentViewedLecture && (
+          {recentViewedLecture && (
+            <div className={isMobile ? '' : 'card'} style={isMobile ? { marginBottom: '24px' } : { padding: '22px 20px', borderRadius: '22px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isMobile ? '14px' : '18px', padding: isMobile ? '0 4px' : '0', gap: '12px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{ fontSize: isMobile ? '18px' : '16px', fontWeight: isMobile ? 900 : 700, color: 'var(--text-primary)', letterSpacing: isMobile ? '-0.02em' : 'normal', margin: 0 }}>
+                    Recent Lecture
+                  </h3>
+                </div>
                 <Link href="/materials/recordings" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   View All →
                 </Link>
-              )}
-            </div>
-            {!recentViewedLecture ? (
-              <div style={{
-                padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px',
-                background: 'var(--surface)', borderRadius: '20px',
-                border: '1px solid rgba(15, 23, 42, 0.05)',
-              }}>
-                No recent lectures
               </div>
-            ) : (
               <div style={{ display: 'flex' }}>
                 {(() => {
                   const lec = recentViewedLecture.content
@@ -1390,8 +1380,8 @@ export default function DashboardPage() {
                   )
                 })()}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* ── Row 3: Action Buttons (Mobile) or Upcoming Assessments (Desktop) ── */}
           {isMobile ? (
