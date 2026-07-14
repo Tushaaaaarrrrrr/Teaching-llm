@@ -1,6 +1,8 @@
 'use client'
 
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { isCapacitorNative } from '@/lib/capacitor-push'
 
 interface Section {
   href: string
@@ -9,6 +11,8 @@ interface Section {
   icon: React.ReactNode
   gradient: string
   shadow: string
+  appGradient: string
+  appShadow: string
 }
 
 const SECTIONS: Section[] = [
@@ -18,8 +22,10 @@ const SECTIONS: Section[] = [
     subtitle: 'Schedule, classes & deadlines',
     gradient: 'linear-gradient(135deg, #4f46e5, #6366f1)',
     shadow: 'rgba(79, 70, 229, 0.25)',
+    appGradient: 'linear-gradient(135deg, #b58bfd, #703bf7)',
+    appShadow: 'rgba(112, 59, 247, 0.35)',
     icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
         <line x1="16" y1="2" x2="16" y2="6"/>
         <line x1="8" y1="2" x2="8" y2="6"/>
@@ -33,8 +39,10 @@ const SECTIONS: Section[] = [
     subtitle: 'Join live classes & recordings',
     gradient: 'linear-gradient(135deg, #ef4444, #f97316)',
     shadow: 'rgba(239, 68, 68, 0.25)',
+    appGradient: 'linear-gradient(135deg, #ff5c4d, #ff9575)',
+    appShadow: 'rgba(255, 92, 77, 0.35)',
     icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="23 7 16 12 23 17 23 7"/>
         <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
       </svg>
@@ -46,9 +54,11 @@ const SECTIONS: Section[] = [
     subtitle: 'Notes, materials & study aids',
     gradient: 'linear-gradient(135deg, #0d9488, #10b981)',
     shadow: 'rgba(13, 148, 136, 0.25)',
+    appGradient: 'linear-gradient(135deg, #32e3a8, #009688)',
+    appShadow: 'rgba(0, 150, 136, 0.35)',
     icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
       </svg>
     ),
   },
@@ -58,8 +68,10 @@ const SECTIONS: Section[] = [
     subtitle: 'Chat with peers & instructors',
     gradient: 'linear-gradient(135deg, #db2777, #9333ea)',
     shadow: 'rgba(219, 39, 119, 0.25)',
+    appGradient: 'linear-gradient(135deg, #f43f5e, #a855f7)',
+    appShadow: 'rgba(244, 63, 94, 0.35)',
     icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
         <circle cx="9" cy="7" r="4"/>
         <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -73,8 +85,10 @@ const SECTIONS: Section[] = [
     subtitle: 'Ratings & student reviews',
     gradient: 'linear-gradient(135deg, #f59e0b, #eab308)',
     shadow: 'rgba(245, 158, 11, 0.25)',
+    appGradient: 'linear-gradient(135deg, #ffd000, #ff9100)',
+    appShadow: 'rgba(255, 145, 0, 0.35)',
     icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
       </svg>
     ),
@@ -85,8 +99,10 @@ const SECTIONS: Section[] = [
     subtitle: 'Latest news & updates',
     gradient: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
     shadow: 'rgba(59, 130, 246, 0.25)',
+    appGradient: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+    appShadow: 'rgba(29, 78, 216, 0.35)',
     icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
       </svg>
@@ -101,6 +117,108 @@ const ChevronRight = () => (
 )
 
 export default function AcademicsPage() {
+  const [isCapacitor, setIsCapacitor] = useState<boolean>(false)
+
+  useEffect(() => {
+    setIsCapacitor(isCapacitorNative())
+  }, [])
+
+  if (isCapacitor) {
+    return (
+      <div className="page-container fade-in" style={{ paddingBottom: '24px' }}>
+        <style dangerouslySetInnerHTML={{__html: `
+          .academic-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding: 8px 4px;
+            margin-top: 10px;
+          }
+          .academic-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 12px;
+            border-radius: 28px;
+            background: #ffffff;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.025), 0 2px 4px rgba(0, 0, 0, 0.015);
+            text-decoration: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            border: 1px solid rgba(0, 0, 0, 0.01);
+          }
+          .academic-card:active {
+            transform: scale(0.96);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+          }
+          :root[data-theme="dark"] .academic-card {
+            background: var(--surface-2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.01);
+          }
+          .academic-card-icon-wrap {
+            width: 68px;
+            height: 68px;
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            margin-bottom: 14px;
+            flex-shrink: 0;
+          }
+          .academic-card-title {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: #0c1a30;
+            text-align: center;
+            line-height: 1.25;
+            letter-spacing: -0.01em;
+            padding: 0 4px;
+          }
+          :root[data-theme="dark"] .academic-card-title {
+            color: var(--text-primary);
+          }
+        `}} />
+
+        <div style={{
+          marginTop: '12px',
+          marginBottom: '20px',
+          padding: '0 4px',
+        }}>
+          <h1 style={{ 
+            fontSize: '32px', 
+            fontWeight: 800, 
+            color: 'var(--text-primary)', 
+            margin: 0, 
+            letterSpacing: '-0.03em'
+          }}>
+            Academics
+          </h1>
+        </div>
+
+        <div className="academic-grid">
+          {SECTIONS.map(s => (
+            <Link key={s.href} href={s.href} className="academic-card">
+              <div 
+                className="academic-card-icon-wrap" 
+                style={{ 
+                  background: s.appGradient,
+                  boxShadow: `0 8px 20px ${s.appShadow}`
+                }}
+              >
+                {s.icon}
+              </div>
+              <div className="academic-card-title">
+                {s.title}
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="page-container fade-in" style={{ paddingBottom: '24px' }}>
       <div style={{

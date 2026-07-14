@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
-import { getISTDayBoundaries, getEventStatus } from '@/lib/date-utils'
+import { getISTDayBoundaries, getEventStatus, formatIST, formatISTDate } from '@/lib/date-utils'
+
 
 type SessionRole = {
   userId: string
@@ -112,6 +113,8 @@ export async function getTodaySessionSnapshots(session: SessionRole) {
       description: snapshot.description,
       startTime: snapshot.startTime.toISOString(),
       endTime: snapshot.endTime.toISOString(),
+      date: formatISTDate(snapshot.startTime),
+      time: formatIST(snapshot.startTime, { hour: 'numeric', minute: '2-digit', hour12: true }),
       meetLink: effectiveMeetLink,
       status: getEventStatus(snapshot.startTime, snapshot.endTime, snapshot.status),
       manualStatus: snapshot.status,

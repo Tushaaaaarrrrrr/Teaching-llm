@@ -76,7 +76,7 @@ export default function MyCoursesMobile() {
             My Courses
           </h1>
           <p style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '4px' }}>
-            {enrolledCount} enrolled · pick up where you left off
+            {enrolledCount} enrolled
           </p>
         </div>
         <button

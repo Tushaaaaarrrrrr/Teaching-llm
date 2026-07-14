@@ -263,14 +263,6 @@ export default function LivePage() {
                   </span>
                 )}
 
-                {isNextUpcoming && !isLive && (
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '50px',
-                    background: 'rgba(54,54,232,0.08)', color: 'var(--primary)', fontSize: '10px', fontWeight: '700', letterSpacing: '0.04em', flexShrink: 0,
-                  }}>
-                    UP NEXT
-                  </span>
-                )}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

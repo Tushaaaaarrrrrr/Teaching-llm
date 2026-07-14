@@ -1141,9 +1141,6 @@ export default function DashboardPage() {
                   <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
                     Upcoming Session
                   </h3>
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Your next live class
-                  </div>
                 </div>
                 <Link href="/live" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   View All →
@@ -1188,7 +1185,7 @@ export default function DashboardPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: 800, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
                       <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--danger)', animation: 'redLivePulse 1.4s infinite' }} />
-                      LIVE NOW · {frontSession.time}
+                      LIVE NOW
                     </div>
                     <div style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {frontSession.title}
@@ -1261,7 +1258,7 @@ export default function DashboardPage() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
-                      UP NEXT · {upNextSessions[0].time}
+                      {upNextSessions[0].time}
                     </div>
                     <div style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {upNextSessions[0].title}
@@ -1298,11 +1295,6 @@ export default function DashboardPage() {
                 <h3 style={{ fontSize: isMobile ? '18px' : '16px', fontWeight: isMobile ? 900 : 700, color: 'var(--text-primary)', letterSpacing: isMobile ? '-0.02em' : 'normal', margin: 0 }}>
                   Recent Lecture
                 </h3>
-                {isMobile && (
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Pick up where you left off
-                  </div>
-                )}
               </div>
               {recentViewedLecture && (
                 <Link href="/materials/recordings" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
@@ -1408,11 +1400,6 @@ export default function DashboardPage() {
                 <h3 style={{ fontSize: isMobile ? '18px' : '16px', fontWeight: isMobile ? 900 : 700, color: 'var(--text-primary)', letterSpacing: isMobile ? '-0.02em' : 'normal', margin: 0 }}>
                   Upcoming Assessments
                 </h3>
-                {isMobile && (
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Tests scheduled for you
-                  </div>
-                )}
               </div>
               <Link href="/exams" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 View All →

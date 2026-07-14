@@ -98,20 +98,20 @@ export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) 
             height: '40px',
             borderRadius: '50%',
             background: 'var(--surface)',
-            border: 'none',
+            border: '1px solid rgba(15, 23, 42, 0.06)',
             cursor: 'pointer',
-            boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
+            boxShadow: '0 8px 20px -6px rgba(15, 23, 42, 0.12), 0 2px 6px -2px rgba(15, 23, 42, 0.04)',
             color: 'var(--text-secondary)',
             flexShrink: 0,
             transition: 'all 0.2s',
           }}
           onMouseEnter={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 14px -4px rgba(15, 23, 42, 0.15)'
           }}
           onMouseLeave={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
-            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 20px -6px rgba(15, 23, 42, 0.12), 0 2px 6px -2px rgba(15, 23, 42, 0.04)'
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -148,11 +148,12 @@ export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) 
           aria-label="Search"
           style={{
             width: '40px', height: '40px', borderRadius: '50%',
-            background: showSearch ? 'var(--primary)' : '#ffffff',
+            background: showSearch ? 'var(--primary)' : 'var(--surface)',
             boxShadow: showSearch
               ? '0 6px 14px rgba(54,54,232,0.30)'
-              : '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
-            border: 'none', cursor: 'pointer',
+              : '0 8px 20px -6px rgba(15, 23, 42, 0.12), 0 2px 6px -2px rgba(15, 23, 42, 0.04)',
+            border: showSearch ? 'none' : '1px solid rgba(15, 23, 42, 0.06)',
+            cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             transition: 'all 0.2s',
           }}
@@ -169,19 +170,20 @@ export default function LiveSessionsMobile({ sessions, onUpgradeClick }: Props) 
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search sessions, courses, instructors"
+            placeholder="Search sessions, courses, instructors..."
             autoFocus
             style={{
               width: '100%',
-              padding: '11px 16px',
-              borderRadius: '14px',
-              border: 'none',
-              fontSize: '13.5px',
+              padding: '12px 18px',
+              borderRadius: '16px',
+              border: '1px solid rgba(15, 23, 42, 0.08)',
+              fontSize: '14px',
               fontFamily: 'inherit',
               outline: 'none',
               color: 'var(--text-primary)',
               background: 'var(--surface)',
-              boxShadow: 'inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light)',
+              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
+              transition: 'all 0.2s',
             }}
           />
         </div>
@@ -415,63 +417,38 @@ function UpcomingSessionRow({ session, slotIdx }: { session: CourseEvent; slotId
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: '14px',
-      padding: '14px 14px',
+      padding: '14px 16px 14px 12px',
       borderRadius: '20px',
       background: 'var(--surface)',
-      boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.15), 0 2px 6px -2px rgba(15, 23, 42, 0.04)',
+      boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.12), 0 2px 6px -2px rgba(15, 23, 42, 0.04)',
       border: '1px solid rgba(15, 23, 42, 0.05)',
+      borderLeft: '4.5px solid ' + slot.fg,
     }}>
       <div style={{
-        width: '64px', minHeight: '54px',
-        borderRadius: '14px',
+        width: '68px', minHeight: '52px',
+        borderRadius: '12px',
         background: slot.bg,
         color: slot.fg,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         gap: '2px', flexShrink: 0,
       }}>
         <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '-0.02em' }}>{start}</div>
-        <div style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.08em' }}>
-          {isToday ? 'TODAY' : new Date(session.startTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()}
-        </div>
+        {!isToday && (
+          <div style={{ fontSize: '8.5px', fontWeight: 800, letterSpacing: '0.04em', opacity: 0.85 }}>
+            {new Date(session.startTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()}
+          </div>
+        )}
       </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+      <div style={{ flex: 1, minWidth: 0, paddingLeft: '2px' }}>
+        <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.3, letterSpacing: '-0.01em' }}>
           {session.title}
         </div>
-        <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {subject} · {instructor}
+        <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {subject} <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>· {instructor}</span>
         </div>
       </div>
-
-      <RemindButton />
     </div>
-  )
-}
-
-function RemindButton() {
-  const [reminded, setReminded] = useState(false)
-  return (
-    <button
-      onClick={() => setReminded(r => !r)}
-      style={{
-        padding: '8px 14px',
-        borderRadius: '50px',
-        border: reminded ? 'none' : '1.5px solid var(--border)',
-        background: reminded ? 'var(--primary)' : '#ffffff',
-        color: reminded ? '#ffffff' : 'var(--primary)',
-        fontSize: '11.5px',
-        fontWeight: 800,
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        whiteSpace: 'nowrap',
-        flexShrink: 0,
-        transition: 'all 0.2s',
-        boxShadow: reminded ? '0 6px 14px rgba(54,54,232,0.30)' : 'none',
-      }}
-    >
-      {reminded ? 'Reminding' : 'Remind me'}
-    </button>
   )
 }
 
@@ -497,30 +474,31 @@ function RecordedSessionRow({ session }: { session: CourseEvent }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: '14px',
-      padding: '14px',
+      padding: '14px 16px 14px 12px',
       borderRadius: '20px',
       background: 'var(--surface)',
-      boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.15), 0 2px 6px -2px rgba(15, 23, 42, 0.04)',
+      boxShadow: '0 10px 24px -14px rgba(15, 23, 42, 0.12), 0 2px 6px -2px rgba(15, 23, 42, 0.04)',
       border: '1px solid rgba(15, 23, 42, 0.05)',
+      borderLeft: '4.5px solid var(--accent)',
     }}>
       <div style={{
-        width: '48px', height: '48px',
-        borderRadius: '14px',
-        background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+        width: '44px', height: '44px',
+        borderRadius: '12px',
+        background: 'var(--primary-light)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#ffffff', flexShrink: 0,
-        boxShadow: '0 6px 14px rgba(54,54,232,0.35)',
+        color: 'var(--accent)', flexShrink: 0,
+        boxShadow: '0 4px 10px rgba(99,102,241,0.15)',
       }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-          <polygon points="5 3 19 12 5 21 5 3" />
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="6 4 20 12 6 20 6 4" />
         </svg>
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ flex: 1, minWidth: 0, paddingLeft: '2px' }}>
+        <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
           {session.title}
         </div>
-        <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
-          {subject} · {instructor} · {date}
+        <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '4px' }}>
+          {subject} <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>· {instructor} · {date}</span>
         </div>
       </div>
     </div>
