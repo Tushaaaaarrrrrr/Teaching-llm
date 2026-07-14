@@ -21,14 +21,12 @@ export default function CapacitorBridge() {
       const [
         { App },
         { StatusBar, Style },
-        { SplashScreen },
         { Keyboard, KeyboardResize, KeyboardStyle },
         { PushNotifications },
         { ScreenOrientation }
       ] = await Promise.all([
         import('@capacitor/app'),
         import('@capacitor/status-bar'),
-        import('@capacitor/splash-screen'),
         import('@capacitor/keyboard'),
         import('@capacitor/push-notifications'),
         import('@capacitor/screen-orientation'),
@@ -62,10 +60,6 @@ export default function CapacitorBridge() {
       } catch (e) {
         console.warn('ScreenOrientation locking to portrait failed', e)
       }
-
-      try {
-        await SplashScreen.hide({ fadeOutDuration: 400 })
-      } catch (e) { console.warn('SplashScreen.hide failed', e) }
 
       const backHandle = await App.addListener('backButton', () => {
         if (window.history.length > 1) {

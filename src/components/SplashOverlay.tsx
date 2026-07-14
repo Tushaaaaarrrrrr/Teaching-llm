@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLocalCachedAsset } from '@/hooks/useLocalCachedAsset'
 
 export default function SplashOverlay() {
@@ -9,7 +9,9 @@ export default function SplashOverlay() {
   const [step, setStep] = useState(1) // 1 = Logo & Progress Bar, 2 = Mascot Image & Skip Button (native only)
   const [progress, setProgress] = useState(0)
   const [isNative, setIsNative] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
+  const hasHiddenRef = useRef(false)
   const logoSrc = useLocalCachedAsset('/mobile-login-logo.png')
   const splashSrc = useLocalCachedAsset('/splash-screen.png')
 
@@ -19,6 +21,53 @@ export default function SplashOverlay() {
     const w = window as any
     setIsNative(!!(w?.Capacitor?.isNativePlatform?.() || w?.Capacitor?.isNative))
   }, [])
+
+  // Safely check image loading completion (including cache hits)
+  useEffect(() => {
+    if (!mounted) return
+    const img = new Image()
+    img.src = logoSrc
+    if (img.complete) {
+      setImageLoaded(true)
+    } else {
+      img.onload = () => setImageLoaded(true)
+      img.onerror = () => setImageLoaded(true) // Proceed if load fails to prevent freeze
+    }
+  }, [mounted, logoSrc])
+
+  // Failsafe timer: Force loading state to true after 5 seconds to prevent app lockups
+  useEffect(() => {
+    if (!mounted) return
+    const timer = setTimeout(() => {
+      console.warn('[SplashOverlay] Failsafe timer reached. Forcing imageLoaded state.')
+      setImageLoaded(true)
+    }, 5000)
+
+    return () => clearTimeout(timer)
+  }, [mounted])
+
+  // Synchronized Handoff: Dismiss native splash screen once React first frame is painted
+  useEffect(() => {
+    if (!mounted || !imageLoaded) return
+    if (!isNative) return
+
+    if (hasHiddenRef.current) return
+    hasHiddenRef.current = true
+
+    // Double requestAnimationFrame ensures that the React DOM elements (logo + loader)
+    // are fully layouted and painted to the Chromium view buffer before dismissing the native dialog.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(async () => {
+        try {
+          const { SplashScreen } = await import('@capacitor/splash-screen')
+          await SplashScreen.hide({ fadeOutDuration: 400 })
+          console.log('[SplashOverlay] Native splash screen dismissed successfully.')
+        } catch (err) {
+          console.warn('[SplashOverlay] Failed to dismiss native splash screen:', err)
+        }
+      })
+    })
+  }, [mounted, imageLoaded, isNative])
 
   // Step 1: Loading Progress Bar (1.5 seconds)
   useEffect(() => {
@@ -95,6 +144,7 @@ export default function SplashOverlay() {
           <img
             src={logoSrc}
             alt="GenZ IITIAN"
+            onLoad={() => setImageLoaded(true)}
             style={{
               width: '160px',
               height: 'auto',

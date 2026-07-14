@@ -4,7 +4,7 @@ android {
     namespace = "com.teaching.lms"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.teaching.lms"
+        applicationId "com.teaching.lms.test"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 5
