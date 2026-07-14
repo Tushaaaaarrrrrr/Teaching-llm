@@ -2444,7 +2444,7 @@ export default function CommunityPage() {
                 This community is currently disabled.
               </div>
             ) : (
-            <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)' }}>
+            <div style={{ padding: '12px 16px', borderTop: '1.5px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
               {/* Reply Preview */}
               {replyingTo && (
                 <div style={{ 
