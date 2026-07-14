@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useUserData } from '@/components/UserDataProvider'
+import { useLocalCachedAsset } from '@/hooks/useLocalCachedAsset'
 
 interface NavItem {
   href: string
@@ -321,6 +322,7 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 export default function Sidebar({ userRole, userName, userEmail }: SidebarProps) {
+  const logoSrc = useLocalCachedAsset('/mobile-login-logo.png')
   const pathname = usePathname()
   const router = useRouter()
   const navRef = useRef<HTMLDivElement>(null)
@@ -411,7 +413,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           boxShadow: 'var(--shadow-lg)',
         }}>
           <img
-            src="/mobile-login-logo.png"
+            src={logoSrc}
             alt="GenZ IITIAN Logo"
             className="sidebar-logo-img"
             style={{

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLocalCachedAsset } from '@/hooks/useLocalCachedAsset'
 
 interface OnboardingSlide {
   eyebrow: string
@@ -235,6 +236,7 @@ function OnboardingView({
    LOGIN VIEW (after onboarding) — light neumorphic
    ───────────────────────────────────────────────────────── */
 function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
+  const logoSrc = useLocalCachedAsset('/mobile-login-logo.png')
   const router = useRouter()
   const [gError, setGError] = useState('')
   const [gLoading, setGLoading] = useState(false)
@@ -449,7 +451,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           padding: '10px',
         }}>
           <img
-            src="/mobile-login-logo.png"
+            src={logoSrc}
             alt="GenZ IITian"
             className="mobile-login-logo-img"
             style={{ width: '100%', height: '100%', objectFit: 'contain' }}

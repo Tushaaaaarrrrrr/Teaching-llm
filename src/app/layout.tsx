@@ -5,6 +5,7 @@ import CsrfProvider from '@/components/CsrfProvider'
 import MobileBlocker from '@/components/layout/MobileBlocker'
 import CapacitorBridge from '@/components/CapacitorBridge'
 import AppUpdater from '@/components/AppUpdater'
+import SplashOverlay from '@/components/SplashOverlay'
 import { PostHogProvider } from '@/components/PostHogProvider'
 import { ThemeProvider } from '@/components/ThemeProvider'
 
@@ -63,6 +64,7 @@ export default function RootLayout({
             <MobileBlocker />
             <CapacitorBridge />
             <AppUpdater />
+            <SplashOverlay />
             <CsrfProvider>{children}</CsrfProvider>
           </ThemeProvider>
         </PostHogProvider>

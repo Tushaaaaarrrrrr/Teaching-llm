@@ -4,6 +4,7 @@ import { useState, Suspense, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import MobileLoginExperience from '@/components/auth/MobileLoginExperience'
 import posthog from 'posthog-js'
+import { useLocalCachedAsset } from '@/hooks/useLocalCachedAsset'
 
 function PoliciesDropdown({ 
   links, 
@@ -143,6 +144,7 @@ function PoliciesDropdown({
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const logoSrc = useLocalCachedAsset('/mobile-login-logo.png')
   const [showRefundPolicy, setShowRefundPolicy] = useState(false)
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const [showTermsConditions, setShowTermsConditions] = useState(false)
@@ -203,7 +205,7 @@ function LoginContent() {
             cursor: 'default',
           }}>
             <img 
-              src="/mobile-login-logo.png" 
+              src={logoSrc} 
               alt="GenZ IITIAN Logo" 
               style={{ 
                 width: '100%',
