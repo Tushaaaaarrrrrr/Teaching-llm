@@ -210,3 +210,67 @@ export async function syncUserTopicSubscriptions(userId: string) {
     console.error('[FCM-Topics] Error syncing user topic subscriptions:', err)
   }
 }
+
+/**
+ * One-time background sync for all existing device tokens in the database.
+ */
+export async function syncAllExistingTopics() {
+  if (!firebaseAdmin) {
+    console.warn('Firebase Admin not initialised — skipping FCM topic migration')
+    return
+  }
+
+  try {
+    console.log('[FCM-Topics] Starting migration of all existing active tokens to topics...')
+    const tokens = await prisma.fcmDeviceToken.findMany({
+      select: { userId: true, token: true }
+    })
+
+    if (tokens.length === 0) {
+      console.log('[FCM-Topics] No tokens in database to migrate.')
+      return
+    }
+
+    // Group tokens by userId
+    const userTokensMap: Record<string, string[]> = {}
+    for (const t of tokens) {
+      if (!userTokensMap[t.userId]) {
+        userTokensMap[t.userId] = []
+      }
+      userTokensMap[t.userId].push(t.token)
+    }
+
+    const userIds = Object.keys(userTokensMap)
+    console.log(`[FCM-Topics] Found ${userIds.length} users with tokens. Syncing...`)
+
+    for (const userId of userIds) {
+      const userTokens = userTokensMap[userId]
+
+      const [user, enrollments] = await Promise.all([
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: { role: true }
+        }),
+        prisma.enrollment.findMany({
+          where: { userId },
+          select: { courseId: true }
+        })
+      ])
+
+      if (!user) continue
+
+      // 1. Subscribe to each enrolled course topic
+      for (const enrollment of enrollments) {
+        await firebaseAdmin.messaging().subscribeToTopic(userTokens, `course_${enrollment.courseId}`)
+      }
+
+      // 2. Subscribe to student announcements if role is STUDENT
+      if (user.role === 'STUDENT') {
+        await firebaseAdmin.messaging().subscribeToTopic(userTokens, 'student_announcements')
+      }
+    }
+    console.log('[FCM-Topics] Migration completed successfully!')
+  } catch (err) {
+    console.error('[FCM-Topics] Error during syncAllExistingTopics migration:', err)
+  }
+}

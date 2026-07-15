@@ -799,6 +799,7 @@ model UpdateSystemSettings {
   customEnabled      Boolean @default(true)
   maintenanceMode    Boolean @default(false)
   lastDailyNotifDate String?
+  isTopicMigrationDone Boolean @default(false)
 }
 
 model HelpCardConfig {

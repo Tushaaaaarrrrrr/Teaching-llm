@@ -4,6 +4,7 @@ import { processProgressQueue, cleanupOldProgressQueue } from '@/lib/progress-pr
 import { processScheduledCampaigns } from '@/lib/campaign-processor'
 import { processScheduledClassStartAlerts, sendDailyScheduleNotification, processPendingLectureAlerts } from '@/lib/system-notifications'
 import { prisma } from '@/lib/db'
+import { syncAllExistingTopics } from '@/lib/fcm'
 
 // This endpoint should be called by a cron job every 10 seconds
 // Configure in vercel.json or use an external cron service
@@ -42,6 +43,25 @@ export async function POST(req: Request) {
     await processPendingLectureAlerts().catch((err) =>
       console.error('[Sync Queue Scheduler] Error processing pending lecture alerts:', err)
     )
+
+    // One-time FCM topics migration for existing database device tokens
+    try {
+      const settings = await prisma.updateSystemSettings.findUnique({
+        where: { id: 'singleton' }
+      })
+      if (!settings?.isTopicMigrationDone) {
+        console.log('[Cron] Initiating one-time FCM topics migration...')
+        await syncAllExistingTopics()
+        await prisma.updateSystemSettings.upsert({
+          where: { id: 'singleton' },
+          update: { isTopicMigrationDone: true },
+          create: { id: 'singleton', isTopicMigrationDone: true },
+        })
+        console.log('[Cron] FCM topics migration completed and registered in singleton settings!')
+      }
+    } catch (err) {
+      console.error('[Cron] Error running FCM topics migration:', err)
+    }
 
     // Trigger daily 1 PM IST schedule notifications
     try {
