@@ -1590,7 +1590,7 @@ export default function CommunityPage() {
         flexDirection: 'column', 
         overflow: 'hidden', 
         minWidth: 0,
-        ...(isMobile ? { height: '100vh', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, background: 'var(--surface)' } : {}),
+        ...(isMobile ? { height: '100dvh', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, background: 'var(--surface)', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' } : {}),
       }}>
         {!selectedClass ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', color: 'var(--text-muted)' }}>
@@ -1740,7 +1740,7 @@ export default function CommunityPage() {
                 </div>
               </div>
             ) : (
-              <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', flexWrap: 'wrap' }}>
+              <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', flexWrap: 'wrap', flexShrink: 0 }}>
                 {isMobile && (
                   <button
                     onClick={() => setSelectedClass(null)}
