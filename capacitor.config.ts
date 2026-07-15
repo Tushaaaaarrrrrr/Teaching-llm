@@ -28,6 +28,9 @@ const config: CapacitorConfig = {
       resize: KeyboardResize.Body,
       style: KeyboardStyle.Light,
     },
+    CapacitorCookies: {
+      enabled: true,
+    },
   },
 };
 

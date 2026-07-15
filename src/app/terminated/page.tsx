@@ -6,6 +6,20 @@ export default function TerminatedPage() {
   const router = useRouter()
 
   async function handleLogout() {
+    try {
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.isNativePlatform()) {
+        const { SocialLogin } = await import('@capgo/capacitor-social-login')
+        await SocialLogin.logout({ provider: 'google' }).catch(() => {})
+        
+        const { CapacitorCookies } = await import('@capacitor/core')
+        await CapacitorCookies.clearCookies({ url: 'https://class.genziitian.in' }).catch(() => {})
+        await CapacitorCookies.clearCookies({ url: window.location.origin }).catch(() => {})
+      }
+    } catch (e) {
+      console.error('Error during native logout cleanup:', e)
+    }
+
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
     router.refresh()
