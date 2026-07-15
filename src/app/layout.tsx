@@ -48,6 +48,8 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
+import SWRProvider from '@/components/SWRProvider'
+
 export default function RootLayout({
   children,
 }: {
@@ -60,13 +62,15 @@ export default function RootLayout({
       </head>
       <body>
         <PostHogProvider>
-          <ThemeProvider>
-            <MobileBlocker />
-            <CapacitorBridge />
-            <AppUpdater />
-            <SplashOverlay />
-            <CsrfProvider>{children}</CsrfProvider>
-          </ThemeProvider>
+          <SWRProvider>
+            <ThemeProvider>
+              <MobileBlocker />
+              <CapacitorBridge />
+              <AppUpdater />
+              <SplashOverlay />
+              <CsrfProvider>{children}</CsrfProvider>
+            </ThemeProvider>
+          </SWRProvider>
         </PostHogProvider>
       </body>
     </html>

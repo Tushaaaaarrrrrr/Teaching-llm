@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { clearSWRCache } from '@/lib/cache'
 
 export default function TerminatedPage() {
   const router = useRouter()
@@ -20,6 +21,7 @@ export default function TerminatedPage() {
       console.error('Error during native logout cleanup:', e)
     }
 
+    clearSWRCache()
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
     router.refresh()

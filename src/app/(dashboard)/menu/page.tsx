@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import useSWR from 'swr'
 import { getDefaultAvatar } from '@/lib/avatar'
+import { clearSWRCache } from '@/lib/cache'
 
 interface MenuItem {
   href: string
@@ -117,6 +118,7 @@ export default function MobileMenuPage() {
       console.error('Error during native logout cleanup:', e)
     }
 
+    clearSWRCache()
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
     router.refresh()

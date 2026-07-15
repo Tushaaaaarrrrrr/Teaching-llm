@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useUserData } from '@/components/UserDataProvider'
 import { useLocalCachedAsset } from '@/hooks/useLocalCachedAsset'
+import { clearSWRCache } from '@/lib/cache'
 
 interface NavItem {
   href: string
@@ -398,6 +399,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
       console.error('Error during native logout cleanup:', e)
     }
 
+    clearSWRCache()
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
     router.refresh()

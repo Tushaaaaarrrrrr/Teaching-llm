@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useUserData } from '@/components/UserDataProvider'
 import { getDefaultAvatar } from '@/lib/avatar'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { clearSWRCache } from '@/lib/cache'
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -326,6 +327,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
       console.error('Error during native logout cleanup:', e)
     }
 
+    clearSWRCache()
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
     router.refresh()
