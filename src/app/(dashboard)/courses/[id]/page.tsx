@@ -118,10 +118,7 @@ export default function CourseDetailPage() {
         setActiveExam(active || null)
       }
 
-      // Expand all topics by default
-      if (Array.isArray(topicsData) && topicsData.length > 0) {
-        setExpandedTopics(new Set(topicsData.map((t: Topic) => t.id)))
-      }
+      // Topics start collapsed — user expands on click
     } catch (e) {
       console.error(e)
     } finally {
