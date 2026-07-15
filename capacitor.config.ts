@@ -2,13 +2,12 @@ import type { CapacitorConfig } from '@capacitor/cli';
 import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
-  appId: 'com.teaching.lms',
-  appName: 'GenZ IITIAN',
+  appId: 'com.teaching.lms.test',
+  appName: 'GenZ IITIAN Test',
   webDir: 'public',
   server: {
-    url: 'https://class.genziitian.in',
+    url: 'https://teaching-llm.onrender.com',
     androidScheme: 'https',
-    errorPath: 'offline.html',
   },
   plugins: {
     PushNotifications: {
@@ -28,9 +27,6 @@ const config: CapacitorConfig = {
     Keyboard: {
       resize: KeyboardResize.Body,
       style: KeyboardStyle.Light,
-    },
-    CapacitorCookies: {
-      enabled: true,
     },
   },
 };
