@@ -51,6 +51,23 @@ export async function registerCapacitorPush(): Promise<boolean> {
       console.log('[CapacitorPush] Permission already granted.')
     }
 
+    if (permStatus.receive === 'granted') {
+      if (typeof window !== 'undefined') {
+        const cachedToken = localStorage.getItem('last_fcm_token')
+        if (cachedToken) {
+          console.log('[CapacitorPush] Syncing cached FCM token with backend:', cachedToken)
+          fetch('/api/fcm/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: cachedToken,
+              platform: 'ANDROID',
+            }),
+          }).catch(err => console.error('[CapacitorPush] Failed to sync cached FCM token:', err))
+        }
+      }
+    }
+
     if (permStatus.receive !== 'granted') {
       console.warn(`[CapacitorPush] Push notification permission not granted after request. Status: ${permStatus.receive}`)
       return false
