@@ -738,7 +738,8 @@ export async function processScheduledClassStartAlerts() {
               ctaLink: ctaLink,
               tag: `alert_start_${event.id}`,
               importance: 'high',
-              sound: 'default',
+              sound: 'class_start_tone',
+              channelId: 'class_start_alerts',
             })
             updateData.notifiedAtStart = true
             updateData.notifiedStart = true // Keep compatibility with existing notifiedStart field

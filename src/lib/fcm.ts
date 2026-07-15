@@ -11,7 +11,8 @@ interface FcmPayload {
   ctaText?: string
   ctaLink?: string
   importance?: 'high' | 'default'
-  sound?: 'default' | 'none'
+  sound?: 'default' | 'none' | string
+  channelId?: string
 }
 
 /**
@@ -32,7 +33,8 @@ export async function sendFcmToUsers(userIds: string[], payload: FcmPayload) {
 
   const isSilent = payload.importance === 'default'
   const isMuted  = payload.sound === 'none'
-  const channelId = isSilent ? 'silent_updates' : 'class_updates'
+  const hasCustomSound = payload.sound && payload.sound !== 'default' && payload.sound !== 'none'
+  const channelId = payload.channelId || (isSilent ? 'silent_updates' : 'class_updates')
 
   const message = {
     notification: {
@@ -53,10 +55,18 @@ export async function sendFcmToUsers(userIds: string[], payload: FcmPayload) {
         icon: 'ic_launcher',
         color: '#4F46E5',
         channelId,
-        defaultSound: !isMuted,
+        defaultSound: !isMuted && !hasCustomSound,
+        sound: hasCustomSound ? payload.sound : (isMuted ? '' : 'default'),
         defaultVibrateTimings: !isSilent,
         notificationPriority: (isSilent ? 'PRIORITY_DEFAULT' : 'PRIORITY_MAX') as 'PRIORITY_DEFAULT' | 'PRIORITY_MAX',
         ...(payload.imageUrl ? { image: payload.imageUrl } : {}),
+      },
+    },
+    apns: {
+      payload: {
+        aps: {
+          sound: hasCustomSound ? `${payload.sound}.mp3` : (isMuted ? '' : 'default'),
+        },
       },
     },
   }

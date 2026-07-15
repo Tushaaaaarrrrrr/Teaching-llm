@@ -87,6 +87,17 @@ export async function registerCapacitorPush(): Promise<boolean> {
           visibility: 1, // 1 = Public
           vibration: true,
         })
+
+        // Class Start channel with custom sound
+        await PushNotifications.createChannel({
+          id: 'class_start_alerts',
+          name: 'Class Live Alerts',
+          description: 'Urgent custom sound alerts when class goes live',
+          importance: 5, // 5 = MAX/HIGH importance
+          sound: 'class_start_tone', // matches android/app/src/main/res/raw/class_start_tone.mp3
+          visibility: 1,
+          vibration: true,
+        })
         
         // Silent priority channel (Tray only)
         await PushNotifications.createChannel({
