@@ -81,11 +81,9 @@ export async function PUT(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: Record<string, any> = {}
     if (isStartTimeChanged || isStatusChangedToRescheduled) {
-      data.notified30mBefore = false
-      data.notified10mBefore = false
+      data.notified15mBefore = false
       data.notifiedAtStart = false
       data.notifiedStart = false
-      data.notified10mAfter = false
     }
     if (title !== undefined) data.title = title
     if (description !== undefined) data.description = description || null
@@ -156,11 +154,9 @@ export async function PUT(
           }
 
           if (isStartTimeChanged || isStatusChangedToRescheduled || startShiftMs !== 0) {
-            updateData.notified30mBefore = false
-            updateData.notified10mBefore = false
+            updateData.notified15mBefore = false
             updateData.notifiedAtStart = false
             updateData.notifiedStart = false
-            updateData.notified10mAfter = false
           }
 
           if (event.id === chainRootId) {

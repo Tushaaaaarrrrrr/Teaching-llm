@@ -56,56 +56,114 @@ export async function sendNewLectureNotification(
   lectureTitle: string
 ) {
   try {
-    const [course, enrollments, managerIds] = await Promise.all([
-      prisma.course.findUnique({
-        where: { id: courseId },
-        select: { name: true },
-      }),
-      prisma.enrollment.findMany({
-        where: { courseId },
-        select: { userId: true },
-      }),
-      getManagerIds(),
-    ])
+    await prisma.lectureNotificationQueue.create({
+      data: {
+        courseId,
+        title: lectureTitle,
+      },
+    })
+    console.log(`[system-notifications] Queued lecture notification for course ${courseId}: "${lectureTitle}"`)
+  } catch (err) {
+    console.error('[system-notifications] Error queueing lecture notification:', err)
+  }
+}
 
-    const recipientIds = Array.from(new Set([
-      ...enrollments.map((e) => e.userId),
-      ...managerIds
-    ]))
-    if (recipientIds.length === 0) return
+/**
+ * Processes batched/debounced lecture notifications in the queue.
+ * Dispatches a notification for a course only if the latest upload was >= 15 minutes ago.
+ */
+export async function processPendingLectureAlerts() {
+  try {
+    const now = new Date()
+    const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000)
 
-    const title = `New Lecture Added`
-    const body = `"${lectureTitle}" has been added to ${course?.name || 'your class'}.`
-
-    // 1. Create database notifications in bulk
-    await prisma.notification.createMany({
-      data: recipientIds.map((userId) => ({
-        userId,
-        title,
-        content: body,
-        type: 'INFO',
-      })),
+    // 1. Get all entries in the queue
+    const queuedEntries = await prisma.lectureNotificationQueue.findMany({
+      orderBy: { createdAt: 'asc' },
     })
 
-    // 2. Notify connected client via SSE
-    recipientIds.forEach((userId) => sseEmitter.emit(`user:${userId}:notify`))
+    if (queuedEntries.length === 0) return
 
-    // 3. Send Web Push and FCM in parallel
-    const pushPayload = {
-      title,
-      body,
-      url: `/study/content-bank?course=${courseId}`,
-      tag: `new_lecture_${courseId}`,
-      importance: 'high' as const,
-      sound: 'default' as const,
+    // 2. Group entries by courseId
+    const groups: Record<string, typeof queuedEntries> = {}
+    for (const entry of queuedEntries) {
+      if (!groups[entry.courseId]) {
+        groups[entry.courseId] = []
+      }
+      groups[entry.courseId].push(entry)
     }
 
-    await Promise.allSettled([
-      sendPushToUsers(recipientIds, pushPayload),
-      sendFcmToUsers(recipientIds, pushPayload),
-    ])
+    // 3. Process groups where the last added lecture is at least 15 minutes old
+    for (const [courseId, entries] of Object.entries(groups)) {
+      const latestEntry = entries[entries.length - 1]
+      if (latestEntry.createdAt.getTime() <= fifteenMinutesAgo.getTime()) {
+        console.log(`[Batch-Lecture-Alerts] Dispatching notification for ${entries.length} lectures in course ${courseId}...`)
+
+        const [course, enrollments, managerIds] = await Promise.all([
+          prisma.course.findUnique({
+            where: { id: courseId },
+            select: { name: true },
+          }),
+          prisma.enrollment.findMany({
+            where: { courseId },
+            select: { userId: true },
+          }),
+          getManagerIds(),
+        ])
+
+        const recipientIds = Array.from(new Set([
+          ...enrollments.map((e) => e.userId),
+          ...managerIds
+        ]))
+
+        if (recipientIds.length > 0) {
+          const title = entries.length === 1 ? `New Lecture Added` : `New Lectures Added`
+          let body = ''
+          if (entries.length === 1) {
+            body = `"${entries[0].title}" has been added to ${course?.name || 'your class'}.`
+          } else {
+            body = `${entries.length} new lectures have been added to ${course?.name || 'your class'}.`
+          }
+
+          // Create database notifications in bulk
+          await prisma.notification.createMany({
+            data: recipientIds.map((userId) => ({
+              userId,
+              title,
+              content: body,
+              type: 'INFO',
+            })),
+          })
+
+          // SSE Emitter
+          recipientIds.forEach((userId) => sseEmitter.emit(`user:${userId}:notify`))
+
+          // Web Push and FCM
+          const pushPayload = {
+            title,
+            body,
+            url: `/study/content-bank?course=${courseId}`,
+            tag: `new_lecture_${courseId}`,
+            importance: 'high' as const,
+            sound: 'default' as const,
+          }
+
+          await Promise.allSettled([
+            sendPushToUsers(recipientIds, pushPayload),
+            sendFcmToUsers(recipientIds, pushPayload),
+          ])
+        }
+
+        // Delete processed queue entries
+        const entryIds = entries.map((e) => e.id)
+        await prisma.lectureNotificationQueue.deleteMany({
+          where: { id: { in: entryIds } },
+        })
+        console.log(`[Batch-Lecture-Alerts] Successfully completed and cleared ${entries.length} items from queue for course ${courseId}`)
+      }
+    }
   } catch (err) {
-    console.error('[system-notifications] Error sending new lecture notification:', err)
+    console.error('[Batch-Lecture-Alerts] Error processing pending lecture alerts:', err)
   }
 }
 
@@ -644,10 +702,8 @@ export async function processScheduledClassStartAlerts() {
           lte: fortyMinutesFromNow,
         },
         OR: [
-          { notified30mBefore: false },
-          { notified10mBefore: false },
+          { notified15mBefore: false },
           { notifiedAtStart: false },
-          { notified10mAfter: false },
         ],
       },
       select: {
@@ -656,10 +712,8 @@ export async function processScheduledClassStartAlerts() {
         title: true,
         meetLink: true,
         startTime: true,
-        notified30mBefore: true,
-        notified10mBefore: true,
+        notified15mBefore: true,
         notifiedAtStart: true,
-        notified10mAfter: true,
       },
       take: 20, // process in small batches
     })
@@ -696,39 +750,23 @@ export async function processScheduledClassStartAlerts() {
 
           const updateData: Record<string, any> = {}
 
-          // 1. 30 Minutes Before Start
-          if (diffMinutes <= 30 && diffMinutes > 10 && !event.notified30mBefore) {
+          // 1. 15 Minutes Before Start
+          if (diffMinutes <= 15 && diffMinutes > 0 && !event.notified15mBefore) {
             await sendFcmToUsers(recipientIds, {
-              title: 'Class Starting Soon',
-              body: `Get ready! "${event.title}" starts in 30 minutes.`,
-              url: ctaLink,
-              ctaText: 'View Details',
-              ctaLink: ctaLink,
-              tag: `alert_30m_${event.id}`,
-              importance: 'default',
-              sound: 'default',
-            })
-            updateData.notified30mBefore = true
-            console.log(`[Auto-Start-Alerts] Sent 30m before alert for class: ${event.title}`)
-          }
-
-          // 2. 10 Minutes Before Start
-          if (diffMinutes <= 10 && diffMinutes > 0 && !event.notified10mBefore) {
-            await sendFcmToUsers(recipientIds, {
-              title: 'Class Starting in 10 Minutes',
-              body: `Class starts in 10 minutes. Please join the session.`,
+              title: 'Class Starting in 15 Minutes',
+              body: `"${event.title}" starts in 15 minutes. Please join the session.`,
               url: ctaLink,
               ctaText: 'Join Class',
               ctaLink: ctaLink,
-              tag: `alert_10m_${event.id}`,
+              tag: `alert_15m_${event.id}`,
               importance: 'high',
               sound: 'default',
             })
-            updateData.notified10mBefore = true
-            console.log(`[Auto-Start-Alerts] Sent 10m before alert for class: ${event.title}`)
+            updateData.notified15mBefore = true
+            console.log(`[Auto-Start-Alerts] Sent 15m before alert for class: ${event.title}`)
           }
 
-          // 3. At Class Start
+          // 2. At Class Start
           if (diffMinutes <= 0 && diffMinutes > -10 && !event.notifiedAtStart) {
             await sendFcmToUsers(recipientIds, {
               title: 'Class Starting Now',
@@ -744,22 +782,6 @@ export async function processScheduledClassStartAlerts() {
             updateData.notifiedAtStart = true
             updateData.notifiedStart = true // Keep compatibility with existing notifiedStart field
             console.log(`[Auto-Start-Alerts] Sent at-start alert for class: ${event.title}`)
-          }
-
-          // 4. 10 Minutes After Class Start
-          if (diffMinutes <= -10 && diffMinutes > -20 && !event.notified10mAfter) {
-            await sendFcmToUsers(recipientIds, {
-              title: 'Class Already Running',
-              body: `"${event.title}" is already underway. Join the session now so you do not fall behind.`,
-              url: ctaLink,
-              ctaText: 'Join Now',
-              ctaLink: ctaLink,
-              tag: `alert_10m_after_${event.id}`,
-              importance: 'high',
-              sound: 'default',
-            })
-            updateData.notified10mAfter = true
-            console.log(`[Auto-Start-Alerts] Sent 10m after alert for class: ${event.title}`)
           }
 
           // Persist the updated notification flags to the database

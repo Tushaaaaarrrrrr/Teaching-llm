@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { processSyncQueue, cleanupOldSyncQueue } from '@/lib/sync-queue'
 import { processProgressQueue, cleanupOldProgressQueue } from '@/lib/progress-processor'
 import { processScheduledCampaigns } from '@/lib/campaign-processor'
-import { processScheduledClassStartAlerts, sendDailyScheduleNotification } from '@/lib/system-notifications'
+import { processScheduledClassStartAlerts, sendDailyScheduleNotification, processPendingLectureAlerts } from '@/lib/system-notifications'
 import { prisma } from '@/lib/db'
 
 // This endpoint should be called by a cron job every 10 seconds
@@ -36,6 +36,11 @@ export async function POST(req: Request) {
     // Process automated live class start alerts (starts 5m before start time)
     await processScheduledClassStartAlerts().catch((err) =>
       console.error('[Sync Queue Scheduler] Error processing auto class start alerts:', err)
+    )
+
+    // Process batched lecture notifications (15m debounce)
+    await processPendingLectureAlerts().catch((err) =>
+      console.error('[Sync Queue Scheduler] Error processing pending lecture alerts:', err)
     )
 
     // Trigger daily 1 PM IST schedule notifications
