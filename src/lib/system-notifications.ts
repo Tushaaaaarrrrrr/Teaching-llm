@@ -777,3 +777,94 @@ export async function processScheduledClassStartAlerts() {
     console.error('[Auto-Start-Alerts] Error processing scheduled class start alerts:', err)
   }
 }
+
+/**
+ * Compiles today's class schedule and sends personalized schedule notifications
+ * at 1 PM IST to students enrolled in those courses.
+ */
+export async function sendDailyScheduleNotification() {
+  try {
+    const { startOfDay, endOfDay } = require('@/lib/date-utils').getISTDayBoundaries()
+
+    // Find all today's non-cancelled classes
+    const todaysEvents = await prisma.courseEvent.findMany({
+      where: {
+        type: 'class',
+        startTime: { gte: startOfDay, lte: endOfDay },
+        status: { not: 'CANCELLED' },
+      },
+      select: {
+        id: true,
+        title: true,
+        startTime: true,
+        courseId: true,
+        isGlobal: true,
+      },
+      orderBy: { startTime: 'asc' },
+    })
+
+    if (todaysEvents.length === 0) {
+      console.log('[Daily-Schedule-Notification] No classes scheduled today.')
+      return
+    }
+
+    // Find all active students with their enrollments
+    const students = await prisma.user.findMany({
+      where: { isTerminated: false },
+      select: {
+        id: true,
+        enrollments: {
+          select: { courseId: true }
+        }
+      }
+    })
+
+    console.log(`[Daily-Schedule-Notification] Processing schedule notification for ${students.length} students...`)
+
+    await Promise.allSettled(
+      students.map(async (student) => {
+        const studentCourseIds = student.enrollments.map(e => e.courseId)
+        const myEvents = todaysEvents.filter(event => 
+          event.isGlobal || (event.courseId && studentCourseIds.includes(event.courseId))
+        )
+
+        if (myEvents.length === 0) return
+
+        let body = ''
+        if (myEvents.length === 1) {
+          const event = myEvents[0]
+          const formattedTime = new Intl.DateTimeFormat('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+          }).format(new Date(event.startTime))
+          body = `You have class today: "${event.title}" starts at ${formattedTime}.`
+        } else {
+          const classDetails = myEvents.map(event => {
+            const formattedTime = new Intl.DateTimeFormat('en-IN', {
+              timeZone: 'Asia/Kolkata',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+            }).format(new Date(event.startTime))
+            return `"${event.title}" at ${formattedTime}`
+          }).join(', ')
+          body = `You have ${myEvents.length} classes today: ${classDetails}.`
+        }
+
+        await sendFcmToUsers([student.id], {
+          title: "Today's Class Schedule",
+          body,
+          url: '/calendar',
+          tag: 'daily_schedule',
+          importance: 'default',
+          sound: 'default',
+        })
+      })
+    )
+  } catch (err) {
+    console.error('[Daily-Schedule-Notification] Error sending daily schedule notifications:', err)
+  }
+}
+

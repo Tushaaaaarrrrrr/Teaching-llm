@@ -1,6 +1,10 @@
 import { prisma } from '@/lib/db'
 import { getISTDayBoundaries, getEventStatus, formatIST, formatISTDate } from '@/lib/date-utils'
-
+import {
+  sendClassScheduledNotification,
+  sendClassRescheduledNotification,
+  sendClassCanceledNotification,
+} from './system-notifications'
 
 type SessionRole = {
   userId: string
@@ -18,6 +22,11 @@ export async function syncTodaySessions(createdById: string) {
       startTime: { gte: startOfDay, lte: endOfDay },
     },
     orderBy: { startTime: 'asc' },
+  })
+
+  // Fetch old snapshots before deleting them to compare for changes
+  const oldSnapshots = await (prisma as any).dailySessionSnapshot.findMany({
+    where: { snapshotDate: startOfDay },
   })
 
   await prisma.$transaction(async (tx) => {
@@ -44,6 +53,56 @@ export async function syncTodaySessions(createdById: string) {
       })),
     })
   })
+
+  // Compare oldSnapshots with current events to trigger notifications
+  const oldMap = new Map((oldSnapshots as any[]).map(s => [s.sourceEventId, s]))
+  const currentMap = new Map(events.map(e => [e.id, e]))
+
+  // 1. Identify Cancelled or Deleted
+  for (const oldSnapshot of (oldSnapshots as any[])) {
+    if (!oldSnapshot.courseId) continue
+
+    const currentEvent = currentMap.get(oldSnapshot.sourceEventId) as any
+    // If it was deleted, or its status changed to CANCELLED but was not CANCELLED before
+    if (!currentEvent || (currentEvent.status === 'CANCELLED' && oldSnapshot.status !== 'CANCELLED')) {
+      sendClassCanceledNotification(
+        oldSnapshot.courseId,
+        oldSnapshot.title,
+        oldSnapshot.startTime,
+        oldSnapshot.sourceEventId
+      ).catch(console.error)
+    }
+  }
+
+  // 2. Identify New or Rescheduled
+  for (const event of events) {
+    if (event.status === 'CANCELLED' || !event.courseId) continue
+
+    const oldSnapshot = oldMap.get(event.id) as any
+    if (!oldSnapshot) {
+      // New class scheduled for today
+      sendClassScheduledNotification(
+        event.courseId,
+        event.title,
+        event.startTime,
+        event.meetLink,
+        event.id
+      ).catch(console.error)
+    } else {
+      // Was already scheduled. Check if start time changed, or if it transitioned to RESCHEDULED
+      const timeChanged = event.startTime.getTime() !== oldSnapshot.startTime.getTime()
+      const statusChangedToRescheduled = event.status === 'RESCHEDULED' && oldSnapshot.status !== 'RESCHEDULED'
+      if (timeChanged || statusChangedToRescheduled) {
+        sendClassRescheduledNotification(
+          event.courseId,
+          event.title,
+          event.startTime,
+          event.meetLink,
+          event.id
+        ).catch(console.error)
+      }
+    }
+  }
 
   return { snapshotDate: startOfDay, count: events.length }
 }

@@ -188,14 +188,7 @@ export async function PUT(
       sendLiveClassNotification(updatedEvent.courseId, updatedEvent.title, updatedEvent.meetLink, updatedEvent.id).catch(console.error)
     }
 
-    // Check if class was cancelled or rescheduled (non-blocking)
-    if (updatedEvent && updatedEvent.courseId) {
-      if (isStatusChangedToCancelled) {
-        sendClassCanceledNotification(updatedEvent.courseId, updatedEvent.title, updatedEvent.startTime, updatedEvent.id).catch(console.error)
-      } else if (isStartTimeChanged || isStatusChangedToRescheduled) {
-        sendClassRescheduledNotification(updatedEvent.courseId, updatedEvent.title, updatedEvent.startTime, updatedEvent.meetLink, updatedEvent.id).catch(console.error)
-      }
-    }
+
 
     logActivity({
       userId: session.userId,
@@ -239,14 +232,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    if (existingEvent.courseId) {
-      await sendClassCanceledNotification(
-        existingEvent.courseId,
-        existingEvent.title,
-        existingEvent.startTime,
-        id
-      ).catch(console.error)
-    }
+
 
     await prisma.courseEvent.delete({ where: { id } })
 

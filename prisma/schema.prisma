@@ -787,10 +787,11 @@ model UpdateView {
 }
 
 model UpdateSystemSettings {
-  id              String  @id @default("singleton")
-  welcomeEnabled  Boolean @default(true)
-  customEnabled   Boolean @default(true)
-  maintenanceMode Boolean @default(false)
+  id                 String  @id @default("singleton")
+  welcomeEnabled     Boolean @default(true)
+  customEnabled      Boolean @default(true)
+  maintenanceMode    Boolean @default(false)
+  lastDailyNotifDate String?
 }
 
 model HelpCardConfig {

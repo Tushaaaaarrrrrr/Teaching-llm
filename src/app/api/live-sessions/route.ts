@@ -103,16 +103,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Trigger "New Class Scheduled" notification to enrolled students
-    if (courseEvent.courseId) {
-      sendClassScheduledNotification(
-        courseEvent.courseId,
-        courseEvent.title,
-        courseEvent.startTime,
-        courseEvent.meetLink,
-        courseEvent.id
-      ).catch(console.error)
-    }
+
 
     logActivity({
       userId: session.userId,

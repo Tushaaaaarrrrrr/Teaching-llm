@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { processSyncQueue, cleanupOldSyncQueue } from '@/lib/sync-queue'
 import { processProgressQueue, cleanupOldProgressQueue } from '@/lib/progress-processor'
 import { processScheduledCampaigns } from '@/lib/campaign-processor'
-import { processScheduledClassStartAlerts } from '@/lib/system-notifications'
+import { processScheduledClassStartAlerts, sendDailyScheduleNotification } from '@/lib/system-notifications'
+import { prisma } from '@/lib/db'
 
 // This endpoint should be called by a cron job every 10 seconds
 // Configure in vercel.json or use an external cron service
@@ -36,6 +37,40 @@ export async function POST(req: Request) {
     await processScheduledClassStartAlerts().catch((err) =>
       console.error('[Sync Queue Scheduler] Error processing auto class start alerts:', err)
     )
+
+    // Trigger daily 1 PM IST schedule notifications
+    try {
+      const now = new Date()
+      const istTimeStr = now.toLocaleTimeString('en-US', {
+        timeZone: 'Asia/Kolkata',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+      const [istHour, istMinute] = istTimeStr.split(':').map(Number)
+
+      if (istHour === 13 && istMinute >= 0 && istMinute < 5) {
+        const todayDateStr = now.toLocaleDateString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+        })
+        const settings = await prisma.updateSystemSettings.findUnique({
+          where: { id: 'singleton' }
+        })
+
+        if (settings?.lastDailyNotifDate !== todayDateStr) {
+          await prisma.updateSystemSettings.upsert({
+            where: { id: 'singleton' },
+            update: { lastDailyNotifDate: todayDateStr },
+            create: { id: 'singleton', lastDailyNotifDate: todayDateStr },
+          })
+          sendDailyScheduleNotification().catch((err) =>
+            console.error('[Sync Queue Scheduler] Error sending daily schedule notifications:', err)
+          )
+        }
+      }
+    } catch (err) {
+      console.error('[Sync Queue Scheduler] Error in daily notification scheduling check:', err)
+    }
 
     // Cleanup old jobs every 10th run (approximately hourly)
     if (Math.random() < 0.1) {

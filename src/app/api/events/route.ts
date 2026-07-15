@@ -213,16 +213,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Trigger "New Class Scheduled" notification to enrolled students
-    if (event.courseId) {
-      sendClassScheduledNotification(
-        event.courseId,
-        event.title,
-        event.startTime,
-        event.meetLink,
-        event.id
-      ).catch(console.error)
-    }
+
 
     // For Agora-backed events, deterministically derive the channel name from
     // the new event id so token/start/end endpoints can resolve it from just
