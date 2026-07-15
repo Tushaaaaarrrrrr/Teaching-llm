@@ -8,6 +8,7 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://class.genziitian.in',
     androidScheme: 'https',
+    errorPath: 'offline.html',
   },
   plugins: {
     PushNotifications: {

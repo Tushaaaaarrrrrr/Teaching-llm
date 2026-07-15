@@ -69,12 +69,12 @@ export default function SplashOverlay() {
     })
   }, [mounted, imageLoaded, isNative])
 
-  // Step 1: Loading Progress Bar (1.5 seconds)
+  // Step 1: Loading Progress Bar (800ms for native to fit 1.5s total, 1500ms for web)
   useEffect(() => {
     if (!mounted || step !== 1) return
 
     const startTime = Date.now()
-    const duration = 1500
+    const duration = isNative ? 800 : 1500
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime
@@ -95,13 +95,13 @@ export default function SplashOverlay() {
     return () => clearInterval(interval)
   }, [mounted, step, isNative])
 
-  // Step 2: Auto-close after 2.5 seconds (2500ms)
+  // Step 2: Auto-close after 700ms (to fit 1.5s total on native)
   useEffect(() => {
     if (!mounted || step !== 2) return
 
     const timer = setTimeout(() => {
       handleClose()
-    }, 2500)
+    }, 700)
 
     return () => clearTimeout(timer)
   }, [mounted, step])
