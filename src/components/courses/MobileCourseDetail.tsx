@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import FeedbackModal from '@/components/FeedbackModal'
 import { extractHex, isGradient, colorWithOpacity, getCourseBackground } from '@/lib/color-utils'
+import { Capacitor } from '@capacitor/core'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -423,6 +424,7 @@ function CurriculumTab({
   updateProgress: (contentId: string, status: string) => void
   isStudent: boolean
 }) {
+  const [activeDownloadUrl, setActiveDownloadUrl] = useState<string | null>(null)
   if (topics.length === 0) {
     return (
       <div style={{
@@ -680,23 +682,41 @@ function CurriculumTab({
                           )}
                         </Link>
                       ) : item.pptUrl ? (
-                        <a
-                          href={item.pptUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                            padding: '10px 18px', borderRadius: '50px',
-                            background: 'var(--surface)', color: 'var(--text-secondary)',
-                            border: '1.5px solid var(--border)',
-                            fontSize: '13px', fontWeight: 800,
-                            textDecoration: 'none',
-                            flexShrink: 0,
-                          }}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                          Open
-                        </a>
+                        Capacitor.isNativePlatform() ? (
+                          <button
+                            onClick={() => setActiveDownloadUrl(item.pptUrl || null)}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '6px',
+                              padding: '10px 18px', borderRadius: '50px',
+                              background: 'var(--surface)', color: 'var(--text-secondary)',
+                              border: '1.5px solid var(--border)',
+                              fontSize: '13px', fontWeight: 800,
+                              cursor: 'pointer',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Open
+                          </button>
+                        ) : (
+                          <a
+                            href={item.pptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '6px',
+                              padding: '10px 18px', borderRadius: '50px',
+                              background: 'var(--surface)', color: 'var(--text-secondary)',
+                              border: '1.5px solid var(--border)',
+                              fontSize: '13px', fontWeight: 800,
+                              textDecoration: 'none',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Open
+                          </a>
+                        )
                       ) : (
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>—</span>
                       )}
@@ -708,6 +728,45 @@ function CurriculumTab({
           </div>
         )
       })}
+      {activeDownloadUrl && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }} onClick={() => setActiveDownloadUrl(null)}>
+          <div className="modal" style={{ maxWidth: '400px', borderRadius: '24px', padding: '24px', position: 'relative' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '12px', color: 'var(--text-primary)' }}>
+              Important Note
+            </h3>
+            <p style={{ fontSize: '14px', lineHeight: '1.5', color: 'var(--text-muted)', marginBottom: '24px' }}>
+              Please ensure you use your registered email address to download or view this document.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setActiveDownloadUrl(null)}
+                style={{
+                  padding: '10px 20px', borderRadius: '50px',
+                  border: '1.5px solid var(--border)', background: 'transparent',
+                  color: 'var(--text-secondary)', fontWeight: 700, fontSize: '13px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  window.open(activeDownloadUrl, '_blank')
+                  setActiveDownloadUrl(null)
+                }}
+                style={{
+                  padding: '10px 24px', borderRadius: '50px',
+                  border: 'none', background: 'var(--primary)',
+                  color: '#ffffff', fontWeight: 700, fontSize: '13px',
+                  cursor: 'pointer', boxShadow: '0 2px 8px rgba(54,54,232,0.25)'
+                }}
+              >
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
