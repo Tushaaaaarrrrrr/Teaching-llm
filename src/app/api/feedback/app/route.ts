@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Check if already submitted
     const existing = await (prisma as any).appFeedback.findFirst({
-      where: { studentId: session.userId }
+      where: { studentId: session.userId, platform }
     })
 
     if (existing) {

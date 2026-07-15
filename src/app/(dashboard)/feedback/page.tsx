@@ -70,7 +70,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
     return () => observer.disconnect()
   }, [])
 
-  const platformFeedbackObj = submittedFeedbacks.find(f => f.type === 'APP' || f.type === 'WEBSITE')
+  const platformFeedbackObj = submittedFeedbacks.find(f => f.type === (isNativeApp ? 'APP' : 'WEBSITE'))
   const hasPlatformFeedback = !!platformFeedbackObj
 
   const isAlreadySubmitted = (courseId: string) => {

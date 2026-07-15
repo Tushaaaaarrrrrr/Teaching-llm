@@ -61,8 +61,13 @@ export default function DashboardPage() {
     if (snoozeUntil && new Date(snoozeUntil) > new Date()) return
 
     // 3. Check submission via check API
-    fetch('/api/feedback/app/check')
-      .then(res => res.json())
+    const isNative = typeof document !== 'undefined' && document.documentElement.classList.contains('is-native')
+    const platform = isNative ? 'APP' : 'WEB'
+    fetch(`/api/feedback/app/check?platform=${platform}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Feedback check failed')
+        return res.json()
+      })
       .then(data => {
         if (data.submitted) return
 

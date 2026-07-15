@@ -9,8 +9,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const platform = searchParams.get('platform') || 'WEB'
+
     const existing = await (prisma as any).appFeedback.findFirst({
-      where: { studentId: session.userId }
+      where: { studentId: session.userId, platform }
     })
 
     return NextResponse.json({ submitted: !!existing })
