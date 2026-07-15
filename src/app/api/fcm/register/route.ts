@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { syncUserTopicSubscriptions } from '@/lib/fcm'
 
 // POST /api/fcm/register — save FCM device token from mobile app
 export async function POST(request: NextRequest) {
@@ -26,6 +27,11 @@ export async function POST(request: NextRequest) {
         platform: platform || 'ANDROID',
       },
     })
+
+    // Sync topic subscriptions in background
+    syncUserTopicSubscriptions(session.userId).catch((err) =>
+      console.error('[FCM Register] Error syncing topic subscriptions:', err)
+    )
 
     return NextResponse.json({ success: true })
   } catch (error) {

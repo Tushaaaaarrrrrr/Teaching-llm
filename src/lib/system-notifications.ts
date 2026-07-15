@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import { sendFcmToUsers } from '@/lib/fcm'
+import { sendFcmToUsers, sendFcmToTopic } from '@/lib/fcm'
 import { sendPushToUsers } from '@/lib/push'
 import { sseEmitter } from '@/lib/sse'
 
@@ -150,7 +150,8 @@ export async function processPendingLectureAlerts() {
 
           await Promise.allSettled([
             sendPushToUsers(recipientIds, pushPayload),
-            sendFcmToUsers(recipientIds, pushPayload),
+            sendFcmToTopic(`course_${courseId}`, pushPayload),
+            sendFcmToUsers(managerIds, pushPayload),
           ])
         }
 
@@ -752,33 +753,58 @@ export async function processScheduledClassStartAlerts() {
 
           // 1. 15 Minutes Before Start
           if (diffMinutes <= 15 && diffMinutes > 0 && !event.notified15mBefore) {
-            await sendFcmToUsers(recipientIds, {
-              title: 'Class Starting in 15 Minutes',
-              body: `"${event.title}" starts in 15 minutes. Please join the session.`,
-              url: ctaLink,
-              ctaText: 'Join Class',
-              ctaLink: ctaLink,
-              tag: `alert_15m_${event.id}`,
-              importance: 'high',
-              sound: 'default',
-            })
+            await Promise.allSettled([
+              sendFcmToTopic(`course_${event.courseId}`, {
+                title: 'Class Starting in 15 Minutes',
+                body: `"${event.title}" starts in 15 minutes. Please join the session.`,
+                url: ctaLink,
+                ctaText: 'Join Class',
+                ctaLink: ctaLink,
+                tag: `alert_15m_${event.id}`,
+                importance: 'high',
+                sound: 'default',
+              }),
+              sendFcmToUsers(managerIds, {
+                title: 'Class Starting in 15 Minutes',
+                body: `"${event.title}" starts in 15 minutes. Please join the session.`,
+                url: ctaLink,
+                ctaText: 'Join Class',
+                ctaLink: ctaLink,
+                tag: `alert_15m_${event.id}`,
+                importance: 'high',
+                sound: 'default',
+              }),
+            ])
             updateData.notified15mBefore = true
             console.log(`[Auto-Start-Alerts] Sent 15m before alert for class: ${event.title}`)
           }
 
           // 2. At Class Start
           if (diffMinutes <= 0 && diffMinutes > -10 && !event.notifiedAtStart) {
-            await sendFcmToUsers(recipientIds, {
-              title: 'Class Starting Now',
-              body: `Your instructor is here and "${event.title}" is starting now. Please join the session.`,
-              url: ctaLink,
-              ctaText: 'Join Now',
-              ctaLink: ctaLink,
-              tag: `alert_start_${event.id}`,
-              importance: 'high',
-              sound: 'class_start_tone',
-              channelId: 'class_start_alerts',
-            })
+            await Promise.allSettled([
+              sendFcmToTopic(`course_${event.courseId}`, {
+                title: 'Class Starting Now',
+                body: `Your instructor is here and "${event.title}" is starting now. Please join the session.`,
+                url: ctaLink,
+                ctaText: 'Join Now',
+                ctaLink: ctaLink,
+                tag: `alert_start_${event.id}`,
+                importance: 'high',
+                sound: 'class_start_tone',
+                channelId: 'class_start_alerts',
+              }),
+              sendFcmToUsers(managerIds, {
+                title: 'Class Starting Now',
+                body: `Your instructor is here and "${event.title}" is starting now. Please join the session.`,
+                url: ctaLink,
+                ctaText: 'Join Now',
+                ctaLink: ctaLink,
+                tag: `alert_start_${event.id}`,
+                importance: 'high',
+                sound: 'class_start_tone',
+                channelId: 'class_start_alerts',
+              }),
+            ])
             updateData.notifiedAtStart = true
             updateData.notifiedStart = true // Keep compatibility with existing notifiedStart field
             console.log(`[Auto-Start-Alerts] Sent at-start alert for class: ${event.title}`)
