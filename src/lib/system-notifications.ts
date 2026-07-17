@@ -4,6 +4,41 @@ import { sendPushToUsers } from '@/lib/push'
 import { sseEmitter } from '@/lib/sse'
 
 /**
+ * Logs an outgoing notification to the NotificationLog table for manager audit history.
+ */
+async function logNotification(data: {
+  category: string
+  title: string
+  body: string
+  courseId?: string | null
+  courseName?: string | null
+  recipientCount: number
+  channel?: string
+  topicName?: string | null
+  status?: string
+  metadata?: Record<string, any> | null
+}) {
+  try {
+    await prisma.notificationLog.create({
+      data: {
+        category: data.category,
+        title: data.title,
+        body: data.body,
+        courseId: data.courseId || null,
+        courseName: data.courseName || null,
+        recipientCount: data.recipientCount,
+        channel: data.channel || 'FCM',
+        topicName: data.topicName || null,
+        status: data.status || 'SENT',
+        metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+      },
+    })
+  } catch (err) {
+    console.error('[NotificationLog] Failed to log notification:', err)
+  }
+}
+
+/**
  * Sends a push notification to all enrolled users when a class goes LIVE.
  */
 export async function sendLiveClassNotification(
@@ -33,15 +68,28 @@ export async function sendLiveClassNotification(
 
     const ctaLink = meetLink || (eventId ? `/courses/${courseId}/live/${eventId}` : `/live`)
 
+    const liveTitle = `Class is Live`
+    const liveBody = `"${eventTitle}" has started in ${course?.name || 'your class'}. Join now!`
+
     await sendFcmToUsers(recipientIds, {
-      title: `Class is Live`,
-      body: `"${eventTitle}" has started in ${course?.name || 'your class'}. Join now!`,
+      title: liveTitle,
+      body: liveBody,
       url: ctaLink,
       ctaText: 'Join now',
       ctaLink: ctaLink,
       tag: `live_event_${courseId}`,
       importance: 'high',
       sound: 'default',
+    })
+
+    await logNotification({
+      category: 'LIVE_CLASS',
+      title: liveTitle,
+      body: liveBody,
+      courseId,
+      courseName: course?.name,
+      recipientCount: recipientIds.length,
+      channel: 'FCM',
     })
   } catch (err) {
     console.error('[system-notifications] Error sending live class notification:', err)
@@ -154,6 +202,18 @@ export async function processPendingLectureAlerts() {
             sendFcmToTopic(`course_${courseId}`, pushPayload),
             sendFcmToUsers(managerIds, pushPayload),
           ])
+
+          await logNotification({
+            category: 'LECTURE_ADDED',
+            title,
+            body,
+            courseId,
+            courseName: course?.name,
+            recipientCount: recipientIds.length,
+            channel: 'TOPIC',
+            topicName: `course_${courseId}`,
+            metadata: { lectureCount: entries.length },
+          })
         }
 
         // Delete processed queue entries
@@ -562,15 +622,28 @@ export async function sendClassScheduledNotification(
 
     const ctaLink = meetLink || (eventId ? `/courses/${courseId}/live/${eventId}` : `/live`)
 
+    const schedTitle = `New Class Scheduled`
+    const schedBody = `"${eventTitle}" has been scheduled for ${formattedTime} in ${course?.name || 'your class'}.`
+
     await sendFcmToUsers(recipientIds, {
-      title: `New Class Scheduled`,
-      body: `"${eventTitle}" has been scheduled for ${formattedTime} in ${course?.name || 'your class'}.`,
+      title: schedTitle,
+      body: schedBody,
       url: ctaLink,
       ctaText: 'View Details',
       ctaLink: ctaLink,
       tag: `scheduled_event_${eventId || courseId}`,
       importance: 'default',
       sound: 'default',
+    })
+
+    await logNotification({
+      category: 'CLASS_SCHEDULED',
+      title: schedTitle,
+      body: schedBody,
+      courseId,
+      courseName: course?.name,
+      recipientCount: recipientIds.length,
+      channel: 'FCM',
     })
   } catch (err) {
     console.error('[system-notifications] Error sending class scheduled notification:', err)
@@ -618,15 +691,28 @@ export async function sendClassRescheduledNotification(
 
     const ctaLink = meetLink || (eventId ? `/courses/${courseId}/live/${eventId}` : `/live`)
 
+    const reschedTitle = `Class Rescheduled`
+    const reschedBody = `"${eventTitle}" in ${course?.name || 'your class'} has been rescheduled to ${formattedTime}.`
+
     await sendFcmToUsers(recipientIds, {
-      title: `Class Rescheduled`,
-      body: `"${eventTitle}" in ${course?.name || 'your class'} has been rescheduled to ${formattedTime}.`,
+      title: reschedTitle,
+      body: reschedBody,
       url: ctaLink,
       ctaText: 'View Details',
       ctaLink: ctaLink,
       tag: `rescheduled_event_${eventId || courseId}`,
       importance: 'default',
       sound: 'default',
+    })
+
+    await logNotification({
+      category: 'CLASS_RESCHEDULED',
+      title: reschedTitle,
+      body: reschedBody,
+      courseId,
+      courseName: course?.name,
+      recipientCount: recipientIds.length,
+      channel: 'FCM',
     })
   } catch (err) {
     console.error('[system-notifications] Error sending class rescheduled notification:', err)
@@ -671,13 +757,26 @@ export async function sendClassCanceledNotification(
       hour12: true,
     }).format(new Date(startTime))
 
+    const cancelTitle = `Class Canceled`
+    const cancelBody = `The class "${eventTitle}" in ${course?.name || 'your class'} scheduled for ${formattedTime} has been canceled.`
+
     await sendFcmToUsers(recipientIds, {
-      title: `Class Canceled`,
-      body: `The class "${eventTitle}" in ${course?.name || 'your class'} scheduled for ${formattedTime} has been canceled.`,
+      title: cancelTitle,
+      body: cancelBody,
       url: '/calendar',
       tag: `canceled_event_${eventId || courseId}`,
       importance: 'high',
       sound: 'default',
+    })
+
+    await logNotification({
+      category: 'CLASS_CANCELED',
+      title: cancelTitle,
+      body: cancelBody,
+      courseId,
+      courseName: course?.name,
+      recipientCount: recipientIds.length,
+      channel: 'FCM',
     })
   } catch (err) {
     console.error('[system-notifications] Error sending class canceled notification:', err)
@@ -779,6 +878,17 @@ export async function processScheduledClassStartAlerts() {
             ])
             updateData.notified15mBefore = true
             console.log(`[Auto-Start-Alerts] Sent 15m before alert for class: ${event.title}`)
+
+            await logNotification({
+              category: 'CLASS_STARTING_15M',
+              title: 'Class Starting in 15 Minutes',
+              body: `"${event.title}" starts in 15 minutes. Please join the session.`,
+              courseId: event.courseId,
+              courseName: course?.name,
+              recipientCount: recipientIds.length,
+              channel: 'TOPIC',
+              topicName: `course_${event.courseId}`,
+            })
           }
 
           // 2. At Class Start
@@ -810,6 +920,17 @@ export async function processScheduledClassStartAlerts() {
             updateData.notifiedAtStart = true
             updateData.notifiedStart = true // Keep compatibility with existing notifiedStart field
             console.log(`[Auto-Start-Alerts] Sent at-start alert for class: ${event.title}`)
+
+            await logNotification({
+              category: 'CLASS_START',
+              title: 'Class Starting Now',
+              body: `Your instructor is here and "${event.title}" is starting now. Please join the session.`,
+              courseId: event.courseId,
+              courseName: course?.name,
+              recipientCount: recipientIds.length,
+              channel: 'TOPIC',
+              topicName: `course_${event.courseId}`,
+            })
           }
 
           // Persist the updated notification flags to the database

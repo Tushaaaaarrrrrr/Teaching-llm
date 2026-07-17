@@ -8,11 +8,15 @@ import { useLocalCachedAsset } from '@/hooks/useLocalCachedAsset'
 
 function getSafeRedirect(next: string | null): string {
   if (!next) return '/dashboard'
+  // Reject null bytes (some browsers handle %00 in unexpected ways)
+  if (next.includes('\0')) return '/dashboard'
+  // Reject absurdly long URLs
+  if (next.length > 2048) return '/dashboard'
   // Prevent open redirect vulnerabilities by ensuring next starts with '/' but not '//' or '/\'
-  if (next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\')) {
-    return next
-  }
-  return '/dashboard'
+  if (!next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return '/dashboard'
+  // Prevent redirect loops back to login
+  if (next === '/login' || next.startsWith('/login?') || next.startsWith('/login/')) return '/dashboard'
+  return next
 }
 
 function PoliciesDropdown({ 

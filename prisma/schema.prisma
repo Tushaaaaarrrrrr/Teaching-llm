@@ -681,6 +681,25 @@ model Notification {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model NotificationLog {
+  id             String   @id @default(cuid())
+  category       String   // CLASS_SCHEDULED, CLASS_STARTING, CLASS_START, CLASS_RESCHEDULED, CLASS_CANCELED, LECTURE_ADDED, ANNOUNCEMENT, DAILY_DIGEST, LIVE_CLASS
+  title          String
+  body           String
+  courseId       String?
+  courseName     String?
+  recipientCount Int      @default(0)
+  channel        String   @default("FCM")  // FCM, TOPIC, WEB_PUSH
+  topicName      String?
+  status         String   @default("SENT") // SENT, FAILED
+  metadata       String?  // JSON string for extra data
+  createdAt      DateTime @default(now())
+
+  @@index([category])
+  @@index([courseId])
+  @@index([createdAt])
+}
+
 model PushSubscription {
   id        String   @id @default(cuid())
   userId    String
