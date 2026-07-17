@@ -6,6 +6,15 @@ import MobileLoginExperience from '@/components/auth/MobileLoginExperience'
 import posthog from 'posthog-js'
 import { useLocalCachedAsset } from '@/hooks/useLocalCachedAsset'
 
+function getSafeRedirect(next: string | null): string {
+  if (!next) return '/dashboard'
+  // Prevent open redirect vulnerabilities by ensuring next starts with '/' but not '//' or '/\'
+  if (next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\')) {
+    return next
+  }
+  return '/dashboard'
+}
+
 function PoliciesDropdown({ 
   links, 
   align = 'left' 
@@ -446,6 +455,7 @@ const GOOGLE_WEB_CLIENT_ID = '990282572765-bn1ls79tuhpa589eiici5r9mr6c98c8h.apps
 
 function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: () => void, onPrivacyClick?: () => void }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [gLoading, setGLoading] = useState(false)
   const [gError, setGError] = useState('')
   const [gsiReady, setGsiReady] = useState(false)
@@ -466,7 +476,8 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
         setGError(data.error || 'Quick login failed.')
         return
       }
-      router.push('/dashboard')
+      const nextParam = searchParams.get('next')
+      router.push(getSafeRedirect(nextParam))
       router.refresh()
     } catch {
       setGError('Something went wrong with quick login.')
@@ -610,7 +621,8 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
       })
     }
     posthog.capture('user_logged_in', { method: 'google', platform: isCapacitor ? 'app' : 'web' })
-    router.push('/dashboard')
+    const nextParam = searchParams.get('next')
+    router.push(getSafeRedirect(nextParam))
     router.refresh()
   }
 
@@ -767,7 +779,8 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
                   setGError(data.error || 'Dev login failed')
                   return
                 }
-                router.push('/dashboard')
+                const nextParam = searchParams.get('next')
+                router.push(getSafeRedirect(nextParam))
                 router.refresh()
               } catch {
                 setGError('Something went wrong with dev login.')
@@ -820,7 +833,8 @@ function GoogleLoginButton({ onTermsClick, onPrivacyClick }: { onTermsClick?: ()
                   setGError(data.error || 'Dev login failed')
                   return
                 }
-                router.push('/dashboard')
+                const nextParam = searchParams.get('next')
+                router.push(getSafeRedirect(nextParam))
                 router.refresh()
               } catch {
                 setGError('Something went wrong with dev login.')

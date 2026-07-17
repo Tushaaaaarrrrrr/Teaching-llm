@@ -1,8 +1,17 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useLocalCachedAsset } from '@/hooks/useLocalCachedAsset'
+
+function getSafeRedirect(next: string | null): string {
+  if (!next) return '/dashboard'
+  // Prevent open redirect vulnerabilities by ensuring next starts with '/' but not '//' or '/\'
+  if (next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\')) {
+    return next
+  }
+  return '/dashboard'
+}
 
 interface OnboardingSlide {
   eyebrow: string
@@ -238,6 +247,7 @@ function OnboardingView({
 function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
   const logoSrc = useLocalCachedAsset('/mobile-login-logo.png')
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [gError, setGError] = useState('')
   const [gLoading, setGLoading] = useState(false)
   const [gsiReady, setGsiReady] = useState(false)
@@ -328,7 +338,8 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
       })
       const data = await res.json()
       if (!res.ok) { setGError(data.error || 'Google login failed'); return }
-      router.push('/dashboard'); router.refresh()
+      const nextParam = searchParams.get('next')
+      router.push(getSafeRedirect(nextParam)); router.refresh()
     } catch {
       setGError('Something went wrong with Google login.')
     } finally { setGLoading(false) }
@@ -360,7 +371,8 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           setGError(data.error || 'Google login failed')
           return
         }
-        router.push('/dashboard')
+        const nextParam = searchParams.get('next')
+        router.push(getSafeRedirect(nextParam))
         router.refresh()
       } else {
         setGError('Google login did not return a valid ID token.')
@@ -385,7 +397,8 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         setGError(data.error || 'Quick login failed.')
         return
       }
-      router.push('/dashboard')
+      const nextParam = searchParams.get('next')
+      router.push(getSafeRedirect(nextParam))
       router.refresh()
     } catch {
       setGError('Something went wrong with quick login.')
@@ -410,7 +423,8 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
       })
       const data = await res.json()
       if (!res.ok) { setGError(data.error || 'Dev login failed'); return }
-      router.push('/dashboard'); router.refresh()
+      const nextParam = searchParams.get('next')
+      router.push(getSafeRedirect(nextParam)); router.refresh()
     } catch {
       setGError('Something went wrong with dev login.')
     } finally { setQuickLoading(null) }

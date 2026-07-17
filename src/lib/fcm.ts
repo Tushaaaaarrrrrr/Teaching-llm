@@ -196,15 +196,21 @@ export async function syncUserTopicSubscriptions(userId: string) {
     // 1. Subscribe to each enrolled course topic
     for (const enrollment of enrollments) {
       const topicName = `course_${enrollment.courseId}`
-      await firebaseAdmin.messaging().subscribeToTopic(deviceTokens, topicName)
-      console.log(`[FCM-Topics] Subscribed user ${userId} tokens to topic: ${topicName}`)
+      const response = await firebaseAdmin.messaging().subscribeToTopic(deviceTokens, topicName)
+      console.log(`[FCM-Topics] Subscribed user ${userId} tokens to topic: ${topicName}. Success count: ${response.successCount}, Failure count: ${response.failureCount}`)
+      if (response.failureCount > 0) {
+        console.warn(`[FCM-Topics] Subscription failures for ${topicName}:`, JSON.stringify(response.errors))
+      }
     }
 
     // 2. Subscribe to global announcements topic if user is a student
     if (user.role === 'STUDENT') {
       const globalTopic = 'student_announcements'
-      await firebaseAdmin.messaging().subscribeToTopic(deviceTokens, globalTopic)
-      console.log(`[FCM-Topics] Subscribed student ${userId} tokens to topic: ${globalTopic}`)
+      const response = await firebaseAdmin.messaging().subscribeToTopic(deviceTokens, globalTopic)
+      console.log(`[FCM-Topics] Subscribed student ${userId} tokens to topic: ${globalTopic}. Success count: ${response.successCount}, Failure count: ${response.failureCount}`)
+      if (response.failureCount > 0) {
+        console.warn(`[FCM-Topics] Global subscription failures:`, JSON.stringify(response.errors))
+      }
     }
   } catch (err) {
     console.error('[FCM-Topics] Error syncing user topic subscriptions:', err)

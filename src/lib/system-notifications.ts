@@ -75,6 +75,7 @@ export async function sendNewLectureNotification(
 export async function processPendingLectureAlerts() {
   try {
     const now = new Date()
+    console.log(`[Batch-Lecture-Alerts] Checking queue. Current time: ${now.toISOString()}`)
     const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000)
 
     // 1. Get all entries in the queue
@@ -690,6 +691,7 @@ export async function sendClassCanceledNotification(
 export async function processScheduledClassStartAlerts() {
   try {
     const now = new Date()
+    console.log(`[Auto-Start-Alerts] Checking for due classes. Current time: ${now.toISOString()}`)
     // We scan classes from 20 minutes in the past up to 40 minutes in the future
     const fortyMinutesFromNow = new Date(now.getTime() + 40 * 60 * 1000)
     const twentyMinutesAgo = new Date(now.getTime() - 20 * 60 * 1000)

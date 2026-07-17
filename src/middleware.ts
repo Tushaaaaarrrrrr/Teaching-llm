@@ -41,6 +41,16 @@ function getSessionToken(request: NextRequest): string | undefined {
   return undefined
 }
 
+/**
+ * Redirects to the login page, preserving the current request path and search query in a 'next' query param.
+ */
+function getLoginRedirectResponse(request: NextRequest): NextResponse {
+  const { pathname, search } = request.nextUrl
+  const loginUrl = new URL('/login', request.url)
+  loginUrl.searchParams.set('next', pathname + search)
+  return NextResponse.redirect(loginUrl)
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const method = request.method
@@ -175,7 +185,7 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    return NextResponse.redirect(new URL('/login', request.url))
+    return getLoginRedirectResponse(request)
   }
 
   if (!JWT_SECRET) {
@@ -183,7 +193,7 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    return NextResponse.redirect(new URL('/login', request.url))
+    return getLoginRedirectResponse(request)
   }
 
   try {
@@ -228,7 +238,7 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const response = NextResponse.redirect(new URL('/login', request.url))
+    const response = getLoginRedirectResponse(request)
     response.cookies.delete(COOKIE_NAME)
     return response
   }
