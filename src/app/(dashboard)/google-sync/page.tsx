@@ -15,9 +15,47 @@ export default function GoogleSyncPage() {
   const [isFlushing, setIsFlushing] = useState(false)
   const [poolMessage, setPoolMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
+  // Bulk Assignment Form State
+  const [bulkEmailInput, setBulkEmailInput] = useState('')
+  const [isBulkRunning, setIsBulkRunning] = useState(false)
+
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const { data: authData } = useSWR('/api/auth/me', fetcher)
   const userRole = authData?.user?.role || ''
+
+  async function handleBulkAssign(groupEmail?: string) {
+    if (groupEmail === undefined && !confirm('Are you sure you want to auto-distribute all unassigned users to active pools?')) return
+    if (groupEmail !== undefined && !confirm(`Are you sure you want to assign group "${groupEmail}" to EVERY registered user (preserving their current groups)?`)) return
+
+    setIsBulkRunning(true)
+    setPoolMessage(null)
+
+    try {
+      const res = await fetch('/api/admin/notification-groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'ASSIGN_ALL',
+          groupEmail: groupEmail || undefined,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to complete bulk assignment')
+
+      setPoolMessage({
+        type: 'success',
+        text: `Bulk action completed! ${data.count} users were processed successfully: ${data.message}`,
+      })
+      if (groupEmail) setBulkEmailInput('')
+      mutatePools()
+      setRefreshKey(prev => prev + 1)
+    } catch (err) {
+      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'An error occurred' })
+    } finally {
+      setIsBulkRunning(false)
+    }
+  }
 
   // Sync Jobs Data
   const syncUrl = userRole === 'MANAGER'
@@ -357,6 +395,71 @@ export default function GoogleSyncPage() {
                 {isSubmittingPool ? 'Adding...' : '+ Add to Pool & Assign Waiting Users'}
               </button>
             </form>
+          </div>
+
+          {/* Bulk Group Operations & Backfills */}
+          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px 0' }}>Bulk Group Operations & Backfills</h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+                Perform batch assignments for existing database users or distribute unassigned users all at once.
+              </p>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+              {/* Option A: Auto-distribute */}
+              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>1. Auto-distribute Unassigned Users</div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                    Automatically finds all existing users in the database who have no notification groups assigned and distributes them across your active pools (up to 500 members per pool).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isBulkRunning || pools.length === 0}
+                  onClick={() => handleBulkAssign()}
+                  className="btn"
+                  style={{ alignSelf: 'flex-start', background: 'var(--primary)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
+                >
+                  {isBulkRunning ? 'Processing...' : '⚡ Auto-distribute Unassigned Users'}
+                </button>
+              </div>
+
+              {/* Option B: Assign to Everyone */}
+              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>2. Assign Specific Group to Everyone</div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', marginBottom: '8px' }}>
+                    Assigns a specific notification group email to **ALL** users in the database (preserving their current group list). Use this to add everyone to a new/second group.
+                  </p>
+                  
+                  <select
+                    value={bulkEmailInput}
+                    onChange={e => setBulkEmailInput(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', fontSize: '12px', padding: '8px' }}
+                    disabled={isBulkRunning || pools.length === 0}
+                  >
+                    <option value="">-- Select a Group Email --</option>
+                    {pools.map((p: any) => (
+                      <option key={p.id} value={p.groupEmail}>
+                        {p.groupEmail} ({p.currentCount} / {p.maxCapacity} members)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  disabled={isBulkRunning || !bulkEmailInput}
+                  onClick={() => handleBulkAssign(bulkEmailInput)}
+                  className="btn"
+                  style={{ alignSelf: 'flex-start', background: 'var(--success)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
+                >
+                  {isBulkRunning ? 'Processing...' : '✉️ Assign Select Group to All Users'}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Group Pools Capacity Visualizer List */}

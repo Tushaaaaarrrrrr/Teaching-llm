@@ -36,7 +36,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
   const userRole = authData?.user?.role || ''
 
   // Courses & instructors always loaded — used in form dropdowns across all tabs
-  const { data: coursesData, error: coursesError, isLoading: loadingCourses } = useSWR('/api/courses', fetcher)
+  const { data: coursesData, error: coursesError, isLoading: loadingCourses, mutate: mutateCourses } = useSWR('/api/courses', fetcher)
   const { data: instructorsData, error: instructorsError } = useSWR('/api/instructors', fetcher)
 
   // All other tabs: only fetch when that tab is active
@@ -290,28 +290,49 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
   }
 
   async function toggleCourseDisabled(item: any) {
-    const res = await fetch(`/api/courses/${item.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: item.name,
-        description: item.description,
-        subject: item.subject,
-        color: item.color,
-        icon: item.icon,
-        teacherName: item.teacherName,
-        isDemo: item.isDemo,
-        isCommunityActive: item.isCommunityActive,
-        expiresAt: item.expiresAt,
-        isDisabled: !item.isDisabled,
-      }),
-    })
-    if (!res.ok) {
-      const data = await res.json()
-      alert(data.error || 'Failed to update course state')
-      return
+    const isCurrentlyOff = Boolean(item.isDisabled || item.isExpired)
+    const nextIsDisabled = !isCurrentlyOff
+
+    // Optimistic SWR Cache Update — instant 0ms UI feedback
+    const currentList = Array.isArray(coursesData) ? coursesData : (Array.isArray((coursesData as any)?.courses) ? (coursesData as any).courses : [])
+    const optimisticList = currentList.map((c: any) =>
+      c.id === item.id ? { ...c, isDisabled: nextIsDisabled } : c
+    )
+
+    if (typeof mutateCourses === 'function') {
+      mutateCourses(optimisticList, false)
     }
-    loadData()
+
+    try {
+      const res = await fetch(`/api/courses/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: item.name,
+          description: item.description,
+          subject: item.subject,
+          color: item.color,
+          icon: item.icon,
+          teacherName: item.teacherName,
+          isDemo: item.isDemo,
+          isCommunityActive: item.isCommunityActive,
+          expiresAt: item.expiresAt,
+          isDisabled: nextIsDisabled,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || 'Failed to update course state')
+        if (typeof mutateCourses === 'function') mutateCourses()
+        return
+      }
+      if (typeof mutateCourses === 'function') mutateCourses()
+      mutate('/api/live-sessions')
+    } catch (e) {
+      console.error(e)
+      alert('Network error updating course state')
+      if (typeof mutateCourses === 'function') mutateCourses()
+    }
   }
 
   function openEdit(item: any) {
@@ -2612,13 +2633,13 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                           )}
                         </button>
                       )}
-                       {tab === 'courses' && (
+                       {tab === 'courses' && (item.isDisabled || item.isExpired) && (
                          <button
                            onClick={() => toggleCourseDisabled(item)}
                            className="btn btn-ghost btn-sm"
                            style={{
-                             color: item.isDisabled || item.isExpired ? 'var(--danger)' : 'var(--success)',
-                             border: `1px solid ${item.isDisabled || item.isExpired ? 'var(--danger-light)' : 'var(--success-light)'}`,
+                             color: 'var(--danger)',
+                             border: '1px solid var(--danger-light)',
                              padding: '6px 12px',
                              fontSize: '11px',
                              fontWeight: '700',
@@ -2628,16 +2649,16 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                              alignItems: 'center',
                              gap: '4px'
                            }}
-                           title={(item.isDisabled || item.isExpired) ? 'Turn Course ON' : 'Turn Course OFF'}
+                           title="Turn Course ON"
                          >
                            <span style={{
                              width: '8px',
                              height: '8px',
                              borderRadius: '50%',
-                             background: (item.isDisabled || item.isExpired) ? 'var(--danger)' : 'var(--success)',
+                             background: 'var(--danger)',
                              display: 'inline-block'
                            }} />
-                           {(item.isDisabled || item.isExpired) ? 'OFF' : 'ON'}
+                           OFF
                          </button>
                        )}
                        {tab === 'courses' && (

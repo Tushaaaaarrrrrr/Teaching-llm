@@ -395,3 +395,78 @@ export async function getNotificationGroupPoolStats(db: any) {
     isAllFull,
   }
 }
+
+/**
+ * Bulk assign all users or unassigned users to notification groups.
+ * If groupEmail is provided, it assigns that email to ALL users (preserving existing groups).
+ * If no groupEmail is provided, it auto-distributes all unassigned users across available pools.
+ */
+export async function assignAllUsersToNotificationGroup(db: any, groupEmail?: string) {
+  // 1. Specific group assignment to ALL users
+  if (groupEmail) {
+    const validatedEmail = validateNotificationGroupEmail(groupEmail)
+    const targetUsers = await db.user.findMany({
+      where: {
+        OR: [
+          { notificationGroupEmails: null },
+          { NOT: { notificationGroupEmails: { contains: validatedEmail } } }
+        ]
+      },
+      select: { id: true, email: true, notificationGroupEmails: true }
+    })
+
+    let count = 0
+    for (const user of targetUsers) {
+      const currentGroups = parseNotificationGroupEmails(user.notificationGroupEmails)
+      if (!currentGroups.includes(validatedEmail)) {
+        const updatedGroups = Array.from(new Set([...currentGroups, validatedEmail]))
+        await db.user.update({
+          where: { id: user.id },
+          data: {
+            notificationGroupEmails: updatedGroups.join(','),
+            isNotificationGroupPending: false
+          }
+        })
+        await queueNotificationGroupSyncJob(db, {
+          userEmail: user.email,
+          groupEmail: validatedEmail,
+          action: 'ADD'
+        })
+        count++
+      }
+    }
+
+    // Update pool count
+    const actualCount = await db.user.count({
+      where: { notificationGroupEmails: { contains: validatedEmail } }
+    })
+    await db.notificationGroupPool.updateMany({
+      where: { groupEmail: validatedEmail },
+      data: { currentCount: actualCount }
+    })
+
+    return { count, message: `Successfully assigned all users to ${validatedEmail}` }
+  }
+
+  // 2. Auto-distribute all unassigned users to active pools
+  const unassignedUsers = await db.user.findMany({
+    where: {
+      OR: [
+        { notificationGroupEmails: null },
+        { notificationGroupEmails: '' }
+      ]
+    },
+    select: { id: true, email: true }
+  })
+
+  let count = 0
+  for (const user of unassignedUsers) {
+    const res = await getOrAssignNotificationGroup(db, user.email)
+    if (res.assigned) {
+      count++
+    }
+  }
+
+  return { count, message: `Successfully auto-assigned ${count} unassigned users to available pools` }
+}
+

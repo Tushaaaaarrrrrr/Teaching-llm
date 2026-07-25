@@ -7,6 +7,7 @@ import {
   flushNotificationGroupOverflowQueue,
   addNotificationGroupToUser,
   removeNotificationGroupFromUser,
+  assignAllUsersToNotificationGroup,
 } from '@/lib/notification-group-pool'
 
 export async function GET(request: Request) {
@@ -88,6 +89,12 @@ export async function POST(request: Request) {
       }
 
       const result = await removeNotificationGroupFromUser(prisma, userId, groupEmail)
+      return NextResponse.json({ success: true, ...result })
+    }
+
+    if (action === 'ASSIGN_ALL') {
+      const { groupEmail } = body // If undefined, triggers auto-distribution of unassigned users
+      const result = await assignAllUsersToNotificationGroup(prisma, groupEmail)
       return NextResponse.json({ success: true, ...result })
     }
 
