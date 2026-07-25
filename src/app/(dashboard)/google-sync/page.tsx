@@ -336,28 +336,74 @@ export default function GoogleSyncPage() {
           {/* Bulk Operations Panel */}
           <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px 0' }}>Bulk Pool Assignment Tool</h3>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px 0' }}>Bulk Pool Assignment Tools</h3>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-                Batch assign all existing users in your database to the General Notification Group Pool (500 limit per email).
+                Batch assign Pool Groups to all users in your database at once.
               </p>
             </div>
             
-            <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>Auto-distribute All Users to General Pool</div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-                  Automatically assigns every user to available emails in the default pool ("General Announcements"), filling them 500-by-500.
-                </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+              {/* Option 1: Auto-distribute to Default Pool */}
+              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>1. Auto-distribute All Users to General Pool</div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                    Automatically assigns every user to available emails in the default pool ("General Announcements"), filling them 500-by-500.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isBulkRunning || categories.length === 0}
+                  onClick={() => handleBulkAssign()}
+                  className="btn"
+                  style={{ alignSelf: 'flex-start', background: 'var(--primary)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
+                >
+                  {isBulkRunning ? 'Processing...' : '⚡ Auto-distribute All Users'}
+                </button>
               </div>
-              <button
-                type="button"
-                disabled={isBulkRunning || categories.length === 0}
-                onClick={() => handleBulkAssign()}
-                className="btn"
-                style={{ background: 'var(--primary)', color: '#ffffff', border: 'none', fontSize: '13px', fontWeight: '700', padding: '10px 20px' }}
-              >
-                {isBulkRunning ? 'Processing...' : '⚡ Auto-distribute All Users'}
-              </button>
+
+              {/* Option 2: Assign Secondary Custom Pool to Everyone (Excludes Default General Pool) */}
+              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>2. Assign Secondary Pool Group to Everyone</div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', marginBottom: '8px' }}>
+                    Assigns a custom secondary Pool Group to **ALL** users in the database (preserving existing groups).
+                  </p>
+                  
+                  {(() => {
+                    const secondaryCategories = categories.filter((c: any) => !c.isDefault && c.name !== 'General Announcements')
+                    return (
+                      <select
+                        value={bulkCatSelect}
+                        onChange={e => setBulkCatSelect(e.target.value)}
+                        className="form-input"
+                        style={{ width: '100%', fontSize: '12px', padding: '8px' }}
+                        disabled={isBulkRunning || secondaryCategories.length === 0}
+                      >
+                        <option value="">
+                          {secondaryCategories.length === 0
+                            ? '-- No custom secondary pools (General Pool auto-assigned above) --'
+                            : '-- Select a Secondary Pool Group --'}
+                        </option>
+                        {secondaryCategories.map((c: any) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({c.totalAssigned} / {c.totalCapacity} members across {c.emails.length} emails)
+                          </option>
+                        ))}
+                      </select>
+                    )
+                  })()}
+                </div>
+                <button
+                  type="button"
+                  disabled={isBulkRunning || !bulkCatSelect}
+                  onClick={() => handleBulkAssign(bulkCatSelect)}
+                  className="btn"
+                  style={{ alignSelf: 'flex-start', background: 'var(--success)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
+                >
+                  {isBulkRunning ? 'Processing...' : '✉️ Assign Secondary Pool to Everyone'}
+                </button>
+              </div>
             </div>
           </div>
 
