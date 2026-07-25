@@ -50,6 +50,8 @@ model User {
   // src/lib/community-notifications.ts.
   notifAnnouncementsEnabled Boolean                    @default(true)
   notifCommunityEnabled   Boolean                      @default(true)
+  notificationGroupEmails String?
+  isNotificationGroupPending Boolean                  @default(false)
   activityLogs            ActivityLog[]
   announcements           Announcement[]               @relation("AnnouncementCreator")
   createdBundleOfferings  BundleOffering[]
@@ -882,20 +884,33 @@ model SyncQueue {
 model GroupSyncJob {
   id           String   @id @default(cuid())
   userEmail    String
-  courseId     String   @map("classId")
+  courseId     String?  @map("classId")
   groupEmail   String
   action       String
+  groupType    String   @default("COURSE")
   status       String   @default("PENDING")
   attemptCount Int      @default(0)
   lastError    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course       Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([status, attemptCount])
   @@index([courseId])
   @@index([userEmail])
   @@index([createdAt])
+}
+
+model NotificationGroupPool {
+  id           String   @id @default(cuid())
+  groupEmail   String   @unique
+  maxCapacity  Int      @default(500)
+  currentCount Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive, currentCount])
 }
 
 model GroupSyncLock {

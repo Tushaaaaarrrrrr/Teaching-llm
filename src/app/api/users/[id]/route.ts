@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseExpired } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
+import { parseNotificationGroupEmails, queueNotificationGroupSyncJob, normalizeEmail } from '@/lib/notification-group-pool'
 
 export async function GET(
   request: NextRequest,
@@ -44,6 +45,8 @@ export async function GET(
         iitmJoinMonth: true,
         iitmLevel: true,
         iitmUserType: true,
+        notificationGroupEmails: true,
+        isNotificationGroupPending: true,
         enrollments: {
           select: {
             courseId: true,
@@ -104,7 +107,7 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    const { name, firstName, lastName, mobileNumber, email, role, isTerminated, gender, age, state, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes, iitmJoinYear, iitmJoinMonth, iitmLevel, iitmUserType, isIdentityUpdated } = body
+    const { name, firstName, lastName, mobileNumber, email, role, isTerminated, gender, age, state, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes, iitmJoinYear, iitmJoinMonth, iitmLevel, iitmUserType, isIdentityUpdated, notificationGroupEmails, notificationGroupEmail } = body
     const nextCourseIds = classIds !== undefined ? classIds : courseIds
     const nextAssignedCourseIds = assignedClassIds !== undefined ? assignedClassIds : assignedCourseIds
     const nextBundleIds = Array.isArray(bundleIds) ? Array.from(new Set(bundleIds.filter(Boolean))) : undefined
@@ -151,7 +154,36 @@ export async function PUT(
       }
     }
 
+    const rawGroupInput = notificationGroupEmails !== undefined ? notificationGroupEmails : notificationGroupEmail
+    const nextGroupEmails = rawGroupInput !== undefined
+      ? (Array.isArray(rawGroupInput)
+          ? Array.from(new Set(rawGroupInput.map((e: string) => normalizeEmail(e)).filter(Boolean)))
+          : parseNotificationGroupEmails(rawGroupInput))
+      : undefined
+
     const updatedUser = await prisma.$transaction(async (tx) => {
+      if (nextGroupEmails !== undefined) {
+        const existingUser = await tx.user.findUnique({
+          where: { id },
+          select: { notificationGroupEmails: true, email: true },
+        })
+        const prevGroups = parseNotificationGroupEmails(existingUser?.notificationGroupEmails)
+        const addedGroups = nextGroupEmails.filter(e => !prevGroups.includes(e))
+        const removedGroups = prevGroups.filter(e => !nextGroupEmails.includes(e))
+
+        data.notificationGroupEmails = nextGroupEmails.join(',')
+        data.isNotificationGroupPending = false
+
+        if (existingUser) {
+          for (const groupEmail of addedGroups) {
+            await queueNotificationGroupSyncJob(tx, { userEmail: existingUser.email, groupEmail, action: 'ADD' })
+          }
+          for (const groupEmail of removedGroups) {
+            await queueNotificationGroupSyncJob(tx, { userEmail: existingUser.email, groupEmail, action: 'REMOVE' })
+          }
+        }
+      }
+
       const existingEnrollmentRows = (nextCourseIds !== undefined || nextBundleIds !== undefined)
         ? await tx.enrollment.findMany({
             where: { userId: id },

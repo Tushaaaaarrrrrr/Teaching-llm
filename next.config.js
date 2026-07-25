@@ -1,9 +1,28 @@
+const defaultRuntimeCaching = require('next-pwa/cache')
+
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   customWorkerDir: 'worker',
+  fallbacks: {
+    document: '/offline.html',
+  },
+  runtimeCaching: [
+    {
+      urlPattern: /\/api\/auth\/me/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'auth-me',
+        expiration: {
+          maxEntries: 1,
+          maxAgeSeconds: 86400, // 24 hours
+        },
+      },
+    },
+    ...defaultRuntimeCaching,
+  ],
 })
 
 /** @type {import('next').NextConfig} */

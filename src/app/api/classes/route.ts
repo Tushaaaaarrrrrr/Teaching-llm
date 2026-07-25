@@ -3,12 +3,16 @@ import { prisma } from '@/lib/db'
 import { getSession, getAccessibleCourseIds, isManagerOrSuperAdmin } from '@/lib/auth'
 import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { searchParams } = new URL(request.url)
+    const includeDms = searchParams.get('includeDms') !== 'false'
+    const activeOnly = searchParams.get('activeOnly') === 'true'
 
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
 
@@ -16,7 +20,7 @@ export async function GET() {
       isGlobal: false,
     }
 
-    if (!isManagerOrSuperAdmin(session.role)) {
+    if (!isManagerOrSuperAdmin(session.role) || activeOnly) {
       where.isDisabled = false
       where.isCommunityActive = true
     }
@@ -79,47 +83,54 @@ export async function GET() {
           isMuted,
         }
       })
-    // Fetch ONLY Direct Chats (type=DIRECT) — NEVER show SUPPORT chats here
-    let chatWhere: any = { type: 'DIRECT' }
-    if (session.role === 'STUDENT' || session.role === 'ADMIN') {
-      // Students only see ACTIVE DMs (not DISABLED or CLOSED)
-      chatWhere.studentId = session.userId
-      chatWhere.status = 'ACTIVE'
-    } else {
-      // Managers only see their own DMs, not other managers' chats
-      chatWhere.agentId = session.userId
-      chatWhere.status = { not: 'CLOSED' }
-    }
-    
-    const chats = await prisma.chatSession.findMany({
-      where: chatWhere,
-      include: {
-        student: { select: { name: true, role: true } },
-        agent: { select: { name: true, role: true } },
-      },
-      orderBy: { updatedAt: 'desc' }
-    })
-
-    const directChats = chats.map(chat => {
-      const lastMsgTime = chat.updatedAt.getTime();
-      const lastReadTime = readMap.get(`dm_${chat.id}`) || 0;
-      return {
-        id: `dm_${chat.id}`,
-        name: session.role === 'STUDENT' ? `Chat with ${chat.agent?.name || 'Manager'}` : `Chat with ${chat.student.name}`,
-        subject: 'Direct Message',
-        color: '#3636e8',
-        isDisabled: false,
-        isCommunityActive: true,
-        isDmDisabled: chat.status === 'DISABLED',
-        lastMessageAt: chat.updatedAt,
-        hasUnread: lastMsgTime > lastReadTime,
-        isDirectChat: true,
-        _count: { lectures: 0 },
-        role: session.role === 'STUDENT' ? (chat.agent?.role || 'MANAGER') : chat.student.role,
+    let directChats: any[] = []
+    if (includeDms) {
+      // Fetch ONLY Direct Chats (type=DIRECT) — NEVER show SUPPORT chats here
+      let chatWhere: any = { type: 'DIRECT' }
+      if (session.role === 'STUDENT' || session.role === 'ADMIN') {
+        // Students only see ACTIVE DMs (not DISABLED or CLOSED)
+        chatWhere.studentId = session.userId
+        chatWhere.status = 'ACTIVE'
+      } else {
+        // Managers only see their own DMs, not other managers' chats
+        chatWhere.agentId = session.userId
+        chatWhere.status = { not: 'CLOSED' }
       }
-    })
+      
+      const chats = await prisma.chatSession.findMany({
+        where: chatWhere,
+        include: {
+          student: { select: { name: true, role: true } },
+          agent: { select: { name: true, role: true } },
+        },
+        orderBy: { updatedAt: 'desc' }
+      })
 
-    const combined = [...formattedCourses, ...directChats].sort((a, b) => {
+      directChats = chats.map(chat => {
+        const lastMsgTime = chat.updatedAt.getTime();
+        const lastReadTime = readMap.get(`dm_${chat.id}`) || 0;
+        return {
+          id: `dm_${chat.id}`,
+          name: session.role === 'STUDENT' ? `Chat with ${chat.agent?.name || 'Manager'}` : `Chat with ${chat.student.name}`,
+          subject: 'Direct Message',
+          color: '#3636e8',
+          isDisabled: false,
+          isCommunityActive: true,
+          isDmDisabled: chat.status === 'DISABLED',
+          lastMessageAt: chat.updatedAt,
+          hasUnread: lastMsgTime > lastReadTime,
+          isDirectChat: true,
+          _count: { lectures: 0 },
+          role: session.role === 'STUDENT' ? (chat.agent?.role || 'MANAGER') : chat.student.role,
+        }
+      })
+    }
+
+    const filteredCourses = activeOnly 
+      ? formattedCourses.filter((c: any) => !c.isDisabled && !isCourseExpired(c))
+      : formattedCourses
+
+    const combined = [...filteredCourses, ...directChats].sort((a, b) => {
       const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
       const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
       return timeB - timeA

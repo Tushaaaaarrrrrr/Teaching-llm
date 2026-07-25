@@ -120,10 +120,10 @@ function CalendarPageContent() {
   const isManager = user?.role === 'MANAGER'
 
   useEffect(() => {
-    // Load user info, classes, and instructors once
+    // Load user info, classes (courses only), and instructors once
     Promise.all([
       fetch('/api/auth/me').then(r => r.json()),
-      fetch('/api/classes').then(r => r.json()),
+      fetch('/api/classes?includeDms=false&activeOnly=true').then(r => r.json()),
       fetch('/api/instructors').then(r => r.json()),
     ]).then(([meData, clsData, instrData]) => {
       setUser(meData.user || meData)

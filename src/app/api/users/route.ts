@@ -5,6 +5,7 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseExpired } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 import { scheduleWelcomeSequence } from '@/lib/welcome-notifications'
+import { getOrAssignNotificationGroup } from '@/lib/notification-group-pool'
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,6 +37,8 @@ export async function GET(request: NextRequest) {
       isSuperManager: true,
       canTerminate: true,
       canCreateStudents: true,
+      notificationGroupEmails: true,
+      isNotificationGroupPending: true,
       createdAt: true,
       enrollments: {
         select: {
@@ -250,6 +253,9 @@ export async function POST(request: NextRequest) {
           createdAt: true,
         },
       })
+
+      // Auto-assign new user to active Notification Group Pool (or queue in Overflow Queue)
+      await getOrAssignNotificationGroup(tx, newUser.email)
 
       if (effectiveCourseIds.length > 0) {
         await tx.enrollment.createMany({

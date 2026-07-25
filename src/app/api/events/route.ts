@@ -158,7 +158,11 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json([...mapped, ...mappedMentorships])
+    return NextResponse.json([...mapped, ...mappedMentorships], {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      }
+    })
   } catch (error) {
     console.error('Error fetching course events:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

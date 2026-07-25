@@ -158,8 +158,7 @@ export async function GET() {
       }
     }, {
       headers: {
-        // Allow browsers to cache for 30s; serve stale while revalidating for up to 60s
-        'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
       }
     })
   } catch (error: any) {

@@ -234,6 +234,14 @@ export default function UpdateOverlay() {
           {/* Content/Subtitle */}
           <div
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+            onClick={(e) => {
+              const target = e.target as HTMLElement
+              const anchor = target.closest('a')
+              if (anchor && anchor.href) {
+                e.preventDefault()
+                window.open(anchor.href, '_blank', 'noopener,noreferrer')
+              }
+            }}
             style={{ 
               fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.7', wordBreak: 'break-word',
               marginBottom: '32px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%'
@@ -247,7 +255,13 @@ export default function UpdateOverlay() {
             {currentUpdate.ctaText && currentUpdate.ctaLink && (
               <button onClick={() => {
                 fetch(`/api/updates/${currentUpdate.id}/dismiss`, { method: 'POST' }).catch(console.error)
-                window.location.href = currentUpdate.ctaLink!
+                const url = currentUpdate.ctaLink!
+                try {
+                  const w = window.open(url, '_blank', 'noopener,noreferrer')
+                  if (!w) window.location.href = url
+                } catch {
+                  window.location.href = url
+                }
               }} style={{
                 background: 'var(--primary)', color: '#fff', border: 'none', padding: '14px',
                 borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',

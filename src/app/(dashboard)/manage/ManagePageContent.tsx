@@ -111,6 +111,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
   async function loadData() {
     mutate('/api/courses')
     mutate('/api/instructors')
+    mutate('/api/live-sessions')
     if (tab === 'bundles' || tab === 'notifications') mutate('/api/course-bundles')
     if (tab === 'lectures')      mutate('/api/content?hasVideo=true')
     if (tab === 'events')        mutate('/api/events')
@@ -2595,60 +2596,88 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                           )}
                         </button>
                       )}
-                      {tab === 'courses' && (
-                        <button
-                          onClick={() => toggleCourseDisabled(item)}
-                          className="btn btn-ghost btn-sm"
-                          disabled={item.isExpired && !item.isDisabled}
-                          style={{
-                            color: item.isDisabled ? 'var(--success)' : (item.isExpired ? 'var(--text-muted)' : 'var(--danger)'),
-                            border: `1px solid ${item.isDisabled ? 'var(--success-light)' : (item.isExpired ? 'var(--surface-2)' : 'var(--danger-light)')}`,
-                            padding: '6px 10px',
-                            fontSize: '11px',
-                            cursor: (item.isExpired && !item.isDisabled) ? 'not-allowed' : 'pointer'
-                          }}
-                          title={item.isExpired && !item.isDisabled ? 'Disabled by expiry' : (item.isDisabled ? 'Enable Course' : 'Disable Course')}
-                        >
-                          {item.isDisabled ? 'Enable' : (item.isExpired ? 'Auto-Disabled' : 'Disable')}
-                        </button>
-                      )}
-                      {tab === 'courses' && (
-                        <button
-                          onClick={() => handleDuplicate(item)}
-                          disabled={saving}
-                          className="btn btn-ghost btn-sm"
-                          style={{
-                            color: 'var(--info)',
-                            border: '1px solid #cffafe',
-                            padding: '6px',
-                          }}
-                          title="Duplicate"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><path d="M3 4h2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4h2"/><path d="M9 9h6v6H9z"/>
-                          </svg>
-                        </button>
-                      )}
-                      <button onClick={() => openEdit(item)} className="btn btn-ghost btn-sm" style={{ padding: '6px' }} title="Edit">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(item.id)} 
-                        disabled={item.isDemo}
-                        title={item.isDemo ? "Cannot delete system demo course" : "Delete course"}
-                        className="btn btn-sm" 
-                        style={{ color: item.isDemo ? 'var(--border)' : 'var(--danger)', border: `1px solid ${item.isDemo ? 'var(--surface-2)' : 'var(--danger-light)'}`, cursor: item.isDemo ? 'not-allowed' : 'pointer' }}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="3 6 5 6 21 6"/>
-                          <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                        </svg>
-                      </button>
-                    </div>
-                   )}
+                       {tab === 'courses' && (
+                         <button
+                           onClick={() => toggleCourseDisabled(item)}
+                           className="btn btn-ghost btn-sm"
+                           style={{
+                             color: item.isDisabled || item.isExpired ? 'var(--danger)' : 'var(--success)',
+                             border: `1px solid ${item.isDisabled || item.isExpired ? 'var(--danger-light)' : 'var(--success-light)'}`,
+                             padding: '6px 12px',
+                             fontSize: '11px',
+                             fontWeight: '700',
+                             cursor: 'pointer',
+                             borderRadius: '20px',
+                             display: 'flex',
+                             alignItems: 'center',
+                             gap: '4px'
+                           }}
+                           title={(item.isDisabled || item.isExpired) ? 'Turn Course ON' : 'Turn Course OFF'}
+                         >
+                           <span style={{
+                             width: '8px',
+                             height: '8px',
+                             borderRadius: '50%',
+                             background: (item.isDisabled || item.isExpired) ? 'var(--danger)' : 'var(--success)',
+                             display: 'inline-block'
+                           }} />
+                           {(item.isDisabled || item.isExpired) ? 'OFF' : 'ON'}
+                         </button>
+                       )}
+                       {tab === 'courses' && (
+                         <button
+                           onClick={() => handleDuplicate(item)}
+                           disabled={saving || item.isDisabled || item.isExpired}
+                           className="btn btn-ghost btn-sm"
+                           style={{
+                             color: (item.isDisabled || item.isExpired) ? 'var(--text-muted)' : 'var(--info)',
+                             border: `1px solid ${(item.isDisabled || item.isExpired) ? 'var(--surface-2)' : '#cffafe'}`,
+                             padding: '6px',
+                             cursor: (item.isDisabled || item.isExpired) ? 'not-allowed' : 'pointer',
+                             opacity: (item.isDisabled || item.isExpired) ? 0.4 : 1
+                           }}
+                           title={(item.isDisabled || item.isExpired) ? 'Turn course ON to duplicate' : 'Duplicate'}
+                         >
+                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                             <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><path d="M3 4h2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4h2"/><path d="M9 9h6v6H9z"/>
+                           </svg>
+                         </button>
+                       )}
+                       <button 
+                         onClick={() => openEdit(item)} 
+                         disabled={tab === 'courses' && (item.isDisabled || item.isExpired)}
+                         className="btn btn-ghost btn-sm" 
+                         style={{ 
+                           padding: '6px', 
+                           cursor: tab === 'courses' && (item.isDisabled || item.isExpired) ? 'not-allowed' : 'pointer',
+                           opacity: tab === 'courses' && (item.isDisabled || item.isExpired) ? 0.4 : 1 
+                         }} 
+                         title={tab === 'courses' && (item.isDisabled || item.isExpired) ? 'Turn course ON to edit' : 'Edit'}
+                       >
+                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                           <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                         </svg>
+                       </button>
+                       <button 
+                         onClick={() => handleDelete(item.id)} 
+                         disabled={item.isDemo || (tab === 'courses' && (item.isDisabled || item.isExpired))}
+                         title={item.isDemo ? "Cannot delete system demo course" : (tab === 'courses' && (item.isDisabled || item.isExpired)) ? "Turn course ON to delete" : "Delete course"}
+                         className="btn btn-sm" 
+                         style={{ 
+                           color: (item.isDemo || (tab === 'courses' && (item.isDisabled || item.isExpired))) ? 'var(--border)' : 'var(--danger)', 
+                           border: `1px solid ${(item.isDemo || (tab === 'courses' && (item.isDisabled || item.isExpired))) ? 'var(--surface-2)' : 'var(--danger-light)'}`, 
+                           cursor: (item.isDemo || (tab === 'courses' && (item.isDisabled || item.isExpired))) ? 'not-allowed' : 'pointer',
+                           opacity: (item.isDemo || (tab === 'courses' && (item.isDisabled || item.isExpired))) ? 0.4 : 1
+                         }}
+                       >
+                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                           <polyline points="3 6 5 6 21 6"/>
+                           <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                         </svg>
+                       </button>
+                     </div>
+                    )}
                 </div>
               )
             })}

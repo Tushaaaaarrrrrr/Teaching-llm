@@ -11,6 +11,8 @@ interface Transaction {
   amount: number
   status: string
   createdAt: string
+  isExternal?: boolean
+  type?: string
   user: { id: string; name: string; email: string; mobileNumber: string | null }
   course: { id: string; name: string; subject: string | null }
 }
@@ -68,6 +70,27 @@ export default function TransactionsPage() {
         textTransform: 'uppercase', letterSpacing: '0.05em'
       }}>
         {status}
+      </span>
+    )
+  }
+
+  const sourceBadge = (isExternal?: boolean) => {
+    const isExt = Boolean(isExternal)
+    return (
+      <span style={{
+        background: isExt ? 'rgba(99, 102, 241, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+        color: isExt ? '#818cf8' : '#34d399',
+        border: `1px solid ${isExt ? 'rgba(99, 102, 241, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
+        padding: '3px 10px',
+        borderRadius: '14px',
+        fontSize: '10.5px',
+        fontWeight: '800',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        letterSpacing: '0.04em',
+      }}>
+        {isExt ? '🌐 EXTERNAL WEB' : '📱 IN-APP'}
       </span>
     )
   }
@@ -224,6 +247,7 @@ export default function TransactionsPage() {
                 <thead>
                   <tr style={{ background: 'var(--surface)', borderBottom: '2px solid var(--border)' }}>
                     <th style={{ padding: '14px 20px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Order ID</th>
+                    <th style={{ padding: '14px 20px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Source</th>
                     <th style={{ padding: '14px 20px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Student</th>
                     <th style={{ padding: '14px 20px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Course</th>
                     <th style={{ padding: '14px 20px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Amount</th>
@@ -235,6 +259,7 @@ export default function TransactionsPage() {
                   {filteredTransactions.map((tx, i) => (
                     <tr key={tx.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface-2)' }}>
                       <td style={{ padding: '14px 20px', fontSize: '13px', fontWeight: '700', color: 'var(--accent)', fontFamily: 'monospace' }}>{tx.orderId}</td>
+                      <td style={{ padding: '14px 20px' }}>{sourceBadge(tx.isExternal)}</td>
                       <td style={{ padding: '14px 20px' }}>
                         <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{tx.user.name}</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{tx.user.email}</div>
@@ -270,7 +295,10 @@ export default function TransactionsPage() {
                 border: '1px solid rgba(0,0,0,0.04)',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  {statusBadge(tx.status)}
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    {statusBadge(tx.status)}
+                    {sourceBadge(tx.isExternal)}
+                  </div>
                   <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)' }}>₹{tx.amount}</div>
                 </div>
 

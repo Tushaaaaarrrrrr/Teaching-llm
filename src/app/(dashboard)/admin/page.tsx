@@ -46,6 +46,8 @@ interface User {
   securityNumber?: string | null
   createdAt: string
   isGoogleUser?: boolean
+  notificationGroupEmails?: string | null
+  isNotificationGroupPending?: boolean
   enrollments?: Enrollment[]
   instructorAssignments?: InstructorAssignment[]
   courseBundleAssignments?: { bundleId: string; bundle: CourseBundleInfo }[]
@@ -61,7 +63,7 @@ export default function AdminPage() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
-  const [selectedCourseId, setSelectedCourseId] = useState('all')
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('all')
 
 
   // Debounce search
@@ -77,6 +79,7 @@ export default function AdminPage() {
   const [form, setForm] = useState({ 
     name: '', firstName: '', lastName: '', mobileNumber: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
     courseIds: [] as string[], bundleIds: [] as string[], assignedCourseIds: [] as string[],
+    notificationGroupEmails: [] as string[],
     enrollmentTypes: {} as Record<string, string>,
     canTerminate: false, canCreateStudents: false 
   })
@@ -194,6 +197,7 @@ export default function AdminPage() {
     setForm({ 
       name: '', firstName: '', lastName: '', mobileNumber: '', email: '', password: '', role: 'STUDENT', gender: 'MALE',
       courseIds: [], bundleIds: [], assignedCourseIds: [],
+      notificationGroupEmails: [],
       enrollmentTypes: {},
       canTerminate: false, canCreateStudents: false 
     })
@@ -209,6 +213,9 @@ export default function AdminPage() {
     } else {
       setEditingUserIsSuperManager(false)
     }
+    const notifEmails = user.notificationGroupEmails
+      ? user.notificationGroupEmails.split(',').map(e => e.trim()).filter(Boolean)
+      : []
     setEditId(user.id)
     setForm({
       name: displayName,
@@ -222,6 +229,7 @@ export default function AdminPage() {
       courseIds: user.enrollments?.map(e => e.courseId) || [],
       bundleIds: user.courseBundleAssignments?.map(b => b.bundleId) || [],
       assignedCourseIds: user.instructorAssignments?.map(a => a.courseId) || [],
+      notificationGroupEmails: notifEmails,
       enrollmentTypes: user.enrollments?.reduce((acc: any, e) => {
         acc[e.courseId] = (e as any).type || 'LIVE'
         return acc
@@ -256,6 +264,7 @@ export default function AdminPage() {
         gender: form.gender,
         courseIds: form.courseIds,
         bundleIds: form.bundleIds,
+        notificationGroupEmails: form.notificationGroupEmails.join(','),
         enrollmentTypes: form.enrollmentTypes,
         canTerminate: form.canTerminate,
         canCreateStudents: form.canCreateStudents
@@ -910,6 +919,81 @@ export default function AdminPage() {
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Managers can update gender anytime.</span>
                 </div>
               )}
+
+              {/* Notification Group Emails (Multi-Group Pool Support) */}
+              <div className="form-group" style={{ background: 'var(--surface-2)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label className="form-label" style={{ margin: 0, fontWeight: '700', fontSize: '12px' }}>
+                    Notification Group Email(s)
+                  </label>
+                  <a href="/google-sync" style={{ fontSize: '11px', color: 'var(--primary)', textDecoration: 'none', fontWeight: '700' }}>
+                    Manage Pool Emails →
+                  </a>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                  {form.notificationGroupEmails.length === 0 ? (
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      No notification group assigned yet. (Auto-assigns from pool on save)
+                    </span>
+                  ) : (
+                    form.notificationGroupEmails.map(email => (
+                      <span key={email} style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        background: 'var(--primary-light, #e0e7ff)',
+                        color: 'var(--primary, #4338ca)',
+                        padding: '4px 10px',
+                        borderRadius: '16px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        border: '1px solid var(--border)',
+                      }}>
+                        ✉️ {email}
+                      </span>
+                    ))
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="email"
+                    className="form-input"
+                    placeholder="e.g. notifications-group-1@genziitian.org"
+                    id="modalNotifGroupInput"
+                    style={{ flex: 1, fontSize: '12px' }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        const val = (e.currentTarget.value || '').trim().toLowerCase()
+                        if (val && !form.notificationGroupEmails.includes(val)) {
+                          setForm(p => ({ ...p, notificationGroupEmails: Array.from(new Set([...p.notificationGroupEmails, val])) }))
+                          e.currentTarget.value = ''
+                        }
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', fontSize: '11px', fontWeight: '700' }}
+                    onClick={() => {
+                      const input = document.getElementById('modalNotifGroupInput') as HTMLInputElement
+                      const val = (input?.value || '').trim().toLowerCase()
+                      if (val && !form.notificationGroupEmails.includes(val)) {
+                        setForm(p => ({ ...p, notificationGroupEmails: Array.from(new Set([...p.notificationGroupEmails, val])) }))
+                        input.value = ''
+                      }
+                    }}
+                  >
+                    + Add Group
+                  </button>
+                </div>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px', display: 'block' }}>
+                  Internal Google Group emails for broadcasting announcements (500 max users per group). Preserves existing memberships when adding new groups.
+                </span>
+              </div>
               
               {/* Granular Permissions (MANAGER ONLY for ADMIN/INSTRUCTOR roles) */}
               {userRole === 'MANAGER' && (form.role === 'ADMIN' || form.role === 'INSTRUCTOR') && (

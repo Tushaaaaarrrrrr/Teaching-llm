@@ -59,7 +59,11 @@ export async function GET(request: NextRequest) {
           return true
         })
 
-    return NextResponse.json(filtered)
+    return NextResponse.json(filtered, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      }
+    })
   } catch (error) {
     console.error('Error fetching live sessions:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

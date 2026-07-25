@@ -280,7 +280,12 @@ export async function POST(request: NextRequest) {
         }
 
         // 7b2. Create Order & Order Items (to enable Transaction page visibility)
-        const safeAmount = typeof finalPrice === 'number' && isFinite(finalPrice) ? finalPrice : 0
+        const rawPrice = finalPrice ?? (body as any).amount ?? (body as any).price ?? (body as any).total ?? (body as any).final_price ?? (body as any).totalPrice
+        const safeAmount = typeof rawPrice === 'number' && isFinite(rawPrice)
+          ? rawPrice
+          : typeof rawPrice === 'string' && !isNaN(parseFloat(rawPrice.trim()))
+          ? parseFloat(rawPrice.trim())
+          : 0
         const safeCreatedAt = purchasedAt ? (() => { const d = new Date(purchasedAt); return isNaN(d.getTime()) ? new Date() : d })() : new Date()
 
         let order = null

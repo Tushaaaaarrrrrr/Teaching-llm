@@ -85,7 +85,7 @@ export async function GET() {
 
   return NextResponse.json({ user: transformedUser }, {
     headers: {
-      'Cache-Control': 'private, max-age=10, stale-while-revalidate=30',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
     }
   })
 }
