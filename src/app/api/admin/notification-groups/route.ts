@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import {
-  getNotificationGroupPoolStats,
-  addNotificationGroupToPool,
-  flushNotificationGroupOverflowQueue,
-  addNotificationGroupToUser,
-  removeNotificationGroupFromUser,
-  assignAllUsersToNotificationGroup,
+  getPoolCategoryStats,
+  createPoolCategory,
+  addEmailToPoolCategory,
+  flushCategoryOverflowQueue,
+  assignAllUsersToPoolCategory,
 } from '@/lib/notification-group-pool'
 
 export async function GET(request: Request) {
@@ -17,7 +16,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized. Manager access required.' }, { status: 403 })
     }
 
-    const stats = await getNotificationGroupPoolStats(prisma)
+    const stats = await getPoolCategoryStats(prisma)
     return NextResponse.json({ success: true, ...stats })
   } catch (error) {
     console.error('[API Notification Groups GET] Error:', error)
@@ -38,64 +37,71 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { action } = body
 
-    if (action === 'ADD_POOL') {
-      const { groupEmail, maxCapacity } = body
-      if (!groupEmail) {
-        return NextResponse.json({ error: 'groupEmail is required' }, { status: 400 })
+    if (action === 'CREATE_CATEGORY') {
+      const { name, description, isDefault } = body
+      if (!name) {
+        return NextResponse.json({ error: 'Pool Category Name is required' }, { status: 400 })
       }
 
-      const result = await addNotificationGroupToPool(prisma, groupEmail, maxCapacity ? Number(maxCapacity) : 500)
-      return NextResponse.json({ success: true, message: 'Notification Group added to pool successfully', ...result })
+      const category = await createPoolCategory(prisma, name, description, Boolean(isDefault))
+      return NextResponse.json({ success: true, message: 'Pool Group created successfully', category })
     }
 
-    if (action === 'FLUSH_QUEUE') {
-      const result = await flushNotificationGroupOverflowQueue(prisma)
-      return NextResponse.json({ success: true, message: 'Overflow queue processed', ...result })
-    }
-
-    if (action === 'TOGGLE_STATUS') {
-      const { poolId, isActive } = body
-      if (!poolId) {
-        return NextResponse.json({ error: 'poolId is required' }, { status: 400 })
+    if (action === 'ADD_EMAIL_TO_CATEGORY') {
+      const { categoryId, groupEmail, maxCapacity } = body
+      if (!categoryId || !groupEmail) {
+        return NextResponse.json({ error: 'categoryId and groupEmail are required' }, { status: 400 })
       }
 
-      const updated = await prisma.notificationGroupPool.update({
-        where: { id: poolId },
+      const result = await addEmailToPoolCategory(prisma, categoryId, groupEmail, maxCapacity ? Number(maxCapacity) : 500)
+      return NextResponse.json({ success: true, message: 'Group Email added to Pool successfully', ...result })
+    }
+
+    if (action === 'FLUSH_CATEGORY') {
+      const { categoryId } = body
+      if (!categoryId) {
+        return NextResponse.json({ error: 'categoryId is required' }, { status: 400 })
+      }
+
+      const result = await flushCategoryOverflowQueue(prisma, categoryId)
+      return NextResponse.json({ success: true, message: 'Category queue processed', ...result })
+    }
+
+    if (action === 'TOGGLE_EMAIL_STATUS') {
+      const { emailId, isActive } = body
+      if (!emailId) {
+        return NextResponse.json({ error: 'emailId is required' }, { status: 400 })
+      }
+
+      const updated = await prisma.notificationPoolEmail.update({
+        where: { id: emailId },
         data: { isActive: Boolean(isActive) },
       })
 
-      // If re-activating, attempt to flush queue
       if (isActive) {
-        await flushNotificationGroupOverflowQueue(prisma)
+        await flushCategoryOverflowQueue(prisma, updated.categoryId)
       }
 
-      return NextResponse.json({ success: true, pool: updated })
+      return NextResponse.json({ success: true, email: updated })
     }
 
-    if (action === 'ADD_USER_GROUP') {
-      const { userId, groupEmail } = body
-      if (!userId || !groupEmail) {
-        return NextResponse.json({ error: 'userId and groupEmail are required' }, { status: 400 })
-      }
-
-      const result = await addNotificationGroupToUser(prisma, userId, groupEmail)
+    if (action === 'ASSIGN_ALL_CATEGORY') {
+      const { categoryId } = body // If undefined, uses default category
+      const result = await assignAllUsersToPoolCategory(prisma, categoryId)
       return NextResponse.json({ success: true, ...result })
     }
 
-    if (action === 'REMOVE_USER_GROUP') {
-      const { userId, groupEmail } = body
-      if (!userId || !groupEmail) {
-        return NextResponse.json({ error: 'userId and groupEmail are required' }, { status: 400 })
+    if (action === 'DELETE_CATEGORY') {
+      const { categoryId } = body
+      if (!categoryId) {
+        return NextResponse.json({ error: 'categoryId is required' }, { status: 400 })
       }
 
-      const result = await removeNotificationGroupFromUser(prisma, userId, groupEmail)
-      return NextResponse.json({ success: true, ...result })
-    }
+      await prisma.notificationPoolCategory.delete({
+        where: { id: categoryId },
+      })
 
-    if (action === 'ASSIGN_ALL') {
-      const { groupEmail } = body // If undefined, triggers auto-distribution of unassigned users
-      const result = await assignAllUsersToNotificationGroup(prisma, groupEmail)
-      return NextResponse.json({ success: true, ...result })
+      return NextResponse.json({ success: true, message: 'Pool Category deleted successfully' })
     }
 
     return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })

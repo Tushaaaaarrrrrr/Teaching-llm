@@ -920,35 +920,36 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {/* Notification Group Emails (Multi-Group Pool Support) */}
-              <div className="form-group" style={{ background: 'var(--surface-2)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label className="form-label" style={{ margin: 0, fontWeight: '700', fontSize: '12px' }}>
-                    Notification Group Email(s)
+              {/* Notification Group Email(s) Visibility & Tag Editor */}
+              <div className="form-group" style={{ background: 'var(--surface-2)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label className="form-label" style={{ margin: 0, fontWeight: '700', fontSize: '12px', color: 'var(--text-primary)' }}>
+                    📢 Assigned Notification Group Email(s)
                   </label>
                   <a href="/google-sync" style={{ fontSize: '11px', color: 'var(--primary)', textDecoration: 'none', fontWeight: '700' }}>
-                    Manage Pool Emails →
+                    Manage Pools →
                   </a>
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
                   {form.notificationGroupEmails.length === 0 ? (
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                      No notification group assigned yet. (Auto-assigns from pool on save)
+                      No notification group assigned yet. (Auto-assigns from active pool on save)
                     </span>
                   ) : (
                     form.notificationGroupEmails.map(email => (
                       <span key={email} style={{
-                        fontSize: '11px',
-                        fontWeight: '600',
+                        fontSize: '12px',
+                        fontWeight: '700',
                         background: 'var(--primary-light, #e0e7ff)',
                         color: 'var(--primary, #4338ca)',
-                        padding: '4px 10px',
-                        borderRadius: '16px',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '6px',
                         border: '1px solid var(--border)',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
                       }}>
                         ✉️ {email}
                       </span>
@@ -987,11 +988,11 @@ export default function AdminPage() {
                       }
                     }}
                   >
-                    + Add Group
+                    + Add Email
                   </button>
                 </div>
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px', display: 'block' }}>
-                  Internal Google Group emails for broadcasting announcements (500 max users per group). Preserves existing memberships when adding new groups.
+                  Exact Google Workspace Group email address(es) this user receives notifications from.
                 </span>
               </div>
               

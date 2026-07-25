@@ -47,6 +47,7 @@ export async function GET(
         iitmUserType: true,
         notificationGroupEmails: true,
         isNotificationGroupPending: true,
+        pendingPoolCategoryIds: true,
         enrollments: {
           select: {
             courseId: true,

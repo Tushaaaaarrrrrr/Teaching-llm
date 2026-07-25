@@ -5,7 +5,7 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseExpired } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 import { scheduleWelcomeSequence } from '@/lib/welcome-notifications'
-import { getOrAssignNotificationGroup } from '@/lib/notification-group-pool'
+import { getOrAssignPoolCategory } from '@/lib/notification-group-pool'
 
 export async function GET(request: NextRequest) {
   try {
@@ -254,8 +254,8 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Auto-assign new user to active Notification Group Pool (or queue in Overflow Queue)
-      await getOrAssignNotificationGroup(tx, newUser.email)
+      // Auto-assign new user to default Notification Pool Category (or queue in Category Overflow)
+      await getOrAssignPoolCategory(tx, newUser.email)
 
       if (effectiveCourseIds.length > 0) {
         await tx.enrollment.createMany({
