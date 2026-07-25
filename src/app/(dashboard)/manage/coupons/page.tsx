@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import useSWR, { mutate } from 'swr'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function CouponManagementPage() {
   const { data: coupons, isLoading } = useSWR('/api/manage/coupons?includeHidden=true', fetcher, { revalidateOnFocus: false })
+  const { confirm, confirmDialog } = useConfirmDialog()
   const [showCreate, setShowCreate] = useState(false)
   const [saving, setSaving] = useState(false)
   const [editingCoupon, setEditingCoupon] = useState<any>(null)
@@ -43,10 +45,20 @@ export default function CouponManagementPage() {
     finally { setSaving(false) }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this coupon permanently?')) return
+  const handleDelete = async (coupon: any) => {
+    const allowed = await confirm({
+      title: 'Delete Discount',
+      message: 'This will permanently delete the discount code. Existing orders using this code will not be affected, but new orders will not be able to use it.',
+      confirmLabel: 'Delete Discount',
+      tone: 'danger',
+      strictDelete: true,
+      entityType: 'Discount',
+      entityName: coupon.code,
+      confirmationPhrase: 'DELETE MY DISCOUNT',
+    })
+    if (!allowed) return
     try {
-      const res = await fetch(`/api/manage/coupons/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/manage/coupons/${coupon.id}`, { method: 'DELETE' })
       if (res.ok) mutate('/api/manage/coupons?includeHidden=true')
       else alert('Failed to delete')
     } catch { alert('Failed to delete') }
@@ -67,6 +79,7 @@ export default function CouponManagementPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: '1200px', margin: '0 auto' }}>
+      {confirmDialog}
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '24px' }}>
         <button onClick={() => { resetForm(); setEditingCoupon(null); setShowCreate(true) }} style={{ padding: '10px 20px', borderRadius: '12px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontWeight: '700', fontSize: '14px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
           + Create Coupon
@@ -121,7 +134,7 @@ export default function CouponManagementPage() {
                 <button onClick={() => { setEditingCoupon(c); setForm({ code: c.code, discountType: c.discountType, discountValue: c.discountValue, applicability: c.applicability, targetBundleIds: c.targetBundleIds || '', targetUserEmails: c.targetUserEmails || '', targetSubjects: c.targetSubjects || '', minOrderValue: c.minOrderValue || '', isFirstPurchaseOnly: c.isFirstPurchaseOnly, isSingleUsePerUser: c.isSingleUsePerUser, isHidden: c.isHidden, startDate: c.startDate ? new Date(c.startDate).toISOString().slice(0, 16) : '', expiresAt: c.expiresAt ? new Date(c.expiresAt).toISOString().slice(0, 16) : '', maxUses: c.maxUses || '', isActive: c.isActive }); setShowCreate(true) }} style={{ padding: '6px 14px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
                   Edit
                 </button>
-                <button onClick={() => handleDelete(c.id)} style={{ padding: '6px 10px', borderRadius: '8px', background: 'var(--danger-light)', border: '1px solid var(--border)', color: 'var(--danger)', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
+                <button onClick={() => handleDelete(c)} style={{ padding: '6px 10px', borderRadius: '8px', background: 'var(--danger-light)', border: '1px solid var(--border)', color: 'var(--danger)', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
                   🗑️
                 </button>
               </div>

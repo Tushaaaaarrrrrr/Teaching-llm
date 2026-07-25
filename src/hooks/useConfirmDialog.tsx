@@ -9,6 +9,10 @@ type ConfirmOptions = {
   confirmLabel?: string
   cancelLabel?: string
   tone?: 'danger' | 'default'
+  strictDelete?: boolean
+  entityType?: string
+  entityName?: string
+  confirmationPhrase?: string
 }
 
 export function useConfirmDialog() {
@@ -36,6 +40,10 @@ export function useConfirmDialog() {
       confirmLabel={options.confirmLabel}
       cancelLabel={options.cancelLabel}
       tone={options.tone}
+      strictDelete={options.strictDelete}
+      entityType={options.entityType}
+      entityName={options.entityName}
+      confirmationPhrase={options.confirmationPhrase}
       onConfirm={() => close(true)}
       onCancel={() => close(false)}
     />

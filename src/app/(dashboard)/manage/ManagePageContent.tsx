@@ -499,12 +499,28 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(id: string, targetItem?: any) {
+    const entityName = targetItem?.code || targetItem?.title || targetItem?.name || targetItem?.subject || id
+    let entityType = 'Item'
+    if (tab === 'courses') entityType = 'Course'
+    else if (tab === 'offerings') entityType = 'Course Offering'
+    else if (tab === 'bundles') entityType = 'Course Bundle'
+    else if (tab === 'lectures') entityType = 'Lecture'
+    else if (tab === 'materials') entityType = 'Material'
+    else if (tab === 'events') entityType = 'Event'
+    else if (tab === 'announcements') entityType = 'Announcement'
+    else if (tab === 'content-bank') entityType = 'Question'
+    else if (tab === 'home-slides') entityType = 'Home Slide'
+
     const allowed = await confirm({
-      title: 'Delete Item?',
-      message: 'This action cannot be undone.',
-      confirmLabel: 'Delete',
+      title: `Delete ${entityType}`,
+      message: `This will permanently delete the ${entityType.toLowerCase()}. Existing data using this entity will not be affected, but new actions will not be able to use it.`,
+      confirmLabel: `Delete ${entityType}`,
       tone: 'danger',
+      strictDelete: true,
+      entityType,
+      entityName,
+      confirmationPhrase: `DELETE MY ${entityType.toUpperCase()}`,
     })
     if (!allowed) return
     if (tab === 'lectures') {
@@ -2413,7 +2429,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                           </svg>
                         </button>
-                        <button onClick={() => handleDelete(item.id)} className="btn btn-ghost btn-sm" style={{ padding: '6px', color: 'var(--danger)' }} title="Delete">
+                        <button onClick={() => handleDelete(item.id, item)} className="btn btn-ghost btn-sm" style={{ padding: '6px', color: 'var(--danger)' }} title="Delete">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                           </svg>
@@ -2659,8 +2675,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                          </svg>
                        </button>
-                       <button 
-                         onClick={() => handleDelete(item.id)} 
+                        <button 
+                          onClick={() => handleDelete(item.id, item)} 
                          disabled={item.isDemo || (tab === 'courses' && (item.isDisabled || item.isExpired))}
                          title={item.isDemo ? "Cannot delete system demo course" : (tab === 'courses' && (item.isDisabled || item.isExpired)) ? "Turn course ON to delete" : "Delete course"}
                          className="btn btn-sm" 

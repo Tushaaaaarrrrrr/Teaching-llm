@@ -199,10 +199,26 @@ export async function GET(request: NextRequest) {
       activeUsers: s.activeUsers,
     }))
 
+    // ─── Filter out disabled/expired courses ──────────────────────────
+    const disabledClasses = await (prisma.course as any).findMany({
+      where: {
+        OR: [
+          { isDisabled: true },
+          { expiresAt: { lte: new Date() } },
+        ],
+      },
+      select: { id: true, name: true },
+    })
+    const disabledIds = new Set(disabledClasses.map(c => c.id))
+    const disabledNames = new Set(disabledClasses.map(c => (c.name || '').trim().toLowerCase()).filter(Boolean))
+
     // ─── Build course growth data ────────────────────────────────────
     // Group by courseId, take the latest entry for each
     const courseGrowthMap = new Map<string, any>()
     for (const cd of courseDaily) {
+      if (disabledIds.has(cd.courseId) || disabledNames.has((cd.courseName || '').trim().toLowerCase())) {
+        continue
+      }
       courseGrowthMap.set(cd.courseId, {
         courseId: cd.courseId,
         courseName: cd.courseName,
@@ -213,6 +229,13 @@ export async function GET(request: NextRequest) {
     }
     const courseGrowth = Array.from(courseGrowthMap.values())
       .sort((a, b) => b.totalEnrollments - a.totalEnrollments)
+
+    const filteredTopCourses = topCourses.filter((c: any) => 
+      !disabledIds.has(c.id || c.courseId) && !disabledNames.has((c.name || c.courseName || '').trim().toLowerCase())
+    )
+    const filteredCourseDist = courseDistribution.filter((c: any) => 
+      !disabledIds.has(c.id || c.courseId) && !disabledNames.has((c.name || c.courseName || '').trim().toLowerCase())
+    )
 
     return NextResponse.json({
       range,
@@ -230,8 +253,8 @@ export async function GET(request: NextRequest) {
       },
       dailyTrend,
       hourlyActivity: mergedHourly,
-      topCourses,
-      courseDistribution,
+      topCourses: filteredTopCourses,
+      courseDistribution: filteredCourseDist,
       courseGrowth,
       demographics,
     })

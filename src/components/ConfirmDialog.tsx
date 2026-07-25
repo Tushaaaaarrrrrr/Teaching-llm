@@ -2,6 +2,8 @@
 
 import React from 'react'
 
+import DeleteConfirmationModal from './DeleteConfirmationModal'
+
 interface ConfirmDialogProps {
   open: boolean
   title?: string
@@ -12,6 +14,10 @@ interface ConfirmDialogProps {
   onConfirm: () => void
   onCancel: () => void
   loading?: boolean
+  strictDelete?: boolean
+  entityType?: string
+  entityName?: string
+  confirmationPhrase?: string
 }
 
 export default function ConfirmDialog({
@@ -24,8 +30,27 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
   loading = false,
+  strictDelete = false,
+  entityType,
+  entityName,
+  confirmationPhrase,
 }: ConfirmDialogProps) {
   if (!open) return null
+
+  if (strictDelete || entityName) {
+    return (
+      <DeleteConfirmationModal
+        open={open}
+        onClose={onCancel}
+        onConfirm={onConfirm}
+        entityType={entityType || (title.startsWith('Delete ') ? title.replace('Delete ', '').replace('?', '') : 'Item')}
+        entityName={entityName || 'CONFIRM'}
+        confirmationPhrase={confirmationPhrase}
+        description={typeof message === 'string' ? message : undefined}
+        loading={loading}
+      />
+    )
+  }
 
   const confirmBg = tone === 'danger' ? 'var(--danger)' : 'var(--primary)'
   const confirmShadow = tone === 'danger'

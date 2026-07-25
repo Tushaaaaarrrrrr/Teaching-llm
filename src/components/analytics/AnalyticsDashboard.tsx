@@ -109,13 +109,35 @@ export default function AnalyticsDashboard() {
     )
   }
 
+  const { data: coursesList } = useSWR('/api/courses', fetcher)
+  const disabledCourseIds = new Set(
+    (coursesList || [])
+      .filter((c: any) => c.isDisabled || (c.expiresAt && new Date(c.expiresAt).getTime() <= Date.now()))
+      .map((c: any) => c.id)
+  )
+  const disabledCourseNames = new Set(
+    (coursesList || [])
+      .filter((c: any) => c.isDisabled || (c.expiresAt && new Date(c.expiresAt).getTime() <= Date.now()))
+      .map((c: any) => (c.name || c.title || '').trim().toLowerCase())
+  )
+
   const summary = data?.summary || {}
   const dailyTrend = data?.dailyTrend || []
   const hourlyActivity = data?.hourlyActivity || {}
-  const topCourses = data?.topCourses || []
-  const courseDistribution = data?.courseDistribution || []
-  const courseGrowth = data?.courseGrowth || []
+  const rawTopCourses = data?.topCourses || []
+  const rawCourseDistribution = data?.courseDistribution || []
+  const rawCourseGrowth = data?.courseGrowth || []
   const demographics = data?.demographics || null
+
+  const topCourses = rawTopCourses.filter((c: any) =>
+    !disabledCourseIds.has(c.id || c.courseId) && !disabledCourseNames.has((c.name || c.courseName || '').trim().toLowerCase())
+  )
+  const courseDistribution = rawCourseDistribution.filter((c: any) =>
+    !disabledCourseIds.has(c.id || c.courseId) && !disabledCourseNames.has((c.name || c.courseName || '').trim().toLowerCase())
+  )
+  const courseGrowth = rawCourseGrowth.filter((cg: any) =>
+    !disabledCourseIds.has(cg.courseId) && !disabledCourseNames.has((cg.courseName || '').trim().toLowerCase())
+  )
 
   const genderData = demographics ? Object.entries(demographics.gender || {}).map(([k, v]) => ({ name: k, value: v as number })).filter(d => d.value > 0) : []
   const ageData = demographics ? Object.entries(demographics.age || {}).map(([k, v]) => ({ name: k, value: v as number })).filter(d => d.value > 0) : []
