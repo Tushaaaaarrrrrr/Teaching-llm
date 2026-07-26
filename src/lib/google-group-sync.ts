@@ -68,11 +68,11 @@ async function isProcessing(): Promise<boolean> {
       return false
     }
 
-    // Check for stale lock (older than 5 minutes)
+    // Check for stale lock (older than 60 seconds)
     if (lock.lockedAt) {
-      const lockAgeMinutes = (new Date().getTime() - new Date(lock.lockedAt).getTime()) / (1000 * 60)
-      if (lockAgeMinutes > 5) {
-        console.warn('[Google Group Sync] Stale lock detected (older than 5 min), auto-resetting')
+      const lockAgeSeconds = (new Date().getTime() - new Date(lock.lockedAt).getTime()) / 1000
+      if (lockAgeSeconds > 60) {
+        console.warn('[Google Group Sync] Stale lock detected (older than 60s), auto-resetting')
         return false 
       }
     }
@@ -375,9 +375,11 @@ export async function retryFailedGoogleGroupSyncJobs() {
   return { resetCount: result.count }
 }
 
-export async function processGoogleGroupSyncJobs() {
-  // Check if already processing to prevent concurrent execution
-  if (await isProcessing()) {
+export async function processGoogleGroupSyncJobs(force = false) {
+  // Check if already processing to prevent concurrent execution unless forced
+  if (force) {
+    await releaseSyncLock()
+  } else if (await isProcessing()) {
     return { processed: 0, succeeded: 0, failed: 0, skipped: true }
   }
 

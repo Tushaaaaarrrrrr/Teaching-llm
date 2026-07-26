@@ -11,17 +11,24 @@ export async function POST(request: Request) {
   return handleRequest(request)
 }
 
+import { getSession } from '@/lib/auth'
+
 async function handleRequest(request: Request) {
   try {
+    const session = await getSession()
+    const isManager = session?.role === 'MANAGER'
+
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
     const secretFromEnv = process.env.CRON_SECRET?.trim()
+    const isValidToken = secretFromEnv && token === secretFromEnv
 
-    if (!secretFromEnv || token !== secretFromEnv) {
+    if (!isManager && !isValidToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const result = await processGoogleGroupSyncJobs()
+    const force = searchParams.get('force') === 'true'
+    const result = await processGoogleGroupSyncJobs(force)
     return NextResponse.json({ 
       success: true, 
       ...result 

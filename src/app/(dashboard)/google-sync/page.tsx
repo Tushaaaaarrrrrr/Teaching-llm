@@ -43,6 +43,7 @@ export default function GoogleSyncPage() {
   })
   const [isResetting, setIsResetting] = useState(false)
   const [isRetryingFailed, setIsRetryingFailed] = useState(false)
+  const [isProcessingSync, setIsProcessingSync] = useState(false)
 
   async function handleResetLock() {
     if (!confirm('Are you sure you want to reset the sync engine? Only do this if jobs have been stuck for more than 5 minutes.')) return
@@ -91,6 +92,30 @@ export default function GoogleSyncPage() {
       alert(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsRetryingFailed(false)
+    }
+  }
+
+  async function handleForceRunSyncEngine() {
+    setIsProcessingSync(true)
+    try {
+      const res = await fetch('/api/google-sync/process?force=true', { method: 'POST' })
+      const text = await res.text()
+      let data: any = {}
+      try {
+        data = JSON.parse(text)
+      } catch (e) {
+        throw new Error('Server operation timed out or returned an HTML error. Please try refreshing.')
+      }
+
+      if (!res.ok) throw new Error(data.error || 'Failed to process sync batch')
+
+      setRefreshKey(prev => prev + 1)
+      mutatePools()
+      alert(`Batch Processed! Processed ${data.processed || 0} jobs (${data.succeeded || 0} succeeded, ${data.failed || 0} failed). ${data.hasMore ? 'Remaining jobs are continuing in background.' : 'Queue complete!'}`)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setIsProcessingSync(false)
     }
   }
 
@@ -849,7 +874,15 @@ export default function GoogleSyncPage() {
               </button>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleForceRunSyncEngine}
+                disabled={isProcessingSync}
+                className="btn btn-sm"
+                style={{ fontSize: '12px', background: 'var(--success, #10b981)', color: '#ffffff', border: 'none', fontWeight: '700' }}
+              >
+                {isProcessingSync ? 'Processing Batch...' : '▶️ Force Run Batch Now'}
+              </button>
               <button
                 onClick={handleRetryFailed}
                 disabled={isRetryingFailed}
