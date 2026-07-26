@@ -374,8 +374,33 @@ export async function getPoolCategoryStats(db: any) {
     where: { isNotificationGroupPending: true },
   })
 
+  const totalAssignedUsersCount = await db.user.count({
+    where: {
+      AND: [
+        { notificationGroupEmails: { not: null } },
+        { NOT: { notificationGroupEmails: '' } },
+      ],
+    },
+  })
+
+  const totalUnassignedUsersCount = await db.user.count({
+    where: {
+      OR: [
+        { notificationGroupEmails: null },
+        { notificationGroupEmails: '' },
+      ],
+    },
+  })
+
+  const totalUsersCount = totalAssignedUsersCount + totalUnassignedUsersCount
+  const predictedGroupsNeeded = Math.ceil(totalUnassignedUsersCount / 500)
+
   return {
     categories: updatedCategories,
     totalPendingGlobal,
+    totalUsersCount,
+    totalAssignedUsersCount,
+    totalUnassignedUsersCount,
+    predictedGroupsNeeded,
   }
 }

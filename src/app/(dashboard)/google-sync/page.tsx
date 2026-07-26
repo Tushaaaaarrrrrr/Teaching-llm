@@ -41,10 +41,8 @@ export default function GoogleSyncPage() {
   const { data: poolData, isLoading: isLoadingPools, mutate: mutatePools } = useSWR(poolsUrl, fetcher, {
     refreshInterval: 10000,
   })
-
-  const jobs = syncData?.jobs || []
-  const pagination = syncData?.pagination || { page: 1, limit: 50, total: 0, totalPages: 0 }
   const [isResetting, setIsResetting] = useState(false)
+  const [isRetryingFailed, setIsRetryingFailed] = useState(false)
 
   async function handleResetLock() {
     if (!confirm('Are you sure you want to reset the sync engine? Only do this if jobs have been stuck for more than 5 minutes.')) return
@@ -62,6 +60,25 @@ export default function GoogleSyncPage() {
       alert(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsResetting(false)
+    }
+  }
+
+  async function handleRetryFailed() {
+    if (!confirm('Are you sure you want to reset and retry all FAILED sync jobs? They will be re-queued with 0 attempts and rate-limited safely.')) return
+
+    setIsRetryingFailed(true)
+    try {
+      const res = await fetch('/api/google-sync/retry-failed', { method: 'POST' })
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.error || 'Failed to retry failed jobs')
+
+      setRefreshKey(prev => prev + 1)
+      alert(data.message || 'Failed sync jobs successfully re-queued for processing!')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setIsRetryingFailed(false)
     }
   }
 
@@ -217,8 +234,14 @@ export default function GoogleSyncPage() {
     )
   }
 
+  const jobs = syncData?.jobs || []
+  const pagination = syncData?.pagination || { page: 1, limit: 50, total: 0, totalPages: 0 }
   const categories = poolData?.categories || []
   const totalPendingGlobal = poolData?.totalPendingGlobal || 0
+  const totalUsersCount = poolData?.totalUsersCount || 0
+  const totalAssignedUsersCount = poolData?.totalAssignedUsersCount || 0
+  const totalUnassignedUsersCount = poolData?.totalUnassignedUsersCount || 0
+  const predictedGroupsNeeded = poolData?.predictedGroupsNeeded || 0
 
   return (
     <div className="page-container fade-in" style={{ paddingBottom: '40px' }}>
@@ -273,6 +296,57 @@ export default function GoogleSyncPage() {
       {/* TAB 1: NOTIFICATION GROUPS & POOLS */}
       {activeTab === 'pools' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Live Member Analytics & Prediction Banner */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
+            <div className="card" style={{ padding: '16px' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Total Registered Users
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '4px' }}>
+                {totalUsersCount.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                Active database accounts
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '16px' }}>
+              <div style={{ fontSize: '11px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                ✅ Assigned (At least 1 group)
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--success)', marginTop: '4px' }}>
+                {totalAssignedUsersCount.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                {totalUsersCount > 0 ? Math.round((totalAssignedUsersCount / totalUsersCount) * 100) : 0}% of total users covered
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '16px' }}>
+              <div style={{ fontSize: '11px', color: totalUnassignedUsersCount > 0 ? '#f59e0b' : 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                ⏳ Remaining (Unassigned)
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: totalUnassignedUsersCount > 0 ? '#f59e0b' : 'var(--text-primary)', marginTop: '4px' }}>
+                {totalUnassignedUsersCount.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                {totalUnassignedUsersCount > 0 ? 'Need pool assignment' : 'All users assigned!'}
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '16px', background: 'var(--primary-light, #e0e7ff)', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '11px', color: 'var(--primary, #4338ca)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                💡 Prediction: Emails Needed
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--primary, #4338ca)', marginTop: '4px' }}>
+                {predictedGroupsNeeded} <span style={{ fontSize: '14px', fontWeight: '700' }}>group email(s)</span>
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--primary, #4338ca)', marginTop: '4px', opacity: 0.9 }}>
+                Required for {totalUnassignedUsersCount} remaining users (500 max each)
+              </div>
+            </div>
+          </div>
+
           {/* Feedback Message */}
           {poolMessage && (
             <div style={{
@@ -640,14 +714,24 @@ export default function GoogleSyncPage() {
               </button>
             </div>
 
-            <button
-              onClick={handleResetLock}
-              disabled={isResetting}
-              className="btn btn-sm btn-outline-danger"
-              style={{ fontSize: '12px' }}
-            >
-              {isResetting ? 'Resetting...' : '⚠️ Reset Sync Lock'}
-            </button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button
+                onClick={handleRetryFailed}
+                disabled={isRetryingFailed}
+                className="btn btn-sm"
+                style={{ fontSize: '12px', background: 'var(--primary)', color: '#ffffff', border: 'none', fontWeight: '700' }}
+              >
+                {isRetryingFailed ? 'Re-queueing...' : '🔄 Retry All Failed Jobs'}
+              </button>
+              <button
+                onClick={handleResetLock}
+                disabled={isResetting}
+                className="btn btn-sm btn-outline-danger"
+                style={{ fontSize: '12px' }}
+              >
+                {isResetting ? 'Resetting...' : '⚠️ Reset Sync Lock'}
+              </button>
+            </div>
           </div>
 
           <div className="card" style={{ overflow: 'hidden' }}>

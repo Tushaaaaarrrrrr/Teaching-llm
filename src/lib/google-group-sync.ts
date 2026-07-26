@@ -357,6 +357,24 @@ async function removeMemberFromGroup(accessToken: string, userEmail: string, gro
   throw new Error(data?.error?.message || `Google remove member failed with status ${response.status}`)
 }
 
+export async function retryFailedGoogleGroupSyncJobs() {
+  const result = await (prisma as any).groupSyncJob.updateMany({
+    where: {
+      status: 'FAILED',
+    },
+    data: {
+      status: 'PENDING',
+      attemptCount: 0,
+      lastError: null,
+    },
+  })
+
+  // Trigger async processing immediately
+  process.nextTick(() => triggerGoogleGroupSyncProcessing())
+
+  return { resetCount: result.count }
+}
+
 export async function processGoogleGroupSyncJobs() {
   // Check if already processing to prevent concurrent execution
   if (await isProcessing()) {
@@ -370,7 +388,7 @@ export async function processGoogleGroupSyncJobs() {
   }
 
   try {
-    // 1. Initial count to determine "Engine Mode"
+    // 1. Initial count of pending jobs
     const remainingCount = await (prisma as any).groupSyncJob.count({
       where: {
         status: 'PENDING',
@@ -382,23 +400,13 @@ export async function processGoogleGroupSyncJobs() {
       return { processed: 0, succeeded: 0, failed: 0 }
     }
 
-    // 2. Select Dynamic Batch Size and Concurrency
-    // Triple Engine (> 200), Double Engine (> 50), Normal otherwise
-    let batchSize = 20
-    let concurrency = 3
-    let engineMode = 'Single Engine'
+    // 2. Safe Batch Size & Rate-Compliant Concurrency
+    // Google Workspace Directory API rate limits allow ~1-2 operations/sec per service account.
+    // We use a max concurrency of 2 with a 250ms inter-chunk delay.
+    const batchSize = Math.min(50, remainingCount)
+    const concurrency = 2
 
-    if (remainingCount > 200) {
-      batchSize = 100
-      concurrency = 15
-      engineMode = 'Triple Engine (EXTREME)'
-    } else if (remainingCount > 50) {
-      batchSize = 50
-      concurrency = 8
-      engineMode = 'Double Engine (TURBO)'
-    }
-
-    console.log(`[Google Group Sync] Starting ${engineMode}: ${remainingCount} users pending, pulling next ${batchSize}`)
+    console.log(`[Google Group Sync] Processing batch: ${remainingCount} users pending, pulling next ${batchSize}`)
 
     const jobs = await (prisma as any).groupSyncJob.findMany({
       where: {
@@ -413,19 +421,22 @@ export async function processGoogleGroupSyncJobs() {
     let succeeded = 0
     let failed = 0
 
-    // 3. Parallel Processing with Concurrency Control
-    // We process in chunks to avoid overwhelming the Google API or the DB
+    // 3. Serialized Chunk Processing with Delays to Respect Google Rate Limits
     for (let i = 0; i < jobs.length; i += concurrency) {
+      if (i > 0) {
+        // 250ms delay between request pairs to comply with Google rate limit thresholds
+        await new Promise(resolve => setTimeout(resolve, 250))
+      }
+
       const chunk = jobs.slice(i, i + concurrency)
       
       await Promise.allSettled(chunk.map(async (job: any) => {
         try {
-          // Mark as PROCESSING and increment attempt count
+          // Mark as PROCESSING
           await (prisma as any).groupSyncJob.update({
             where: { id: job.id },
             data: {
               status: 'PROCESSING',
-              attemptCount: job.attemptCount + 1,
             },
           })
 
@@ -446,16 +457,36 @@ export async function processGoogleGroupSyncJobs() {
           })
           succeeded++
         } catch (error) {
-          console.error(`[Google Group Sync] Job ${job.id} failed:`, error instanceof Error ? error.message : 'Unknown error')
-          const nextAttemptCount = job.attemptCount + 1
-          await (prisma as any).groupSyncJob.update({
-            where: { id: job.id },
-            data: {
-              status: nextAttemptCount >= GROUP_SYNC_MAX_ATTEMPTS ? 'FAILED' : 'PENDING',
-              lastError: error instanceof Error ? error.message : 'Unknown Google sync error',
-            },
-          })
-          failed++
+          const errMsg = error instanceof Error ? error.message : String(error)
+          const isRateLimit = errMsg.toLowerCase().includes('request rate higher than configured') ||
+                              errMsg.toLowerCase().includes('ratelimitexceeded') ||
+                              errMsg.toLowerCase().includes('quota')
+
+          console.error(`[Google Group Sync] Job ${job.id} failed (${isRateLimit ? 'RATE LIMITED' : 'ERROR'}):`, errMsg)
+
+          if (isRateLimit) {
+            // Do NOT increment attempt count on rate limit! Keep status PENDING so it can be safely retried.
+            await (prisma as any).groupSyncJob.update({
+              where: { id: job.id },
+              data: {
+                status: 'PENDING',
+                lastError: 'Request rate higher than configured (Rate Limited - Will Auto Retry)',
+              },
+            })
+            // Pause execution briefly (3s) to allow Google API quota window to reset
+            await new Promise(resolve => setTimeout(resolve, 3000))
+          } else {
+            const nextAttemptCount = job.attemptCount + 1
+            await (prisma as any).groupSyncJob.update({
+              where: { id: job.id },
+              data: {
+                attemptCount: nextAttemptCount,
+                status: nextAttemptCount >= GROUP_SYNC_MAX_ATTEMPTS ? 'FAILED' : 'PENDING',
+                lastError: errMsg || 'Unknown Google sync error',
+              },
+            })
+            failed++
+          }
         }
       }))
     }
