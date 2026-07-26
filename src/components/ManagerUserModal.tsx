@@ -37,6 +37,7 @@ interface User {
   state?: string | null
   avatar?: string | null
   isGoogleUser?: boolean
+  notificationGroupEmails?: string | null
   enrollments?: { courseId: string; type?: string; course: CourseInfo }[]
   instructorAssignments?: { courseId: string; course: CourseInfo }[]
   courseBundleAssignments?: { bundleId: string; bundle: CourseBundleInfo }[]
@@ -69,6 +70,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     courseIds: [] as string[],
     bundleIds: [] as string[],
     enrollmentTypes: {} as Record<string, string>, // courseId → 'LIVE' | 'RECORDED'
+    notificationGroupEmails: [] as string[],
     age: '',
     state: '',
     enableDetailedLogs: false,
@@ -127,6 +129,9 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
           instructorAssignments: normalizeCollection(data?.instructorAssignments),
           courseBundleAssignments: normalizeCollection(data?.courseBundleAssignments),
         }
+        const notifEmails = data.notificationGroupEmails
+          ? data.notificationGroupEmails.split(',').map((e: string) => e.trim()).filter(Boolean)
+          : []
         setUser(normalizedUser)
         setFormData({
             name: normalizedUser.name,
@@ -143,6 +148,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             enrollmentTypes: Object.fromEntries(
               normalizeCollection<any>(data?.enrollments).map((e: any) => [e.courseId, e.type || 'LIVE'])
             ),
+            notificationGroupEmails: notifEmails,
             enableDetailedLogs: data.enableDetailedLogs || false,
             iitmJoinYear: data.iitmJoinYear || '',
             iitmJoinMonth: data.iitmJoinMonth || '',
@@ -206,6 +212,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
             courseIds: formData.courseIds,
             bundleIds: formData.bundleIds,
             enrollmentTypes: formData.enrollmentTypes,
+            notificationGroupEmails: formData.notificationGroupEmails.join(','),
             iitmJoinYear: formData.iitmJoinYear || null,
             iitmJoinMonth: formData.iitmJoinMonth || null,
             iitmLevel: formData.iitmLevel || null,
@@ -388,6 +395,79 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   <div>
                     <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>State</label>
                     <input style={neuInset} value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
+                  </div>
+                </div>
+
+                {/* Group Mail Section */}
+                <div style={{ marginBottom: '20px', padding: '16px', borderRadius: '12px', background: 'var(--surface-2)', border: '1px solid var(--border-light)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', margin: 0 }}>
+                      📢 Group Mail
+                    </label>
+                    <a href="/google-sync" style={{ fontSize: '11px', color: 'var(--primary)', textDecoration: 'none', fontWeight: '700' }}>
+                      Pools →
+                    </a>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                    {formData.notificationGroupEmails.length === 0 ? (
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        No Group Mail assigned yet. (Auto-assigns on save)
+                      </span>
+                    ) : (
+                      formData.notificationGroupEmails.map(mail => (
+                        <span key={mail} style={{
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          background: 'var(--primary-light, #e0e7ff)',
+                          color: 'var(--primary, #4338ca)',
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          border: '1px solid var(--border)',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                        }}>
+                          ✉️ {mail}
+                        </span>
+                      ))
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="email"
+                      className="form-input"
+                      placeholder="e.g. notifications-group-1@genziitian.org"
+                      id="managerModalNotifGroupInput"
+                      style={{ flex: 1, fontSize: '12px' }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const val = (e.currentTarget.value || '').trim().toLowerCase()
+                          if (val && !formData.notificationGroupEmails.includes(val)) {
+                            setFormData(p => ({ ...p, notificationGroupEmails: Array.from(new Set([...p.notificationGroupEmails, val])) }))
+                            e.currentTarget.value = ''
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', fontSize: '11px', fontWeight: '700' }}
+                      onClick={() => {
+                        const input = document.getElementById('managerModalNotifGroupInput') as HTMLInputElement
+                        const val = (input?.value || '').trim().toLowerCase()
+                        if (val && !formData.notificationGroupEmails.includes(val)) {
+                          setFormData(p => ({ ...p, notificationGroupEmails: Array.from(new Set([...p.notificationGroupEmails, val])) }))
+                          input.value = ''
+                        }
+                      }}
+                    >
+                      + Add Group Mail
+                    </button>
                   </div>
                 </div>
 
