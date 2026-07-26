@@ -210,6 +210,37 @@ export default function GoogleSyncPage() {
     }
   }
 
+  const [isCleaning, setIsCleaning] = useState(false)
+
+  async function handleCleanupDuplicates() {
+    if (!confirm('Are you sure you want to clean up duplicate pool email assignments? This will ensure every student gets EXACTLY 1 email per Pool Group, free up filled spots, and redistribute pending users.')) return
+
+    setIsCleaning(true)
+    setPoolMessage(null)
+
+    try {
+      const res = await fetch('/api/admin/notification-groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'CLEANUP_DUPLICATES' }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to clean duplicates')
+
+      setPoolMessage({
+        type: 'success',
+        text: data.message || `Successfully cleaned duplicate group emails!`,
+      })
+      mutatePools()
+      setRefreshKey(prev => prev + 1)
+    } catch (err) {
+      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'An error occurred' })
+    } finally {
+      setIsCleaning(false)
+    }
+  }
+
   function getErrorLabel(lastError?: string | null) {
     if (!lastError) return ''
     const normalized = lastError.toLowerCase()
@@ -476,6 +507,25 @@ export default function GoogleSyncPage() {
                   style={{ alignSelf: 'flex-start', background: 'var(--success)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
                 >
                   {isBulkRunning ? 'Processing...' : '✉️ Assign Secondary Pool to Everyone'}
+                </button>
+              </div>
+
+              {/* Option 3: Clean & Recalculate Duplicates */}
+              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>3. Clean & Recalculate Duplicates</div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                    Ensures every student has EXACTLY 1 email per Pool Group, frees up held capacity, and redistributes pending users.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isCleaning}
+                  onClick={handleCleanupDuplicates}
+                  className="btn"
+                  style={{ alignSelf: 'flex-start', background: 'var(--warning, #f59e0b)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
+                >
+                  {isCleaning ? 'Cleaning...' : '🧹 Clean & Fix Duplicates'}
                 </button>
               </div>
             </div>

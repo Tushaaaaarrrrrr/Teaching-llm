@@ -183,6 +183,20 @@ export async function getOrAssignPoolCategory(db: any, userEmail: string, catego
     orderBy: { createdAt: 'asc' },
   })
 
+  // CHECK: If user ALREADY has an email belonging to this category, DO NOT assign a second email from the same category!
+  const categoryEmailAddresses = poolEmails.map(p => p.groupEmail)
+  const currentGroups = parseNotificationGroupEmails(targetUser.notificationGroupEmails)
+  const existingCategoryEmail = currentGroups.find(email => categoryEmailAddresses.includes(email))
+
+  if (existingCategoryEmail) {
+    return {
+      assigned: true,
+      groupEmail: existingCategoryEmail,
+      categoryName: targetCategory.name,
+      newlyAssigned: false,
+    }
+  }
+
   let availableEmail: any = null
   for (const p of poolEmails) {
     const actualCount = await db.user.count({
@@ -211,7 +225,6 @@ export async function getOrAssignPoolCategory(db: any, userEmail: string, catego
   }
 
   // Assign user to availableEmail.groupEmail
-  const currentGroups = parseNotificationGroupEmails(targetUser.notificationGroupEmails)
   if (!currentGroups.includes(availableEmail.groupEmail)) {
     const updatedGroups = Array.from(new Set([...currentGroups, availableEmail.groupEmail]))
 
@@ -403,4 +416,86 @@ export async function getPoolCategoryStats(db: any) {
     totalUnassignedUsersCount,
     predictedGroupsNeeded,
   }
+}
+
+/**
+ * Clean up duplicate pool assignments so each user has AT MOST 1 email per Pool Category
+ */
+export async function cleanupDuplicatePoolAssignments(db: any) {
+  // Get all categories and their child pool email addresses
+  const categories = await db.notificationPoolCategory.findMany({
+    include: { emails: true },
+  })
+
+  const users = await db.user.findMany({
+    where: {
+      AND: [
+        { notificationGroupEmails: { not: null } },
+        { NOT: { notificationGroupEmails: '' } },
+      ],
+    },
+    select: { id: true, email: true, notificationGroupEmails: true },
+  })
+
+  let cleanedCount = 0
+
+  for (const user of users) {
+    const userEmails = parseNotificationGroupEmails(user.notificationGroupEmails)
+    const cleanedEmails: string[] = []
+    let modified = false
+
+    // Track assigned categories for this user
+    const assignedCategoryIds = new Set<string>()
+
+    for (const email of userEmails) {
+      // Find category for this email
+      const matchedCategory = categories.find(c => c.emails.some(e => e.groupEmail === email))
+      if (matchedCategory) {
+        if (!assignedCategoryIds.has(matchedCategory.id)) {
+          assignedCategoryIds.add(matchedCategory.id)
+          cleanedEmails.push(email)
+        } else {
+          // Duplicate email in same pool category! Drop it!
+          modified = true
+        }
+      } else {
+        // Custom email not in any pool category, keep it
+        cleanedEmails.push(email)
+      }
+    }
+
+    if (modified) {
+      await db.user.update({
+        where: { id: user.id },
+        data: {
+          notificationGroupEmails: cleanedEmails.join(','),
+        },
+      })
+      cleanedCount++
+    }
+  }
+
+  // Recalculate currentCount for all pool emails
+  const allPoolEmails = await db.notificationPoolEmail.findMany()
+  for (const email of allPoolEmails) {
+    const actualCount = await db.user.count({
+      where: { notificationGroupEmails: { contains: email.groupEmail } },
+    })
+    await db.notificationPoolEmail.update({
+      where: { id: email.id },
+      data: { currentCount: actualCount },
+    })
+  }
+
+  // Re-run auto-distribution for all users to ensure everyone is properly distributed 1-per-user
+  const defaultCategory = await ensureDefaultPoolCategory(db)
+  const defaultCategoryAllUsers = await db.user.findMany({
+    select: { id: true, email: true },
+    orderBy: { createdAt: 'asc' },
+  })
+  for (const user of defaultCategoryAllUsers) {
+    await getOrAssignPoolCategory(db, user.email, defaultCategory.id)
+  }
+
+  return { cleanedCount, message: `Cleaned duplicate pool emails for ${cleanedCount} users and redistributed.` }
 }

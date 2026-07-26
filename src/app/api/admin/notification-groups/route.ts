@@ -7,6 +7,7 @@ import {
   addEmailToPoolCategory,
   flushCategoryOverflowQueue,
   assignAllUsersToPoolCategory,
+  cleanupDuplicatePoolAssignments,
 } from '@/lib/notification-group-pool'
 
 export async function GET(request: Request) {
@@ -88,6 +89,11 @@ export async function POST(request: Request) {
     if (action === 'ASSIGN_ALL_CATEGORY') {
       const { categoryId } = body // If undefined, uses default category
       const result = await assignAllUsersToPoolCategory(prisma, categoryId)
+      return NextResponse.json({ success: true, ...result })
+    }
+
+    if (action === 'CLEANUP_DUPLICATES') {
+      const result = await cleanupDuplicatePoolAssignments(prisma)
       return NextResponse.json({ success: true, ...result })
     }
 
