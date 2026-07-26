@@ -28,13 +28,14 @@ export async function POST(request: Request) {
       },
     })
 
-    // Immediately trigger a sync run since the lock is now clear
-    const result = await processGoogleGroupSyncJobs()
+    // Immediately trigger a sync run in background (fire-and-forget)
+    process.nextTick(() => {
+      processGoogleGroupSyncJobs().catch(err => console.error('[API reset-lock async worker] Error:', err))
+    })
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Google Sync lock reset and processing started',
-      details: result
+      message: 'Google Sync lock reset successfully. Background processing started.',
     })
   } catch (error) {
     console.error('[API reset-lock] Error:', error)

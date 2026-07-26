@@ -50,12 +50,18 @@ export default function GoogleSyncPage() {
     setIsResetting(true)
     try {
       const res = await fetch('/api/google-sync/reset-lock', { method: 'POST' })
-      const data = await res.json()
+      const text = await res.text()
+      let data: any = {}
+      try {
+        data = JSON.parse(text)
+      } catch (e) {
+        throw new Error('Server operation timed out or returned an HTML error. Please try refreshing.')
+      }
 
       if (!res.ok) throw new Error(data.error || 'Failed to reset lock')
 
       setRefreshKey(prev => prev + 1)
-      alert('Sync engine reset successfully. Jobs are now being processed.')
+      alert(data.message || 'Sync engine reset successfully. Background processing started.')
     } catch (err) {
       alert(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -69,7 +75,13 @@ export default function GoogleSyncPage() {
     setIsRetryingFailed(true)
     try {
       const res = await fetch('/api/google-sync/retry-failed', { method: 'POST' })
-      const data = await res.json()
+      const text = await res.text()
+      let data: any = {}
+      try {
+        data = JSON.parse(text)
+      } catch (e) {
+        throw new Error('Server operation timed out or returned an HTML error. Please try refreshing.')
+      }
 
       if (!res.ok) throw new Error(data.error || 'Failed to retry failed jobs')
 
