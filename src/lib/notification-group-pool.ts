@@ -472,6 +472,8 @@ export async function cleanupDuplicatePoolAssignments(db: any) {
     // Track assigned categories for this user
     const assignedCategoryIds = new Set<string>()
 
+    const removedEmails: string[] = []
+
     for (const email of userEmails) {
       // Find category for this email
       const matchedCategory = categories.find(c => c.emails.some(e => e.groupEmail === email))
@@ -480,7 +482,8 @@ export async function cleanupDuplicatePoolAssignments(db: any) {
           assignedCategoryIds.add(matchedCategory.id)
           cleanedEmails.push(email)
         } else {
-          // Duplicate email in same pool category! Drop it!
+          // Duplicate email in same pool category! Drop it & track for Google REMOVE sync!
+          removedEmails.push(email)
           modified = true
         }
       } else {
@@ -496,6 +499,19 @@ export async function cleanupDuplicatePoolAssignments(db: any) {
           notificationGroupEmails: cleanedEmails.join(','),
         },
       })
+
+      // Queue REMOVE sync job for each dropped duplicate so Google Workspace removes them from Google Group
+      for (const removedEmail of removedEmails) {
+        await db.groupSyncJob.create({
+          data: {
+            userEmail: user.email,
+            groupEmail: removedEmail,
+            action: 'REMOVE',
+            status: 'PENDING',
+          },
+        })
+      }
+
       cleanedCount++
     }
   }
