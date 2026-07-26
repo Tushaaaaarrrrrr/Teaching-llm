@@ -134,7 +134,7 @@ export default function GoogleSyncPage() {
 
       setRefreshKey(prev => prev + 1)
       mutatePools()
-      alert(`Batch Processed! Processed ${data.processed || 0} jobs (${data.succeeded || 0} succeeded, ${data.failed || 0} failed). ${data.hasMore ? 'Remaining jobs are continuing in background.' : 'Queue complete!'}`)
+      alert(`Batch Processed! Processed ${data.processed || 0} jobs (${data.succeeded || 0} succeeded, ${data.failed || 0} failed). ${data.error ? `\nError: ${data.error}` : ''} ${data.hasMore ? '\nRemaining jobs are continuing.' : '\nQueue complete!'}`)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'An error occurred')
     } finally {

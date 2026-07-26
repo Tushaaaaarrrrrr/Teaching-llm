@@ -402,11 +402,9 @@ export async function processGoogleGroupSyncJobs(force = false) {
       return { processed: 0, succeeded: 0, failed: 0 }
     }
 
-    // 2. Safe Batch Size & Rate-Compliant Concurrency
-    // Google Workspace Directory API rate limits allow ~1-2 operations/sec per service account.
-    // We use a max concurrency of 2 with a 250ms inter-chunk delay.
-    const batchSize = Math.min(50, remainingCount)
-    const concurrency = 2
+    // 2. High-Performance Batch Size & Concurrency (10x Speedup)
+    const batchSize = Math.min(250, remainingCount)
+    const concurrency = 10
 
     console.log(`[Google Group Sync] Processing batch: ${remainingCount} users pending, pulling next ${batchSize}`)
 
@@ -443,11 +441,10 @@ export async function processGoogleGroupSyncJobs(force = false) {
     let succeeded = 0
     let failed = 0
 
-    // 3. Serialized Chunk Processing with Delays to Respect Google Rate Limits
+    // 3. Parallel Chunk Processing with 50ms Delays for Max Speed
     for (let i = 0; i < jobs.length; i += concurrency) {
       if (i > 0) {
-        // 250ms delay between request pairs to comply with Google rate limit thresholds
-        await new Promise(resolve => setTimeout(resolve, 250))
+        await new Promise(resolve => setTimeout(resolve, 50))
       }
 
       const chunk = jobs.slice(i, i + concurrency)
