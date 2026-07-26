@@ -44,6 +44,29 @@ export default function GoogleSyncPage() {
   const [isResetting, setIsResetting] = useState(false)
   const [isRetryingFailed, setIsRetryingFailed] = useState(false)
   const [isProcessingSync, setIsProcessingSync] = useState(false)
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false)
+
+  useEffect(() => {
+    if (!autoSyncEnabled) return
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/google-sync/process?force=true', { method: 'POST' })
+        const data = await res.json().catch(() => ({}))
+        setRefreshKey(prev => prev + 1)
+        mutatePools()
+
+        if (data.processed === 0 && !data.hasMore) {
+          // Queue is completely clear
+          setAutoSyncEnabled(false)
+        }
+      } catch (err) {
+        console.error('Auto sync loop error:', err)
+      }
+    }, 4000)
+
+    return () => clearInterval(interval)
+  }, [autoSyncEnabled, mutatePools])
 
   async function handleResetLock() {
     if (!confirm('Are you sure you want to reset the sync engine? Only do this if jobs have been stuck for more than 5 minutes.')) return
@@ -876,12 +899,26 @@ export default function GoogleSyncPage() {
 
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
               <button
+                onClick={() => setAutoSyncEnabled(prev => !prev)}
+                className="btn btn-sm"
+                style={{
+                  fontSize: '12px',
+                  background: autoSyncEnabled ? '#10b981' : 'var(--surface-3)',
+                  color: autoSyncEnabled ? '#ffffff' : 'var(--text-primary)',
+                  border: '1px solid var(--border)',
+                  fontWeight: '700',
+                  boxShadow: autoSyncEnabled ? '0 0 12px rgba(16, 185, 129, 0.5)' : 'none',
+                }}
+              >
+                {autoSyncEnabled ? '🟢 Auto-Sync Worker: ACTIVE (Auto-Processing)' : '⚡ Turn ON Auto-Sync Worker'}
+              </button>
+              <button
                 onClick={handleForceRunSyncEngine}
                 disabled={isProcessingSync}
                 className="btn btn-sm"
-                style={{ fontSize: '12px', background: 'var(--success, #10b981)', color: '#ffffff', border: 'none', fontWeight: '700' }}
+                style={{ fontSize: '12px', background: 'var(--primary)', color: '#ffffff', border: 'none', fontWeight: '700' }}
               >
-                {isProcessingSync ? 'Processing Batch...' : '▶️ Force Run Batch Now'}
+                {isProcessingSync ? 'Processing Batch...' : '▶️ Run 1 Batch Now'}
               </button>
               <button
                 onClick={handleRetryFailed}

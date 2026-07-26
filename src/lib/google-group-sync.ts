@@ -419,7 +419,27 @@ export async function processGoogleGroupSyncJobs(force = false) {
       take: batchSize,
     })
 
-    const accessToken = await getGoogleAccessToken()
+    let accessToken: string
+    try {
+      accessToken = await getGoogleAccessToken()
+    } catch (tokenErr: any) {
+      const errMsg = tokenErr instanceof Error ? tokenErr.message : String(tokenErr)
+      console.error('[Google Group Sync] Access token failed:', errMsg)
+
+      for (const job of jobs) {
+        const nextAttemptCount = (job.attemptCount || 0) + 1
+        await (prisma as any).groupSyncJob.update({
+          where: { id: job.id },
+          data: {
+            attemptCount: nextAttemptCount,
+            status: nextAttemptCount >= GROUP_SYNC_MAX_ATTEMPTS ? 'FAILED' : 'PENDING',
+            lastError: errMsg,
+          },
+        })
+      }
+
+      return { processed: jobs.length, succeeded: 0, failed: jobs.length, error: errMsg }
+    }
     let succeeded = 0
     let failed = 0
 
