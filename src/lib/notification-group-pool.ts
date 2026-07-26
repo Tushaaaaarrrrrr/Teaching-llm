@@ -313,16 +313,43 @@ export async function assignAllUsersToPoolCategory(db: any, categoryId?: string)
 
   if (!targetCategory) throw new Error('Pool Category not found')
 
-  const allUsers = await db.user.findMany({
+  const poolEmails = await db.notificationPoolEmail.findMany({
+    where: { categoryId: targetCategory.id, isActive: true },
+  })
+
+  if (poolEmails.length === 0) {
+    return { count: 0, categoryName: targetCategory.name, message: `No active pool emails in ${targetCategory.name}` }
+  }
+
+  const categoryEmailAddresses = poolEmails.map(p => p.groupEmail)
+
+  // Find users who do NOT have an email belonging to this pool category
+  const unassignedUsers = await db.user.findMany({
+    where: {
+      OR: [
+        { notificationGroupEmails: null },
+        { notificationGroupEmails: '' },
+        {
+          NOT: {
+            OR: categoryEmailAddresses.map(addr => ({
+              notificationGroupEmails: { contains: addr },
+            })),
+          },
+        },
+      ],
+    },
     select: { id: true, email: true },
     orderBy: { createdAt: 'asc' },
   })
 
   let count = 0
-  for (const user of allUsers) {
+  for (const user of unassignedUsers) {
     const res = await getOrAssignPoolCategory(db, user.email, targetCategory.id)
     if (res.assigned && res.newlyAssigned) {
       count++
+    } else if (res.pending) {
+      // Pool filled up to capacity, stop loop immediately!
+      break
     }
   }
 
@@ -427,12 +454,10 @@ export async function cleanupDuplicatePoolAssignments(db: any) {
     include: { emails: true },
   })
 
+  // Target only users who have multiple emails (comma separated)
   const users = await db.user.findMany({
     where: {
-      AND: [
-        { notificationGroupEmails: { not: null } },
-        { NOT: { notificationGroupEmails: '' } },
-      ],
+      notificationGroupEmails: { contains: ',' },
     },
     select: { id: true, email: true, notificationGroupEmails: true },
   })
@@ -487,15 +512,9 @@ export async function cleanupDuplicatePoolAssignments(db: any) {
     })
   }
 
-  // Re-run auto-distribution for all users to ensure everyone is properly distributed 1-per-user
+  // Automatically auto-distribute remaining unassigned users using optimized auto-distribution
   const defaultCategory = await ensureDefaultPoolCategory(db)
-  const defaultCategoryAllUsers = await db.user.findMany({
-    select: { id: true, email: true },
-    orderBy: { createdAt: 'asc' },
-  })
-  for (const user of defaultCategoryAllUsers) {
-    await getOrAssignPoolCategory(db, user.email, defaultCategory.id)
-  }
+  await assignAllUsersToPoolCategory(db, defaultCategory.id)
 
-  return { cleanedCount, message: `Cleaned duplicate pool emails for ${cleanedCount} users and redistributed.` }
+  return { cleanedCount, message: `Cleaned duplicate pool emails for ${cleanedCount} users and auto-distributed.` }
 }

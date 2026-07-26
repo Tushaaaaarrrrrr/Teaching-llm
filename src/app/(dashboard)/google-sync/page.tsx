@@ -193,12 +193,19 @@ export default function GoogleSyncPage() {
         }),
       })
 
-      const data = await res.json()
+      const text = await res.text()
+      let data: any = {}
+      try {
+        data = JSON.parse(text)
+      } catch (e) {
+        throw new Error('Server operation timed out or returned an HTML error. Please try refreshing.')
+      }
+
       if (!res.ok) throw new Error(data.error || 'Failed to complete bulk assignment')
 
       setPoolMessage({
         type: 'success',
-        text: `Bulk action completed! ${data.count} users were processed for "${data.categoryName || catName}".`,
+        text: `Bulk action completed! ${data.count || 0} users were processed for "${data.categoryName || catName}".`,
       })
       setBulkCatSelect('')
       mutatePools()
@@ -225,7 +232,14 @@ export default function GoogleSyncPage() {
         body: JSON.stringify({ action: 'CLEANUP_DUPLICATES' }),
       })
 
-      const data = await res.json()
+      const text = await res.text()
+      let data: any = {}
+      try {
+        data = JSON.parse(text)
+      } catch (e) {
+        throw new Error('Server operation timed out or returned an HTML error. Please try refreshing.')
+      }
+
       if (!res.ok) throw new Error(data.error || 'Failed to clean duplicates')
 
       setPoolMessage({
