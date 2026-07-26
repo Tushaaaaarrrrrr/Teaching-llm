@@ -134,7 +134,8 @@ export default function GoogleSyncPage() {
 
       setRefreshKey(prev => prev + 1)
       mutatePools()
-      alert(`Batch Processed! Processed ${data.processed || 0} jobs (${data.succeeded || 0} succeeded, ${data.failed || 0} failed). ${data.error ? `\nError: ${data.error}` : ''} ${data.hasMore ? '\nRemaining jobs are continuing.' : '\nQueue complete!'}`)
+      const errDetail = data.sampleError || data.error || ''
+      alert(`Batch Processed! Processed ${data.processed || 0} jobs (${data.succeeded || 0} succeeded, ${data.failed || 0} failed).${errDetail ? `\n\nGoogle API Error: ${errDetail}` : ''}${data.hasMore ? '\n\nRemaining jobs continuing.' : '\n\nQueue complete!'}`)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'An error occurred')
     } finally {

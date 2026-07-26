@@ -441,6 +441,8 @@ export async function processGoogleGroupSyncJobs(force = false) {
     let succeeded = 0
     let failed = 0
 
+    let firstError = ''
+
     // 3. Parallel Chunk Processing with 50ms Delays for Max Speed
     for (let i = 0; i < jobs.length; i += concurrency) {
       if (i > 0) {
@@ -477,6 +479,8 @@ export async function processGoogleGroupSyncJobs(force = false) {
           succeeded++
         } catch (error) {
           const errMsg = error instanceof Error ? error.message : String(error)
+          if (!firstError) firstError = errMsg
+
           const isRateLimit = errMsg.toLowerCase().includes('request rate higher than configured') ||
                               errMsg.toLowerCase().includes('ratelimitexceeded') ||
                               errMsg.toLowerCase().includes('quota')
@@ -533,7 +537,7 @@ export async function processGoogleGroupSyncJobs(force = false) {
       },
     })
 
-    return { processed: jobs.length, succeeded, failed, hasMore: finalCount > 0 }
+    return { processed: jobs.length, succeeded, failed, sampleError: firstError, hasMore: finalCount > 0 }
   } finally {
     // Always release lock
     await releaseSyncLock()

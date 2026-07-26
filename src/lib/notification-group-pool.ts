@@ -371,47 +371,27 @@ export async function getPoolCategoryStats(db: any) {
     orderBy: { createdAt: 'asc' },
   })
 
-  const updatedCategories = await Promise.all(
-    categories.map(async (cat: any) => {
-      const updatedEmails = await Promise.all(
-        cat.emails.map(async (email: any) => {
-          const actualCount = await db.user.count({
-            where: { notificationGroupEmails: { contains: email.groupEmail } },
-          })
-          if (actualCount !== email.currentCount) {
-            await db.notificationPoolEmail.update({
-              where: { id: email.id },
-              data: { currentCount: actualCount },
-            })
-          }
-          return {
-            ...email,
-            currentCount: actualCount,
-            percentage: Math.min(100, Math.round((actualCount / email.maxCapacity) * 100)),
-            isFull: actualCount >= email.maxCapacity,
-          }
-        })
-      )
-
-      const catPendingUsersCount = await db.user.count({
-        where: { pendingPoolCategoryIds: { contains: cat.id } },
-      })
-
-      const totalCap = updatedEmails.reduce((sum: number, e: any) => sum + (e.isActive ? e.maxCapacity : 0), 0)
-      const totalAssigned = updatedEmails.reduce((sum: number, e: any) => sum + (e.isActive ? e.currentCount : 0), 0)
-
+  const updatedCategories = categories.map((cat: any) => {
+    const updatedEmails = cat.emails.map((email: any) => {
+      const actualCount = email.currentCount || 0
       return {
-        ...cat,
-        emails: updatedEmails,
-        totalCapacity: totalCap,
-        totalAssigned,
-        pendingCount: catPendingUsersCount,
+        ...email,
+        currentCount: actualCount,
+        percentage: Math.min(100, Math.round((actualCount / email.maxCapacity) * 100)),
+        isFull: actualCount >= email.maxCapacity,
       }
     })
-  )
 
-  const totalPendingGlobal = await db.user.count({
-    where: { isNotificationGroupPending: true },
+    const totalCap = updatedEmails.reduce((sum: number, e: any) => sum + (e.isActive ? e.maxCapacity : 0), 0)
+    const totalAssigned = updatedEmails.reduce((sum: number, e: any) => sum + (e.isActive ? e.currentCount : 0), 0)
+
+    return {
+      ...cat,
+      emails: updatedEmails,
+      totalCapacity: totalCap,
+      totalAssigned,
+      pendingCount: 0,
+    }
   })
 
   const totalAssignedUsersCount = await db.user.count({
@@ -437,7 +417,7 @@ export async function getPoolCategoryStats(db: any) {
 
   return {
     categories: updatedCategories,
-    totalPendingGlobal,
+    totalPendingGlobal: 0,
     totalUsersCount,
     totalAssignedUsersCount,
     totalUnassignedUsersCount,
