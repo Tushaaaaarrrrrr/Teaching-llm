@@ -50,8 +50,22 @@ export async function GET(req: Request) {
       take: limit,
     })
 
+    // Get pending and processing counts for queue ETA calculation
+    const pendingCount = await (prisma as any).groupSyncJob.count({
+      where: { status: 'PENDING' },
+    })
+    const processingCount = await (prisma as any).groupSyncJob.count({
+      where: { status: 'PROCESSING' },
+    })
+    const failedCount = await (prisma as any).groupSyncJob.count({
+      where: { status: 'FAILED' },
+    })
+
     return NextResponse.json({
       jobs,
+      pendingCount,
+      processingCount,
+      failedCount,
       pagination: {
         page,
         limit,

@@ -288,6 +288,26 @@ export default function GoogleSyncPage() {
   const totalUnassignedUsersCount = poolData?.totalUnassignedUsersCount || 0
   const predictedGroupsNeeded = poolData?.predictedGroupsNeeded || 0
 
+  const syncJobsPendingCount = syncData?.pendingCount || 0
+  const syncJobsProcessingCount = syncData?.processingCount || 0
+  const syncJobsFailedCount = syncData?.failedCount || 0
+  const totalActiveQueueJobs = syncJobsPendingCount + syncJobsProcessingCount
+
+  // ETA Calculation: ~1.5 sec rate-limited per Google Workspace API job
+  const etaTotalSeconds = totalActiveQueueJobs * 1.5
+  let formattedSyncETA = '0 sec (Queue clear)'
+  if (totalActiveQueueJobs > 0) {
+    if (etaTotalSeconds < 60) {
+      formattedSyncETA = `~${Math.round(etaTotalSeconds)} sec`
+    } else if (etaTotalSeconds < 3600) {
+      formattedSyncETA = `~${Math.ceil(etaTotalSeconds / 60)} min(s)`
+    } else {
+      const hrs = Math.floor(etaTotalSeconds / 3600)
+      const mins = Math.ceil((etaTotalSeconds % 3600) / 60)
+      formattedSyncETA = `~${hrs} hr ${mins} min`
+    }
+  }
+
   return (
     <div className="page-container fade-in" style={{ paddingBottom: '40px' }}>
       {/* Header & Tab Navigation */}
@@ -743,6 +763,45 @@ export default function GoogleSyncPage() {
       {/* TAB 2: GOOGLE GROUP SYNC JOBS MONITOR */}
       {activeTab === 'jobs' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Live Pending Queue & ETA Banner */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
+            <div className="card" style={{ padding: '16px' }}>
+              <div style={{ fontSize: '11px', color: totalActiveQueueJobs > 0 ? '#f59e0b' : 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                ⏳ Pending Jobs in Queue
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: totalActiveQueueJobs > 0 ? '#f59e0b' : 'var(--text-primary)', marginTop: '4px' }}>
+                {totalActiveQueueJobs.toLocaleString()} <span style={{ fontSize: '14px', fontWeight: '600' }}>jobs</span>
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                {totalActiveQueueJobs > 0 ? 'Queued background sync jobs' : 'Queue clear — all syncs complete!'}
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '16px', background: 'var(--primary-light, #e0e7ff)', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '11px', color: 'var(--primary, #4338ca)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                ⏱️ Estimated Time to Finish (ETA)
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--primary, #4338ca)', marginTop: '4px' }}>
+                {formattedSyncETA}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--primary, #4338ca)', marginTop: '4px', opacity: 0.9 }}>
+                Based on ~1.5s rate-limited processing per Google API quota
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '16px' }}>
+              <div style={{ fontSize: '11px', color: syncJobsFailedCount > 0 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                ❌ Failed Jobs
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: syncJobsFailedCount > 0 ? 'var(--danger)' : 'var(--text-primary)', marginTop: '4px' }}>
+                {syncJobsFailedCount.toLocaleString()} <span style={{ fontSize: '14px', fontWeight: '600' }}>jobs</span>
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                {syncJobsFailedCount > 0 ? 'Use "Retry All Failed Jobs" below' : 'Zero errors'}
+              </div>
+            </div>
+          </div>
+
           <div className="card" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
               <select
