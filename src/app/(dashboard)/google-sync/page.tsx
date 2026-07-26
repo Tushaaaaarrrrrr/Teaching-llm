@@ -29,15 +29,13 @@ export default function GoogleSyncPage() {
   const userRole = authData?.user?.role || ''
 
   // Sync Jobs Data
-  const syncUrl = userRole === 'MANAGER'
-    ? `/api/group-sync-jobs?status=${filters.status}&action=${filters.action}&page=${filters.page}&limit=50&_refresh=${refreshKey}`
-    : null
-  const { data: syncData, isLoading: isLoadingJobs } = useSWR(syncUrl, fetcher, {
+  const syncUrl = `/api/group-sync-jobs?status=${filters.status}&action=${filters.action}&page=${filters.page}&limit=50&_refresh=${refreshKey}`
+  const { data: syncData, error: syncError } = useSWR(syncUrl, fetcher, {
     refreshInterval: 10000,
   })
 
   // Notification Pools Stats Data
-  const poolsUrl = userRole === 'MANAGER' ? `/api/admin/notification-groups?_refresh=${refreshKey}` : null
+  const poolsUrl = `/api/admin/notification-groups?_refresh=${refreshKey}`
   const { data: poolData, isLoading: isLoadingPools, mutate: mutatePools } = useSWR(poolsUrl, fetcher, {
     refreshInterval: 10000,
   })
@@ -941,10 +939,14 @@ export default function GoogleSyncPage() {
           </div>
 
           <div className="card" style={{ overflow: 'hidden' }}>
-            {isLoadingJobs ? (
+            {!syncData && !syncError ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading sync jobs...</div>
             ) : jobs.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No sync jobs found.</div>
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎉</div>
+                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>No Sync Jobs In Queue</div>
+                <div style={{ fontSize: '12px' }}>All background sync jobs have completed successfully.</div>
+              </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
