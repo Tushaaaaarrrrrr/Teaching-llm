@@ -309,6 +309,42 @@ export default function MobileCourseDetail({
             <span>⚡ Upgrade to PRO — ₹{course.liveUpgradePrice}</span>
           </button>
         )}
+
+        {course.enrollmentType === 'DEMO' && !isManager && (
+          <div style={{ display: 'flex', gap: '8px', marginTop: '14px', position: 'relative', zIndex: 2 }}>
+            <button
+              onClick={() => router.push('/courses/explore')}
+              style={{
+                flex: 1, padding: '10px 14px', borderRadius: '50px', border: 'none',
+                background: '#ffffff', color: 'var(--accent)', fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}
+            >
+              🔓 Unlock Full Course
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm('Are you sure you want to unenroll from this demo?')) return
+                try {
+                  const res = await fetch(`/api/courses/${course.id}/unenroll`, { method: 'POST' })
+                  if (res.ok) {
+                    alert('Unenrolled from demo')
+                    router.push('/courses')
+                  } else {
+                    const data = await res.json()
+                    alert(data.error || 'Failed to unenroll')
+                  }
+                } catch { alert('Error unenrolling') }
+              }}
+              style={{
+                padding: '10px 14px', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.4)',
+                background: 'rgba(239, 68, 68, 0.3)', color: '#ffffff', fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+              }}
+            >
+              Unenroll Demo
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ──── CONTENT AREA ──── */}
@@ -515,8 +551,20 @@ function CurriculumTab({
 
               {/* Title + meta */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {topic.title}
+                <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
+                  {(((topic as any).createdAt && new Date().getTime() - new Date((topic as any).createdAt).getTime() < 24 * 60 * 60 * 1000) ||
+                    topic.content?.some((item: any) => item.createdAt && new Date().getTime() - new Date(item.createdAt).getTime() < 24 * 60 * 60 * 1000)) && (
+                    <span style={{
+                      background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                      color: 'white', padding: '2px 6px', borderRadius: '4px',
+                      fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
+                      letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                      flexShrink: 0
+                    }}>
+                      NEW
+                    </span>
+                  )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
                   <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
@@ -640,8 +688,20 @@ function CurriculumTab({
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           textDecoration: isCompleted ? 'none' : 'none',
                           opacity: isCompleted ? 0.7 : 1,
+                          display: 'flex', alignItems: 'center', gap: '6px',
                         }}>
-                          {item.title}
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
+                          {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
+                            <span style={{
+                              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                              color: 'white', padding: '2px 6px', borderRadius: '4px',
+                              fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
+                              letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                              flexShrink: 0
+                            }}>
+                              NEW
+                            </span>
+                          )}
                         </div>
                         {typeof item.durationMinutes === 'number' && item.durationMinutes > 0 && (
                           <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
@@ -653,7 +713,24 @@ function CurriculumTab({
                       </div>
 
                       {/* Action */}
-                      {(item.videoUrl || item.youtubeUrl) ? (
+                      {(item as any).isDemoLocked ? (
+                        <Link
+                          href="/courses/explore"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                            padding: '10px 18px', borderRadius: '50px',
+                            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                            color: '#fff',
+                            fontSize: '13px', fontWeight: 800,
+                            textDecoration: 'none',
+                            boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+                            flexShrink: 0,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          🔒 Unlock Now
+                        </Link>
+                      ) : (item.videoUrl || item.youtubeUrl) ? (
                         <Link
                           href={`/courses/${courseId}/lectures/${item.id}`}
                           style={{

@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isDisabled, isFree, googleGroupEmail } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isDisabled, isFree, googleGroupEmail, liveGoogleGroupEmail } = await request.json()
 
     // 1. Rate Limiting
     const rateLimit = await checkRateLimit(session.userId, 'general')
@@ -204,6 +204,7 @@ export async function POST(request: NextRequest) {
     const sanitizedSubject = sanitizeInput(subject)
     const sanitizedTeacherName = teacherName ? sanitizeInput(teacherName) : null
     const normalizedGoogleGroupEmail = validateGoogleGroupEmail(googleGroupEmail)
+    const normalizedLiveGoogleGroupEmail = validateGoogleGroupEmail(liveGoogleGroupEmail)
     
     // Validate expiresAt if provided
     if (expiresAt) {
@@ -235,6 +236,7 @@ export async function POST(request: NextRequest) {
           icon,
           teacherName: sanitizedTeacherName,
           googleGroupEmail: normalizedGoogleGroupEmail,
+          liveGoogleGroupEmail: normalizedLiveGoogleGroupEmail,
           isDemo: !!isDemo,
           isFree: !!isFree,
           isDisabled: !!isDisabled,

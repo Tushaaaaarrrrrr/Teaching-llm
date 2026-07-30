@@ -43,6 +43,7 @@ export async function GET(
       select: {
         id: true,
         pptUrl: true,
+        isDemo: true,
         topic: {
           select: {
             courseId: true,
@@ -76,6 +77,12 @@ export async function GET(
       if (!enrollment) {
         return NextResponse.json(
           { error: 'You are not enrolled in this course' },
+          { status: 403 }
+        )
+      }
+      if (enrollment.type === 'DEMO' && !content.isDemo) {
+        return NextResponse.json(
+          { error: 'This material is locked in Demo mode. Unlock full course to access.' },
           { status: 403 }
         )
       }

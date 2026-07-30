@@ -58,6 +58,7 @@ export async function GET(
         id: true,
         videoUrl: true,
         videoSource: true,
+        isDemo: true,
         // JSON column added in 20260617090000_content_video_variants.
         // Cast at the lib boundary because Prisma's JsonValue type is `any`.
         videoVariants: true,
@@ -110,6 +111,9 @@ export async function GET(
       })
       if (!enrollment) {
         return NextResponse.json({ error: 'You are not enrolled in this course' }, { status: 403 })
+      }
+      if (enrollment.type === 'DEMO' && !content.isDemo) {
+        return NextResponse.json({ error: 'This lecture is locked in Demo mode. Unlock full course to access.' }, { status: 403 })
       }
     }
 

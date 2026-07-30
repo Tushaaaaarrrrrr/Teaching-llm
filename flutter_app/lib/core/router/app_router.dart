@@ -27,7 +27,7 @@ import '../../features/store/course_offering_detail_page.dart';
 import '../../features/store/course_offerings_page.dart';
 import '../../features/store/store_page.dart';
 import '../../features/support/faq_page.dart';
-import '../../features/support/live_chat_page.dart';
+// import '../../features/support/live_chat_page.dart'; // Disabled (backed up in scratch/live-chat-backup/)
 import '../../features/support/support_page.dart';
 import '../../features/transactions/transactions_page.dart';
 import '../../shared/widgets/app_scaffold.dart';
@@ -94,12 +94,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/transactions',
           builder: (_, __) => const TransactionsPage()),
       GoRoute(path: '/faq', builder: (_, __) => const FaqPage()),
-      GoRoute(
-        path: '/support/chat',
-        builder: (_, state) => LiveChatPage(
-          chatId: state.uri.queryParameters['id'],
-        ),
-      ),
+      // GoRoute(
+      //   path: '/support/chat',
+      //   builder: (_, state) => LiveChatPage(
+      //     chatId: state.uri.queryParameters['id'],
+      //   ),
+      // ),
       GoRoute(
           path: '/notifications',
           builder: (_, __) => const NotificationsPage()),

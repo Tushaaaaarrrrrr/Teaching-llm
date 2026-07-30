@@ -110,6 +110,7 @@ model Course {
   description           String?
   subject               String?
   googleGroupEmail      String?
+  liveGoogleGroupEmail  String?
   color                 String                 @default("#4F46E5")
   icon                  String                 @default("BookOpen")
   createdById           String
@@ -124,6 +125,8 @@ model Course {
   lastMessageAt         DateTime?
   teacherName           String?
   liveUpgradePrice      Float?
+  isDemoPaid            Boolean                @default(false)
+  demoPrice             Float?                 @default(0)
   announcements         Announcement[]
   bundleOfferingCourses BundleOfferingCourse[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
@@ -259,6 +262,7 @@ model Lecture {
   notesUrl     String?
   duration     String?
   thumbnail    String?
+  isDemo       Boolean  @default(false)
   uploadedById String
   uploadedAt   DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -400,6 +404,7 @@ model Content {
   youtubeUrl      String?
   pptUrl          String?
   isRecordingOnly Boolean              @default(false)
+  isDemo          Boolean              @default(false)
   order           Int                  @default(0)
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
@@ -1313,6 +1318,7 @@ model TestSeriesAccess {
 enum EnrollmentType {
   LIVE
   RECORDED
+  DEMO
 }
 
 model NotificationCampaign {

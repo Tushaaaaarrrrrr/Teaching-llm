@@ -632,7 +632,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             <div className="form-group"><label className="form-label">Teacher Name</label><input className="form-input" value={f.teacherName || ''} onChange={e => set('teacherName', e.target.value)} placeholder="Manual teacher name" /></div>
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Google Group Email</span>
+                <span>Google Group Email (Recorded / Default Batch)</span>
                 {(() => {
                   const emails = (f.googleGroupEmail || '').split(',').filter((e: string) => e.trim());
                   const count = Math.max(emails.length, 1);
@@ -668,7 +668,6 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               {(() => {
                 const raw = f.googleGroupEmail || '';
                 const emails = raw.split(',');
-                // Ensure at least one slot
                 if (emails.length === 0 || (emails.length === 1 && emails[0] === '')) {
                   return (
                     <input
@@ -676,7 +675,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                       type="email"
                       value=""
                       onChange={e => set('googleGroupEmail', e.target.value.toLowerCase())}
-                      placeholder="math1@yourdomain.com"
+                      placeholder="recorded-batch@yourdomain.com"
                     />
                   );
                 }
@@ -691,7 +690,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                         updated[idx] = e.target.value.toLowerCase();
                         set('googleGroupEmail', updated.join(','));
                       }}
-                      placeholder={`group${idx + 1}@yourdomain.com`}
+                      placeholder={`recorded-batch${idx + 1}@yourdomain.com`}
                       style={{ flex: 1 }}
                     />
                     {emails.length > 1 && (
@@ -723,7 +722,20 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                 ));
               })()}
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Optional. Up to 5 group emails in your Google Workspace domain. Each syncs independently.
+                Default group. If Live Group Email is empty below, ALL students (Live & Recorded) go here.
+              </p>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Live Google Group Email (Live Batch Only - Optional)</label>
+              <input
+                className="form-input"
+                type="email"
+                value={f.liveGoogleGroupEmail || ''}
+                onChange={e => set('liveGoogleGroupEmail', e.target.value.toLowerCase())}
+                placeholder="live-batch@yourdomain.com"
+              />
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                Optional. When provided, Live batch students are routed to this group, while Recorded students remain in Recorded group. Leave blank for general batches.
               </p>
             </div>
             <label className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: editId ? 0.7 : 1 }}>
@@ -2615,7 +2627,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
 
                    {(userRole === 'MANAGER' || (tab !== 'courses' && tab !== 'lectures' && tab !== 'materials')) && (
                      <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                      {tab === 'courses' && (
+                      {tab === 'courses' && !item.isDisabled && (
                         <button 
                           onClick={() => {
                             navigator.clipboard.writeText(item.id);
@@ -2664,16 +2676,16 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                        {tab === 'courses' && (
                          <button
                            onClick={() => handleDuplicate(item)}
-                           disabled={saving || item.isDisabled || item.isExpired}
+                           disabled={saving}
                            className="btn btn-ghost btn-sm"
                            style={{
-                             color: (item.isDisabled || item.isExpired) ? 'var(--text-muted)' : 'var(--info)',
-                             border: `1px solid ${(item.isDisabled || item.isExpired) ? 'var(--surface-2)' : '#cffafe'}`,
+                             color: 'var(--info)',
+                             border: '1px solid #cffafe',
                              padding: '6px',
-                             cursor: (item.isDisabled || item.isExpired) ? 'not-allowed' : 'pointer',
-                             opacity: (item.isDisabled || item.isExpired) ? 0.4 : 1
+                             cursor: 'pointer',
+                             opacity: 1
                            }}
-                           title={(item.isDisabled || item.isExpired) ? 'Turn course ON to duplicate' : 'Duplicate'}
+                           title="Duplicate"
                          >
                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                              <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><path d="M3 4h2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4h2"/><path d="M9 9h6v6H9z"/>
@@ -2682,14 +2694,13 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                        )}
                        <button 
                          onClick={() => openEdit(item)} 
-                         disabled={tab === 'courses' && (item.isDisabled || item.isExpired)}
                          className="btn btn-ghost btn-sm" 
                          style={{ 
                            padding: '6px', 
-                           cursor: tab === 'courses' && (item.isDisabled || item.isExpired) ? 'not-allowed' : 'pointer',
-                           opacity: tab === 'courses' && (item.isDisabled || item.isExpired) ? 0.4 : 1 
+                           cursor: 'pointer',
+                           opacity: 1 
                          }} 
-                         title={tab === 'courses' && (item.isDisabled || item.isExpired) ? 'Turn course ON to edit' : 'Edit'}
+                         title="Edit"
                        >
                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -2698,14 +2709,14 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                        </button>
                         <button 
                           onClick={() => handleDelete(item.id, item)} 
-                         disabled={item.isDemo || (tab === 'courses' && (item.isDisabled || item.isExpired))}
-                         title={item.isDemo ? "Cannot delete system demo course" : (tab === 'courses' && (item.isDisabled || item.isExpired)) ? "Turn course ON to delete" : "Delete course"}
+                         disabled={item.isDemo}
+                         title={item.isDemo ? "Cannot delete system demo course" : "Delete course"}
                          className="btn btn-sm" 
                          style={{ 
-                           color: (item.isDemo || (tab === 'courses' && (item.isDisabled || item.isExpired))) ? 'var(--border)' : 'var(--danger)', 
-                           border: `1px solid ${(item.isDemo || (tab === 'courses' && (item.isDisabled || item.isExpired))) ? 'var(--surface-2)' : 'var(--danger-light)'}`, 
-                           cursor: (item.isDemo || (tab === 'courses' && (item.isDisabled || item.isExpired))) ? 'not-allowed' : 'pointer',
-                           opacity: (item.isDemo || (tab === 'courses' && (item.isDisabled || item.isExpired))) ? 0.4 : 1
+                           color: item.isDemo ? 'var(--border)' : 'var(--danger)', 
+                           border: `1px solid ${item.isDemo ? 'var(--surface-2)' : 'var(--danger-light)'}`, 
+                           cursor: item.isDemo ? 'not-allowed' : 'pointer',
+                           opacity: item.isDemo ? 0.4 : 1
                          }}
                        >
                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

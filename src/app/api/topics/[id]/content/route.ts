@@ -15,7 +15,7 @@ export async function POST(
     const { id } = await params
 
 
-    const { title, description, videoUrl, youtubeUrl, pptUrl, videoSource } = await request.json()
+    const { title, description, videoUrl, youtubeUrl, pptUrl, videoSource, isDemo } = await request.json()
 
     const count = await prisma.content.count({ where: { topicId: id } })
     const content = await prisma.content.create({
@@ -27,6 +27,7 @@ export async function POST(
         youtubeUrl,
         pptUrl,
         videoSource: videoSource || 'GOOGLE_DRIVE',
+        isDemo: !!isDemo,
         order: count,
       },
     })

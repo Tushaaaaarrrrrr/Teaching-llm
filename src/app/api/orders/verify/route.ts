@@ -51,20 +51,15 @@ export async function POST(request: NextRequest) {
 
       const existing = await prisma.enrollment.findUnique({ where: { userId_courseId: { userId: session.userId, courseId: item.courseId } } })
       if (existing) {
-        if (existing.type !== enrollType && enrollType === 'LIVE') {
-          await prisma.enrollment.update({ 
-            where: { id: existing.id }, 
-            data: { 
-              type: 'LIVE',
-              packageName: packageName || existing.packageName
-            } 
-          })
-        } else if (isChampion && existing.packageName !== 'CHAMPION') {
-           await prisma.enrollment.update({ 
-            where: { id: existing.id }, 
-            data: { packageName: 'CHAMPION' } 
-          })
-        }
+        // Upgrade from DEMO, RECORDED, or update package
+        await prisma.enrollment.update({ 
+          where: { id: existing.id }, 
+          data: { 
+            type: enrollType,
+            packageName: packageName || existing.packageName,
+            isFreeEnrollment: false,
+          } 
+        })
       } else {
         await prisma.enrollment.create({ 
           data: { 
@@ -92,6 +87,19 @@ export async function POST(request: NextRequest) {
             packageName: packageName
           }
         })
+      }
+
+      // Trigger Google Group Sync on full purchase/upgrade
+      try {
+        const { queueGoogleGroupSyncJobs } = await import('@/lib/google-group-sync')
+        await queueGoogleGroupSyncJobs(prisma, {
+          userEmail: session.email,
+          courseIds: [item.courseId],
+          action: 'ADD',
+          enrollmentTypeMap: { [item.courseId]: enrollType },
+        })
+      } catch (syncErr) {
+        console.error('[orders/verify] Failed to queue Google Group sync:', syncErr)
       }
     }
 

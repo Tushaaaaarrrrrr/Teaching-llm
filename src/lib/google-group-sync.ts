@@ -2,7 +2,7 @@ import { SignJWT, importPKCS8 } from 'jose'
 import { prisma } from '@/lib/db'
 
 const GOOGLE_TOKEN_AUDIENCE = 'https://oauth2.googleapis.com/token'
-const GOOGLE_GROUP_SCOPE = 'https://www.googleapis.com/auth/admin.directory.group.member'
+const GOOGLE_GROUP_SCOPE = 'https://www.googleapis.com/auth/admin.directory.group.member https://www.googleapis.com/auth/admin.directory.group.readonly'
 const GROUP_SYNC_MAX_ATTEMPTS = 3
 const CRON_SECRET = process.env.CRON_SECRET?.trim() || ''
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') || ''
@@ -162,10 +162,12 @@ export async function queueGoogleGroupSyncJobs(
     userEmail,
     courseIds,
     action,
+    enrollmentTypeMap,
   }: {
     userEmail: string
     courseIds: string[]
     action: SyncAction
+    enrollmentTypeMap?: Record<string, 'LIVE' | 'RECORDED'>
   }
 ) {
   const normalizedUserEmail = normalizeEmail(userEmail)
@@ -175,55 +177,178 @@ export async function queueGoogleGroupSyncJobs(
   const courses = await db.course.findMany({
     where: {
       id: { in: uniqueCourseIds },
-      googleGroupEmail: { not: null },
+      OR: [
+        { googleGroupEmail: { not: null } },
+        { liveGoogleGroupEmail: { not: null } }
+      ]
     },
     select: {
       id: true,
       googleGroupEmail: true,
+      liveGoogleGroupEmail: true,
     },
   })
 
   if (courses.length === 0) return 0
 
-  const pendingJobs = await db.groupSyncJob.findMany({
-    where: {
-      userEmail: normalizedUserEmail,
-      courseId: { in: courses.map((course: { id: string }) => course.id) },
-      action,
-      status: 'PENDING',
-    },
+  let enrollmentsMap = enrollmentTypeMap || {}
+  if (!enrollmentTypeMap) {
+    const user = await db.user.findUnique({
+      where: { email: normalizedUserEmail },
+      select: {
+        id: true,
+        enrollments: {
+          where: { courseId: { in: uniqueCourseIds } },
+          select: { courseId: true, type: true }
+        }
+      }
+    })
+    if (user && user.enrollments) {
+      enrollmentsMap = {}
+      for (const e of user.enrollments) {
+        enrollmentsMap[e.courseId] = e.type as 'LIVE' | 'RECORDED'
+      }
+    }
+  }
+
+  const explicitJobs: Array<{
+    userEmail: string
+    courseId: string
+    groupEmail: string
+    action: SyncAction
+  }> = []
+
+  for (const course of courses) {
+    const enrollmentType = enrollmentsMap[course.id] || 'RECORDED'
+    const hasLiveGroup = Boolean(course.liveGoogleGroupEmail?.trim())
+
+    if (action === 'ADD') {
+      if (hasLiveGroup && enrollmentType === 'LIVE') {
+        const liveEmails = parseGoogleGroupEmails(course.liveGoogleGroupEmail)
+        for (const ge of liveEmails) {
+          explicitJobs.push({ userEmail: normalizedUserEmail, courseId: course.id, groupEmail: ge, action: 'ADD' })
+        }
+        if (course.googleGroupEmail) {
+          const recEmails = parseGoogleGroupEmails(course.googleGroupEmail)
+          for (const ge of recEmails) {
+            explicitJobs.push({ userEmail: normalizedUserEmail, courseId: course.id, groupEmail: ge, action: 'REMOVE' })
+          }
+        }
+      } else {
+        if (course.googleGroupEmail) {
+          const recEmails = parseGoogleGroupEmails(course.googleGroupEmail)
+          for (const ge of recEmails) {
+            explicitJobs.push({ userEmail: normalizedUserEmail, courseId: course.id, groupEmail: ge, action: 'ADD' })
+          }
+        }
+        if (hasLiveGroup) {
+          const liveEmails = parseGoogleGroupEmails(course.liveGoogleGroupEmail)
+          for (const ge of liveEmails) {
+            explicitJobs.push({ userEmail: normalizedUserEmail, courseId: course.id, groupEmail: ge, action: 'REMOVE' })
+          }
+        }
+      }
+    } else if (action === 'REMOVE') {
+      if (course.googleGroupEmail) {
+        const recEmails = parseGoogleGroupEmails(course.googleGroupEmail)
+        for (const ge of recEmails) {
+          explicitJobs.push({ userEmail: normalizedUserEmail, courseId: course.id, groupEmail: ge, action: 'REMOVE' })
+        }
+      }
+      if (course.liveGoogleGroupEmail) {
+        const liveEmails = parseGoogleGroupEmails(course.liveGoogleGroupEmail)
+        for (const ge of liveEmails) {
+          explicitJobs.push({ userEmail: normalizedUserEmail, courseId: course.id, groupEmail: ge, action: 'REMOVE' })
+        }
+      }
+    }
+  }
+
+  return queueExplicitGoogleGroupSyncJobs(db, explicitJobs)
+}
+
+/**
+ * Re-evaluates and queues Google Group sync jobs for all active enrollments of a course.
+ * Triggered when an admin configures or updates group emails for a course.
+ */
+export async function reSyncCourseGroupMembers(db: any, courseId: string) {
+  const course = await db.course.findUnique({
+    where: { id: courseId },
     select: {
-      courseId: true,
-      groupEmail: true,
+      id: true,
+      googleGroupEmail: true,
+      liveGoogleGroupEmail: true,
     },
   })
 
-  const pendingKeys = new Set(
-    pendingJobs.map((job: { courseId: string; groupEmail: string }) => `${job.courseId}:${job.groupEmail}`)
-  )
+  if (!course) return 0
 
-  const jobs = courses
-    .flatMap((course: { id: string; googleGroupEmail: string | null }) => {
-      const groupEmails = parseGoogleGroupEmails(course.googleGroupEmail)
-      return groupEmails.map(groupEmail => ({
-        userEmail: normalizedUserEmail,
-        courseId: course.id,
-        groupEmail: normalizeEmail(groupEmail),
-        action,
-        status: 'PENDING' as SyncStatus,
-      }))
-    })
-    .filter(job => job.groupEmail && !pendingKeys.has(`${job.courseId}:${job.groupEmail}`))
+  const enrollments = await db.enrollment.findMany({
+    where: { courseId },
+    select: {
+      type: true,
+      user: {
+        select: {
+          email: true,
+        },
+      },
+    },
+  })
 
-  if (jobs.length === 0) return 0
+  const explicitJobs: Array<{
+    userEmail: string
+    courseId: string
+    groupEmail: string
+    action: SyncAction
+  }> = []
 
-  await db.groupSyncJob.createMany({ data: jobs })
+  const hasLiveGroup = Boolean(course.liveGoogleGroupEmail?.trim())
+  const hasRecordedGroup = Boolean(course.googleGroupEmail?.trim())
 
-  // Trigger async processing (fire-and-forget, outside transaction)
-  // Schedule in next tick to avoid blocking the transaction
-  process.nextTick(() => triggerGoogleGroupSyncProcessing())
+  for (const enrollment of enrollments) {
+    if (!enrollment.user?.email) continue
+    const userEmail = normalizeEmail(enrollment.user.email)
+    const enrollmentType = enrollment.type
 
-  return jobs.length
+    if (hasLiveGroup && enrollmentType === 'LIVE') {
+      for (const ge of parseGoogleGroupEmails(course.liveGoogleGroupEmail)) {
+        explicitJobs.push({ userEmail, courseId, groupEmail: ge, action: 'ADD' })
+      }
+      if (hasRecordedGroup) {
+        for (const ge of parseGoogleGroupEmails(course.googleGroupEmail)) {
+          explicitJobs.push({ userEmail, courseId, groupEmail: ge, action: 'REMOVE' })
+        }
+      }
+    } else {
+      if (hasRecordedGroup) {
+        for (const ge of parseGoogleGroupEmails(course.googleGroupEmail)) {
+          explicitJobs.push({ userEmail, courseId, groupEmail: ge, action: 'ADD' })
+        }
+      }
+      if (hasLiveGroup) {
+        for (const ge of parseGoogleGroupEmails(course.liveGoogleGroupEmail)) {
+          explicitJobs.push({ userEmail, courseId, groupEmail: ge, action: 'REMOVE' })
+        }
+      }
+    }
+  }
+
+  return queueExplicitGoogleGroupSyncJobs(db, explicitJobs)
+}
+
+/**
+ * Handles Google Group migration when a user upgrades from RECORDED to LIVE batch.
+ */
+export async function handleGoogleGroupEnrollmentUpgrade(
+  db: any,
+  { userEmail, courseId }: { userEmail: string; courseId: string }
+) {
+  return queueGoogleGroupSyncJobs(db, {
+    userEmail,
+    courseIds: [courseId],
+    action: 'ADD',
+    enrollmentTypeMap: { [courseId]: 'LIVE' },
+  })
 }
 
 export async function queueExplicitGoogleGroupSyncJobs(
@@ -542,4 +667,286 @@ export async function processGoogleGroupSyncJobs(force = false) {
     // Always release lock
     await releaseSyncLock()
   }
+}
+
+/**
+ * Fetch actual member count from Google Groups Admin API for each group email.
+ * Returns a map of groupEmail → { googleCount, error? }
+ */
+export async function getGoogleGroupMemberCounts(
+  groupEmails: string[]
+): Promise<Record<string, { googleCount: number; error?: string }>> {
+  const results: Record<string, { googleCount: number; error?: string }> = {}
+
+  if (groupEmails.length === 0) return results
+
+  let accessToken: string
+  try {
+    accessToken = await getGoogleAccessToken()
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : 'Failed to get access token'
+    for (const email of groupEmails) {
+      results[email] = { googleCount: -1, error: errMsg }
+    }
+    return results
+  }
+
+  // Fetch counts sequentially with small delay to avoid rate limits
+  for (let i = 0; i < groupEmails.length; i++) {
+    const groupEmail = groupEmails[i].trim().toLowerCase()
+    
+    if (i > 0) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
+
+    try {
+      // Use the Groups.get endpoint which returns directMembersCount
+      const response = await fetch(
+        `https://admin.googleapis.com/admin/directory/v1/groups/${encodeURIComponent(groupEmail)}`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      )
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        const errMsg = data?.error?.message || `HTTP ${response.status}`
+        results[groupEmail] = { googleCount: -1, error: errMsg }
+        continue
+      }
+
+      const data = await response.json()
+      results[groupEmail] = {
+        googleCount: typeof data.directMembersCount === 'string'
+          ? parseInt(data.directMembersCount, 10)
+          : (data.directMembersCount ?? -1),
+      }
+    } catch (err) {
+      results[groupEmail] = {
+        googleCount: -1,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      }
+    }
+  }
+
+  return results
+}
+
+/**
+ * List ALL members of a Google Group (handles pagination).
+ * Returns array of lowercase email strings.
+ */
+async function listGoogleGroupMembers(accessToken: string, groupEmail: string): Promise<string[]> {
+  const allMembers: string[] = []
+  let nextPageToken: string | undefined
+
+  do {
+    const url = new URL(`https://admin.googleapis.com/admin/directory/v1/groups/${encodeURIComponent(groupEmail)}/members`)
+    url.searchParams.set('maxResults', '200')
+    if (nextPageToken) url.searchParams.set('pageToken', nextPageToken)
+
+    const response = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null)
+      throw new Error(data?.error?.message || `HTTP ${response.status}`)
+    }
+
+    const data = await response.json()
+    if (data.members && Array.isArray(data.members)) {
+      for (const member of data.members) {
+        if (member.email) {
+          allMembers.push(member.email.toLowerCase().trim())
+        }
+      }
+    }
+
+    nextPageToken = data.nextPageToken
+    // Brief delay between pages to avoid rate limits
+    if (nextPageToken) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
+  } while (nextPageToken)
+
+  return allMembers
+}
+
+/**
+ * Reconcile Google Groups with DB assignments.
+ * 
+ * For each notification pool email:
+ * 1. Fetches actual members from Google Groups API
+ * 2. Compares with DB (which users have this email in notificationGroupEmails)
+ * 3. Queues REMOVE jobs for anyone in Google but NOT in DB (extras)
+ * 4. Queues ADD jobs for anyone in DB but NOT in Google (missing)
+ * 
+ * This cleans up overfilled groups (655, 994 members → 500).
+ */
+export async function reconcileGoogleGroupMembers(
+  groupEmails: string[]
+): Promise<{
+  results: Array<{
+    groupEmail: string
+    googleMemberCount: number
+    dbMemberCount: number
+    extrasInGoogle: number
+    missingInGoogle: number
+    removeJobsQueued: number
+    addJobsQueued: number
+    error?: string
+  }>
+  totalRemoveJobsQueued: number
+  totalAddJobsQueued: number
+}> {
+  const results: Array<{
+    groupEmail: string
+    googleMemberCount: number
+    dbMemberCount: number
+    extrasInGoogle: number
+    missingInGoogle: number
+    removeJobsQueued: number
+    addJobsQueued: number
+    error?: string
+  }> = []
+
+  let totalRemoveJobsQueued = 0
+  let totalAddJobsQueued = 0
+
+  if (groupEmails.length === 0) return { results, totalRemoveJobsQueued, totalAddJobsQueued }
+
+  let accessToken: string
+  try {
+    accessToken = await getGoogleAccessToken()
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : 'Failed to get access token'
+    for (const email of groupEmails) {
+      results.push({
+        groupEmail: email,
+        googleMemberCount: -1,
+        dbMemberCount: 0,
+        extrasInGoogle: 0,
+        missingInGoogle: 0,
+        removeJobsQueued: 0,
+        addJobsQueued: 0,
+        error: errMsg,
+      })
+    }
+    return { results, totalRemoveJobsQueued, totalAddJobsQueued }
+  }
+
+  for (const groupEmail of groupEmails) {
+    const normGroupEmail = groupEmail.trim().toLowerCase()
+
+    try {
+      // 1. Get actual Google members
+      const googleMembers = await listGoogleGroupMembers(accessToken, normGroupEmail)
+      const googleMemberSet = new Set(googleMembers)
+
+      // 2. Get DB assignments (users who have this email in their notificationGroupEmails)
+      const dbUsers = await prisma.user.findMany({
+        where: { notificationGroupEmails: { contains: normGroupEmail } },
+        select: { email: true },
+      })
+      const dbEmailSet = new Set(dbUsers.map(u => u.email.toLowerCase().trim()))
+
+      // 3. Find extras (in Google but NOT in DB)
+      const extras = googleMembers.filter(e => !dbEmailSet.has(e))
+
+      // 4. Find missing (in DB but NOT in Google)
+      const missing = Array.from(dbEmailSet).filter(e => !googleMemberSet.has(e))
+
+      // 5. Queue REMOVE jobs for extras
+      let removeQueued = 0
+      for (const extraEmail of extras) {
+        // Don't remove workspace admin or service accounts
+        if (extraEmail.endsWith(`@${process.env.GOOGLE_WORKSPACE_DOMAIN?.trim().toLowerCase() || ''}`)) {
+          continue
+        }
+
+        const existing = await prisma.groupSyncJob.findFirst({
+          where: {
+            userEmail: extraEmail,
+            groupEmail: normGroupEmail,
+            action: 'REMOVE',
+            status: { in: ['PENDING', 'PROCESSING'] },
+          },
+        })
+        if (!existing) {
+          await prisma.groupSyncJob.create({
+            data: {
+              userEmail: extraEmail,
+              groupEmail: normGroupEmail,
+              action: 'REMOVE',
+              groupType: 'NOTIFICATION',
+              status: 'PENDING',
+              attemptCount: 0,
+            },
+          })
+          removeQueued++
+        }
+      }
+
+      // 6. Queue ADD jobs for missing
+      let addQueued = 0
+      for (const missingEmail of missing) {
+        const existing = await prisma.groupSyncJob.findFirst({
+          where: {
+            userEmail: missingEmail,
+            groupEmail: normGroupEmail,
+            action: 'ADD',
+            status: { in: ['PENDING', 'PROCESSING', 'SUCCESS'] },
+          },
+        })
+        if (!existing) {
+          await prisma.groupSyncJob.create({
+            data: {
+              userEmail: missingEmail,
+              groupEmail: normGroupEmail,
+              action: 'ADD',
+              groupType: 'NOTIFICATION',
+              status: 'PENDING',
+              attemptCount: 0,
+            },
+          })
+          addQueued++
+        }
+      }
+
+      totalRemoveJobsQueued += removeQueued
+      totalAddJobsQueued += addQueued
+
+      results.push({
+        groupEmail: normGroupEmail,
+        googleMemberCount: googleMembers.length,
+        dbMemberCount: dbUsers.length,
+        extrasInGoogle: extras.length,
+        missingInGoogle: missing.length,
+        removeJobsQueued: removeQueued,
+        addJobsQueued: addQueued,
+      })
+
+      // Brief delay between groups
+      await new Promise(resolve => setTimeout(resolve, 500))
+    } catch (err) {
+      results.push({
+        groupEmail: normGroupEmail,
+        googleMemberCount: -1,
+        dbMemberCount: 0,
+        extrasInGoogle: 0,
+        missingInGoogle: 0,
+        removeJobsQueued: 0,
+        addJobsQueued: 0,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
+    }
+  }
+
+  // Trigger processing of the queued jobs
+  if (totalRemoveJobsQueued > 0 || totalAddJobsQueued > 0) {
+    process.nextTick(() => triggerGoogleGroupSyncProcessing())
+  }
+
+  return { results, totalRemoveJobsQueued, totalAddJobsQueued }
 }

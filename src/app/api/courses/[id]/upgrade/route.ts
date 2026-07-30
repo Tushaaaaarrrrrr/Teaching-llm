@@ -87,8 +87,21 @@ export async function POST(
           courseId,
         },
       },
-      data: { type: 'LIVE' },
+      data: { type: 'LIVE', isFreeEnrollment: false },
     })
+
+    // Queue Google Group sync for full upgrade
+    try {
+      const { queueGoogleGroupSyncJobs } = await import('@/lib/google-group-sync')
+      await queueGoogleGroupSyncJobs(prisma, {
+        userEmail: session.email,
+        courseIds: [courseId],
+        action: 'ADD',
+        enrollmentTypeMap: { [courseId]: 'LIVE' },
+      })
+    } catch (syncErr) {
+      console.error('[courses/[id]/upgrade] Failed to queue Google Group sync:', syncErr)
+    }
 
     // Mark transaction as successful
     await prisma.upgradeTransaction.update({

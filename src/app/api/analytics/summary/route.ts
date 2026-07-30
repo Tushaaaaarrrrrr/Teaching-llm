@@ -237,6 +237,77 @@ export async function GET(request: NextRequest) {
       !disabledIds.has(c.id || c.courseId) && !disabledNames.has((c.name || c.courseName || '').trim().toLowerCase())
     )
 
+    // ─── Compute Batch Type Distribution (Live vs Recorded) ───────────
+    let batchStats = {
+      liveStudents: 0,
+      recordedStudents: 0,
+      bothStudents: 0,
+      totalLiveEnrollments: 0,
+      totalRecordedEnrollments: 0,
+      totalEnrolledStudents: 0,
+      liveOnlyStudents: 0,
+      recordedOnlyStudents: 0,
+    }
+
+    try {
+      const enrollments = await (prisma.enrollment as any).findMany({
+        where: {
+          user: { role: 'STUDENT', isTerminated: false }
+        },
+        select: { userId: true, type: true }
+      })
+
+      const userBatchMap = new Map<string, Set<string>>()
+      let liveEnrollmentsCount = 0
+      let recordedEnrollmentsCount = 0
+
+      for (const enr of enrollments) {
+        if (!userBatchMap.has(enr.userId)) {
+          userBatchMap.set(enr.userId, new Set())
+        }
+        const enrType = enr.type || 'LIVE'
+        userBatchMap.get(enr.userId)!.add(enrType)
+        if (enrType === 'LIVE') liveEnrollmentsCount++
+        else if (enrType === 'RECORDED') recordedEnrollmentsCount++
+      }
+
+      let liveStudents = 0
+      let recordedStudents = 0
+      let bothStudents = 0
+      let liveOnlyStudents = 0
+      let recordedOnlyStudents = 0
+
+      for (const types of Array.from(userBatchMap.values())) {
+        const hasLive = types.has('LIVE')
+        const hasRecorded = types.has('RECORDED')
+
+        if (hasLive && hasRecorded) {
+          bothStudents++
+          liveStudents++
+          recordedStudents++
+        } else if (hasLive) {
+          liveStudents++
+          liveOnlyStudents++
+        } else if (hasRecorded) {
+          recordedStudents++
+          recordedOnlyStudents++
+        }
+      }
+
+      batchStats = {
+        liveStudents,
+        recordedStudents,
+        bothStudents,
+        totalLiveEnrollments: liveEnrollmentsCount,
+        totalRecordedEnrollments: recordedEnrollmentsCount,
+        totalEnrolledStudents: userBatchMap.size,
+        liveOnlyStudents,
+        recordedOnlyStudents,
+      }
+    } catch (e) {
+      console.error('[Analytics Summary] Failed to compute batch stats:', e)
+    }
+
     return NextResponse.json({
       range,
       timer: {
@@ -257,6 +328,7 @@ export async function GET(request: NextRequest) {
       courseDistribution: filteredCourseDist,
       courseGrowth,
       demographics,
+      batchStats,
     })
   } catch (error) {
     console.error('[Analytics Summary] Error:', error)

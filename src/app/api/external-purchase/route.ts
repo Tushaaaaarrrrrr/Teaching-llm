@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 import { scheduleWelcomeSequence } from '@/lib/welcome-notifications'
+import { getOrAssignPoolCategory } from '@/lib/notification-group-pool'
+import { extractAndParseAmount, getFallbackCoursePrices } from '@/lib/external-price'
 
 export async function POST(request: NextRequest) {
   const headerSecret = request.headers.get('x-external-secret')
@@ -134,6 +136,9 @@ export async function POST(request: NextRequest) {
         
         // Trigger welcome notifications sequence in background
         scheduleWelcomeSequence(user.id).catch(console.error)
+
+        // Auto-assign new user to default Notification Pool Group (ensures every student gets a group email)
+        await getOrAssignPoolCategory(prisma, normalizedEmail)
       } catch (createErr) {
         const errMsg = createErr instanceof Error ? createErr.message : 'Unknown error'
         console.error(`[external-purchase] FAILED — user create error for ${normalizedEmail}:`, createErr)
@@ -152,12 +157,15 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── 5. Create Order (optional fields guarded) ────────────────────
-    const rawPrice = finalPrice ?? (body as any).amount ?? (body as any).price ?? (body as any).total ?? (body as any).final_price ?? (body as any).totalPrice
-    const safeAmount = typeof rawPrice === 'number' && isFinite(rawPrice)
-      ? rawPrice
-      : typeof rawPrice === 'string' && !isNaN(parseFloat(rawPrice.trim()))
-      ? parseFloat(rawPrice.trim())
-      : 0
+    let safeAmount = extractAndParseAmount(body)
+    let coursePricesMap: Record<string, number> = {}
+
+    if (safeAmount === 0 && allCourseIds.length > 0) {
+      const fallback = await getFallbackCoursePrices(prisma, allCourseIds, classTypeMap)
+      safeAmount = fallback.totalPrice
+      coursePricesMap = fallback.coursePrices
+    }
+
     const safeCreatedAt = purchasedAt ? (() => { const d = new Date(purchasedAt); return isNaN(d.getTime()) ? new Date() : d })() : new Date()
 
     const order = await prisma.order.create({
@@ -179,13 +187,14 @@ export async function POST(request: NextRequest) {
     for (const courseId of allCourseIds) {
       // Type is resolved by ID match, not position, to be robust against reordering
       const accessType = classTypeMap.get(courseId) ?? 'RECORDED'
+      const itemPrice = coursePricesMap[courseId] ?? pricePerCourse
 
       await prisma.orderItem.create({
         data: {
           orderId: order.id,
           courseId,
           accessType,
-          price: pricePerCourse,
+          price: itemPrice,
         },
       })
 
@@ -215,11 +224,18 @@ export async function POST(request: NextRequest) {
       enrollmentCourseIds.push(courseId)
     }
 
+    // Build map of courseId -> accessType for accurate group routing
+    const enrollmentTypeMap: Record<string, 'LIVE' | 'RECORDED'> = {}
+    for (const courseId of enrollmentCourseIds) {
+      enrollmentTypeMap[courseId] = classTypeMap.get(courseId) ?? 'RECORDED'
+    }
+
     // ─── 7. Queue Google Group sync ───────────────────────────────────
     await queueGoogleGroupSyncJobs(prisma, {
       userEmail: normalizedEmail,
       courseIds: enrollmentCourseIds,
       action: 'ADD',
+      enrollmentTypeMap,
     })
 
     // ─── 8. Activity log ──────────────────────────────────────────────

@@ -277,6 +277,10 @@ export default function GoogleSyncPage() {
   }
 
   const [isCleaning, setIsCleaning] = useState(false)
+  const [isResettingFull, setIsResettingFull] = useState(false)
+  const [isReconciling, setIsReconciling] = useState(false)
+  const [isVerifyingGoogle, setIsVerifyingGoogle] = useState(false)
+  const [googleVerificationData, setGoogleVerificationData] = useState<any>(null)
 
   async function handleCleanupDuplicates() {
     if (!confirm('Are you sure you want to clean up duplicate pool email assignments? This will ensure every student gets EXACTLY 1 email per Pool Group, free up filled spots, and redistribute pending users.')) return
@@ -311,6 +315,99 @@ export default function GoogleSyncPage() {
       setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'An error occurred' })
     } finally {
       setIsCleaning(false)
+    }
+  }
+
+  async function handleFullReset(categoryId?: string) {
+    const promptText = '🚨 WARNING: NUCLEAR RESET!\n\nThis will:\n1. Clear ALL existing pool group assignments for all users.\n2. Re-assign every user sequentially (500 members per group max) from scratch.\n3. Queue ADD jobs to ensure everyone has a group email.\n\nAre you ABSOLUTELY SURE?'
+    if (!confirm(promptText)) return
+
+    setIsResettingFull(true)
+    setPoolMessage(null)
+
+    try {
+      const res = await fetch('/api/admin/notification-groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'FULL_RESET', categoryId }),
+      })
+
+      const text = await res.text()
+      let data: any = {}
+      try {
+        data = JSON.parse(text)
+      } catch (e) {
+        throw new Error('Server operation timed out or returned an HTML error.')
+      }
+
+      if (!res.ok) throw new Error(data.error || 'Failed to execute full reset')
+
+      setPoolMessage({
+        type: 'success',
+        text: data.message || `Full reset completed successfully!`,
+      })
+      mutatePools()
+      setRefreshKey(prev => prev + 1)
+    } catch (err) {
+      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'An error occurred during reset' })
+    } finally {
+      setIsResettingFull(false)
+    }
+  }
+
+  async function handleReconcileGoogle() {
+    if (!confirm('This will fetch actual membership from Google Groups API, compare against DB assignments, and queue REMOVE jobs for extra members (e.g. overfilled groups) and ADD jobs for missing members. Proceed?')) return
+
+    setIsReconciling(true)
+    setPoolMessage(null)
+
+    try {
+      const res = await fetch('/api/admin/notification-groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'RECONCILE_GOOGLE' }),
+      })
+
+      const text = await res.text()
+      let data: any = {}
+      try {
+        data = JSON.parse(text)
+      } catch (e) {
+        throw new Error('Server operation timed out or returned an HTML error.')
+      }
+
+      if (!res.ok) throw new Error(data.error || 'Failed to reconcile with Google')
+
+      setPoolMessage({
+        type: 'success',
+        text: `Google Reconciliation Complete! Queued ${data.totalRemoveJobsQueued || 0} REMOVE jobs and ${data.totalAddJobsQueued || 0} ADD jobs to sync Google Workspace with DB.`,
+      })
+      mutatePools()
+      setRefreshKey(prev => prev + 1)
+    } catch (err) {
+      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'An error occurred during reconciliation' })
+    } finally {
+      setIsReconciling(false)
+    }
+  }
+
+  async function handleVerifyGoogleCounts() {
+    setIsVerifyingGoogle(true)
+    try {
+      const res = await fetch('/api/admin/notification-groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'VERIFY_GOOGLE_COUNTS' }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to verify Google counts')
+
+      setGoogleVerificationData(data)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to verify Google counts')
+    } finally {
+      setIsVerifyingGoogle(false)
     }
   }
 
@@ -621,20 +718,107 @@ export default function GoogleSyncPage() {
                   {isCleaning ? 'Cleaning...' : '🧹 Clean & Fix Duplicates'}
                 </button>
               </div>
+
+              {/* Option 4: Full Nuclear Reset & Redistribute */}
+              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid #ef4444', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#ef4444' }}>4. Nuclear Reset & Redistribute</div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                    Wipes all user pool assignments, resets counts, and redistributes EVERY user sequentially (500 max per email) from scratch.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isResettingFull}
+                  onClick={() => handleFullReset()}
+                  className="btn"
+                  style={{ alignSelf: 'flex-start', background: '#ef4444', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
+                >
+                  {isResettingFull ? 'Resetting...' : '🚨 Nuclear Reset & Redistribute'}
+                </button>
+              </div>
+
+              {/* Option 5: Reconcile with Google Workspace */}
+              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--primary-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary)' }}>5. Reconcile with Google Workspace</div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                    Queries Google Groups API, compares member list with DB, and queues REMOVE jobs for extra members (clears 655/994 overfilling).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isReconciling}
+                  onClick={handleReconcileGoogle}
+                  className="btn"
+                  style={{ alignSelf: 'flex-start', background: 'var(--primary)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
+                >
+                  {isReconciling ? 'Reconciling...' : '🔄 Reconcile with Google Workspace'}
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Verification comparison modal / display if fetched */}
+          {googleVerificationData && (
+            <div className="card" style={{ padding: '20px', border: '1px solid var(--primary-light)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>📊 Google Groups API Verification Results</h4>
+                <button onClick={() => setGoogleVerificationData(null)} className="btn btn-sm btn-ghost" style={{ fontSize: '11px' }}>✕ Close</button>
+              </div>
+              <div style={{ fontSize: '12px', marginBottom: '12px', color: 'var(--text-secondary)' }}>
+                Total DB Pool Members: <strong>{googleVerificationData.totalDbMembers}</strong> | Total Actual Google Members: <strong>{googleVerificationData.totalGoogleMembers}</strong>
+              </div>
+              <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
+                    <th style={{ padding: '8px' }}>Group Email</th>
+                    <th style={{ padding: '8px' }}>DB Count</th>
+                    <th style={{ padding: '8px' }}>Google Count</th>
+                    <th style={{ padding: '8px' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {googleVerificationData.comparison?.map((c: any) => (
+                    <tr key={c.groupEmail} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                      <td style={{ padding: '8px', fontWeight: '600' }}>{c.groupEmail}</td>
+                      <td style={{ padding: '8px' }}>{c.dbCount}</td>
+                      <td style={{ padding: '8px' }}>{c.googleCount === -1 ? (c.error || 'Error') : c.googleCount}</td>
+                      <td style={{ padding: '8px' }}>
+                        {c.matches ? (
+                          <span style={{ color: 'var(--success)', fontWeight: '700' }}>✅ MATCH</span>
+                        ) : (
+                          <span style={{ color: 'var(--danger)', fontWeight: '700' }}>❌ MISMATCH ({c.googleCount - c.dbCount > 0 ? `+${c.googleCount - c.dbCount} extra in Google` : `${c.googleCount - c.dbCount} in Google`})</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Named Pool Groups List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>Active Pool Groups & Email Limits</h3>
-              <button
-                onClick={() => mutatePools()}
-                className="btn btn-sm btn-ghost"
-                style={{ border: '1px solid var(--border)', fontSize: '12px' }}
-              >
-                🔄 Refresh Pools
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handleVerifyGoogleCounts}
+                  disabled={isVerifyingGoogle}
+                  className="btn btn-sm btn-ghost"
+                  style={{ border: '1px solid var(--border)', fontSize: '12px' }}
+                >
+                  {isVerifyingGoogle ? 'Checking Google...' : '🔍 Verify Google Counts'}
+                </button>
+                <button
+                  onClick={() => mutatePools()}
+                  className="btn btn-sm btn-ghost"
+                  style={{ border: '1px solid var(--border)', fontSize: '12px' }}
+                >
+                  🔄 Refresh Pools
+                </button>
+              </div>
             </div>
 
             {isLoadingPools ? (

@@ -854,10 +854,23 @@ export async function processScheduledClassStartAlerts() {
 
           // 1. 15 Minutes Before Start
           if (diffMinutes <= 15 && diffMinutes > 0 && !event.notified15mBefore) {
+            const title15m = 'Class Starting in 15 Minutes'
+            const body15m = `"${event.title}" starts in 15 minutes. Please join the session.`
+
+            await prisma.notification.createMany({
+              data: recipientIds.map((userId) => ({
+                userId,
+                title: title15m,
+                content: body15m,
+                type: 'INFO',
+              })),
+            })
+            recipientIds.forEach((userId) => sseEmitter.emit(`user:${userId}:notify`))
+
             await Promise.allSettled([
               sendFcmToTopic(`course_${event.courseId}`, {
-                title: 'Class Starting in 15 Minutes',
-                body: `"${event.title}" starts in 15 minutes. Please join the session.`,
+                title: title15m,
+                body: body15m,
                 url: ctaLink,
                 ctaText: 'Join Class',
                 ctaLink: ctaLink,
@@ -866,8 +879,8 @@ export async function processScheduledClassStartAlerts() {
                 sound: 'default',
               }),
               sendFcmToUsers(managerIds, {
-                title: 'Class Starting in 15 Minutes',
-                body: `"${event.title}" starts in 15 minutes. Please join the session.`,
+                title: title15m,
+                body: body15m,
                 url: ctaLink,
                 ctaText: 'Join Class',
                 ctaLink: ctaLink,
@@ -881,8 +894,8 @@ export async function processScheduledClassStartAlerts() {
 
             await logNotification({
               category: 'CLASS_STARTING_15M',
-              title: 'Class Starting in 15 Minutes',
-              body: `"${event.title}" starts in 15 minutes. Please join the session.`,
+              title: title15m,
+              body: body15m,
               courseId: event.courseId,
               courseName: course?.name,
               recipientCount: recipientIds.length,
@@ -893,10 +906,23 @@ export async function processScheduledClassStartAlerts() {
 
           // 2. At Class Start
           if (diffMinutes <= 0 && diffMinutes > -10 && !event.notifiedAtStart) {
+            const titleStart = 'Class Starting Now'
+            const bodyStart = `Your instructor is here and "${event.title}" is starting now. Please join the session.`
+
+            await prisma.notification.createMany({
+              data: recipientIds.map((userId) => ({
+                userId,
+                title: titleStart,
+                content: bodyStart,
+                type: 'INFO',
+              })),
+            })
+            recipientIds.forEach((userId) => sseEmitter.emit(`user:${userId}:notify`))
+
             await Promise.allSettled([
               sendFcmToTopic(`course_${event.courseId}`, {
-                title: 'Class Starting Now',
-                body: `Your instructor is here and "${event.title}" is starting now. Please join the session.`,
+                title: titleStart,
+                body: bodyStart,
                 url: ctaLink,
                 ctaText: 'Join Now',
                 ctaLink: ctaLink,
@@ -906,8 +932,8 @@ export async function processScheduledClassStartAlerts() {
                 channelId: 'class_start_alerts',
               }),
               sendFcmToUsers(managerIds, {
-                title: 'Class Starting Now',
-                body: `Your instructor is here and "${event.title}" is starting now. Please join the session.`,
+                title: titleStart,
+                body: bodyStart,
                 url: ctaLink,
                 ctaText: 'Join Now',
                 ctaLink: ctaLink,
@@ -923,8 +949,8 @@ export async function processScheduledClassStartAlerts() {
 
             await logNotification({
               category: 'CLASS_START',
-              title: 'Class Starting Now',
-              body: `Your instructor is here and "${event.title}" is starting now. Please join the session.`,
+              title: titleStart,
+              body: bodyStart,
               courseId: event.courseId,
               courseName: course?.name,
               recipientCount: recipientIds.length,

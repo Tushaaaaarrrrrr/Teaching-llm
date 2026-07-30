@@ -43,8 +43,13 @@ export async function GET(
       const chat = await getDMSession(id, session.userId, session.role)
       if (!chat) return NextResponse.json({ error: 'Chat not found or forbidden' }, { status: 404 })
 
+      const dmWhere: any = { chatId: id }
+      if (session.role !== 'MANAGER') {
+        dmWhere.isDeleted = false
+      }
+
       const rawMessages = await prisma.chatMessage.findMany({
-        where: { chatId: id },
+        where: dmWhere,
         include: {
           sender: { select: { id: true, name: true, role: true } },
           replyTo: {
@@ -100,8 +105,14 @@ export async function GET(
     const cursor = searchParams.get('cursor')
     const limit = parseInt(searchParams.get('limit') || '50')
 
+    const whereClause: any = { courseId }
+    if (session.role !== 'MANAGER') {
+      whereClause.isDeleted = false
+      whereClause.isSystemDeleted = false
+    }
+
     const messages = await prisma.communityMessage.findMany({
-      where: { courseId },
+      where: whereClause,
       take: limit,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       include: {
@@ -229,6 +240,23 @@ export async function POST(
     const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
     if (accessibleCourseIds !== null && !accessibleCourseIds.includes(params.courseId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (session.role === 'STUDENT') {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          userId_courseId: {
+            userId: session.userId,
+            courseId: params.courseId,
+          },
+        },
+      })
+      if (enrollment?.type === 'DEMO') {
+        return NextResponse.json(
+          { error: 'Community chat is read-only in Demo mode. Unlock full course to send messages.' },
+          { status: 403 }
+        )
+      }
     }
 
     const course = await prisma.course.findUnique({

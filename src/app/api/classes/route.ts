@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       ],
     })
 
-    const [readStates, mutePrefs] = await Promise.all([
+    const [readStates, mutePrefs, userEnrollments] = await Promise.all([
       prisma.communityReadState.findMany({
         where: { userId: session.userId },
         select: { courseId: true, lastReadAt: true },
@@ -63,9 +63,16 @@ export async function GET(request: NextRequest) {
         where: { userId: session.userId },
         select: { courseId: true, isMuted: true },
       }),
+      session.role === 'STUDENT'
+        ? prisma.enrollment.findMany({
+            where: { userId: session.userId },
+            select: { courseId: true, type: true },
+          })
+        : Promise.resolve([]),
     ])
     const readMap = new Map(readStates.map(r => [r.courseId, r.lastReadAt.getTime()]))
     const muteMap = new Map(mutePrefs.map(m => [m.courseId, m.isMuted]))
+    const enrollmentTypeMap = new Map(userEnrollments.map(e => [e.courseId, e.type]))
 
     const isManager = isManagerOrSuperAdmin(session.role)
 
@@ -74,9 +81,12 @@ export async function GET(request: NextRequest) {
         const lastReadTime = readMap.get(course.id) || 0;
         const hasUnread = lastMsgTime > lastReadTime;
         const isMuted = muteMap.get(course.id) || false;
+        const enrollmentType = enrollmentTypeMap.get(course.id) || null;
 
         return {
           ...course,
+          enrollmentType,
+          isDemoEnrollment: enrollmentType === 'DEMO',
           isExpired: isManager ? false : isCourseExpired(course),
           isEffectivelyDisabled: isManager ? false : isCourseEffectivelyDisabled(course),
           hasUnread,

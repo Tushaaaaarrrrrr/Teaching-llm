@@ -157,6 +157,22 @@ export default function CourseDetailPage() {
     })
   }
   
+  const handleUnenrollDemo = async () => {
+    if (!confirm('Are you sure you want to unenroll from this demo? You will lose access to demo lectures.')) return
+    try {
+      const res = await fetch(`/api/courses/${params.id}/unenroll`, { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        alert('Successfully unenrolled from demo.')
+        router.push('/courses')
+      } else {
+        alert(data.error || 'Failed to unenroll')
+      }
+    } catch (e: any) {
+      alert(e.message || 'Error unenrolling')
+    }
+  }
+
   const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
 
   const handleUpgrade = async (courseId: string) => {
@@ -550,6 +566,33 @@ export default function CourseDetailPage() {
                     </button>
                   </div>
                 )}
+
+                {/* Demo Action Buttons */}
+                {(course.enrollmentType as string) === 'DEMO' && (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <Link
+                      href="/courses/explore"
+                      style={{
+                        background: 'var(--surface)', color: 'var(--text-primary)', padding: '6px 16px', borderRadius: '50px',
+                        fontSize: '12px', fontWeight: '800', border: 'none', cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        textDecoration: 'none', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      🔓 Unlock Full Course
+                    </Link>
+                    <button
+                      onClick={handleUnenrollDemo}
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.4)',
+                        padding: '6px 16px', borderRadius: '50px', fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Unenroll Demo
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -645,40 +688,56 @@ export default function CourseDetailPage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {topics.map((topic, topicIdx) => (
-            <div key={topic.id} className="card" style={{ overflow: 'hidden' }}>
-              {/* Topic Header */}
-              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                <button
-                  onClick={() => toggleTopic(topic.id)}
-                  style={{
-                    flex: 1, padding: '16px 20px', background: 'none', border: 'none',
-                    display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <div style={{
-                    width: '36px', height: '36px', borderRadius: '10px',
-                    background: colorWithOpacity(course.color, '18'), color: extractHex(course.color),
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '13px', fontWeight: '700', flexShrink: 0,
-                  }}>
-                    {String(topicIdx + 1).padStart(2, '0')}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)' }}>{topic.title}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {topic.content.length} lecture{topic.content.length !== 1 ? 's' : ''}
-                    </div>
-                  </div>
-                  <svg
-                    width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"
-                    style={{ transition: 'transform 0.2s', transform: expandedTopics.has(topic.id) ? 'rotate(180deg)' : 'none' }}
+          {topics.map((topic, topicIdx) => {
+            const hasNewContent = ((topic as any).createdAt && new Date().getTime() - new Date((topic as any).createdAt).getTime() < 24 * 60 * 60 * 1000) ||
+              topic.content?.some((item: any) => item.createdAt && new Date().getTime() - new Date(item.createdAt).getTime() < 24 * 60 * 60 * 1000);
+            return (
+              <div key={topic.id} className="card" style={{ overflow: 'hidden' }}>
+                {/* Topic Header */}
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <button
+                    onClick={() => toggleTopic(topic.id)}
+                    style={{
+                      flex: 1, padding: '16px 20px', background: 'none', border: 'none',
+                      display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
                   >
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </button>
-              </div>
+                    <div style={{
+                      width: '36px', height: '36px', borderRadius: '10px',
+                      background: colorWithOpacity(course.color, '18'), color: extractHex(course.color),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '13px', fontWeight: '700', flexShrink: 0,
+                    }}>
+                      {String(topicIdx + 1).padStart(2, '0')}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>{topic.title}</span>
+                        {hasNewContent && (
+                          <span style={{
+                            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                            color: 'white', padding: '2px 6px', borderRadius: '4px',
+                            fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
+                            letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                            flexShrink: 0
+                          }}>
+                            New
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        {topic.content.length} lecture{topic.content.length !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                    <svg
+                      width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"
+                      style={{ transition: 'transform 0.2s', transform: expandedTopics.has(topic.id) ? 'rotate(180deg)' : 'none' }}
+                    >
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
 
               {/* Topic Content */}
               {expandedTopics.has(topic.id) && (
@@ -777,49 +836,72 @@ export default function CourseDetailPage() {
                           )}
 
                           {/* Watch / Material buttons */}
-                          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                            {item.pptUrl && (
+                          <div style={{ display: 'flex', gap: '8px', flexShrink: 0, alignItems: 'center' }}>
+                            {(item as any).isDemoLocked ? (
                               <Link
-                                href={`/material/${item.id}/view`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn btn-ghost"
+                                href="/courses/explore"
                                 style={{
-                                  padding: isNative ? '10px 18px' : '6px 14px',
+                                  padding: isNative ? '10px 20px' : '6px 16px',
                                   fontSize: isNative ? '13px' : '12px',
                                   fontWeight: '800',
                                   borderRadius: '50px',
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '6px',
-                                  height: isNative ? '40px' : '32px',
-                                  border: '1.5px solid var(--border)',
+                                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                  color: '#fff',
+                                  textDecoration: 'none',
+                                  boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
                                 }}
                               >
-                                <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                                </svg>
-                                Download Notes
+                                🔒 Unlock Now
                               </Link>
-                            )}
-                            {(item.videoUrl || item.youtubeUrl) && (
-                              <Link
-                                href={`/courses/${params.id}/lectures/${item.id}`}
-                                className="btn btn-primary"
-                                style={{
-                                  padding: isNative ? '10px 20px' : '6px 14px',
-                                  fontSize: isNative ? '13px' : '12px',
-                                  fontWeight: '800',
-                                  borderRadius: '50px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  height: isNative ? '40px' : '32px',
-                                }}
-                              >
-                                <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                Watch
-                              </Link>
+                            ) : (
+                              <>
+                                {item.pptUrl && (
+                                  <Link
+                                    href={`/material/${item.id}/view`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn btn-ghost"
+                                    style={{
+                                      padding: isNative ? '10px 18px' : '6px 14px',
+                                      fontSize: isNative ? '13px' : '12px',
+                                      fontWeight: '800',
+                                      borderRadius: '50px',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      height: isNative ? '40px' : '32px',
+                                      border: '1.5px solid var(--border)',
+                                    }}
+                                  >
+                                    <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                    Download Notes
+                                  </Link>
+                                )}
+                                {(item.videoUrl || item.youtubeUrl) && (
+                                  <Link
+                                    href={`/courses/${params.id}/lectures/${item.id}`}
+                                    className="btn btn-primary"
+                                    style={{
+                                      padding: isNative ? '10px 20px' : '6px 14px',
+                                      fontSize: isNative ? '13px' : '12px',
+                                      fontWeight: '800',
+                                      borderRadius: '50px',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      height: isNative ? '40px' : '32px',
+                                    }}
+                                  >
+                                    <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    Watch
+                                  </Link>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>
@@ -829,7 +911,7 @@ export default function CourseDetailPage() {
                 </div>
               )}
             </div>
-          ))}
+          )})}
         </div>
       )}
       {/* Info Modal */}

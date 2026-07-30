@@ -8,7 +8,9 @@ import {
   flushCategoryOverflowQueue,
   assignAllUsersToPoolCategory,
   cleanupDuplicatePoolAssignments,
+  fullResetAndRedistribute,
 } from '@/lib/notification-group-pool'
+import { getGoogleGroupMemberCounts, reconcileGoogleGroupMembers } from '@/lib/google-group-sync'
 
 export async function GET(request: Request) {
   try {
@@ -108,6 +110,52 @@ export async function POST(request: Request) {
       })
 
       return NextResponse.json({ success: true, message: 'Pool Category deleted successfully' })
+    }
+
+    if (action === 'FULL_RESET') {
+      const { categoryId } = body
+      const result = await fullResetAndRedistribute(prisma, categoryId)
+      return NextResponse.json({ success: true, ...result })
+    }
+
+    if (action === 'RECONCILE_GOOGLE') {
+      // Fetch all pool email addresses across all categories
+      const allPoolEmails = await prisma.notificationPoolEmail.findMany({
+        select: { groupEmail: true },
+      })
+
+      const groupEmails = allPoolEmails.map(e => e.groupEmail)
+      const result = await reconcileGoogleGroupMembers(groupEmails)
+      return NextResponse.json({ success: true, ...result })
+    }
+
+    if (action === 'VERIFY_GOOGLE_COUNTS') {
+      // Fetch all pool email addresses across all categories
+      const allPoolEmails = await prisma.notificationPoolEmail.findMany({
+        select: { groupEmail: true, currentCount: true },
+      })
+
+      const groupEmails = allPoolEmails.map(e => e.groupEmail)
+      const googleCounts = await getGoogleGroupMemberCounts(groupEmails)
+
+      // Build comparison: DB count vs Google count
+      const comparison = allPoolEmails.map(e => {
+        const google = googleCounts[e.groupEmail]
+        return {
+          groupEmail: e.groupEmail,
+          dbCount: e.currentCount,
+          googleCount: google?.googleCount ?? -1,
+          error: google?.error || null,
+          matches: e.currentCount === (google?.googleCount ?? -1),
+        }
+      })
+
+      return NextResponse.json({
+        success: true,
+        comparison,
+        totalDbMembers: allPoolEmails.reduce((sum, e) => sum + e.currentCount, 0),
+        totalGoogleMembers: comparison.reduce((sum, c) => sum + (c.googleCount > 0 ? c.googleCount : 0), 0),
+      })
     }
 
     return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })

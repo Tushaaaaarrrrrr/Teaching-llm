@@ -24,6 +24,7 @@ export async function GET(
     }
 
     // Course Access Control: Check enrollment for students
+    let isDemoUser = false
     if (session.role === 'STUDENT') {
       const enrollment = await prisma.enrollment.findUnique({
         where: {
@@ -36,6 +37,9 @@ export async function GET(
 
       if (!enrollment) {
         return NextResponse.json({ error: 'You are not enrolled in this course' }, { status: 403 })
+      }
+      if (enrollment.type === 'DEMO') {
+        isDemoUser = true
       }
     }
 
@@ -67,9 +71,28 @@ export async function GET(
         createdAt: link.createdAt,
       }))
 
+      const allItems = [...topic.content.map(item => ({ ...item, isImported: false })), ...importedContent].sort((a, b) => a.order - b.order)
+
+      const processedContent = allItems.map(item => {
+        if (isDemoUser && !item.isDemo) {
+          return {
+            ...item,
+            isDemoLocked: true,
+            videoUrl: null,
+            youtubeUrl: null,
+            pptUrl: null,
+            videoVariants: null,
+          }
+        }
+        return {
+          ...item,
+          isDemoLocked: false,
+        }
+      })
+
       return {
         ...topic,
-        content: [...topic.content.map(item => ({ ...item, isImported: false })), ...importedContent].sort((a, b) => a.order - b.order),
+        content: processedContent,
       }
     })
 

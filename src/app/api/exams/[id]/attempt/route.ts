@@ -48,6 +48,9 @@ export async function POST(
         if (!enrollment) {
           return NextResponse.json({ error: 'Not enrolled in this course' }, { status: 403 })
         }
+        if (enrollment.type === 'DEMO') {
+          return NextResponse.json({ error: 'Exams are locked in Demo mode. Unlock full course to attempt exams.' }, { status: 403 })
+        }
       } else if (exam.testSeriesId) {
         const tsAccess = await (prisma as any).testSeriesAccess.findFirst({
           where: { 

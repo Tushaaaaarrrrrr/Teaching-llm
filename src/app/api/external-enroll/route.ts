@@ -4,6 +4,8 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseEffectivelyDisabled } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 import { appendEnrollmentToSheet } from "@/lib/google-sheets"
+import { getOrAssignPoolCategory } from '@/lib/notification-group-pool'
+import { extractAndParseAmount, getFallbackCoursePrices } from '@/lib/external-price'
 
 const EXTERNAL_SECRET = process.env.EXTERNAL_ENROLL_SECRET?.trim()
 
@@ -279,13 +281,21 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // Auto-assign new user to default Notification Pool Group (ensures every student gets a group email)
+        if (isNewUser) {
+          await getOrAssignPoolCategory(tx, user.email)
+        }
+
         // 7b2. Create Order & Order Items (to enable Transaction page visibility)
-        const rawPrice = finalPrice ?? (body as any).amount ?? (body as any).price ?? (body as any).total ?? (body as any).final_price ?? (body as any).totalPrice
-        const safeAmount = typeof rawPrice === 'number' && isFinite(rawPrice)
-          ? rawPrice
-          : typeof rawPrice === 'string' && !isNaN(parseFloat(rawPrice.trim()))
-          ? parseFloat(rawPrice.trim())
-          : 0
+        let safeAmount = extractAndParseAmount(body)
+        let coursePricesMap: Record<string, number> = {}
+
+        if (safeAmount === 0 && normalizedCourseIds.length > 0) {
+          const fallback = await getFallbackCoursePrices(tx, normalizedCourseIds, classTypeMap)
+          safeAmount = fallback.totalPrice
+          coursePricesMap = fallback.coursePrices
+        }
+
         const safeCreatedAt = purchasedAt ? (() => { const d = new Date(purchasedAt); return isNaN(d.getTime()) ? new Date() : d })() : new Date()
 
         let order = null
@@ -312,15 +322,22 @@ export async function POST(request: NextRequest) {
 
           for (const courseId of normalizedCourseIds) {
             const accessType = classTypeMap.get(courseId) ?? 'LIVE'
+            const itemPrice = coursePricesMap[courseId] ?? pricePerCourse
             await tx.orderItem.create({
               data: {
                 orderId: order.id,
                 courseId,
                 accessType,
-                price: pricePerCourse,
+                price: itemPrice,
               },
             })
           }
+        } else if (order.amount === 0 && safeAmount > 0) {
+          // Update existing zero-amount order if we now parsed or derived a non-zero price
+          await tx.order.update({
+            where: { id: order.id },
+            data: { amount: safeAmount },
+          })
         }
 
         // 7c. Enroll in each purchased course (idempotent)

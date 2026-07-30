@@ -37,16 +37,20 @@ export async function queueNotificationGroupSyncJob(
   const normUserEmail = normalizeEmail(userEmail)
   const normGroupEmail = normalizeEmail(groupEmail)
 
-  const existingPendingJob = await db.groupSyncJob.findFirst({
+  // Check ALL statuses (PENDING, PROCESSING, SUCCESS) to prevent duplicate sync jobs.
+  // Previously only checked PENDING, which allowed 4-5 duplicate ADD jobs per user
+  // when the button was clicked multiple times or concurrent operations ran.
+  const existingJob = await db.groupSyncJob.findFirst({
     where: {
       userEmail: normUserEmail,
       groupEmail: normGroupEmail,
       action,
-      status: 'PENDING',
+      status: { in: ['PENDING', 'PROCESSING', 'SUCCESS'] },
     },
+    orderBy: { createdAt: 'desc' },
   })
 
-  if (existingPendingJob) return existingPendingJob
+  if (existingJob) return existingJob
 
   return await db.groupSyncJob.create({
     data: {
@@ -301,59 +305,79 @@ export async function flushCategoryOverflowQueue(db: any, categoryId: string) {
 /**
  * Bulk assign ALL users or unassigned users to a Pool Category
  */
+// In-memory guard to prevent concurrent bulk assignment runs from creating duplicate jobs
+let _bulkAssignRunning = false
+
 export async function assignAllUsersToPoolCategory(db: any, categoryId?: string) {
-  let targetCategory: any
-  if (categoryId) {
-    targetCategory = await db.notificationPoolCategory.findUnique({
-      where: { id: categoryId },
-    })
-  } else {
-    targetCategory = await ensureDefaultPoolCategory(db)
+  // Prevent concurrent runs (e.g. user clicking button 4 times, or auto-sync overlapping)
+  if (_bulkAssignRunning) {
+    return { count: 0, categoryName: '', message: 'Bulk assignment already in progress. Please wait.' }
   }
+  _bulkAssignRunning = true
 
-  if (!targetCategory) throw new Error('Pool Category not found')
-
-  const poolEmails = await db.notificationPoolEmail.findMany({
-    where: { categoryId: targetCategory.id, isActive: true },
-  })
-
-  if (poolEmails.length === 0) {
-    return { count: 0, categoryName: targetCategory.name, message: `No active pool emails in ${targetCategory.name}` }
-  }
-
-  const categoryEmailAddresses = poolEmails.map(p => p.groupEmail)
-
-  // Find users who do NOT have an email belonging to this pool category
-  const unassignedUsers = await db.user.findMany({
-    where: {
-      OR: [
-        { notificationGroupEmails: null },
-        { notificationGroupEmails: '' },
-        {
-          NOT: {
-            OR: categoryEmailAddresses.map(addr => ({
-              notificationGroupEmails: { contains: addr },
-            })),
-          },
-        },
-      ],
-    },
-    select: { id: true, email: true },
-    orderBy: { createdAt: 'asc' },
-  })
-
-  let count = 0
-  for (const user of unassignedUsers) {
-    const res = await getOrAssignPoolCategory(db, user.email, targetCategory.id)
-    if (res.assigned && res.newlyAssigned) {
-      count++
-    } else if (res.pending) {
-      // Pool filled up to capacity, stop loop immediately!
-      break
+  try {
+    let targetCategory: any
+    if (categoryId) {
+      targetCategory = await db.notificationPoolCategory.findUnique({
+        where: { id: categoryId },
+      })
+    } else {
+      targetCategory = await ensureDefaultPoolCategory(db)
     }
-  }
 
-  return { count, categoryName: targetCategory.name, message: `Processed assignment for ${count} users in ${targetCategory.name}` }
+    if (!targetCategory) throw new Error('Pool Category not found')
+
+    const poolEmails = await db.notificationPoolEmail.findMany({
+      where: { categoryId: targetCategory.id, isActive: true },
+    })
+
+    if (poolEmails.length === 0) {
+      return { count: 0, categoryName: targetCategory.name, message: `No active pool emails in ${targetCategory.name}` }
+    }
+
+    const categoryEmailAddresses = poolEmails.map(p => p.groupEmail)
+
+    // Find users who do NOT have an email belonging to this pool category
+    const unassignedUsers = await db.user.findMany({
+      where: {
+        OR: [
+          { notificationGroupEmails: null },
+          { notificationGroupEmails: '' },
+          {
+            NOT: {
+              OR: categoryEmailAddresses.map(addr => ({
+                notificationGroupEmails: { contains: addr },
+              })),
+            },
+          },
+        ],
+      },
+      select: { id: true, email: true },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    let count = 0
+    // Track processed user emails to prevent double-processing within same run
+    const processedEmails = new Set<string>()
+
+    for (const user of unassignedUsers) {
+      const normEmail = normalizeEmail(user.email)
+      if (processedEmails.has(normEmail)) continue
+      processedEmails.add(normEmail)
+
+      const res = await getOrAssignPoolCategory(db, user.email, targetCategory.id)
+      if (res.assigned && res.newlyAssigned) {
+        count++
+      } else if (res.pending) {
+        // Pool filled up to capacity, stop loop immediately!
+        break
+      }
+    }
+
+    return { count, categoryName: targetCategory.name, message: `Processed assignment for ${count} users in ${targetCategory.name}` }
+  } finally {
+    _bulkAssignRunning = false
+  }
 }
 
 /**
@@ -371,28 +395,44 @@ export async function getPoolCategoryStats(db: any) {
     orderBy: { createdAt: 'asc' },
   })
 
-  const updatedCategories = categories.map((cat: any) => {
-    const updatedEmails = cat.emails.map((email: any) => {
-      const actualCount = email.currentCount || 0
-      return {
-        ...email,
-        currentCount: actualCount,
-        percentage: Math.min(100, Math.round((actualCount / email.maxCapacity) * 100)),
-        isFull: actualCount >= email.maxCapacity,
+  // Compute LIVE counts from User table instead of reading stale currentCount.
+  // Also sync the live count back to DB so it stays accurate.
+  const updatedCategories = []
+  for (const cat of categories) {
+    const updatedEmails = []
+    for (const email of cat.emails) {
+      // Live count: actually count users who have this group email
+      const liveCount = await db.user.count({
+        where: { notificationGroupEmails: { contains: email.groupEmail } },
+      })
+
+      // Sync back to DB if drifted (self-healing)
+      if (liveCount !== email.currentCount) {
+        await db.notificationPoolEmail.update({
+          where: { id: email.id },
+          data: { currentCount: liveCount },
+        })
       }
-    })
+
+      updatedEmails.push({
+        ...email,
+        currentCount: liveCount,
+        percentage: Math.min(100, Math.round((liveCount / email.maxCapacity) * 100)),
+        isFull: liveCount >= email.maxCapacity,
+      })
+    }
 
     const totalCap = updatedEmails.reduce((sum: number, e: any) => sum + (e.isActive ? e.maxCapacity : 0), 0)
     const totalAssigned = updatedEmails.reduce((sum: number, e: any) => sum + (e.isActive ? e.currentCount : 0), 0)
 
-    return {
+    updatedCategories.push({
       ...cat,
       emails: updatedEmails,
       totalCapacity: totalCap,
       totalAssigned,
       pendingCount: 0,
-    }
-  })
+    })
+  }
 
   const totalAssignedUsersCount = await db.user.count({
     where: {
@@ -513,4 +553,174 @@ export async function cleanupDuplicatePoolAssignments(db: any) {
   await assignAllUsersToPoolCategory(db, defaultCategory.id)
 
   return { cleanedCount, message: `Cleaned duplicate pool emails for ${cleanedCount} users and auto-distributed.` }
+}
+
+/**
+ * NUCLEAR RESET: Clear ALL notification pool assignments, redistribute every user
+ * from scratch (500 per group), and queue smart Google sync jobs.
+ * 
+ * This handles the scenario where Google Groups are already overfilled/out of sync.
+ * 
+ * Steps:
+ * 1. Clear ALL users' notificationGroupEmails
+ * 2. Reset all pool email counts to 0
+ * 3. Delete all pending NOTIFICATION sync jobs (clean slate)
+ * 4. Re-assign every user to exactly 1 group (500 per group, sequential)
+ * 5. Queue ADD sync job for each assignment
+ * 
+ * After this runs, run "Reconcile with Google" to remove extras from Google Groups.
+ */
+export async function fullResetAndRedistribute(db: any, categoryId?: string) {
+  let targetCategory: any
+  if (categoryId) {
+    targetCategory = await db.notificationPoolCategory.findUnique({
+      where: { id: categoryId },
+    })
+  } else {
+    targetCategory = await ensureDefaultPoolCategory(db)
+  }
+
+  if (!targetCategory) throw new Error('Pool Category not found')
+
+  const poolEmails = await db.notificationPoolEmail.findMany({
+    where: { categoryId: targetCategory.id, isActive: true },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  if (poolEmails.length === 0) {
+    throw new Error(`No active pool emails in "${targetCategory.name}". Add group emails first.`)
+  }
+
+  // ─── Step 1: Clear ALL users' notification group emails ─────────────
+  const categoryEmailAddresses = poolEmails.map((p: any) => p.groupEmail)
+  
+  // Get ALL users who have any notification group email from this category
+  const usersWithAssignment = await db.user.findMany({
+    where: {
+      AND: [
+        { notificationGroupEmails: { not: null } },
+        { NOT: { notificationGroupEmails: '' } },
+      ],
+    },
+    select: { id: true, email: true, notificationGroupEmails: true },
+  })
+
+  // For each user, remove only the emails belonging to THIS category (preserve other categories)
+  let clearedCount = 0
+  for (const user of usersWithAssignment) {
+    const currentEmails = parseNotificationGroupEmails(user.notificationGroupEmails)
+    const remainingEmails = currentEmails.filter(e => !categoryEmailAddresses.includes(e))
+    
+    if (remainingEmails.length !== currentEmails.length) {
+      await db.user.update({
+        where: { id: user.id },
+        data: {
+          notificationGroupEmails: remainingEmails.length > 0 ? remainingEmails.join(',') : null,
+          isNotificationGroupPending: false,
+          pendingPoolCategoryIds: null,
+        },
+      })
+      clearedCount++
+    }
+  }
+
+  // ─── Step 2: Reset all pool email counts to 0 ──────────────────────
+  for (const poolEmail of poolEmails) {
+    await db.notificationPoolEmail.update({
+      where: { id: poolEmail.id },
+      data: { currentCount: 0 },
+    })
+  }
+
+  // ─── Step 3: Delete all pending NOTIFICATION sync jobs for these groups ─
+  await db.groupSyncJob.deleteMany({
+    where: {
+      groupEmail: { in: categoryEmailAddresses },
+      groupType: 'NOTIFICATION',
+      status: { in: ['PENDING', 'PROCESSING'] },
+    },
+  })
+
+  // ─── Step 4: Get ALL users and assign them fresh ───────────────────
+  const allUsers = await db.user.findMany({
+    select: { id: true, email: true },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  let assignedCount = 0
+  let poolIndex = 0
+  let currentPoolCount = 0
+
+  for (const user of allUsers) {
+    // Find next pool email with space
+    while (poolIndex < poolEmails.length && currentPoolCount >= poolEmails[poolIndex].maxCapacity) {
+      // Save count for current pool and move to next
+      await db.notificationPoolEmail.update({
+        where: { id: poolEmails[poolIndex].id },
+        data: { currentCount: currentPoolCount },
+      })
+      poolIndex++
+      currentPoolCount = 0
+    }
+
+    if (poolIndex >= poolEmails.length) {
+      // All pools are full — mark remaining users as pending
+      break
+    }
+
+    const targetPoolEmail = poolEmails[poolIndex]
+    const normEmail = normalizeEmail(user.email)
+
+    // Read user's current emails (might have other categories)
+    const freshUser = await db.user.findUnique({
+      where: { id: user.id },
+      select: { notificationGroupEmails: true },
+    })
+    const existingEmails = parseNotificationGroupEmails(freshUser?.notificationGroupEmails)
+    
+    // Skip if user already has this pool email (shouldn't happen after reset, but safe)
+    if (existingEmails.includes(targetPoolEmail.groupEmail)) continue
+
+    const updatedEmails = [...existingEmails, targetPoolEmail.groupEmail]
+
+    await db.user.update({
+      where: { id: user.id },
+      data: {
+        notificationGroupEmails: updatedEmails.join(','),
+        isNotificationGroupPending: false,
+        pendingPoolCategoryIds: null,
+      },
+    })
+
+    // Queue ADD sync job (dedup will prevent true duplicates)
+    await queueNotificationGroupSyncJob(db, {
+      userEmail: normEmail,
+      groupEmail: targetPoolEmail.groupEmail,
+      action: 'ADD',
+    })
+
+    currentPoolCount++
+    assignedCount++
+  }
+
+  // Save final pool count
+  if (poolIndex < poolEmails.length) {
+    await db.notificationPoolEmail.update({
+      where: { id: poolEmails[poolIndex].id },
+      data: { currentCount: currentPoolCount },
+    })
+  }
+
+  // Mark remaining users as pending if pools ran out of space
+  const remainingUnassigned = allUsers.length - assignedCount
+
+  return {
+    totalUsers: allUsers.length,
+    assignedCount,
+    clearedCount,
+    remainingUnassigned,
+    poolsUsed: Math.min(poolIndex + 1, poolEmails.length),
+    categoryName: targetCategory.name,
+    message: `Full reset complete: cleared ${clearedCount} old assignments, re-assigned ${assignedCount} users across ${Math.min(poolIndex + 1, poolEmails.length)} pool emails in "${targetCategory.name}".${remainingUnassigned > 0 ? ` ${remainingUnassigned} users still need groups (add more pool emails).` : ''}`,
+  }
 }

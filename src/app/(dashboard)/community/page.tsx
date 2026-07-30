@@ -2101,44 +2101,7 @@ export default function CommunityPage() {
                 const showAvatar = idx === 0 || messages[idx - 1]?.sender.id !== msg.sender.id || showDateHeader
 
                 if (msg.isDeleted && userRole !== 'MANAGER') {
-                  return (
-                    <React.Fragment key={msg.id}>
-                      {showDateHeader && (
-                        <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0 12px' }}>
-                          <span style={{
-                            padding: '4px 14px', borderRadius: '50px',
-                            background: 'rgba(0,0,0,0.04)', color: 'var(--text-secondary)',
-                            fontSize: '11px', fontWeight: '700', textTransform: 'uppercase',
-                          }}>
-                            {formatMessageDate(msg.createdAt)}
-                          </span>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '10px', alignItems: 'flex-start' }}>
-                        {!isMe && (
-                          <div style={{
-                            width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-                            background: 'var(--surface-2)',
-                            boxShadow: '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
-                            display: showAvatar ? 'flex' : 'none',
-                            alignItems: 'center', justifyContent: 'center',
-                            fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)',
-                          }}>
-                            {msg.sender.name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        {!isMe && !showAvatar && <div style={{ width: '32px', flexShrink: 0 }} />}
-                        <div style={{
-                          padding: '8px 14px', borderRadius: '14px',
-                          background: 'transparent',
-                          border: '1.5px dashed var(--neu-dark)',
-                          color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic',
-                        }}>
-                          Message deleted
-                        </div>
-                      </div>
-                    </React.Fragment>
-                  )
+                  return null
                 }
 
                 return (
@@ -2604,23 +2567,25 @@ export default function CommunityPage() {
                     placeholder={
                       !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER'
                         ? 'This community is disabled'
-                        : isDM(selectedClass)
-                          ? `Message ${selectedClass.name.replace('Chat with ', '')}...`
-                          : `Message ${selectedClass.name} community...`
+                        : (selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO'
+                          ? 'Community chat is read-only in Demo mode. Unlock full course to participate.'
+                          : isDM(selectedClass)
+                            ? `Message ${selectedClass.name.replace('Chat with ', '')}...`
+                            : `Message ${selectedClass.name} community...`
                     }
-                    disabled={(!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || uploadingImage}
+                    disabled={(!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || uploadingImage || !!((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO')}
                     style={{
                       width: '100%', padding: '11px 16px', borderRadius: '50px',
                       border: 'none', outline: 'none',
                       fontFamily: 'inherit', fontSize: '14px',
                       ...neuInset, color: 'var(--text-primary)',
-                      opacity: (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? 0.6 : 1,
+                      opacity: ((!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || ((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO')) ? 0.6 : 1,
                     }}
                   />
                 </div>
                 <button
                   onClick={sendMessage}
-                  disabled={(!input.trim() && !pendingImage) || uploadingImage || (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER')}
+                  disabled={(!input.trim() && !pendingImage) || uploadingImage || (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || !!((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO')}
                   style={{
                     height: '44px', borderRadius: pendingImage ? '50px' : '50%', border: 'none',
                     width: pendingImage ? 'auto' : '44px',

@@ -315,6 +315,98 @@ export default function ExploreCoursesPage() {
     }
   }
 
+  const handleGetDemo = async (offering: any) => {
+    const courseId = offering.courseId
+    const course = offering.course
+
+    if (!course?.hasDemoLectures) {
+      alert('Manager has not assigned any demo lectures for this course yet.')
+      return
+    }
+
+    const hasPrice = (offering.recordedDiscountPrice && offering.recordedDiscountPrice > 0) ||
+                     (offering.recordedOriginalPrice && offering.recordedOriginalPrice > 0) ||
+                     (offering.liveDiscountPrice && offering.liveDiscountPrice > 0) ||
+                     (offering.liveOriginalPrice && offering.liveOriginalPrice > 0)
+    if (!hasPrice) {
+      alert('Store price is not set for this course yet. Please tell manager first to set the price in store.')
+      return
+    }
+
+    setPurchasing(`demo-${courseId}`)
+    try {
+      const res = await fetch(`/api/courses/${courseId}/demo-enroll`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.error || 'Failed to enroll in demo')
+        setPurchasing(null)
+        return
+      }
+
+      if (data.isEnrolled) {
+        alert(data.message)
+        router.push(`/courses/${courseId}`)
+        setPurchasing(null)
+        return
+      }
+
+      if (data.requiresPayment) {
+        const options = {
+          key: data.keyId,
+          amount: data.amount,
+          currency: data.currency,
+          name: 'GenZ IItian',
+          description: `Demo Access: ${data.courseName}`,
+          order_id: data.razorpayOrderId,
+          prefill: {
+            name: userData?.user?.name || userData?.name || '',
+            email: userData?.user?.email || userData?.email || '',
+          },
+          theme: { color: '#6366f1' },
+          handler: async (response: any) => {
+            try {
+              const vRes = await fetch(`/api/courses/${courseId}/verify-demo-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpaySignature: response.razorpay_signature,
+                }),
+              })
+              const vData = await vRes.json()
+              if (vRes.ok) {
+                alert('Paid demo access unlocked!')
+                router.push(`/courses/${courseId}`)
+              } else {
+                alert(vData.error || 'Demo payment verification failed')
+              }
+            } catch {
+              alert('Payment verification failed')
+            } finally {
+              setPurchasing(null)
+            }
+          },
+          modal: { ondismiss: () => setPurchasing(null) },
+        }
+        const rzp = new (window as any).Razorpay(options)
+        rzp.open()
+        return
+      }
+
+      alert('Successfully enrolled in Demo!')
+      router.push(`/courses/${courseId}`)
+    } catch (e: any) {
+      alert(e.message || 'Error enrolling in demo')
+    } finally {
+      setPurchasing(null)
+    }
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -1858,6 +1950,48 @@ export default function ExploreCoursesPage() {
                         }}
                       >
                         {purchasing === `${offering.id}-CHAMPION` ? 'Processing...' : '💎 Buy Champion Batch'}
+                      </button>
+                    </div>
+                  )}
+                  {/* Get Demo Option - Show for non-enrolled users */}
+                  {!isLiveEnrolled && !isRecordedEnrolled && (
+                    <div style={{ marginTop: '6px' }}>
+                      <button
+                        onClick={() => handleGetDemo(offering)}
+                        disabled={!offering.course?.hasDemoLectures || purchasing === `demo-${offering.courseId}`}
+                        title={
+                          !offering.course?.hasDemoLectures
+                            ? 'Demo is not set by manager yet'
+                            : offering.course?.isDemoPaid
+                            ? `Get demo access for ₹${offering.course?.demoPrice}`
+                            : 'Get free demo access'
+                        }
+                        style={{
+                          width: '100%',
+                          padding: '11px',
+                          borderRadius: '50px',
+                          border: '1.5px dashed var(--accent)',
+                          background: 'rgba(99, 102, 241, 0.06)',
+                          color: 'var(--accent)',
+                          fontSize: '13px',
+                          fontWeight: '800',
+                          cursor: (!offering.course?.hasDemoLectures || purchasing) ? 'not-allowed' : 'pointer',
+                          opacity: (!offering.course?.hasDemoLectures) ? 0.5 : 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <Sparkles size={14} />
+                        {purchasing === `demo-${offering.courseId}`
+                          ? 'Enrolling in Demo...'
+                          : !offering.course?.hasDemoLectures
+                          ? 'Demo Unavailable'
+                          : offering.course?.isDemoPaid && offering.course?.demoPrice
+                          ? `Get Demo (₹${offering.course.demoPrice})`
+                          : 'Get Demo (Free)'}
                       </button>
                     </div>
                   )}

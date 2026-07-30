@@ -32,6 +32,7 @@ export default function AnalyticsDashboard() {
   )
 
   const { data: feedbackStats } = useSWR('/api/analytics/feedback', fetcher)
+  const { data: coursesList } = useSWR('/api/courses', fetcher)
 
   // ─── Timer Logic ───────────────────────────────────────────────────
   const isUpdatingRef = useRef(false)
@@ -109,7 +110,6 @@ export default function AnalyticsDashboard() {
     )
   }
 
-  const { data: coursesList } = useSWR('/api/courses', fetcher)
   const disabledCourseIds = new Set(
     (coursesList || [])
       .filter((c: any) => c.isDisabled || (c.expiresAt && new Date(c.expiresAt).getTime() <= Date.now()))
@@ -682,6 +682,133 @@ export default function AnalyticsDashboard() {
 
         </div>
       </div>
+
+      {/* ─── Batch Distribution (Live vs Recorded) ──────────────────── */}
+      {data?.batchStats && (
+        <div style={{ marginTop: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div>
+              <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📹 Batch Distribution (Live vs Recorded)</span>
+              </h2>
+              <p style={{ fontSize: '12px', color: '#9999b0', marginTop: '4px', fontWeight: 600 }}>
+                Breakdown of students enrolled in Live vs Recorded batches across all active courses
+              </p>
+            </div>
+          </div>
+
+          <div style={neuCard}>
+            {(() => {
+              const bStats = data.batchStats
+              const totalEnrolled = bStats.totalEnrolledStudents || 1
+              const livePct = Math.round((bStats.liveStudents / totalEnrolled) * 100)
+              const recPct = Math.round((bStats.recordedStudents / totalEnrolled) * 100)
+              const bothPct = Math.round((bStats.bothStudents / totalEnrolled) * 100)
+
+              return (
+                <div>
+                  {/* Top 3 Metric Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+                    {/* Live Batch Card */}
+                    <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#10b981' }} />
+                      <div style={{ paddingLeft: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Live Batch Students</span>
+                          <span style={{ fontSize: '18px' }}>🔴</span>
+                        </div>
+                        <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '8px' }}>
+                          {bStats.liveStudents.toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', marginTop: '4px' }}>
+                          {livePct}% of enrolled students <span style={{ color: '#9999b0', fontWeight: 600 }}>({bStats.liveOnlyStudents} Live Only)</span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
+                          {bStats.totalLiveEnrollments.toLocaleString()} total live course enrollments
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recorded Batch Card */}
+                    <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#f59e0b' }} />
+                      <div style={{ paddingLeft: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recorded Batch Students</span>
+                          <span style={{ fontSize: '18px' }}>📼</span>
+                        </div>
+                        <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '8px' }}>
+                          {bStats.recordedStudents.toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#f59e0b', marginTop: '4px' }}>
+                          {recPct}% of enrolled students <span style={{ color: '#9999b0', fontWeight: 600 }}>({bStats.recordedOnlyStudents} Recorded Only)</span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
+                          {bStats.totalRecordedEnrollments.toLocaleString()} total recorded course enrollments
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Both (Dual Access) Card */}
+                    <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#8b5cf6' }} />
+                      <div style={{ paddingLeft: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Both (Live + Recorded)</span>
+                          <span style={{ fontSize: '18px' }}>⚡</span>
+                        </div>
+                        <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '8px' }}>
+                          {bStats.bothStudents.toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#8b5cf6', marginTop: '4px' }}>
+                          {bothPct}% hybrid enrolled
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
+                          Students enrolled in both live & recorded courses
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Enrollment Ratio Visual Bar */}
+                  <div style={{ background: 'var(--surface-2)', padding: '16px 20px', borderRadius: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '12px', fontWeight: 700 }}>
+                      <span style={{ color: 'var(--text-primary)' }}>Total Course Enrollments Breakdown</span>
+                      <span style={{ color: '#9999b0' }}>
+                        {(bStats.totalLiveEnrollments + bStats.totalRecordedEnrollments).toLocaleString()} Total Enrollments
+                      </span>
+                    </div>
+                    {(() => {
+                      const totalEnr = (bStats.totalLiveEnrollments + bStats.totalRecordedEnrollments) || 1
+                      const liveEnrPct = Math.round((bStats.totalLiveEnrollments / totalEnr) * 100)
+                      const recEnrPct = Math.round((bStats.totalRecordedEnrollments / totalEnr) * 100)
+                      return (
+                        <div>
+                          <div style={{ height: '12px', borderRadius: '6px', background: '#e0e3ea', overflow: 'hidden', display: 'flex' }}>
+                            <div style={{ width: `${liveEnrPct}%`, background: '#10b981', transition: 'width 0.5s ease' }} title={`Live: ${liveEnrPct}%`} />
+                            <div style={{ width: `${recEnrPct}%`, background: '#f59e0b', transition: 'width 0.5s ease' }} title={`Recorded: ${recEnrPct}%`} />
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '11px', fontWeight: 700 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981' }}>
+                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+                              <span>Live Batch: {bStats.totalLiveEnrollments} ({liveEnrPct}%)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f59e0b' }}>
+                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }} />
+                              <span>Recorded Batch: {bStats.totalRecordedEnrollments} ({recEnrPct}%)</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* ─── Course Growth ────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>

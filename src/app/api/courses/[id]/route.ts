@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager, isManagerOrSuperAdmin } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
-import { queueExplicitGoogleGroupSyncJobs, validateGoogleGroupEmail, parseGoogleGroupEmails } from '@/lib/google-group-sync'
+import { queueExplicitGoogleGroupSyncJobs, validateGoogleGroupEmail, parseGoogleGroupEmails, reSyncCourseGroupMembers } from '@/lib/google-group-sync'
 
 export async function GET(
   request: NextRequest,
@@ -67,6 +67,7 @@ export async function GET(
           include: {
             content: {
               select: {
+                isDemo: true,
                 videoUrl: true,
                 youtubeUrl: true,
                 pptUrl: true,
@@ -76,6 +77,7 @@ export async function GET(
               include: {
                 content: {
                   select: {
+                    isDemo: true,
                     videoUrl: true,
                     youtubeUrl: true,
                     pptUrl: true,
@@ -118,29 +120,34 @@ export async function GET(
       filteredCourseEvents = [] // RECORDED users cannot see live events
     }
 
-    // Calculate dynamic counts
+    // Calculate dynamic counts and check demo availability
     const cData = courseData as any
     const topicsCount = cData.topics.length
     let lecturesCount = 0
     let materialsCount = 0
+    let hasDemoLectures = false
 
     cData.topics.forEach((topic: any) => {
       // Count direct content
       topic.content.forEach((content: any) => {
+        if (content.isDemo) hasDemoLectures = true
         if (content.videoUrl || content.youtubeUrl) lecturesCount++
         if (content.pptUrl) materialsCount++
       })
       // Count shared content
       topic.sharedContentLinks?.forEach((link: any) => {
+        if (link.content?.isDemo) hasDemoLectures = true
         if (link.content?.videoUrl || link.content?.youtubeUrl) lecturesCount++
         if (link.content?.pptUrl) materialsCount++
       })
     })
+    if (cData.lectures?.some((l: any) => l.isDemo)) hasDemoLectures = true
 
     const result = {
       ...cData,
       courseEvents: filteredCourseEvents, // Use filtered events based on enrollment type
       enrollmentType: userEnrollmentType,
+      hasDemoLectures,
       isExpired: hasManagerLevelAccess ? false : isCourseExpired(cData),
       isEffectivelyDisabled: hasManagerLevelAccess ? false : isCourseEffectivelyDisabled(cData),
       _count: {
@@ -175,7 +182,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled, googleGroupEmail, liveUpgradePrice } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled, googleGroupEmail, liveGoogleGroupEmail, liveUpgradePrice, isDemoPaid, demoPrice } = await request.json()
 
     if (isDisabled !== undefined && !isManagerOrSuperAdmin(session.role)) {
       return NextResponse.json({ error: 'Only managers can enable or disable courses' }, { status: 403 })
@@ -199,6 +206,7 @@ export async function PUT(
 
     // Demo state and Free state are immutable on edit.
     const normalizedGoogleGroupEmail = validateGoogleGroupEmail(googleGroupEmail)
+    const normalizedLiveGoogleGroupEmail = validateGoogleGroupEmail(liveGoogleGroupEmail)
 
     const updatedCourse = await prisma.$transaction(async (tx) => {
       const updated = await (tx.course.update as any)({
@@ -211,7 +219,10 @@ export async function PUT(
           icon,
           teacherName: teacherName || null,
           liveUpgradePrice: liveUpgradePrice !== undefined ? (liveUpgradePrice === '' || liveUpgradePrice === null ? null : Number(liveUpgradePrice)) : undefined,
+          isDemoPaid: isDemoPaid !== undefined ? !!isDemoPaid : undefined,
+          demoPrice: demoPrice !== undefined ? (demoPrice === '' || demoPrice === null ? 0 : Number(demoPrice)) : undefined,
           googleGroupEmail: normalizedGoogleGroupEmail,
+          liveGoogleGroupEmail: normalizedLiveGoogleGroupEmail,
           isDemo: existingCourse.isDemo,
           isFree: existingCourse.isFree,
           isCommunityActive: isCommunityActive !== undefined ? !!isCommunityActive : undefined,
@@ -220,47 +231,13 @@ export async function PUT(
         },
       })
 
-      // Diff old vs new group emails for sync
-      const oldEmails = !existingCourse.isDisabled ? parseGoogleGroupEmails(existingCourse.googleGroupEmail) : [];
-      const newEmails = !updated.isDisabled ? parseGoogleGroupEmails(updated.googleGroupEmail) : [];
-      const oldSet = new Set(oldEmails);
-      const newSet = new Set(newEmails);
-      const emailsToRemove = oldEmails.filter((e: string) => !newSet.has(e));
-      const emailsToAdd = newEmails.filter((e: string) => !oldSet.has(e));
-
-      if (emailsToRemove.length > 0 || emailsToAdd.length > 0) {
-        const enrollments = await tx.enrollment.findMany({
-          where: { courseId: id },
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        })
-
-        // Remove users from groups that were removed
-        if (emailsToRemove.length > 0) {
-          await queueExplicitGoogleGroupSyncJobs(tx, emailsToRemove.flatMap((groupEmail: string) =>
-            enrollments.map(enrollment => ({
-              userEmail: enrollment.user.email,
-              courseId: id,
-              groupEmail,
-              action: 'REMOVE' as const,
-            }))
-          ))
-        }
-
-        // Add users to newly added groups
-        if (emailsToAdd.length > 0) {
-          await queueExplicitGoogleGroupSyncJobs(tx, emailsToAdd.flatMap((groupEmail: string) =>
-            enrollments.map(enrollment => ({
-              userEmail: enrollment.user.email,
-              courseId: id,
-              groupEmail,
-              action: 'ADD' as const,
-            }))
-          ))
-        }
+      // Re-sync members if Google Group configuration changed
+      if (
+        existingCourse.googleGroupEmail !== updated.googleGroupEmail ||
+        existingCourse.liveGoogleGroupEmail !== updated.liveGoogleGroupEmail ||
+        existingCourse.isDisabled !== updated.isDisabled
+      ) {
+        await reSyncCourseGroupMembers(tx, id)
       }
 
       return updated

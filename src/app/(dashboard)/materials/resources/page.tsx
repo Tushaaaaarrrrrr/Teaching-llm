@@ -340,8 +340,19 @@ export default function StudyResourcesPage() {
 
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '14.5px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {mat.title}
+                  <div style={{ fontSize: '14.5px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mat.title}</span>
+                    {mat.createdAt && new Date().getTime() - new Date(mat.createdAt).getTime() < 24 * 60 * 60 * 1000 && (
+                      <span style={{
+                        background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                        color: 'white', padding: '2px 6px', borderRadius: '4px',
+                        fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
+                        letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                        flexShrink: 0
+                      }}>
+                        New
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {mat.isGlobal ? (

@@ -33,6 +33,8 @@ interface CourseDetail {
   description: string
   subject: string
   color: string
+  isDemoPaid?: boolean
+  demoPrice?: number
 }
 
 interface ContentForm {
@@ -41,6 +43,7 @@ interface ContentForm {
   videoUrl: string
   youtubeUrl: string
   videoSource: string
+  isDemo: boolean
 }
 
 interface MaterialItem {
@@ -71,7 +74,7 @@ interface RecordingItem {
   }
 }
 
-const emptyForm: ContentForm = { title: '', description: '', videoUrl: '', youtubeUrl: '', videoSource: 'GOOGLE_DRIVE' }
+const emptyForm: ContentForm = { title: '', description: '', videoUrl: '', youtubeUrl: '', videoSource: 'GOOGLE_DRIVE', isDemo: false }
 
 export default function CourseEditPage() {
   const { confirm, confirmDialog } = useConfirmDialog()
@@ -248,6 +251,25 @@ export default function CourseEditPage() {
     setOrderDirty(true)
   }
 
+  const saveDemoSettings = async (isDemoPaid: boolean, demoPrice: number) => {
+    try {
+      const res = await fetch(`/api/courses/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isDemoPaid, demoPrice }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        alert('Demo batch settings updated successfully!')
+        setCourse(prev => prev ? { ...prev, isDemoPaid, demoPrice } : null)
+      } else {
+        alert(data.error || 'Failed to update demo settings')
+      }
+    } catch (e: any) {
+      alert(e.message || 'Error updating demo settings')
+    }
+  }
+
   const saveOrder = async () => {
     setSavingOrder(true)
     try {
@@ -316,6 +338,7 @@ export default function CourseEditPage() {
       videoUrl: item.videoUrl || '',
       youtubeUrl: item.youtubeUrl || '',
       videoSource: item.videoSource || 'GOOGLE_DRIVE',
+      isDemo: !!(item as any).isDemo,
     })
     setMaterialSourceType(hasUploadedMaterial ? 'FILE' : 'LINK')
     setMaterialLink(hasUploadedMaterial ? '' : existingMaterialUrl)
@@ -516,6 +539,23 @@ export default function CourseEditPage() {
                   className="form-input"
                   style={{ width: '100%' }}
                 />
+              </div>
+
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '12px 14px', borderRadius: '12px',
+                background: 'var(--surface)', border: '1px solid var(--border)',
+              }}>
+                <input
+                  type="checkbox"
+                  id="isDemoInput"
+                  checked={contentForm.isDemo}
+                  onChange={e => setContentForm(f => ({ ...f, isDemo: e.target.checked }))}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <label htmlFor="isDemoInput" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  ✨ Mark as Demo Lecture (Sample access for non-enrolled students)
+                </label>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
@@ -831,6 +871,52 @@ export default function CourseEditPage() {
         </div>
       </div>
 
+      {/* Demo Batch Settings Card */}
+      {course && (
+        <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
+          <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>✨ Demo Batch Configuration</span>
+          </div>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
+            Configure demo access for non-enrolled students. Mark specific lectures below as demo.
+          </p>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="checkbox"
+                id="isDemoPaidCourseInput"
+                checked={course.isDemoPaid || false}
+                onChange={e => setCourse({ ...course, isDemoPaid: e.target.checked })}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              <label htmlFor="isDemoPaidCourseInput" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                Paid Demo Batch (Require payment for demo)
+              </label>
+            </div>
+            {course.isDemoPaid && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>Demo Price (₹):</span>
+                <input
+                  type="number"
+                  value={course.demoPrice || ''}
+                  onChange={e => setCourse({ ...course, demoPrice: parseFloat(e.target.value) || 0 })}
+                  placeholder="Demo Price"
+                  className="form-input"
+                  style={{ width: '110px' }}
+                />
+              </div>
+            )}
+            <button
+              onClick={() => saveDemoSettings(course.isDemoPaid || false, course.demoPrice || 0)}
+              className="btn btn-primary btn-sm"
+              style={{ marginLeft: 'auto' }}
+            >
+              Save Demo Settings
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Topics */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {topics.map((topic, topicIdx) => (
@@ -989,7 +1075,18 @@ export default function CourseEditPage() {
                         }
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-primary)' }}>{item.title}</div>
+                        <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>{item.title}</span>
+                          {(item as any).isDemo && (
+                            <span style={{
+                              background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                              color: '#fff', padding: '2px 8px', borderRadius: '12px',
+                              fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em'
+                            }}>
+                              ✨ DEMO
+                            </span>
+                          )}
+                        </div>
                         {item.description && (
                           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
                             {item.description}

@@ -65,12 +65,7 @@ class SupportPage extends ConsumerWidget {
                 title: 'Contact & Support',
                 subtitle: 'Raise a ticket or chat with support',
               ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _LiveChatCard(),
-              ),
-              const SizedBox(height: 14),
+              // Live Support Chat removed (backed up in scratch/live-chat-backup/)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _TicketsCard(tickets: tickets),

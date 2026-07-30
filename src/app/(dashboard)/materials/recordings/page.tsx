@@ -315,8 +315,19 @@ export default function RecordingsPage() {
 
               {/* Info */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {lec.title}
+                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lec.title}</span>
+                  {lec.createdAt && new Date().getTime() - new Date(lec.createdAt).getTime() < 24 * 60 * 60 * 1000 && (
+                    <span style={{
+                      background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                      color: 'white', padding: '2px 6px', borderRadius: '4px',
+                      fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
+                      letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                      flexShrink: 0
+                    }}>
+                      New
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                   {course && (
