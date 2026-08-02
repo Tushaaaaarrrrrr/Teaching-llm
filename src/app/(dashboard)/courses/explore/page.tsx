@@ -44,6 +44,7 @@ export default function ExploreCoursesPage() {
   const [upgrading, setUpgrading] = useState(false)
   const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
   const [showInfoHint, setShowInfoHint] = useState<string | null>(null)
+  const [demoSuccessModal, setDemoSuccessModal] = useState<{ courseId: string; courseName: string; message: string } | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [editingOffering, setEditingOffering] = useState<any | null>(null)
   const [editFormData, setEditFormData] = useState<any>({})
@@ -348,8 +349,11 @@ export default function ExploreCoursesPage() {
       }
 
       if (data.isEnrolled) {
-        alert(data.message)
-        router.push(`/courses/${courseId}`)
+        setDemoSuccessModal({
+          courseId,
+          courseName: course.name,
+          message: data.message || 'You are already enrolled in this demo.'
+        })
         setPurchasing(null)
         return
       }
@@ -380,8 +384,11 @@ export default function ExploreCoursesPage() {
               })
               const vData = await vRes.json()
               if (vRes.ok) {
-                alert('Paid demo access unlocked!')
-                router.push(`/courses/${courseId}`)
+                setDemoSuccessModal({
+                  courseId,
+                  courseName: course.name,
+                  message: 'Paid demo access unlocked!'
+                })
               } else {
                 alert(vData.error || 'Demo payment verification failed')
               }
@@ -398,8 +405,11 @@ export default function ExploreCoursesPage() {
         return
       }
 
-      alert('Successfully enrolled in Demo!')
-      router.push(`/courses/${courseId}`)
+      setDemoSuccessModal({
+        courseId,
+        courseName: course.name,
+        message: 'Successfully enrolled in Demo!'
+      })
     } catch (e: any) {
       alert(e.message || 'Error enrolling in demo')
     } finally {
@@ -3270,16 +3280,76 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
+      {/* Demo Enrollment Success Modal */}
+      {demoSuccessModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px'
+        }} onClick={() => { setDemoSuccessModal(null); router.push(`/courses/${demoSuccessModal.courseId}`) }}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '480px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', textAlign: 'center',
+            animation: 'modalSlideUp 0.3s ease-out',
+            position: 'relative'
+          }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => { setDemoSuccessModal(null); router.push(`/courses/${demoSuccessModal.courseId}`) }}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: 'var(--surface)', border: 'none', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              <X size={20} />
+            </button>
+            <div style={{ fontSize: '64px', marginBottom: '24px' }}>🎓</div>
+            <h2 style={{ fontSize: '26px', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '16px' }}>
+              Thank You!
+            </h2>
+            <p style={{ fontSize: '16px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
+              Thank you for enrolling in the demo of <strong>{demoSuccessModal.courseName}</strong>. Welcome to the course! We hope you enjoy the lectures and have a great learning experience.
+            </p>
+
+            <div style={{ background: 'var(--bg)', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1.5px solid var(--border)' }}>
+              <div style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Status</div>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', fontWeight: '600', lineHeight: '1.5', margin: 0 }}>
+                {demoSuccessModal.message}
+              </p>
+            </div>
+
+            <button 
+              onClick={() => { setDemoSuccessModal(null); router.push(`/courses/${demoSuccessModal.courseId}`) }}
+              style={{
+                width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 8px 16px rgba(99, 102, 241, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)'
+              }}
+            >
+              Continue to Course Page 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Edit Offering Modal */}
       {editingOffering && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
-          padding: '20px'
+          padding: '20px', overflow: 'auto'
         }} onClick={() => setEditingOffering(null)}>
           <div style={{
-            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '600px',
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '960px',
             boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             padding: '40px',
             animation: 'modalSlideUp 0.3s ease-out',
@@ -3295,94 +3365,109 @@ export default function ExploreCoursesPage() {
               Edit Course Offering
             </h2>
 
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Course</label>
-              <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)' }}>{editingOffering.course?.name}</div>
-            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '24px' }}>
+              <div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Course</label>
+                  <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)' }}>{editingOffering.course?.name}</div>
+                </div>
 
-            {editingOffering.hasRecorded && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                <div>
-                  <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Original Price</label>
-                  <input type="number" min={1} value={editFormData.recordedOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, recordedOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Recorded Discount Price</label>
-                  <input type="number" min={1} value={editFormData.recordedDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, recordedDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
-                </div>
-              </div>
-            )}
-
-            {editingOffering.hasLive && (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Original Price</label>
-                    <input type="number" min={1} value={editFormData.liveOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, liveOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Live Discount Price</label>
-                    <input type="number" min={1} value={editFormData.liveDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, liveDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
-                  </div>
-                </div>
-                <div style={{ marginBottom: '20px', padding: '16px', borderRadius: '16px', background: 'var(--danger-light)', border: '2px solid var(--border)' }}>
-                  <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--danger)', marginBottom: '12px' }}>🏆 Champion Batch</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Real Price (₹)</label>
-                      <input type="number" min={1} value={editFormData.championOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, championOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Discount Price (₹)</label>
-                      <input type="number" min={1} value={editFormData.championDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, championDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
+                {editingOffering.hasRecorded && (
+                  <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '18px', marginBottom: '20px', border: '2px solid var(--border)' }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '16px' }}>
+                      Recorded Batch
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Original Price (₹)</label>
+                        <input type="number" min={1} value={editFormData.recordedOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, recordedOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Discount Price (₹)</label>
+                        <input type="number" min={1} value={editFormData.recordedDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, recordedDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Champion Subtitle</label>
-                    <input type="text" value={editFormData.championSubtitle ?? ''} onChange={e => setEditFormData({...editFormData, championSubtitle: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} placeholder="e.g. Includes Unlimited Support..." />
+                )}
+
+                {editingOffering.hasLive && (
+                  <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '18px', border: '2px solid var(--border)' }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '16px' }}>
+                      Live Batch
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Original Price (₹)</label>
+                        <input type="number" min={1} value={editFormData.liveOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, liveOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Discount Price (₹)</label>
+                        <input type="number" min={1} value={editFormData.liveDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, liveDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-
-            {/* Details Link (optional) */}
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Details Link (optional)</label>
-              <input type="url" value={editFormData.detailsLink ?? ''} onChange={e => setEditFormData({...editFormData, detailsLink: e.target.value})} placeholder="https://example.com/course-details" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>If set, a "More Details" button will appear on the course card for students.</div>
-            </div>
-
-            {/* Demo Batch Configuration */}
-            <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '16px', background: 'var(--surface-2, rgba(99,102,241,0.04))', border: '2px solid var(--border)' }}>
-              <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent)', marginBottom: '12px' }}>Demo Batch Configuration</div>
-              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-                Configure demo access for non-enrolled students. Mark specific lectures as demo from the course edit page.
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <input
-                  type="checkbox"
-                  id="isDemoPaidEditInput"
-                  checked={editFormData.isDemoPaid || false}
-                  onChange={e => setEditFormData({...editFormData, isDemoPaid: e.target.checked})}
-                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                />
-                <label htmlFor="isDemoPaidEditInput" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                  Paid Demo Batch (Require payment for demo)
-                </label>
+                )}
               </div>
-              {editFormData.isDemoPaid && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>Demo Price (₹):</span>
-                  <input
-                    type="number"
-                    min={1}
-                    value={editFormData.demoPrice ?? ''}
-                    onChange={e => setEditFormData({...editFormData, demoPrice: e.target.value})}
-                    style={{ width: '120px', padding: '10px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }}
-                    placeholder="e.g. 99"
-                  />
+
+              <div>
+                {editingOffering.hasLive && (
+                  <div style={{ marginBottom: '20px', padding: '20px', borderRadius: '18px', background: 'var(--danger-light)', border: '2px solid var(--border)' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--danger)', marginBottom: '16px' }}>Champion Batch</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Real Price (₹)</label>
+                        <input type="number" min={1} value={editFormData.championOriginalPrice ?? ''} onChange={e => setEditFormData({...editFormData, championOriginalPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Discount Price (₹)</label>
+                        <input type="number" min={1} value={editFormData.championDiscountPrice ?? ''} onChange={e => setEditFormData({...editFormData, championDiscountPrice: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Champion Subtitle</label>
+                      <input type="text" value={editFormData.championSubtitle ?? ''} onChange={e => setEditFormData({...editFormData, championSubtitle: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} placeholder="e.g. Includes Unlimited Support..." />
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Details Link (optional)</label>
+                  <input type="url" value={editFormData.detailsLink ?? ''} onChange={e => setEditFormData({...editFormData, detailsLink: e.target.value})} placeholder="https://example.com/course-details" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>If set, a "More Details" button will appear on the course card for students.</div>
                 </div>
-              )}
+
+                <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--surface-2, rgba(99,102,241,0.04))', border: '2px solid var(--border)' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent)', marginBottom: '12px' }}>Demo Batch Configuration</div>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
+                    Configure demo access for non-enrolled students. Mark specific lectures as demo from the course edit page.
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <input
+                      type="checkbox"
+                      id="isDemoPaidEditInput"
+                      checked={editFormData.isDemoPaid || false}
+                      onChange={e => setEditFormData({...editFormData, isDemoPaid: e.target.checked})}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="isDemoPaidEditInput" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                      Paid Demo Batch (Require payment for demo)
+                    </label>
+                  </div>
+                  {editFormData.isDemoPaid && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>Demo Price (₹):</span>
+                      <input
+                        type="number"
+                        min={1}
+                        value={editFormData.demoPrice ?? ''}
+                        onChange={e => setEditFormData({...editFormData, demoPrice: e.target.value})}
+                        style={{ width: '120px', padding: '10px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }}
+                        placeholder="e.g. 99"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>

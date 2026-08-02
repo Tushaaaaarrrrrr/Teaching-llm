@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import useSWR, { mutate } from 'swr'
 import ManagerUserModal from '@/components/ManagerUserModal'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
@@ -368,6 +368,27 @@ export default function AdminPage() {
   // Filter users by role tab and course — server already handles course/search filtering,
   // but we keep a safeguard check for courseId to support immediate UI filter transitions.
   const visibleUsers = users
+
+  const enrollmentStats = useMemo(() => {
+    const studentUsers = users.filter((u: any) => u.role === 'STUDENT')
+    let demoCount = 0
+    let recordedCount = 0
+    let liveCount = 0
+    
+    studentUsers.forEach((u: any) => {
+      const enrolls = u.enrollments || []
+      const matches = selectedCourseId === 'all' 
+        ? enrolls 
+        : enrolls.filter((e: any) => e.courseId === selectedCourseId)
+        
+      if (matches.some((e: any) => e.type === 'DEMO')) demoCount++
+      if (matches.some((e: any) => e.type === 'RECORDED')) recordedCount++
+      if (matches.some((e: any) => e.type === 'LIVE')) liveCount++
+    })
+    
+    return { demoCount, recordedCount, liveCount, total: studentUsers.length }
+  }, [users, selectedCourseId])
+
   const filtered = visibleUsers.filter(u => {
     if (filter !== 'all' && u.role !== filter) return false
     if (selectedCourseId !== 'all') {
@@ -469,7 +490,7 @@ export default function AdminPage() {
             onClick={() => {
               const rows = [['Name', 'Email', 'Role', 'Courses', 'Joined']]
               filtered.forEach(u => {
-                const courses = (u.enrollments || []).map(e => e.course.name).join('; ')
+                const courses = (u.enrollments || []).map(e => `${e.course.name} (${(e as any).type || 'LIVE'})`).join('; ')
                 rows.push([
                   getDisplayName(u), u.email, u.role, courses,
                   new Date(u.createdAt).toLocaleDateString('en-GB'),
@@ -500,6 +521,77 @@ export default function AdminPage() {
           </button>
         )}
       </div>
+      </div>
+
+      {/* Enrollment Stats Tracker */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gap: '16px',
+        marginBottom: '24px'
+      }}>
+        <div className="card" style={{
+          padding: '20px',
+          background: 'var(--surface)',
+          borderRadius: '16px',
+          border: '1.5px solid var(--border)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            🔴 Paid Live (Pro)
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--text-primary)' }}>
+            {enrollmentStats.liveCount}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            Students with full Live + Recorded access
+          </div>
+        </div>
+
+        <div className="card" style={{
+          padding: '20px',
+          background: 'var(--surface)',
+          borderRadius: '16px',
+          border: '1.5px solid var(--border)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--warning)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            📹 Paid Recorded (Plus)
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--text-primary)' }}>
+            {enrollmentStats.recordedCount}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            Students with standard Recorded-only access
+          </div>
+        </div>
+
+        <div className="card" style={{
+          padding: '20px',
+          background: 'var(--surface)',
+          borderRadius: '16px',
+          border: '1.5px solid var(--border)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            ✨ Demo Enrollments
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--text-primary)' }}>
+            {enrollmentStats.demoCount}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            Students exploring via limited demo access
+          </div>
+        </div>
       </div>
 
       {/* Stats */}
@@ -638,7 +730,7 @@ export default function AdminPage() {
                             background: e.course.color + '18', color: e.course.color,
                             whiteSpace: 'nowrap',
                           }}>
-                            {e.course.name}
+                            {e.course.name} <span style={{ opacity: 0.75, fontSize: '8.5px', fontWeight: '800', marginLeft: '4px', textTransform: 'uppercase' }}>({(e as any).type || 'LIVE'})</span>
                           </span>
                         ))}
                         {user.enrollments.length > 3 && (

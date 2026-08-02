@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
       enrollments: {
         select: {
           courseId: true,
+          type: true,
           course: { select: { id: true, name: true, color: true, subject: true } },
         },
       },

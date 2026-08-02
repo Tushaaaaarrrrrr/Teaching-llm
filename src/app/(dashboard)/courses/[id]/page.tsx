@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Script from 'next/script'
 import MobileCourseDetail from '@/components/courses/MobileCourseDetail'
+import { X } from 'lucide-react'
 import { getCourseBackground, getCourseTextColor, getCourseSecondaryTextColor, getCourseBadgeBg, getCourseBadgeText, getCourseDecorativeColor, colorWithOpacity, extractHex, isGradient } from '@/lib/color-utils'
 
 interface ContentItem {
@@ -76,18 +77,30 @@ export default function CourseDetailPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [isNative, setIsNative] = useState(false)
 
+  // Store offering/purchase modal states
+  const [offering, setOffering] = useState<any | null>(null)
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+  const [purchasing, setPurchasing] = useState<string | null>(null)
+  const [successOrderId, setSuccessOrderId] = useState<string | null>(null)
+  const [verifyingPayment, setVerifyingPayment] = useState(false)
+  const [purchasedCourse, setPurchasedCourse] = useState<any>(null)
+  const [showUnenrollThanksModal, setShowUnenrollThanksModal] = useState(false)
+  const [showUnenrollFeedbackModal, setShowUnenrollFeedbackModal] = useState(false)
+
   const fetchData = useCallback(async () => {
     try {
-      const [courseRes, topicsRes, sessionRes, progressRes] = await Promise.all([
+      const [courseRes, topicsRes, sessionRes, progressRes, offeringsRes] = await Promise.all([
         fetch(`/api/courses/${params.id}`),
         fetch(`/api/courses/${params.id}/topics`),
         fetch('/api/auth/me'),
         fetch(`/api/lectures/progress?courseId=${params.id}`),
+        fetch('/api/course-offerings'),
       ])
       const courseData = await courseRes.json()
       const topicsData = await topicsRes.json()
       const sessionData = await sessionRes.json()
       const progressData = progressRes.ok ? await progressRes.json() : []
+      const offeringsData = offeringsRes.ok ? await offeringsRes.json() : []
 
       if (Array.isArray(progressData)) {
         const pMap = progressData.reduce((acc: any, curr: any) => {
@@ -95,6 +108,11 @@ export default function CourseDetailPage() {
           return acc
         }, {})
         setProgressMap(pMap)
+      }
+
+      if (Array.isArray(offeringsData)) {
+        const found = offeringsData.find((o: any) => o.courseId === params.id)
+        setOffering(found || null)
       }
 
       setCourse(courseData.course || courseData)
@@ -125,6 +143,89 @@ export default function CourseDetailPage() {
       setLoading(false)
     }
   }, [params.id])
+
+  const handlePurchase = async (offeringId: string, accessType: 'RECORDED' | 'LIVE' | 'CHAMPION') => {
+    setIsProcessing(true)
+    setPurchasing(`${offeringId}-${accessType}`)
+    try {
+      const res = await fetch(`/api/course-offerings/${offeringId}/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessType }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to initialize payment')
+
+      if (data.isFree) {
+        setIsProcessing(false)
+        setSuccessOrderId('FREE-ENROLLMENT')
+        setPurchasedCourse({ courseName: data.courseName, accessType })
+        return
+      }
+
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'GenZ IItian',
+        description: `Purchase ${data.courseName} (${accessType})`,
+        order_id: data.razorpayOrderId,
+        prefill: {
+          name: data.userName || '',
+          email: data.userEmail || '',
+        },
+        theme: { color: 'var(--accent)' },
+        handler: async (response: any) => {
+          setIsProcessing(true)
+          setVerifyingPayment(true)
+          try {
+            const verifyRes = await fetch(`/api/course-offerings/${offeringId}/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                accessType,
+              }),
+            })
+            const verifyData = await verifyRes.json()
+            if (verifyRes.ok) {
+              setSuccessOrderId(verifyData.orderId || 'SUCCESS')
+              setPurchasedCourse({ 
+                courseName: data.courseName,
+                accessType,
+                orderId: verifyData.orderId,
+                courseTier: accessType === 'LIVE' ? 'Live + Recorded (Pro)' : 'Recorded (Plus)'
+              })
+            } else {
+              alert('Verification failed: ' + verifyData.error)
+            }
+          } catch {
+            alert('Payment verification failed. Please contact support.')
+          } finally {
+            setIsProcessing(false)
+            setPurchasing(null)
+            setVerifyingPayment(false)
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setIsProcessing(false)
+            setPurchasing(null)
+          },
+        },
+      }
+
+      const rzp = new (window as any).Razorpay(options)
+      rzp.open()
+      setIsProcessing(false)
+    } catch (err: any) {
+      alert(err.message)
+      setIsProcessing(false)
+      setPurchasing(null)
+    }
+  }
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -158,13 +259,14 @@ export default function CourseDetailPage() {
   }
   
   const handleUnenrollDemo = async () => {
+    if (role === 'MANAGER' || role === 'ADMIN') return
     if (!confirm('Are you sure you want to unenroll from this demo? You will lose access to demo lectures.')) return
     try {
       const res = await fetch(`/api/courses/${params.id}/unenroll`, { method: 'POST' })
       const data = await res.json()
       if (res.ok) {
-        alert('Successfully unenrolled from demo.')
-        router.push('/courses')
+        fetchData()
+        setShowUnenrollThanksModal(true)
       } else {
         alert(data.error || 'Failed to unenroll')
       }
@@ -447,6 +549,7 @@ export default function CourseDetailPage() {
         role={role}
         setInfoModalCourse={setInfoModalCourse}
         setUpgradeModalCourse={setUpgradeModalCourse}
+        setShowPurchaseModal={setShowPurchaseModal}
       />
     </div>
     {/* Desktop layout */}
@@ -570,17 +673,17 @@ export default function CourseDetailPage() {
                 {/* Demo Action Buttons */}
                 {(course.enrollmentType as string) === 'DEMO' && (
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <Link
-                      href="/courses/explore"
+                    <button
+                      onClick={() => setShowPurchaseModal(true)}
                       style={{
                         background: 'var(--surface)', color: 'var(--text-primary)', padding: '6px 16px', borderRadius: '50px',
                         fontSize: '12px', fontWeight: '800', border: 'none', cursor: 'pointer',
                         display: 'inline-flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                        textDecoration: 'none', whiteSpace: 'nowrap',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       Unlock Full Course
-                    </Link>
+                    </button>
                     <button
                       onClick={handleUnenrollDemo}
                       style={{
@@ -843,8 +946,8 @@ export default function CourseDetailPage() {
                           {/* Watch / Material buttons */}
                           <div style={{ display: 'flex', gap: '8px', flexShrink: 0, alignItems: 'center' }}>
                             {(item as any).isDemoLocked ? (
-                              <Link
-                                href="/courses/explore"
+                              <button
+                                onClick={() => setShowPurchaseModal(true)}
                                 style={{
                                   padding: isNative ? '10px 20px' : '6px 16px',
                                   fontSize: isNative ? '13px' : '12px',
@@ -855,12 +958,13 @@ export default function CourseDetailPage() {
                                   gap: '6px',
                                   background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                                   color: '#fff',
-                                  textDecoration: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
                                   boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
                                 }}
                               >
                                 Unlock Now
-                              </Link>
+                              </button>
                             ) : (
                               <>
                                 {item.pptUrl && (
@@ -1333,6 +1437,393 @@ export default function CourseDetailPage() {
             }} />
             <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Processing...</h3>
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>Please wait while we set up your course access.</p>
+          </div>
+        </div>
+      )}
+      {/* Course Purchase Modal */}
+      {showPurchaseModal && offering && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px', overflow: 'auto'
+        }} onClick={() => setShowPurchaseModal(false)}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '480px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '30px',
+            animation: 'modalSlideUp 0.3s ease-out',
+            position: 'relative'
+          }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowPurchaseModal(false)}
+              style={{ position: 'absolute', top: '20px', right: '20px', background: 'var(--surface)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              <X size={18} />
+            </button>
+
+            {/* Course Header Color Band */}
+            <div style={{
+              background: `linear-gradient(135deg, ${offering.course?.color || '#6366f1'}, ${colorWithOpacity(offering.course?.color || '#6366f1', 'cc')})`,
+              margin: '-30px -30px 24px -30px',
+              padding: '40px 30px 30px 30px',
+              borderTopLeftRadius: '32px',
+              borderTopRightRadius: '32px',
+              color: '#fff',
+              position: 'relative',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                width: '60px', height: '60px', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px auto',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20M4 19.5V5A2.5 2.5 0 0 1 6.5 2.5H20v20H6.5a2.5 2.5 0 0 1-2-2.5z"/></svg>
+              </div>
+              <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '4px', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                {offering.course?.name}
+              </h2>
+              <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '600', marginBottom: '0' }}>
+                {offering.course?.subject}
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Recorded Batch Option */}
+              {offering.hasRecorded && (
+                <div style={{
+                  padding: '16px', borderRadius: '20px',
+                  background: 'var(--surface-2, rgba(99, 102, 241, 0.02))',
+                  border: '1.5px solid var(--border)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                        📹 Recorded Batch - PLUS
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>
+                          ₹{Math.max(Number(offering.recordedDiscountPrice || 0), 1)}
+                        </span>
+                        {Number(offering.recordedOriginalPrice || 0) > Math.max(Number(offering.recordedDiscountPrice || 0), 1) && (
+                          <span style={{ fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                            ₹{offering.recordedOriginalPrice}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handlePurchase(offering.id, 'RECORDED')}
+                    disabled={!!purchasing}
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: '50px',
+                      border: '2.5px solid var(--accent)', background: 'transparent',
+                      color: 'var(--accent)', fontSize: '14px', fontWeight: '800',
+                      cursor: purchasing ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {purchasing === `${offering.id}-RECORDED` ? 'Processing...' : 'Buy PLUS Batch'}
+                  </button>
+                </div>
+              )}
+
+              {/* Live Batch Option */}
+              {offering.hasLive && (
+                <div style={{
+                  padding: '16px', borderRadius: '20px',
+                  background: 'var(--surface-2, rgba(99, 102, 241, 0.02))',
+                  border: '1.5px solid var(--accent)',
+                  position: 'relative',
+                  boxShadow: '0 8px 24px rgba(99,102,241,0.08)'
+                }}>
+                  <div style={{
+                    position: 'absolute', top: '12px', right: '16px',
+                    padding: '3px 10px', borderRadius: '20px',
+                    background: 'var(--accent)', color: '#fff',
+                    fontSize: '9px', fontWeight: '900', letterSpacing: '0.08em',
+                  }}>
+                    PRO
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                        🔴 Live + Recorded Batch - PRO
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>
+                          ₹{Math.max(Number(offering.liveDiscountPrice || 0), 1)}
+                        </span>
+                        {Number(offering.liveOriginalPrice || 0) > Math.max(Number(offering.liveDiscountPrice || 0), 1) && (
+                          <span style={{ fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                            ₹{offering.liveOriginalPrice}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handlePurchase(offering.id, 'LIVE')}
+                    disabled={!!purchasing}
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: '50px',
+                      border: 'none', background: 'var(--accent)',
+                      color: '#fff', fontSize: '14px', fontWeight: '800',
+                      cursor: purchasing ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {purchasing === `${offering.id}-LIVE` ? 'Processing...' : '⚡ Buy PLUS + PRO Batch'}
+                  </button>
+                </div>
+              )}
+
+              {/* Champion Option */}
+              {offering.championDiscountPrice > 0 && (
+                <div style={{
+                  padding: '16px', borderRadius: '20px',
+                  background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+                  border: '1.5px solid #fca5a5',
+                  position: 'relative',
+                }}>
+                  <div style={{
+                    position: 'absolute', top: '12px', right: '16px',
+                    padding: '3px 10px', borderRadius: '20px',
+                    background: 'var(--danger)', color: '#fff',
+                    fontSize: '9px', fontWeight: '900', letterSpacing: '0.08em',
+                  }}>
+                    CHAMPION
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                        🏆 Champion - {offering.championSubtitle || 'Premium Wrapper'}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>
+                          ₹{offering.championDiscountPrice}
+                        </span>
+                        {offering.championOriginalPrice > offering.championDiscountPrice && (
+                          <span style={{ fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                            ₹{offering.championOriginalPrice}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handlePurchase(offering.id, 'CHAMPION')}
+                    disabled={!!purchasing}
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: '50px',
+                      border: 'none', background: 'var(--danger)',
+                      color: '#fff', fontSize: '14px', fontWeight: '800',
+                      cursor: purchasing ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {purchasing === `${offering.id}-CHAMPION` ? 'Processing...' : '⚡ Buy PLUS + PRO + CHAMPION Batch'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer info */}
+            <div style={{
+              marginTop: '24px',
+              textAlign: 'center',
+              fontSize: '12px',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
+            }}>
+              <span>⌛</span> Access Till End Term
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Course Unlocked Success Modal */}
+      {successOrderId && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px'
+        }} onClick={() => { setSuccessOrderId(null); window.location.reload() }}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', textAlign: 'center',
+            animation: 'modalSlideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Course Unlocked!</h2>
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
+              Congratulations! You have successfully unlocked the full version of the course. All lectures, materials, and features are now fully available to you.
+            </p>
+            <div style={{ background: 'var(--success-light)', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid var(--border)' }}>
+              <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--success)', fontFamily: 'monospace' }}>{successOrderId}</div>
+            </div>
+            <button
+              onClick={() => { setSuccessOrderId(null); window.location.reload() }}
+              style={{
+                width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+              }}
+            >
+              Start Learning! 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Unenroll Thanks Modal */}
+      {showUnenrollThanksModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px'
+        }} onClick={() => { setShowUnenrollThanksModal(false); router.push('/courses') }}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', textAlign: 'center',
+            animation: 'modalSlideUp 0.3s ease-out',
+            position: 'relative'
+          }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => { setShowUnenrollThanksModal(false); router.push('/courses') }}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: 'var(--surface)', border: 'none', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              <X size={20} />
+            </button>
+            <div style={{ fontSize: '64px', marginBottom: '16px' }}>👋</div>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '12px', lineHeight: '1.3' }}>
+              Thanks for checking out the Demo!
+            </h2>
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
+              Now please unlock your Full course, your coursemates are waiting for you!
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                onClick={() => {
+                  setShowUnenrollThanksModal(false)
+                  setShowPurchaseModal(true)
+                }}
+                style={{
+                  width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = '0 8px 16px rgba(99, 102, 241, 0.4)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)'
+                }}
+              >
+                Let's go - unlock now 🚀
+              </button>
+              <button
+                onClick={() => {
+                  setShowUnenrollThanksModal(false)
+                  setShowUnenrollFeedbackModal(true)
+                }}
+                style={{
+                  width: '100%', padding: '16px', borderRadius: '18px',
+                  background: 'var(--surface)', color: 'var(--text-secondary)',
+                  border: '1.5px solid var(--border)', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unenroll Feedback Modal */}
+      {showUnenrollFeedbackModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+          padding: '20px'
+        }} onClick={() => { setShowUnenrollFeedbackModal(false); router.push('/courses') }}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', textAlign: 'center',
+            animation: 'modalSlideUp 0.3s ease-out',
+            position: 'relative'
+          }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => { setShowUnenrollFeedbackModal(false); router.push('/courses') }}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: 'var(--surface)', border: 'none', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              <X size={20} />
+            </button>
+            <div style={{ fontSize: '64px', marginBottom: '16px' }}>🤔</div>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '12px', lineHeight: '1.3' }}>
+              Hey, is everything okay?
+            </h2>
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
+              Did we mess up? Please contact us - we can help you to find something better, or we can make it better! Let us understand.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                onClick={() => {
+                  setShowUnenrollFeedbackModal(false)
+                  router.push('/support')
+                }}
+                style={{
+                  width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = '0 8px 16px rgba(16, 185, 129, 0.4)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)'
+                }}
+              >
+                Contact Us 💬
+              </button>
+              <button
+                onClick={() => {
+                  setShowUnenrollFeedbackModal(false)
+                  router.push('/courses')
+                }}
+                style={{
+                  width: '100%', padding: '16px', borderRadius: '18px',
+                  background: 'var(--surface)', color: 'var(--text-secondary)',
+                  border: '1.5px solid var(--border)', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Later
+              </button>
+            </div>
           </div>
         </div>
       )}

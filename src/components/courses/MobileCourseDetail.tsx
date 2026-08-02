@@ -50,6 +50,7 @@ interface Props {
   role: string
   setInfoModalCourse?: (course: any) => void
   setUpgradeModalCourse?: (course: any) => void
+  setShowPurchaseModal?: (show: boolean) => void
 }
 
 type TabKey = 'curriculum' | 'overview' | 'feedback'
@@ -63,7 +64,7 @@ function cycleStatus(current: string): string {
 
 export default function MobileCourseDetail({
   course, topics, expandedTopics, toggleTopic, progressMap, updateProgress, role,
-  setInfoModalCourse, setUpgradeModalCourse,
+  setInfoModalCourse, setUpgradeModalCourse, setShowPurchaseModal,
 }: Props) {
   const router = useRouter()
   const [tab, setTab] = useState<TabKey>('curriculum')
@@ -313,7 +314,7 @@ export default function MobileCourseDetail({
         {course.enrollmentType === 'DEMO' && !isManager && (
           <div style={{ display: 'flex', gap: '8px', marginTop: '14px', position: 'relative', zIndex: 2 }}>
             <button
-              onClick={() => router.push('/courses/explore')}
+              onClick={() => setShowPurchaseModal?.(true)}
               style={{
                 flex: 1, padding: '10px 14px', borderRadius: '50px', border: 'none',
                 background: '#ffffff', color: 'var(--accent)', fontSize: '12px', fontWeight: '800', cursor: 'pointer',
@@ -409,6 +410,7 @@ export default function MobileCourseDetail({
             progressMap={progressMap}
             updateProgress={updateProgress}
             isStudent={role === 'STUDENT'}
+            setShowPurchaseModal={setShowPurchaseModal}
           />
         )}
 
@@ -449,7 +451,7 @@ export default function MobileCourseDetail({
 
 /* ───────── Curriculum Tab ───────── */
 function CurriculumTab({
-  courseId, accent, topics, expandedTopics, toggleTopic, progressMap, updateProgress, isStudent,
+  courseId, accent, topics, expandedTopics, toggleTopic, progressMap, updateProgress, isStudent, setShowPurchaseModal,
 }: {
   courseId: string
   accent: string
@@ -459,6 +461,7 @@ function CurriculumTab({
   progressMap: Record<string, string>
   updateProgress: (contentId: string, status: string) => void
   isStudent: boolean
+  setShowPurchaseModal?: (show: boolean) => void
 }) {
   const [activeDownloadUrl, setActiveDownloadUrl] = useState<string | null>(null)
   if (topics.length === 0) {
@@ -719,22 +722,23 @@ function CurriculumTab({
 
                       {/* Action */}
                       {(item as any).isDemoLocked ? (
-                        <Link
-                          href="/courses/explore"
+                        <button
+                          onClick={() => setShowPurchaseModal?.(true)}
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: '6px',
                             padding: '10px 18px', borderRadius: '50px',
                             background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                             color: '#fff',
                             fontSize: '13px', fontWeight: 800,
-                            textDecoration: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
                             boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
                             flexShrink: 0,
                             whiteSpace: 'nowrap',
                           }}
                         >
                           Unlock Now
-                        </Link>
+                        </button>
                       ) : (item.videoUrl || item.youtubeUrl) ? (
                         <Link
                           href={`/courses/${courseId}/lectures/${item.id}`}
