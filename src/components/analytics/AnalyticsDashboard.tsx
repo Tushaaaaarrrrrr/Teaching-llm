@@ -24,9 +24,10 @@ const PIE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5
 export default function AnalyticsDashboard() {
   const [range, setRange] = useState<RangeKey>('7d')
   const [countdown, setCountdown] = useState('')
+  const [selectedCourse, setSelectedCourse] = useState<string>('all')
 
   const { data, isLoading, mutate } = useSWR(
-    `/api/analytics/summary?range=${range}`,
+    `/api/analytics/summary?range=${range}&courseId=${selectedCourse}`,
     fetcher,
     { refreshInterval: 0 }
   )
@@ -121,6 +122,8 @@ export default function AnalyticsDashboard() {
       .map((c: any) => (c.name || c.title || '').trim().toLowerCase())
   )
 
+  const activeCourses = (coursesList || []).filter((c: any) => !disabledCourseIds.has(c.id))
+
   const summary = data?.summary || {}
   const dailyTrend = data?.dailyTrend || []
   const hourlyActivity = data?.hourlyActivity || {}
@@ -209,24 +212,52 @@ export default function AnalyticsDashboard() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         flexWrap: 'wrap', gap: '16px',
       }}>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          {(Object.keys(RANGE_LABELS) as RangeKey[]).map(key => (
-            <button
-              key={key}
-              onClick={() => setRange(key)}
-              style={{
-                padding: '8px 18px', borderRadius: '50px', border: 'none',
-                background: range === key ? '#3636e8' : 'var(--surface-2)',
-                color: range === key ? '#fff' : 'var(--text-secondary)',
-                boxShadow: range === key
-                  ? '0 4px 12px rgba(54,54,232,0.3)'
-                  : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
-                fontWeight: 700, fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
-              }}
-            >
-              {RANGE_LABELS[key]}
-            </button>
-          ))}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {(Object.keys(RANGE_LABELS) as RangeKey[]).map(key => (
+              <button
+                key={key}
+                onClick={() => setRange(key)}
+                style={{
+                  padding: '8px 18px', borderRadius: '50px', border: 'none',
+                  background: range === key ? '#3636e8' : 'var(--surface-2)',
+                  color: range === key ? '#fff' : 'var(--text-secondary)',
+                  boxShadow: range === key
+                    ? '0 4px 12px rgba(54,54,232,0.3)'
+                    : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
+                  fontWeight: 700, fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                }}
+              >
+                {RANGE_LABELS[key]}
+              </button>
+            ))}
+          </div>
+
+          <select
+            id="course-select"
+            value={selectedCourse}
+            onChange={(e) => setSelectedCourse(e.target.value)}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '50px',
+              border: 'none',
+              background: 'var(--surface-2)',
+              color: 'var(--text-secondary)',
+              boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
+              fontWeight: 700,
+              fontSize: '12px',
+              cursor: 'pointer',
+              outline: 'none',
+              transition: 'all 0.2s',
+            }}
+          >
+            <option value="all">All Courses</option>
+            {activeCourses.map((course: any) => (
+              <option key={course.id} value={course.id}>
+                {course.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
@@ -301,86 +332,88 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* ─── Top Courses & Course Distribution ──────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      {selectedCourse === 'all' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
 
-        {/* Top 7 Courses (Bar Chart) */}
-        <div style={neuCard}>
-          <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>
-            🏆 Top Courses
-          </h3>
-          {topCourses.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No data</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart
-                data={topCourses.map((c: any) => ({
-                  name: c.name.length > 15 ? c.name.substring(0, 13) + '…' : c.name,
-                  Students: c.count,
-                }))}
-                layout="vertical"
-                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#dddfe6" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#9999b0' }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 11, fill: '#9999b0', fontWeight: 600 }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="Students" radius={[0, 6, 6, 0]} barSize={20}>
-                  {topCourses.map((_: any, i: number) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        {/* Course Distribution (Pie Chart) */}
-        <div style={neuCard}>
-          <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>
-            🍩 Course Distribution
-          </h3>
-          {pieData.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No data</div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <ResponsiveContainer width="50%" height={240}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%" cy="50%"
-                    innerRadius={55} outerRadius={90}
-                    paddingAngle={3}
-                    dataKey="value"
-                    strokeWidth={0}
-                  >
-                    {pieData.map((entry: any, i: number) => (
-                      <Cell key={i} fill={entry.fill} />
-                    ))}
-                  </Pie>
+          {/* Top 7 Courses (Bar Chart) */}
+          <div style={neuCard}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>
+              🏆 Top Courses
+            </h3>
+            {topCourses.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No data</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart
+                  data={topCourses.map((c: any) => ({
+                    name: c.name.length > 15 ? c.name.substring(0, 13) + '…' : c.name,
+                    Students: c.count,
+                  }))}
+                  layout="vertical"
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#dddfe6" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: '#9999b0' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 11, fill: '#9999b0', fontWeight: 600 }} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={tooltipStyle} />
-                </PieChart>
+                  <Bar dataKey="Students" radius={[0, 6, 6, 0]} barSize={20}>
+                    {topCourses.map((_: any, i: number) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '240px', overflowY: 'auto' }}>
-                {courseDistribution.map((c: any, i: number) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                    <span style={{
-                      width: '10px', height: '10px', borderRadius: '3px', flexShrink: 0,
-                      background: PIE_COLORS[i % PIE_COLORS.length],
-                    }} />
-                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
-                      {c.name}
-                    </span>
-                    <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{c.count}</span>
-                    <span style={{ color: '#9999b0', fontSize: '11px' }}>
-                      ({((c.count / totalPieEnrollments) * 100).toFixed(1)}%)
-                    </span>
-                  </div>
-                ))}
+            )}
+          </div>
+
+          {/* Course Distribution (Pie Chart) */}
+          <div style={neuCard}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', color: 'var(--text-primary)' }}>
+              🍩 Course Distribution
+            </h3>
+            {pieData.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#9999b0', fontSize: '13px' }}>No data</div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <ResponsiveContainer width="50%" height={240}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%" cy="50%"
+                      innerRadius={55} outerRadius={90}
+                      paddingAngle={3}
+                      dataKey="value"
+                      strokeWidth={0}
+                    >
+                      {pieData.map((entry: any, i: number) => (
+                        <Cell key={i} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={tooltipStyle} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '240px', overflowY: 'auto' }}>
+                  {courseDistribution.map((c: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                      <span style={{
+                        width: '10px', height: '10px', borderRadius: '3px', flexShrink: 0,
+                        background: PIE_COLORS[i % PIE_COLORS.length],
+                      }} />
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                        {c.name}
+                      </span>
+                      <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{c.count}</span>
+                      <span style={{ color: '#9999b0', fontSize: '11px' }}>
+                        ({((c.count / totalPieEnrollments) * 100).toFixed(1)}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
 
 
@@ -701,13 +734,15 @@ export default function AnalyticsDashboard() {
             {(() => {
               const bStats = data.batchStats
               const totalEnrolled = bStats.totalEnrolledStudents || 1
-              const livePct = Math.round((bStats.liveStudents / totalEnrolled) * 100)
-              const recPct = Math.round((bStats.recordedStudents / totalEnrolled) * 100)
-              const bothPct = Math.round((bStats.bothStudents / totalEnrolled) * 100)
+              const totalBase = selectedCourse === 'all' ? (bStats.totalStudents || totalEnrolled) : totalEnrolled
+              const livePct = Math.round((bStats.liveStudents / totalBase) * 100)
+              const recPct = Math.round((bStats.recordedStudents / totalBase) * 100)
+              const bothPct = Math.round((bStats.bothStudents / totalBase) * 100)
+              const notEnrolledPct = Math.round((bStats.notEnrolledStudents / totalBase) * 100)
 
               return (
                 <div>
-                  {/* Top 3 Metric Cards */}
+                  {/* Metric Cards Grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
                     {/* Live Batch Card */}
                     <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
@@ -721,7 +756,8 @@ export default function AnalyticsDashboard() {
                           {bStats.liveStudents.toLocaleString()}
                         </div>
                         <div style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', marginTop: '4px' }}>
-                          {livePct}% of enrolled students <span style={{ color: '#9999b0', fontWeight: 600 }}>({bStats.liveOnlyStudents} Live Only)</span>
+                          {livePct}% of {selectedCourse === 'all' ? 'total' : 'enrolled'} students 
+                          {selectedCourse === 'all' && <span style={{ color: '#9999b0', fontWeight: 600 }}> ({bStats.liveOnlyStudents} Live Only)</span>}
                         </div>
                         <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
                           {bStats.totalLiveEnrollments.toLocaleString()} total live course enrollments
@@ -741,7 +777,8 @@ export default function AnalyticsDashboard() {
                           {bStats.recordedStudents.toLocaleString()}
                         </div>
                         <div style={{ fontSize: '12px', fontWeight: 700, color: '#f59e0b', marginTop: '4px' }}>
-                          {recPct}% of enrolled students <span style={{ color: '#9999b0', fontWeight: 600 }}>({bStats.recordedOnlyStudents} Recorded Only)</span>
+                          {recPct}% of {selectedCourse === 'all' ? 'total' : 'enrolled'} students 
+                          {selectedCourse === 'all' && <span style={{ color: '#9999b0', fontWeight: 600 }}> ({bStats.recordedOnlyStudents} Recorded Only)</span>}
                         </div>
                         <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
                           {bStats.totalRecordedEnrollments.toLocaleString()} total recorded course enrollments
@@ -750,24 +787,70 @@ export default function AnalyticsDashboard() {
                     </div>
 
                     {/* Both (Dual Access) Card */}
-                    <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
-                      <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#8b5cf6' }} />
-                      <div style={{ paddingLeft: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Both (Live + Recorded)</span>
-                          <span style={{ fontSize: '18px' }}>⚡</span>
-                        </div>
-                        <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '8px' }}>
-                          {bStats.bothStudents.toLocaleString()}
-                        </div>
-                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#8b5cf6', marginTop: '4px' }}>
-                          {bothPct}% hybrid enrolled
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
-                          Students enrolled in both live & recorded courses
+                    {selectedCourse === 'all' && (
+                      <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#8b5cf6' }} />
+                        <div style={{ paddingLeft: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Both (Live + Recorded)</span>
+                            <span style={{ fontSize: '18px' }}>⚡</span>
+                          </div>
+                          <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '8px' }}>
+                            {bStats.bothStudents.toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: '#8b5cf6', marginTop: '4px' }}>
+                            {bothPct}% hybrid enrolled
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
+                            Students enrolled in both live & recorded courses
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
+
+                    {/* Not Enrolled Card */}
+                    {selectedCourse === 'all' && (
+                      <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#ef4444' }} />
+                        <div style={{ paddingLeft: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Not Enrolled Students</span>
+                            <span style={{ fontSize: '18px' }}>🚫</span>
+                          </div>
+                          <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '8px' }}>
+                            {(bStats.notEnrolledStudents || 0).toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: '#ef4444', marginTop: '4px' }}>
+                            {notEnrolledPct}% of total students
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
+                            Students with no active batch enrollments
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Demo Batch Card */}
+                    {selectedCourse !== 'all' && bStats.demoStudents > 0 && (
+                      <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#8b5cf6' }} />
+                        <div style={{ paddingLeft: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#9999b0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Demo Batch Students</span>
+                            <span style={{ fontSize: '18px' }}>🆓</span>
+                          </div>
+                          <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '8px' }}>
+                            {bStats.demoStudents.toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: '#8b5cf6', marginTop: '4px' }}>
+                            {Math.round((bStats.demoStudents / totalEnrolled) * 100)}% of enrolled students
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#9999b0', marginTop: '6px' }}>
+                            Students with trial or demo access to this course
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Enrollment Ratio Visual Bar */}

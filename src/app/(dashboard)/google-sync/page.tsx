@@ -281,6 +281,46 @@ export default function GoogleSyncPage() {
   const [isReconciling, setIsReconciling] = useState(false)
   const [isVerifyingGoogle, setIsVerifyingGoogle] = useState(false)
   const [googleVerificationData, setGoogleVerificationData] = useState<any>(null)
+  const [showAdvancedTools, setShowAdvancedTools] = useState(false)
+  const [isAutoFixing, setIsAutoFixing] = useState(false)
+
+  async function handleAutoFixAll() {
+    setIsAutoFixing(true)
+    setPoolMessage(null)
+    try {
+      // 1. Clean duplicates
+      const res1 = await fetch('/api/admin/notification-groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'CLEANUP_DUPLICATES' }),
+      })
+      const data1 = await res1.json()
+      if (!res1.ok) throw new Error(data1.error || 'Failed cleanup')
+
+      // 2. Assign all unassigned
+      const res2 = await fetch('/api/admin/notification-groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ASSIGN_ALL_CATEGORY' }),
+      })
+      const data2 = await res2.json()
+      if (!res2.ok) throw new Error(data2.error || 'Failed assignment')
+
+      // 3. Trigger queue background process
+      await fetch('/api/google-sync/process?force=true', { method: 'POST' }).catch(() => ({}))
+
+      setPoolMessage({
+        type: 'success',
+        text: `⚡ Automation Complete! Cleaned duplicate assignments and processed ${data2.count || 0} user(s) into groups (500 max each). Background sync triggered automatically!`,
+      })
+      mutatePools()
+      setRefreshKey(prev => prev + 1)
+    } catch (err) {
+      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'Auto-fix failed' })
+    } finally {
+      setIsAutoFixing(false)
+    }
+  }
 
   async function handleCleanupDuplicates() {
     if (!confirm('Are you sure you want to clean up duplicate pool email assignments? This will ensure every student gets EXACTLY 1 email per Pool Group, free up filled spots, and redistribute pending users.')) return
@@ -630,133 +670,155 @@ export default function GoogleSyncPage() {
 
           {/* Bulk Operations Panel */}
           <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px 0' }}>Bulk Pool Assignment Tools</h3>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-                Batch assign Pool Groups to all users in your database at once.
-              </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px 0' }}>Automated Pool & Sync Management</h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+                  New students are automatically added to 500-member Google Groups upon registration or purchase.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  disabled={isAutoFixing}
+                  onClick={handleAutoFixAll}
+                  className="btn"
+                  style={{ background: 'var(--primary)', color: '#ffffff', border: 'none', fontSize: '13px', fontWeight: '700', padding: '10px 20px' }}
+                >
+                  {isAutoFixing ? 'Processing Automation...' : '⚡ Auto-Fix & Sync All Users'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedTools(!showAdvancedTools)}
+                  className="btn btn-ghost"
+                  style={{ border: '1px solid var(--border)', fontSize: '12px', fontWeight: '600' }}
+                >
+                  {showAdvancedTools ? '▲ Hide Advanced Tools' : '⚙️ Advanced Tools'}
+                </button>
+              </div>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-              {/* Option 1: Auto-distribute to Default Pool */}
-              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>1. Auto-distribute All Users to General Pool</div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-                    Automatically assigns every user to available emails in the default pool ("General Announcements"), filling them 500-by-500.
-                  </p>
+            {showAdvancedTools && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-light)' }}>
+                {/* Option 1: Auto-distribute to Default Pool */}
+                <div style={{ background: 'var(--surface-2)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>1. Auto-distribute Unassigned Users</div>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                      Assigns unassigned users to available pool emails (filling 500-by-500).
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isBulkRunning || categories.length === 0}
+                    onClick={() => handleBulkAssign()}
+                    className="btn btn-sm"
+                    style={{ alignSelf: 'flex-start', background: 'var(--surface-3)', border: '1px solid var(--border)', fontSize: '11px', fontWeight: '700' }}
+                  >
+                    {isBulkRunning ? 'Processing...' : 'Auto-distribute'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  disabled={isBulkRunning || categories.length === 0}
-                  onClick={() => handleBulkAssign()}
-                  className="btn"
-                  style={{ alignSelf: 'flex-start', background: 'var(--primary)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
-                >
-                  {isBulkRunning ? 'Processing...' : '⚡ Auto-distribute All Users'}
-                </button>
-              </div>
 
-              {/* Option 2: Assign Secondary Custom Pool to Everyone (Excludes Default General Pool) */}
-              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>2. Assign Secondary Pool Group to Everyone</div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', marginBottom: '8px' }}>
-                    Assigns a custom secondary Pool Group to **ALL** users in the database (preserving existing groups).
-                  </p>
-                  
-                  {(() => {
-                    const secondaryCategories = categories.filter((c: any) => !c.isDefault && c.name !== 'General Announcements')
-                    return (
-                      <select
-                        value={bulkCatSelect}
-                        onChange={e => setBulkCatSelect(e.target.value)}
-                        className="form-input"
-                        style={{ width: '100%', fontSize: '12px', padding: '8px' }}
-                        disabled={isBulkRunning || secondaryCategories.length === 0}
-                      >
-                        <option value="">
-                          {secondaryCategories.length === 0
-                            ? '-- No custom secondary pools (General Pool auto-assigned above) --'
-                            : '-- Select a Secondary Pool Group --'}
-                        </option>
-                        {secondaryCategories.map((c: any) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name} ({c.totalAssigned} / {c.totalCapacity} members across {c.emails.length} emails)
+                {/* Option 2: Assign Secondary Custom Pool */}
+                <div style={{ background: 'var(--surface-2)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>2. Assign Secondary Pool Group</div>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', marginBottom: '6px' }}>
+                      Assigns a custom secondary Pool Group to all users.
+                    </p>
+                    {(() => {
+                      const secondaryCategories = categories.filter((c: any) => !c.isDefault && c.name !== 'General Announcements')
+                      return (
+                        <select
+                          value={bulkCatSelect}
+                          onChange={e => setBulkCatSelect(e.target.value)}
+                          className="form-input"
+                          style={{ width: '100%', fontSize: '11px', padding: '6px' }}
+                          disabled={isBulkRunning || secondaryCategories.length === 0}
+                        >
+                          <option value="">
+                            {secondaryCategories.length === 0
+                              ? '-- No custom secondary pools --'
+                              : '-- Select Secondary Pool --'}
                           </option>
-                        ))}
-                      </select>
-                    )
-                  })()}
+                          {secondaryCategories.map((c: any) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name} ({c.totalAssigned} / {c.totalCapacity})
+                            </option>
+                          ))}
+                        </select>
+                      )
+                    })()}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isBulkRunning || !bulkCatSelect}
+                    onClick={() => handleBulkAssign(bulkCatSelect)}
+                    className="btn btn-sm"
+                    style={{ alignSelf: 'flex-start', background: 'var(--success)', color: '#ffffff', border: 'none', fontSize: '11px', fontWeight: '700' }}
+                  >
+                    {isBulkRunning ? 'Processing...' : 'Assign Secondary Pool'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  disabled={isBulkRunning || !bulkCatSelect}
-                  onClick={() => handleBulkAssign(bulkCatSelect)}
-                  className="btn"
-                  style={{ alignSelf: 'flex-start', background: 'var(--success)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
-                >
-                  {isBulkRunning ? 'Processing...' : '✉️ Assign Secondary Pool to Everyone'}
-                </button>
-              </div>
 
-              {/* Option 3: Clean & Recalculate Duplicates */}
-              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>3. Clean & Recalculate Duplicates</div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-                    Ensures every student has EXACTLY 1 email per Pool Group, frees up held capacity, and redistributes pending users.
-                  </p>
+                {/* Option 3: Clean & Recalculate Duplicates */}
+                <div style={{ background: 'var(--surface-2)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>3. Clean & Fix Duplicates</div>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                      Ensures every student has max 1 email per Pool Group.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isCleaning}
+                    onClick={handleCleanupDuplicates}
+                    className="btn btn-sm"
+                    style={{ alignSelf: 'flex-start', background: 'var(--warning, #f59e0b)', color: '#ffffff', border: 'none', fontSize: '11px', fontWeight: '700' }}
+                  >
+                    {isCleaning ? 'Cleaning...' : 'Clean Duplicates'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  disabled={isCleaning}
-                  onClick={handleCleanupDuplicates}
-                  className="btn"
-                  style={{ alignSelf: 'flex-start', background: 'var(--warning, #f59e0b)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
-                >
-                  {isCleaning ? 'Cleaning...' : '🧹 Clean & Fix Duplicates'}
-                </button>
-              </div>
 
-              {/* Option 4: Full Nuclear Reset & Redistribute */}
-              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid #ef4444', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#ef4444' }}>4. Nuclear Reset & Redistribute</div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-                    Wipes all user pool assignments, resets counts, and redistributes EVERY user sequentially (500 max per email) from scratch.
-                  </p>
+                {/* Option 4: Full Nuclear Reset */}
+                <div style={{ background: 'var(--surface-2)', padding: '14px', borderRadius: '10px', border: '1px solid #ef4444', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#ef4444' }}>4. Nuclear Reset & Redistribute</div>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                      Wipes all assignments and redistributes EVERY user from scratch (500 max).
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isResettingFull}
+                    onClick={() => handleFullReset()}
+                    className="btn btn-sm"
+                    style={{ alignSelf: 'flex-start', background: '#ef4444', color: '#ffffff', border: 'none', fontSize: '11px', fontWeight: '700' }}
+                  >
+                    {isResettingFull ? 'Resetting...' : '🚨 Nuclear Reset'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  disabled={isResettingFull}
-                  onClick={() => handleFullReset()}
-                  className="btn"
-                  style={{ alignSelf: 'flex-start', background: '#ef4444', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
-                >
-                  {isResettingFull ? 'Resetting...' : '🚨 Nuclear Reset & Redistribute'}
-                </button>
-              </div>
 
-              {/* Option 5: Reconcile with Google Workspace */}
-              <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--primary-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary)' }}>5. Reconcile with Google Workspace</div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-                    Queries Google Groups API, compares member list with DB, and queues REMOVE jobs for extra members (clears 655/994 overfilling).
-                  </p>
+                {/* Option 5: Reconcile with Google */}
+                <div style={{ background: 'var(--surface-2)', padding: '14px', borderRadius: '10px', border: '1px solid var(--primary-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary)' }}>5. Reconcile with Google Workspace</div>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                      Queries Google API & queues REMOVE jobs for extra members in overfilled groups.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isReconciling}
+                    onClick={handleReconcileGoogle}
+                    className="btn btn-sm"
+                    style={{ alignSelf: 'flex-start', background: 'var(--primary)', color: '#ffffff', border: 'none', fontSize: '11px', fontWeight: '700' }}
+                  >
+                    {isReconciling ? 'Reconciling...' : 'Reconcile Google'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  disabled={isReconciling}
-                  onClick={handleReconcileGoogle}
-                  className="btn"
-                  style={{ alignSelf: 'flex-start', background: 'var(--primary)', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700' }}
-                >
-                  {isReconciling ? 'Reconciling...' : '🔄 Reconcile with Google Workspace'}
-                </button>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Verification comparison modal / display if fetched */}

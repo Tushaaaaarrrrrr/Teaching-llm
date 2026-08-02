@@ -523,6 +523,9 @@ export async function PATCH(
     if (message.isDeleted || message.isSystemDeleted) {
       return NextResponse.json({ error: 'Cannot edit a deleted message' }, { status: 400 })
     }
+    if (message.senderId !== session.userId) {
+      return NextResponse.json({ error: 'You can only edit your own messages' }, { status: 403 })
+    }
 
     const editedAt = new Date()
     const updated = await prisma.communityMessage.update({

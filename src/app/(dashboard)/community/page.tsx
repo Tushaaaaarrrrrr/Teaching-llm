@@ -1707,7 +1707,7 @@ export default function CommunityPage() {
                   </button>
 
                   {/* Edit Button */}
-                  {(userRole === 'MANAGER' || userRole === 'ADMIN') && !selectedMessage.isDeleted && !selectedMessage.id.startsWith('temp-') && (
+                  {(userRole === 'MANAGER' || userRole === 'ADMIN') && selectedMessage.sender.id === userId && !selectedMessage.isDeleted && !selectedMessage.id.startsWith('temp-') && (
                     <button
                       onClick={() => {
                         setEditingMessage(selectedMessage)
@@ -2453,7 +2453,7 @@ export default function CommunityPage() {
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
                               </button>
                             )}
-                            {(userRole === 'MANAGER' || userRole === 'ADMIN') && !msg.isDeleted && !msg.id.startsWith('temp-') && !isDM(selectedClass) && (
+                            {(userRole === 'MANAGER' || userRole === 'ADMIN') && isMe && !msg.isDeleted && !msg.id.startsWith('temp-') && !isDM(selectedClass) && (
                               <button
                                 onClick={() => {
                                   setEditingMessage(msg)
@@ -2914,7 +2914,7 @@ export default function CommunityPage() {
               )}
 
               {/* Edit option */}
-              {!managerActionMessage.isDeleted && !managerActionMessage.id.startsWith('temp-') && !isDM(selectedClass) && (
+              {!managerActionMessage.isDeleted && !managerActionMessage.id.startsWith('temp-') && !isDM(selectedClass) && managerActionMessage.sender.id === userId && (
                 <button
                   onClick={() => {
                     const msg = managerActionMessage;

@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || '7d'
+    const courseId = searchParams.get('courseId') || 'all'
 
     // ─── Calculate date range ────────────────────────────────────────
     const now = new Date()
@@ -100,19 +101,90 @@ export async function GET(request: NextRequest) {
     const mergedHourly: Record<string, number> = {}
     for (let h = 0; h < 24; h++) mergedHourly[String(h)] = 0
 
-    for (const snap of snapshots) {
-      totalNewUsers += snap.newUsers
-      totalReturningUsers += snap.returningUsers
-      totalActiveUsers += snap.activeUsers
-      totalEnrollments += snap.totalEnrollments
-
-      if (snap.hourlyActivity) {
-        try {
-          const hourly = JSON.parse(snap.hourlyActivity)
-          for (const [hour, count] of Object.entries(hourly)) {
-            mergedHourly[hour] = (mergedHourly[hour] || 0) + (count as number)
+    if (courseId && courseId !== 'all') {
+      // Find all activity logs for this course's enrolled students
+      const dailyActivity = await prisma.activityLog.findMany({
+        where: {
+          timestamp: { gte: startDate, lte: today },
+          user: {
+            role: 'STUDENT',
+            isTerminated: false,
+            enrollments: { some: { courseId: courseId } }
           }
-        } catch {}
+        },
+        select: { timestamp: true }
+      })
+
+      for (const log of dailyActivity) {
+        const hour = new Date(log.timestamp).getUTCHours()
+        // Convert UTC to IST (+5:30)
+        const istHour = (hour + 5 + Math.floor((30) / 60)) % 24
+        mergedHourly[String(istHour)] = (mergedHourly[String(istHour)] || 0) + 1
+      }
+
+      const totalEnrolledInCourse = await prisma.enrollment.count({
+        where: {
+          courseId,
+          user: { role: 'STUDENT', isTerminated: false }
+        }
+      })
+
+      const newEnrollmentsInCourse = await prisma.enrollment.count({
+        where: {
+          courseId,
+          createdAt: { gte: startDate, lte: today },
+          user: { role: 'STUDENT', isTerminated: false }
+        }
+      })
+
+      const activeUsersInCourse = await prisma.activityLog.findMany({
+        where: {
+          timestamp: { gte: startDate, lte: today },
+          user: {
+            role: 'STUDENT',
+            isTerminated: false,
+            enrollments: { some: { courseId: courseId } }
+          }
+        },
+        select: { userId: true },
+        distinct: ['userId']
+      })
+      const activeUsersCount = activeUsersInCourse.length
+
+      const returningActiveUsersInCourse = await prisma.activityLog.findMany({
+        where: {
+          timestamp: { gte: startDate, lte: today },
+          user: {
+            role: 'STUDENT',
+            isTerminated: false,
+            createdAt: { lt: startDate },
+            enrollments: { some: { courseId: courseId } }
+          }
+        },
+        select: { userId: true },
+        distinct: ['userId']
+      })
+      const returningUsersCount = returningActiveUsersInCourse.length
+
+      totalNewUsers = newEnrollmentsInCourse
+      totalReturningUsers = returningUsersCount
+      totalActiveUsers = activeUsersCount
+      totalEnrollments = totalEnrolledInCourse
+    } else {
+      for (const snap of snapshots) {
+        totalNewUsers += snap.newUsers
+        totalReturningUsers += snap.returningUsers
+        totalActiveUsers += snap.activeUsers
+        totalEnrollments += snap.totalEnrollments
+
+        if (snap.hourlyActivity) {
+          try {
+            const hourly = JSON.parse(snap.hourlyActivity)
+            for (const [hour, count] of Object.entries(hourly)) {
+              mergedHourly[hour] = (mergedHourly[hour] || 0) + (count as number)
+            }
+          } catch {}
+        }
       }
     }
 
@@ -138,10 +210,24 @@ export async function GET(request: NextRequest) {
 
     // Compute live demographics to ensure up-to-the-minute correctness and include new fields
     try {
-      const allUsers = await prisma.user.findMany({
-        where: { role: 'STUDENT', isTerminated: false },
-        select: { gender: true, state: true, age: true, iitmJoinYear: true, iitmJoinMonth: true, iitmLevel: true, iitmUserType: true }
-      })
+      let allUsers;
+      if (courseId && courseId !== 'all') {
+        allUsers = await prisma.user.findMany({
+          where: {
+            role: 'STUDENT',
+            isTerminated: false,
+            enrollments: {
+              some: { courseId: courseId }
+            }
+          },
+          select: { id: true, gender: true, state: true, age: true, iitmJoinYear: true, iitmJoinMonth: true, iitmLevel: true, iitmUserType: true }
+        })
+      } else {
+        allUsers = await prisma.user.findMany({
+          where: { role: 'STUDENT', isTerminated: false },
+          select: { id: true, gender: true, state: true, age: true, iitmJoinYear: true, iitmJoinMonth: true, iitmLevel: true, iitmUserType: true }
+        })
+      }
       
       const liveDemographics: any = {
         gender: { MALE: 0, FEMALE: 0, OTHER: 0, UNSPECIFIED: 0 },
@@ -191,14 +277,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // ─── Build daily trend data ──────────────────────────────────────
-    const dailyTrend = snapshots.map((s: any) => ({
-      date: s.date,
-      enrollments: s.totalEnrollments,
-      newUsers: s.newUsers,
-      activeUsers: s.activeUsers,
-    }))
-
     // ─── Filter out disabled/expired courses ──────────────────────────
     const disabledClasses = await (prisma.course as any).findMany({
       where: {
@@ -227,8 +305,12 @@ export async function GET(request: NextRequest) {
         growthDelta: cd.growthDelta,
       })
     }
-    const courseGrowth = Array.from(courseGrowthMap.values())
+    let courseGrowth = Array.from(courseGrowthMap.values())
       .sort((a, b) => b.totalEnrollments - a.totalEnrollments)
+
+    if (courseId && courseId !== 'all') {
+      courseGrowth = courseGrowth.filter((cg: any) => cg.courseId === courseId)
+    }
 
     const filteredTopCourses = topCourses.filter((c: any) => 
       !disabledIds.has(c.id || c.courseId) && !disabledNames.has((c.name || c.courseName || '').trim().toLowerCase())
@@ -236,6 +318,55 @@ export async function GET(request: NextRequest) {
     const filteredCourseDist = courseDistribution.filter((c: any) => 
       !disabledIds.has(c.id || c.courseId) && !disabledNames.has((c.name || c.courseName || '').trim().toLowerCase())
     )
+
+    // ─── Build daily trend data ──────────────────────────────────────
+    let dailyTrend = snapshots.map((s: any) => ({
+      date: s.date,
+      enrollments: s.totalEnrollments,
+      newUsers: s.newUsers,
+      activeUsers: s.activeUsers,
+    }))
+
+    if (courseId && courseId !== 'all') {
+      const dailyActivity = await prisma.activityLog.findMany({
+        where: {
+          timestamp: { gte: startDate, lte: today },
+          user: {
+            role: 'STUDENT',
+            isTerminated: false,
+            enrollments: { some: { courseId: courseId } }
+          }
+        },
+        select: { timestamp: true, userId: true }
+      })
+
+      const courseDailyStats = courseDaily.filter((cd: any) => cd.courseId === courseId)
+      
+      const activeUsersPerDay = new Map<string, Set<string>>()
+      for (const log of dailyActivity) {
+        const dateStr = new Date(log.timestamp).toISOString().split('T')[0]
+        if (!activeUsersPerDay.has(dateStr)) {
+          activeUsersPerDay.set(dateStr, new Set())
+        }
+        activeUsersPerDay.get(dateStr)!.add(log.userId)
+      }
+
+      dailyTrend = snapshots.map((s: any) => {
+        const snapDateStr = new Date(s.date).toISOString().split('T')[0]
+        const activeCount = activeUsersPerDay.get(snapDateStr)?.size || 0
+        
+        const match = courseDailyStats.find((cd: any) => 
+          new Date(cd.date).toISOString().split('T')[0] === snapDateStr
+        )
+        
+        return {
+          date: s.date,
+          enrollments: match?.totalEnrollments || 0,
+          newUsers: match?.enrollmentCount || 0,
+          activeUsers: activeCount,
+        }
+      })
+    }
 
     // ─── Compute Batch Type Distribution (Live vs Recorded) ───────────
     let batchStats = {
@@ -247,62 +378,140 @@ export async function GET(request: NextRequest) {
       totalEnrolledStudents: 0,
       liveOnlyStudents: 0,
       recordedOnlyStudents: 0,
+      notEnrolledStudents: 0,
+      totalStudents: 0,
+      demoStudents: 0,
     }
 
     try {
-      const enrollments = await (prisma.enrollment as any).findMany({
-        where: {
-          user: { role: 'STUDENT', isTerminated: false }
-        },
-        select: { userId: true, type: true }
-      })
+      if (courseId && courseId !== 'all') {
+        const courseEnrollments = await prisma.enrollment.findMany({
+          where: {
+            courseId,
+            user: { role: 'STUDENT', isTerminated: false }
+          },
+          select: { type: true }
+        })
 
-      const userBatchMap = new Map<string, Set<string>>()
-      let liveEnrollmentsCount = 0
-      let recordedEnrollmentsCount = 0
+        let liveCount = 0
+        let recordedCount = 0
+        let demoCount = 0
 
-      for (const enr of enrollments) {
-        if (!userBatchMap.has(enr.userId)) {
-          userBatchMap.set(enr.userId, new Set())
+        for (const enr of courseEnrollments) {
+          if (enr.type === 'LIVE') liveCount++
+          else if (enr.type === 'RECORDED') recordedCount++
+          else if (enr.type === 'DEMO') demoCount++
         }
-        const enrType = enr.type || 'LIVE'
-        userBatchMap.get(enr.userId)!.add(enrType)
-        if (enrType === 'LIVE') liveEnrollmentsCount++
-        else if (enrType === 'RECORDED') recordedEnrollmentsCount++
-      }
 
-      let liveStudents = 0
-      let recordedStudents = 0
-      let bothStudents = 0
-      let liveOnlyStudents = 0
-      let recordedOnlyStudents = 0
-
-      for (const types of Array.from(userBatchMap.values())) {
-        const hasLive = types.has('LIVE')
-        const hasRecorded = types.has('RECORDED')
-
-        if (hasLive && hasRecorded) {
-          bothStudents++
-          liveStudents++
-          recordedStudents++
-        } else if (hasLive) {
-          liveStudents++
-          liveOnlyStudents++
-        } else if (hasRecorded) {
-          recordedStudents++
-          recordedOnlyStudents++
+        batchStats = {
+          liveStudents: liveCount,
+          recordedStudents: recordedCount,
+          bothStudents: 0,
+          totalLiveEnrollments: liveCount,
+          totalRecordedEnrollments: recordedCount,
+          totalEnrolledStudents: courseEnrollments.length,
+          liveOnlyStudents: liveCount,
+          recordedOnlyStudents: recordedCount,
+          notEnrolledStudents: 0,
+          totalStudents: courseEnrollments.length,
+          demoStudents: demoCount,
         }
-      }
+      } else {
+        const allStudentsList = await prisma.user.findMany({
+          where: { role: 'STUDENT', isTerminated: false },
+          select: { id: true }
+        })
+        const totalStudentsCount = allStudentsList.length
 
-      batchStats = {
-        liveStudents,
-        recordedStudents,
-        bothStudents,
-        totalLiveEnrollments: liveEnrollmentsCount,
-        totalRecordedEnrollments: recordedEnrollmentsCount,
-        totalEnrolledStudents: userBatchMap.size,
-        liveOnlyStudents,
-        recordedOnlyStudents,
+        const enrollments = await (prisma.enrollment as any).findMany({
+          where: {
+            user: { role: 'STUDENT', isTerminated: false }
+          },
+          select: {
+            userId: true,
+            type: true,
+            course: {
+              select: {
+                id: true,
+                name: true,
+                isDemo: true,
+                isFree: true,
+                isGlobal: true,
+              }
+            }
+          }
+        })
+
+        const userBatchMap = new Map<string, Set<string>>()
+        let liveEnrollmentsCount = 0
+        let recordedEnrollmentsCount = 0
+
+        for (const enr of enrollments) {
+          const course = enr.course
+          if (!course) continue
+
+          // Exclude demo, free, general batches
+          const isDemo = course.isDemo || false
+          const isFree = course.isFree || false
+          const isGlobal = course.isGlobal || false
+          const isGeneralName = /general|demo|free/i.test(course.name || '')
+
+          if (isDemo || isFree || isGlobal || isGeneralName) {
+            continue
+          }
+
+          if (!userBatchMap.has(enr.userId)) {
+            userBatchMap.set(enr.userId, new Set())
+          }
+          
+          const enrType = enr.type || 'LIVE'
+          userBatchMap.get(enr.userId)!.add(enrType)
+          if (enrType === 'LIVE') liveEnrollmentsCount++
+          else if (enrType === 'RECORDED') recordedEnrollmentsCount++
+        }
+
+        let liveStudents = 0
+        let recordedStudents = 0
+        let bothStudents = 0
+        let liveOnlyStudents = 0
+        let recordedOnlyStudents = 0
+        let notEnrolledStudents = 0
+
+        for (const std of allStudentsList) {
+          const types = userBatchMap.get(std.id)
+          if (!types || types.size === 0) {
+            notEnrolledStudents++
+          } else {
+            const hasLive = types.has('LIVE')
+            const hasRecorded = types.has('RECORDED')
+
+            if (hasLive && hasRecorded) {
+              bothStudents++
+              liveStudents++
+              recordedStudents++
+            } else if (hasLive) {
+              liveStudents++
+              liveOnlyStudents++
+            } else if (hasRecorded) {
+              recordedStudents++
+              recordedOnlyStudents++
+            }
+          }
+        }
+
+        batchStats = {
+          liveStudents,
+          recordedStudents,
+          bothStudents,
+          totalLiveEnrollments: liveEnrollmentsCount,
+          totalRecordedEnrollments: recordedEnrollmentsCount,
+          totalEnrolledStudents: totalStudentsCount - notEnrolledStudents,
+          liveOnlyStudents,
+          recordedOnlyStudents,
+          notEnrolledStudents,
+          totalStudents: totalStudentsCount,
+          demoStudents: 0,
+        }
       }
     } catch (e) {
       console.error('[Analytics Summary] Failed to compute batch stats:', e)
@@ -315,12 +524,12 @@ export async function GET(request: NextRequest) {
         cronIntervalHours: config.cronIntervalHours,
       },
       summary: {
-        totalUsers: latest?.totalUsers || 0,
+        totalUsers: courseId && courseId !== 'all' ? totalEnrollments : (latest?.totalUsers || 0),
         newUsers: totalNewUsers,
         returningUsers: totalReturningUsers,
         activeUsers: totalActiveUsers,
         totalEnrollments,
-        avgCoursesPerStudent: latest?.avgCoursesPerStudent || 0,
+        avgCoursesPerStudent: courseId && courseId !== 'all' ? 1 : (latest?.avgCoursesPerStudent || 0),
       },
       dailyTrend,
       hourlyActivity: mergedHourly,
