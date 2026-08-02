@@ -51,6 +51,7 @@ interface Props {
   setInfoModalCourse?: (course: any) => void
   setUpgradeModalCourse?: (course: any) => void
   setShowPurchaseModal?: (show: boolean) => void
+  offering?: any
 }
 
 type TabKey = 'curriculum' | 'overview' | 'feedback'
@@ -64,7 +65,7 @@ function cycleStatus(current: string): string {
 
 export default function MobileCourseDetail({
   course, topics, expandedTopics, toggleTopic, progressMap, updateProgress, role,
-  setInfoModalCourse, setUpgradeModalCourse, setShowPurchaseModal,
+  setInfoModalCourse, setUpgradeModalCourse, setShowPurchaseModal, offering,
 }: Props) {
   const router = useRouter()
   const [tab, setTab] = useState<TabKey>('curriculum')
@@ -411,6 +412,8 @@ export default function MobileCourseDetail({
             updateProgress={updateProgress}
             isStudent={role === 'STUDENT'}
             setShowPurchaseModal={setShowPurchaseModal}
+            course={course}
+            offering={offering}
           />
         )}
 
@@ -452,6 +455,7 @@ export default function MobileCourseDetail({
 /* ───────── Curriculum Tab ───────── */
 function CurriculumTab({
   courseId, accent, topics, expandedTopics, toggleTopic, progressMap, updateProgress, isStudent, setShowPurchaseModal,
+  course, offering,
 }: {
   courseId: string
   accent: string
@@ -462,8 +466,24 @@ function CurriculumTab({
   updateProgress: (contentId: string, status: string) => void
   isStudent: boolean
   setShowPurchaseModal?: (show: boolean) => void
+  course?: CourseDetail
+  offering?: any
 }) {
   const [activeDownloadUrl, setActiveDownloadUrl] = useState<string | null>(null)
+
+  const lowestPrice = (() => {
+    if (offering) {
+      const prices: number[] = []
+      if (offering.hasRecorded && typeof offering.recordedDiscountPrice === 'number') prices.push(offering.recordedDiscountPrice)
+      if (offering.hasLive && typeof offering.liveDiscountPrice === 'number') prices.push(offering.liveDiscountPrice)
+      if (typeof offering.championDiscountPrice === 'number' && offering.championDiscountPrice > 0) prices.push(offering.championDiscountPrice)
+      if (prices.length > 0) return Math.min(...prices)
+    }
+    if (course && typeof course.liveUpgradePrice === 'number') {
+      return course.liveUpgradePrice
+    }
+    return null
+  })()
   if (topics.length === 0) {
     return (
       <div style={{
@@ -625,190 +645,309 @@ function CurriculumTab({
                   <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid rgba(15,23,42,0.05)' }}>
                     No lectures in this topic yet
                   </div>
-                ) : topic.content.map((item) => {
-                  const currentStatus = progressMap[item.id] || 'NOT_STARTED'
-                  const isCompleted = currentStatus === 'COMPLETED'
-                  const isRewatch = currentStatus === 'REWATCH'
-                  return (
-                    <div key={item.id} className="mcd-lecture-row" style={{
-                      display: 'flex', alignItems: 'center', gap: '12px',
-                      padding: '16px 16px',
-                      borderRadius: '16px',
-                      background: 'var(--surface)',
-                      border: '1px solid rgba(15,23,42,0.05)',
-                      boxShadow: '0 2px 8px rgba(15,23,42,0.02)',
-                      position: 'relative',
-                    }}>
-                      {/* 3-state toggle button */}
-                      {isStudent && (item.videoUrl || item.youtubeUrl) ? (
-                        <button
-                          className="mcd-status-btn"
-                          onClick={() => updateProgress(item.id, cycleStatus(currentStatus))}
-                          aria-label={`Status: ${currentStatus}. Tap to change.`}
-                          style={{
-                            width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                            background:
-                              isCompleted ? 'var(--success)' :
-                              isRewatch ? 'var(--warning)' : '#fff',
-                            color:
-                              (isCompleted || isRewatch) ? '#fff' : 'var(--text-muted)',
-                            border:
-                              (isCompleted || isRewatch) ? 'none' : '2px solid #d4d8e0',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer',
-                            boxShadow:
-                              isCompleted ? '0 2px 6px rgba(16,185,129,0.35)' :
-                              isRewatch ? '0 2px 6px rgba(245,158,11,0.35)' : 'none',
-                            padding: 0,
-                          }}
-                        >
-                          {isCompleted && (
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                          )}
-                          {isRewatch && (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
-                          )}
-                        </button>
-                      ) : (
-                        <div style={{
-                          width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                          background: (item.videoUrl || item.youtubeUrl) ? `${accent}10` : 'var(--surface)',
-                          color: (item.videoUrl || item.youtubeUrl) ? accent : 'var(--text-muted)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                ) : (
+                  <>
+                    {/* Render Unlocked/Available Lectures */}
+                    {topic.content.filter((item) => !(item as any).isDemoLocked).map((item) => {
+                      const currentStatus = progressMap[item.id] || 'NOT_STARTED'
+                      const isCompleted = currentStatus === 'COMPLETED'
+                      const isRewatch = currentStatus === 'REWATCH'
+                      return (
+                        <div key={item.id} className="mcd-lecture-row" style={{
+                          display: 'flex', alignItems: 'center', gap: '12px',
+                          padding: '16px 16px',
+                          borderRadius: '16px',
+                          background: 'var(--surface)',
+                          border: '1px solid rgba(15,23,42,0.05)',
+                          boxShadow: '0 2px 8px rgba(15,23,42,0.02)',
+                          position: 'relative',
                         }}>
-                          {(item.videoUrl || item.youtubeUrl) ? (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                          {/* 3-state toggle button */}
+                          {isStudent && (item.videoUrl || item.youtubeUrl) ? (
+                            <button
+                              className="mcd-status-btn"
+                              onClick={() => updateProgress(item.id, cycleStatus(currentStatus))}
+                              aria-label={`Status: ${currentStatus}. Tap to change.`}
+                              style={{
+                                width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                                background:
+                                  isCompleted ? 'var(--success)' :
+                                  isRewatch ? 'var(--warning)' : '#fff',
+                                color:
+                                  (isCompleted || isRewatch) ? '#fff' : 'var(--text-muted)',
+                                border:
+                                  (isCompleted || isRewatch) ? 'none' : '2px solid #d4d8e0',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer',
+                                boxShadow:
+                                  isCompleted ? '0 2px 6px rgba(16,185,129,0.35)' :
+                                  isRewatch ? '0 2px 6px rgba(245,158,11,0.35)' : 'none',
+                                padding: 0,
+                              }}
+                            >
+                              {isCompleted && (
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              )}
+                              {isRewatch && (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                              )}
+                            </button>
                           ) : (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Title + duration */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)',
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          textDecoration: isCompleted ? 'none' : 'none',
-                          opacity: isCompleted ? 0.7 : 1,
-                          display: 'flex', alignItems: 'center', gap: '6px',
-                        }}>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
-                          {(item as any).createdAt && (
-                             <span style={{ fontSize: '11px', fontWeight: '500', color: 'var(--text-muted)', flexShrink: 0 }}>
-                               - Added on {new Date((item as any).createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                             </span>
-                           )}
-                          {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
-                            <span style={{
-                              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                              color: 'white', padding: '2px 6px', borderRadius: '4px',
-                              fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
-                              letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
-                              flexShrink: 0
+                            <div style={{
+                              width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                              background: (item.videoUrl || item.youtubeUrl) ? `${accent}10` : 'var(--surface)',
+                              color: (item.videoUrl || item.youtubeUrl) ? accent : 'var(--text-muted)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                              NEW
-                            </span>
+                              {(item.videoUrl || item.youtubeUrl) ? (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                              ) : (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Title + duration */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)',
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                              display: 'flex', alignItems: 'center', gap: '6px',
+                            }}>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
+                              {(item as any).createdAt && (
+                                 <span style={{ fontSize: '11px', fontWeight: '500', color: 'var(--text-muted)', flexShrink: 0 }}>
+                                   - Added on {new Date((item as any).createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                 </span>
+                               )}
+                              {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
+                                <span style={{
+                                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                  color: 'white', padding: '2px 6px', borderRadius: '4px',
+                                  fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
+                                  letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                                  flexShrink: 0
+                                }}>
+                                  NEW
+                                </span>
+                              )}
+                            </div>
+                            {typeof item.durationMinutes === 'number' && item.durationMinutes > 0 && (
+                              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
+                                {Math.floor(item.durationMinutes / 60) > 0
+                                  ? `${Math.floor(item.durationMinutes / 60)}h ${item.durationMinutes % 60}m`
+                                  : `${item.durationMinutes}m`}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action */}
+                          {(item.videoUrl || item.youtubeUrl) ? (
+                            <Link
+                              href={`/courses/${courseId}/lectures/${item.id}`}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                padding: '10px 18px', borderRadius: '50px',
+                                background: isCompleted ? '#fff' : accent,
+                                color: isCompleted ? accent : '#fff',
+                                border: isCompleted ? `1.5px solid ${accent}25` : 'none',
+                                fontSize: '13px', fontWeight: 800,
+                                textDecoration: 'none',
+                                boxShadow: isCompleted ? 'none' : `0 2px 8px ${accent}35`,
+                                flexShrink: 0,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {isCompleted ? (
+                                <>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                                  Rewatch
+                                </>
+                              ) : (
+                                <>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                  Watch
+                                </>
+                              )}
+                            </Link>
+                          ) : item.pptUrl ? (
+                            Capacitor.isNativePlatform() ? (
+                              <button
+                                onClick={() => setActiveDownloadUrl(item.pptUrl || null)}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                  padding: '10px 18px', borderRadius: '50px',
+                                  background: 'var(--surface)', color: 'var(--text-secondary)',
+                                  border: '1.5px solid var(--border)',
+                                  fontSize: '13px', fontWeight: 800,
+                                  cursor: 'pointer',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Open
+                              </button>
+                            ) : (
+                              <a
+                                href={item.pptUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                  padding: '10px 18px', borderRadius: '50px',
+                                  background: 'var(--surface)', color: 'var(--text-secondary)',
+                                  border: '1.5px solid var(--border)',
+                                  fontSize: '13px', fontWeight: 800,
+                                  textDecoration: 'none',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Open
+                              </a>
+                            )
+                          ) : (
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>—</span>
                           )}
                         </div>
-                        {typeof item.durationMinutes === 'number' && item.durationMinutes > 0 && (
-                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
-                            {Math.floor(item.durationMinutes / 60) > 0
-                              ? `${Math.floor(item.durationMinutes / 60)}h ${item.durationMinutes % 60}m`
-                              : `${item.durationMinutes}m`}
-                          </div>
-                        )}
-                      </div>
+                      )
+                    })}
 
-                      {/* Action */}
-                      {(item as any).isDemoLocked ? (
-                        <button
-                          onClick={() => setShowPurchaseModal?.(true)}
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                            padding: '10px 18px', borderRadius: '50px',
-                            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                            color: '#fff',
-                            fontSize: '13px', fontWeight: 800,
-                            border: 'none',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
-                            flexShrink: 0,
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          Unlock Now
-                        </button>
-                      ) : (item.videoUrl || item.youtubeUrl) ? (
-                        <Link
-                          href={`/courses/${courseId}/lectures/${item.id}`}
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                            padding: '10px 18px', borderRadius: '50px',
-                            background: isCompleted ? '#fff' : accent,
-                            color: isCompleted ? accent : '#fff',
-                            border: isCompleted ? `1.5px solid ${accent}25` : 'none',
-                            fontSize: '13px', fontWeight: 800,
-                            textDecoration: 'none',
-                            boxShadow: isCompleted ? 'none' : `0 2px 8px ${accent}35`,
-                            flexShrink: 0,
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {isCompleted ? (
-                            <>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
-                              Rewatch
-                            </>
-                          ) : (
-                            <>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                              Watch
-                            </>
-                          )}
-                        </Link>
-                      ) : item.pptUrl ? (
-                        Capacitor.isNativePlatform() ? (
-                          <button
-                            onClick={() => setActiveDownloadUrl(item.pptUrl || null)}
-                            style={{
-                              display: 'inline-flex', alignItems: 'center', gap: '6px',
-                              padding: '10px 18px', borderRadius: '50px',
-                              background: 'var(--surface)', color: 'var(--text-secondary)',
-                              border: '1.5px solid var(--border)',
-                              fontSize: '13px', fontWeight: 800,
-                              cursor: 'pointer',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Open
-                          </button>
-                        ) : (
-                          <a
-                            href={item.pptUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex', alignItems: 'center', gap: '6px',
-                              padding: '10px 18px', borderRadius: '50px',
-                              background: 'var(--surface)', color: 'var(--text-secondary)',
-                              border: '1.5px solid var(--border)',
-                              fontSize: '13px', fontWeight: 800,
-                              textDecoration: 'none',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Open
-                          </a>
-                        )
-                      ) : (
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>—</span>
-                      )}
-                    </div>
-                  )
-                })}
+                    {/* Render Locked Lectures blurred as a group */}
+                    {(() => {
+                      const lockedItems = topic.content.filter((item) => (item as any).isDemoLocked)
+                      if (lockedItems.length === 0) return null
+
+                      return (
+                        <div style={{ position: 'relative', marginTop: topic.content.some((item) => !(item as any).isDemoLocked) ? '8px' : '0' }}>
+                          {/* Blurred rows */}
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '6px',
+                            filter: 'blur(4px) grayscale(30%)',
+                            opacity: 0.5,
+                            pointerEvents: 'none',
+                            userSelect: 'none',
+                          }}>
+                            {lockedItems.map((item) => (
+                              <div key={item.id} className="mcd-lecture-row" style={{
+                                display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '16px 16px',
+                                borderRadius: '16px',
+                                background: 'var(--surface)',
+                                border: '1px solid rgba(15,23,42,0.05)',
+                                boxShadow: '0 2px 8px rgba(15,23,42,0.02)',
+                              }}>
+                                {/* Lecture icon */}
+                                <div style={{
+                                  width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                                  background: 'var(--surface)',
+                                  color: 'var(--text-muted)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}>
+                                  {(item.videoUrl || item.youtubeUrl) ? (
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                  ) : (
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                  )}
+                                </div>
+
+                                {/* Title */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {item.title}
+                                  </div>
+                                </div>
+
+                                {/* Lock icon */}
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                  </svg>
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Center Premium Overlay Card */}
+                          <div style={{
+                            position: 'absolute',
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10,
+                            padding: '12px',
+                          }}>
+                            <div
+                              onClick={() => setShowPurchaseModal?.(true)}
+                              style={{
+                                background: 'rgba(23, 27, 38, 0.94)',
+                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                borderRadius: '20px',
+                                padding: '16px 20px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                textAlign: 'center',
+                                cursor: 'pointer',
+                                boxShadow: '0 10px 25px rgba(0,0,0,0.35)',
+                                maxWidth: '280px',
+                                width: '100%',
+                                pointerEvents: 'auto',
+                              }}
+                            >
+                              <div style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(79, 70, 229, 0.2))',
+                                border: '1.5px solid rgba(99, 102, 241, 0.4)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '10px',
+                                color: '#818cf8',
+                              }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                              </div>
+                              <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff', marginBottom: '2px' }}>
+                                Unlock All Lectures
+                              </div>
+                              {lowestPrice !== null && (
+                                <div style={{ fontSize: '12px', fontWeight: '700', color: '#818cf8', marginBottom: '2px' }}>
+                                  Full Access starting at ₹{lowestPrice}
+                                </div>
+                              )}
+                              <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(255, 255, 255, 0.5)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span>⌛</span> Access Till End Term
+                              </div>
+                              <button style={{
+                                width: '100%',
+                                padding: '8px 16px',
+                                borderRadius: '50px',
+                                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                color: '#ffffff',
+                                fontWeight: '800',
+                                fontSize: '11px',
+                                border: 'none',
+                                boxShadow: '0 4px 10px rgba(99, 102, 241, 0.25)',
+                                cursor: 'pointer',
+                              }}>
+                                Unlock Now
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </>
+                )}
               </div>
             )}
           </div>

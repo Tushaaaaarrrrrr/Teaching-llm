@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Script from 'next/script'
 import useSWR, { mutate } from 'swr'
+import { useRouter } from 'next/navigation'
 import FeedbackModal from '@/components/FeedbackModal'
 import { extractHex, colorWithOpacity, getCourseBackground, isGradient } from '@/lib/color-utils'
 
@@ -39,12 +40,14 @@ const COURSE_ICONS: Record<string, React.ReactNode> = {
 }
 
 export default function CoursesPage() {
+  const router = useRouter()
   const { data, error, isLoading } = useSWR<CourseItem[]>('/api/courses', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
   })
   const { data: userData } = useSWR('/api/auth/me', fetcher, { revalidateOnFocus: false })
   const { data: helpCard } = useSWR('/api/support/help-card', fetcher)
+  const { data: offeringsData } = useSWR('/api/course-offerings', fetcher, { revalidateOnFocus: false })
   const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
   const isStudent = userData?.user?.role === 'STUDENT' || userData?.role === 'STUDENT'
   
@@ -388,6 +391,11 @@ export default function CoursesPage() {
           const isFreeOrDemo = course.enrollmentType === 'FREE' || course.enrollmentType === 'DEMO'
           const hasUpgradePrice = isRecorded && !isFreeOrDemo && course.liveUpgradePrice != null && course.liveUpgradePrice > 0
           
+          const courseOffering = Array.isArray(offeringsData)
+            ? offeringsData.find((o: any) => o.courseId === course.id)
+            : null
+          const plusPrice = courseOffering?.recordedDiscountPrice || courseOffering?.recordedOriginalPrice || courseOffering?.liveDiscountPrice || courseOffering?.liveOriginalPrice
+          
           // Determine batch type: General (free/demo), PRO (live), or Plus (recorded)
           const getBatchBadge = () => {
             if (isFreeOrDemo) return { text: 'General Batch', color: '#bae6fd' }
@@ -647,6 +655,77 @@ export default function CoursesPage() {
                       </span>
                       <span>
                         ⚡ Upgrade to PRO — ₹{course.liveUpgradePrice}
+                      </span>
+                      
+                      {/* Shine effect overlay */}
+                      <div style={{
+                        position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%',
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
+                        transform: 'skewX(-25deg)',
+                        transition: 'left 0.75s',
+                      }} className="button-shine" />
+                    </button>
+                    
+                    <style dangerouslySetInnerHTML={{ __html: `
+                      button:hover .button-shine { left: 150% !important; }
+                      @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, 5px); } to { opacity: 1; transform: translate(-50%, 0); } }
+                    `}} />
+                  </div>
+                )}
+
+                {/* Unlock Full Course button for DEMO users */}
+                {course.enrollmentType === 'DEMO' && plusPrice != null && (
+                  <div style={{ position: 'relative', marginTop: 'auto' }}>
+                    {course.teacherName && (
+                      <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                        <div style={{
+                          width: '20px', height: '20px', borderRadius: '50%',
+                          background: 'var(--surface-2)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '9px', fontWeight: '700', color: 'var(--text-secondary)',
+                        }}>
+                          {course.teacherName.charAt(0).toUpperCase()}
+                        </div>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                          {course.teacherName}
+                        </span>
+                      </div>
+                    )}
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push('/courses/explore') }}
+                      style={{
+                        width: '100%',
+                        padding: 'var(--course-upgrade-padding, 14px 16px)',
+                        borderRadius: '50px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        color: '#fff',
+                        fontSize: 'var(--course-upgrade-font-size, 13px)',
+                        fontWeight: '800',
+                        cursor: 'pointer',
+                        marginBottom: '4px',
+                        boxShadow: '0 8px 16px rgba(30, 30, 58, 0.4)',
+                        transition: 'all 0.25s',
+                        letterSpacing: '0.02em',
+                        display: 'flex',
+                        flexDirection: 'var(--course-upgrade-flex-dir, row)' as any,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <span style={{ 
+                        position: 'var(--course-badge-pos, absolute)' as any,
+                        left: 'var(--course-badge-left, 12px)',
+                        margin: 'var(--course-optional-margin, 0)',
+                        fontSize: '8px', background: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '20px', 
+                        color: '#fff', letterSpacing: '0.05em', fontWeight: '900', border: '1px solid rgba(255,255,255,0.2)' 
+                      }}>
+                        POPULAR
+                      </span>
+                      <span>
+                        ⚡ Unlock Full Course — ₹{plusPrice}
                       </span>
                       
                       {/* Shine effect overlay */}
