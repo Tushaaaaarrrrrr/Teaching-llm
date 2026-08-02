@@ -554,7 +554,7 @@ export default function CourseEditPage() {
                   style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                 />
                 <label htmlFor="isDemoInput" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                  ✨ Mark as Demo Lecture (Sample access for non-enrolled students)
+                   Mark as Demo Lecture (Sample access for non-enrolled students)
                 </label>
               </div>
 
@@ -871,51 +871,6 @@ export default function CourseEditPage() {
         </div>
       </div>
 
-      {/* Demo Batch Settings Card */}
-      {course && (
-        <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
-          <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>✨ Demo Batch Configuration</span>
-          </div>
-          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-            Configure demo access for non-enrolled students. Mark specific lectures below as demo.
-          </p>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="checkbox"
-                id="isDemoPaidCourseInput"
-                checked={course.isDemoPaid || false}
-                onChange={e => setCourse({ ...course, isDemoPaid: e.target.checked })}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-              />
-              <label htmlFor="isDemoPaidCourseInput" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                Paid Demo Batch (Require payment for demo)
-              </label>
-            </div>
-            {course.isDemoPaid && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>Demo Price (₹):</span>
-                <input
-                  type="number"
-                  value={course.demoPrice || ''}
-                  onChange={e => setCourse({ ...course, demoPrice: parseFloat(e.target.value) || 0 })}
-                  placeholder="Demo Price"
-                  className="form-input"
-                  style={{ width: '110px' }}
-                />
-              </div>
-            )}
-            <button
-              onClick={() => saveDemoSettings(course.isDemoPaid || false, course.demoPrice || 0)}
-              className="btn btn-primary btn-sm"
-              style={{ marginLeft: 'auto' }}
-            >
-              Save Demo Settings
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Topics */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1083,7 +1038,7 @@ export default function CourseEditPage() {
                               color: '#fff', padding: '2px 8px', borderRadius: '12px',
                               fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em'
                             }}>
-                              ✨ DEMO
+                              DEMO
                             </span>
                           )}
                         </div>

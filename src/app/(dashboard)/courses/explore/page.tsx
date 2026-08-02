@@ -1471,7 +1471,7 @@ export default function ExploreCoursesPage() {
                   {/* Edit button for managers */}
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
                     <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingOffering(offering); setEditFormData({ recordedOriginalPrice: offering.recordedOriginalPrice ?? '', recordedDiscountPrice: offering.recordedDiscountPrice ?? '', liveOriginalPrice: offering.liveOriginalPrice ?? '', liveDiscountPrice: offering.liveDiscountPrice ?? '', championOriginalPrice: offering.championOriginalPrice ?? '', championDiscountPrice: offering.championDiscountPrice ?? '', championSubtitle: offering.championSubtitle ?? '', detailsLink: offering.detailsLink ?? '' }) }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingOffering(offering); setEditFormData({ recordedOriginalPrice: offering.recordedOriginalPrice ?? '', recordedDiscountPrice: offering.recordedDiscountPrice ?? '', liveOriginalPrice: offering.liveOriginalPrice ?? '', liveDiscountPrice: offering.liveDiscountPrice ?? '', championOriginalPrice: offering.championOriginalPrice ?? '', championDiscountPrice: offering.championDiscountPrice ?? '', championSubtitle: offering.championSubtitle ?? '', detailsLink: offering.detailsLink ?? '', isDemoPaid: offering.course?.isDemoPaid || false, demoPrice: offering.course?.demoPrice || '' }) }}
                       style={{
                         width: '28px', height: '28px', borderRadius: '50%',
                         background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)',
@@ -3352,6 +3352,39 @@ export default function ExploreCoursesPage() {
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>If set, a "More Details" button will appear on the course card for students.</div>
             </div>
 
+            {/* Demo Batch Configuration */}
+            <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '16px', background: 'var(--surface-2, rgba(99,102,241,0.04))', border: '2px solid var(--border)' }}>
+              <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent)', marginBottom: '12px' }}>Demo Batch Configuration</div>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
+                Configure demo access for non-enrolled students. Mark specific lectures as demo from the course edit page.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="isDemoPaidEditInput"
+                  checked={editFormData.isDemoPaid || false}
+                  onChange={e => setEditFormData({...editFormData, isDemoPaid: e.target.checked})}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <label htmlFor="isDemoPaidEditInput" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  Paid Demo Batch (Require payment for demo)
+                </label>
+              </div>
+              {editFormData.isDemoPaid && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>Demo Price (₹):</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={editFormData.demoPrice ?? ''}
+                    onChange={e => setEditFormData({...editFormData, demoPrice: e.target.value})}
+                    style={{ width: '120px', padding: '10px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }}
+                    placeholder="e.g. 99"
+                  />
+                </div>
+              )}
+            </div>
+
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={async () => {
@@ -3406,7 +3439,9 @@ export default function ExploreCoursesPage() {
                         championSubtitle: editFormData.championSubtitle || null,
                         detailsLink: editFormData.detailsLink || null,
                         hasRecorded: (editFormData.recordedOriginalPrice > 0 || editFormData.recordedDiscountPrice > 0),
-                        hasLive: (editFormData.liveOriginalPrice > 0 || editFormData.liveDiscountPrice > 0)
+                        hasLive: (editFormData.liveOriginalPrice > 0 || editFormData.liveDiscountPrice > 0),
+                        isDemoPaid: !!editFormData.isDemoPaid,
+                        demoPrice: editFormData.isDemoPaid ? (editFormData.demoPrice || 0) : 0
                       })
                     })
                     if (res.ok) {

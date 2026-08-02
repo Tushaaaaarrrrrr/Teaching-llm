@@ -478,3 +478,91 @@ export async function DELETE(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+// ─── PATCH (Edit Message) ─────────────────────────────────────────────────────
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { courseId: string } }
+) {
+  try {
+    const session = await getSession()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Only ADMIN and MANAGER can edit messages
+    if (session.role !== 'MANAGER' && session.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Only admins and managers can edit messages' }, { status: 403 })
+    }
+
+    const { messageId, content } = await request.json()
+    if (!messageId) return NextResponse.json({ error: 'messageId is required' }, { status: 400 })
+    if (!content || !content.trim()) {
+      return NextResponse.json({ error: 'Message content cannot be empty' }, { status: 400 })
+    }
+    if (!validateLength(content, 2000)) {
+      return NextResponse.json({ error: 'Message content must be between 1 and 2,000 characters' }, { status: 400 })
+    }
+    const sanitizedContent = sanitizeInput(content)
+
+    // DMs do not support editing
+    if (isDM(params.courseId)) {
+      return NextResponse.json({ error: 'Editing is not supported in direct chats' }, { status: 400 })
+    }
+
+    // Community path
+    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+    if (accessibleCourseIds !== null && !accessibleCourseIds.includes(params.courseId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const message = await prisma.communityMessage.findUnique({ where: { id: messageId } })
+    if (!message) return NextResponse.json({ error: 'Message not found' }, { status: 404 })
+    if (message.courseId !== params.courseId) {
+      return NextResponse.json({ error: 'Message does not belong to this course' }, { status: 400 })
+    }
+    if (message.isDeleted || message.isSystemDeleted) {
+      return NextResponse.json({ error: 'Cannot edit a deleted message' }, { status: 400 })
+    }
+
+    const editedAt = new Date()
+    const updated = await prisma.communityMessage.update({
+      where: { id: messageId },
+      data: {
+        content: sanitizedContent,
+        isEdited: true,
+        editedAt,
+      },
+      include: {
+        sender: { select: { id: true, name: true, role: true, securityNumber: true } },
+      },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.MESSAGE_EDITED,
+      actionDescription: `${session.name} edited a message in community chat`,
+      moduleName: MODULE.COMMUNITY,
+      targetId: messageId,
+      metadata: { originalContent: message.content },
+    })
+
+    sseEmitter.emit(`chat:${params.courseId}:edit`, {
+      messageId,
+      content: sanitizedContent,
+      editedAt: editedAt.toISOString(),
+    })
+
+    return NextResponse.json({
+      ...updated,
+      sender: {
+        ...updated.sender,
+        securityNumber: session.role === 'MANAGER' ? updated.sender.securityNumber : undefined,
+      },
+    })
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

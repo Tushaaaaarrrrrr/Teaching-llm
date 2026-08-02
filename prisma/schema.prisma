@@ -653,6 +653,8 @@ model CommunityMessage {
   replies         CommunityMessage[] @relation("CommunityMessageReplies")
   sender          User               @relation("CommMsgSender", fields: [senderId], references: [id])
   isPinned        Boolean            @default(false)
+  isEdited        Boolean            @default(false)
+  editedAt        DateTime?
 
   @@index([courseId])
   @@index([senderId])

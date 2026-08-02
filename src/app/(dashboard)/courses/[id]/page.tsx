@@ -579,7 +579,7 @@ export default function CourseDetailPage() {
                         textDecoration: 'none', whiteSpace: 'nowrap',
                       }}
                     >
-                      🔓 Unlock Full Course
+                      Unlock Full Course
                     </Link>
                     <button
                       onClick={handleUnenrollDemo}
@@ -780,6 +780,11 @@ export default function CourseDetailPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: isNative ? '15px' : '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
+                            {(item as any).createdAt && (
+                              <span style={{ fontSize: '11px', fontWeight: '500', color: 'var(--text-muted)', flexShrink: 0 }}>
+                                - Added on {new Date((item as any).createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </span>
+                            )}
                             {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
                               <span style={{
                                 background: 'linear-gradient(135deg, #ef4444, #dc2626)',
@@ -854,7 +859,7 @@ export default function CourseDetailPage() {
                                   boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
                                 }}
                               >
-                                🔒 Unlock Now
+                                Unlock Now
                               </Link>
                             ) : (
                               <>

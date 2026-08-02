@@ -30,6 +30,8 @@ interface CommMsg {
   isDeleted?: boolean
   deletedAt?: string | null
   isPinned?: boolean
+  isEdited?: boolean
+  editedAt?: string | null
   sender: {
     id: string
     name: string
@@ -308,6 +310,8 @@ export default function CommunityPage() {
   const [selectedMessage, setSelectedMessage] = useState<CommMsg | null>(null)
   const [pinnedMessage, setPinnedMessage] = useState<CommMsg | null>(null)
   const [managerActionMessage, setManagerActionMessage] = useState<CommMsg | null>(null)
+  const [editingMessage, setEditingMessage] = useState<CommMsg | null>(null)
+  const [editContent, setEditContent] = useState('')
   const imageInputRef = useRef<HTMLInputElement>(null)
 
   // Pagination & infinite scroll state
@@ -611,6 +615,15 @@ export default function CommunityPage() {
       }
     })
 
+    eventSource.addEventListener('edit', (e) => {
+      try {
+        const { messageId, content, editedAt } = JSON.parse(e.data)
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, content, isEdited: true, editedAt } : m))
+      } catch (err) {
+        console.error('SSE Edit Error', err)
+      }
+    })
+
     return () => eventSource.close()
   }, [selectedClass, loadMessages, loadPinnedMessage])
 
@@ -882,6 +895,30 @@ export default function CommunityPage() {
       console.error(e)
     }
     setDeletingId(null)
+  }
+
+  async function editMessage(messageId: string, newContent: string) {
+    if (!selectedClass || !newContent.trim()) return
+    try {
+      // Optimistically update
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, content: newContent, isEdited: true } : m))
+      setEditingMessage(null)
+      setEditContent('')
+
+      const res = await fetch(`/api/community/${selectedClass.id}/messages`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId, content: newContent }),
+      })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'Failed to edit message')
+      }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : 'Could not edit message')
+      loadMessages(selectedClass.id)
+    }
   }
 
   async function clearCommunityMessages() {
@@ -1669,6 +1706,39 @@ export default function CommunityPage() {
                     </svg>
                   </button>
 
+                  {/* Edit Button */}
+                  {(userRole === 'MANAGER' || userRole === 'ADMIN') && !selectedMessage.isDeleted && !selectedMessage.id.startsWith('temp-') && (
+                    <button
+                      onClick={() => {
+                        setEditingMessage(selectedMessage)
+                        setEditContent(selectedMessage.content)
+                        setSelectedMessage(null)
+                      }}
+                      title="Edit message"
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        background: 'var(--surface)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '2px 2px 5px rgba(0,0,0,0.08), -2px -2px 5px var(--neu-light)',
+                        color: '#d97706',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'transform 0.2s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
+                      </svg>
+                    </button>
+                  )}
+
                   {/* Copy Button */}
                   {selectedMessage.content && (
                     <button
@@ -2349,6 +2419,11 @@ export default function CommunityPage() {
                                 fontWeight: '600',
                               }}>
                                 {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {msg.isEdited && (
+                                  <span style={{ fontSize: '9px', fontStyle: 'italic', opacity: 0.8 }} title={msg.editedAt ? `Edited at ${new Date(msg.editedAt).toLocaleString()}` : 'Edited'}>
+                                    (edited)
+                                  </span>
+                                )}
                                 {isMe && (
                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                                 )}
@@ -2376,6 +2451,27 @@ export default function CommunityPage() {
                                 }}
                               >
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                              </button>
+                            )}
+                            {(userRole === 'MANAGER' || userRole === 'ADMIN') && !msg.isDeleted && !msg.id.startsWith('temp-') && !isDM(selectedClass) && (
+                              <button
+                                onClick={() => {
+                                  setEditingMessage(msg)
+                                  setEditContent(msg.content)
+                                }}
+                                style={{
+                                  width: '24px', height: '24px', borderRadius: '50%',
+                                  border: 'none', cursor: 'pointer',
+                                  background: 'var(--surface)',
+                                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}
+                                title="Edit message"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
+                                </svg>
                               </button>
                             )}
                             <button
@@ -2429,6 +2525,27 @@ export default function CommunityPage() {
                 </div>
               )}
 
+              {/* Edit Preview */}
+              {editingMessage && (
+                <div style={{ 
+                  marginBottom: '8px', padding: '10px 14px', 
+                  background: 'rgba(217, 119, 6, 0.08)', borderRadius: '12px',
+                  borderLeft: '4px solid #d97706',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  fontSize: '12px'
+                }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: '800', color: '#d97706', marginBottom: '2px' }}>Editing message</div>
+                    <div style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {editingMessage.content}
+                    </div>
+                  </div>
+                  <button onClick={() => { setEditingMessage(null); setEditContent('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+              )}
+
               {/* Image preview */}
               {pendingImagePreview && (
                 <div style={{ 
@@ -2467,16 +2584,17 @@ export default function CommunityPage() {
                 />
                 <button
                   onClick={() => imageInputRef.current?.click()}
-                  disabled={uploadingImage}
+                  disabled={uploadingImage || !!editingMessage}
                   title="Attach image"
                   style={{
                     width: '40px', height: '40px', borderRadius: '50%', border: 'none',
-                    cursor: 'pointer', flexShrink: 0,
-                    background: pendingImage ? 'var(--primary-light)' : 'var(--surface-2)',
+                    cursor: editingMessage ? 'default' : 'pointer', flexShrink: 0,
+                    background: (pendingImage && !editingMessage) ? 'var(--primary-light)' : 'var(--surface-2)',
                     boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: pendingImage ? 'var(--primary)' : 'var(--text-muted)',
+                    color: (pendingImage && !editingMessage) ? 'var(--primary)' : 'var(--text-muted)',
                     transition: 'all 0.2s',
+                    opacity: editingMessage ? 0.5 : 1,
                   }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2486,7 +2604,7 @@ export default function CommunityPage() {
                   </svg>
                 </button>
                 <div style={{ flex: 1, position: 'relative' }}>
-                  {showTagSuggestions && filteredStaff.length > 0 && !isDM(selectedClass) && (
+                  {showTagSuggestions && filteredStaff.length > 0 && !isDM(selectedClass) && !editingMessage && (
                     <div style={{
                       position: 'absolute',
                       bottom: '100%',
@@ -2555,52 +2673,81 @@ export default function CommunityPage() {
                   )}
                   <input
                     ref={inputRef}
-                    value={input}
-                    onChange={handleInputChange}
+                    value={editingMessage ? editContent : input}
+                    onChange={e => {
+                      if (editingMessage) {
+                        setEditContent(e.target.value)
+                      } else {
+                        handleInputChange(e)
+                      }
+                    }}
                     onKeyDown={e => {
                       if (e.key === 'Escape') {
-                        setShowTagSuggestions(false)
+                        if (editingMessage) {
+                          setEditingMessage(null)
+                          setEditContent('')
+                        } else {
+                          setShowTagSuggestions(false)
+                        }
                       } else if (e.key === 'Enter' && !e.shiftKey) {
-                        sendMessage()
+                        if (editingMessage) {
+                          editMessage(editingMessage.id, editContent)
+                        } else {
+                          sendMessage()
+                        }
                       }
                     }}
                     placeholder={
-                      !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER'
-                        ? 'This community is disabled'
-                        : (selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO'
-                          ? 'Community chat is read-only in Demo mode. Unlock full course to participate.'
-                          : isDM(selectedClass)
-                            ? `Message ${selectedClass.name.replace('Chat with ', '')}...`
-                            : `Message ${selectedClass.name} community...`
+                      editingMessage
+                        ? 'Edit message...'
+                        : (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER')
+                          ? 'This community is disabled'
+                          : (selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO'
+                            ? 'Community chat is read-only in Demo mode. Unlock full course to participate.'
+                            : isDM(selectedClass)
+                              ? `Message ${selectedClass.name.replace('Chat with ', '')}...`
+                              : `Message ${selectedClass.name} community...`
                     }
-                    disabled={(!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || uploadingImage || !!((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO')}
+                    disabled={(!editingMessage && !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || uploadingImage || !!((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO')}
                     style={{
                       width: '100%', padding: '11px 16px', borderRadius: '50px',
                       border: 'none', outline: 'none',
                       fontFamily: 'inherit', fontSize: '14px',
                       ...neuInset, color: 'var(--text-primary)',
-                      opacity: ((!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || ((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO')) ? 0.6 : 1,
+                      opacity: ((!editingMessage && !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || ((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO')) ? 0.6 : 1,
                     }}
                   />
                 </div>
                 <button
-                  onClick={sendMessage}
-                  disabled={(!input.trim() && !pendingImage) || uploadingImage || (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || !!((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO')}
+                  onClick={editingMessage ? () => editMessage(editingMessage.id, editContent) : sendMessage}
+                  disabled={
+                    editingMessage
+                      ? !editContent.trim()
+                      : ((!input.trim() && !pendingImage) || uploadingImage || (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || !!((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO'))
+                  }
                   style={{
-                    height: '44px', borderRadius: pendingImage ? '50px' : '50%', border: 'none',
-                    width: pendingImage ? 'auto' : '44px',
-                    padding: pendingImage ? '0 20px' : '0',
-                    cursor: (input.trim() || pendingImage) ? 'pointer' : 'default',
-                    background: (input.trim() || pendingImage) ? selectedClass.color : 'var(--surface-2)',
-                    color: (input.trim() || pendingImage) ? '#fff' : 'var(--text-muted)',
+                    height: '44px', borderRadius: (pendingImage && !editingMessage) ? '50px' : '50%', border: 'none',
+                    width: (pendingImage && !editingMessage) ? 'auto' : '44px',
+                    padding: (pendingImage && !editingMessage) ? '0 20px' : '0',
+                    cursor: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? 'pointer' : 'default',
+                    background: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? selectedClass.color : 'var(--surface-2)',
+                    color: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? '#fff' : 'var(--text-muted)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, gap: '6px',
-                    boxShadow: (input.trim() || pendingImage) ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+                    boxShadow: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                     transition: 'all 0.2s', fontWeight: '700', fontSize: '13px', fontFamily: 'inherit',
                   }}
+                  title={editingMessage ? 'Save changes' : 'Send message'}
                 >
-                  {pendingImage && <span>Send</span>}
+                  {pendingImage && !editingMessage && <span>Send</span>}
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    {editingMessage ? (
+                      <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                    ) : (
+                      <>
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                      </>
+                    )}
                   </svg>
                 </button>
               </div>
@@ -2763,6 +2910,40 @@ export default function CommunityPage() {
                     <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.5A2 2 0 0 1 15 9.26V5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4.26a2 2 0 0 1-.78 1.24l-2.78 3.5a2 2 0 0 0-.44 1.24z"/>
                   </svg>
                   {managerActionMessage.isPinned ? 'Unpin Message' : 'Pin Message'}
+                </button>
+              )}
+
+              {/* Edit option */}
+              {!managerActionMessage.isDeleted && !managerActionMessage.id.startsWith('temp-') && !isDM(selectedClass) && (
+                <button
+                  onClick={() => {
+                    const msg = managerActionMessage;
+                    setManagerActionMessage(null);
+                    setEditingMessage(msg);
+                    setEditContent(msg.content);
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 14px', border: 'none', width: '100%',
+                    cursor: 'pointer', textAlign: 'left',
+                    borderRadius: '12px',
+                    background: 'transparent', fontFamily: 'inherit',
+                    fontSize: '14px', fontWeight: '700',
+                    color: '#d97706',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = 'rgba(217, 119, 6, 0.08)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
+                  </svg>
+                  Edit Message
                 </button>
               )}
 

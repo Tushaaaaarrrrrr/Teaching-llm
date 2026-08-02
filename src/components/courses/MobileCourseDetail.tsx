@@ -320,7 +320,7 @@ export default function MobileCourseDetail({
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               }}
             >
-              🔓 Unlock Full Course
+              Unlock Full Course
             </button>
             <button
               onClick={async () => {
@@ -691,6 +691,11 @@ function CurriculumTab({
                           display: 'flex', alignItems: 'center', gap: '6px',
                         }}>
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
+                          {(item as any).createdAt && (
+                             <span style={{ fontSize: '11px', fontWeight: '500', color: 'var(--text-muted)', flexShrink: 0 }}>
+                               - Added on {new Date((item as any).createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                             </span>
+                           )}
                           {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
                             <span style={{
                               background: 'linear-gradient(135deg, #ef4444, #dc2626)',
@@ -728,7 +733,7 @@ function CurriculumTab({
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          🔒 Unlock Now
+                          Unlock Now
                         </Link>
                       ) : (item.videoUrl || item.youtubeUrl) ? (
                         <Link
