@@ -7,6 +7,7 @@ import Script from 'next/script'
 import { formatISTDate, getEventStatus } from '@/lib/date-utils'
 import { normalizeMeetLink } from '@/lib/meet-link'
 import HomeHeroSlider, { HeroSlide } from '@/components/home/HomeHeroSlider'
+import { colorWithOpacity } from '@/lib/color-utils'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -89,6 +90,114 @@ export default function DashboardPage() {
   const [upgrading, setUpgrading] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
+
+  // Purchase modal states
+  const [offering, setOffering] = useState<any | null>(null)
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+  const [showComparisonModal, setShowComparisonModal] = useState(false)
+  const [purchasing, setPurchasing] = useState<string | null>(null)
+  const [successOrderId, setSuccessOrderId] = useState<string | null>(null)
+
+  const handleUnlockClick = async (courseId: string | null) => {
+    if (!courseId) return
+    setIsProcessing(true)
+    try {
+      const res = await fetch('/api/course-offerings')
+      if (res.ok) {
+        const offerings = await res.json()
+        if (Array.isArray(offerings)) {
+          const found = offerings.find((o: any) => o.courseId === courseId)
+          if (found) {
+            setOffering(found)
+            setShowPurchaseModal(true)
+          } else {
+            alert('No batch offering found for this course.')
+          }
+        }
+      } else {
+        alert('Failed to load purchase options.')
+      }
+    } catch (e) {
+      console.error(e)
+      alert('Something went wrong.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handlePurchase = async (offeringId: string, accessType: 'RECORDED' | 'LIVE' | 'CHAMPION') => {
+    setIsProcessing(true)
+    setPurchasing(`${offeringId}-${accessType}`)
+    try {
+      const res = await fetch(`/api/course-offerings/${offeringId}/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessType }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to initialize payment')
+
+      if (data.isFree) {
+        setIsProcessing(false)
+        setSuccessOrderId('FREE-ENROLLMENT')
+        return
+      }
+
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'GenZ IItian',
+        description: `Purchase ${data.courseName} (${accessType})`,
+        order_id: data.razorpayOrderId,
+        prefill: {
+          name: data.userName || '',
+          email: data.userEmail || '',
+        },
+        theme: { color: 'var(--accent)' },
+        handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+          setIsProcessing(true)
+          try {
+            const verifyRes = await fetch(`/api/course-offerings/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            })
+            const verifyData = await verifyRes.json()
+            if (verifyRes.ok) {
+              setShowPurchaseModal(false)
+              setSuccessOrderId(verifyData.orderId || 'SUCCESS')
+              mutate()
+            } else {
+              alert(verifyData.error || 'Payment verification failed')
+            }
+          } catch (e) {
+            console.error(e)
+            alert('Something went wrong during payment verification')
+          } finally {
+            setIsProcessing(false)
+          }
+        },
+        modal: {
+          onDismiss: () => {
+            setPurchasing(null)
+          }
+        }
+      }
+
+      const rzp = new (window as any).Razorpay(options)
+      rzp.open()
+      setIsProcessing(false)
+    } catch (e: any) {
+      alert(e.message || 'Something went wrong')
+      setIsProcessing(false)
+      setPurchasing(null)
+    }
+  }
 
   const handleUpgrade = async (courseId: string) => {
     setIsProcessing(true)
@@ -994,11 +1103,7 @@ export default function DashboardPage() {
                       <button
                         onClick={() => {
                           if (frontSession.courseId) {
-                            setUpgradeModalCourse({
-                              id: frontSession.courseId,
-                              name: frontSession.course?.name || 'This Course',
-                              liveUpgradePrice: frontSession.course?.liveUpgradePrice || 999
-                            })
+                            handleUnlockClick(frontSession.courseId)
                           }
                         }}
                         style={{
@@ -1119,11 +1224,7 @@ export default function DashboardPage() {
                         if (session.isRecordedOnly) {
                           e.preventDefault()
                           if (session.courseId) {
-                            setUpgradeModalCourse({
-                              id: session.courseId,
-                              name: session.course?.name || 'This Course',
-                              liveUpgradePrice: session.course?.liveUpgradePrice || 999
-                            })
+                            handleUnlockClick(session.courseId)
                           }
                         }
                       }}
@@ -1199,11 +1300,7 @@ export default function DashboardPage() {
                   onClick={() => {
                     if (frontSession.isRecordedOnly) {
                       if (frontSession.courseId) {
-                        setUpgradeModalCourse({
-                          id: frontSession.courseId,
-                          name: frontSession.course?.name || 'This Course',
-                          liveUpgradePrice: frontSession.course?.liveUpgradePrice || 999
-                        })
+                        handleUnlockClick(frontSession.courseId)
                       }
                     } else if (frontSession.meetLink) {
                       window.open(normalizeMeetLink(frontSession.meetLink) ?? '#', '_blank')
@@ -1274,11 +1371,7 @@ export default function DashboardPage() {
                     const upNext = upNextSessions[0]
                     if (upNext.isRecordedOnly) {
                       if (upNext.courseId) {
-                        setUpgradeModalCourse({
-                          id: upNext.courseId,
-                          name: upNext.course?.name || 'This Course',
-                          liveUpgradePrice: upNext.course?.liveUpgradePrice || 999
-                        })
+                        handleUnlockClick(upNext.courseId)
                       }
                     } else if (upNext.meetLink) {
                       window.open(normalizeMeetLink(upNext.meetLink) ?? '#', '_blank')
@@ -1823,6 +1916,338 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+    )}
+
+    {showPurchaseModal && offering && (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001,
+        padding: '20px', overflow: 'auto'
+      }} onClick={() => setShowPurchaseModal(false)}>
+        <div style={{
+          background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '480px',
+          boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          padding: '30px',
+          animation: 'modalSlideUp 0.3s ease-out',
+          position: 'relative'
+        }} onClick={e => e.stopPropagation()}>
+          <button 
+            onClick={() => setShowPurchaseModal(false)}
+            style={{ position: 'absolute', top: '20px', right: '20px', background: 'var(--surface)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s', zIndex: 10 }}
+          >
+            ✕
+          </button>
+
+          {/* Course Header Color Band */}
+          <div style={{
+            background: `linear-gradient(135deg, ${offering.course?.color || '#6366f1'}, ${colorWithOpacity(offering.course?.color || '#6366f1', 'cc')})`,
+            margin: '-30px -30px 24px -30px',
+            padding: '40px 30px 30px 30px',
+            borderTopLeftRadius: '32px',
+            borderTopRightRadius: '32px',
+            color: '#fff',
+            position: 'relative',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '60px', height: '60px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 16px auto',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20M4 19.5V5A2.5 2.5 0 0 1 6.5 2.5H20v20H6.5a2.5 2.5 0 0 1-2-2.5z"/></svg>
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '4px', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+              {offering.course?.name}
+            </h2>
+            <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '600', marginBottom: '0' }}>
+              {offering.course?.subject}
+            </p>
+            <button
+              onClick={() => {
+                setShowPurchaseModal(false)
+                setShowComparisonModal(true)
+              }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+                padding: '6px 14px', borderRadius: '20px', color: '#fff',
+                fontSize: '11px', fontWeight: '800', cursor: 'pointer',
+                marginTop: '12px', transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            >
+              Click here to Know difference between Pro and Plus batch
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Recorded Batch Option */}
+            {offering.hasRecorded && (
+              <div style={{
+                padding: '16px', borderRadius: '20px',
+                background: 'var(--surface-2, rgba(99, 102, 241, 0.02))',
+                border: '1.5px solid var(--border)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                      📹 Recorded Batch - PLUS
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>
+                        ₹{Math.max(Number(offering.recordedDiscountPrice || 0), 1)}
+                      </span>
+                      {Number(offering.recordedOriginalPrice || 0) > Math.max(Number(offering.recordedDiscountPrice || 0), 1) && (
+                        <span style={{ fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                          ₹{offering.recordedOriginalPrice}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handlePurchase(offering.id, 'RECORDED')}
+                  disabled={!!purchasing}
+                  style={{
+                    width: '100%', padding: '12px', borderRadius: '50px',
+                    border: '2.5px solid var(--accent)', background: 'transparent',
+                    color: 'var(--accent)', fontSize: '14px', fontWeight: '800',
+                    cursor: purchasing ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {purchasing === `${offering.id}-RECORDED` ? 'Processing...' : 'Buy PLUS Batch'}
+                </button>
+              </div>
+            )}
+
+            {/* Live Batch Option */}
+            {offering.hasLive && (
+              <div style={{
+                padding: '16px', borderRadius: '20px',
+                background: 'var(--surface-2, rgba(99, 102, 241, 0.02))',
+                border: '1.5px solid var(--accent)',
+                position: 'relative',
+                boxShadow: '0 8px 24px rgba(99,102,241,0.08)'
+              }}>
+                <div style={{
+                  position: 'absolute', top: '12px', right: '16px',
+                  padding: '3px 10px', borderRadius: '20px',
+                  background: 'var(--accent)', color: '#fff',
+                  fontSize: '9px', fontWeight: '900', letterSpacing: '0.08em',
+                }}>
+                  PRO
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                      🔴 Live + Recorded Batch - PRO
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>
+                        ₹{Math.max(Number(offering.liveDiscountPrice || 0), 1)}
+                      </span>
+                      {Number(offering.liveOriginalPrice || 0) > Math.max(Number(offering.liveDiscountPrice || 0), 1) && (
+                        <span style={{ fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                          ₹{offering.liveOriginalPrice}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handlePurchase(offering.id, 'LIVE')}
+                  disabled={!!purchasing}
+                  style={{
+                    width: '100%', padding: '12px', borderRadius: '50px',
+                    border: 'none', background: 'var(--accent)',
+                    color: '#fff', fontSize: '14px', fontWeight: '800',
+                    cursor: purchasing ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {purchasing === `${offering.id}-LIVE` ? 'Processing...' : '⚡ Buy PLUS + PRO Batch'}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Modal Footer info */}
+          <div style={{
+            marginTop: '24px',
+            textAlign: 'center',
+            fontSize: '12px',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <span>⌛</span> Access Till End Term
+            </div>
+            <button
+              onClick={() => window.location.href = `/support?openTicket=true&type=GENERAL&classId=${offering?.courseId || ''}`}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent)',
+                fontSize: '11.5px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                padding: '4px 8px',
+                marginTop: '4px',
+              }}
+            >
+              Need Help? Contact Support
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Success Modal */}
+    {successOrderId && (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001,
+        padding: '20px'
+      }} onClick={() => { setSuccessOrderId(null); window.location.reload() }}>
+        <div style={{
+          background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
+          boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          padding: '40px', textAlign: 'center',
+          animation: 'modalSlideUp 0.3s ease-out'
+        }} onClick={e => e.stopPropagation()}>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Course Unlocked!</h2>
+          <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
+            Your payment was verified successfully. You now have full access to all lectures, class materials, and student benefits.
+          </p>
+          <button
+            onClick={() => { setSuccessOrderId(null); window.location.reload() }}
+            style={{
+              width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+              background: 'linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%)',
+              color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+            }}
+          >
+            Got it, let&apos;s go! 🚀
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* Batch Comparison Modal */}
+    {showComparisonModal && offering && (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(10px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10002,
+        padding: '20px', overflow: 'auto'
+      }} onClick={() => {
+        setShowComparisonModal(false)
+        setShowPurchaseModal(true)
+      }}>
+        <div style={{
+          background: '#1e2230', borderRadius: '24px', width: '100%', maxWidth: '520px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          padding: '30px',
+          animation: 'modalSlideUp 0.3s ease-out',
+          position: 'relative',
+          color: '#ffffff'
+        }} onClick={e => e.stopPropagation()}>
+          <button 
+            onClick={() => {
+              setShowComparisonModal(false)
+              setShowPurchaseModal(true)
+            }}
+            style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.08)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#a0aec0', transition: 'all 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+          >
+            ✕
+          </button>
+
+          <h2 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '4px', color: '#ffffff' }}>Batch Comparison</h2>
+          <p style={{ fontSize: '13px', color: '#a0aec0', marginBottom: '24px', fontWeight: '500' }}>
+            Choose the experience that fits your learning style
+          </p>
+
+          {/* Comparison Table */}
+          <div style={{
+            borderRadius: '16px', overflow: 'hidden', border: '1px solid #2d3748',
+            background: '#1a1d28', marginBottom: '24px'
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #2d3748', background: '#171923' }}>
+                  <th style={{ padding: '14px 16px', fontWeight: '700', color: '#a0aec0', width: '40%' }}>FEATURES</th>
+                  <th style={{ padding: '14px 16px', fontWeight: '800', color: '#d69e2e', textAlign: 'center', width: '30%', background: 'rgba(214, 158, 46, 0.05)' }}>PLUS</th>
+                  <th style={{ padding: '14px 16px', fontWeight: '800', color: '#6366f1', textAlign: 'center', width: '30%', background: 'rgba(99, 102, 241, 0.05)' }}>PRO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { name: 'Lectures', plus: '✅ Full', pro: '✅ Full' },
+                  { name: 'Materials', plus: '✅ Full', pro: '✅ Full' },
+                  { name: 'Live Classes', plus: '❌ No', pro: '✅ Yes' },
+                  { name: 'Q&A w/ Teacher', plus: '❌ No', pro: '✅ Live' },
+                  { name: 'Mentorship', plus: '❌ No', pro: '✅ Weekly' },
+                  { name: 'Support', plus: '❌ Basic', pro: '✅ Priority' },
+                ].map((row, index) => (
+                  <tr key={row.name} style={{ borderBottom: index < 5 ? '1px solid #2d3748' : 'none' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: '600', color: '#e2e8f0' }}>{row.name}</td>
+                    <td style={{
+                      padding: '12px 16px', textAlign: 'center', fontWeight: '700',
+                      color: row.plus.includes('✅') ? '#48bb78' : '#e53e3e',
+                      background: 'rgba(214, 158, 46, 0.02)'
+                    }}>
+                      {row.plus}
+                    </td>
+                    <td style={{
+                      padding: '12px 16px', textAlign: 'center', fontWeight: '700',
+                      color: row.pro.includes('✅') ? '#48bb78' : '#e53e3e',
+                      background: 'rgba(99, 102, 241, 0.02)'
+                    }}>
+                      {row.pro}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Got it button */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              onClick={() => {
+                setShowComparisonModal(false)
+                setShowPurchaseModal(true)
+              }}
+              style={{
+                padding: '12px 32px', borderRadius: '50px', border: 'none',
+                background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#ffffff',
+                fontSize: '14px', fontWeight: '800', cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)', transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              Got it, thanks!
+            </button>
+          </div>
         </div>
       </div>
     )}
