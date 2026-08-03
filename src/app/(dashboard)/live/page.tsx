@@ -58,6 +58,8 @@ export default function LivePage() {
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
   
   const [upgradeModalCourse, setUpgradeModalCourse] = useState<{ id: string; name: string; liveUpgradePrice: number } | null>(null)
+  const [showComparisonModal, setShowComparisonModal] = useState(false)
+  const [savedUpgradeCourse, setSavedUpgradeCourse] = useState<any>(null)
   const [upgrading, setUpgrading] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
@@ -559,16 +561,98 @@ export default function LivePage() {
               <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
             </div>
           ) : (
-            <div style={{ padding: '40px', textAlign: 'center' }}>
+            <div style={{ padding: '40px', textAlign: 'center', position: 'relative' }}>
               <button
                 onClick={() => setUpgradeModalCourse(null)}
                 style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: 'var(--text-muted)', cursor: 'pointer', lineHeight: 1 }}
               >&times;</button>
+              
+              {/* Info Button with Tooltip */}
+              <div style={{ position: 'absolute', top: '20px', right: '60px', zIndex: 10 }}>
+                <button 
+                  onClick={() => {
+                    setSavedUpgradeCourse(upgradeModalCourse)
+                    setUpgradeModalCourse(null)
+                    setShowComparisonModal(true)
+                  }}
+                  title="Know difference between PLUS and PRO"
+                  style={{
+                    background: 'var(--surface-2)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'var(--surface-3)'
+                    const tooltip = document.getElementById('live-modal-tooltip')
+                    if (tooltip) tooltip.style.opacity = '1'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'var(--surface-2)'
+                    const tooltip = document.getElementById('live-modal-tooltip')
+                    if (tooltip) tooltip.style.opacity = '0'
+                  }}
+                >
+                  <span style={{ fontSize: '15px', fontWeight: '800', fontFamily: 'serif' }}>i</span>
+                </button>
+
+                {/* Tooltip style bubble */}
+                <div 
+                  id="live-modal-tooltip"
+                  style={{
+                    position: 'absolute',
+                    top: '40px',
+                    right: '50%',
+                    transform: 'translateX(50%)',
+                    background: '#6366f1',
+                    color: 'white',
+                    padding: '10px 16px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                    opacity: 0,
+                    pointerEvents: 'none',
+                    transition: 'opacity 0.2s ease',
+                    zIndex: 20,
+                    textAlign: 'center'
+                  }}
+                >
+                  Click here to see difference between PLUS AND PRO batches
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    left: '50%',
+                    marginLeft: '-5px',
+                    borderWidth: '5px',
+                    borderStyle: 'solid',
+                    borderColor: 'transparent transparent #6366f1 transparent'
+                  }} />
+                </div>
+              </div>
+
               <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'var(--surface)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               </div>
               <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
-              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>{upgradeModalCourse.name}</div>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px' }}>{upgradeModalCourse.name}</div>
+              <button
+                onClick={() => {
+                  setSavedUpgradeCourse(upgradeModalCourse)
+                  setUpgradeModalCourse(null)
+                  setShowComparisonModal(true)
+                }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                  background: 'rgba(99,102,241,0.08)', border: '1.5px solid rgba(99,102,241,0.2)',
+                  padding: '6px 14px', borderRadius: '20px', color: 'var(--accent)',
+                  fontSize: '11px', fontWeight: '800', cursor: 'pointer',
+                  marginBottom: '20px', transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.15)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(99,102,241,0.08)'}
+              >
+                Know difference
+              </button>
               <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '32px' }}>
                 You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
               </p>
@@ -648,6 +732,109 @@ export default function LivePage() {
     )}
 
     {/* Processing Modal */}
+    {/* Batch Comparison Modal */}
+    {showComparisonModal && (upgradeModalCourse || savedUpgradeCourse) && (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(10px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1002,
+        padding: '20px', overflow: 'auto'
+      }} onClick={() => {
+        setShowComparisonModal(false)
+        setUpgradeModalCourse(savedUpgradeCourse)
+      }}>
+        <div style={{
+          background: '#1e2230', borderRadius: '24px', width: '100%', maxWidth: '520px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          padding: '30px',
+          animation: 'modalSlideUp 0.3s ease-out',
+          position: 'relative',
+          color: '#ffffff'
+        }} onClick={e => e.stopPropagation()}>
+          <button 
+            onClick={() => {
+              setShowComparisonModal(false)
+              setUpgradeModalCourse(savedUpgradeCourse)
+            }}
+            style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.08)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#a0aec0', transition: 'all 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+          >
+            ✕
+          </button>
+
+          <h2 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '4px', color: '#ffffff' }}>Batch Comparison</h2>
+          <p style={{ fontSize: '13px', color: '#a0aec0', marginBottom: '24px', fontWeight: '500' }}>
+            Choose the experience that fits your learning style
+          </p>
+
+          {/* Comparison Table */}
+          <div style={{
+            borderRadius: '16px', overflow: 'hidden', border: '1px solid #2d3748',
+            background: '#1a1d28', marginBottom: '24px'
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #2d3748', background: '#171923' }}>
+                  <th style={{ padding: '14px 16px', fontWeight: '700', color: '#a0aec0', width: '40%' }}>FEATURES</th>
+                  <th style={{ padding: '14px 16px', fontWeight: '800', color: '#d69e2e', textAlign: 'center', width: '30%', background: 'rgba(214, 158, 46, 0.05)' }}>PLUS</th>
+                  <th style={{ padding: '14px 16px', fontWeight: '800', color: '#6366f1', textAlign: 'center', width: '30%', background: 'rgba(99, 102, 241, 0.05)' }}>PRO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { name: 'Lectures', plus: '✅ Full', pro: '✅ Full' },
+                  { name: 'Materials', plus: '✅ Full', pro: '✅ Full' },
+                  { name: 'Live Classes', plus: '❌ No', pro: '✅ Yes' },
+                  { name: 'Q&A w/ Teacher', plus: '❌ No', pro: '✅ Live' },
+                  { name: 'Mentorship', plus: '❌ No', pro: '✅ Weekly' },
+                  { name: 'Support', plus: '❌ Basic', pro: '✅ Priority' },
+                ].map((row, index) => (
+                  <tr key={row.name} style={{ borderBottom: index < 5 ? '1px solid #2d3748' : 'none' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: '600', color: '#e2e8f0' }}>{row.name}</td>
+                    <td style={{
+                      padding: '12px 16px', textAlign: 'center', fontWeight: '700',
+                      color: row.plus.includes('✅') ? '#48bb78' : '#e53e3e',
+                      background: 'rgba(214, 158, 46, 0.02)'
+                    }}>
+                      {row.plus}
+                    </td>
+                    <td style={{
+                      padding: '12px 16px', textAlign: 'center', fontWeight: '700',
+                      color: row.pro.includes('✅') ? '#48bb78' : '#e53e3e',
+                      background: 'rgba(99, 102, 241, 0.02)'
+                    }}>
+                      {row.pro}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Got it button */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              onClick={() => {
+                setShowComparisonModal(false)
+                setUpgradeModalCourse(savedUpgradeCourse)
+              }}
+              style={{
+                padding: '12px 32px', borderRadius: '50px', border: 'none',
+                background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#ffffff',
+                fontSize: '14px', fontWeight: '800', cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)', transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              Got it, thanks!
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     {isProcessing && (
       <div style={{
         position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',

@@ -214,6 +214,7 @@ export default function CommunityPage() {
   
   const [offering, setOffering] = useState<any | null>(null)
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+  const [showComparisonModal, setShowComparisonModal] = useState(false)
   const [purchasing, setPurchasing] = useState<string | null>(null)
   const [successOrderId, setSuccessOrderId] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -3480,6 +3481,68 @@ export default function CommunityPage() {
             animation: 'modalSlideUp 0.3s ease-out',
             position: 'relative'
           }} onClick={e => e.stopPropagation()}>
+            {/* Info / Know Difference Button */}
+            <div style={{ position: 'absolute', top: '20px', right: '60px', zIndex: 10 }}>
+              <button 
+                onClick={() => {
+                  setShowPurchaseModal(false)
+                  setShowComparisonModal(true)
+                }}
+                title="Know difference between PLUS and PRO"
+                style={{
+                  background: 'rgba(255,255,255,0.2)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s',
+                  position: 'relative'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.3)'
+                  const tooltip = document.getElementById('community-purchase-tooltip')
+                  if (tooltip) tooltip.style.opacity = '1'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.2)'
+                  const tooltip = document.getElementById('community-purchase-tooltip')
+                  if (tooltip) tooltip.style.opacity = '0'
+                }}
+              >
+                <span style={{ fontSize: '15px', fontWeight: '800', fontFamily: 'serif' }}>i</span>
+              </button>
+
+              {/* Tooltip style bubble */}
+              <div 
+                id="community-purchase-tooltip"
+                style={{
+                  position: 'absolute',
+                  top: '40px',
+                  right: '50%',
+                  transform: 'translateX(50%)',
+                  background: '#6366f1',
+                  color: 'white',
+                  padding: '10px 16px',
+                  borderRadius: '12px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                  opacity: 0,
+                  pointerEvents: 'none',
+                  transition: 'opacity 0.2s ease',
+                  zIndex: 20,
+                  textAlign: 'center'
+                }}
+              >
+                Click here to see difference between PLUS AND PRO batches
+                <div style={{
+                  position: 'absolute',
+                  bottom: '100%',
+                  left: '50%',
+                  marginLeft: '-5px',
+                  borderWidth: '5px',
+                  borderStyle: 'solid',
+                  borderColor: 'transparent transparent #6366f1 transparent'
+                }} />
+              </div>
+            </div>
+
             <button 
               onClick={() => setShowPurchaseModal(false)}
               style={{ position: 'absolute', top: '20px', right: '20px', background: 'var(--surface)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s', zIndex: 10 }}
@@ -3513,6 +3576,23 @@ export default function CommunityPage() {
               <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '600', marginBottom: '0' }}>
                 {offering.course?.subject}
               </p>
+              <button
+                onClick={() => {
+                  setShowPurchaseModal(false)
+                  setShowComparisonModal(true)
+                }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                  background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+                  padding: '6px 14px', borderRadius: '20px', color: '#fff',
+                  fontSize: '11px', fontWeight: '800', cursor: 'pointer',
+                  marginTop: '12px', transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+              >
+                Know difference
+              </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -3722,6 +3802,108 @@ export default function CommunityPage() {
             >
               Got it, let&apos;s go! 🚀
             </button>
+          </div>
+        </div>
+      )}
+      {/* Batch Comparison Modal */}
+      {showComparisonModal && offering && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10002,
+          padding: '20px', overflow: 'auto'
+        }} onClick={() => {
+          setShowComparisonModal(false)
+          setShowPurchaseModal(true)
+        }}>
+          <div style={{
+            background: '#1e2230', borderRadius: '24px', width: '100%', maxWidth: '520px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '30px',
+            animation: 'modalSlideUp 0.3s ease-out',
+            position: 'relative',
+            color: '#ffffff'
+          }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => {
+                setShowComparisonModal(false)
+                setShowPurchaseModal(true)
+              }}
+              style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.08)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#a0aec0', transition: 'all 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+            >
+              ✕
+            </button>
+
+            <h2 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '4px', color: '#ffffff' }}>Batch Comparison</h2>
+            <p style={{ fontSize: '13px', color: '#a0aec0', marginBottom: '24px', fontWeight: '500' }}>
+              Choose the experience that fits your learning style
+            </p>
+
+            {/* Comparison Table */}
+            <div style={{
+              borderRadius: '16px', overflow: 'hidden', border: '1px solid #2d3748',
+              background: '#1a1d28', marginBottom: '24px'
+            }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #2d3748', background: '#171923' }}>
+                    <th style={{ padding: '14px 16px', fontWeight: '700', color: '#a0aec0', width: '40%' }}>FEATURES</th>
+                    <th style={{ padding: '14px 16px', fontWeight: '800', color: '#d69e2e', textAlign: 'center', width: '30%', background: 'rgba(214, 158, 46, 0.05)' }}>PLUS</th>
+                    <th style={{ padding: '14px 16px', fontWeight: '800', color: '#6366f1', textAlign: 'center', width: '30%', background: 'rgba(99, 102, 241, 0.05)' }}>PRO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { name: 'Lectures', plus: '✅ Full', pro: '✅ Full' },
+                    { name: 'Materials', plus: '✅ Full', pro: '✅ Full' },
+                    { name: 'Live Classes', plus: '❌ No', pro: '✅ Yes' },
+                    { name: 'Q&A w/ Teacher', plus: '❌ No', pro: '✅ Live' },
+                    { name: 'Mentorship', plus: '❌ No', pro: '✅ Weekly' },
+                    { name: 'Support', plus: '❌ Basic', pro: '✅ Priority' },
+                  ].map((row, index) => (
+                    <tr key={row.name} style={{ borderBottom: index < 5 ? '1px solid #2d3748' : 'none' }}>
+                      <td style={{ padding: '12px 16px', fontWeight: '600', color: '#e2e8f0' }}>{row.name}</td>
+                      <td style={{
+                        padding: '12px 16px', textAlign: 'center', fontWeight: '700',
+                        color: row.plus.includes('✅') ? '#48bb78' : '#e53e3e',
+                        background: 'rgba(214, 158, 46, 0.02)'
+                      }}>
+                        {row.plus}
+                      </td>
+                      <td style={{
+                        padding: '12px 16px', textAlign: 'center', fontWeight: '700',
+                        color: row.pro.includes('✅') ? '#48bb78' : '#e53e3e',
+                        background: 'rgba(99, 102, 241, 0.02)'
+                      }}>
+                        {row.pro}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Got it button */}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button
+                onClick={() => {
+                  setShowComparisonModal(false)
+                  setShowPurchaseModal(true)
+                }}
+                style={{
+                  padding: '12px 32px', borderRadius: '50px', border: 'none',
+                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#ffffff',
+                  fontSize: '14px', fontWeight: '800', cursor: 'pointer',
+                  boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)', transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                Got it, thanks!
+              </button>
+            </div>
           </div>
         </div>
       )}
