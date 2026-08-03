@@ -347,8 +347,9 @@ export default function MobileCourseDetail({
                 } catch { alert('Error unenrolling') }
               }}
               style={{
-                padding: '10px 14px', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.4)',
-                background: 'rgba(239, 68, 68, 0.3)', color: '#ffffff', fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+                padding: '8px 16px', borderRadius: '50px', border: '1.5px solid rgba(239, 68, 68, 0.45)',
+                background: 'transparent', color: 'rgba(239, 68, 68, 0.95)', fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+                transition: 'all 0.2s ease',
               }}
             >
               Unenroll Demo

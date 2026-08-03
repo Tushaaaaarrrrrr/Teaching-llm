@@ -765,9 +765,9 @@ export default function CourseDetailPage() {
                     <button
                       onClick={handleUnenrollDemo}
                       style={{
-                        background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.4)',
+                        background: 'transparent', color: 'rgba(239, 68, 68, 0.95)', border: '1.5px solid rgba(239, 68, 68, 0.45)',
                         padding: '6px 16px', borderRadius: '50px', fontSize: '12px', fontWeight: '800', cursor: 'pointer',
-                        whiteSpace: 'nowrap',
+                        whiteSpace: 'nowrap', transition: 'all 0.2s ease',
                       }}
                     >
                       Unenroll Demo
