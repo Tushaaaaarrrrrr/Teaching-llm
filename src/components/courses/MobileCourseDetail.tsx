@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
@@ -70,6 +70,14 @@ export default function MobileCourseDetail({
   const router = useRouter()
   const [tab, setTab] = useState<TabKey>('curriculum')
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
+
+  const [isNative, setIsNative] = useState(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const w = window as any
+      setIsNative(!!(w.Capacitor?.isNativePlatform?.() || w.Capacitor?.isNative))
+    }
+  }, [])
 
   const { data: submittedFeedbacksRaw, mutate: mutateFeedbacks } = useSWR(role === 'STUDENT' ? '/api/feedback' : null, fetcher)
   const submittedFeedbacks = Array.isArray(submittedFeedbacksRaw) ? submittedFeedbacksRaw : []
@@ -715,7 +723,7 @@ function CurriculumTab({
                               display: 'flex', alignItems: 'center', gap: '6px',
                             }}>
                               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
-                              {(item as any).createdAt && (
+                              {(item as any).createdAt && !isNative && (
                                  <span style={{ fontSize: '11px', fontWeight: '500', color: 'var(--text-muted)', flexShrink: 0 }}>
                                    - Added on {new Date((item as any).createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                  </span>
