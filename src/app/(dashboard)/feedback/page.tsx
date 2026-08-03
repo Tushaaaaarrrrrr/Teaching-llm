@@ -683,20 +683,30 @@ function ForceFeedbackSettingsModal({
   onClose: () => void, 
   onMutate: () => void 
 }) {
-  const [selectedCourseId, setSelectedCourseId] = useState('')
+  // Track toggled state per course (initialised from current DB values)
+  const [toggles, setToggles] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {}
+    courses.forEach(c => { init[c.id] = !!c.requireFeedback })
+    return init
+  })
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const activeCourse = courses.find(c => c.id === selectedCourseId)
+  // Courses whose toggle differs from the saved DB value
+  const changedCourses = courses.filter(c => toggles[c.id] !== !!c.requireFeedback)
 
-  const handleToggleForceFeedback = async () => {
-    if (!activeCourse) return
-    
-    const newRequired = !activeCourse.requireFeedback
-    const actionWord = newRequired ? 'require extensive feedback' : 'disable the extensive feedback requirement'
-    
-    if (!window.confirm(`Are you sure you want to ${actionWord} for "${activeCourse.name}"?`)) {
+  const handleToggle = (courseId: string) => {
+    setToggles(prev => ({ ...prev, [courseId]: !prev[courseId] }))
+    setError('')
+    setSuccess('')
+  }
+
+  const handleApplyAll = async () => {
+    if (changedCourses.length === 0) return
+
+    const names = changedCourses.map(c => c.name).join(', ')
+    if (!window.confirm(`Are you sure you want to update feedback settings for: ${names}?`)) {
       return
     }
 
@@ -705,23 +715,27 @@ function ForceFeedbackSettingsModal({
     setSuccess('')
 
     try {
-      const res = await fetch(`/api/courses/${activeCourse.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: activeCourse.name,
-          subject: activeCourse.subject,
-          color: activeCourse.color,
-          requireFeedback: newRequired
-        })
-      })
+      const results = await Promise.all(
+        changedCourses.map(c =>
+          fetch(`/api/courses/${c.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: c.name,
+              subject: c.subject,
+              color: c.color,
+              requireFeedback: toggles[c.id]
+            })
+          })
+        )
+      )
 
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to update course feedback settings')
+      const failed = results.filter(r => !r.ok)
+      if (failed.length > 0) {
+        throw new Error(`Failed to update ${failed.length} course(s)`)
       }
 
-      setSuccess(`Successfully updated "${activeCourse.name}"!`)
+      setSuccess(`Successfully updated ${changedCourses.length} course(s)!`)
       onMutate()
     } catch (err: any) {
       setError(err.message)
@@ -745,13 +759,16 @@ function ForceFeedbackSettingsModal({
       <div style={{
         background: 'var(--surface)',
         width: '100%',
-        maxWidth: '480px',
+        maxWidth: '520px',
         borderRadius: '24px',
         padding: '28px',
         boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
         border: '1px solid var(--border)',
         position: 'relative',
         fontFamily: "'Outfit', sans-serif",
+        maxHeight: 'calc(100vh - 40px)',
+        display: 'flex',
+        flexDirection: 'column',
       }}>
         {/* Close Button */}
         <button
@@ -774,118 +791,133 @@ function ForceFeedbackSettingsModal({
         <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>
           Forced Feedback Settings
         </h3>
-        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.4' }}>
-          Select a course below to enable or disable forced extensive feedback. When enabled, students must submit feedback to access the course.
+        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.4' }}>
+          Toggle courses below to require or disable forced extensive feedback. Students must submit feedback before accessing enabled courses.
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div>
-            <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>
-              Select Course
-            </label>
-            <select
-              value={selectedCourseId}
-              onChange={e => {
-                setSelectedCourseId(e.target.value)
-                setError('')
-                setSuccess('')
-              }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '12px',
-                border: '1px solid var(--border)',
-                background: 'var(--surface)',
-                fontSize: '14px',
-                color: 'var(--text-primary)',
-                outline: 'none',
-              }}
-            >
-              <option value="">-- Choose a Course --</option>
-              {courses.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.name} {c.requireFeedback ? '★' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {activeCourse && (
-            <div style={{ 
-              background: 'var(--surface-2)', 
-              borderRadius: '16px', 
-              padding: '18px', 
-              border: '1px solid var(--border)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                  Course
-                </span>
-                <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>
-                  {activeCourse.name}
-                </span>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                  Current Status
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: activeCourse.requireFeedback ? 'var(--success)' : 'var(--text-muted)',
-                  }} />
-                  <span style={{ fontSize: '13.5px', fontWeight: '700', color: activeCourse.requireFeedback ? 'var(--success)' : 'var(--text-secondary)' }}>
-                    {activeCourse.requireFeedback ? 'Forced Extensive Feedback Active' : 'Standard (Optional Feedback)'}
-                  </span>
-                </div>
-              </div>
-
+        {/* Scrollable course list */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          marginBottom: '16px',
+          maxHeight: '340px',
+          paddingRight: '4px',
+        }}>
+          {courses.map(c => {
+            const isEnabled = toggles[c.id]
+            const hasChanged = isEnabled !== !!c.requireFeedback
+            return (
               <button
-                onClick={handleToggleForceFeedback}
-                disabled={isUpdating}
+                key={c.id}
+                onClick={() => handleToggle(c.id)}
                 style={{
-                  marginTop: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '14px 16px',
+                  borderRadius: '14px',
+                  border: hasChanged ? '1.5px solid var(--primary)' : '1px solid var(--border)',
+                  background: hasChanged ? 'rgba(99, 102, 241, 0.04)' : 'var(--surface)',
+                  cursor: 'pointer',
                   width: '100%',
-                  padding: '12px',
-                  borderRadius: '50px',
-                  border: 'none',
-                  background: activeCourse.requireFeedback ? 'var(--danger)' : '#0a0a0a',
-                  color: 'white',
-                  fontWeight: '700',
-                  fontSize: '13.5px',
-                  cursor: isUpdating ? 'not-allowed' : 'pointer',
-                  transition: 'opacity 0.2s',
-                  opacity: isUpdating ? 0.7 : 1,
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease',
+                  fontFamily: 'inherit',
                 }}
               >
-                {isUpdating ? 'Updating...' : activeCourse.requireFeedback ? 'Disable Force Feedback' : 'Enable Force Feedback'}
+                {/* Custom checkbox */}
+                <div style={{
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '6px',
+                  border: isEnabled ? 'none' : '2px solid var(--border)',
+                  background: isEnabled ? '#0a0a0a' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  transition: 'all 0.15s ease',
+                }}>
+                  {isEnabled && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  )}
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {c.name}
+                  </div>
+                  <div style={{ fontSize: '11.5px', fontWeight: '600', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {c.subject}
+                  </div>
+                </div>
+
+                {/* Status indicator */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  flexShrink: 0,
+                }}>
+                  <span style={{
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    background: isEnabled ? 'var(--success)' : 'var(--text-muted)',
+                    opacity: 0.8,
+                  }} />
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    color: isEnabled ? 'var(--success)' : 'var(--text-muted)',
+                  }}>
+                    {isEnabled ? 'ON' : 'OFF'}
+                  </span>
+                  {hasChanged && (
+                    <span style={{
+                      fontSize: '9px',
+                      fontWeight: '800',
+                      color: 'var(--primary)',
+                      background: 'rgba(99, 102, 241, 0.1)',
+                      padding: '2px 6px',
+                      borderRadius: '6px',
+                      marginLeft: '4px',
+                    }}>
+                      CHANGED
+                    </span>
+                  )}
+                </div>
               </button>
-            </div>
-          )}
+            )
+          })}
+        </div>
 
-          {error && (
-            <p style={{ color: 'var(--danger)', fontSize: '13px', margin: 0, fontWeight: '600' }}>
-              ⚠️ {error}
-            </p>
-          )}
+        {error && (
+          <p style={{ color: 'var(--danger)', fontSize: '13px', margin: '0 0 12px', fontWeight: '600' }}>
+            ⚠️ {error}
+          </p>
+        )}
 
-          {success && (
-            <p style={{ color: 'var(--success)', fontSize: '13px', margin: 0, fontWeight: '600' }}>
-              ✓ {success}
-            </p>
-          )}
+        {success && (
+          <p style={{ color: 'var(--success)', fontSize: '13px', margin: '0 0 12px', fontWeight: '600' }}>
+            ✓ {success}
+          </p>
+        )}
 
-          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
+            {changedCourses.length > 0 ? `${changedCourses.length} change(s) pending` : 'No changes'}
+          </span>
+          <div style={{ display: 'flex', gap: '10px' }}>
             <button
               onClick={onClose}
               style={{
-                padding: '10px 24px',
+                padding: '10px 20px',
                 borderRadius: '50px',
                 border: '1px solid var(--border)',
                 background: 'var(--surface)',
@@ -896,6 +928,24 @@ function ForceFeedbackSettingsModal({
               }}
             >
               Close
+            </button>
+            <button
+              onClick={handleApplyAll}
+              disabled={isUpdating || changedCourses.length === 0}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '50px',
+                border: 'none',
+                background: changedCourses.length === 0 ? 'var(--surface-2)' : '#0a0a0a',
+                color: changedCourses.length === 0 ? 'var(--text-muted)' : 'white',
+                fontWeight: '700',
+                fontSize: '13.5px',
+                cursor: changedCourses.length === 0 || isUpdating ? 'default' : 'pointer',
+                opacity: isUpdating ? 0.7 : 1,
+                transition: 'all 0.2s',
+              }}
+            >
+              {isUpdating ? 'Applying...' : `Apply${changedCourses.length > 0 ? ` (${changedCourses.length})` : ''}`}
             </button>
           </div>
         </div>
