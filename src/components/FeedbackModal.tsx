@@ -268,15 +268,16 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
                 resize: 'none',
                 outline: 'none',
                 transition: 'all 0.2s ease',
-                background: 'var(--surface)',
+                background: 'var(--bg)',
+                color: 'var(--text-primary)',
               }}
               onFocus={e => {
                 e.currentTarget.style.borderColor = 'var(--primary)'
-                e.currentTarget.style.background = '#fff'
+                e.currentTarget.style.background = 'var(--surface-2)'
               }}
               onBlur={e => {
-                e.currentTarget.style.borderColor = 'var(--surface)'
-                e.currentTarget.style.background = 'var(--surface)'
+                e.currentTarget.style.borderColor = 'var(--border)'
+                e.currentTarget.style.background = 'var(--bg)'
               }}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>

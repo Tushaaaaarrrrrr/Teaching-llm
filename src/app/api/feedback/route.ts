@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
     const formattedCourse = courseFeedbacks.map(f => ({
       id: f.id,
       type: 'COURSE',
+      courseId: f.courseId,
       studentId: f.studentId,
       student: f.student,
       course: f.course,
