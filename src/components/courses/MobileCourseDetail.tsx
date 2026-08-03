@@ -478,6 +478,13 @@ function CurriculumTab({
   offering?: any
 }) {
   const [activeDownloadUrl, setActiveDownloadUrl] = useState<string | null>(null)
+  const [isNative, setIsNative] = useState(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const w = window as any
+      setIsNative(!!(w.Capacitor?.isNativePlatform?.() || w.Capacitor?.isNative))
+    }
+  }, [])
 
   const lowestPrice = (() => {
     if (offering) {
