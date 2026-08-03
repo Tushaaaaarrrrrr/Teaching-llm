@@ -415,52 +415,51 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
         className={`sidebar-overlay ${isOpen ? 'active' : ''}`} 
         onClick={() => setIsOpen(false)} 
       />
+      {/* Desktop Permanent Corner-Fixed Logo */}
+      <div className="sidebar-desktop-logo-fixed-container" style={{
+        position: 'fixed',
+        left: '24px',
+        top: '24px',
+        zIndex: 110,
+        display: 'flex',
+        alignItems: 'center',
+      }}>
+        <Link href="/dashboard" className="sidebar-logo-plate" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          width: '182px',
+          minHeight: '74px',
+          padding: '8px 12px',
+          borderRadius: '16px',
+          background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
+          boxShadow: 'var(--shadow-lg)',
+          cursor: 'pointer',
+        }}>
+          <img
+            src={logoSrc}
+            alt="GenZ IITIAN Logo"
+            className="sidebar-logo-img"
+            style={{
+              width: '100%',
+              height: 'auto', 
+              maxHeight: '58px',
+              objectFit: 'contain',
+              display: 'block',
+            }} 
+          />
+        </Link>
+      </div>
+
       <nav 
         className={`sidebar-nav ${isOpen ? 'sidebar-open' : ''} ${isCurrentlyExpanded ? 'desktop-expanded' : 'desktop-collapsed'}`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
-          width: isOpen ? '240px' : (isCurrentlyExpanded ? '240px' : '88px'),
+          width: isOpen ? '240px' : (isCurrentlyExpanded ? '240px' : '76px'),
         }}
       >
-        <div className="sidebar-desktop-logo-header" style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          padding: '16px 4px 16px 6px',
-          width: '100%',
-          minHeight: '80px',
-        }}>
-          <Link href="/dashboard" className="sidebar-logo-plate" style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            overflow: 'hidden',
-            width: '182px',
-            minHeight: '74px',
-            padding: '8px 12px',
-            borderRadius: '16px',
-            background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
-            boxShadow: 'var(--shadow-lg)',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-          }}>
-            <img
-              src={logoSrc}
-              alt="GenZ IITIAN Logo"
-              className="sidebar-logo-img"
-              style={{
-                width: '100%',
-                height: 'auto', 
-                maxHeight: '58px',
-                objectFit: 'contain',
-                display: 'block',
-              }} 
-            />
-          </Link>
-        </div>
-
         {/* Navigation items rounded vertical container */}
         <div
           ref={navRef}
