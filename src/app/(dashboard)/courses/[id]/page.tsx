@@ -106,8 +106,13 @@ export default function CourseDetailPage() {
         fetch(`/api/lectures/progress?courseId=${params.id}`),
         fetch('/api/course-offerings'),
       ])
+      if (!courseRes.ok) {
+        setCourse(null)
+        setLoading(false)
+        return
+      }
       const courseData = await courseRes.json()
-      const topicsData = await topicsRes.json()
+      const topicsData = topicsRes.ok ? await topicsRes.json() : []
       const sessionData = await sessionRes.json()
       const progressData = progressRes.ok ? await progressRes.json() : []
       const offeringsData = offeringsRes.ok ? await offeringsRes.json() : []
@@ -289,7 +294,6 @@ export default function CourseDetailPage() {
       const res = await fetch(`/api/courses/${params.id}/unenroll`, { method: 'POST' })
       const data = await res.json()
       if (res.ok) {
-        fetchData()
         setShowUnenrollThanksModal(true)
       } else {
         alert(data.error || 'Failed to unenroll')

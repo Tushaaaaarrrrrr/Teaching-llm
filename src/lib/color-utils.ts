@@ -7,6 +7,7 @@
 
 /** Check whether a color string is a gradient (vs a plain hex/named color). */
 export function isGradient(color: string): boolean {
+  if (!color || typeof color !== 'string') return false
   return color.includes('gradient')
 }
 
@@ -15,6 +16,7 @@ export function isGradient(color: string): boolean {
  * Works with both plain hex strings and gradient strings.
  */
 export function extractHex(color: string): string {
+  if (!color || typeof color !== 'string') return '#4F46E5'
   const match = color.match(/#[0-9a-fA-F]{6}/)
   return match ? match[0] : '#4F46E5' // fallback indigo
 }
