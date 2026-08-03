@@ -500,7 +500,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   borderRadius: '16px',
                   color: '#ffffff',
                   background: 'linear-gradient(135deg, #4b5563, #1f2937)',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px var(--neu-glow)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
                   textDecoration: 'none',
                   fontSize: '14px',
                   fontWeight: '800',
@@ -522,7 +522,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 color: isActive ? '#ffffff' : 'var(--text-secondary)',
                 background: isActive ? 'var(--primary)' : 'transparent',
                 boxShadow: isActive
-                  ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-light)'
+                  ? '0 4px 12px rgba(54,54,232,0.35)'
                   : 'none',
                 textDecoration: 'none',
                 fontSize: '14px',

@@ -348,7 +348,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
 
   return (
     <header style={{
-      height: showGreetingHeadline ? '140px' : '96px', background: 'var(--sidebar-bg)',
+      height: showGreetingHeadline ? '140px' : '96px', background: 'var(--bg)',
       display: 'flex', justifyContent: 'center',
       position: 'sticky', top: 0, zIndex: 50,
       transition: 'height 0.3s ease',
