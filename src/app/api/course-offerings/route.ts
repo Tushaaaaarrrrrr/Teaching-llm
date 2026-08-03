@@ -84,7 +84,8 @@ export async function POST(request: NextRequest) {
       courseId, classId, name, thumbnail,
       hasRecorded, recordedOriginalPrice, recordedDiscountPrice,
       hasLive, liveOriginalPrice, liveDiscountPrice,
-      championOriginalPrice, championDiscountPrice, championSubtitle
+      championOriginalPrice, championDiscountPrice, championSubtitle,
+      category
     } = data
     const resolvedCourseId = courseId || classId
 
@@ -130,6 +131,7 @@ export async function POST(request: NextRequest) {
         championOriginalPrice: championOriginalPrice ? Number(championOriginalPrice) : null,
         championDiscountPrice: championDiscountPrice ? Number(championDiscountPrice) : null,
         championSubtitle: championSubtitle || null,
+        category: category || "General",
       }
     })
 

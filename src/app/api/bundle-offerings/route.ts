@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
       championOriginalPrice, championDiscountPrice, championSubtitle,
       allowIndividualPurchase, forceClassType,
       enableBundleDiscount, bundleDiscountType, bundleDiscountValue, bundleDiscountApplicability, requireAllCourses,
-      coursePrices, startingPrice, startingFromText, bannerText, courseHeadline
+      coursePrices, startingPrice, startingFromText, bannerText, courseHeadline,
+      category
     } = data
 
     if (!name || !Array.isArray(courseIds) || courseIds.length === 0) {
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
         startingFromText: startingFromText || "Courses start from",
         bannerText: bannerText || "Class starts from 1 June 2026",
         courseHeadline: courseHeadline || "Included Courses",
+        category: category || "General",
         courses: {
           create: courseIds.map((cid: string) => ({ courseId: cid }))
         }

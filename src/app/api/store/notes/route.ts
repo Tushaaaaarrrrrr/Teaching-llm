@@ -5,7 +5,7 @@ import { getSession } from '@/lib/auth'
 export async function POST(req: Request) {
   try {
     const data = await req.json()
-    const { title, description, fileUrl, price } = data
+    const { title, description, fileUrl, price, category, subject } = data
 
     if (!title || !fileUrl) {
       return NextResponse.json({ error: 'Title and file link are required' }, { status: 400 })
@@ -27,6 +27,8 @@ export async function POST(req: Request) {
         description,
         price,
         createdById: manager.id,
+        category: category || "General",
+        subject: subject || null,
         files: {
           create: {
             title: 'Primary Document',

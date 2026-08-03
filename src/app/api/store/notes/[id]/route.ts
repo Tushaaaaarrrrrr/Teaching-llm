@@ -33,7 +33,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
     const { id } = params
-    const { title, description, fileUrl, price } = await req.json()
+    const { title, description, fileUrl, price, category, subject } = await req.json()
 
     // Check if manager
     const manager = await prisma.user.findFirst({
@@ -50,6 +50,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         title,
         description,
         price: Number(price),
+        category: category || undefined,
+        subject: subject !== undefined ? subject : undefined,
       }
     })
 
