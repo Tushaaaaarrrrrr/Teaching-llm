@@ -7,6 +7,7 @@ import Script from 'next/script'
 import { formatIST, formatISTDate, getEventStatus } from '@/lib/date-utils'
 import { normalizeMeetLink } from '@/lib/meet-link'
 import LiveSessionsMobile from '@/components/live/LiveSessionsMobile'
+import { colorWithOpacity } from '@/lib/color-utils'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -57,43 +58,74 @@ export default function LivePage() {
   const [userId, setUserId] = useState('')
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
   
-  const [upgradeModalCourse, setUpgradeModalCourse] = useState<{ id: string; name: string; liveUpgradePrice: number } | null>(null)
+  const [offering, setOffering] = useState<any | null>(null)
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [showComparisonModal, setShowComparisonModal] = useState(false)
-  const [savedUpgradeCourse, setSavedUpgradeCourse] = useState<any>(null)
-  const [upgrading, setUpgrading] = useState(false)
+  const [purchasing, setPurchasing] = useState<string | null>(null)
+  const [successOrderId, setSuccessOrderId] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [upgradeSuccessOrderId, setUpgradeSuccessOrderId] = useState<string | null>(null)
 
-  const handleUpgrade = async (courseId: string) => {
+  const handleUnlockClick = async (courseId: string | null) => {
+    if (!courseId) return
     setIsProcessing(true)
-    setUpgrading(true)
     try {
-      const orderRes = await fetch(`/api/courses/${courseId}/create-razorpay-order`, { method: 'POST' })
-      if (!orderRes.ok) {
-        const data = await orderRes.json()
-        alert(data.error || 'Failed to create order')
+      const res = await fetch('/api/course-offerings')
+      if (res.ok) {
+        const offerings = await res.json()
+        if (Array.isArray(offerings)) {
+          const found = offerings.find((o: any) => o.courseId === courseId)
+          if (found) {
+            setOffering(found)
+            setShowPurchaseModal(true)
+          } else {
+            alert('No batch offering found for this course.')
+          }
+        }
+      } else {
+        alert('Failed to load purchase options.')
+      }
+    } catch (e) {
+      console.error(e)
+      alert('Something went wrong.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handlePurchase = async (offeringId: string, accessType: 'RECORDED' | 'LIVE' | 'CHAMPION') => {
+    setIsProcessing(true)
+    setPurchasing(`${offeringId}-${accessType}`)
+    try {
+      const res = await fetch(`/api/course-offerings/${offeringId}/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessType }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to initialize payment')
+
+      if (data.isFree) {
         setIsProcessing(false)
-        setUpgrading(false)
+        setSuccessOrderId('FREE-ENROLLMENT')
         return
       }
-      const orderData = await orderRes.json()
 
       const options = {
-        key: orderData.keyId,
-        amount: orderData.amount,
-        currency: orderData.currency,
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
         name: 'GenZ IItian',
-        description: `PRO Upgrade — ${orderData.courseName}`,
-        order_id: orderData.razorpayOrderId,
+        description: `Purchase ${data.courseName} (${accessType})`,
+        order_id: data.razorpayOrderId,
         prefill: {
-          name: orderData.userName,
-          email: orderData.userEmail,
+          name: data.userName,
+          email: data.userEmail,
         },
         theme: { color: 'var(--accent)' },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
           setIsProcessing(true)
           try {
-            const verifyRes = await fetch(`/api/courses/${courseId}/upgrade`, {
+            const verifyRes = await fetch(`/api/course-offerings/verify`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -104,34 +136,33 @@ export default function LivePage() {
             })
             const verifyData = await verifyRes.json()
             if (verifyRes.ok) {
-              setUpgradeModalCourse(null)
-              setUpgradeSuccessOrderId(verifyData.orderId)
+              setShowPurchaseModal(false)
+              setSuccessOrderId(verifyData.orderId || 'SUCCESS')
               mutate('/api/live-sessions')
             } else {
               alert(verifyData.error || 'Payment verification failed')
             }
-          } catch {
-            alert('Payment verification failed. Please contact support.')
+          } catch (e) {
+            console.error(e)
+            alert('Something went wrong during payment verification')
           } finally {
             setIsProcessing(false)
-            setUpgrading(false)
           }
         },
         modal: {
-          ondismiss: () => {
-            setIsProcessing(false)
-            setUpgrading(false)
-          },
-        },
+          onDismiss: () => {
+            setPurchasing(null)
+          }
+        }
       }
 
-      const rzp = new (window as unknown as { Razorpay: new (opts: typeof options) => { open: () => void } }).Razorpay(options)
+      const rzp = new (window as any).Razorpay(options)
       rzp.open()
       setIsProcessing(false)
     } catch (e: any) {
       alert(e.message || 'Something went wrong')
       setIsProcessing(false)
-      setUpgrading(false)
+      setPurchasing(null)
     }
   }
   
@@ -307,11 +338,7 @@ export default function LivePage() {
             <button
               onClick={() => {
                 if (session.courseId) {
-                  setUpgradeModalCourse({
-                    id: session.courseId,
-                    name: session.course?.name || 'This Course',
-                    liveUpgradePrice: session.course?.liveUpgradePrice || 999
-                  })
+                  handleUnlockClick(session.courseId)
                 }
               }}
               style={{
@@ -329,7 +356,7 @@ export default function LivePage() {
                 ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 14px rgba(220, 38, 38, 0.3)'
               }}
             >
-              Upgrade to join
+              Unlock to Join
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             </button>
           ) : session.streamProvider === 'AGORA' && (isLive || (!isCompleted && !isCancelled && !isRescheduled)) ? (
@@ -383,11 +410,7 @@ export default function LivePage() {
             <button
               onClick={() => {
                 if (session.courseId) {
-                  setUpgradeModalCourse({
-                    id: session.courseId,
-                    name: session.course?.name || 'This Course',
-                    liveUpgradePrice: session.course?.liveUpgradePrice || 999
-                  })
+                  handleUnlockClick(session.courseId)
                 }
               }}
               style={{
@@ -405,7 +428,7 @@ export default function LivePage() {
                 ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 14px rgba(220, 38, 38, 0.3)'
               }}
             >
-              Upgrade to join
+              Unlock to Join
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             </button>
           ) : (
@@ -427,8 +450,8 @@ export default function LivePage() {
     <div className="live-sessions-mobile-only">
       <LiveSessionsMobile 
         sessions={sessions} 
-        onUpgradeClick={(courseId, courseName, price) => {
-          setUpgradeModalCourse({ id: courseId, name: courseName, liveUpgradePrice: price })
+        onUpgradeClick={(courseId) => {
+          handleUnlockClick(courseId)
         }}
       />
     </div>
@@ -536,170 +559,210 @@ export default function LivePage() {
       `}</style>
     </div>
 
-    {/* Upgrade Confirmation Modal */}
-    {upgradeModalCourse && (
+    {/* Course Purchase Modal */}
+    {showPurchaseModal && offering && (
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
-        padding: '20px'
-      }} onClick={() => !upgrading && setUpgradeModalCourse(null)}>
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001,
+        padding: '20px', overflow: 'auto'
+      }} onClick={() => setShowPurchaseModal(false)}>
         <div style={{
-          background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
-          boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden',
-          animation: 'modalSlideUp 0.3s ease-out', position: 'relative'
+          background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '480px',
+          boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          padding: '30px',
+          animation: 'modalSlideUp 0.3s ease-out',
+          position: 'relative'
         }} onClick={e => e.stopPropagation()}>
-          {upgrading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' }}>
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', marginBottom: '24px' }}>
-                <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/>
-              </svg>
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '12px' }}>Processing Payment...</h2>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', textAlign: 'center' }}>
-                Please wait while we securely process your transaction.<br/>Do not close or refresh this page.
-              </p>
-              <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
-            </div>
-          ) : (
-            <div style={{ padding: '40px', textAlign: 'center', position: 'relative' }}>
-              <button
-                onClick={() => setUpgradeModalCourse(null)}
-                style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '28px', color: 'var(--text-muted)', cursor: 'pointer', lineHeight: 1 }}
-              >&times;</button>
-              
-              {/* Info Button with Tooltip */}
-              <div style={{ position: 'absolute', top: '20px', right: '60px', zIndex: 10 }}>
-                <button 
-                  onClick={() => {
-                    setSavedUpgradeCourse(upgradeModalCourse)
-                    setUpgradeModalCourse(null)
-                    setShowComparisonModal(true)
-                  }}
-                  title="Know difference between PLUS and PRO"
-                  style={{
-                    background: 'var(--surface-2)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s',
-                    position: 'relative'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = 'var(--surface-3)'
-                    const tooltip = document.getElementById('live-modal-tooltip')
-                    if (tooltip) tooltip.style.opacity = '1'
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = 'var(--surface-2)'
-                    const tooltip = document.getElementById('live-modal-tooltip')
-                    if (tooltip) tooltip.style.opacity = '0'
-                  }}
-                >
-                  <span style={{ fontSize: '15px', fontWeight: '800', fontFamily: 'serif' }}>i</span>
-                </button>
+          <button 
+            onClick={() => setShowPurchaseModal(false)}
+            style={{ position: 'absolute', top: '20px', right: '20px', background: 'var(--surface)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s', zIndex: 10 }}
+          >
+            ✕
+          </button>
 
-                {/* Tooltip style bubble */}
-                <div 
-                  id="live-modal-tooltip"
-                  style={{
-                    position: 'absolute',
-                    top: '40px',
-                    right: '50%',
-                    transform: 'translateX(50%)',
-                    background: '#6366f1',
-                    color: 'white',
-                    padding: '10px 16px',
-                    borderRadius: '12px',
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-                    opacity: 0,
-                    pointerEvents: 'none',
-                    transition: 'opacity 0.2s ease',
-                    zIndex: 20,
-                    textAlign: 'center'
-                  }}
-                >
-                  Click here to see difference between PLUS AND PRO batches
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '100%',
-                    left: '50%',
-                    marginLeft: '-5px',
-                    borderWidth: '5px',
-                    borderStyle: 'solid',
-                    borderColor: 'transparent transparent #6366f1 transparent'
-                  }} />
+          {/* Course Header Color Band */}
+          <div style={{
+            background: `linear-gradient(135deg, ${offering.course?.color || '#6366f1'}, ${colorWithOpacity(offering.course?.color || '#6366f1', 'cc')})`,
+            margin: '-30px -30px 24px -30px',
+            padding: '40px 30px 30px 30px',
+            borderTopLeftRadius: '32px',
+            borderTopRightRadius: '32px',
+            color: '#fff',
+            position: 'relative',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '60px', height: '60px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 16px auto',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20M4 19.5V5A2.5 2.5 0 0 1 6.5 2.5H20v20H6.5a2.5 2.5 0 0 1-2-2.5z"/></svg>
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '4px', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+              {offering.course?.name}
+            </h2>
+            <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '600', marginBottom: '0' }}>
+              {offering.course?.subject}
+            </p>
+            <button
+              onClick={() => {
+                setShowPurchaseModal(false)
+                setShowComparisonModal(true)
+              }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+                padding: '6px 14px', borderRadius: '20px', color: '#fff',
+                fontSize: '11px', fontWeight: '800', cursor: 'pointer',
+                marginTop: '12px', transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            >
+              Know difference
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Recorded Batch Option */}
+            {offering.hasRecorded && (
+              <div style={{
+                padding: '16px', borderRadius: '20px',
+                background: 'var(--surface-2, rgba(99, 102, 241, 0.02))',
+                border: '1.5px solid var(--border)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                      📹 Recorded Batch - PLUS
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>
+                        ₹{Math.max(Number(offering.recordedDiscountPrice || 0), 1)}
+                      </span>
+                      {Number(offering.recordedOriginalPrice || 0) > Math.max(Number(offering.recordedDiscountPrice || 0), 1) && (
+                        <span style={{ fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                          ₹{offering.recordedOriginalPrice}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'var(--surface)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              </div>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Upgrade to PRO Batch</h2>
-              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px' }}>{upgradeModalCourse.name}</div>
-              <button
-                onClick={() => {
-                  setSavedUpgradeCourse(upgradeModalCourse)
-                  setUpgradeModalCourse(null)
-                  setShowComparisonModal(true)
-                }}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '4px',
-                  background: 'rgba(99,102,241,0.08)', border: '1.5px solid rgba(99,102,241,0.2)',
-                  padding: '6px 14px', borderRadius: '20px', color: 'var(--accent)',
-                  fontSize: '11px', fontWeight: '800', cursor: 'pointer',
-                  marginBottom: '20px', transition: 'all 0.2s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.15)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(99,102,241,0.08)'}
-              >
-                Know difference
-              </button>
-              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '32px' }}>
-                You will get access to <strong>live classes, real-time mentorship,</strong> and everything as in your current plan.
-              </p>
-
-              <div style={{ background: 'var(--surface)', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1.5px solid var(--border)' }}>
-                <div style={{ fontSize: '36px', fontWeight: '900', color: 'var(--accent)', marginBottom: '8px' }}>₹{upgradeModalCourse.liveUpgradePrice}</div>
-                <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600' }}>One-time upgrade fee</div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '14px' }}>
                 <button
-                  onClick={() => setUpgradeModalCourse(null)}
-                  style={{ flex: 1, padding: '16px', borderRadius: '18px', border: '2px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleUpgrade(upgradeModalCourse.id)}
+                  onClick={() => handlePurchase(offering.id, 'RECORDED')}
+                  disabled={!!purchasing}
                   style={{
-                    flex: 1.5, padding: '16px', borderRadius: '18px', border: 'none',
-                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                    color: 'white', fontWeight: '700', cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                    width: '100%', padding: '12px', borderRadius: '50px',
+                    border: '2.5px solid var(--accent)', background: 'transparent',
+                    color: 'var(--accent)', fontSize: '14px', fontWeight: '800',
+                    cursor: purchasing ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
                   }}
                 >
-                  ✓ Confirm Upgrade
+                  {purchasing === `${offering.id}-RECORDED` ? 'Processing...' : 'Buy PLUS Batch'}
                 </button>
               </div>
+            )}
 
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '24px' }}>
-                Course will be updated automatically after Payment
+            {/* Live Batch Option */}
+            {offering.hasLive && (
+              <div style={{
+                padding: '16px', borderRadius: '20px',
+                background: 'var(--surface-2, rgba(99, 102, 241, 0.02))',
+                border: '1.5px solid var(--accent)',
+                position: 'relative',
+                boxShadow: '0 8px 24px rgba(99,102,241,0.08)'
+              }}>
+                <div style={{
+                  position: 'absolute', top: '12px', right: '16px',
+                  padding: '3px 10px', borderRadius: '20px',
+                  background: 'var(--accent)', color: '#fff',
+                  fontSize: '9px', fontWeight: '900', letterSpacing: '0.08em',
+                }}>
+                  PRO
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                      🔴 Live + Recorded Batch - PRO
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>
+                        ₹{Math.max(Number(offering.liveDiscountPrice || 0), 1)}
+                      </span>
+                      {Number(offering.liveOriginalPrice || 0) > Math.max(Number(offering.liveDiscountPrice || 0), 1) && (
+                        <span style={{ fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                          ₹{offering.liveOriginalPrice}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handlePurchase(offering.id, 'LIVE')}
+                  disabled={!!purchasing}
+                  style={{
+                    width: '100%', padding: '12px', borderRadius: '50px',
+                    border: 'none', background: 'var(--accent)',
+                    color: '#fff', fontSize: '14px', fontWeight: '800',
+                    cursor: purchasing ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {purchasing === `${offering.id}-LIVE` ? 'Processing...' : '⚡ Buy PLUS + PRO Batch'}
+                </button>
               </div>
+            )}
+          </div>
+
+          {/* Modal Footer info */}
+          <div style={{
+            marginTop: '24px',
+            textAlign: 'center',
+            fontSize: '12px',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <span>⌛</span> Access Till End Term
             </div>
-          )}
+            <button
+              onClick={() => window.location.href = `/support?openTicket=true&type=GENERAL&classId=${offering?.courseId || ''}`}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent)',
+                fontSize: '11.5px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                padding: '4px 8px',
+                marginTop: '4px',
+              }}
+            >
+              Need Help? Contact Support
+            </button>
+          </div>
         </div>
       </div>
     )}
 
-    {/* Upgrade Success Modal */}
-    {upgradeSuccessOrderId && (
+    {/* Success Modal */}
+    {successOrderId && (
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001,
         padding: '20px'
-      }} onClick={() => setUpgradeSuccessOrderId(null)}>
+      }} onClick={() => { setSuccessOrderId(null); window.location.reload() }}>
         <div style={{
           background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
           boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
@@ -707,22 +770,17 @@ export default function LivePage() {
           animation: 'modalSlideUp 0.3s ease-out'
         }} onClick={e => e.stopPropagation()}>
           <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
-          <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Welcome to PRO!</h2>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Course Unlocked!</h2>
           <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
-            Your upgrade was successful. You now have full access to live classes, mentorship, and priority support.
+            Your payment was verified successfully. You now have full access to all lectures, class materials, and student benefits.
           </p>
-          <div style={{ background: 'var(--success-light)', borderRadius: '16px', padding: '16px', marginBottom: '24px', border: '1.5px solid var(--border)' }}>
-            <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Order ID</div>
-            <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--success)', fontFamily: 'monospace' }}>{upgradeSuccessOrderId}</div>
-          </div>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>A confirmation email has been sent to your registered email.</p>
           <button
-            onClick={() => setUpgradeSuccessOrderId(null)}
+            onClick={() => { setSuccessOrderId(null); window.location.reload() }}
             style={{
               width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
-              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+              background: 'linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%)',
               color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
             }}
           >
             Got it, let&apos;s go! 🚀
@@ -731,17 +789,16 @@ export default function LivePage() {
       </div>
     )}
 
-    {/* Processing Modal */}
     {/* Batch Comparison Modal */}
-    {showComparisonModal && (upgradeModalCourse || savedUpgradeCourse) && (
+    {showComparisonModal && offering && (
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(10px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1002,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10002,
         padding: '20px', overflow: 'auto'
       }} onClick={() => {
         setShowComparisonModal(false)
-        setUpgradeModalCourse(savedUpgradeCourse)
+        setShowPurchaseModal(true)
       }}>
         <div style={{
           background: '#1e2230', borderRadius: '24px', width: '100%', maxWidth: '520px',
@@ -754,7 +811,7 @@ export default function LivePage() {
           <button 
             onClick={() => {
               setShowComparisonModal(false)
-              setUpgradeModalCourse(savedUpgradeCourse)
+              setShowPurchaseModal(true)
             }}
             style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.08)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#a0aec0', transition: 'all 0.2s' }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
@@ -817,7 +874,7 @@ export default function LivePage() {
             <button
               onClick={() => {
                 setShowComparisonModal(false)
-                setUpgradeModalCourse(savedUpgradeCourse)
+                setShowPurchaseModal(true)
               }}
               style={{
                 padding: '12px 32px', borderRadius: '50px', border: 'none',

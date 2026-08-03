@@ -30,7 +30,44 @@ export async function GET(
       return NextResponse.json({ error: 'Lecture not found' }, { status: 404 })
     }
 
-    return NextResponse.json(content)
+    // Course Access Control: Check enrollment for students
+    let isDemoUser = false
+    if (session.role === 'STUDENT') {
+      const courseId = content.topic?.course?.id
+      if (courseId) {
+        const enrollment = await prisma.enrollment.findUnique({
+          where: {
+            userId_courseId: {
+              userId: session.userId,
+              courseId,
+            },
+          },
+        })
+
+        if (!enrollment) {
+          return NextResponse.json({ error: 'You are not enrolled in this course' }, { status: 403 })
+        }
+        if (enrollment.type === 'DEMO') {
+          isDemoUser = true
+        }
+      }
+    }
+
+    if (isDemoUser && !content.isDemo) {
+      return NextResponse.json({
+        ...content,
+        isDemoLocked: true,
+        videoUrl: null,
+        youtubeUrl: null,
+        pptUrl: null,
+        videoVariants: null,
+      })
+    }
+
+    return NextResponse.json({
+      ...content,
+      isDemoLocked: false
+    })
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

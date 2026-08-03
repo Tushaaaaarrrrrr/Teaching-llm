@@ -84,6 +84,10 @@ export default function PlayDriveVideoPage() {
         return
       }
       const data = await res.json()
+      if (data.isDemoLocked) {
+        router.push(`/courses/${params.id}/lectures/${params.lectureId}`)
+        return
+      }
       setContent(data)
     } catch (e) {
       console.error(e)
