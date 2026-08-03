@@ -71,16 +71,21 @@ export async function sendLiveClassNotification(
     const liveTitle = `Class is Live`
     const liveBody = `"${eventTitle}" has started in ${course?.name || 'your class'}. Join now!`
 
-    await sendFcmToUsers(recipientIds, {
+    const pushPayload = {
       title: liveTitle,
       body: liveBody,
       url: ctaLink,
       ctaText: 'Join now',
       ctaLink: ctaLink,
       tag: `live_event_${courseId}`,
-      importance: 'high',
-      sound: 'default',
-    })
+      importance: 'high' as const,
+      sound: 'default' as const,
+    }
+
+    await Promise.allSettled([
+      sendPushToUsers(recipientIds, pushPayload),
+      sendFcmToUsers(recipientIds, pushPayload),
+    ])
 
     await logNotification({
       category: 'LIVE_CLASS',
@@ -625,16 +630,21 @@ export async function sendClassScheduledNotification(
     const schedTitle = `New Class Scheduled`
     const schedBody = `"${eventTitle}" has been scheduled for ${formattedTime} in ${course?.name || 'your class'}.`
 
-    await sendFcmToUsers(recipientIds, {
+    const pushPayload = {
       title: schedTitle,
       body: schedBody,
       url: ctaLink,
       ctaText: 'View Details',
       ctaLink: ctaLink,
       tag: `scheduled_event_${eventId || courseId}`,
-      importance: 'default',
-      sound: 'default',
-    })
+      importance: 'default' as const,
+      sound: 'default' as const,
+    }
+
+    await Promise.allSettled([
+      sendPushToUsers(recipientIds, pushPayload),
+      sendFcmToUsers(recipientIds, pushPayload),
+    ])
 
     await logNotification({
       category: 'CLASS_SCHEDULED',
@@ -694,16 +704,21 @@ export async function sendClassRescheduledNotification(
     const reschedTitle = `Class Rescheduled`
     const reschedBody = `"${eventTitle}" in ${course?.name || 'your class'} has been rescheduled to ${formattedTime}.`
 
-    await sendFcmToUsers(recipientIds, {
+    const pushPayload = {
       title: reschedTitle,
       body: reschedBody,
       url: ctaLink,
       ctaText: 'View Details',
       ctaLink: ctaLink,
       tag: `rescheduled_event_${eventId || courseId}`,
-      importance: 'default',
-      sound: 'default',
-    })
+      importance: 'default' as const,
+      sound: 'default' as const,
+    }
+
+    await Promise.allSettled([
+      sendPushToUsers(recipientIds, pushPayload),
+      sendFcmToUsers(recipientIds, pushPayload),
+    ])
 
     await logNotification({
       category: 'CLASS_RESCHEDULED',
@@ -760,14 +775,19 @@ export async function sendClassCanceledNotification(
     const cancelTitle = `Class Canceled`
     const cancelBody = `The class "${eventTitle}" in ${course?.name || 'your class'} scheduled for ${formattedTime} has been canceled.`
 
-    await sendFcmToUsers(recipientIds, {
+    const pushPayload = {
       title: cancelTitle,
       body: cancelBody,
       url: '/calendar',
       tag: `canceled_event_${eventId || courseId}`,
-      importance: 'high',
-      sound: 'default',
-    })
+      importance: 'high' as const,
+      sound: 'default' as const,
+    }
+
+    await Promise.allSettled([
+      sendPushToUsers(recipientIds, pushPayload),
+      sendFcmToUsers(recipientIds, pushPayload),
+    ])
 
     await logNotification({
       category: 'CLASS_CANCELED',
@@ -867,27 +887,21 @@ export async function processScheduledClassStartAlerts() {
             })
             recipientIds.forEach((userId) => sseEmitter.emit(`user:${userId}:notify`))
 
+            const pushPayload15m = {
+              title: title15m,
+              body: body15m,
+              url: ctaLink,
+              ctaText: 'Join Class',
+              ctaLink: ctaLink,
+              tag: `alert_15m_${event.id}`,
+              importance: 'high' as const,
+              sound: 'default' as const,
+            }
+
             await Promise.allSettled([
-              sendFcmToTopic(`course_${event.courseId}`, {
-                title: title15m,
-                body: body15m,
-                url: ctaLink,
-                ctaText: 'Join Class',
-                ctaLink: ctaLink,
-                tag: `alert_15m_${event.id}`,
-                importance: 'high',
-                sound: 'default',
-              }),
-              sendFcmToUsers(managerIds, {
-                title: title15m,
-                body: body15m,
-                url: ctaLink,
-                ctaText: 'Join Class',
-                ctaLink: ctaLink,
-                tag: `alert_15m_${event.id}`,
-                importance: 'high',
-                sound: 'default',
-              }),
+              sendPushToUsers(recipientIds, pushPayload15m),
+              sendFcmToTopic(`course_${event.courseId}`, pushPayload15m),
+              sendFcmToUsers(managerIds, pushPayload15m),
             ])
             updateData.notified15mBefore = true
             console.log(`[Auto-Start-Alerts] Sent 15m before alert for class: ${event.title}`)
@@ -919,29 +933,22 @@ export async function processScheduledClassStartAlerts() {
             })
             recipientIds.forEach((userId) => sseEmitter.emit(`user:${userId}:notify`))
 
+            const pushPayloadStart = {
+              title: titleStart,
+              body: bodyStart,
+              url: ctaLink,
+              ctaText: 'Join Now',
+              ctaLink: ctaLink,
+              tag: `alert_start_${event.id}`,
+              importance: 'high' as const,
+              sound: 'class_start_tone',
+              channelId: 'class_start_alerts',
+            }
+
             await Promise.allSettled([
-              sendFcmToTopic(`course_${event.courseId}`, {
-                title: titleStart,
-                body: bodyStart,
-                url: ctaLink,
-                ctaText: 'Join Now',
-                ctaLink: ctaLink,
-                tag: `alert_start_${event.id}`,
-                importance: 'high',
-                sound: 'class_start_tone',
-                channelId: 'class_start_alerts',
-              }),
-              sendFcmToUsers(managerIds, {
-                title: titleStart,
-                body: bodyStart,
-                url: ctaLink,
-                ctaText: 'Join Now',
-                ctaLink: ctaLink,
-                tag: `alert_start_${event.id}`,
-                importance: 'high',
-                sound: 'class_start_tone',
-                channelId: 'class_start_alerts',
-              }),
+              sendPushToUsers(recipientIds, pushPayloadStart),
+              sendFcmToTopic(`course_${event.courseId}`, pushPayloadStart),
+              sendFcmToUsers(managerIds, pushPayloadStart),
             ])
             updateData.notifiedAtStart = true
             updateData.notifiedStart = true // Keep compatibility with existing notifiedStart field
@@ -1051,14 +1058,19 @@ export async function sendDailyScheduleNotification() {
           body = `You have ${myEvents.length} classes today: ${classDetails}.`
         }
 
-        await sendFcmToUsers([student.id], {
+        const pushPayload = {
           title: "Today's Class Schedule",
           body,
           url: '/calendar',
           tag: 'daily_schedule',
-          importance: 'default',
-          sound: 'default',
-        })
+          importance: 'default' as const,
+          sound: 'default' as const,
+        }
+
+        await Promise.allSettled([
+          sendFcmToUsers([student.id], pushPayload),
+          sendPushToUsers([student.id], pushPayload),
+        ])
       })
     )
   } catch (err) {

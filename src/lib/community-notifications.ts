@@ -214,14 +214,18 @@ export async function sendTagNotification({
       select: { notifCommunityEnabled: true },
     })
     if (recipient?.notifCommunityEnabled) {
-      await sendFcmToUsers([recipientId], {
+      const pushPayload = {
         title,
         body: content,
         url: `/community?course=${courseId}`,
         tag: `tag_${messageId}`,
-        importance: 'high',
-        sound: 'default',
-      })
+        importance: 'high' as const,
+        sound: 'default' as const,
+      }
+      await Promise.allSettled([
+        sendFcmToUsers([recipientId], pushPayload),
+        sendPushToUsers([recipientId], pushPayload),
+      ])
     }
   } catch (err) {
     console.error('[community-notifications] Error sending tag notification:', err)
@@ -276,14 +280,18 @@ export async function sendReplyNotification({
       select: { notifCommunityEnabled: true },
     })
     if (recipient?.notifCommunityEnabled) {
-      await sendFcmToUsers([recipientId], {
+      const pushPayload = {
         title,
         body: content,
         url: `/community?course=${courseId}`,
         tag: `reply_${messageId}`,
-        importance: 'high',
-        sound: 'default',
-      })
+        importance: 'high' as const,
+        sound: 'default' as const,
+      }
+      await Promise.allSettled([
+        sendFcmToUsers([recipientId], pushPayload),
+        sendPushToUsers([recipientId], pushPayload),
+      ])
     }
   } catch (err) {
     console.error('[community-notifications] Error sending reply notification:', err)

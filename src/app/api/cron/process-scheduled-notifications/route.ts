@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendFcmToUsers } from '@/lib/fcm'
+import { sendPushToUsers } from '@/lib/push'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,16 +69,21 @@ export async function GET(request: NextRequest) {
 
         // ─── Fire Notification ───
         try {
-          await sendFcmToUsers([student.id], {
+          const pushPayload = {
             title: noti.title,
             body: noti.content,
             url: noti.ctaLink || '/',
             tag: 'welcome_onboarding',
             ctaText: noti.ctaText || undefined,
             ctaLink: noti.ctaLink || undefined,
-            importance: 'high',
-            sound: 'default',
-          })
+            importance: 'high' as const,
+            sound: 'default' as const,
+          }
+
+          await Promise.allSettled([
+            sendFcmToUsers([student.id], pushPayload),
+            sendPushToUsers([student.id], pushPayload),
+          ])
 
           await prisma.scheduledUserNotification.update({
             where: { id: noti.id },

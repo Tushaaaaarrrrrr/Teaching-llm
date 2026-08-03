@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
 import { sseEmitter } from '@/lib/sse'
 import { sendFcmToUsers } from '@/lib/fcm'
+import { sendPushToUsers } from '@/lib/push'
 
 export async function PUT(
   request: NextRequest,
@@ -43,13 +44,17 @@ export async function PUT(
       // Notify connected client via SSE
       sseEmitter.emit(`user:${attempt.userId}:notify`)
 
-      // Send FCM push notification to the student
-      sendFcmToUsers([attempt.userId], {
+      // Send FCM and Web push notification to the student
+      const pushPayload = {
         title: '📊 Exam Result Published',
         body: `Your result for "${attempt.exam.title}" is now available for review.`,
         url: `/exams/${attempt.examId}/result`,
         tag: `exam-result-${attempt.id}`,
-      }).catch(console.error)
+      }
+      Promise.allSettled([
+        sendFcmToUsers([attempt.userId], pushPayload),
+        sendPushToUsers([attempt.userId], pushPayload),
+      ]).catch(console.error)
     }
 
     return NextResponse.json(updatedAttempt)

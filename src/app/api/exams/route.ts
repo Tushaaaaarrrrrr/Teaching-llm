@@ -7,6 +7,7 @@ import { sanitizeInput } from '@/lib/validation'
 import { DEFAULT_FINAL_TEST_WINDOW_MS, isFinalTest } from '@/lib/exam-policy'
 import { randomUUID } from 'crypto'
 import { sendFcmToUsers } from '@/lib/fcm'
+import { sendPushToUsers } from '@/lib/push'
 import { checkAndAutoSubmitAttempts } from '@/lib/exam-db-utils'
 
 export async function GET(request: NextRequest) {
@@ -312,13 +313,17 @@ export async function POST(request: NextRequest) {
             }))
           })
 
-          // Send FCM push to recipients
-          sendFcmToUsers(recipientIds, {
+          // Send FCM and Web push to recipients
+          const pushPayload = {
             title: '📝 New Exam Created',
             body: `A new exam "${sanitizedTitle}" has been added. Check it in the Exams tab.`,
             url: '/exams',
             tag: `exam-${exam.id}`,
-          }).catch(console.error)
+          }
+          Promise.allSettled([
+            sendFcmToUsers(recipientIds, pushPayload),
+            sendPushToUsers(recipientIds, pushPayload),
+          ]).catch(console.error)
         }
       } else if (testSeriesId) {
         // Notify test series subscribers
@@ -353,13 +358,17 @@ export async function POST(request: NextRequest) {
             }))
           })
 
-          // Send FCM push to recipients
-          sendFcmToUsers(recipientIds, {
+          // Send FCM and Web push to recipients
+          const pushPayload = {
             title: '📝 New Exam in Test Series',
             body: `A new exam "${sanitizedTitle}" has been added to your Test Series!`,
             url: '/exams',
             tag: `exam-${exam.id}`,
-          }).catch(console.error)
+          }
+          Promise.allSettled([
+            sendFcmToUsers(recipientIds, pushPayload),
+            sendPushToUsers(recipientIds, pushPayload),
+          ]).catch(console.error)
         }
       }
 
