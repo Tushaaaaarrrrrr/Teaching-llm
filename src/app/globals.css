@@ -1114,7 +1114,7 @@ tr:hover td {
   width: 100%;
   max-width: 100vw;
   margin-left: 0;
-  padding-left: 76px; /* Space for the collapsed sidebar on desktop */
+  padding-left: 100px; /* Space for the collapsed sidebar on desktop */
   overflow: hidden;
   transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
               margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
@@ -1122,7 +1122,7 @@ tr:hover td {
 }
 
 .sidebar-nav {
-  width: 76px;
+  width: 88px;
   min-height: 100vh;
   background: transparent; /* Transparent so only vertical container stands out */
   display: flex;

@@ -420,7 +420,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
-          width: isOpen ? '240px' : (isCurrentlyExpanded ? '240px' : '76px'),
+          width: isOpen ? '240px' : (isCurrentlyExpanded ? '240px' : '88px'),
         }}
       >
         {/* Desktop Corner-Fixed Logo Header */}
@@ -438,9 +438,9 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             justifyContent: 'center',
             flexShrink: 0,
             overflow: 'hidden',
-            width: isCurrentlyExpanded ? '182px' : '56px',
-            minHeight: isCurrentlyExpanded ? '74px' : '44px',
-            padding: isCurrentlyExpanded ? '8px 12px' : '4px 6px',
+            width: isCurrentlyExpanded ? '182px' : '68px',
+            minHeight: isCurrentlyExpanded ? '74px' : '48px',
+            padding: isCurrentlyExpanded ? '8px 12px' : '4px 8px',
             borderRadius: '999px',
             background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
             boxShadow: 'var(--shadow-lg)',
@@ -454,7 +454,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               style={{
                 width: '100%',
                 height: 'auto', 
-                maxHeight: isCurrentlyExpanded ? '58px' : '32px',
+                maxHeight: isCurrentlyExpanded ? '58px' : '36px',
                 objectFit: 'contain',
                 display: 'block',
                 transition: 'all 0.3s ease',
