@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import Script from 'next/script'
 import { formatISTDate, getEventStatus } from '@/lib/date-utils'
@@ -34,6 +35,7 @@ function parseAnnouncementContent(content: string): { body: string; metadata: An
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const { data: dashboardData, error, isLoading: loading, mutate } = useSWR('/api/dashboard', fetcher, {
     revalidateOnFocus: false
   })
@@ -1215,11 +1217,9 @@ export default function DashboardPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {upNextSessions.map((session, idx) => (
-                    <a
+                    <Link
                       key={session.id}
-                      href={session.isRecordedOnly ? undefined : (normalizeMeetLink(session.meetLink) ?? '#')}
-                      target={session.isRecordedOnly ? undefined : "_blank"}
-                      rel={session.isRecordedOnly ? undefined : "noopener noreferrer"}
+                      href={session.isRecordedOnly ? '#' : '/live'}
                       onClick={(e) => {
                         if (session.isRecordedOnly) {
                           e.preventDefault()
@@ -1270,7 +1270,7 @@ export default function DashboardPage() {
                           <polyline points="9 18 15 12 9 6"/>
                         </svg>
                       </div>
-                    </a>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -1302,8 +1302,8 @@ export default function DashboardPage() {
                       if (frontSession.courseId) {
                         handleUnlockClick(frontSession.courseId)
                       }
-                    } else if (frontSession.meetLink) {
-                      window.open(normalizeMeetLink(frontSession.meetLink) ?? '#', '_blank')
+                    } else {
+                      router.push('/live')
                     }
                   }}
                   style={{
@@ -1373,8 +1373,8 @@ export default function DashboardPage() {
                       if (upNext.courseId) {
                         handleUnlockClick(upNext.courseId)
                       }
-                    } else if (upNext.meetLink) {
-                      window.open(normalizeMeetLink(upNext.meetLink) ?? '#', '_blank')
+                    } else {
+                      router.push('/live')
                     }
                   }}
                   style={{
