@@ -331,22 +331,6 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const [canScrollMore, setCanScrollMore] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
-
-  useEffect(() => {
-    const saved = localStorage.getItem('sidebar-expanded')
-    if (saved === 'true') {
-      setIsExpanded(true)
-    }
-  }, [])
-
-  const handleToggleExpand = () => {
-    setIsExpanded(prev => {
-      const next = !prev
-      localStorage.setItem('sidebar-expanded', String(next))
-      return next
-    })
-  }
 
   // Listen for custom toggle events from the mobile header
   useEffect(() => {
@@ -423,7 +407,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     router.refresh()
   }
 
-  const isCurrentlyExpanded = isExpanded || isHovered
+  const isCurrentlyExpanded = isHovered
 
   return (
     <>
@@ -439,74 +423,44 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           width: isOpen ? '240px' : (isCurrentlyExpanded ? '240px' : '76px'),
         }}
       >
-        {/* Desktop Expand/Collapse Header */}
-        <div className="sidebar-desktop-expand-header" style={{
+        {/* Desktop Corner-Fixed Logo Header */}
+        <div className="sidebar-desktop-logo-header" style={{
           display: 'flex',
           alignItems: 'center',
-          padding: '8px 4px',
-          marginBottom: '16px',
+          justifyContent: 'center',
+          padding: '16px 4px',
           width: '100%',
+          minHeight: '80px',
         }}>
-          <button
-            onClick={handleToggleExpand}
-            className="sidebar-expand-toggle-btn"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: 'rgba(30, 30, 47, 0.6)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '8px',
-              padding: '4px',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              fontWeight: '800',
-              fontSize: '11px',
-              letterSpacing: '0.08em',
-              gap: '10px',
-              width: isCurrentlyExpanded ? '150px' : '40px',
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              transition: 'width 0.3s ease',
-            }}
-          >
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              background: 'var(--primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              boxShadow: '0 4px 12px rgba(54,54,232,0.3)',
-              flexShrink: 0,
-            }}>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{
-                  transform: isCurrentlyExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.3s ease',
-                }}
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-            <span style={{
-              opacity: isCurrentlyExpanded ? 1 : 0,
-              transition: 'opacity 0.2s ease',
-              textTransform: 'uppercase',
-            }}>
-              {isExpanded ? 'COLLAPSE' : 'EXPAND'}
-            </span>
-          </button>
+          <Link href="/dashboard" className="sidebar-logo-plate" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            overflow: 'hidden',
+            width: isCurrentlyExpanded ? '182px' : '56px',
+            minHeight: isCurrentlyExpanded ? '74px' : '44px',
+            padding: isCurrentlyExpanded ? '8px 12px' : '4px 6px',
+            borderRadius: '999px',
+            background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
+            boxShadow: 'var(--shadow-lg)',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+          }}>
+            <img
+              src={logoSrc}
+              alt="GenZ IITIAN Logo"
+              className="sidebar-logo-img"
+              style={{
+                width: '100%',
+                height: 'auto', 
+                maxHeight: isCurrentlyExpanded ? '58px' : '32px',
+                objectFit: 'contain',
+                display: 'block',
+                transition: 'all 0.3s ease',
+              }} 
+            />
+          </Link>
         </div>
 
         {/* Navigation items rounded vertical container */}
