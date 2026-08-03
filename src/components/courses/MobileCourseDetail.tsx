@@ -730,11 +730,7 @@ function CurriculumTab({
                               display: 'flex', alignItems: 'center', gap: '6px',
                             }}>
                               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
-                              {(item as any).createdAt && !isNative && (
-                                 <span style={{ fontSize: '11px', fontWeight: '500', color: 'var(--text-muted)', flexShrink: 0 }}>
-                                   - Added on {new Date((item as any).createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                 </span>
-                               )}
+                              {/* Added on date hidden on mobile viewports */}
                               {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
                                 <span style={{
                                   background: 'linear-gradient(135deg, #ef4444, #dc2626)',
