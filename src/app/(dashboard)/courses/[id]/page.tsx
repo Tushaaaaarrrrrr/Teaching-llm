@@ -1831,11 +1831,30 @@ export default function CourseDetailPage() {
               fontSize: '12px',
               color: 'var(--text-muted)',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px'
+              gap: '8px'
             }}>
-              <span>⌛</span> Access Till End Term
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <span>⌛</span> Access Till End Term
+              </div>
+              <button
+                onClick={() => router.push(`/support?openTicket=true&type=GENERAL&classId=${offering?.courseId || ''}`)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--accent)',
+                  fontSize: '11.5px',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: '4px 8px',
+                  marginTop: '4px',
+                }}
+              >
+                Need Help? Contact Support
+              </button>
             </div>
           </div>
         </div>

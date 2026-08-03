@@ -404,6 +404,21 @@ export default function SupportPage() {
     loadFaqs()
   }, [loadTickets, loadFaqs])
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('openTicket') === 'true') {
+        const type = params.get('type') || 'GENERAL'
+        const classId = params.get('classId') || ''
+        setForm(f => ({ ...f, type, classId }))
+        setShowCreate(true)
+        // Clear search query from URL to prevent reopening on refresh
+        const newUrl = window.location.pathname
+        window.history.replaceState({}, '', newUrl)
+      }
+    }
+  }, [])
+
   // Poll chat messages
   useEffect(() => {
     if (!activeChatId) return
