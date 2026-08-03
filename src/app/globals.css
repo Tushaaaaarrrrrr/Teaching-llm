@@ -1114,7 +1114,7 @@ tr:hover td {
   width: 100%;
   max-width: 100vw;
   margin-left: 0;
-  padding-left: 100px; /* Space for the collapsed sidebar on desktop */
+  padding-left: 220px; /* Space for the collapsed sidebar + permanent logo on desktop */
   overflow: hidden;
   transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
               margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), 

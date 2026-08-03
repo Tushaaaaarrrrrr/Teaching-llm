@@ -438,10 +438,10 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             justifyContent: 'center',
             flexShrink: 0,
             overflow: 'hidden',
-            width: isCurrentlyExpanded ? '182px' : '80px',
-            minHeight: isCurrentlyExpanded ? '74px' : '60px',
-            padding: isCurrentlyExpanded ? '8px 12px' : '2px 4px',
-            borderRadius: isCurrentlyExpanded ? '999px' : '12px',
+            width: '182px',
+            minHeight: '74px',
+            padding: '8px 12px',
+            borderRadius: '999px',
             background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
             boxShadow: 'var(--shadow-lg)',
             cursor: 'pointer',
@@ -454,10 +454,9 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               style={{
                 width: '100%',
                 height: 'auto', 
-                maxHeight: isCurrentlyExpanded ? '58px' : '52px',
+                maxHeight: '58px',
                 objectFit: 'contain',
                 display: 'block',
-                transition: 'all 0.3s ease',
               }} 
             />
           </Link>
