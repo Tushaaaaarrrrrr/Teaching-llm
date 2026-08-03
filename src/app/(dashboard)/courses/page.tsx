@@ -521,7 +521,7 @@ export default function CoursesPage() {
                         </button>
                         <div style={{
                           position: 'absolute', top: 'calc(100% + 8px)', right: '0',
-                          background: 'var(--primary)', color: '#fff', padding: '8px 14px', borderRadius: '12px',
+                          background: '#0f172a', color: '#ffffff', padding: '8px 14px', borderRadius: '12px',
                           fontSize: '11px', fontWeight: '600', width: '200px', textAlign: 'center',
                           boxShadow: '0 8px 25px rgba(0,0,0,0.4)', pointerEvents: 'none',
                           opacity: showUpgradeHint === course.id ? 1 : 0, 
@@ -530,7 +530,7 @@ export default function CoursesPage() {
                           lineHeight: '1.4'
                         }}>
                           Click here to see difference between PLUS AND PRO batches
-                          <div style={{ position: 'absolute', bottom: '100%', right: '10px', border: '6px solid transparent', borderBottomColor: 'var(--text-primary)' }} />
+                          <div style={{ position: 'absolute', bottom: '100%', right: '10px', border: '6px solid transparent', borderBottomColor: '#0f172a' }} />
                         </div>
                       </div>
                     )}

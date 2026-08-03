@@ -584,7 +584,7 @@ export default function LecturePage() {
                 transition: 'all 0.2s',
               }}
             >
-              Know difference
+              Click here to Know difference between Pro and Plus batch
             </button>
           </div>
         </div>
@@ -676,7 +676,7 @@ export default function LecturePage() {
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
                 >
-                  Know difference
+                  Click here to Know difference between Pro and Plus batch
                 </button>
               </div>
 

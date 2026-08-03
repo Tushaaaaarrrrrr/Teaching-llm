@@ -3488,7 +3488,7 @@ export default function CommunityPage() {
                   setShowPurchaseModal(false)
                   setShowComparisonModal(true)
                 }}
-                title="Know difference between PLUS and PRO"
+                title="Click here to Know difference between Pro and Plus batch"
                 style={{
                   background: 'rgba(255,255,255,0.2)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s',
                   position: 'relative'
@@ -3591,7 +3591,7 @@ export default function CommunityPage() {
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
               >
-                Know difference
+                Click here to Know difference between Pro and Plus batch
               </button>
             </div>
 

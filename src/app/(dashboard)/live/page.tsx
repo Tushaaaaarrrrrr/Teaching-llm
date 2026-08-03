@@ -622,7 +622,7 @@ export default function LivePage() {
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
             >
-              Know difference
+              Click here to Know difference between Pro and Plus batch
             </button>
           </div>
 

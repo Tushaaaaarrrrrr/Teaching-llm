@@ -1501,14 +1501,14 @@ export default function ExploreCoursesPage() {
                       {showInfoHint === offering.id && (
                         <div style={{
                           position: 'absolute', bottom: 'calc(100% + 12px)', right: '-6px',
-                          background: 'var(--text-primary)', color: '#fff', padding: '10px 14px', borderRadius: '12px',
+                          background: '#0f172a', color: '#ffffff', padding: '10px 14px', borderRadius: '12px',
                           fontSize: '12px', fontWeight: '600', width: '245px', textAlign: 'center',
-                          boxShadow: '0 8px 20px rgba(0,0,0,0.28)', zIndex: 60,
+                          boxShadow: '0 8px 20px rgba(0,0,0,0.4)', zIndex: 60,
                           animation: 'fadeIn 0.2s ease-out',
                           pointerEvents: 'none',
                         }}>
                           Click here to see the difference between PRO and PLUS Batch
-                          <div style={{ position: 'absolute', top: '100%', right: '12px', border: '7px solid transparent', borderTopColor: 'var(--text-primary)' }} />
+                          <div style={{ position: 'absolute', top: '100%', right: '12px', border: '7px solid transparent', borderTopColor: '#0f172a' }} />
                         </div>
                       )}
                       <button

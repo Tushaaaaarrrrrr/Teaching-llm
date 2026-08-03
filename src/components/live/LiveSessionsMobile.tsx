@@ -351,7 +351,7 @@ function LiveSessionCard({ session, onUpgradeClick }: { session: CourseEvent; on
               ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 14px rgba(0,0,0,0.10)'
             }}
           >
-            Upgrade to join
+            Unlock to Join
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
             </svg>
