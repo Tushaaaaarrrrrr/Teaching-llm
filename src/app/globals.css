@@ -1726,3 +1726,9 @@ tr:hover td {
     display: none !important;
   }
 }
+
+@media (min-width: 769px) {
+  .header-left-section {
+    padding-left: 60px; /* Shift the good evening text further right on desktop */
+  }
+}

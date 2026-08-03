@@ -441,7 +441,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             width: '182px',
             minHeight: '74px',
             padding: '8px 12px',
-            borderRadius: '999px',
+            borderRadius: '16px',
             background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
             boxShadow: 'var(--shadow-lg)',
             cursor: 'pointer',
