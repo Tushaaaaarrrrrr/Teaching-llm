@@ -129,6 +129,7 @@ model Course {
   demoPrice             Float?                 @default(0)
   isDemoEnabled         Boolean                @default(false)
   demoExpiryDays        Int?                   @default(0)
+  requireFeedback       Boolean                @default(false)
   announcements         Announcement[]
   bundleOfferingCourses BundleOfferingCourse[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
