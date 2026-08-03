@@ -143,10 +143,22 @@ export async function GET(
     })
     if (cData.lectures?.some((l: any) => l.isDemo)) hasDemoLectures = true
 
+    let hasSubmittedFeedback = false
+    if (session.role === 'STUDENT') {
+      const feedbackCount = await prisma.feedback.count({
+        where: {
+          studentId: session.userId,
+          courseId: id,
+        },
+      })
+      hasSubmittedFeedback = feedbackCount > 0
+    }
+
     const result = {
       ...cData,
       courseEvents: filteredCourseEvents, // Use filtered events based on enrollment type
       enrollmentType: userEnrollmentType,
+      hasSubmittedFeedback,
       enrollment: enrollment ? {
         id: enrollment.id,
         createdAt: enrollment.createdAt,
@@ -187,7 +199,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled, googleGroupEmail, liveGoogleGroupEmail, liveUpgradePrice, isDemoPaid, demoPrice } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled, googleGroupEmail, liveGoogleGroupEmail, liveUpgradePrice, isDemoPaid, demoPrice, requireFeedback } = await request.json()
 
     if (isDisabled !== undefined && !isManagerOrSuperAdmin(session.role)) {
       return NextResponse.json({ error: 'Only managers can enable or disable courses' }, { status: 403 })
@@ -232,6 +244,7 @@ export async function PUT(
           isFree: existingCourse.isFree,
           isCommunityActive: isCommunityActive !== undefined ? !!isCommunityActive : undefined,
           isDisabled: isDisabled !== undefined ? !!isDisabled : undefined,
+          requireFeedback: requireFeedback !== undefined ? !!requireFeedback : undefined,
           expiresAt: expiresAt ? new Date(expiresAt) : null
         },
       })

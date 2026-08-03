@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Script from 'next/script'
 import MobileCourseDetail from '@/components/courses/MobileCourseDetail'
+import FeedbackModal from '@/components/FeedbackModal'
 import { X } from 'lucide-react'
 import { getCourseBackground, getCourseTextColor, getCourseSecondaryTextColor, getCourseBadgeBg, getCourseBadgeText, getCourseDecorativeColor, colorWithOpacity, extractHex, isGradient } from '@/lib/color-utils'
 
@@ -93,6 +94,7 @@ export default function CourseDetailPage() {
   const [purchasedCourse, setPurchasedCourse] = useState<any>(null)
   const [showUnenrollThanksModal, setShowUnenrollThanksModal] = useState(false)
   const [showUnenrollFeedbackModal, setShowUnenrollFeedbackModal] = useState(false)
+  const [showForcedFeedback, setShowForcedFeedback] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -128,6 +130,11 @@ export default function CourseDetailPage() {
       setTopics(activeTopics)
       setRole(sessionData.user?.role || '')
       setUserId(sessionData.user?.id || '')
+
+      const isStudent = sessionData.user?.role === 'STUDENT'
+      if (activeCourse?.requireFeedback && !activeCourse?.hasSubmittedFeedback && isStudent) {
+        setShowForcedFeedback(true)
+      }
 
       if (activeCourse?.enrollmentType === 'DEMO') {
         const demoTopics = activeTopics
@@ -2046,6 +2053,22 @@ export default function CourseDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showForcedFeedback && course && (
+        <FeedbackModal
+          courseId={course.id}
+          courseName={course.name}
+          courseSubject={course.subject || ''}
+          isForced={true}
+          onClose={() => {
+            setShowForcedFeedback(false)
+          }}
+          onSuccess={() => {
+            setShowForcedFeedback(false)
+            fetchData()
+          }}
+        />
       )}
     </>
   )

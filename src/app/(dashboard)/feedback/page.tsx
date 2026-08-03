@@ -13,6 +13,7 @@ interface CourseItem {
   name: string
   subject: string
   color: string
+  requireFeedback?: boolean
 }
 
 interface FeedbackItem {
@@ -392,7 +393,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
 function ManagerFeedbackView() {
   const router = useRouter()
   const { data: feedbacksRaw, isLoading } = useSWR('/api/feedback', fetcher)
-  const { data: coursesRaw } = useSWR('/api/courses', fetcher)
+  const { data: coursesRaw, mutate: mutateCourses } = useSWR('/api/courses', fetcher)
 
   // Safety: always ensure arrays — API may return an error object on 401
   const feedbacks: FeedbackItem[] = Array.isArray(feedbacksRaw) ? feedbacksRaw : []
@@ -401,6 +402,7 @@ function ManagerFeedbackView() {
   const [filterCourse, setFilterCourse] = useState('')
   const [searchStudent, setSearchStudent] = useState('')
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [showForceSettings, setShowForceSettings] = useState(false)
 
   const filtered = feedbacks.filter(f => {
     let matchCourse = true
@@ -487,8 +489,29 @@ function ManagerFeedbackView() {
           </p>
         </div>
       </div>
-      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end' }}>
-        <div style={{ display: 'flex', gap: '12px' }}>
+      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <button
+          onClick={() => setShowForceSettings(true)}
+          style={{
+            background: '#0a0a0a',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: '12px',
+            border: 'none',
+            fontWeight: '700',
+            fontSize: '14px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'transform 0.1s ease',
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <span>⚙️</span> Required Feedback
+        </button>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative' }}>
             <select 
               value={filterCourse}
@@ -639,6 +662,244 @@ function ManagerFeedbackView() {
       {selectedUserId && (
         <ManagerUserModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} onUpdate={() => {}} />
       )}
+
+      {showForceSettings && (
+        <ForceFeedbackSettingsModal
+          courses={courses}
+          onClose={() => setShowForceSettings(false)}
+          onMutate={mutateCourses}
+        />
+      )}
+    </div>
+  )
+}
+
+function ForceFeedbackSettingsModal({ 
+  courses, 
+  onClose, 
+  onMutate 
+}: { 
+  courses: CourseItem[], 
+  onClose: () => void, 
+  onMutate: () => void 
+}) {
+  const [selectedCourseId, setSelectedCourseId] = useState('')
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const activeCourse = courses.find(c => c.id === selectedCourseId)
+
+  const handleToggleForceFeedback = async () => {
+    if (!activeCourse) return
+    
+    const newRequired = !activeCourse.requireFeedback
+    const actionWord = newRequired ? 'require extensive feedback' : 'disable the extensive feedback requirement'
+    
+    if (!window.confirm(`Are you sure you want to ${actionWord} for "${activeCourse.name}"?`)) {
+      return
+    }
+
+    setIsUpdating(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const res = await fetch(`/api/courses/${activeCourse.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: activeCourse.name,
+          subject: activeCourse.subject,
+          color: activeCourse.color,
+          requireFeedback: newRequired
+        })
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to update course feedback settings')
+      }
+
+      setSuccess(`Successfully updated "${activeCourse.name}"!`)
+      onMutate()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0,0,0,0.5)',
+      backdropFilter: 'blur(8px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 2000,
+      padding: '20px',
+    }}>
+      <div style={{
+        background: 'var(--surface)',
+        width: '100%',
+        maxWidth: '480px',
+        borderRadius: '24px',
+        padding: '28px',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+        border: '1px solid var(--border)',
+        position: 'relative',
+        fontFamily: "'Outfit', sans-serif",
+      }}>
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+
+        <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>
+          Forced Feedback Settings
+        </h3>
+        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.4' }}>
+          Select a course below to enable or disable forced extensive feedback. When enabled, students must submit feedback to access the course.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>
+              Select Course
+            </label>
+            <select
+              value={selectedCourseId}
+              onChange={e => {
+                setSelectedCourseId(e.target.value)
+                setError('')
+                setSuccess('')
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                fontSize: '14px',
+                color: 'var(--text-primary)',
+                outline: 'none',
+              }}
+            >
+              <option value="">-- Choose a Course --</option>
+              {courses.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name} {c.requireFeedback ? '★' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {activeCourse && (
+            <div style={{ 
+              background: 'var(--surface-2)', 
+              borderRadius: '16px', 
+              padding: '18px', 
+              border: '1px solid var(--border)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  Course
+                </span>
+                <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>
+                  {activeCourse.name}
+                </span>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  Current Status
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: activeCourse.requireFeedback ? 'var(--success)' : 'var(--text-muted)',
+                  }} />
+                  <span style={{ fontSize: '13.5px', fontWeight: '700', color: activeCourse.requireFeedback ? 'var(--success)' : 'var(--text-secondary)' }}>
+                    {activeCourse.requireFeedback ? 'Forced Extensive Feedback Active' : 'Standard (Optional Feedback)'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleToggleForceFeedback}
+                disabled={isUpdating}
+                style={{
+                  marginTop: '6px',
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '50px',
+                  border: 'none',
+                  background: activeCourse.requireFeedback ? 'var(--danger)' : '#0a0a0a',
+                  color: 'white',
+                  fontWeight: '700',
+                  fontSize: '13.5px',
+                  cursor: isUpdating ? 'not-allowed' : 'pointer',
+                  transition: 'opacity 0.2s',
+                  opacity: isUpdating ? 0.7 : 1,
+                }}
+              >
+                {isUpdating ? 'Updating...' : activeCourse.requireFeedback ? 'Disable Force Feedback' : 'Enable Force Feedback'}
+              </button>
+            </div>
+          )}
+
+          {error && (
+            <p style={{ color: 'var(--danger)', fontSize: '13px', margin: 0, fontWeight: '600' }}>
+              ⚠️ {error}
+            </p>
+          )}
+
+          {success && (
+            <p style={{ color: 'var(--success)', fontSize: '13px', margin: 0, fontWeight: '600' }}>
+              ✓ {success}
+            </p>
+          )}
+
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={onClose}
+              style={{
+                padding: '10px 24px',
+                borderRadius: '50px',
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                color: 'var(--text-secondary)',
+                fontWeight: '700',
+                fontSize: '13.5px',
+                cursor: 'pointer',
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

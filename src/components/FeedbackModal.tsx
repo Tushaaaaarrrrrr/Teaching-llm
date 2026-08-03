@@ -9,6 +9,7 @@ interface FeedbackModalProps {
   courseSubject: string
   onClose: () => void
   onSuccess: () => void
+  isForced?: boolean
   existingFeedback?: {
     id: string
     teacherRating: number
@@ -26,7 +27,7 @@ const CATEGORIES = [
   { id: 'recommendScore', label: 'Recommendation Score' },
 ]
 
-export default function FeedbackModal({ courseId, courseName, courseSubject, onClose, onSuccess, existingFeedback }: FeedbackModalProps) {
+export default function FeedbackModal({ courseId, courseName, courseSubject, onClose, onSuccess, isForced = false, existingFeedback }: FeedbackModalProps) {
   const router = useRouter()
   const [ratings, setRatings] = useState<Record<string, number>>({
     teacherRating: existingFeedback?.teacherRating || 0,
@@ -34,6 +35,27 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
     materialRating: existingFeedback?.materialRating || 0,
     recommendScore: existingFeedback?.recommendScore || 0,
   })
+
+  const [cancelClicked, setCancelClicked] = useState(false)
+  const [helpClicked, setHelpClicked] = useState(false)
+
+  const handleCancelClick = () => {
+    if (isForced) {
+      setCancelClicked(true)
+      setError("Please fill these first and submit.")
+    } else {
+      onClose()
+    }
+  }
+
+  const handleHelpClick = () => {
+    if (isForced) {
+      setHelpClicked(true)
+      setError("Please fill these first and submit.")
+    } else {
+      router.push('/support')
+    }
+  }
 
   const [isCapacitor, setIsCapacitor] = useState<boolean>(false)
 
@@ -124,8 +146,8 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
     <div style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.4)',
-      backdropFilter: 'blur(4px)',
+      background: isForced ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)',
+      backdropFilter: isForced ? 'blur(12px)' : 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -147,32 +169,34 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
         }}
       >
         {/* Close Button */}
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '16px',
-            right: '16px',
-            background: 'var(--surface)',
-            border: 'none',
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            cursor: 'pointer',
-            color: 'var(--text-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-            zIndex: 5,
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'var(--surface)'}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+        {!isForced && (
+          <button
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
+              background: 'var(--surface)',
+              border: 'none',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s',
+              zIndex: 5,
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--surface)'}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        )}
 
         <h2 style={{ fontSize: 'clamp(20px, 5.4vw, 26px)', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px', paddingRight: '48px', lineHeight: 1.2 }}>
           Feedback for {courseName}
@@ -279,7 +303,8 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
 
         <div className="feedback-modal-footer" style={{ display: 'flex', gap: '10px', marginTop: 'clamp(20px, 5vw, 32px)', flexWrap: 'wrap' }}>
           <button
-            onClick={() => router.push('/support')}
+            onClick={handleHelpClick}
+            disabled={isForced && helpClicked}
             style={{
               flex: '1 1 140px',
               padding: '14px',
@@ -289,15 +314,18 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
               color: 'var(--text-secondary)',
               fontWeight: '700',
               fontSize: '13.5px',
-              cursor: 'pointer',
+              cursor: (isForced && helpClicked) ? 'default' : 'pointer',
               whiteSpace: 'nowrap',
+              opacity: (isForced && helpClicked) ? 0.4 : 1,
+              pointerEvents: (isForced && helpClicked) ? 'none' : 'auto',
             }}
           >
             Need More Help?
           </button>
           <div className="feedback-modal-footer-actions" style={{ display: 'flex', gap: '10px', flex: '2 1 220px' }}>
             <button
-              onClick={onClose}
+              onClick={handleCancelClick}
+              disabled={isForced && cancelClicked}
               style={{
                 flex: 1,
                 padding: '14px',
@@ -307,7 +335,9 @@ export default function FeedbackModal({ courseId, courseName, courseSubject, onC
                 color: 'var(--text-secondary)',
                 fontWeight: '700',
                 fontSize: '13.5px',
-                cursor: 'pointer',
+                cursor: (isForced && cancelClicked) ? 'default' : 'pointer',
+                opacity: (isForced && cancelClicked) ? 0.4 : 1,
+                pointerEvents: (isForced && cancelClicked) ? 'none' : 'auto',
               }}
             >
               Cancel
