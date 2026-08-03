@@ -167,7 +167,7 @@ export async function queueGoogleGroupSyncJobs(
     userEmail: string
     courseIds: string[]
     action: SyncAction
-    enrollmentTypeMap?: Record<string, 'LIVE' | 'RECORDED'>
+    enrollmentTypeMap?: Record<string, string>
   }
 ) {
   const normalizedUserEmail = normalizeEmail(userEmail)
@@ -220,6 +220,23 @@ export async function queueGoogleGroupSyncJobs(
 
   for (const course of courses) {
     const enrollmentType = enrollmentsMap[course.id] || 'RECORDED'
+    if (enrollmentType === 'DEMO') {
+      if (action === 'REMOVE') {
+        if (course.googleGroupEmail) {
+          const recEmails = parseGoogleGroupEmails(course.googleGroupEmail)
+          for (const ge of recEmails) {
+            explicitJobs.push({ userEmail: normalizedUserEmail, courseId: course.id, groupEmail: ge, action: 'REMOVE' })
+          }
+        }
+        if (course.liveGoogleGroupEmail) {
+          const liveEmails = parseGoogleGroupEmails(course.liveGoogleGroupEmail)
+          for (const ge of liveEmails) {
+            explicitJobs.push({ userEmail: normalizedUserEmail, courseId: course.id, groupEmail: ge, action: 'REMOVE' })
+          }
+        }
+      }
+      continue
+    }
     const hasLiveGroup = Boolean(course.liveGoogleGroupEmail?.trim())
 
     if (action === 'ADD') {

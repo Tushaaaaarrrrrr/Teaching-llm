@@ -662,92 +662,149 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           </select>
                         </div>
                       </div>
-                    </div>
-
-                    <div style={{ flex: 1.5 }}>
-                      <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Course Enrollments</label>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                        {courses.filter(c => formData.courseIds.includes(c.id)).map(c => {
-                          const enrollType = formData.enrollmentTypes[c.id] || 'LIVE'
-                          const isLive = enrollType === 'LIVE'
-                          return (
-                          <div key={c.id} style={{
-                            padding: '10px 18px', borderRadius: '16px', background: 'var(--surface)',
-                            boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
-                            display: 'flex', alignItems: 'center', gap: '10px'
-                          }}>
-                             <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
-                             <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.name}</span>
-                             {c.isExpired && <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>Expired</span>}
-                             {c.isEffectivelyDisabled && !c.isExpired && <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700', background: 'var(--danger-light)', padding: '2px 8px', borderRadius: '20px' }}>Disabled</span>}
-                             {/* Live/Recorded Dropdown */}
-                             <select
-                                value={enrollType}
-                                onChange={(e) => {
-                                  setFormData({...formData, enrollmentTypes: {...formData.enrollmentTypes, [c.id]: e.target.value}})
-                                }}
+                                     <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      {/* Regular Course Enrollments */}
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Course Enrollments</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                          {courses.filter(c => formData.courseIds.includes(c.id) && formData.enrollmentTypes[c.id] !== 'DEMO').map(c => {
+                            const enrollType = formData.enrollmentTypes[c.id] || 'LIVE'
+                            const isLive = enrollType === 'LIVE'
+                            return (
+                            <div key={c.id} style={{
+                              padding: '10px 18px', borderRadius: '16px', background: 'var(--surface)',
+                              boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+                              display: 'flex', alignItems: 'center', gap: '10px'
+                            }}>
+                               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
+                               <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.name}</span>
+                               {c.isExpired && <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>Expired</span>}
+                               {c.isEffectivelyDisabled && !c.isExpired && <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700', background: 'var(--danger-light)', padding: '2px 8px', borderRadius: '20px' }}>Disabled</span>}
+                               {/* Live/Recorded Dropdown */}
+                               <select
+                                  value={enrollType}
+                                  onChange={(e) => {
+                                    setFormData({...formData, enrollmentTypes: {...formData.enrollmentTypes, [c.id]: e.target.value}})
+                                  }}
+                                  style={{
+                                    padding: '4px 10px', borderRadius: '20px', border: '1px solid ' + (isLive ? 'var(--border)' : 'var(--border)'),
+                                    background: isLive
+                                      ? 'linear-gradient(135deg, var(--success-light), var(--border))'
+                                      : 'linear-gradient(135deg, var(--border), var(--border))',
+                                    color: isLive ? 'var(--success)' : 'var(--warning)',
+                                    fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em',
+                                    cursor: 'pointer', transition: 'all 0.2s',
+                                    boxShadow: '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
+                                    outline: 'none',
+                                  }}
+                                >
+                                  <option value="LIVE">🟢 LIVE</option>
+                                  <option value="RECORDED">🟡 RECORDED</option>
+                                </select>
+                               <button 
+                                  onClick={() => {
+                                    const newTypes = {...formData.enrollmentTypes}
+                                    delete newTypes[c.id]
+                                    setFormData({...formData, courseIds: formData.courseIds.filter(id => id !== c.id), enrollmentTypes: newTypes})
+                                  }}
+                                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--danger)', display: 'flex' }}
+                               >
+                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                               </button>
+                            </div>
+                            )
+                          })}
+                          
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <div style={{ position: 'relative' }}>
+                               <select 
+                                  onChange={(e) => {
+                                   if (e.target.value && !formData.courseIds.includes(e.target.value)) {
+                                      setFormData({
+                                         ...formData,
+                                         courseIds: [...formData.courseIds, e.target.value],
+                                         enrollmentTypes: {...formData.enrollmentTypes, [e.target.value]: 'LIVE'}
+                                       })
+                                    }
+                                  }}
                                 style={{
-                                  padding: '4px 10px', borderRadius: '20px', border: '1px solid ' + (isLive ? 'var(--border)' : 'var(--border)'),
-                                  background: isLive
-                                    ? 'linear-gradient(135deg, var(--success-light), var(--border))'
-                                    : 'linear-gradient(135deg, var(--border), var(--border))',
-                                  color: isLive ? 'var(--success)' : 'var(--warning)',
-                                  fontSize: '10px', fontWeight: '800', letterSpacing: '0.04em',
-                                  cursor: 'pointer', transition: 'all 0.2s',
-                                  boxShadow: '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
-                                  outline: 'none',
+                                  padding: '10px 18px', borderRadius: '16px', border: '2px dashed var(--neu-dark)', background: 'var(--surface-2)',
+                                  fontSize: '13px', fontWeight: '700', color: 'var(--accent)', cursor: 'pointer', appearance: 'none'
                                 }}
-                              >
-                                <option value="LIVE">🟢 LIVE</option>
-                                <option value="RECORDED">🟡 RECORDED</option>
-                              </select>
-                             <button 
-                                onClick={() => {
-                                  const newTypes = {...formData.enrollmentTypes}
-                                  delete newTypes[c.id]
-                                  setFormData({...formData, courseIds: formData.courseIds.filter(id => id !== c.id), enrollmentTypes: newTypes})
-                                }}
-                                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--danger)', display: 'flex' }}
+                                value=""
                              >
-                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                             </button>
+                               <option value="">+ Add Course</option>
+                               {courses.filter(c => !formData.courseIds.includes(c.id) && !bundledCourseIds.has(c.id) && !c.isEffectivelyDisabled).map(c => (
+                                  <option key={c.id} value={c.id}>{c.name}</option>
+                               ))}
+                             </select>
+                           </div>
                           </div>
-                          )
-                        })}
-                        
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <div style={{ position: 'relative' }}>
-                             <select 
-                                onChange={(e) => {
-                                 if (e.target.value && !formData.courseIds.includes(e.target.value)) {
-                                    setFormData({
-                                       ...formData,
-                                       courseIds: [...formData.courseIds, e.target.value],
-                                       enrollmentTypes: {...formData.enrollmentTypes, [e.target.value]: 'LIVE'}
-                                     })
-                                  }
-                                }}
-                              style={{
-                                padding: '10px 18px', borderRadius: '16px', border: '2px dashed var(--neu-dark)', background: 'var(--surface-2)',
-                                fontSize: '13px', fontWeight: '700', color: 'var(--accent)', cursor: 'pointer', appearance: 'none'
-                              }}
-                              value=""
-                           >
-                             <option value="">+ Add Course</option>
-                             {courses.filter(c => !formData.courseIds.includes(c.id) && !bundledCourseIds.has(c.id) && !c.isEffectivelyDisabled).map(c => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                             ))}
-                           </select>
                         </div>
+                        {bundledCourseIds.size > 0 && (
+                          <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--accent)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            Bundled courses are automatically handled.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Demo Courses Section */}
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Demo Courses</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                          {courses.filter(c => formData.courseIds.includes(c.id) && formData.enrollmentTypes[c.id] === 'DEMO').map(c => {
+                            return (
+                            <div key={c.id} style={{
+                              padding: '10px 18px', borderRadius: '16px', background: 'var(--surface)',
+                              boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+                              display: 'flex', alignItems: 'center', gap: '10px'
+                            }}>
+                               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
+                               <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.name}</span>
+                               <span style={{ fontSize: '10px', fontWeight: '850', color: 'var(--accent)', background: 'var(--primary-light)', padding: '2px 8px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Demo</span>
+                               <button 
+                                  onClick={() => {
+                                    const newTypes = {...formData.enrollmentTypes}
+                                    delete newTypes[c.id]
+                                    setFormData({...formData, courseIds: formData.courseIds.filter(id => id !== c.id), enrollmentTypes: newTypes})
+                                  }}
+                                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--danger)', display: 'flex' }}
+                                >
+                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                               </button>
+                            </div>
+                            )
+                          })}
+                          
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <div style={{ position: 'relative' }}>
+                               <select 
+                                  onChange={(e) => {
+                                   if (e.target.value && !formData.courseIds.includes(e.target.value)) {
+                                      setFormData({
+                                         ...formData,
+                                         courseIds: [...formData.courseIds, e.target.value],
+                                         enrollmentTypes: {...formData.enrollmentTypes, [e.target.value]: 'DEMO'}
+                                       })
+                                    }
+                                  }}
+                                style={{
+                                  padding: '10px 18px', borderRadius: '16px', border: '2px dashed var(--neu-dark)', background: 'var(--surface-2)',
+                                  fontSize: '13px', fontWeight: '700', color: 'var(--accent)', cursor: 'pointer', appearance: 'none'
+                                }}
+                                value=""
+                             >
+                               <option value="">+ Add Demo Course</option>
+                               {courses.filter(c => !formData.courseIds.includes(c.id)).map(c => (
+                                  <option key={c.id} value={c.id}>{c.name}</option>
+                               ))}
+                             </select>
+                           </div>
+                          </div>
                         </div>
                       </div>
-                      {bundledCourseIds.size > 0 && (
-                        <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--accent)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                          Bundled courses are automatically handled.
-                        </div>
-                      )}
-                    </div>
+                    </div>           </div>
                   </>
                 ) : (
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)', borderRadius: '24px', border: '2px dashed var(--border)', padding: '40px', textAlign: 'center' }}>

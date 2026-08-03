@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import ManagerUserModal from '@/components/ManagerUserModal'
 import SwipeableMessage from './SwipeableMessage'
+import { colorWithOpacity } from '@/lib/color-utils'
+import Script from 'next/script'
 
 interface ClassItem {
   id: string
@@ -210,6 +212,12 @@ export default function CommunityPage() {
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null)
   
+  const [offering, setOffering] = useState<any | null>(null)
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+  const [purchasing, setPurchasing] = useState<string | null>(null)
+  const [successOrderId, setSuccessOrderId] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  
   const [isCapacitor, setIsCapacitor] = useState<boolean>(false)
   const [longPressedClass, setLongPressedClass] = useState<ClassItem | null>(null)
   
@@ -313,6 +321,106 @@ export default function CommunityPage() {
   const [editingMessage, setEditingMessage] = useState<CommMsg | null>(null)
   const [editContent, setEditContent] = useState('')
   const imageInputRef = useRef<HTMLInputElement>(null)
+
+  const handleUpgradeClick = async () => {
+    if (!selectedClass || !selectedClass.id) return
+    setIsProcessing(true)
+    try {
+      const res = await fetch('/api/course-offerings')
+      if (res.ok) {
+        const offerings = await res.json()
+        if (Array.isArray(offerings)) {
+          const found = offerings.find((o: any) => o.courseId === selectedClass.id)
+          if (found) {
+            setOffering(found)
+            setShowPurchaseModal(true)
+          } else {
+            alert('No batch offering found for this course.')
+          }
+        }
+      } else {
+        alert('Failed to load upgrade options.')
+      }
+    } catch (e) {
+      console.error(e)
+      alert('Something went wrong.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handlePurchase = async (offeringId: string, accessType: 'RECORDED' | 'LIVE' | 'CHAMPION') => {
+    setIsProcessing(true)
+    setPurchasing(`${offeringId}-${accessType}`)
+    try {
+      const res = await fetch(`/api/course-offerings/${offeringId}/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessType }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to initialize payment')
+
+      if (data.isFree) {
+        setIsProcessing(false)
+        setSuccessOrderId('FREE-ENROLLMENT')
+        return
+      }
+
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'GenZ IItian',
+        description: `Purchase ${data.courseName} (${accessType})`,
+        order_id: data.razorpayOrderId,
+        prefill: {
+          name: data.userName,
+          email: data.userEmail,
+        },
+        theme: { color: 'var(--accent)' },
+        handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+          setIsProcessing(true)
+          try {
+            const verifyRes = await fetch(`/api/course-offerings/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            })
+            const verifyData = await verifyRes.json()
+            if (verifyRes.ok) {
+              setShowPurchaseModal(false)
+              setSuccessOrderId(verifyData.orderId || 'SUCCESS')
+            } else {
+              alert(verifyData.error || 'Payment verification failed')
+            }
+          } catch (e) {
+            console.error(e)
+            alert('Something went wrong during payment verification')
+          } finally {
+            setIsProcessing(false)
+          }
+        },
+        modal: {
+          onDismiss: () => {
+            setPurchasing(null)
+          }
+        }
+      }
+
+      const rzp = new (window as any).Razorpay(options)
+      rzp.open()
+      setIsProcessing(false)
+    } catch (e: any) {
+      alert(e.message || 'Something went wrong')
+      setIsProcessing(false)
+      setPurchasing(null)
+    }
+  }
 
   // Pagination & infinite scroll state
   const [hasMore, setHasMore] = useState(true)
@@ -2574,183 +2682,231 @@ export default function CommunityPage() {
                   Uploading image...
                 </div>
               )}
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  ref={imageInputRef}
-                  onChange={handleImageSelect}
-                  style={{ display: 'none' }}
-                />
-                <button
-                  onClick={() => imageInputRef.current?.click()}
-                  disabled={uploadingImage || !!editingMessage}
-                  title="Attach image"
-                  style={{
-                    width: '40px', height: '40px', borderRadius: '50%', border: 'none',
-                    cursor: editingMessage ? 'default' : 'pointer', flexShrink: 0,
-                    background: (pendingImage && !editingMessage) ? 'var(--primary-light)' : 'var(--surface-2)',
-                    boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: (pendingImage && !editingMessage) ? 'var(--primary)' : 'var(--text-muted)',
-                    transition: 'all 0.2s',
-                    opacity: editingMessage ? 0.5 : 1,
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                </button>
-                <div style={{ flex: 1, position: 'relative' }}>
-                  {showTagSuggestions && filteredStaff.length > 0 && !isDM(selectedClass) && !editingMessage && (
+              {(() => {
+                const isDemo = selectedClass && ((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO') && userRole !== 'MANAGER' && userRole !== 'ADMIN';
+                if (isDemo) {
+                  return (
                     <div style={{
-                      position: 'absolute',
-                      bottom: '100%',
-                      left: '12px',
-                      marginBottom: '8px',
-                      background: 'var(--community-item-bg)',
-                      border: '1.5px solid rgba(0,0,0,0.08)',
-                      borderRadius: '16px',
-                      boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                      maxHeight: '200px',
-                      overflowY: 'auto',
-                      zIndex: 10,
-                      width: '280px',
                       display: 'flex',
-                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '12px 20px',
+                      borderRadius: '50px',
+                      background: 'var(--surface-2)',
+                      boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
+                      border: '1.5px solid var(--border)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '13.5px',
+                      fontWeight: '600',
+                      gap: '12px',
+                      margin: '10px 0 4px 0'
                     }}>
-                      {filteredStaff.map((user) => (
-                        <button
-                          key={user.id}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            selectTagUser(user)
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            padding: '10px 14px',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            width: '100%',
-                            color: 'var(--community-item-text)',
-                            borderBottom: '1px solid rgba(0,0,0,0.02)',
-                            transition: 'background 0.2s',
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(54,54,232,0.08)'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                        >
-                          <div style={{
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '50%',
-                            background: '#3636e822',
-                            color: '#3636e8',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '11px',
-                            fontWeight: '800',
-                          }}>
-                            {user.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {user.name}
-                            </div>
-                            <div style={{ fontSize: '10px', color: '#9999b0', textTransform: 'capitalize' }}>
-                              {user.role.toLowerCase()}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '16px' }}>🔒</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          Community chat is read-only in Demo mode.
+                        </span>
+                      </div>
+                      <button
+                        onClick={handleUpgradeClick}
+                        style={{
+                          padding: '8px 18px',
+                          borderRadius: '50px',
+                          background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                          color: '#ffffff',
+                          fontWeight: '800',
+                          fontSize: '12px',
+                          border: 'none',
+                          boxShadow: '0 4px 10px rgba(99, 102, 241, 0.25)',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                        }}
+                      >
+                        Upgrade to Chat
+                      </button>
                     </div>
-                  )}
-                  <input
-                    ref={inputRef}
-                    value={editingMessage ? editContent : input}
-                    onChange={e => {
-                      if (editingMessage) {
-                        setEditContent(e.target.value)
-                      } else {
-                        handleInputChange(e)
-                      }
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === 'Escape') {
-                        if (editingMessage) {
-                          setEditingMessage(null)
-                          setEditContent('')
-                        } else {
-                          setShowTagSuggestions(false)
+                  );
+                }
+                return (
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', width: '100%' }}>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      ref={imageInputRef}
+                      onChange={handleImageSelect}
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      onClick={() => imageInputRef.current?.click()}
+                      disabled={uploadingImage || !!editingMessage}
+                      title="Attach image"
+                      style={{
+                        width: '40px', height: '40px', borderRadius: '50%', border: 'none',
+                        cursor: editingMessage ? 'default' : 'pointer', flexShrink: 0,
+                        background: (pendingImage && !editingMessage) ? 'var(--primary-light)' : 'var(--surface-2)',
+                        boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: (pendingImage && !editingMessage) ? 'var(--primary)' : 'var(--text-muted)',
+                        transition: 'all 0.2s',
+                        opacity: editingMessage ? 0.5 : 1,
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </button>
+                    <div style={{ flex: 1, position: 'relative' }}>
+                      {showTagSuggestions && filteredStaff.length > 0 && !isDM(selectedClass) && !editingMessage && (
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '100%',
+                          left: '12px',
+                          marginBottom: '8px',
+                          background: 'var(--community-item-bg)',
+                          border: '1.5px solid rgba(0,0,0,0.08)',
+                          borderRadius: '16px',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                          maxHeight: '200px',
+                          overflowY: 'auto',
+                          zIndex: 10,
+                          width: '280px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}>
+                          {filteredStaff.map((user) => (
+                            <button
+                              key={user.id}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                selectTagUser(user)
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '10px 14px',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                width: '100%',
+                                color: 'var(--community-item-text)',
+                                borderBottom: '1px solid rgba(0,0,0,0.02)',
+                                transition: 'background 0.2s',
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(54,54,232,0.08)'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                            >
+                              <div style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '50%',
+                                background: '#3636e822',
+                                color: '#3636e8',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '11px',
+                                fontWeight: '800',
+                              }}>
+                                {user.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {user.name}
+                                </div>
+                                <div style={{ fontSize: '10px', color: '#9999b0', textTransform: 'capitalize' }}>
+                                  {user.role.toLowerCase()}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <input
+                        ref={inputRef}
+                        value={editingMessage ? editContent : input}
+                        onChange={e => {
+                          if (editingMessage) {
+                            setEditContent(e.target.value)
+                          } else {
+                            handleInputChange(e)
+                          }
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Escape') {
+                            if (editingMessage) {
+                              setEditingMessage(null)
+                              setEditContent('')
+                            } else {
+                              setShowTagSuggestions(false)
+                            }
+                          } else if (e.key === 'Enter' && !e.shiftKey) {
+                            if (editingMessage) {
+                              editMessage(editingMessage.id, editContent)
+                            } else {
+                              sendMessage()
+                            }
+                          }
+                        }}
+                        placeholder={
+                          editingMessage
+                            ? 'Edit message...'
+                            : (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER')
+                              ? 'This community is disabled'
+                              : isDM(selectedClass)
+                                ? `Message ${selectedClass.name.replace('Chat with ', '')}...`
+                                : `Message ${selectedClass.name} community...`
                         }
-                      } else if (e.key === 'Enter' && !e.shiftKey) {
-                        if (editingMessage) {
-                          editMessage(editingMessage.id, editContent)
-                        } else {
-                          sendMessage()
-                        }
+                        disabled={(!editingMessage && !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || uploadingImage}
+                        style={{
+                          width: '100%', padding: '11px 16px', borderRadius: '50px',
+                          border: 'none', outline: 'none',
+                          fontFamily: 'inherit', fontSize: '14px',
+                          ...neuInset, color: 'var(--text-primary)',
+                          opacity: (!editingMessage && !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? 0.6 : 1,
+                        }}
+                      />
+                    </div>
+                    <button
+                      onClick={editingMessage ? () => editMessage(editingMessage.id, editContent) : sendMessage}
+                      disabled={
+                        editingMessage
+                          ? !editContent.trim()
+                          : ((!input.trim() && !pendingImage) || uploadingImage || (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER'))
                       }
-                    }}
-                    placeholder={
-                      editingMessage
-                        ? 'Edit message...'
-                        : (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER')
-                          ? 'This community is disabled'
-                          : (selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO'
-                            ? 'Community chat is read-only in Demo mode. Unlock full course to participate.'
-                            : isDM(selectedClass)
-                              ? `Message ${selectedClass.name.replace('Chat with ', '')}...`
-                              : `Message ${selectedClass.name} community...`
-                    }
-                    disabled={(!editingMessage && !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || uploadingImage || !!((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO')}
-                    style={{
-                      width: '100%', padding: '11px 16px', borderRadius: '50px',
-                      border: 'none', outline: 'none',
-                      fontFamily: 'inherit', fontSize: '14px',
-                      ...neuInset, color: 'var(--text-primary)',
-                      opacity: ((!editingMessage && !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || ((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO')) ? 0.6 : 1,
-                    }}
-                  />
-                </div>
-                <button
-                  onClick={editingMessage ? () => editMessage(editingMessage.id, editContent) : sendMessage}
-                  disabled={
-                    editingMessage
-                      ? !editContent.trim()
-                      : ((!input.trim() && !pendingImage) || uploadingImage || (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || !!((selectedClass as any).isDemoEnrollment || (selectedClass as any).enrollmentType === 'DEMO'))
-                  }
-                  style={{
-                    height: '44px', borderRadius: (pendingImage && !editingMessage) ? '50px' : '50%', border: 'none',
-                    width: (pendingImage && !editingMessage) ? 'auto' : '44px',
-                    padding: (pendingImage && !editingMessage) ? '0 20px' : '0',
-                    cursor: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? 'pointer' : 'default',
-                    background: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? selectedClass.color : 'var(--surface-2)',
-                    color: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? '#fff' : 'var(--text-muted)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, gap: '6px',
-                    boxShadow: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
-                    transition: 'all 0.2s', fontWeight: '700', fontSize: '13px', fontFamily: 'inherit',
-                  }}
-                  title={editingMessage ? 'Save changes' : 'Send message'}
-                >
-                  {pendingImage && !editingMessage && <span>Send</span>}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    {editingMessage ? (
-                      <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-                    ) : (
-                      <>
-                        <line x1="22" y1="2" x2="11" y2="13"/>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                      </>
-                    )}
-                  </svg>
-                </button>
-              </div>
+                      style={{
+                        height: '44px', borderRadius: (pendingImage && !editingMessage) ? '50px' : '50%', border: 'none',
+                        width: (pendingImage && !editingMessage) ? 'auto' : '44px',
+                        padding: (pendingImage && !editingMessage) ? '0 20px' : '0',
+                        cursor: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? 'pointer' : 'default',
+                        background: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? selectedClass.color : 'var(--surface-2)',
+                        color: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? '#fff' : 'var(--text-muted)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, gap: '6px',
+                        boxShadow: (editingMessage ? editContent.trim() : (input.trim() || pendingImage)) ? `4px 4px 10px ${selectedClass.color}55` : '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+                        transition: 'all 0.2s', fontWeight: '700', fontSize: '13px', fontFamily: 'inherit',
+                      }}
+                      title={editingMessage ? 'Save changes' : 'Send message'}
+                    >
+                      {pendingImage && !editingMessage && <span>Send</span>}
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        {editingMessage ? (
+                          <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                        ) : (
+                          <>
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                          </>
+                        )}
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
             )}
           </>
@@ -3284,6 +3440,292 @@ export default function CommunityPage() {
           </div>
         </div>
       )}
+
+      {/* Processing Modal */}
+      {isProcessing && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(8px)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'var(--surface)', padding: '40px', borderRadius: '32px',
+            textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+            width: '320px'
+          }}>
+            <div className="spinner" style={{
+              width: '40px', height: '40px', border: '4px solid #f3f3f3',
+              borderTop: '4px solid #6366f1', borderRadius: '50%',
+              margin: '0 auto 20px',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Processing...</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>Please wait while we set up your course access.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Course Purchase Modal */}
+      {showPurchaseModal && offering && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001,
+          padding: '20px', overflow: 'auto'
+        }} onClick={() => setShowPurchaseModal(false)}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '480px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '30px',
+            animation: 'modalSlideUp 0.3s ease-out',
+            position: 'relative'
+          }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowPurchaseModal(false)}
+              style={{ position: 'absolute', top: '20px', right: '20px', background: 'var(--surface)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s', zIndex: 10 }}
+            >
+              ✕
+            </button>
+
+            {/* Course Header Color Band */}
+            <div style={{
+              background: `linear-gradient(135deg, ${offering.course?.color || '#6366f1'}, ${colorWithOpacity(offering.course?.color || '#6366f1', 'cc')})`,
+              margin: '-30px -30px 24px -30px',
+              padding: '40px 30px 30px 30px',
+              borderTopLeftRadius: '32px',
+              borderTopRightRadius: '32px',
+              color: '#fff',
+              position: 'relative',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                width: '60px', height: '60px', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px auto',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20M4 19.5V5A2.5 2.5 0 0 1 6.5 2.5H20v20H6.5a2.5 2.5 0 0 1-2-2.5z"/></svg>
+              </div>
+              <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '4px', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                {offering.course?.name}
+              </h2>
+              <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '600', marginBottom: '0' }}>
+                {offering.course?.subject}
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Recorded Batch Option */}
+              {offering.hasRecorded && (
+                <div style={{
+                  padding: '16px', borderRadius: '20px',
+                  background: 'var(--surface-2, rgba(99, 102, 241, 0.02))',
+                  border: '1.5px solid var(--border)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                        📹 Recorded Batch - PLUS
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>
+                          ₹{Math.max(Number(offering.recordedDiscountPrice || 0), 1)}
+                        </span>
+                        {Number(offering.recordedOriginalPrice || 0) > Math.max(Number(offering.recordedDiscountPrice || 0), 1) && (
+                          <span style={{ fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                            ₹{offering.recordedOriginalPrice}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handlePurchase(offering.id, 'RECORDED')}
+                    disabled={!!purchasing}
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: '50px',
+                      border: '2.5px solid var(--accent)', background: 'transparent',
+                      color: 'var(--accent)', fontSize: '14px', fontWeight: '800',
+                      cursor: purchasing ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {purchasing === `${offering.id}-RECORDED` ? 'Processing...' : 'Buy PLUS Batch'}
+                  </button>
+                </div>
+              )}
+
+              {/* Live Batch Option */}
+              {offering.hasLive && (
+                <div style={{
+                  padding: '16px', borderRadius: '20px',
+                  background: 'var(--surface-2, rgba(99, 102, 241, 0.02))',
+                  border: '1.5px solid var(--accent)',
+                  position: 'relative',
+                  boxShadow: '0 8px 24px rgba(99,102,241,0.08)'
+                }}>
+                  <div style={{
+                    position: 'absolute', top: '12px', right: '16px',
+                    padding: '3px 10px', borderRadius: '20px',
+                    background: 'var(--accent)', color: '#fff',
+                    fontSize: '9px', fontWeight: '900', letterSpacing: '0.08em',
+                  }}>
+                    PRO
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                        🔴 Live + Recorded Batch - PRO
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>
+                          ₹{Math.max(Number(offering.liveDiscountPrice || 0), 1)}
+                        </span>
+                        {Number(offering.liveOriginalPrice || 0) > Math.max(Number(offering.liveDiscountPrice || 0), 1) && (
+                          <span style={{ fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                            ₹{offering.liveOriginalPrice}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handlePurchase(offering.id, 'LIVE')}
+                    disabled={!!purchasing}
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: '50px',
+                      border: 'none', background: 'var(--accent)',
+                      color: '#fff', fontSize: '14px', fontWeight: '800',
+                      cursor: purchasing ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {purchasing === `${offering.id}-LIVE` ? 'Processing...' : '⚡ Buy PLUS + PRO Batch'}
+                  </button>
+                </div>
+              )}
+
+              {/* Champion Option */}
+              {offering.championDiscountPrice > 0 && (
+                <div style={{
+                  padding: '16px', borderRadius: '20px',
+                  background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+                  border: '1.5px solid #fca5a5',
+                  position: 'relative',
+                }}>
+                  <div style={{
+                    position: 'absolute', top: '12px', right: '16px',
+                    padding: '3px 10px', borderRadius: '20px',
+                    background: 'var(--danger)', color: '#fff',
+                    fontSize: '9px', fontWeight: '900', letterSpacing: '0.08em',
+                  }}>
+                    CHAMPION
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                        🏆 Champion - {offering.championSubtitle || 'Premium Wrapper'}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>
+                          ₹{offering.championDiscountPrice}
+                        </span>
+                        {offering.championOriginalPrice > offering.championDiscountPrice && (
+                          <span style={{ fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                            ₹{offering.championOriginalPrice}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handlePurchase(offering.id, 'CHAMPION')}
+                    disabled={!!purchasing}
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: '50px',
+                      border: 'none', background: 'var(--danger)',
+                      color: '#fff', fontSize: '14px', fontWeight: '800',
+                      cursor: purchasing ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {purchasing === `${offering.id}-CHAMPION` ? 'Processing...' : '⚡ Buy PLUS + PRO + CHAMPION Batch'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer info */}
+            <div style={{
+              marginTop: '24px',
+              textAlign: 'center',
+              fontSize: '12px',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <span>⌛</span> Access Till End Term
+              </div>
+              <button
+                onClick={() => router.push(`/support?openTicket=true&type=GENERAL&classId=${offering?.courseId || ''}`)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--accent)',
+                  fontSize: '11.5px',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: '4px 8px',
+                  marginTop: '4px',
+                }}
+              >
+                Need Help? Contact Support
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {successOrderId && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001,
+          padding: '20px'
+        }} onClick={() => { setSuccessOrderId(null); window.location.reload() }}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: '32px', width: '100%', maxWidth: '440px',
+            boxShadow: '0 0 100px var(--neu-glow), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            padding: '40px', textAlign: 'center',
+            animation: 'modalSlideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>Course Unlocked!</h2>
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
+              Your payment was verified successfully. You now have full access to all lectures, class materials, and student benefits.
+            </p>
+            <button
+              onClick={() => { setSuccessOrderId(null); window.location.reload() }}
+              style={{
+                width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+                background: 'linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%)',
+                color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+              }}
+            >
+              Got it, let&apos;s go! 🚀
+            </button>
+          </div>
+        </div>
+      )}
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>
   )
 }

@@ -517,6 +517,65 @@ export async function GET(request: NextRequest) {
       console.error('[Analytics Summary] Failed to compute batch stats:', e)
     }
 
+    // ─── Compute Demo Stats ──────────────────────────────────────────
+    let demoStats = {
+      totalUsersWithDemo: 0,
+      totalDemoEnrollments: 0,
+      courseBreakdown: [] as Array<{ courseId: string; courseName: string; count: number; color: string }>,
+      mostPopularDemoCourse: 'None'
+    }
+
+    try {
+      const demoEnrollments = await prisma.enrollment.findMany({
+        where: {
+          type: 'DEMO',
+          user: { role: 'STUDENT', isTerminated: false }
+        },
+        select: {
+          userId: true,
+          courseId: true,
+          course: {
+            select: {
+              name: true,
+              color: true
+            }
+          }
+        }
+      })
+
+      const filteredDemos = (courseId && courseId !== 'all')
+        ? demoEnrollments.filter(e => e.courseId === courseId)
+        : demoEnrollments
+
+      const uniqueDemoUsers = new Set(filteredDemos.map(e => e.userId))
+      
+      const courseCountsMap = new Map<string, { name: string; color: string; count: number }>()
+      for (const e of filteredDemos) {
+        if (!e.course) continue
+        const current = courseCountsMap.get(e.courseId) || { name: e.course.name, color: e.course.color || '#6366f1', count: 0 }
+        current.count++
+        courseCountsMap.set(e.courseId, current)
+      }
+
+      const breakdown = Array.from(courseCountsMap.entries()).map(([cid, data]) => ({
+        courseId: cid,
+        courseName: data.name,
+        count: data.count,
+        color: data.color
+      })).sort((a, b) => b.count - a.count)
+
+      const mostPopular = breakdown.length > 0 ? breakdown[0].courseName : 'None'
+
+      demoStats = {
+        totalUsersWithDemo: uniqueDemoUsers.size,
+        totalDemoEnrollments: filteredDemos.length,
+        courseBreakdown: breakdown,
+        mostPopularDemoCourse: mostPopular
+      }
+    } catch (err) {
+      console.error('[Analytics Summary] Failed to compute demo stats:', err)
+    }
+
     return NextResponse.json({
       range,
       timer: {
@@ -538,6 +597,7 @@ export async function GET(request: NextRequest) {
       courseGrowth,
       demographics,
       batchStats,
+      demoStats,
     })
   } catch (error) {
     console.error('[Analytics Summary] Error:', error)

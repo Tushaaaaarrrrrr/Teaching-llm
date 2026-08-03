@@ -185,6 +185,7 @@ export async function getTodaySessionSnapshots(session: SessionRole) {
       instructorId: liveEvent?.instructorId ?? snapshot.instructorId ?? null,
       isGlobal: snapshot.isGlobal,
       isRecordedOnly, // Pass to frontend so it knows to hide UI elements
+      enrollmentType,
       snapshotDate: snapshot.snapshotDate.toISOString(),
       syncedAt: snapshot.syncedAt.toISOString(),
       // Agora live-stream fields — always read from the live CourseEvent so

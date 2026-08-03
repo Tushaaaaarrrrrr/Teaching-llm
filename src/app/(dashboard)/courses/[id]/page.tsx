@@ -122,10 +122,19 @@ export default function CourseDetailPage() {
         setOffering(found || null)
       }
 
-      setCourse(courseData.course || courseData)
-      setTopics(Array.isArray(topicsData) ? topicsData : [])
+      const activeCourse = courseData.course || courseData
+      const activeTopics = Array.isArray(topicsData) ? topicsData : []
+      setCourse(activeCourse)
+      setTopics(activeTopics)
       setRole(sessionData.user?.role || '')
       setUserId(sessionData.user?.id || '')
+
+      if (activeCourse?.enrollmentType === 'DEMO') {
+        const demoTopics = activeTopics
+          .filter(topic => topic.content?.some((item: any) => item.videoUrl || item.youtubeUrl))
+          .map(topic => topic.id)
+        setExpandedTopics(new Set(demoTopics))
+      }
       
       // Fetch exams for this course
       const examsRes = await fetch(`/api/exams?courseId=${params.id}`)

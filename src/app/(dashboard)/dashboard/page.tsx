@@ -990,7 +990,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    {frontSession.isRecordedOnly ? (
+                    {frontSession.isRecordedOnly || frontSession.enrollmentType === 'DEMO' ? (
                       <button
                         onClick={() => {
                           if (frontSession.courseId) {
