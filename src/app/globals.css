@@ -414,6 +414,7 @@ img {
   padding: 24px;
   max-width: 1400px;
   width: 100%;
+  margin: 0 auto;
   overflow-x: hidden;
 }
 
@@ -1142,20 +1143,33 @@ tr:hover td {
   box-shadow: 10px 0 30px rgba(0, 0, 0, 0.35);
 }
 
-/* Desktop toggle button styles */
-.sidebar-desktop-toggle {
+/* Desktop toggle & close button styles */
+.sidebar-desktop-menu-trigger {
   display: flex;
   transition: all 0.2s ease;
 }
 
-.sidebar-desktop-toggle:hover {
+.sidebar-desktop-menu-trigger:hover {
   background-color: var(--primary) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 10px rgba(54,54,232,0.5) !important;
+  box-shadow: 4px 0 20px rgba(99, 102, 241, 0.4) !important;
+}
+
+.sidebar-close-btn {
+  display: flex;
+  transition: all 0.2s ease;
+}
+
+.sidebar-close-btn:hover {
+  color: var(--danger) !important;
+  transform: scale(1.1);
 }
 
 @media (max-width: 768px) {
-  .sidebar-desktop-toggle {
+  .sidebar-desktop-menu-trigger {
+    display: none !important;
+  }
+  .sidebar-close-btn {
     display: none !important;
   }
   .sidebar-hover-sensor {

@@ -349,10 +349,20 @@ export default function Header({ userName, userRole }: HeaderProps) {
   return (
     <header style={{
       height: showGreetingHeadline ? '140px' : '96px', background: 'var(--sidebar-bg)',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 32px', position: 'sticky', top: 0, zIndex: 50,
+      display: 'flex', justifyContent: 'center',
+      position: 'sticky', top: 0, zIndex: 50,
       transition: 'height 0.3s ease',
+      padding: '0 24px',
     }} className={`dashboard-header ${!isHomePage ? 'mobile-hide-header' : ''}`}>
+      <div style={{
+        maxWidth: '1400px',
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        minWidth: 0,
+      }} className="header-inner-container">
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0, flex: 1 }} className="header-left-section">
         {/* Hamburger Menu Toggle Button on Mobile (hidden — bottom nav handles navigation) */}
         <button
@@ -758,6 +768,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
             </div>
           )}
         </div>
+      </div>
       </div>
     </header>
   )

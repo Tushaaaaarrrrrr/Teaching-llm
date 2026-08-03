@@ -439,6 +439,46 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           zIndex: 99,
         }}
       />
+      {/* Floating Menu Button Trigger on left edge of the screen */}
+      {!isLockedOpen && (
+        <button
+          className="sidebar-desktop-menu-trigger"
+          onClick={() => setIsLockedOpen(true)}
+          style={{
+            position: 'fixed',
+            left: 0,
+            top: '120px',
+            zIndex: 90,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 16px 10px 12px',
+            borderTopRightRadius: '8px',
+            borderBottomRightRadius: '8px',
+            borderLeft: 'none',
+            borderTop: '1px solid var(--border)',
+            borderRight: '1px solid var(--border)',
+            borderBottom: '1px solid var(--border)',
+            background: 'var(--sidebar-bg)',
+            color: 'var(--text-primary)',
+            fontFamily: 'inherit',
+            fontWeight: '700',
+            fontSize: '12px',
+            letterSpacing: '0.05em',
+            cursor: 'pointer',
+            boxShadow: '4px 0 16px rgba(0, 0, 0, 0.4), 0 0 8px rgba(99, 102, 241, 0.2)',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          {/* Menu Hamburger Icon */}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+          <span>MENU</span>
+        </button>
+      )}
       <div 
         className={`sidebar-overlay ${isOpen ? 'active' : ''}`} 
         onClick={() => setIsOpen(false)} 
@@ -449,39 +489,64 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
         onMouseLeave={() => setIsHovered(false)}
       >
       {/* Logo & Portal Label */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', padding: '4px 8px', marginBottom: '22px' }}>
-        <Link href="/dashboard" className="sidebar-logo-plate" style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          overflow: 'hidden',
-          width: '100%',
-          maxWidth: '182px',
-          minHeight: '74px',
-          padding: '8px 12px',
-          borderRadius: '999px',
-          background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
-          boxShadow: 'var(--shadow-lg)',
-          cursor: 'pointer',
-        }}>
-          <img
-            src={logoSrc}
-            alt="GenZ IITIAN Logo"
-            className="sidebar-logo-img"
-            style={{
-              width: '100%',
-              maxWidth: '158px',
-              height: 'auto', 
-              maxHeight: '58px',
-              objectFit: 'contain',
-              display: 'block',
-            }} 
-          />
-        </Link>
-        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.01em', textTransform: 'uppercase', paddingLeft: '2px' }}>
-          {roleLabel} Portal
+      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '4px 8px', marginBottom: '22px', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', minWidth: 0, flex: 1 }}>
+          <Link href="/dashboard" className="sidebar-logo-plate" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            overflow: 'hidden',
+            width: '100%',
+            maxWidth: '182px',
+            minHeight: '74px',
+            padding: '8px 12px',
+            borderRadius: '999px',
+            background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
+            boxShadow: 'var(--shadow-lg)',
+            cursor: 'pointer',
+          }}>
+            <img
+              src={logoSrc}
+              alt="GenZ IITIAN Logo"
+              className="sidebar-logo-img"
+              style={{
+                width: '100%',
+                maxWidth: '158px',
+                height: 'auto', 
+                maxHeight: '58px',
+                objectFit: 'contain',
+                display: 'block',
+              }} 
+            />
+          </Link>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.01em', textTransform: 'uppercase', paddingLeft: '2px' }}>
+            {roleLabel} Portal
+          </div>
         </div>
+
+        {/* Close Button inside Sidebar (Desktop-only) */}
+        <button
+          className="sidebar-close-btn"
+          onClick={() => setIsLockedOpen(false)}
+          aria-label="Close sidebar"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            padding: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'color 0.2s ease',
+            flexShrink: 0,
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
       </div>
 
       {/* Navigation items */}
@@ -666,49 +731,6 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           </svg>
         </span>
         Sign Out
-      </button>
-
-      {/* Desktop Toggle Button */}
-      <button
-        className="sidebar-desktop-toggle"
-        onClick={handleToggleLock}
-        aria-label={isLockedOpen ? "Collapse sidebar" : "Expand sidebar"}
-        style={{
-          position: 'absolute',
-          left: '100%',
-          top: '90px',
-          transform: 'translateX(-50%)',
-          width: '28px',
-          height: '28px',
-          borderRadius: '50%',
-          background: 'var(--sidebar-bg)',
-          border: '1px solid var(--border)',
-          color: 'var(--text-secondary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          zIndex: 110,
-          boxShadow: 'var(--shadow-lg)',
-          transition: 'all 0.2s ease',
-        }}
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{
-            transform: isLockedOpen ? 'rotate(0deg)' : 'rotate(180deg)',
-            transition: 'transform 0.3s ease',
-          }}
-        >
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
       </button>
 
     </nav>
