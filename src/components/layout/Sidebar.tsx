@@ -330,6 +330,24 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const navRef = useRef<HTMLDivElement>(null)
   const [canScrollMore, setCanScrollMore] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const [isLockedOpen, setIsLockedOpen] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar-locked-open')
+    if (saved === 'true') {
+      setIsLockedOpen(true)
+    }
+  }, [])
+
+  const handleToggleLock = () => {
+    setIsLockedOpen(prev => {
+      const next = !prev
+      localStorage.setItem('sidebar-locked-open', String(next))
+      return next
+    })
+  }
+
 
   // Listen for custom toggle events from the mobile header
   useEffect(() => {
@@ -408,14 +426,31 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
 
   return (
     <>
+      {/* Hover sensor zone on the left edge of the screen */}
+      <div
+        className="sidebar-hover-sensor"
+        onMouseEnter={() => setIsHovered(true)}
+        style={{
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: '16px',
+          zIndex: 99,
+        }}
+      />
       <div 
         className={`sidebar-overlay ${isOpen ? 'active' : ''}`} 
         onClick={() => setIsOpen(false)} 
       />
-      <nav className={`sidebar-nav ${isOpen ? 'sidebar-open' : ''}`}>
+      <nav 
+        className={`sidebar-nav ${isOpen || isHovered || isLockedOpen ? 'sidebar-open' : ''}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
       {/* Logo & Portal Label */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', padding: '4px 8px', marginBottom: '22px' }}>
-        <div className="sidebar-logo-plate" style={{
+        <Link href="/dashboard" className="sidebar-logo-plate" style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -428,6 +463,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           borderRadius: '999px',
           background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
           boxShadow: 'var(--shadow-lg)',
+          cursor: 'pointer',
         }}>
           <img
             src={logoSrc}
@@ -442,7 +478,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               display: 'block',
             }} 
           />
-        </div>
+        </Link>
         <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.01em', textTransform: 'uppercase', paddingLeft: '2px' }}>
           {roleLabel} Portal
         </div>
@@ -630,6 +666,49 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           </svg>
         </span>
         Sign Out
+      </button>
+
+      {/* Desktop Toggle Button */}
+      <button
+        className="sidebar-desktop-toggle"
+        onClick={handleToggleLock}
+        aria-label={isLockedOpen ? "Collapse sidebar" : "Expand sidebar"}
+        style={{
+          position: 'absolute',
+          left: '100%',
+          top: '90px',
+          transform: 'translateX(-50%)',
+          width: '28px',
+          height: '28px',
+          borderRadius: '50%',
+          background: 'var(--sidebar-bg)',
+          border: '1px solid var(--border)',
+          color: 'var(--text-secondary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          zIndex: 110,
+          boxShadow: 'var(--shadow-lg)',
+          transition: 'all 0.2s ease',
+        }}
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{
+            transform: isLockedOpen ? 'rotate(0deg)' : 'rotate(180deg)',
+            transition: 'transform 0.3s ease',
+          }}
+        >
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
       </button>
 
     </nav>
