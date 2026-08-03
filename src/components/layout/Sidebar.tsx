@@ -423,12 +423,11 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           width: isOpen ? '240px' : (isCurrentlyExpanded ? '240px' : '88px'),
         }}
       >
-        {/* Desktop Corner-Fixed Logo Header */}
         <div className="sidebar-desktop-logo-header" style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px 4px',
+          justifyContent: 'flex-start',
+          padding: '16px 4px 16px 6px',
           width: '100%',
           minHeight: '80px',
         }}>
