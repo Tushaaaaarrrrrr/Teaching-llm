@@ -81,10 +81,22 @@ export default function ExamsPage() {
     const desc = (document.getElementById('ts-desc') as HTMLInputElement)?.value
     const price = (document.getElementById('ts-price') as HTMLInputElement)?.value
     const validity = (document.getElementById('ts-validity') as HTMLInputElement)?.value
+    const category = (document.getElementById('ts-category') as HTMLSelectElement)?.value
     if (!title) { alert('Title required'); return }
+    if (!category) { alert('Category is required'); return }
     setCreatingSeries(true)
     try {
-      const res = await fetch('/api/test-series', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description: desc, price: price || 0, validityDays: validity || 365 }) })
+      const res = await fetch('/api/test-series', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ 
+          title, 
+          description: desc, 
+          price: price || 0, 
+          validityDays: validity || 365,
+          category
+        }) 
+      })
       if (res.ok) { setShowCreateTSModal(false); mutateTS() }
       else { const d = await res.json(); alert(d.error || 'Failed') }
     } catch { alert('Error creating test series') }
@@ -338,6 +350,13 @@ export default function ExamsPage() {
                 <input id="ts-price" type="number" placeholder="Price (₹)" defaultValue="0" style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1.5px solid var(--border)', fontSize: '14px' }} />
                 <input id="ts-validity" type="number" placeholder="Validity (days)" defaultValue="365" style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1.5px solid var(--border)', fontSize: '14px' }} />
               </div>
+              <select id="ts-category" style={{ padding: '12px', borderRadius: '10px', border: '1.5px solid var(--border)', fontSize: '14px', background: 'var(--surface)', cursor: 'pointer' }}>
+                <option value="">Select Category *</option>
+                <option value="Re-attempt">Re-attempt</option>
+                <option value="Foundation">Foundation</option>
+                <option value="Diploma">Diploma</option>
+                <option value="General">General</option>
+              </select>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
               <button onClick={() => setShowCreateTSModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', background: 'var(--surface)', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>

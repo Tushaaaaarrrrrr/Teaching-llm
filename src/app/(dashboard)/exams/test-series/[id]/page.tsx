@@ -342,6 +342,15 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
                   <input name="validityDays" type="number" defaultValue={ts.validityDays} required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid var(--border)', fontSize: '15px' }} />
                 </div>
               </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>Category *</label>
+                <select name="category" defaultValue={ts.category || 'General'} required style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid var(--border)', fontSize: '15px', background: 'var(--surface)', cursor: 'pointer' }}>
+                  <option value="Re-attempt">Re-attempt</option>
+                  <option value="Foundation">Foundation</option>
+                  <option value="Diploma">Diploma</option>
+                  <option value="General">General</option>
+                </select>
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--surface)', padding: '16px', borderRadius: '16px' }}>
                 <input type="checkbox" name="isActive" id="ts-active" defaultChecked={ts.isActive} value="true" style={{ width: '20px', height: '20px' }} />
                 <label htmlFor="ts-active" style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>Active & Visible to Students</label>

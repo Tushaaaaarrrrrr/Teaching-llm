@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { title, description, price, originalPrice, validityDays } = await request.json()
+    const { title, description, price, originalPrice, validityDays, category } = await request.json()
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -76,7 +76,8 @@ export async function POST(request: NextRequest) {
         price: parseFloat(price) || 0,
         originalPrice: originalPrice ? parseFloat(originalPrice) : null,
         validityDays: parseInt(validityDays) || 365,
-        createdById: session.userId
+        createdById: session.userId,
+        category: category || "General",
       },
       include: {
         _count: { select: { exams: true } },

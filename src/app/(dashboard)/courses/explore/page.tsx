@@ -109,6 +109,17 @@ export default function ExploreCoursesPage() {
   const [storeView, setStoreView] = useState<null | 'courses' | 'notes' | 'mentorship' | 'testSeries'>(null)
   const [activeCategory, setActiveCategory] = useState<string>('')
 
+  // New store tabs and modals category select state variables
+  const [selectedStoreTab, setSelectedStoreTab] = useState<string>('')
+  const [selectedNotesTab, setSelectedNotesTab] = useState<string>('')
+  const [selectedNotesSubjectTab, setSelectedNotesSubjectTab] = useState<string>('')
+  const [selectedTestSeriesTab, setSelectedTestSeriesTab] = useState<string>('')
+
+  const [offeringCategory, setOfferingCategory] = useState<string>('')
+  const [bundleCategory, setBundleCategory] = useState<string>('')
+  const [noteCategory, setNoteCategory] = useState<string>('General')
+  const [noteSubject, setNoteSubject] = useState<string>('')
+
   // Sync ?category= URL param into store view + active filter on mount or param change
   useEffect(() => {
     if (categoryParam && CATEGORY_TO_VIEW[categoryParam]) {
@@ -533,6 +544,61 @@ export default function ExploreCoursesPage() {
   const activeOfferings = offerings || []
   const activeBundles = bundleOfferings || []
 
+  // Dynamic Level Tabs for Courses & Bundles
+  const visibleCategories = ['Re-attempt', 'Foundation', 'Diploma', 'General'].filter(cat => {
+    const hasOfferings = activeOfferings.some((o: any) => (o.category || 'General') === cat)
+    const hasBundles = activeBundles.some((b: any) => (b.category || 'General') === cat)
+    return hasOfferings || hasBundles
+  })
+  const currentStoreTab = visibleCategories.includes(selectedStoreTab)
+    ? selectedStoreTab
+    : (visibleCategories[0] || 'General')
+
+  const filteredOfferings = activeOfferings.filter((o: any) => (o.category || 'General') === currentStoreTab)
+  const filteredBundles = activeBundles.filter((b: any) => (b.category || 'General') === currentStoreTab)
+
+  // Dynamic Level and Subject Tabs for Store Notes
+  const activeNotes = storeNotesData?.notes || []
+  const visibleNotesCategories = ['Re-attempt', 'Foundation', 'Diploma', 'General'].filter(cat => {
+    return activeNotes.some((n: any) => (n.category || 'General') === cat)
+  })
+  const currentNotesTab = visibleNotesCategories.includes(selectedNotesTab)
+    ? selectedNotesTab
+    : (visibleNotesCategories[0] || 'General')
+
+  const filteredNotesByLevel = activeNotes.filter((n: any) => (n.category || 'General') === currentNotesTab)
+
+  const getSubjectListForLevel = (level: string) => {
+    if (level === 'Foundation') return ['STATS 1', 'STATS 2', 'MATH 2', 'MATH 1', 'ENG 1', 'ENG 2', 'CT', 'PYTHON']
+    if (level === 'Re-attempt') return ['ENG 1', 'CT', 'MATH 1', 'STATS 1']
+    return []
+  }
+  const levelSubjects = getSubjectListForLevel(currentNotesTab)
+  const visibleNotesSubjects = levelSubjects.filter(sub => {
+    return filteredNotesByLevel.some((n: any) => n.subject === sub)
+  })
+  const currentNotesSubjectTab = visibleNotesSubjects.includes(selectedNotesSubjectTab)
+    ? selectedNotesSubjectTab
+    : (visibleNotesSubjects[0] || '')
+
+  const filteredNotes = filteredNotesByLevel.filter((n: any) => {
+    if (currentNotesTab === 'Foundation' || currentNotesTab === 'Re-attempt') {
+      return n.subject === currentNotesSubjectTab
+    }
+    return true
+  })
+
+  // Dynamic Level Tabs for Test Series
+  const activeTestSeries = testSeriesData?.testSeries || []
+  const visibleTestSeriesCategories = ['Re-attempt', 'Foundation', 'Diploma', 'General'].filter(cat => {
+    return activeTestSeries.some((ts: any) => (ts.category || 'General') === cat)
+  })
+  const currentTestSeriesTab = visibleTestSeriesCategories.includes(selectedTestSeriesTab)
+    ? selectedTestSeriesTab
+    : (visibleTestSeriesCategories[0] || 'General')
+
+  const filteredTestSeries = activeTestSeries.filter((ts: any) => (ts.category || 'General') === currentTestSeriesTab)
+
   const getMobileHeaderConfig = () => {
     switch (storeView) {
       case 'courses':
@@ -747,9 +813,9 @@ export default function ExploreCoursesPage() {
                   display: 'flex', flexDirection: 'column', gap: '4px'
                 }}>
                   {[
-                    { label: '📚 Course', action: () => { setShowCreateModal(true); setShowCreateDropdown(false) } },
-                    { label: '📦 Bundle', action: () => { setShowCreateBundleModal(true); setShowCreateDropdown(false) } },
-                    { label: '📝 Notes', action: () => { setShowCreateNoteModal(true); setShowCreateDropdown(false) } },
+                    { label: '📚 Course', action: () => { setOfferingCategory(''); setShowCreateModal(true); setShowCreateDropdown(false) } },
+                    { label: '📦 Bundle', action: () => { setBundleCategory(''); setShowCreateBundleModal(true); setShowCreateDropdown(false) } },
+                    { label: '📝 Notes', action: () => { setNoteCategory('General'); setNoteSubject(''); setShowCreateNoteModal(true); setShowCreateDropdown(false) } },
                     { label: '🤝 Mentorship', action: () => { setShowCreateMentorshipModal(true); setShowCreateDropdown(false) } }
                   ].map((item, i) => (
                     <button
@@ -875,12 +941,50 @@ export default function ExploreCoursesPage() {
 
 
 
+      {/* Level Tabs for Courses & Bundles */}
+      {storeView === 'courses' && visibleCategories.length > 0 && (
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          marginBottom: '28px',
+          borderBottom: '1px solid var(--border)',
+          paddingBottom: '12px',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+        }}>
+          {visibleCategories.map(cat => {
+            const isActive = currentStoreTab === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedStoreTab(cat)}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  background: isActive ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'var(--surface-hover)',
+                  color: isActive ? '#fff' : 'var(--text-secondary)',
+                  fontWeight: '800',
+                  fontSize: '14.5px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isActive ? '0 10px 20px -5px rgba(99, 102, 241, 0.4)' : 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {cat}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {/* Bundle offerings section */}
-      {storeView === 'courses' && activeBundles.length > 0 && (
+      {storeView === 'courses' && filteredBundles.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
           <div style={{ marginTop: '12px' }} />
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
-            {activeBundles.map((b: any) => {
+            {filteredBundles.map((b: any) => {
               const bundlePriceRecorded = b.recordedDiscountPrice ?? b.recordedOriginalPrice
               const bundlePriceLive = b.liveDiscountPrice ?? b.liveOriginalPrice
               const bundlePriceChampion = b.championDiscountPrice ?? b.championOriginalPrice
@@ -1003,7 +1107,8 @@ export default function ExploreCoursesPage() {
                             startingPrice: b.startingPrice ?? '',
                             startingFromText: b.startingFromText ?? 'Courses start from',
                             bannerText: b.bannerText ?? 'Class starts from 1 June 2026',
-                            courseHeadline: b.courseHeadline ?? 'Included Courses'
+                            courseHeadline: b.courseHeadline ?? 'Included Courses',
+                            category: b.category || 'General'
                           }) 
                         }} style={{ width: '44px', height: '44px', borderRadius: '14px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Pencil size={18} /></button>
                         <button onClick={async () => {
@@ -1024,12 +1129,94 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
+      {/* Level Tabs for Notes */}
+      {storeView === 'notes' && visibleNotesCategories.length > 0 && (
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          marginBottom: '20px',
+          borderBottom: '1px solid var(--border)',
+          paddingBottom: '12px',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+        }}>
+          {visibleNotesCategories.map(cat => {
+            const isActive = currentNotesTab === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedNotesTab(cat)}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  background: isActive ? 'linear-gradient(135deg, #10b981, #059669)' : 'var(--surface-hover)',
+                  color: isActive ? '#fff' : 'var(--text-secondary)',
+                  fontWeight: '800',
+                  fontSize: '14.5px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isActive ? '0 10px 20px -5px rgba(16, 185, 129, 0.4)' : 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {cat}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Subject Sub-tabs for Notes */}
+      {storeView === 'notes' && (currentNotesTab === 'Foundation' || currentNotesTab === 'Re-attempt') && visibleNotesSubjects.length > 0 && (
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          marginBottom: '24px',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+          paddingBottom: '4px'
+        }}>
+          {visibleNotesSubjects.map(sub => {
+            const isActive = currentNotesSubjectTab === sub;
+            return (
+              <button
+                key={sub}
+                onClick={() => setSelectedNotesSubjectTab(sub)}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: '12px',
+                  border: isActive ? '1.5px solid var(--success)' : '1.5px solid var(--border)',
+                  background: isActive ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
+                  color: isActive ? 'var(--success)' : 'var(--text-secondary)',
+                  fontWeight: '700',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {sub}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Notes empty state */}
+      {storeView === 'notes' && activeNotes.length === 0 && (
+        <div className="empty-state" style={{ padding: '60px 20px' }}>
+          <p style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px' }}>No notes available yet</p>
+          <p style={{ fontSize: '13px' }}>Check back soon for new study notes!</p>
+        </div>
+      )}
+
       {/* Notes section */}
-      {storeView === 'notes' && storeNotesData?.notes?.length > 0 && (
+      {storeView === 'notes' && filteredNotes.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-primary)', margin: '6px 0 12px' }}>Study Notes</h2>
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
-            {storeNotesData.notes.map((n: any) => {
+            {filteredNotes.map((n: any) => {
               const currentUserId = userData?.user?.id
               const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
               const hasAccess = n.price === 0 || 
@@ -1070,6 +1257,8 @@ export default function ExploreCoursesPage() {
                       <button onClick={(e) => {
                         e.stopPropagation()
                         setEditingNote(n)
+                        setNoteCategory(n.category || 'General')
+                        setNoteSubject(n.subject || '')
                         setShowCreateNoteModal(true)
                         setTimeout(() => {
                           const titleEl = document.getElementById('noteTitleInput') as HTMLInputElement
@@ -1301,12 +1490,58 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
+      {/* Level Tabs for Test Series */}
+      {storeView === 'testSeries' && visibleTestSeriesCategories.length > 0 && (
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          marginBottom: '20px',
+          borderBottom: '1px solid var(--border)',
+          paddingBottom: '12px',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+        }}>
+          {visibleTestSeriesCategories.map(cat => {
+            const isActive = currentTestSeriesTab === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedTestSeriesTab(cat)}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  background: isActive ? 'linear-gradient(135deg, #eab308, #ca8a04)' : 'var(--surface-hover)',
+                  color: isActive ? '#fff' : 'var(--text-secondary)',
+                  fontWeight: '800',
+                  fontSize: '14.5px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isActive ? '0 10px 20px -5px rgba(234, 179, 8, 0.4)' : 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {cat}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Test Series empty state */}
+      {storeView === 'testSeries' && activeTestSeries.length === 0 && (
+        <div className="empty-state" style={{ padding: '60px 20px' }}>
+          <p style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px' }}>No test series available yet</p>
+          <p style={{ fontSize: '13px' }}>Check back soon for new test series!</p>
+        </div>
+      )}
+
       {/* TEST SERIES STORE SECTION */}
-      {storeView === 'testSeries' && testSeriesData?.testSeries?.length > 0 && (
+      {storeView === 'testSeries' && filteredTestSeries.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-primary)', margin: '6px 0 12px' }}>Test Series</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '16px' }}>
-            {testSeriesData.testSeries.map((ts: any) => {
+            {filteredTestSeries.map((ts: any) => {
               const hasAccess = ts.myAccess != null
               const isExpiredAccess = hasAccess && new Date(ts.myAccess.expiresAt) < new Date()
               const canAccess = hasAccess && !isExpiredAccess
@@ -1389,7 +1624,7 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
-      {storeView === 'courses' && activeOfferings.length === 0 && (
+      {storeView === 'courses' && activeOfferings.length === 0 && activeBundles.length === 0 && (
         <div className="empty-state" style={{ padding: '60px 20px' }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--neu-dark)" strokeWidth="1.5">
             <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" /><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
@@ -1399,8 +1634,8 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
-      {storeView === 'courses' && <div className="grid-3">
-        {[...activeOfferings].sort((a: any, b: any) => {
+      {storeView === 'courses' && filteredOfferings.length > 0 && <div className="grid-3">
+        {[...filteredOfferings].sort((a: any, b: any) => {
           const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
           const aEnroll = getEnrollmentStatus(a.courseId)
           const bEnroll = getEnrollmentStatus(b.courseId)
@@ -1481,7 +1716,7 @@ export default function ExploreCoursesPage() {
                   {/* Edit button for managers */}
                   {(userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER') && (
                     <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingOffering(offering); setEditFormData({ recordedOriginalPrice: offering.recordedOriginalPrice ?? '', recordedDiscountPrice: offering.recordedDiscountPrice ?? '', liveOriginalPrice: offering.liveOriginalPrice ?? '', liveDiscountPrice: offering.liveDiscountPrice ?? '', championOriginalPrice: offering.championOriginalPrice ?? '', championDiscountPrice: offering.championDiscountPrice ?? '', championSubtitle: offering.championSubtitle ?? '', detailsLink: offering.detailsLink ?? '', isDemoPaid: offering.course?.isDemoPaid || false, demoPrice: offering.course?.demoPrice || '', isDemoEnabled: offering.course?.isDemoEnabled || false, demoExpiryDays: offering.course?.demoExpiryDays || '' }) }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingOffering(offering); setEditFormData({ recordedOriginalPrice: offering.recordedOriginalPrice ?? '', recordedDiscountPrice: offering.recordedDiscountPrice ?? '', liveOriginalPrice: offering.liveOriginalPrice ?? '', liveDiscountPrice: offering.liveDiscountPrice ?? '', championOriginalPrice: offering.championOriginalPrice ?? '', championDiscountPrice: offering.championDiscountPrice ?? '', championSubtitle: offering.championSubtitle ?? '', detailsLink: offering.detailsLink ?? '', isDemoPaid: offering.course?.isDemoPaid || false, demoPrice: offering.course?.demoPrice || '', isDemoEnabled: offering.course?.isDemoEnabled || false, demoExpiryDays: offering.course?.demoExpiryDays || '', category: offering.category || 'General' }) }}
                       style={{
                         width: '28px', height: '28px', borderRadius: '50%',
                         background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)',
@@ -2770,6 +3005,27 @@ export default function ExploreCoursesPage() {
                   </select>
                 </div>
 
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                    Select Category *
+                  </label>
+                  <select
+                    value={offeringCategory}
+                    onChange={(e) => setOfferingCategory(e.target.value)}
+                    style={{
+                      width: '100%', padding: '12px 14px', borderRadius: '12px', border: '2px solid var(--border)',
+                      fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', 
+                      background: 'var(--surface)', cursor: 'pointer'
+                    }}
+                  >
+                    <option value="">Choose a category...</option>
+                    <option value="Re-attempt">Re-attempt</option>
+                    <option value="Foundation">Foundation</option>
+                    <option value="Diploma">Diploma</option>
+                    <option value="General">General</option>
+                  </select>
+                </div>
+
                 {selectedCourse && courses && (
                   (() => {
                     const selected = courses.find((c: any) => c.id === selectedCourse)
@@ -3014,6 +3270,10 @@ export default function ExploreCoursesPage() {
                     alert('Please select a course')
                     return
                   }
+                  if (!offeringCategory) {
+                    alert('Please select a category')
+                    return
+                  }
                   if (activeOfferings?.some((o: any) => o.courseId === selectedCourse)) {
                     alert('This course is already in the store.')
                     return
@@ -3051,12 +3311,14 @@ export default function ExploreCoursesPage() {
                         hasRecorded: recordedOriginal > 0 || recordedDiscount > 0,
                         hasLive: liveOriginal > 0 || liveDiscount > 0,
                         hasChampion: championOriginal > 0 || championDiscount > 0,
+                        category: offeringCategory,
                       }),
                     })
                     if (res.ok) {
                       alert('Course added to store successfully!')
                       setShowCreateModal(false)
                       setSelectedCourse('')
+                      setOfferingCategory('')
                       setRecordedOriginalPrice('')
                       setRecordedDiscountPrice('')
                       setLiveOriginalPrice('')
@@ -3372,6 +3634,20 @@ export default function ExploreCoursesPage() {
                   <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)' }}>{editingOffering.course?.name}</div>
                 </div>
 
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Category *</label>
+                  <select
+                    value={editFormData.category || 'General'}
+                    onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', background: 'var(--surface)', cursor: 'pointer' }}
+                  >
+                    <option value="Re-attempt">Re-attempt</option>
+                    <option value="Foundation">Foundation</option>
+                    <option value="Diploma">Diploma</option>
+                    <option value="General">General</option>
+                  </select>
+                </div>
+
                 {editingOffering.hasRecorded && (
                   <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '18px', marginBottom: '20px', border: '2px solid var(--border)' }}>
                     <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '16px' }}>
@@ -3568,7 +3844,8 @@ export default function ExploreCoursesPage() {
                         isDemoPaid: !!editFormData.isDemoPaid,
                         demoPrice: editFormData.isDemoPaid ? (editFormData.demoPrice || 0) : 0,
                         isDemoEnabled: !!editFormData.isDemoEnabled,
-                        demoExpiryDays: editFormData.isDemoEnabled ? (editFormData.demoExpiryDays || 0) : 0
+                        demoExpiryDays: editFormData.isDemoEnabled ? (editFormData.demoExpiryDays || 0) : 0,
+                        category: editFormData.category || 'General',
                       })
                     })
                     if (res.ok) {
@@ -3623,6 +3900,20 @@ export default function ExploreCoursesPage() {
             <div style={{ marginBottom: '16px' }}>
               <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Bundle Name</label>
               <input type="text" value={editBundleData.name ?? ''} onChange={e => setEditBundleData({...editBundleData, name: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Category *</label>
+              <select
+                value={editBundleData.category || 'General'}
+                onChange={e => setEditBundleData({...editBundleData, category: e.target.value})}
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border)', fontSize: '14px', background: 'var(--surface)', cursor: 'pointer', boxSizing: 'border-box' }}
+              >
+                <option value="Re-attempt">Re-attempt</option>
+                <option value="Foundation">Foundation</option>
+                <option value="Diploma">Diploma</option>
+                <option value="General">General</option>
+              </select>
             </div>
 
             <div style={{ marginBottom: '24px' }}>
@@ -4059,6 +4350,21 @@ export default function ExploreCoursesPage() {
             </div>
 
             <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Category *</label>
+              <select
+                value={bundleCategory}
+                onChange={e => setBundleCategory(e.target.value)}
+                style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', background: 'var(--surface)', cursor: 'pointer' }}
+              >
+                <option value="">Select Category...</option>
+                <option value="Re-attempt">Re-attempt</option>
+                <option value="Foundation">Foundation</option>
+                <option value="Diploma">Diploma</option>
+                <option value="General">General</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Bundle Description</label>
               <textarea value={bundleDescription} onChange={e => setBundleDescription(e.target.value)} placeholder="Tell students what's included in this bundle..." rows={3} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', resize: 'vertical' }} />
             </div>
@@ -4290,6 +4596,7 @@ export default function ExploreCoursesPage() {
                 disabled={creating}
                 onClick={async () => {
                   if (!bundleName || bundleSelectedCourses.length === 0) { alert('Bundle requires a name and at least one course.'); return }
+                  if (!bundleCategory) { alert('Category is required.'); return }
                   setCreating(true)
                   try {
                     const combinedCoursePrices = { 
@@ -4318,11 +4625,13 @@ export default function ExploreCoursesPage() {
                         startingPrice: bundleStartingPrice ? Number(bundleStartingPrice) : undefined,
                         startingFromText: bundleStartingFromText,
                         bannerText: bundleBannerText,
-                        courseHeadline: bundleCourseHeadline
+                        courseHeadline: bundleCourseHeadline,
+                        category: bundleCategory,
                       })
                     })
                     if (res.ok) {
                       setShowCreateBundleModal(false)
+                      setBundleCategory('')
                       window.location.reload()
                     } else { alert('Failed to create bundle') }
                   } catch { alert('Error creating bundle') }
@@ -4369,6 +4678,44 @@ export default function ExploreCoursesPage() {
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Note Title</label>
               <input id="noteTitleInput" placeholder="E.g., Physics Chapter 1 Notes" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px' }} />
             </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Level *</label>
+              <select
+                id="noteCategoryInput"
+                value={noteCategory}
+                onChange={(e) => {
+                  setNoteCategory(e.target.value)
+                  setNoteSubject('') // clear subject on level change
+                }}
+                style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', background: 'var(--surface)', cursor: 'pointer' }}
+              >
+                <option value="Re-attempt">Re-attempt</option>
+                <option value="Foundation">Foundation</option>
+                <option value="Diploma">Diploma</option>
+                <option value="General">General</option>
+              </select>
+            </div>
+
+            {(noteCategory === 'Foundation' || noteCategory === 'Re-attempt') && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Subject *</label>
+                <select
+                  id="noteSubjectInput"
+                  value={noteSubject}
+                  onChange={(e) => setNoteSubject(e.target.value)}
+                  style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #dbeafe', fontSize: '14px', background: 'var(--surface)', cursor: 'pointer' }}
+                >
+                  <option value="">Select Subject...</option>
+                  {noteCategory === 'Foundation' && [
+                    'STATS 1', 'STATS 2', 'MATH 2', 'MATH 1', 'ENG 1', 'ENG 2', 'CT', 'PYTHON'
+                  ].map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                  {noteCategory === 'Re-attempt' && [
+                    'ENG 1', 'CT', 'MATH 1', 'STATS 1'
+                  ].map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                </select>
+              </div>
+            )}
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px' }}>Description (Optional)</label>
@@ -4422,6 +4769,10 @@ export default function ExploreCoursesPage() {
                   const link = (document.getElementById('noteLinkInput') as HTMLInputElement).value
                   const price = (document.getElementById('notePriceInput') as HTMLInputElement).value
                   if (!title || !link) { alert('Title and Link are required'); return }
+                  if ((noteCategory === 'Foundation' || noteCategory === 'Re-attempt') && !noteSubject) {
+                    alert('Subject is required for the selected Level')
+                    return
+                  }
 
                   setCreating(true)
                   try {
@@ -4429,7 +4780,14 @@ export default function ExploreCoursesPage() {
                     const url = editingNote ? `/api/store/notes/${editingNote.id}` : '/api/store/notes'
                     const res = await fetch(url, {
                       method, headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ title, description: desc, fileUrl: link, price: Number(price) || 0 })
+                      body: JSON.stringify({ 
+                        title, 
+                        description: desc, 
+                        fileUrl: link, 
+                        price: Number(price) || 0,
+                        category: noteCategory,
+                        subject: noteSubject || null
+                      })
                     })
                     if (res.ok) { window.location.reload() }
                     else { alert(editingNote ? 'Failed to update notes' : 'Failed to add notes') }

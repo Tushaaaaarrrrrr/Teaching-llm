@@ -49,7 +49,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { title, description, price, originalPrice, validityDays, isActive } = await request.json()
+    const { title, description, price, originalPrice, validityDays, isActive, category } = await request.json()
 
     const testSeries = await (prisma as any).testSeries.update({
       where: { id: params.id },
@@ -59,7 +59,8 @@ export async function PATCH(
         ...(price !== undefined && { price: parseFloat(price) || 0 }),
         ...(originalPrice !== undefined && { originalPrice: originalPrice ? parseFloat(originalPrice) : null }),
         ...(validityDays !== undefined && { validityDays: parseInt(validityDays) || 365 }),
-        ...(isActive !== undefined && { isActive })
+        ...(isActive !== undefined && { isActive }),
+        ...(category !== undefined && { category })
       },
       include: {
         _count: { select: { exams: true } },
