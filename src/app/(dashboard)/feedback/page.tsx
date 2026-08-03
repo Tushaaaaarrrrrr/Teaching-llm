@@ -426,8 +426,15 @@ function ManagerFeedbackView() {
 
   return (
     <div className="page-container fade-in" style={{ padding: 'clamp(16px, 4vw, 32px)' }}>
+      <style dangerouslySetInnerHTML={{__html: `
+        @media (min-width: 769px) {
+          .feedback-mobile-header {
+            display: none !important;
+          }
+        }
+      `}} />
       {/* Premium Neumorphic Page Header */}
-      <div style={{
+      <div className="feedback-mobile-header" style={{
         display: 'flex',
         alignItems: 'center',
         gap: '16px',
