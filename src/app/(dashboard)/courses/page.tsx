@@ -725,7 +725,7 @@ export default function CoursesPage() {
                         POPULAR
                       </span>
                       <span>
-                        ⚡ Unlock Full Course — ₹{plusPrice}
+                        ⚡ Unlock Full Course
                       </span>
                       
                       {/* Shine effect overlay */}

@@ -127,6 +127,8 @@ model Course {
   liveUpgradePrice      Float?
   isDemoPaid            Boolean                @default(false)
   demoPrice             Float?                 @default(0)
+  isDemoEnabled         Boolean                @default(false)
+  demoExpiryDays        Int?                   @default(0)
   announcements         Announcement[]
   bundleOfferingCourses BundleOfferingCourse[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])

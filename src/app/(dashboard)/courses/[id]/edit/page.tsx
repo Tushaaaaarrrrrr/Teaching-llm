@@ -251,24 +251,6 @@ export default function CourseEditPage() {
     setOrderDirty(true)
   }
 
-  const saveDemoSettings = async (isDemoPaid: boolean, demoPrice: number) => {
-    try {
-      const res = await fetch(`/api/courses/${params.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isDemoPaid, demoPrice }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        alert('Demo batch settings updated successfully!')
-        setCourse(prev => prev ? { ...prev, isDemoPaid, demoPrice } : null)
-      } else {
-        alert(data.error || 'Failed to update demo settings')
-      }
-    } catch (e: any) {
-      alert(e.message || 'Error updating demo settings')
-    }
-  }
 
   const saveOrder = async () => {
     setSavingOrder(true)

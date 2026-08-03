@@ -147,6 +147,11 @@ export async function GET(
       ...cData,
       courseEvents: filteredCourseEvents, // Use filtered events based on enrollment type
       enrollmentType: userEnrollmentType,
+      enrollment: enrollment ? {
+        id: enrollment.id,
+        createdAt: enrollment.createdAt,
+        type: enrollment.type,
+      } : null,
       hasDemoLectures,
       isExpired: hasManagerLevelAccess ? false : isCourseExpired(cData),
       isEffectivelyDisabled: hasManagerLevelAccess ? false : isCourseEffectivelyDisabled(cData),

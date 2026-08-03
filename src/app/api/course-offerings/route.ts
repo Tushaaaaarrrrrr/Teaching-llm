@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
             isDisabled: true,
             isDemoPaid: true,
             demoPrice: true,
+            isDemoEnabled: true,
+            demoExpiryDays: true,
             topics: {
               select: {
                 content: { select: { isDemo: true } },

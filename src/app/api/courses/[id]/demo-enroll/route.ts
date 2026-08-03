@@ -45,6 +45,10 @@ export async function POST(
       return NextResponse.json({ error: 'Course is currently disabled' }, { status: 403 })
     }
 
+    if (!course.isDemoEnabled) {
+      return NextResponse.json({ error: 'Demo access is not enabled for this course.' }, { status: 400 })
+    }
+
     // 1. Check if manager has assigned at least one demo lecture
     let hasDemoLectures = false
     course.topics.forEach((t: any) => {

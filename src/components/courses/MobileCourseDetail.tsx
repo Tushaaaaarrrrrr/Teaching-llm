@@ -916,14 +916,9 @@ function CurriculumTab({
                                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                                 </svg>
                               </div>
-                              <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff', marginBottom: '2px' }}>
+                              <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff', marginBottom: '12px' }}>
                                 Unlock All Lectures
                               </div>
-                              {lowestPrice !== null && (
-                                <div style={{ fontSize: '12px', fontWeight: '700', color: '#818cf8', marginBottom: '2px' }}>
-                                  Full Access starting at ₹{lowestPrice}
-                                </div>
-                              )}
                               <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(255, 255, 255, 0.5)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <span>⌛</span> Access Till End Term
                               </div>

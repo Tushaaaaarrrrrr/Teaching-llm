@@ -15,7 +15,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       hasRecorded, recordedOriginalPrice, recordedDiscountPrice,
       hasLive, liveOriginalPrice, liveDiscountPrice,
       championOriginalPrice, championDiscountPrice, championSubtitle,
-      detailsLink, isDemoPaid, demoPrice
+      detailsLink, isDemoPaid, demoPrice, isDemoEnabled, demoExpiryDays
     } = data
 
     const offering = await prisma.courseOffering.update({
@@ -43,6 +43,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         data: {
           isDemoPaid: isDemoPaid !== undefined ? !!isDemoPaid : false,
           demoPrice: (demoPrice !== undefined && demoPrice !== null && demoPrice !== '') ? Number(demoPrice) : 0,
+          isDemoEnabled: isDemoEnabled !== undefined ? !!isDemoEnabled : false,
+          demoExpiryDays: (demoExpiryDays !== undefined && demoExpiryDays !== null && demoExpiryDays !== '') ? Number(demoExpiryDays) : 0,
         }
       })
     }

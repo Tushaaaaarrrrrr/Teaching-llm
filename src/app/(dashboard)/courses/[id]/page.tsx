@@ -33,10 +33,17 @@ interface CourseDetail {
   color: string
   expiresAt?: string
   teacherName: string
-  enrollmentType?: 'LIVE' | 'RECORDED' | null
+  enrollmentType?: 'LIVE' | 'RECORDED' | 'DEMO' | 'FREE' | null
   liveUpgradePrice?: number | null
   instructorAssignments?: { instructor: { id: string; name: string } }[]
   _count?: { topics: number; lectures: number; materials: number; courseEvents: number }
+  createdAt?: string
+  demoExpiryDays?: number | null
+  enrollment?: {
+    id: string
+    createdAt: string
+    type: string
+  } | null
   courseEvents?: {
     id: string
     title: string
@@ -515,20 +522,69 @@ export default function CourseDetailPage() {
   const canManage = isManager
 
   const isCourseExpired = course.expiresAt && new Date(course.expiresAt).getTime() < new Date().getTime();
+  const isDemoExpired = !isManager && course.enrollmentType === 'DEMO' && Number((course as any).demoExpiryDays || 0) > 0 && (() => {
+    const enrollDate = (course as any).enrollment?.createdAt ? new Date((course as any).enrollment.createdAt) : new Date(course.createdAt || Date.now());
+    const expiryMs = Number((course as any).demoExpiryDays) * 24 * 60 * 60 * 1000;
+    return (new Date().getTime() - enrollDate.getTime()) > expiryMs;
+  })();
 
-  if (isCourseExpired && !isManager) {
+  const isExpired = isCourseExpired || isDemoExpired;
+
+  if (isExpired && !isManager) {
     return (
       <div className="page-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
         <div style={{ textAlign: 'center', background: 'var(--surface)', padding: '40px', borderRadius: '32px', boxShadow: '0 20px 40px rgba(0,0,0,0.05)', maxWidth: '500px', width: '100%' }}>
           <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--danger-light)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '16px' }}>Access Expired</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '16px' }}>
+            {isDemoExpired ? 'Demo Access Expired' : 'Access Expired'}
+          </h1>
           <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '32px' }}>
-            Your access to <strong>{course.name}</strong> has expired. You can no longer view the course lectures or materials.
+            {isDemoExpired 
+              ? `Your demo access to ${course.name} has expired. Unlock the full course to continue learning.`
+              : `Your access to ${course.name} has expired. You can no longer view the course lectures or materials.`
+            }
           </p>
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-            <Link href="/courses" className="btn btn-ghost" style={{ padding: '12px 24px', borderRadius: '16px', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: '700' }}>Back to Courses</Link>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', width: '100%' }}>
+            {isDemoExpired ? (
+              <>
+                <button
+                  onClick={() => setShowPurchaseModal(true)}
+                  style={{
+                    width: '100%',
+                    padding: '14px 28px',
+                    borderRadius: '16px',
+                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                    color: '#fff',
+                    fontWeight: '800',
+                    fontSize: '15px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+                  }}
+                >
+                  Unlock Full Course
+                </button>
+                <button
+                  onClick={handleUnenrollDemo}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    marginTop: '8px',
+                  }}
+                >
+                  Unenroll from Demo
+                </button>
+              </>
+            ) : (
+              <Link href="/courses" className="btn btn-ghost" style={{ padding: '12px 24px', borderRadius: '16px', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: '700', textDecoration: 'none' }}>Back to Courses</Link>
+            )}
           </div>
         </div>
       </div>
@@ -1126,14 +1182,9 @@ export default function CourseDetailPage() {
                                     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                                   </svg>
                                 </div>
-                                <div style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff', marginBottom: '4px' }}>
+                                <div style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff', marginBottom: '16px' }}>
                                   Unlock All Lectures
                                 </div>
-                                {lowestPrice !== null && (
-                                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#818cf8', marginBottom: '4px' }}>
-                                    Full Access starting at ₹{lowestPrice}
-                                  </div>
-                                )}
                                 <div style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(255, 255, 255, 0.5)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                   <span>⌛</span> Access Till End Term
                                 </div>
