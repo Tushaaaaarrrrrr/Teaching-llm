@@ -118,6 +118,16 @@ const ChevronRight = () => (
 
 export default function AcademicsPage() {
   const [isCapacitor, setIsCapacitor] = useState<boolean>(false)
+  const [isMobile, setIsMobile] = useState<boolean>(false)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     const check = () => {
@@ -154,7 +164,7 @@ export default function AcademicsPage() {
     }
   }, [])
 
-  if (isCapacitor) {
+  if (isCapacitor || isMobile) {
     return (
       <div className="page-container fade-in" style={{ paddingBottom: '24px' }}>
         <style dangerouslySetInnerHTML={{__html: `

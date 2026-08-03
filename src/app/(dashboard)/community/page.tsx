@@ -1286,8 +1286,8 @@ export default function CommunityPage() {
             </div>
           </div>
         )}
-        {/* If Capacitor and Mobile, render grid */}
-        {isCapacitor && isMobile ? (
+        {/* If Mobile, render grid (same as Capacitor app) */}
+        {isMobile ? (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', padding: '10px 2px 24px', overflow: 'hidden' }}>
             {classes.filter(cls => !cls.isDirectChat).map((cls, idx) => {
@@ -1659,8 +1659,8 @@ export default function CommunityPage() {
           </>
         )}
 
-        {/* Direct Messages section — hidden for students with zero DMs, and hidden entirely in native app */}
-        {!isCapacitor && (userRole === 'MANAGER' || classes.some(cls => cls.isDirectChat)) && (
+        {/* Direct Messages section — hidden for students with zero DMs, and hidden entirely on mobile views */}
+        {!isMobile && (userRole === 'MANAGER' || classes.some(cls => cls.isDirectChat)) && (
           <>
             <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '12px 0 4px', padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>Direct Messages</span>
