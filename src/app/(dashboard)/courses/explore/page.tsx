@@ -1757,7 +1757,7 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
-      {storeView === 'courses' && filteredOfferings.length > 0 && <div className="grid-3">
+      {storeView === 'courses' && selectedStoreTab && filteredOfferings.length > 0 && <div className="grid-3">
         {[...filteredOfferings].sort((a: any, b: any) => {
           const isManager = userData?.user?.role === 'MANAGER' || userData?.role === 'MANAGER'
           const aEnroll = getEnrollmentStatus(a.courseId)
