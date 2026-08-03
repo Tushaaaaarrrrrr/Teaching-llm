@@ -909,7 +909,13 @@ export default function ExploreCoursesPage() {
 
       {/* BACK BUTTON when inside a view */}
       {storeView && (
-        <button className="desktop-back-btn" onClick={() => setStoreView(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '700', cursor: 'pointer', marginBottom: '20px', padding: '8px 0' }}>
+        <button className="desktop-back-btn" onClick={() => {
+          setStoreView(null)
+          setSelectedStoreTab('')
+          setSelectedNotesTab('')
+          setSelectedNotesSubjectTab('')
+          setSelectedTestSeriesTab('')
+        }} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '700', cursor: 'pointer', marginBottom: '20px', padding: '8px 0' }}>
           <ArrowLeft size={20} />
           Back to Store
         </button>
@@ -941,46 +947,86 @@ export default function ExploreCoursesPage() {
 
 
 
-      {/* Level Tabs for Courses & Bundles */}
-      {storeView === 'courses' && visibleCategories.length > 0 && (
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          marginBottom: '28px',
-          borderBottom: '1px solid var(--border)',
-          paddingBottom: '12px',
-          overflowX: 'auto',
-          scrollbarWidth: 'none',
-        }}>
-          {visibleCategories.map(cat => {
-            const isActive = currentStoreTab === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setSelectedStoreTab(cat)}
-                style={{
-                  padding: '10px 24px',
-                  borderRadius: '16px',
-                  border: 'none',
-                  background: isActive ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'var(--surface-hover)',
-                  color: isActive ? '#fff' : 'var(--text-secondary)',
-                  fontWeight: '800',
-                  fontSize: '14.5px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: isActive ? '0 10px 20px -5px rgba(99, 102, 241, 0.4)' : 'none',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {cat}
-              </button>
-            )
-          })}
+      {/* Category options selection screen */}
+      {storeView === 'courses' && !selectedStoreTab && visibleCategories.length > 0 && (
+        <div style={{ padding: '20px 0' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '950', textAlign: 'center', marginBottom: '8px' }}>Select Level</h2>
+          <p style={{ fontSize: '15px', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '32px' }}>Choose a level to explore available courses</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', maxWidth: '900px', margin: '0 auto' }}>
+            {visibleCategories.map(cat => {
+              const courseCount = activeOfferings.filter((o: any) => (o.category || 'General') === cat).length;
+              const bundleCount = activeBundles.filter((b: any) => (b.category || 'General') === cat).length;
+              return (
+                <div
+                  key={cat}
+                  onClick={() => setSelectedStoreTab(cat)}
+                  style={{
+                    background: 'var(--surface)',
+                    borderRadius: '24px',
+                    padding: '32px 24px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 10px 30px rgba(15,23,42,0.06)',
+                    border: '1.5px solid var(--border)',
+                    transition: 'all 0.3s ease',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.borderColor = 'var(--accent)';
+                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(99,102,241,0.1)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(15,23,42,0.06)';
+                  }}
+                >
+                  <div style={{ fontSize: '40px', marginBottom: '16px' }}>
+                    {cat === 'Re-attempt' ? '🔄' : cat === 'Foundation' ? '🌱' : cat === 'Diploma' ? '🎓' : '📚'}
+                  </div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '8px' }}>{cat}</h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                    {courseCount > 0 && `${courseCount} Course${courseCount > 1 ? 's' : ''}`}
+                    {courseCount > 0 && bundleCount > 0 && ' • '}
+                    {bundleCount > 0 && `${bundleCount} Bundle${bundleCount > 1 ? 's' : ''}`}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Selected category header with Change Category button */}
+      {storeView === 'courses' && selectedStoreTab && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>{selectedStoreTab} Level</h2>
+          <button
+            onClick={() => setSelectedStoreTab('')}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '12px',
+              border: '1.5px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--text-secondary)',
+              fontSize: '13.5px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-hover)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--surface)'}
+          >
+            🔄 Change Category
+          </button>
         </div>
       )}
 
       {/* Bundle offerings section */}
-      {storeView === 'courses' && filteredBundles.length > 0 && (
+      {storeView === 'courses' && selectedStoreTab && filteredBundles.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
           <div style={{ marginTop: '12px' }} />
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
@@ -1129,41 +1175,81 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
-      {/* Level Tabs for Notes */}
-      {storeView === 'notes' && visibleNotesCategories.length > 0 && (
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          marginBottom: '20px',
-          borderBottom: '1px solid var(--border)',
-          paddingBottom: '12px',
-          overflowX: 'auto',
-          scrollbarWidth: 'none',
-        }}>
-          {visibleNotesCategories.map(cat => {
-            const isActive = currentNotesTab === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setSelectedNotesTab(cat)}
-                style={{
-                  padding: '10px 24px',
-                  borderRadius: '16px',
-                  border: 'none',
-                  background: isActive ? 'linear-gradient(135deg, #10b981, #059669)' : 'var(--surface-hover)',
-                  color: isActive ? '#fff' : 'var(--text-secondary)',
-                  fontWeight: '800',
-                  fontSize: '14.5px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: isActive ? '0 10px 20px -5px rgba(16, 185, 129, 0.4)' : 'none',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {cat}
-              </button>
-            )
-          })}
+      {/* Category options selection screen for Notes */}
+      {storeView === 'notes' && !selectedNotesTab && visibleNotesCategories.length > 0 && (
+        <div style={{ padding: '20px 0' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '950', textAlign: 'center', marginBottom: '8px' }}>Select Level</h2>
+          <p style={{ fontSize: '15px', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '32px' }}>Choose a level to explore available study notes</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', maxWidth: '900px', margin: '0 auto' }}>
+            {visibleNotesCategories.map(cat => {
+              const notesCount = activeNotes.filter((n: any) => (n.category || 'General') === cat).length;
+              return (
+                <div
+                  key={cat}
+                  onClick={() => setSelectedNotesTab(cat)}
+                  style={{
+                    background: 'var(--surface)',
+                    borderRadius: '24px',
+                    padding: '32px 24px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 10px 30px rgba(15,23,42,0.06)',
+                    border: '1.5px solid var(--border)',
+                    transition: 'all 0.3s ease',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.borderColor = 'var(--success)';
+                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(16,185,129,0.1)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(15,23,42,0.06)';
+                  }}
+                >
+                  <div style={{ fontSize: '40px', marginBottom: '16px' }}>
+                    {cat === 'Re-attempt' ? '🔄' : cat === 'Foundation' ? '🌱' : cat === 'Diploma' ? '🎓' : '📝'}
+                  </div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '8px' }}>{cat}</h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                    {notesCount > 0 ? `${notesCount} Note${notesCount > 1 ? 's' : ''}` : 'No notes'}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Selected category header with Change Category button for Notes */}
+      {storeView === 'notes' && selectedNotesTab && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>{selectedNotesTab} Level Notes</h2>
+          <button
+            onClick={() => {
+              setSelectedNotesTab('');
+              setSelectedNotesSubjectTab('');
+            }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '12px',
+              border: '1.5px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--text-secondary)',
+              fontSize: '13.5px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-hover)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--surface)'}
+          >
+            🔄 Change Category
+          </button>
         </div>
       )}
 
@@ -1212,7 +1298,7 @@ export default function ExploreCoursesPage() {
       )}
 
       {/* Notes section */}
-      {storeView === 'notes' && filteredNotes.length > 0 && (
+      {storeView === 'notes' && selectedNotesTab && filteredNotes.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-primary)', margin: '6px 0 12px' }}>Study Notes</h2>
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
@@ -1490,41 +1576,78 @@ export default function ExploreCoursesPage() {
         </div>
       )}
 
-      {/* Level Tabs for Test Series */}
-      {storeView === 'testSeries' && visibleTestSeriesCategories.length > 0 && (
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          marginBottom: '20px',
-          borderBottom: '1px solid var(--border)',
-          paddingBottom: '12px',
-          overflowX: 'auto',
-          scrollbarWidth: 'none',
-        }}>
-          {visibleTestSeriesCategories.map(cat => {
-            const isActive = currentTestSeriesTab === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setSelectedTestSeriesTab(cat)}
-                style={{
-                  padding: '10px 24px',
-                  borderRadius: '16px',
-                  border: 'none',
-                  background: isActive ? 'linear-gradient(135deg, #eab308, #ca8a04)' : 'var(--surface-hover)',
-                  color: isActive ? '#fff' : 'var(--text-secondary)',
-                  fontWeight: '800',
-                  fontSize: '14.5px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: isActive ? '0 10px 20px -5px rgba(234, 179, 8, 0.4)' : 'none',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {cat}
-              </button>
-            )
-          })}
+      {/* Category options selection screen for Test Series */}
+      {storeView === 'testSeries' && !selectedTestSeriesTab && visibleTestSeriesCategories.length > 0 && (
+        <div style={{ padding: '20px 0' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '950', textAlign: 'center', marginBottom: '8px' }}>Select Level</h2>
+          <p style={{ fontSize: '15px', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '32px' }}>Choose a level to explore available test series</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', maxWidth: '900px', margin: '0 auto' }}>
+            {visibleTestSeriesCategories.map(cat => {
+              const tsCount = activeTestSeries.filter((ts: any) => (ts.category || 'General') === cat).length;
+              return (
+                <div
+                  key={cat}
+                  onClick={() => setSelectedTestSeriesTab(cat)}
+                  style={{
+                    background: 'var(--surface)',
+                    borderRadius: '24px',
+                    padding: '32px 24px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 10px 30px rgba(15,23,42,0.06)',
+                    border: '1.5px solid var(--border)',
+                    transition: 'all 0.3s ease',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.borderColor = '#eab308';
+                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(234, 179, 8, 0.1)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(15,23,42,0.06)';
+                  }}
+                >
+                  <div style={{ fontSize: '40px', marginBottom: '16px' }}>
+                    {cat === 'Re-attempt' ? '🔄' : cat === 'Foundation' ? '🌱' : cat === 'Diploma' ? '🎓' : '📝'}
+                  </div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '8px' }}>{cat}</h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                    {tsCount > 0 ? `${tsCount} Series` : 'No series'}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Selected category header with Change Category button for Test Series */}
+      {storeView === 'testSeries' && selectedTestSeriesTab && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)' }}>{selectedTestSeriesTab} Level Test Series</h2>
+          <button
+            onClick={() => setSelectedTestSeriesTab('')}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '12px',
+              border: '1.5px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--text-secondary)',
+              fontSize: '13.5px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-hover)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--surface)'}
+          >
+            🔄 Change Category
+          </button>
         </div>
       )}
 
@@ -1537,7 +1660,7 @@ export default function ExploreCoursesPage() {
       )}
 
       {/* TEST SERIES STORE SECTION */}
-      {storeView === 'testSeries' && filteredTestSeries.length > 0 && (
+      {storeView === 'testSeries' && selectedTestSeriesTab && filteredTestSeries.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-primary)', margin: '6px 0 12px' }}>Test Series</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '16px' }}>
