@@ -331,23 +331,22 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const [canScrollMore, setCanScrollMore] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
-  const [isLockedOpen, setIsLockedOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem('sidebar-locked-open')
+    const saved = localStorage.getItem('sidebar-expanded')
     if (saved === 'true') {
-      setIsLockedOpen(true)
+      setIsExpanded(true)
     }
   }, [])
 
-  const handleToggleLock = () => {
-    setIsLockedOpen(prev => {
+  const handleToggleExpand = () => {
+    setIsExpanded(prev => {
       const next = !prev
-      localStorage.setItem('sidebar-locked-open', String(next))
+      localStorage.setItem('sidebar-expanded', String(next))
       return next
     })
   }
-
 
   // Listen for custom toggle events from the mobile header
   useEffect(() => {
@@ -424,316 +423,247 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     router.refresh()
   }
 
+  const isCurrentlyExpanded = isExpanded || isHovered
+
   return (
     <>
-      {/* Hover sensor zone on the left edge of the screen */}
-      <div
-        className="sidebar-hover-sensor"
-        onMouseEnter={() => setIsHovered(true)}
-        style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: '16px',
-          zIndex: 99,
-        }}
-      />
-      {/* Floating Menu Button Trigger on left edge of the screen */}
-      {!isLockedOpen && (
-        <button
-          className="sidebar-desktop-menu-trigger"
-          onClick={() => setIsLockedOpen(true)}
-          style={{
-            position: 'fixed',
-            left: 0,
-            top: '120px',
-            zIndex: 90,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 16px 10px 12px',
-            borderTopRightRadius: '8px',
-            borderBottomRightRadius: '8px',
-            borderLeft: 'none',
-            borderTop: '1px solid var(--border)',
-            borderRight: '1px solid var(--border)',
-            borderBottom: '1px solid var(--border)',
-            background: 'var(--sidebar-bg)',
-            color: 'var(--text-primary)',
-            fontFamily: 'inherit',
-            fontWeight: '700',
-            fontSize: '12px',
-            letterSpacing: '0.05em',
-            cursor: 'pointer',
-            boxShadow: '4px 0 16px rgba(0, 0, 0, 0.4), 0 0 8px rgba(99, 102, 241, 0.2)',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          {/* Menu Hamburger Icon */}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-          <span>MENU</span>
-        </button>
-      )}
       <div 
         className={`sidebar-overlay ${isOpen ? 'active' : ''}`} 
         onClick={() => setIsOpen(false)} 
       />
       <nav 
-        className={`sidebar-nav ${isOpen || isHovered || isLockedOpen ? 'sidebar-open' : ''}`}
+        className={`sidebar-nav ${isOpen ? 'sidebar-open' : ''} ${isCurrentlyExpanded ? 'desktop-expanded' : 'desktop-collapsed'}`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-      >
-      {/* Logo & Portal Label */}
-      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '4px 8px', marginBottom: '22px', gap: '8px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', minWidth: 0, flex: 1 }}>
-          <Link href="/dashboard" className="sidebar-logo-plate" style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            overflow: 'hidden',
-            width: '100%',
-            maxWidth: '182px',
-            minHeight: '74px',
-            padding: '8px 12px',
-            borderRadius: '999px',
-            background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
-            boxShadow: 'var(--shadow-lg)',
-            cursor: 'pointer',
-          }}>
-            <img
-              src={logoSrc}
-              alt="GenZ IITIAN Logo"
-              className="sidebar-logo-img"
-              style={{
-                width: '100%',
-                maxWidth: '158px',
-                height: 'auto', 
-                maxHeight: '58px',
-                objectFit: 'contain',
-                display: 'block',
-              }} 
-            />
-          </Link>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.01em', textTransform: 'uppercase', paddingLeft: '2px' }}>
-            {roleLabel} Portal
-          </div>
-        </div>
-
-        {/* Close Button inside Sidebar (Desktop-only) */}
-        <button
-          className="sidebar-close-btn"
-          onClick={() => setIsLockedOpen(false)}
-          aria-label="Close sidebar"
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-secondary)',
-            cursor: 'pointer',
-            padding: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'color 0.2s ease',
-            flexShrink: 0,
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Navigation items */}
-      <div
-        ref={navRef}
-        style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', paddingRight: '4px', position: 'relative' }}
-      >
-        {visibleItems.map((item, idx) => {
-          // Check if pathname matches or starts with item href (with proper path boundary)
-          const isActive = pathname === item.href ||
-            (item.href !== '/dashboard' && item.href !== '/courses/explore' && pathname.startsWith(item.href) && 
-             (pathname[item.href.length] === '/' || pathname[item.href.length] === undefined) && !pathname.startsWith('/courses/explore') &&
-             !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates') || pathname.startsWith('/manage/coupons') || pathname.startsWith('/manage/notifications') || pathname.startsWith('/manage/home-slides'))))
-
-          // Add Section Headers
-          const showGeneralHeader = idx === 0
-          
-          const showCommunityHeader = item.href === '/community'
-          const showAdminHeader = item.href === '/manage'
-          
-          const hasRedDot = (
-            (item.href === '/support' && unread?.support) ||
-            (item.href === '/announcements' && unread?.announcements)
-          )
-
-          const isStore = item.href === '/courses/explore'
-          const getLinkStyle = () => {
-            if (isStore) {
-              return {
-                display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 18px', borderRadius: '50px',
-                color: '#ffffff',
-                background: 'linear-gradient(135deg, #4b5563, #1f2937)',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px var(--neu-glow)',
-                textDecoration: 'none', fontSize: '14px', fontWeight: '800', transition: 'all 0.2s ease',
-                marginBottom: '4px', position: 'relative' as const, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const
-              }
-            }
-            return {
-              display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 18px', borderRadius: '50px',
-              color: isActive ? '#ffffff' : 'var(--text-secondary)',
-              background: isActive ? 'var(--primary)' : 'var(--sidebar-bg)',
-              boxShadow: isActive
-                ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-light)'
-                : 'var(--shadow)',
-              textDecoration: 'none', fontSize: '14px', fontWeight: isActive ? '700' : '500', transition: 'all 0.2s ease',
-              marginBottom: '4px', position: 'relative' as const, whiteSpace: 'nowrap' as const
-            }
-          }
-
-          return (
-            <div key={item.href} className={item.desktopOnly ? 'desktop-only-nav-item' : undefined}>
-              {showGeneralHeader && (
-                <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '10px', paddingLeft: '12px' }}>
-                  General
-                </div>
-              )}
-              
-              {showCommunityHeader && (
-                <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '16px', paddingLeft: '12px' }}>
-                  Engagement
-                </div>
-              )}
-              {showAdminHeader && (
-                <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', marginTop: '16px', paddingLeft: '12px' }}>
-                  Administration
-                </div>
-              )}
-              <Link
-                href={item.href}
-                style={getLinkStyle()}
-                className={isStore ? 'store-link' : ''}
-                onClick={() => setIsOpen(false)}
-              >
-                {isStore && (
-                  <style dangerouslySetInnerHTML={{__html: `
-                    .store-link::before {
-                      content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-                      background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
-                      transform: skewX(-25deg);
-                      animation: shine 3s infinite;
-                    }
-                    @keyframes shine {
-                      0% { left: -100%; }
-                      20% { left: 200%; }
-                      100% { left: 200%; }
-                    }
-                  `}} />
-                )}
-                <span style={{
-                  color: isStore ? '#ffffff' : (isActive ? '#ffffff' : 'var(--text-secondary)'),
-                  flexShrink: 0,
-                  display: 'flex',
-                  position: 'relative',
-                  zIndex: 1
-                }}>
-                  {item.icon}
-                  {hasRedDot && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '-2px',
-                      right: '-2px',
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: 'var(--danger)',
-                      border: `2px solid ${isStore ? 'var(--text-secondary)' : (isActive ? 'var(--primary)' : 'var(--sidebar-bg)')}`,
-                      boxShadow: '0 0 6px rgba(239, 68, 68, 0.4)'
-                    }} />
-                  )}
-                </span>
-                {item.label === 'Analytics & Performance' ? (
-                  <div style={{ lineHeight: '1.2', whiteSpace: 'normal', zIndex: 1, position: 'relative' }}>
-                    {item.label}
-                  </div>
-                ) : (
-                  <span style={{ zIndex: 1, position: 'relative' }}>{item.label}</span>
-                )}
-              </Link>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Scroll More Indicator — sticky inside the scroll container, never overlaps items */}
-      <style>{`
-        @keyframes sidebarBounce {
-          0%, 100% { transform: translateY(0); opacity: 0.45; }
-          50% { transform: translateY(4px); opacity: 1; }
-        }
-      `}</style>
-      {canScrollMore && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: '4px 0 2px',
-          pointerEvents: 'none',
-          flexShrink: 0,
-        }}>
-          <svg
-            width="18" height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ color: 'var(--text-muted)', animation: 'sidebarBounce 1.6s ease-in-out infinite' }}
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
-      )}
-
-      {/* Sign Out */}
-      <button
-        onClick={handleLogout}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '11px 18px',
-          borderRadius: '50px',
-          color: 'var(--danger)',
-          background: 'var(--sidebar-bg)',
-          boxShadow: 'var(--shadow)',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '14.5px',
-          fontWeight: '500',
-          fontFamily: 'inherit',
-          transition: 'all 0.2s ease',
-          marginTop: '12px',
-          width: '100%',
+          width: isOpen ? '240px' : (isCurrentlyExpanded ? '240px' : '76px'),
         }}
       >
-        <span style={{ color: 'var(--danger)', flexShrink: 0, display: 'flex' }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </span>
-        Sign Out
-      </button>
+        {/* Desktop Expand/Collapse Header */}
+        <div className="sidebar-desktop-expand-header" style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '8px 4px',
+          marginBottom: '16px',
+          width: '100%',
+        }}>
+          <button
+            onClick={handleToggleExpand}
+            className="sidebar-expand-toggle-btn"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: 'rgba(30, 30, 47, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '8px',
+              padding: '4px',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontWeight: '800',
+              fontSize: '11px',
+              letterSpacing: '0.08em',
+              gap: '10px',
+              width: isCurrentlyExpanded ? '150px' : '40px',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              transition: 'width 0.3s ease',
+            }}
+          >
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              background: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              boxShadow: '0 4px 12px rgba(54,54,232,0.3)',
+              flexShrink: 0,
+            }}>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  transform: isCurrentlyExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.3s ease',
+                }}
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+            <span style={{
+              opacity: isCurrentlyExpanded ? 1 : 0,
+              transition: 'opacity 0.2s ease',
+              textTransform: 'uppercase',
+            }}>
+              {isExpanded ? 'COLLAPSE' : 'EXPAND'}
+            </span>
+          </button>
+        </div>
 
-    </nav>
+        {/* Navigation items rounded vertical container */}
+        <div
+          ref={navRef}
+          className="sidebar-vertical-container"
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            overflowY: 'auto',
+            padding: '12px 6px',
+            background: 'rgba(17, 17, 30, 0.85)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '20px',
+            boxShadow: 'var(--shadow-lg)',
+            width: '100%',
+          }}
+        >
+          {visibleItems.map((item, idx) => {
+            const isActive = pathname === item.href ||
+              (item.href !== '/dashboard' && item.href !== '/courses/explore' && pathname.startsWith(item.href) && 
+               (pathname[item.href.length] === '/' || pathname[item.href.length] === undefined) && !pathname.startsWith('/courses/explore') &&
+               !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates') || pathname.startsWith('/manage/coupons') || pathname.startsWith('/manage/notifications') || pathname.startsWith('/manage/home-slides'))))
+
+            const isStore = item.href === '/courses/explore'
+            const getLinkStyle = () => {
+              if (isStore) {
+                return {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
+                  gap: isCurrentlyExpanded ? '12px' : '0px',
+                  padding: isCurrentlyExpanded ? '11px 18px' : '11px 0',
+                  borderRadius: '16px',
+                  color: '#ffffff',
+                  background: 'linear-gradient(135deg, #4b5563, #1f2937)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px var(--neu-glow)',
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                  fontWeight: '800',
+                  transition: 'all 0.2s ease',
+                  position: 'relative' as const,
+                  whiteSpace: 'nowrap' as const,
+                  overflow: 'hidden' as const,
+                  height: '44px',
+                  width: '100%',
+                }
+              }
+              return {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
+                gap: isCurrentlyExpanded ? '12px' : '0px',
+                padding: isCurrentlyExpanded ? '11px 18px' : '11px 0',
+                borderRadius: '16px',
+                color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                background: isActive ? 'var(--primary)' : 'transparent',
+                boxShadow: isActive
+                  ? '4px 4px 10px rgba(54,54,232,0.35), -2px -2px 6px var(--neu-light)'
+                  : 'none',
+                textDecoration: 'none',
+                fontSize: '14px',
+                fontWeight: isActive ? '700' : '500',
+                transition: 'all 0.2s ease',
+                position: 'relative' as const,
+                whiteSpace: 'nowrap' as const,
+                height: '44px',
+                width: '100%',
+              }
+            }
+
+            return (
+              <div key={item.href} className={item.desktopOnly ? 'desktop-only-nav-item' : undefined} style={{ width: '100%' }}>
+                <Link
+                  href={item.href}
+                  style={getLinkStyle()}
+                  className={isStore ? 'store-link' : ''}
+                  onClick={() => setIsOpen(false)}
+                  title={!isCurrentlyExpanded ? item.label : undefined}
+                >
+                  <span style={{
+                    color: isStore ? '#ffffff' : (isActive ? '#ffffff' : 'var(--text-secondary)'),
+                    flexShrink: 0,
+                    display: 'flex',
+                    position: 'relative',
+                    zIndex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '24px',
+                  }}>
+                    {item.icon}
+                  </span>
+                  <span style={{
+                    opacity: isCurrentlyExpanded ? 1 : 0,
+                    width: isCurrentlyExpanded ? 'auto' : 0,
+                    overflow: 'hidden',
+                    transition: 'opacity 0.2s ease, width 0.2s ease',
+                    zIndex: 1,
+                    position: 'relative',
+                    whiteSpace: 'nowrap',
+                    marginLeft: isCurrentlyExpanded ? '4px' : '0px',
+                  }}>
+                    {item.label}
+                  </span>
+                </Link>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Sign Out Button */}
+        <button
+          onClick={handleLogout}
+          title={!isCurrentlyExpanded ? "Sign Out" : undefined}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
+            gap: isCurrentlyExpanded ? '12px' : '0px',
+            padding: isCurrentlyExpanded ? '11px 18px' : '11px 0',
+            borderRadius: '16px',
+            color: 'var(--danger)',
+            background: 'rgba(239, 68, 68, 0.08)',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '14.5px',
+            fontWeight: '500',
+            fontFamily: 'inherit',
+            transition: 'all 0.2s ease',
+            marginTop: '12px',
+            width: '100%',
+            height: '44px',
+          }}
+        >
+          <span style={{ color: 'var(--danger)', flexShrink: 0, display: 'flex', width: '24px', justifyContent: 'center' }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </span>
+          <span style={{
+            opacity: isCurrentlyExpanded ? 1 : 0,
+            width: isCurrentlyExpanded ? 'auto' : 0,
+            overflow: 'hidden',
+            transition: 'opacity 0.2s ease, width 0.2s ease',
+            whiteSpace: 'nowrap',
+            marginLeft: isCurrentlyExpanded ? '4px' : '0px',
+          }}>
+            Sign Out
+          </span>
+        </button>
+
+      </nav>
     </>
   )
 }
