@@ -434,7 +434,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           padding: '10px 14px',
           borderRadius: '14px',
           background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
-          boxShadow: 'var(--shadow-lg)',
+          boxShadow: 'none',
           cursor: 'pointer',
         }}>
           <img
@@ -472,7 +472,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
             borderRadius: '24px',
-            boxShadow: 'var(--shadow-lg)',
+            boxShadow: 'none',
             width: '100%',
             height: '100%',
             padding: '12px 6px',

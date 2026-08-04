@@ -149,7 +149,7 @@
    silhouette so it reads on the dark sidebar instead of glowing as a white blob. */
 :root[data-theme="dark"] .sidebar-logo-plate {
   background: var(--surface-2) !important;
-  box-shadow: var(--shadow) !important;
+  box-shadow: none !important;
 }
 :root[data-theme="dark"] .sidebar-logo-img {
   filter: brightness(0) invert(1);
