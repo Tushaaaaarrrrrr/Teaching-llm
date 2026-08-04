@@ -422,21 +422,17 @@ export default function Header({ userName, userRole }: HeaderProps) {
         {showGreetingHeadline ? (
           <>
             <h1 style={{
-              fontSize: '56px',
+              fontSize: '38px',
               fontWeight: '900',
               color: 'var(--text-primary)',
-              lineHeight: '1.0',
-              letterSpacing: '-1.5px',
-              display: 'flex',
-              alignItems: 'baseline',
-              justifyContent: 'flex-start',
-              gap: '12px',
-              flexWrap: 'wrap',
-              fontFamily: "'Outfit', 'Nunito', sans-serif"
+              lineHeight: '1.1',
+              letterSpacing: '-1.0px',
+              fontFamily: "'Outfit', 'Nunito', sans-serif",
+              whiteSpace: 'nowrap',
             }}>
-              {mounted ? getGreeting().heading : 'Welcome'},
+              {mounted ? getGreeting().heading : 'Welcome'},{' '}
               <span style={{
-                fontSize: '40px',
+                fontSize: 'inherit',
                 fontWeight: '700',
                 color: 'var(--primary)',
                 letterSpacing: '-0.8px',

@@ -642,7 +642,7 @@ export default function ExploreCoursesPage() {
         .mobile-back-header {
           display: none;
         }
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           .mobile-back-header {
             display: flex !important;
           }

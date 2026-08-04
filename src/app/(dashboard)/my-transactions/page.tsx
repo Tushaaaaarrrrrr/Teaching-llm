@@ -84,7 +84,7 @@ export default function MyTransactionsPage() {
         .mobile-tx-list {
           display: none;
         }
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           .desktop-tx-list {
             display: none !important;
           }

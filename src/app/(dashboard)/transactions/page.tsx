@@ -104,7 +104,7 @@ export default function TransactionsPage() {
         .mobile-tx-list {
           display: none;
         }
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           .desktop-tx-table {
             display: none !important;
           }

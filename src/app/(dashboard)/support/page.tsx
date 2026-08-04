@@ -716,7 +716,7 @@ export default function SupportPage() {
           .ticket-box-pad {
             padding: 24px;
           }
-          @media (max-width: 768px) {
+          @media (max-width: 767px) {
             .mobile-back-header {
               display: flex !important;
             }

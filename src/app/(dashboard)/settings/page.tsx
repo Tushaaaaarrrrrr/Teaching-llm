@@ -153,7 +153,7 @@ export default function SettingsPage() {
         .desktop-back-container {
           display: block;
         }
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           .mobile-back-header {
             display: flex !important;
           }
