@@ -1194,7 +1194,7 @@ tr:hover td {
   max-height: calc(100% - 68px) !important;
   background: rgba(17, 17, 30, 0.85) !important;
   backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
   border-radius: 24px !important;
   padding: 12px 6px !important;
   box-shadow: none !important;
@@ -1205,10 +1205,21 @@ tr:hover td {
   width: 100% !important;
   background: rgba(17, 17, 30, 0.85) !important;
   backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
   border-radius: 16px !important;
   padding: 6px !important;
   box-shadow: none !important;
+}
+
+/* Hide default browser scrollbars for the sidebar navigation */
+.sidebar-scrollable-content::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.sidebar-scrollable-content {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
 @media (max-width: 767px) {
@@ -1905,19 +1916,97 @@ tr:hover td {
   }
   /* Scale down link heights and fonts */
   .sidebar-scrollable-content a {
-    height: 36px !important;
+    min-height: clamp(38px, 4.8vh, 44px) !important;
+    height: auto !important;
     font-size: 13px !important;
   }
   .sidebar-nav.desktop-collapsed .sidebar-scrollable-content a {
     padding: 8px 0 !important;
   }
   .sidebar-nav.desktop-expanded .sidebar-scrollable-content a {
-    padding: 8px 12px !important;
+    padding: 8px 14px !important;
   }
   /* Scale down bottom controls */
   .sidebar-logout-card button {
-    height: 36px !important;
+    min-height: clamp(38px, 4.8vh, 44px) !important;
+    height: auto !important;
     font-size: 13px !important;
-    padding: 8px 12px !important;
+    padding: 8px 14px !important;
   }
+}
+
+/* Sidebar Option Buttons Hover Animations & Color Transitions */
+.sidebar-link-item {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Hover state for inactive links */
+.sidebar-link-item:not(.active):hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.sidebar-link-item:not(.active):hover .sidebar-link-icon,
+.sidebar-link-item:not(.active):hover .sidebar-link-label {
+  color: #ffffff !important;
+}
+
+/* Lift icon and add spring-like scale animation */
+.sidebar-link-item .sidebar-link-icon {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease !important;
+}
+.sidebar-link-item:hover .sidebar-link-icon {
+  transform: scale(1.08) !important;
+}
+
+/* Slide label slightly to the right on hover (if expanded) */
+.sidebar-link-item .sidebar-link-label {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease, width 0.2s ease !important;
+}
+.sidebar-nav.desktop-expanded .sidebar-link-item:not(.active):hover .sidebar-link-label {
+  transform: translateX(4px) !important;
+}
+
+/* Bottom Controls Hover Effects */
+.sidebar-logout-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.sidebar-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.18) !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15) !important;
+}
+.sidebar-logout-btn:hover span {
+  color: #ff6b6b !important;
+}
+.sidebar-logout-btn:hover svg {
+  transform: scale(1.08) !important;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.sidebar-collapse-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.sidebar-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+.sidebar-collapse-btn:hover span {
+  color: #ffffff !important;
+}
+.sidebar-collapse-btn:hover svg {
+  transform: translateX(-3px) !important;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.sidebar-expand-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.sidebar-expand-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+.sidebar-expand-btn:hover span {
+  color: #ffffff !important;
+}
+.sidebar-expand-btn:hover svg {
+  transform: translateX(3px) !important;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }

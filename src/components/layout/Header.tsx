@@ -518,7 +518,13 @@ export default function Header({ userName, userRole }: HeaderProps) {
         </a>
 
         {/* Notification bell */}
-        <div ref={notifRef} className="header-notif" style={{ position: 'relative' }}>
+        <div
+          ref={notifRef}
+          className="header-notif"
+          onMouseEnter={() => setShowNotif(true)}
+          onMouseLeave={() => setShowNotif(false)}
+          style={{ position: 'relative' }}
+        >
           <button
             style={{ ...neuIconStyle, position: 'relative' }}
             onClick={() => setShowNotif(v => !v)}
@@ -549,7 +555,9 @@ export default function Header({ userName, userRole }: HeaderProps) {
               style={{
                 position: 'absolute', right: 0, top: 'calc(100% + 10px)',
                 width: 'min(340px, calc(100vw - 24px))', borderRadius: '20px',
-                background: 'var(--sidebar-bg)', boxShadow: 'var(--shadow-lg)',
+                background: 'var(--sidebar-bg)', 
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.08)',
+                border: '1px solid var(--border)',
                 zIndex: 200, overflow: 'hidden',
               }}
             >
@@ -667,7 +675,13 @@ export default function Header({ userName, userRole }: HeaderProps) {
         </div>
 
         {/* User pill with dropdown */}
-        <div ref={userMenuRef} className="header-profile" style={{ position: 'relative' }}>
+        <div
+          ref={userMenuRef}
+          className="header-profile"
+          onMouseEnter={() => setShowUserMenu(true)}
+          onMouseLeave={() => setShowUserMenu(false)}
+          style={{ position: 'relative' }}
+        >
           <div
             style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 16px 6px 6px', borderRadius: '50px', background: 'var(--sidebar-bg)', boxShadow: 'var(--shadow)', cursor: 'pointer', transition: 'box-shadow 0.2s ease', outline: 'none' }}
             onClick={() => setShowUserMenu(v => !v)}
@@ -710,7 +724,9 @@ export default function Header({ userName, userRole }: HeaderProps) {
             <div style={{
               position: 'absolute', right: 0, top: 'calc(100% + 10px)',
               width: '200px', borderRadius: '16px',
-              background: 'var(--sidebar-bg)', boxShadow: 'var(--shadow-lg)',
+              background: 'var(--sidebar-bg)', 
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.08)',
+              border: '1px solid var(--border)',
               zIndex: 200, overflow: 'hidden', padding: '6px',
             }}>
               <button

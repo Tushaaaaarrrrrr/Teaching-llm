@@ -328,6 +328,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const pathname = usePathname()
   const router = useRouter()
   const navRef = useRef<HTMLDivElement>(null)
+  const sidebarRef = useRef<HTMLElement>(null)
   const [canScrollMore, setCanScrollMore] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -355,6 +356,27 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     setIsManualExpanded(false)
     setIsManualCollapsed(false)
   }, [pathname])
+
+  // Handle click outside to collapse sidebar on tablets/mobile or desktop manual expand
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      // If the sidebar is expanded or open, and click target is not within the sidebar, collapse it!
+      if (
+        sidebarRef.current && 
+        !sidebarRef.current.contains(e.target as Node)
+      ) {
+        setIsManualExpanded(false)
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick)
+    document.addEventListener('touchstart', handleOutsideClick)
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+      document.removeEventListener('touchstart', handleOutsideClick)
+    }
+  }, [])
 
   // Use shared UserDataProvider instead of duplicate SWR/SSE calls
   const { userData, unreadCounts: unread } = useUserData()
@@ -439,7 +461,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start',
-        gap: '12px',
+        gap: '4px',
       }}>
         <Link href="/dashboard" className="sidebar-logo-plate" style={{
           display: 'flex',
@@ -484,11 +506,14 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
       </div>
 
       <nav 
+        ref={sidebarRef}
         className={`sidebar-nav ${isOpen ? 'sidebar-open' : ''} ${isCurrentlyExpanded ? 'desktop-expanded' : 'desktop-collapsed'} ${isTabletDevice ? 'is-tablet-device' : ''}`}
         onMouseLeave={() => {
           setIsHovered(false)
-          setIsManualCollapsed(false)
-          setIsManualExpanded(false)
+          if (!isTabletDevice) {
+            setIsManualCollapsed(false)
+            setIsManualExpanded(false)
+          }
         }}
         style={{
           width: isOpen ? '240px' : (isCurrentlyExpanded ? '240px' : '76px'),
@@ -527,11 +552,9 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
 
               const isStore = item.href === '/courses/explore'
               const getLinkStyle = () => {
-                const height = isTabletDevice ? '36px' : '44px'
-                const padding = isTabletDevice
-                  ? (isCurrentlyExpanded ? '8px 14px' : '8px 0')
-                  : (isCurrentlyExpanded ? '11px 18px' : '11px 0')
-                const borderRadius = isTabletDevice ? '12px' : '16px'
+                const minHeight = 'clamp(40px, 5.2vh, 48px)'
+                const padding = isCurrentlyExpanded ? '10px 16px' : '10px 0'
+                const borderRadius = isTabletDevice ? '10px' : '12px'
                 const fontSize = isTabletDevice ? '13px' : '14px'
 
                 if (isStore) {
@@ -552,7 +575,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                     position: 'relative' as const,
                     whiteSpace: 'nowrap' as const,
                     overflow: 'hidden' as const,
-                    height,
+                    minHeight,
+                    height: 'auto',
                     width: '100%',
                   }
                 }
@@ -574,7 +598,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   transition: 'all 0.2s ease',
                   position: 'relative' as const,
                   whiteSpace: 'nowrap' as const,
-                  height,
+                  minHeight,
+                  height: 'auto',
                   width: '100%',
                 }
               }
@@ -584,32 +609,38 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   <Link
                     href={item.href}
                     style={getLinkStyle()}
-                    className={isStore ? 'store-link' : ''}
+                    className={`sidebar-link-item ${isActive ? 'active' : ''} ${isStore ? 'store-link' : ''}`}
                     onClick={() => setIsOpen(false)}
                     title={!isCurrentlyExpanded ? item.label : undefined}
                   >
-                    <span style={{
-                      color: isStore ? '#ffffff' : (isActive ? '#ffffff' : 'var(--text-secondary)'),
-                      flexShrink: 0,
-                      display: 'flex',
-                      position: 'relative',
-                      zIndex: 1,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      width: '24px',
-                    }}>
+                    <span 
+                      className="sidebar-link-icon"
+                      style={{
+                        color: isStore ? '#ffffff' : (isActive ? '#ffffff' : 'var(--text-secondary)'),
+                        flexShrink: 0,
+                        display: 'flex',
+                        position: 'relative',
+                        zIndex: 1,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        width: '24px',
+                      }}
+                    >
                       {item.icon}
                     </span>
-                    <span style={{
-                      opacity: isCurrentlyExpanded ? 1 : 0,
-                      width: isCurrentlyExpanded ? 'auto' : 0,
-                      overflow: 'hidden',
-                      transition: 'opacity 0.2s ease, width 0.2s ease',
-                      zIndex: 1,
-                      position: 'relative',
-                      whiteSpace: 'nowrap',
-                      marginLeft: isCurrentlyExpanded ? '4px' : '0px',
-                    }}>
+                    <span 
+                      className="sidebar-link-label"
+                      style={{
+                        opacity: isCurrentlyExpanded ? 1 : 0,
+                        width: isCurrentlyExpanded ? 'auto' : 0,
+                        overflow: 'hidden',
+                        transition: 'opacity 0.2s ease, width 0.2s ease',
+                        zIndex: 1,
+                        position: 'relative',
+                        whiteSpace: 'nowrap',
+                        marginLeft: isCurrentlyExpanded ? '4px' : '0px',
+                      }}
+                    >
                       {item.label}
                     </span>
                   </Link>
@@ -633,12 +664,13 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               <button
                 onClick={() => setShowLogoutConfirm(true)}
                 title="Sign Out"
+                className="sidebar-logout-btn"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'flex-start',
                   gap: '12px',
-                  padding: isTabletDevice ? '8px 14px' : '11px 18px',
+                  padding: '10px 16px',
                   borderRadius: isTabletDevice ? '10px' : '12px',
                   color: 'var(--danger)',
                   background: 'rgba(239, 68, 68, 0.08)',
@@ -649,7 +681,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   fontFamily: 'inherit',
                   transition: 'all 0.2s ease',
                   width: '100%',
-                  height: isTabletDevice ? '36px' : '44px',
+                  minHeight: 'clamp(40px, 5.2vh, 48px)',
+                  height: 'auto',
                   flexShrink: 0,
                 }}
               >
@@ -679,12 +712,13 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   setIsManualExpanded(false)
                 }}
                 title="Collapse Sidebar"
+                className="sidebar-collapse-btn"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'flex-start',
                   gap: '12px',
-                  padding: isTabletDevice ? '8px 14px' : '11px 18px',
+                  padding: '10px 16px',
                   borderRadius: isTabletDevice ? '10px' : '12px',
                   color: 'var(--text-secondary)',
                   background: 'rgba(255, 255, 255, 0.05)',
@@ -695,7 +729,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   fontFamily: 'inherit',
                   transition: 'all 0.2s ease',
                   width: '100%',
-                  height: isTabletDevice ? '36px' : '44px',
+                  minHeight: 'clamp(40px, 5.2vh, 48px)',
+                  height: 'auto',
                   flexShrink: 0,
                 }}
               >
@@ -725,12 +760,13 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 setIsManualCollapsed(false)
               }}
               title="Expand Sidebar"
+              className="sidebar-expand-btn"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0px',
-                padding: '0px',
+                padding: '10px 0',
                 borderRadius: isTabletDevice ? '10px' : '12px',
                 color: 'var(--text-secondary)',
                 background: 'rgba(255, 255, 255, 0.05)',
@@ -738,11 +774,10 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 width: '100%',
-                height: isTabletDevice ? '36px' : '44px',
+                minHeight: 'clamp(40px, 5.2vh, 48px)',
+                height: 'auto',
                 flexShrink: 0,
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
             >
               <span style={{ flexShrink: 0, display: 'flex', width: '24px', justifyContent: 'center' }}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
