@@ -1677,7 +1677,7 @@ tr:hover td {
   width: 40px !important;
   height: 40px !important;
   padding: 0 !important;
-  border-radius: 50% !important;
+  border-radius: 50px !important;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%) !important; /* Premium rich blue gradient */
   color: #ffffff !important;
   font-size: 13px !important;
@@ -1691,6 +1691,29 @@ tr:hover td {
   position: relative !important;
   overflow: hidden !important;
   flex-shrink: 0 !important;
+}
+
+.download-btn:hover {
+  width: 142px !important;
+}
+
+.download-btn-text {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
+              opacity 0.2s ease,
+              margin-left 0.3s ease;
+  margin-left: 0;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.download-btn:hover .download-btn-text {
+  max-width: 100px;
+  opacity: 1;
+  margin-left: 8px;
 }
 
 /* Sliding shine / shimmer animation overlay */
