@@ -1805,7 +1805,7 @@ tr:hover td {
   }
 }
 
-/* Tablet Portrait Responsive Sidebar and Grid Styles */
+/* Tablet Portrait Responsive Sidebar, Header, and Grid Styles */
 @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
   .sidebar-nav {
     top: 76px !important;
@@ -1818,10 +1818,17 @@ tr:hover td {
   .dashboard-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
   }
-  .header-titles-dashboard {
-    left: 120px !important;
-    transform: translateY(-50%) !important;
-    align-items: flex-start !important;
+  .header-titles {
+    position: static !important;
+    transform: none !important;
     text-align: left !important;
+    align-items: flex-start !important;
+    margin-left: 56px !important;
+  }
+  .header-titles-dashboard h1 {
+    font-size: 32px !important;
+  }
+  .header-titles-dashboard p {
+    font-size: 14px !important;
   }
 }
