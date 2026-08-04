@@ -84,7 +84,7 @@ function StudentFeedbackView({ userId }: { userId: string }) {
     <div className="page-container fade-in" style={{ maxWidth: '900px', margin: '0 auto', padding: 'clamp(16px, 4vw, 32px)' }}>
       <style>{`
         .mobile-back-header {
-          display: none;
+          display: none !important;
         }
         @media (max-width: 767px) {
           .mobile-back-header {

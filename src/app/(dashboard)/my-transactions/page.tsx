@@ -79,7 +79,7 @@ export default function MyTransactionsPage() {
     <div className="page-container fade-in">
       <style>{`
         .mobile-back-header {
-          display: none;
+          display: none !important;
         }
         .mobile-tx-list {
           display: none;

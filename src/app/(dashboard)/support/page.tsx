@@ -689,7 +689,7 @@ export default function SupportPage() {
       <div className="page-container fade-in" style={{ maxHeight: 'calc(100vh - 72px)', overflowY: 'auto', overflowX: 'hidden' }}>
         <style>{`
           .mobile-back-header {
-            display: none;
+            display: none !important;
           }
           .support-grid {
             display: grid;

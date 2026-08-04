@@ -88,7 +88,7 @@ export default function CompanyPage() {
     <div style={{ padding: 'clamp(16px, 4vw, 24px) clamp(16px, 4vw, 32px) 48px', maxWidth: '1000px', margin: '0 auto' }}>
       <style>{`
         .mobile-back-header {
-          display: none;
+          display: none !important;
         }
         @media (max-width: 767px) {
           .mobile-back-header {

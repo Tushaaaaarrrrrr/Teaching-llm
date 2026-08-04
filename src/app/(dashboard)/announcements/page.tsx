@@ -351,8 +351,18 @@ export default function AnnouncementsPage() {
 
   return (
     <div className="announcements-page-container" style={{ padding: '24px 32px 48px' }}>
+      <style>{`
+        .mobile-back-header {
+          display: none !important;
+        }
+        @media (max-width: 767px) {
+          .mobile-back-header {
+            display: flex !important;
+          }
+        }
+      `}</style>
       {/* Premium Neumorphic Page Header */}
-      <div className="page-header" style={{
+      <div className="mobile-back-header" style={{
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',

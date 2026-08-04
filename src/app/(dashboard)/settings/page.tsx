@@ -148,7 +148,7 @@ export default function SettingsPage() {
     <div className="page-container fade-in" style={{ padding: isMobile ? '12px' : '20px' }}>
       <style>{`
         .mobile-back-header {
-          display: none;
+          display: none !important;
         }
         .desktop-back-container {
           display: block;
