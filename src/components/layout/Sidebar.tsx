@@ -609,6 +609,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           display: 'flex',
           flexDirection: 'column',
           gap: isTabletDevice ? '6px' : '8px',
+          marginTop: 'auto',
         }}>
           {isCurrentlyExpanded ? (
             <>

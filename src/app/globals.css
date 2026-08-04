@@ -1890,3 +1890,34 @@ tr:hover td {
     padding: 4px !important;
   }
 }
+
+/* Height-based media query to prevent sidebar vertical overflow on short screens */
+@media (max-height: 850px) {
+  .sidebar-scrollable-content {
+    gap: 4px !important;
+  }
+  .sidebar-vertical-container {
+    padding: 6px 4px !important;
+  }
+  .sidebar-nav {
+    top: 76px !important;
+    bottom: 12px !important;
+  }
+  /* Scale down link heights and fonts */
+  .sidebar-scrollable-content a {
+    height: 36px !important;
+    font-size: 13px !important;
+  }
+  .sidebar-nav.desktop-collapsed .sidebar-scrollable-content a {
+    padding: 8px 0 !important;
+  }
+  .sidebar-nav.desktop-expanded .sidebar-scrollable-content a {
+    padding: 8px 12px !important;
+  }
+  /* Scale down bottom controls */
+  .sidebar-logout-card button {
+    height: 36px !important;
+    font-size: 13px !important;
+    padding: 8px 12px !important;
+  }
+}

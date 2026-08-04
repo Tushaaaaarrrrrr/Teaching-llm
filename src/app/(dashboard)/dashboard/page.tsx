@@ -1868,7 +1868,7 @@ export default function DashboardPage() {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.4; }
         }
-        @media (max-width: 900px) {
+        @media (max-width: 767px) {
           .page-container > div[style*='grid-template-columns'] {
             grid-template-columns: 1fr !important;
           }
