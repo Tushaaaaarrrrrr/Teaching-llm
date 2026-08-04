@@ -1008,7 +1008,7 @@ tr:hover td {
   }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   :root {
     --course-banner-height: 180px;
     --course-card-padding: 28px 24px 24px;
@@ -1152,7 +1152,7 @@ tr:hover td {
   text-align: center;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   .header-titles-dashboard {
     left: 120px !important;
     transform: translateY(-50%) !important;
@@ -1335,7 +1335,7 @@ tr:hover td {
 /* Hide mobile greeting on desktop — keep without !important so the
    mobile @media rule (display: flex !important above) wins on phones. */
 .mobile-header-greeting { display: none; }
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   .mobile-header-greeting { display: none !important; }
   .mobile-header-back-title { display: none !important; }
 }
@@ -1687,7 +1687,7 @@ tr:hover td {
 }
 
 /* Hide Home Hero Slider on desktop (web/large screens) as it is only for the app/mobile */
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   .home-hero-slider {
     display: none !important;
   }
