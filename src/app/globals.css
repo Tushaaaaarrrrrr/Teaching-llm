@@ -1180,6 +1180,11 @@ tr:hover td {
               box-shadow 0.3s ease;
 }
 
+.sidebar-nav.is-tablet-device {
+  top: 76px !important;
+  bottom: 16px !important;
+}
+
 .sidebar-nav.desktop-expanded {
   width: 240px;
 }

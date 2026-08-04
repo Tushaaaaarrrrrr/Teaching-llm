@@ -407,6 +407,17 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     router.refresh()
   }
 
+  const [isTabletDevice, setIsTabletDevice] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const ua = navigator.userAgent.toLowerCase()
+    const hasTouch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window
+    const isTabletUA = /(ipad|tablet|(android(?!.*mobile))|kindle|playbook|silk)/i.test(ua)
+    const isIPadSafari = hasTouch && ua.includes('macintosh')
+    const isTabletScreen = hasTouch && window.innerWidth >= 768 && window.innerWidth <= 1470
+    setIsTabletDevice(isTabletUA || isIPadSafari || isTabletScreen)
+  }, [])
+
   const isCurrentlyExpanded = isHovered
 
   return (
@@ -416,10 +427,10 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
         onClick={() => setIsOpen(false)} 
       />
       {/* Desktop Permanent Corner-Fixed Logo */}
-      <div className="sidebar-desktop-logo-fixed-container" style={{
+      <div className={`sidebar-desktop-logo-fixed-container ${isTabletDevice ? 'is-tablet-device' : ''}`} style={{
         position: 'fixed',
         left: '12px',
-        top: '24px',
+        top: isTabletDevice ? '12px' : '24px',
         zIndex: 110,
         display: 'flex',
         alignItems: 'center',
@@ -429,10 +440,10 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
-          width: '140px',
-          minHeight: '74px',
-          padding: '10px 14px',
-          borderRadius: '14px',
+          width: isTabletDevice ? '110px' : '140px',
+          minHeight: isTabletDevice ? '52px' : '74px',
+          padding: isTabletDevice ? '6px 10px' : '10px 14px',
+          borderRadius: isTabletDevice ? '10px' : '14px',
           background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
           boxShadow: 'none',
           cursor: 'pointer',
@@ -444,7 +455,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             style={{
               width: '100%',
               height: 'auto', 
-              maxHeight: '50px',
+              maxHeight: isTabletDevice ? '36px' : '50px',
               objectFit: 'contain',
               display: 'block',
             }} 
@@ -453,7 +464,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
       </div>
 
       <nav 
-        className={`sidebar-nav ${isOpen ? 'sidebar-open' : ''} ${isCurrentlyExpanded ? 'desktop-expanded' : 'desktop-collapsed'}`}
+        className={`sidebar-nav ${isOpen ? 'sidebar-open' : ''} ${isCurrentlyExpanded ? 'desktop-expanded' : 'desktop-collapsed'} ${isTabletDevice ? 'is-tablet-device' : ''}`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
@@ -471,11 +482,11 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             background: 'rgba(17, 17, 30, 0.85)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '24px',
+            borderRadius: isTabletDevice ? '18px' : '24px',
             boxShadow: 'none',
             width: '100%',
             height: '100%',
-            padding: '12px 6px',
+            padding: isTabletDevice ? '8px 4px' : '12px 6px',
             overflow: 'hidden',
           }}
         >
@@ -485,7 +496,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
-              gap: '8px',
+              gap: isTabletDevice ? '4px' : '8px',
               overflowY: 'auto',
               width: '100%',
               paddingRight: '2px',
@@ -500,25 +511,32 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
 
               const isStore = item.href === '/courses/explore'
               const getLinkStyle = () => {
+                const height = isTabletDevice ? '36px' : '44px'
+                const padding = isTabletDevice
+                  ? (isCurrentlyExpanded ? '8px 14px' : '8px 0')
+                  : (isCurrentlyExpanded ? '11px 18px' : '11px 0')
+                const borderRadius = isTabletDevice ? '12px' : '16px'
+                const fontSize = isTabletDevice ? '13px' : '14px'
+
                 if (isStore) {
                   return {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
                     gap: isCurrentlyExpanded ? '12px' : '0px',
-                    padding: isCurrentlyExpanded ? '11px 18px' : '11px 0',
-                    borderRadius: '16px',
+                    padding,
+                    borderRadius,
                     color: '#ffffff',
                     background: 'linear-gradient(135deg, #4b5563, #1f2937)',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
                     textDecoration: 'none',
-                    fontSize: '14px',
+                    fontSize,
                     fontWeight: '800',
                     transition: 'all 0.2s ease',
                     position: 'relative' as const,
                     whiteSpace: 'nowrap' as const,
                     overflow: 'hidden' as const,
-                    height: '44px',
+                    height,
                     width: '100%',
                   }
                 }
@@ -527,20 +545,20 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   alignItems: 'center',
                   justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
                   gap: isCurrentlyExpanded ? '12px' : '0px',
-                  padding: isCurrentlyExpanded ? '11px 18px' : '11px 0',
-                  borderRadius: '16px',
+                  padding,
+                  borderRadius,
                   color: isActive ? '#ffffff' : 'var(--text-secondary)',
                   background: isActive ? 'var(--primary)' : 'transparent',
                   boxShadow: isActive
                     ? '0 4px 12px rgba(54,54,232,0.35)'
                     : 'none',
                   textDecoration: 'none',
-                  fontSize: '14px',
+                  fontSize,
                   fontWeight: isActive ? '700' : '500',
                   transition: 'all 0.2s ease',
                   position: 'relative' as const,
                   whiteSpace: 'nowrap' as const,
-                  height: '44px',
+                  height,
                   width: '100%',
                 }
               }
@@ -593,19 +611,21 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               alignItems: 'center',
               justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
               gap: isCurrentlyExpanded ? '12px' : '0px',
-              padding: isCurrentlyExpanded ? '11px 18px' : '11px 0',
-              borderRadius: '16px',
+              padding: isTabletDevice
+                ? (isCurrentlyExpanded ? '8px 14px' : '8px 0')
+                : (isCurrentlyExpanded ? '11px 18px' : '11px 0'),
+              borderRadius: isTabletDevice ? '12px' : '16px',
               color: 'var(--danger)',
               background: 'rgba(239, 68, 68, 0.08)',
               border: 'none',
               cursor: 'pointer',
-              fontSize: '14.5px',
+              fontSize: isTabletDevice ? '13px' : '14.5px',
               fontWeight: '500',
               fontFamily: 'inherit',
               transition: 'all 0.2s ease',
-              marginTop: '12px',
+              marginTop: isTabletDevice ? '6px' : '12px',
               width: '100%',
-              height: '44px',
+              height: isTabletDevice ? '36px' : '44px',
               flexShrink: 0,
             }}
           >
