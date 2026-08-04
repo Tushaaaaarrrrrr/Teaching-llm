@@ -12,8 +12,8 @@
   --bg: #ffffff;
   --surface: #F3F4F6;
   --surface-2: #E5E7EB;
-  --border: rgba(255,255,255,0.7);
-  --border-light: rgba(255,255,255,0.5);
+  --border: rgba(15, 23, 42, 0.08);
+  --border-light: rgba(15, 23, 42, 0.04);
   --primary: #3636e8;
   --primary-dark: #2525cc;
   --primary-light: rgba(54,54,232,0.08);

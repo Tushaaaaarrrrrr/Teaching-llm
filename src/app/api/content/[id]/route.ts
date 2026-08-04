@@ -85,7 +85,7 @@ export async function PUT(
 
     const { id } = await params
 
-    const { title, description, videoUrl, youtubeUrl, pptUrl, videoSource, isDemo } = await request.json()
+    const { title, description, videoUrl, youtubeUrl, pptUrl, videoSource, isDemo, duration } = await request.json()
 
     const content = await prisma.content.update({
       where: { id },
@@ -97,6 +97,7 @@ export async function PUT(
         pptUrl,
         videoSource,
         isDemo: isDemo !== undefined ? !!isDemo : undefined,
+        duration: duration !== undefined ? (duration || null) : undefined,
       },
     })
 

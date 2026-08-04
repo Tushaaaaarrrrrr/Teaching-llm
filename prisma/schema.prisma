@@ -130,6 +130,9 @@ model Course {
   isDemoEnabled         Boolean                @default(false)
   demoExpiryDays        Int?                   @default(0)
   requireFeedback       Boolean                @default(false)
+  aboutUs               String?
+  startDate             DateTime?
+  endDate               DateTime?
   announcements         Announcement[]
   bundleOfferingCourses BundleOfferingCourse[]
   createdBy             User                   @relation("CourseCreator", fields: [createdById], references: [id])
@@ -407,6 +410,7 @@ model Content {
   videoUrl        String?
   youtubeUrl      String?
   pptUrl          String?
+  duration        String?
   isRecordingOnly Boolean              @default(false)
   isDemo          Boolean              @default(false)
   order           Int                  @default(0)

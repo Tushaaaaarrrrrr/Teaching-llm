@@ -199,7 +199,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled, googleGroupEmail, liveGoogleGroupEmail, liveUpgradePrice, isDemoPaid, demoPrice, requireFeedback } = await request.json()
+    const { name, description, subject, color, icon, expiresAt, teacherName, isCommunityActive, isDisabled, googleGroupEmail, liveGoogleGroupEmail, liveUpgradePrice, isDemoPaid, demoPrice, requireFeedback, aboutUs, startDate, endDate } = await request.json()
 
     if (isDisabled !== undefined && !isManagerOrSuperAdmin(session.role)) {
       return NextResponse.json({ error: 'Only managers can enable or disable courses' }, { status: 403 })
@@ -245,7 +245,10 @@ export async function PUT(
           isCommunityActive: isCommunityActive !== undefined ? !!isCommunityActive : undefined,
           isDisabled: isDisabled !== undefined ? !!isDisabled : undefined,
           requireFeedback: requireFeedback !== undefined ? !!requireFeedback : undefined,
-          expiresAt: expiresAt ? new Date(expiresAt) : null
+          expiresAt: expiresAt ? new Date(expiresAt) : null,
+          aboutUs: aboutUs !== undefined ? (aboutUs || null) : undefined,
+          startDate: startDate !== undefined ? (startDate ? new Date(startDate) : null) : undefined,
+          endDate: endDate !== undefined ? (endDate ? new Date(endDate) : null) : undefined,
         },
       })
 

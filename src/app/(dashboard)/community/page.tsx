@@ -323,6 +323,8 @@ export default function CommunityPage() {
   const [managerActionMessage, setManagerActionMessage] = useState<CommMsg | null>(null)
   const [editingMessage, setEditingMessage] = useState<CommMsg | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [guidelinesOpen, setGuidelinesOpen] = useState(false)
+  const [sidebarTab, setSidebarTab] = useState<'general' | 'announcements'>('general')
   const imageInputRef = useRef<HTMLInputElement>(null)
 
   const handleUpgradeClick = async () => {
@@ -755,12 +757,14 @@ export default function CommunityPage() {
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image too large. Maximum 5MB.')
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Files must be smaller than 10MB.')
+      if (e.target) e.target.value = ''
       return
     }
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       alert('Only JPG, PNG, and WEBP images are allowed.')
+      if (e.target) e.target.value = ''
       return
     }
     setPendingImage(file)
@@ -775,8 +779,56 @@ export default function CommunityPage() {
   }
 
   async function sendMessage() {
-    if ((!input.trim() && !pendingImage) || !selectedClass) return
-    
+    // Enforce role check: General batch or demo enrollments cannot post/reply
+    const isDemoOrGeneral = selectedClass && (
+      (selectedClass as any).isDemoEnrollment || 
+      (selectedClass as any).enrollmentType === 'DEMO' || 
+      selectedClass.name.toLowerCase().includes('general') || 
+      selectedClass.name.toLowerCase().includes('demo')
+    );
+    if (isDemoOrGeneral && userRole !== 'MANAGER' && userRole !== 'ADMIN') {
+      alert('Posting is restricted for Demo/General batch users.');
+      return;
+    }
+
+    // Enforce Character Limits
+    const isReply = !!replyingTo;
+    const limit = isReply ? 300 : 500;
+    if (input.length > limit) {
+      alert(`Message exceeds the maximum limit of ${limit} characters.`);
+      return;
+    }
+
+    // Rate Limit Enforcements (using LocalStorage as client-side tracker)
+    const today = new Date().toDateString();
+    const rateLimitKey = `rate_limit_${userId}_${today}`;
+    const trackingStr = localStorage.getItem(rateLimitKey);
+    let tracking = { posts: 0, replies: 0 };
+    if (trackingStr) {
+      try { tracking = JSON.parse(trackingStr); } catch (e) {}
+    }
+
+    if (isReply) {
+      if (tracking.replies >= 20 && userRole !== 'MANAGER' && userRole !== 'ADMIN') {
+        alert('You have reached the maximum limit of 20 replies/comments per day.');
+        return;
+      }
+      tracking.replies += 1;
+    } else {
+      if (tracking.posts >= 5 && userRole !== 'MANAGER' && userRole !== 'ADMIN') {
+        alert('You have reached the maximum limit of 5 posts per day.');
+        return;
+      }
+      tracking.posts += 1;
+    }
+    localStorage.setItem(rateLimitKey, JSON.stringify(tracking));
+
+    // Cap comments count limit check
+    if (isReply && messages.length >= 200) {
+      alert('This post has reached the maximum capacity of 200 comments.');
+      return;
+    }
+
     let imageUrl: string | null = null
 
     // Upload image first if present
@@ -1570,6 +1622,69 @@ export default function CommunityPage() {
           </>
         ) : (
           <>
+            {/* Forum Navigation Sections */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+              <button
+                onClick={() => {
+                  setSidebarTab('general')
+                  setSelectedClass(null)
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '10px 14px', borderRadius: '14px', border: 'none',
+                  cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                  background: (sidebarTab === 'general' && !selectedClass) ? 'var(--primary-light)' : 'transparent',
+                  color: (sidebarTab === 'general' && !selectedClass) ? 'var(--primary)' : 'var(--text-primary)',
+                  fontWeight: '700', fontSize: '13px', transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { if (sidebarTab !== 'general' || selectedClass) e.currentTarget.style.background = 'var(--surface-3)' }}
+                onMouseLeave={e => { if (sidebarTab !== 'general' || selectedClass) e.currentTarget.style.background = 'transparent' }}
+              >
+                <span style={{ fontSize: '16px' }}>💬</span>
+                General Discussion
+              </button>
+
+              <button
+                onClick={() => {
+                  setSidebarTab('announcements')
+                  setSelectedClass(null)
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '10px 14px', borderRadius: '14px', border: 'none',
+                  cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                  background: (sidebarTab === 'announcements' && !selectedClass) ? 'var(--primary-light)' : 'transparent',
+                  color: (sidebarTab === 'announcements' && !selectedClass) ? 'var(--primary)' : 'var(--text-primary)',
+                  fontWeight: '700', fontSize: '13px', transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { if (sidebarTab !== 'announcements' || selectedClass) e.currentTarget.style.background = 'var(--surface-3)' }}
+                onMouseLeave={e => { if (sidebarTab !== 'announcements' || selectedClass) e.currentTarget.style.background = 'transparent' }}
+              >
+                <span style={{ fontSize: '16px' }}>📢</span>
+                Announcements
+              </button>
+
+              <button
+                onClick={() => router.push('/free-resources')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '10px 14px', borderRadius: '14px', border: 'none',
+                  cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                  background: 'transparent',
+                  color: 'var(--text-primary)',
+                  fontWeight: '700', fontSize: '13px', transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-3)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <span style={{ fontSize: '16px' }}>📚</span>
+                Study Resources
+              </button>
+            </div>
+
+            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', padding: '0 6px' }}>
+              My Courses
+            </div>
             {classes.filter(cls => !cls.isDirectChat).map(cls => {
               const active = selectedClass?.id === cls.id
               return (
@@ -1742,6 +1857,45 @@ export default function CommunityPage() {
             )}
           </>
         )}
+
+        {/* Community Guidelines Card */}
+        <div style={{
+          marginTop: '16px',
+          padding: '16px',
+          borderRadius: '20px',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          boxShadow: 'inset 2px 2px 5px var(--neu-dark), inset -2px -2px 5px var(--neu-light)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}>
+          <div style={{ fontSize: '13px', fontWeight: '850', color: 'var(--text-primary)' }}>Community Guidelines</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+            Be respectful, kind and supportive. Help others and learn together.
+          </div>
+          <button
+            onClick={() => setGuidelinesOpen(true)}
+            style={{
+              alignSelf: 'flex-start',
+              background: 'none',
+              border: 'none',
+              color: 'var(--primary)',
+              fontSize: '11.5px',
+              fontWeight: '800',
+              cursor: 'pointer',
+              padding: '4px 0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              transition: 'transform 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'translateX(2px)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
+          >
+            View Guidelines →
+          </button>
+        </div>
       </div>
 
       {/* Right: Chat area */}
@@ -1755,7 +1909,73 @@ export default function CommunityPage() {
         minWidth: 0,
         ...(isMobile ? { height: '100dvh', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, background: 'var(--surface)', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' } : {}),
       }}>
-        {!selectedClass ? (
+        {!selectedClass && sidebarTab === 'general' ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Header */}
+            <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>💬</div>
+              <div>
+                <div style={{ fontWeight: '800', fontSize: '16px', color: 'var(--text-primary)' }}>General Discussion</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Public community posts and general questions</div>
+              </div>
+            </div>
+            {/* Feed Wall */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }} className="chat-wallpaper">
+              {classes.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                  <p style={{ fontWeight: '700' }}>No courses loaded yet</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {classes.filter(c => !c.isDirectChat).map(course => (
+                    <div
+                      key={course.id}
+                      onClick={() => setSelectedClass(course)}
+                      style={{
+                        padding: '16px', borderRadius: '20px', background: 'var(--surface)',
+                        border: '1px solid var(--border)', cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.02)', display: 'flex', gap: '16px',
+                        alignItems: 'center', transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(54,54,232,0.06)' }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.02)' }}
+                    >
+                      <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: course.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '800', color: course.color }}>
+                        {course.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>{course.name}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{course.subject || 'Course Forum'}</div>
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: '700' }}>Enter Forum →</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : !selectedClass && sidebarTab === 'announcements' ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Header */}
+            <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>📢</div>
+              <div>
+                <div style={{ fontWeight: '800', fontSize: '16px', color: 'var(--text-primary)' }}>Announcements</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Official notifications and course announcements</div>
+              </div>
+            </div>
+            {/* Announcements Wall */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }} className="chat-wallpaper">
+              <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--surface)', border: '1px solid var(--border)', textAlign: 'center' }}>
+                <span style={{ fontSize: '32px' }}>📣</span>
+                <h4 style={{ margin: '12px 0 6px 0', fontWeight: '800', color: 'var(--text-primary)' }}>Official Announcements</h4>
+                <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                  There are no global announcements at this moment. Course-specific announcements can be viewed inside individual course forums.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : !selectedClass ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '16px', color: 'var(--text-muted)', padding: '40px' }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <p style={{ fontWeight: '700', fontSize: '15px', margin: 0 }}>Tap on a community to start chatting</p>
@@ -2566,59 +2786,70 @@ export default function CommunityPage() {
                                   </span>
                                 )}
                               </div>
+                              </div>
+                            </SwipeableMessage>
+                          {/* Hover Reactions Flyout + Like/Reply Actions bar below bubble */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '6px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            
+                            {/* Like / Reaction Hover Container */}
+                            <div style={{ position: 'relative' }} className="like-btn-container">
+                              <button
+                                onClick={() => {
+                                  // Trigger generic like
+                                  fetch(`/api/community/${selectedClass.id}/messages/${msg.id}/pin`, { method: 'POST', body: JSON.stringify({ action: 'like' }) }).catch(console.error)
+                                }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <span>👍</span> Like
+                              </button>
+                              
+                              {/* Hover reactions panel */}
+                              <div className="reactions-hover-panel" style={{
+                                position: 'absolute', bottom: '20px', left: 0,
+                                background: 'var(--sidebar-bg)', borderRadius: '24px',
+                                border: '1px solid var(--border)', display: 'none',
+                                gap: '6px', padding: '6px 10px', boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+                                zIndex: 10,
+                              }}>
+                                {['👍', '❤️', '😄', '😲'].map(emoji => (
+                                  <button
+                                    key={emoji}
+                                    onClick={() => {
+                                      // Trigger custom reaction
+                                      fetch(`/api/community/${selectedClass.id}/messages/${msg.id}/pin`, { method: 'POST', body: JSON.stringify({ action: 'react', reaction: emoji }) }).catch(console.error)
+                                    }}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '15px', padding: '2px', transition: 'transform 0.1s' }}
+                                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.3)'}
+                                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                              <style>{`
+                                .like-btn-container:hover .reactions-hover-panel {
+                                  display: flex !important;
+                                }
+                              `}</style>
                             </div>
-                          </SwipeableMessage>
 
-                          {/* Message Actions (Visible on Hover/Right Side) */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', opacity: 0, transition: 'opacity 0.2s' }} className="msg-actions">
+                            <button
+                              onClick={() => setReplyingTo(msg)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <span>💬</span> Reply
+                            </button>
+
+                            {/* Message actions (delete/edit) for manager */}
                             {(userRole === 'MANAGER' || isMe) && !msg.isDeleted && !msg.id.startsWith('temp-') && (
                               <button
                                 onClick={() => deleteMessage(msg.id)}
                                 disabled={deletingId === msg.id}
-                                style={{
-                                  width: '24px', height: '24px', borderRadius: '50%',
-                                  border: 'none', cursor: 'pointer',
-                                  background: 'var(--surface)',
-                                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: '11px', fontWeight: '800' }}
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                                Delete
                               </button>
                             )}
-                            {(userRole === 'MANAGER' || userRole === 'ADMIN') && isMe && !msg.isDeleted && !msg.id.startsWith('temp-') && !isDM(selectedClass) && (
-                              <button
-                                onClick={() => {
-                                  setEditingMessage(msg)
-                                  setEditContent(msg.content)
-                                }}
-                                style={{
-                                  width: '24px', height: '24px', borderRadius: '50%',
-                                  border: 'none', cursor: 'pointer',
-                                  background: 'var(--surface)',
-                                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                }}
-                                title="Edit message"
-                              >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5">
-                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                  <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
-                                </svg>
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setReplyingTo(msg)}
-                              style={{
-                                width: '24px', height: '24px', borderRadius: '50%',
-                                border: 'none', cursor: 'pointer',
-                                background: 'var(--surface)',
-                                boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              }}
-                            >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3636e8" strokeWidth="2.5"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -2893,8 +3124,10 @@ export default function CommunityPage() {
                             : (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER')
                               ? 'This community is disabled'
                               : isDM(selectedClass)
-                                ? `Message ${selectedClass.name.replace('Chat with ', '')}...`
-                                : `Message ${selectedClass.name} community...`
+                                ? `Message ${selectedClass.name.replace('Chat with ', '')}... (Max 500 chars)`
+                                : replyingTo
+                                  ? `Reply to comment... (Max 300 chars)`
+                                  : `Post in ${selectedClass.name}... (Max 500 chars)`
                         }
                         disabled={(!editingMessage && !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || uploadingImage}
                         rows={1}
@@ -3022,6 +3255,117 @@ export default function CommunityPage() {
           </>
         )}
       </div>
+
+      {guidelinesOpen && (
+        <div className="modal-overlay" onClick={() => setGuidelinesOpen(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '680px', width: '90%', maxHeight: '85vh', overflowY: 'auto', borderRadius: '24px', padding: '24px', background: 'var(--sidebar-bg)', border: '1px solid var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
+            <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>📜</span>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>Community Guidelines</h3>
+              </div>
+              <button onClick={() => setGuidelinesOpen(false)} style={{ color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="modal-body" style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.6', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: '800', color: 'var(--primary)' }}>1.</span>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>Be respectful:</strong> Treat classmates, teachers, mentors, and staff with respect. No personal attacks, insults, harassment, or bullying.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: '800', color: 'var(--primary)' }}>2.</span>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>Keep discussions relevant:</strong> Use the appropriate course/category for questions and discussions. Avoid unnecessary spam or repeated posts.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: '800', color: 'var(--primary)' }}>3.</span>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>No abusive or offensive content:</strong> Do not post hateful, discriminatory, sexually explicit, violent, or otherwise inappropriate content.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: '800', color: 'var(--primary)' }}>4.</span>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>No spam or self-promotion:</strong> Don't flood the community with advertisements, referral links, promotions, or unrelated content.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: '800', color: 'var(--primary)' }}>5.</span>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>Don't share personal information:</strong> Never post phone numbers, passwords, addresses, private conversations, or other people's personal information without permission.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: '800', color: 'var(--primary)' }}>6.</span>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>Academic integrity:</strong> Help others learn, but don't encourage cheating, exam misconduct, plagiarism, or sharing restricted exam material.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: '800', color: 'var(--primary)' }}>7.</span>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>Share useful content:</strong> Notes, resources, explanations, study tips, questions, and useful opportunities are welcome when they are relevant to the community.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: '800', color: 'var(--primary)' }}>8.</span>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>Don't impersonate others:</strong> Do not pretend to be another student, teacher, mentor, or GenZ IITIAN staff member.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: '800', color: 'var(--primary)' }}>9.</span>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>Report problems:</strong> If you see inappropriate content or behavior, report it instead of engaging in an argument.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: '800', color: 'var(--primary)' }}>10.</span>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>Use common sense:</strong> The community is meant for learning, collaboration, and connecting with classmates. If something clearly doesn't belong here, don't post it.
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '8px' }}>
+                <h4 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 12px 0', color: 'var(--text-primary)' }}>Actions Taken for Violations</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13.5px' }}>
+                  <div><strong style={{ color: 'var(--text-primary)' }}>1. Content removal:</strong> Posts or comments that violate the guidelines may be removed.</div>
+                  <div><strong style={{ color: 'var(--text-primary)' }}>2. Warning:</strong> For minor or first-time violations, the user may receive a warning.</div>
+                  <div><strong style={{ color: 'var(--text-primary)' }}>3. Temporary restriction:</strong> Repeated violations may result in the user temporarily losing the ability to post, comment, or react.</div>
+                  <div><strong style={{ color: 'var(--text-primary)' }}>4. Temporary suspension:</strong> Serious or repeated violations can result in temporary suspension from the Community.</div>
+                  <div><strong style={{ color: 'var(--text-primary)' }}>5. Permanent removal:</strong> Severe violations or repeated misconduct may result in permanent removal from the Community.</div>
+                  <div><strong style={{ color: 'var(--text-primary)' }}>6. Immediate action for serious violations:</strong> Threats, harassment, hate speech, explicit content, scams, impersonation, serious privacy violations, or attempts to compromise the platform may result in immediate suspension or removal without a prior warning.</div>
+                  <div style={{ fontStyle: 'italic', color: 'var(--text-muted)', marginTop: '4px' }}>* Actions may vary depending on the severity and frequency of the violation.</div>
+                </div>
+              </div>
+
+              <blockquote style={{ borderLeft: '4px solid var(--primary)', margin: '12px 0 0 0', padding: '6px 16px', background: 'var(--primary-light)', borderRadius: '0 12px 12px 0', fontStyle: 'italic', fontWeight: '600', color: 'var(--text-primary)' }}>
+                Our goal is not to restrict conversation. It's to keep the Community safe, useful, and welcoming for everyone.
+              </blockquote>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {transcriptOpen && selectedClass && (
         <div className="modal-overlay" onClick={() => setTranscriptOpen(false)}>

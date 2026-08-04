@@ -318,6 +318,9 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           isCommunityActive: item.isCommunityActive,
           expiresAt: item.expiresAt,
           isDisabled: nextIsDisabled,
+          aboutUs: item.aboutUs || null,
+          startDate: item.startDate || null,
+          endDate: item.endDate || null,
         }),
       })
       if (!res.ok) {
@@ -346,6 +349,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
         videoUrl: item.videoUrl || '',
         pptUrl: item.pptUrl || '',
         topicId: item.topicId || '',
+        duration: item.duration || '',
         courseId,
       })
       setTopicsForCourse([])
@@ -394,12 +398,12 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
     setSaving(true)
     try {
       if (tab === 'lectures') {
-        const { topicId, title, description, videoUrl, pptUrl } = formData
+        const { topicId, title, description, videoUrl, pptUrl, duration } = formData
         if (editId) {
           const res = await fetch(`/api/content/${editId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description, videoUrl, pptUrl }),
+            body: JSON.stringify({ title, description, videoUrl, pptUrl, duration }),
           })
           if (!res.ok) {
             const data = await res.json().catch(() => ({}))
@@ -410,7 +414,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           const res = await fetch(`/api/topics/${topicId}/content`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description, videoUrl, pptUrl }),
+            body: JSON.stringify({ title, description, videoUrl, pptUrl, duration }),
           })
           if (!res.ok) {
             const data = await res.json().catch(() => ({}))
@@ -762,6 +766,45 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
               </span>
             </label>
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} placeholder="Course description" rows={3} style={{ resize: 'vertical' }} /></div>
+            <div className="form-group"><label className="form-label">About Us (About Course)</label><textarea className="form-input" value={f.aboutUs || ''} onChange={e => set('aboutUs', e.target.value)} placeholder="About this course..." rows={3} style={{ resize: 'vertical' }} /></div>
+            <div className="form-group">
+              <label className="form-label">Course Start Date</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input 
+                  type="date" 
+                  className="form-input" 
+                  value={f.startDate ? f.startDate.split('T')[0] : ''} 
+                  onChange={e => set('startDate', e.target.value)}
+                />
+                <button 
+                  type="button" 
+                  onClick={() => set('startDate', '')}
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--danger)' }}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Course End Date</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input 
+                  type="date" 
+                  className="form-input" 
+                  value={f.endDate ? f.endDate.split('T')[0] : ''} 
+                  onChange={e => set('endDate', e.target.value)}
+                />
+                <button 
+                  type="button" 
+                  onClick={() => set('endDate', '')}
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--danger)' }}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
             <div className="form-group">
               <label className="form-label">Live Upgrade Price (₹)</label>
               <input
@@ -876,7 +919,29 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           </>
         )
 
-      case 'lectures':
+      case 'lectures': {
+        const parseDuration = (dStr: string) => {
+          if (!dStr) return { h: 0, m: 0, s: 0 };
+          const parts = dStr.split(':').map(Number);
+          if (parts.length === 3) return { h: parts[0], m: parts[1], s: parts[2] };
+          if (parts.length === 2) return { h: 0, m: parts[0], s: parts[1] };
+          return { h: 0, m: 0, s: 0 };
+        };
+        const currentDur = parseDuration(f.duration || '');
+        const handleDurationChange = (key: 'h' | 'm' | 's', val: number) => {
+          const nextDur = { ...currentDur, [key]: val };
+          if (nextDur.h === 0 && nextDur.m === 0 && nextDur.s === 0) {
+            set('duration', '');
+          } else {
+            const pad = (num: number) => String(num).padStart(2, '0');
+            if (nextDur.h > 0) {
+              set('duration', `${nextDur.h}:${pad(nextDur.m)}:${pad(nextDur.s)}`);
+            } else {
+              set('duration', `${nextDur.m}:${pad(nextDur.s)}`);
+            }
+          }
+        };
+
         return (
           <>
             {courseTopicSelector}
@@ -884,8 +949,38 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
             <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" value={f.description || ''} onChange={e => set('description', e.target.value)} rows={2} style={{ resize: 'vertical' }} /></div>
             <div className="form-group"><label className="form-label">Video URL</label><input className="form-input" value={f.videoUrl || ''} onChange={e => set('videoUrl', e.target.value)} placeholder="https://youtube.com/watch?v=… or direct video link" /></div>
             <div className="form-group"><label className="form-label">Attachment / PPT URL</label><input className="form-input" value={f.pptUrl || ''} onChange={e => set('pptUrl', e.target.value)} placeholder="https://… (PDF, PPT, or any file — optional)" /></div>
+            <div className="form-group">
+              <label className="form-label">Duration (Optional)</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Hours</span>
+                  <select className="form-input" value={currentDur.h} onChange={e => handleDurationChange('h', Number(e.target.value))}>
+                    {Array.from({ length: 11 }, (_, i) => (
+                      <option key={i} value={i}>{i}h</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Minutes</span>
+                  <select className="form-input" value={currentDur.m} onChange={e => handleDurationChange('m', Number(e.target.value))}>
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <option key={i} value={i}>{i}m</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Seconds</span>
+                  <select className="form-input" value={currentDur.s} onChange={e => handleDurationChange('s', Number(e.target.value))}>
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <option key={i} value={i}>{i}s</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
           </>
         )
+      }
 
       case 'events':
         return (
