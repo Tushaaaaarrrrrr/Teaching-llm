@@ -410,15 +410,14 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const [isTabletDevice, setIsTabletDevice] = useState(false)
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const ua = navigator.userAgent.toLowerCase()
-    const hasTouch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window
-    const isTabletUA = /(ipad|tablet|(android(?!.*mobile))|kindle|playbook|silk)/i.test(ua)
-    const isIPadSafari = hasTouch && ua.includes('macintosh')
-    const isTabletScreen = hasTouch && window.innerWidth >= 768 && window.innerWidth <= 1470
-    setIsTabletDevice(isTabletUA || isIPadSafari || isTabletScreen)
+    const mql = window.matchMedia('(min-width: 768px) and (max-width: 1024px) and (orientation: portrait)')
+    setIsTabletDevice(mql.matches)
+    const listener = (e: MediaQueryListEvent) => setIsTabletDevice(e.matches)
+    mql.addEventListener('change', listener)
+    return () => mql.removeEventListener('change', listener)
   }, [])
 
-  const isCurrentlyExpanded = isHovered
+  const isCurrentlyExpanded = isHovered && !isTabletDevice
 
   return (
     <>
@@ -496,7 +495,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
-              gap: isTabletDevice ? '4px' : '8px',
+              gap: isTabletDevice ? '1.8vh' : '8px',
               overflowY: 'auto',
               width: '100%',
               paddingRight: '2px',

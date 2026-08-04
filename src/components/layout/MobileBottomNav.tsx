@@ -127,7 +127,7 @@ export default function MobileBottomNav() {
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           .dashboard-main-container main {
             padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
           }

@@ -64,7 +64,7 @@
   box-shadow: 4px 4px 8px var(--community-item-shadow-dark), -4px -4px 8px var(--community-item-shadow-light);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .community-channel-btn {
     background: var(--community-item-bg-mobile);
     box-shadow: 6px 6px 14px var(--community-item-shadow-dark), -6px -6px 14px var(--community-item-shadow-light);
@@ -77,7 +77,7 @@
   box-shadow: 4px 4px 8px var(--community-item-shadow-dark), -4px -4px 8px var(--community-item-shadow-light);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .dm-channel-btn {
     background: var(--community-item-bg-mobile);
     box-shadow: 6px 6px 14px var(--community-item-shadow-dark), -6px -6px 14px var(--community-item-shadow-light);
@@ -271,7 +271,7 @@ img {
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hidden-mobile { display: inline; }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .hidden-mobile { display: none; }
 }
 
@@ -650,7 +650,7 @@ tr:hover td {
 }
 
 /* Tighten gap between the mobile dashboard header (greeting block) and page content */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .page-container { padding-top: 6px; }
 }
 
@@ -664,12 +664,12 @@ tr:hover td {
 .mobile-bottom-nav { display: none; }
 .calendar-mobile-only { display: none; }
 /* Need Help floating button — hide on mobile; the bottom nav handles support access */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   a.support-btn-float,
   .support-btn-float { display: none !important; }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .dashboard-header.mobile-hide-header { display: none !important; }
   .header-profile { display: none !important; }
   .desktop-only-nav-item { display: none !important; }
@@ -796,7 +796,7 @@ tr:hover td {
 }
 
 /* Lecture row on a course page: actions stack below title on mobile so Watch button isn't cut off */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .lecture-row {
     padding: 14px 16px !important;
     border-radius: 20px !important;
@@ -817,7 +817,7 @@ tr:hover td {
 }
 
 /* Bundle/Checkout modal: stack inner grid on mobile so price column doesn't push content off-screen */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .bundle-modal-grid {
     grid-template-columns: 1fr !important;
     overflow-y: auto !important;
@@ -830,7 +830,7 @@ tr:hover td {
 }
 
 /* Admin user-row: collapses fixed columns onto next line on phones */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .admin-user-row {
     flex-wrap: wrap !important;
     border-radius: 24px !important;
@@ -853,7 +853,7 @@ tr:hover td {
 
 /* Master-detail mobile pattern (chat-transcripts, future two-pane routes) */
 .master-detail-back { display: none; }
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .master-detail-layout {
     flex-direction: column !important;
     gap: 0 !important;
@@ -982,7 +982,7 @@ tr:hover td {
   gap: 24px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .responsive-two-column-grid {
     grid-template-columns: 1fr !important;
     gap: 16px !important;
@@ -1017,7 +1017,7 @@ tr:hover td {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .dashboard-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 12px !important;
@@ -1073,7 +1073,7 @@ tr:hover td {
   line-height: 1.1;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .stat-card {
     padding: 14px 16px !important;
     gap: 12px !important;
@@ -1108,7 +1108,7 @@ tr:hover td {
   gap: 24px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .responsive-support-grid {
     grid-template-columns: 1fr !important;
     gap: 16px !important;
@@ -1189,7 +1189,7 @@ tr:hover td {
   width: 240px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .dashboard-main-container {
     padding-left: 0 !important;
     margin-left: 0 !important;
@@ -1256,7 +1256,7 @@ tr:hover td {
   transition: opacity 0.3s ease;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .dashboard-main-container {
     margin-left: 0;
     width: 100%;
@@ -1344,7 +1344,7 @@ tr:hover td {
 .my-courses-mobile-only { display: none; }
 .course-detail-mobile-only { display: none; }
 .live-sessions-mobile-only { display: none; }
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .my-courses-desktop-only { display: none !important; }
   .my-courses-mobile-only { display: block !important; }
   .course-detail-desktop-only { display: none !important; }
@@ -1390,14 +1390,14 @@ tr:hover td {
 
 /* Login: swap between desktop layout and mobile experience */
 .mobile-only-login { display: none; }
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .desktop-only-login { display: none !important; }
   .mobile-only-login { display: block !important; }
 }
 
 /* Desktop shows the time-based greeting headline for dashboard + courses;
    mobile uses .mobile-header-greeting (avatar + Welcome to GenZ IITian) instead. */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .header-titles-dashboard { display: none !important; }
   .dashboard-header[style*='140px'] { height: 96px !important; }
 }
@@ -1544,7 +1544,7 @@ tr:hover td {
 }
 
 /* Login Page Mobile Optimization (Declared after base styles to override correctly) */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .login-container {
     flex-direction: column;
     min-height: 100vh;
@@ -1654,7 +1654,7 @@ tr:hover td {
   gap: 32px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .lecture-layout-grid {
     grid-template-columns: 1fr !important;
     gap: 24px !important;
@@ -1694,7 +1694,7 @@ tr:hover td {
 }
 
 /* Responsive adjustments for notification dropdown on mobile screens */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .notification-dropdown {
     right: -10px !important;
   }
@@ -1793,14 +1793,35 @@ tr:hover td {
 }
 
 /* Responsive Collapsing for Mobile Devices (Desktop Only) */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .download-btn {
     display: none !important;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .sidebar-desktop-logo-fixed-container {
     display: none !important;
+  }
+}
+
+/* Tablet Portrait Responsive Sidebar and Grid Styles */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .sidebar-nav {
+    top: 76px !important;
+    bottom: 16px !important;
+    width: 76px !important;
+  }
+  .sidebar-scrollable-content {
+    gap: 1.8vh !important;
+  }
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .header-titles-dashboard {
+    left: 120px !important;
+    transform: translateY(-50%) !important;
+    align-items: flex-start !important;
+    text-align: left !important;
   }
 }
