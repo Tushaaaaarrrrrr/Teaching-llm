@@ -458,20 +458,11 @@ export default function DashboardPage() {
     return (
       <div className="page-container">
         {/* Shimmering Stats Grid */}
-        <div
-          className="dashboard-stats-grid"
-          style={{
-            marginBottom: isMobile ? '16px' : '24px',
-            marginTop: isMobile ? '16px' : '24px',
-            display: 'grid',
-            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-            gap: isMobile ? '12px' : '20px'
-          }}
-        >
+        <div className="dashboard-stats-grid">
           {[1, 2, 3, 4].map(i => (
             <div key={i} className="stat-card" style={{ background: 'var(--surface)' }}>
-              <div className="skeleton" style={{ width: isMobile ? '36px' : '48px', height: isMobile ? '36px' : '48px', borderRadius: isMobile ? '10px' : '14px', flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="skeleton stat-card-icon" style={{ flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
                 <div className="skeleton" style={{ height: '12px', width: '60px', marginBottom: '6px', borderRadius: '4px' }} />
                 <div className="skeleton" style={{ height: '22px', width: '40px', borderRadius: '4px' }} />
               </div>
@@ -679,22 +670,13 @@ export default function DashboardPage() {
       `}</style>
 
       {/* Stats Grid */}
-      <div
-        className="dashboard-stats-grid"
-        style={{
-          marginBottom: isMobile ? '16px' : '24px',
-          marginTop: isMobile ? '16px' : '24px',
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-          gap: isMobile ? '12px' : '20px'
-        }}
-      >
+      <div className="dashboard-stats-grid">
         {statCards.filter(c => !c.isSupport && c.label !== 'Active Sessions' && !isMobile).map((card) => {
           const mobileHero = isMobile && card.isTimer
           return (
           <div 
             key={card.label} 
-            className="stat-card" 
+            className={`stat-card ${mobileHero ? 'mobile-hero' : ''} ${card.isTimer ? 'timer-card' : ''}`}
             onClick={() => {
               if (card.label === 'Total Courses' || card.label === 'Lectures') {
                 router.push('/courses')
@@ -704,9 +686,6 @@ export default function DashboardPage() {
               background: mobileHero
                 ? 'linear-gradient(135deg, var(--surface) 0%, var(--surface) 55%, var(--primary-light) 100%)'
                 : (card.isTimer ? card.bg : undefined),
-              padding: mobileHero ? '22px 22px' : (isMobile ? '12px 14px' : '22px 24px'),
-              gap: isMobile ? '14px' : '20px',
-              borderRadius: mobileHero ? '22px' : (isMobile ? '16px' : '20px'),
               border: mobileHero ? '1px solid rgba(99, 102, 241, 0.10)' : undefined,
               boxShadow: mobileHero ? '0 12px 30px -10px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.04)' : undefined,
               position: 'relative', overflow: 'hidden',
@@ -736,9 +715,6 @@ export default function DashboardPage() {
                 <div className="stat-card-icon" style={{
                   background: mobileHero ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : (card.isTimer ? 'rgba(255,255,255,0.4)' : card.bg),
                   color: mobileHero ? '#ffffff' : card.color,
-                  width: mobileHero ? '48px' : (isMobile ? '36px' : '48px'),
-                  height: mobileHero ? '48px' : (isMobile ? '36px' : '48px'),
-                  borderRadius: mobileHero ? '14px' : (isMobile ? '10px' : '14px'),
                   boxShadow: mobileHero ? '0 8px 18px rgba(99,102,241,0.35)' : undefined,
                   flexShrink: 0,
                 }}>
@@ -746,9 +722,6 @@ export default function DashboardPage() {
                 </div>
                 <div className="stat-card-label" style={{
                   color: mobileHero ? 'var(--accent)' : (card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(0,0,0,0.5)' : undefined),
-                  fontSize: mobileHero ? '10.5px' : undefined,
-                  fontWeight: mobileHero ? 800 : undefined,
-                  letterSpacing: mobileHero ? '0.08em' : undefined,
                 }}>
                   {card.label}
                 </div>
@@ -756,15 +729,7 @@ export default function DashboardPage() {
 
               {/* Right: Value (number) */}
               <div className="stat-card-value" style={{
-                fontSize: mobileHero 
-                  ? '26px' 
-                  : (isMobile 
-                      ? '24px' 
-                      : (card.isTimer ? '36px' : '48px')),
-                fontWeight: 900,
                 color: mobileHero ? 'var(--text-primary)' : 'var(--text-primary)',
-                letterSpacing: '-0.02em',
-                lineHeight: 1,
                 marginRight: card.isTimer ? '24px' : '48px', // Shift non-timer numbers further left to center them
               }}>
                 {card.value}

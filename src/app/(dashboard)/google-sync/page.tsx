@@ -1,28 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import useSWR from 'swr'
 
 export default function GoogleSyncPage() {
-  const [activeTab, setActiveTab] = useState<'pools' | 'jobs'>('pools')
   const [filters, setFilters] = useState({ status: '', action: '', page: 1 })
   const [refreshKey, setRefreshKey] = useState(0)
-
-  // Category & Email Form State
-  const [newCatName, setNewCatName] = useState('')
-  const [newCatDesc, setNewCatDesc] = useState('')
-  const [isSubmittingCat, setIsSubmittingCat] = useState(false)
-
-  const [selectedCatForEmail, setSelectedCatForEmail] = useState<string | null>(null)
-  const [newGroupEmail, setNewGroupEmail] = useState('')
-  const [newMaxCapacity, setNewMaxCapacity] = useState('500')
-  const [isSubmittingEmail, setIsSubmittingEmail] = useState(false)
-
-  const [poolMessage, setPoolMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-
-  // Bulk Assignment Form State
-  const [bulkCatSelect, setBulkCatSelect] = useState('')
-  const [isBulkRunning, setIsBulkRunning] = useState(false)
 
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const { data: authData } = useSWR('/api/auth/me', fetcher)
@@ -34,40 +17,13 @@ export default function GoogleSyncPage() {
     refreshInterval: 10000,
   })
 
-  // Notification Pools Stats Data
-  const poolsUrl = `/api/admin/notification-groups?_refresh=${refreshKey}`
-  const { data: poolData, isLoading: isLoadingPools, mutate: mutatePools } = useSWR(poolsUrl, fetcher, {
-    refreshInterval: 10000,
-  })
   const [isResetting, setIsResetting] = useState(false)
   const [isRetryingFailed, setIsRetryingFailed] = useState(false)
+  const [isClearingQueue, setIsClearingQueue] = useState(false)
   const [isProcessingSync, setIsProcessingSync] = useState(false)
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false)
-
-  useEffect(() => {
-    if (!autoSyncEnabled) return
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch('/api/google-sync/process?force=true', { method: 'POST' })
-        const data = await res.json().catch(() => ({}))
-        setRefreshKey(prev => prev + 1)
-        mutatePools()
-
-        if (data.processed === 0 && !data.hasMore) {
-          // Queue is completely clear
-          setAutoSyncEnabled(false)
-        }
-      } catch (err) {
-        console.error('Auto sync loop error:', err)
-      }
-    }, 4000)
-
-    return () => clearInterval(interval)
-  }, [autoSyncEnabled, mutatePools])
 
   async function handleResetLock() {
-    if (!confirm('Are you sure you want to reset the sync engine? Only do this if jobs have been stuck for more than 5 minutes.')) return
+    if (!confirm('Are you sure you want to reset the sync engine lock? Only do this if jobs have been stuck.')) return
 
     setIsResetting(true)
     try {
@@ -77,13 +33,13 @@ export default function GoogleSyncPage() {
       try {
         data = JSON.parse(text)
       } catch (e) {
-        throw new Error('Server operation timed out or returned an HTML error. Please try refreshing.')
+        throw new Error('Server operation timed out or returned an error.')
       }
 
       if (!res.ok) throw new Error(data.error || 'Failed to reset lock')
 
       setRefreshKey(prev => prev + 1)
-      alert(data.message || 'Sync engine reset successfully. Background processing started.')
+      alert(data.message || 'Sync engine reset successfully.')
     } catch (err) {
       alert(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -92,7 +48,7 @@ export default function GoogleSyncPage() {
   }
 
   async function handleRetryFailed() {
-    if (!confirm('Are you sure you want to reset and retry all FAILED sync jobs? They will be re-queued with 0 attempts and rate-limited safely.')) return
+    if (!confirm('Are you sure you want to reset and retry all FAILED sync jobs?')) return
 
     setIsRetryingFailed(true)
     try {
@@ -102,17 +58,35 @@ export default function GoogleSyncPage() {
       try {
         data = JSON.parse(text)
       } catch (e) {
-        throw new Error('Server operation timed out or returned an HTML error. Please try refreshing.')
+        throw new Error('Server operation timed out or returned an error.')
       }
 
       if (!res.ok) throw new Error(data.error || 'Failed to retry failed jobs')
 
       setRefreshKey(prev => prev + 1)
-      alert(data.message || 'Failed sync jobs successfully re-queued for processing!')
+      alert(data.message || 'Failed sync jobs successfully re-queued!')
     } catch (err) {
       alert(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsRetryingFailed(false)
+    }
+  }
+
+  async function handleClearQueue() {
+    if (!confirm('Are you sure you want to CLEAR all sync jobs from the queue? This will remove all pending/failed jobs without running sync.')) return
+
+    setIsClearingQueue(true)
+    try {
+      const res = await fetch('/api/google-sync/clear-queue', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to clear queue')
+
+      setRefreshKey(prev => prev + 1)
+      alert(data.message || 'Sync queue cleared successfully!')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setIsClearingQueue(false)
     }
   }
 
@@ -125,329 +99,18 @@ export default function GoogleSyncPage() {
       try {
         data = JSON.parse(text)
       } catch (e) {
-        throw new Error('Server operation timed out or returned an HTML error. Please try refreshing.')
+        throw new Error('Server operation timed out or returned an error.')
       }
 
       if (!res.ok) throw new Error(data.error || 'Failed to process sync batch')
 
       setRefreshKey(prev => prev + 1)
-      mutatePools()
       const errDetail = data.sampleError || data.error || ''
-      alert(`Batch Processed! Processed ${data.processed || 0} jobs (${data.succeeded || 0} succeeded, ${data.failed || 0} failed).${errDetail ? `\n\nGoogle API Error: ${errDetail}` : ''}${data.hasMore ? '\n\nRemaining jobs continuing.' : '\n\nQueue complete!'}`)
+      alert(`Batch Processed! Processed ${data.processed || 0} jobs (${data.succeeded || 0} succeeded, ${data.failed || 0} failed).${errDetail ? `\n\nGoogle API Error: ${errDetail}` : ''}`)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsProcessingSync(false)
-    }
-  }
-
-  async function handleCreateCategory(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newCatName.trim()) return
-
-    setIsSubmittingCat(true)
-    setPoolMessage(null)
-
-    try {
-      const res = await fetch('/api/admin/notification-groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'CREATE_CATEGORY',
-          name: newCatName.trim(),
-          description: newCatDesc.trim() || undefined,
-        }),
-      })
-
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to create Pool Group')
-
-      setPoolMessage({ type: 'success', text: `Pool Group "${newCatName}" created successfully!` })
-      setNewCatName('')
-      setNewCatDesc('')
-      mutatePools()
-    } catch (err) {
-      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to create Pool Group' })
-    } finally {
-      setIsSubmittingCat(false)
-    }
-  }
-
-  async function handleAddEmailToCategory(categoryId: string, e: React.FormEvent) {
-    e.preventDefault()
-    if (!newGroupEmail.trim()) return
-
-    setIsSubmittingEmail(true)
-    setPoolMessage(null)
-
-    try {
-      const res = await fetch('/api/admin/notification-groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ADD_EMAIL_TO_CATEGORY',
-          categoryId,
-          groupEmail: newGroupEmail.trim().toLowerCase(),
-          maxCapacity: parseInt(newMaxCapacity, 10) || 500,
-        }),
-      })
-
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to add group email to pool')
-
-      let msg = `Group email "${newGroupEmail}" added successfully!`
-      if (data.flushResult && data.flushResult.assigned > 0) {
-        msg += ` Automatically assigned ${data.flushResult.assigned} waiting user(s) to this group!`
-      }
-
-      setPoolMessage({ type: 'success', text: msg })
-      setNewGroupEmail('')
-      setSelectedCatForEmail(null)
-      mutatePools()
-      setRefreshKey(prev => prev + 1)
-    } catch (err) {
-      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to add group email' })
-    } finally {
-      setIsSubmittingEmail(false)
-    }
-  }
-
-  async function handleToggleEmailStatus(emailId: string, currentStatus: boolean) {
-    try {
-      const res = await fetch('/api/admin/notification-groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'TOGGLE_EMAIL_STATUS',
-          emailId,
-          isActive: !currentStatus,
-        }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to update status')
-      }
-
-      mutatePools()
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update status')
-    }
-  }
-
-  async function handleBulkAssign(categoryId?: string) {
-    const catName = categories.find((c: any) => c.id === categoryId)?.name || 'Default Pool'
-    if (!confirm(`Are you sure you want to assign Pool Group "${catName}" to EVERY registered user (preserving existing groups)?`)) return
-
-    setIsBulkRunning(true)
-    setPoolMessage(null)
-
-    try {
-      const res = await fetch('/api/admin/notification-groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ASSIGN_ALL_CATEGORY',
-          categoryId: categoryId || undefined,
-        }),
-      })
-
-      const text = await res.text()
-      let data: any = {}
-      try {
-        data = JSON.parse(text)
-      } catch (e) {
-        throw new Error('Server operation timed out or returned an HTML error. Please try refreshing.')
-      }
-
-      if (!res.ok) throw new Error(data.error || 'Failed to complete bulk assignment')
-
-      setPoolMessage({
-        type: 'success',
-        text: `Bulk action completed! ${data.count || 0} users were processed for "${data.categoryName || catName}".`,
-      })
-      setBulkCatSelect('')
-      mutatePools()
-      setRefreshKey(prev => prev + 1)
-    } catch (err) {
-      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'An error occurred' })
-    } finally {
-      setIsBulkRunning(false)
-    }
-  }
-
-  const [isCleaning, setIsCleaning] = useState(false)
-  const [isResettingFull, setIsResettingFull] = useState(false)
-  const [isReconciling, setIsReconciling] = useState(false)
-  const [isVerifyingGoogle, setIsVerifyingGoogle] = useState(false)
-  const [googleVerificationData, setGoogleVerificationData] = useState<any>(null)
-  const [showAdvancedTools, setShowAdvancedTools] = useState(false)
-  const [isAutoFixing, setIsAutoFixing] = useState(false)
-
-  async function handleAutoFixAll() {
-    setIsAutoFixing(true)
-    setPoolMessage(null)
-    try {
-      // 1. Clean duplicates
-      const res1 = await fetch('/api/admin/notification-groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'CLEANUP_DUPLICATES' }),
-      })
-      const data1 = await res1.json()
-      if (!res1.ok) throw new Error(data1.error || 'Failed cleanup')
-
-      // 2. Assign all unassigned
-      const res2 = await fetch('/api/admin/notification-groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'ASSIGN_ALL_CATEGORY' }),
-      })
-      const data2 = await res2.json()
-      if (!res2.ok) throw new Error(data2.error || 'Failed assignment')
-
-      // 3. Trigger queue background process
-      await fetch('/api/google-sync/process?force=true', { method: 'POST' }).catch(() => ({}))
-
-      setPoolMessage({
-        type: 'success',
-        text: `⚡ Automation Complete! Cleaned duplicate assignments and processed ${data2.count || 0} user(s) into groups (500 max each). Background sync triggered automatically!`,
-      })
-      mutatePools()
-      setRefreshKey(prev => prev + 1)
-    } catch (err) {
-      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'Auto-fix failed' })
-    } finally {
-      setIsAutoFixing(false)
-    }
-  }
-
-  async function handleCleanupDuplicates() {
-    if (!confirm('Are you sure you want to clean up duplicate pool email assignments? This will ensure every student gets EXACTLY 1 email per Pool Group, free up filled spots, and redistribute pending users.')) return
-
-    setIsCleaning(true)
-    setPoolMessage(null)
-
-    try {
-      const res = await fetch('/api/admin/notification-groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'CLEANUP_DUPLICATES' }),
-      })
-
-      const text = await res.text()
-      let data: any = {}
-      try {
-        data = JSON.parse(text)
-      } catch (e) {
-        throw new Error('Server operation timed out or returned an HTML error. Please try refreshing.')
-      }
-
-      if (!res.ok) throw new Error(data.error || 'Failed to clean duplicates')
-
-      setPoolMessage({
-        type: 'success',
-        text: data.message || `Successfully cleaned duplicate group emails!`,
-      })
-      mutatePools()
-      setRefreshKey(prev => prev + 1)
-    } catch (err) {
-      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'An error occurred' })
-    } finally {
-      setIsCleaning(false)
-    }
-  }
-
-  async function handleFullReset(categoryId?: string) {
-    const promptText = '🚨 WARNING: NUCLEAR RESET!\n\nThis will:\n1. Clear ALL existing pool group assignments for all users.\n2. Re-assign every user sequentially (500 members per group max) from scratch.\n3. Queue ADD jobs to ensure everyone has a group email.\n\nAre you ABSOLUTELY SURE?'
-    if (!confirm(promptText)) return
-
-    setIsResettingFull(true)
-    setPoolMessage(null)
-
-    try {
-      const res = await fetch('/api/admin/notification-groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'FULL_RESET', categoryId }),
-      })
-
-      const text = await res.text()
-      let data: any = {}
-      try {
-        data = JSON.parse(text)
-      } catch (e) {
-        throw new Error('Server operation timed out or returned an HTML error.')
-      }
-
-      if (!res.ok) throw new Error(data.error || 'Failed to execute full reset')
-
-      setPoolMessage({
-        type: 'success',
-        text: data.message || `Full reset completed successfully!`,
-      })
-      mutatePools()
-      setRefreshKey(prev => prev + 1)
-    } catch (err) {
-      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'An error occurred during reset' })
-    } finally {
-      setIsResettingFull(false)
-    }
-  }
-
-  async function handleReconcileGoogle() {
-    if (!confirm('This will fetch actual membership from Google Groups API, compare against DB assignments, and queue REMOVE jobs for extra members (e.g. overfilled groups) and ADD jobs for missing members. Proceed?')) return
-
-    setIsReconciling(true)
-    setPoolMessage(null)
-
-    try {
-      const res = await fetch('/api/admin/notification-groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'RECONCILE_GOOGLE' }),
-      })
-
-      const text = await res.text()
-      let data: any = {}
-      try {
-        data = JSON.parse(text)
-      } catch (e) {
-        throw new Error('Server operation timed out or returned an HTML error.')
-      }
-
-      if (!res.ok) throw new Error(data.error || 'Failed to reconcile with Google')
-
-      setPoolMessage({
-        type: 'success',
-        text: `Google Reconciliation Complete! Queued ${data.totalRemoveJobsQueued || 0} REMOVE jobs and ${data.totalAddJobsQueued || 0} ADD jobs to sync Google Workspace with DB.`,
-      })
-      mutatePools()
-      setRefreshKey(prev => prev + 1)
-    } catch (err) {
-      setPoolMessage({ type: 'error', text: err instanceof Error ? err.message : 'An error occurred during reconciliation' })
-    } finally {
-      setIsReconciling(false)
-    }
-  }
-
-  async function handleVerifyGoogleCounts() {
-    setIsVerifyingGoogle(true)
-    try {
-      const res = await fetch('/api/admin/notification-groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'VERIFY_GOOGLE_COUNTS' }),
-      })
-
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to verify Google counts')
-
-      setGoogleVerificationData(data)
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to verify Google counts')
-    } finally {
-      setIsVerifyingGoogle(false)
     }
   }
 
@@ -477,12 +140,6 @@ export default function GoogleSyncPage() {
 
   const jobs = syncData?.jobs || []
   const pagination = syncData?.pagination || { page: 1, limit: 50, total: 0, totalPages: 0 }
-  const categories = poolData?.categories || []
-  const totalPendingGlobal = poolData?.totalPendingGlobal || 0
-  const totalUsersCount = poolData?.totalUsersCount || 0
-  const totalAssignedUsersCount = poolData?.totalAssignedUsersCount || 0
-  const totalUnassignedUsersCount = poolData?.totalUnassignedUsersCount || 0
-  const predictedGroupsNeeded = poolData?.predictedGroupsNeeded || 0
 
   const syncJobsPendingCount = syncData?.pendingCount || 0
   const syncJobsProcessingCount = syncData?.processingCount || 0
@@ -506,785 +163,228 @@ export default function GoogleSyncPage() {
 
   return (
     <div className="page-container fade-in" style={{ paddingBottom: '40px' }}>
-      {/* Header & Tab Navigation */}
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>Google Sync & Named Notification Pools</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Manage named pool categories, 500-member email limits, and monitor real-time Google Workspace sync jobs.</p>
-        </div>
-        <div style={{ display: 'flex', gap: '8px', background: 'var(--surface-2)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border)' }}>
-          <button
-            onClick={() => setActiveTab('pools')}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              fontSize: '13px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              background: activeTab === 'pools' ? 'var(--primary)' : 'transparent',
-              color: activeTab === 'pools' ? '#ffffff' : 'var(--text-secondary)',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            ✉️ Notification Pools
-          </button>
-          <button
-            onClick={() => setActiveTab('jobs')}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              fontSize: '13px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              background: activeTab === 'jobs' ? 'var(--primary)' : 'transparent',
-              color: activeTab === 'jobs' ? '#ffffff' : 'var(--text-secondary)',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            ⚡ Sync Jobs Monitor
-          </button>
+          <h1 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>Google Sync Dashboard</h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Monitor real-time Google Workspace group sync jobs.</p>
         </div>
       </div>
 
-      {/* TAB 1: NOTIFICATION GROUPS & POOLS */}
-      {activeTab === 'pools' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Live Member Analytics & Prediction Banner */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
-            <div className="card" style={{ padding: '16px' }}>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Total Registered Users
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '4px' }}>
-                {totalUsersCount.toLocaleString()}
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Active database accounts
-              </div>
+      {/* Sync Jobs Monitor */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Stats Banner */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
+          <div className="card" style={{ padding: '16px' }}>
+            <div style={{ fontSize: '11px', color: totalActiveQueueJobs > 0 ? '#f59e0b' : 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              ⏳ Pending Jobs in Queue
             </div>
-
-            <div className="card" style={{ padding: '16px' }}>
-              <div style={{ fontSize: '11px', color: 'var(--success)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                ✅ Assigned (At least 1 group)
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--success)', marginTop: '4px' }}>
-                {totalAssignedUsersCount.toLocaleString()}
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                {totalUsersCount > 0 ? Math.round((totalAssignedUsersCount / totalUsersCount) * 100) : 0}% of total users covered
-              </div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: totalActiveQueueJobs > 0 ? '#f59e0b' : 'var(--text-primary)', marginTop: '4px' }}>
+              {totalActiveQueueJobs.toLocaleString()} <span style={{ fontSize: '14px', fontWeight: '600' }}>jobs</span>
             </div>
-
-            <div className="card" style={{ padding: '16px' }}>
-              <div style={{ fontSize: '11px', color: totalUnassignedUsersCount > 0 ? '#f59e0b' : 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                ⏳ Remaining (Unassigned)
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: '800', color: totalUnassignedUsersCount > 0 ? '#f59e0b' : 'var(--text-primary)', marginTop: '4px' }}>
-                {totalUnassignedUsersCount.toLocaleString()}
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                {totalUnassignedUsersCount > 0 ? 'Need pool assignment' : 'All users assigned!'}
-              </div>
-            </div>
-
-            <div className="card" style={{ padding: '16px', background: 'var(--primary-light, #e0e7ff)', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '11px', color: 'var(--primary, #4338ca)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                💡 Prediction: Emails Needed
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--primary, #4338ca)', marginTop: '4px' }}>
-                {predictedGroupsNeeded} <span style={{ fontSize: '14px', fontWeight: '700' }}>group email(s)</span>
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--primary, #4338ca)', marginTop: '4px', opacity: 0.9 }}>
-                Required for {totalUnassignedUsersCount} remaining users (500 max each)
-              </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              {totalActiveQueueJobs > 0 ? 'Queued background sync jobs' : 'Queue clear — all syncs complete!'}
             </div>
           </div>
 
-          {/* Feedback Message */}
-          {poolMessage && (
-            <div style={{
-              padding: '12px 16px',
-              borderRadius: '10px',
-              fontSize: '13px',
-              fontWeight: '600',
-              background: poolMessage.type === 'success' ? 'var(--success-light)' : 'var(--danger-light)',
-              color: poolMessage.type === 'success' ? 'var(--success)' : 'var(--danger)',
-              border: `1px solid ${poolMessage.type === 'success' ? 'var(--success)' : 'var(--danger)'}`,
-            }}>
-              {poolMessage.text}
+          <div className="card" style={{ padding: '16px', background: 'var(--primary-light, #e0e7ff)', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--primary, #4338ca)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              ⏱️ Estimated Time to Finish (ETA)
             </div>
-          )}
-
-          {/* Top Form: Create New Pool Category */}
-          <div className="card" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px 0' }}>+ Create New Named Pool Group</h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 14px 0' }}>
-              Create friendly Pool Group names (e.g. "General Announcements", "IITM Batch 2026"). You can assign users to this Pool name, and the system automatically fills its child emails up to 500 members.
-            </p>
-            <form onSubmit={handleCreateCategory} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-              <div style={{ flex: '1', minWidth: '220px' }}>
-                <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                  Pool Group Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. General Announcements"
-                  value={newCatName}
-                  onChange={e => setNewCatName(e.target.value)}
-                  className="form-input"
-                  style={{ width: '100%' }}
-                />
-              </div>
-              <div style={{ flex: '1.5', minWidth: '280px' }}>
-                <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                  Description (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Main announcement channel for registered students"
-                  value={newCatDesc}
-                  onChange={e => setNewCatDesc(e.target.value)}
-                  className="form-input"
-                  style={{ width: '100%' }}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={isSubmittingCat || !newCatName.trim()}
-                className="btn"
-                style={{ background: 'var(--primary)', color: '#ffffff', border: 'none', fontWeight: '700', padding: '10px 20px' }}
-              >
-                {isSubmittingCat ? 'Creating...' : '+ Create Pool Group'}
-              </button>
-            </form>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--primary, #4338ca)', marginTop: '4px' }}>
+              {formattedSyncETA}
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--primary, #4338ca)', marginTop: '4px', opacity: 0.9 }}>
+              Based on ~1.5s rate-limited processing per Google API quota
+            </div>
           </div>
 
-          {/* Bulk Operations Panel */}
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px 0' }}>Automated Pool & Sync Management</h3>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-                  New students are automatically added to 500-member Google Groups upon registration or purchase.
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  disabled={isAutoFixing}
-                  onClick={handleAutoFixAll}
-                  className="btn"
-                  style={{ background: 'var(--primary)', color: '#ffffff', border: 'none', fontSize: '13px', fontWeight: '700', padding: '10px 20px' }}
-                >
-                  {isAutoFixing ? 'Processing Automation...' : '⚡ Auto-Fix & Sync All Users'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAdvancedTools(!showAdvancedTools)}
-                  className="btn btn-ghost"
-                  style={{ border: '1px solid var(--border)', fontSize: '12px', fontWeight: '600' }}
-                >
-                  {showAdvancedTools ? '▲ Hide Advanced Tools' : '⚙️ Advanced Tools'}
-                </button>
-              </div>
+          <div className="card" style={{ padding: '16px' }}>
+            <div style={{ fontSize: '11px', color: syncJobsFailedCount > 0 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              ❌ Failed Jobs
             </div>
-            
-            {showAdvancedTools && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-light)' }}>
-                {/* Option 1: Auto-distribute to Default Pool */}
-                <div style={{ background: 'var(--surface-2)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>1. Auto-distribute Unassigned Users</div>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-                      Assigns unassigned users to available pool emails (filling 500-by-500).
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={isBulkRunning || categories.length === 0}
-                    onClick={() => handleBulkAssign()}
-                    className="btn btn-sm"
-                    style={{ alignSelf: 'flex-start', background: 'var(--surface-3)', border: '1px solid var(--border)', fontSize: '11px', fontWeight: '700' }}
-                  >
-                    {isBulkRunning ? 'Processing...' : 'Auto-distribute'}
-                  </button>
-                </div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: syncJobsFailedCount > 0 ? 'var(--danger)' : 'var(--text-primary)', marginTop: '4px' }}>
+              {syncJobsFailedCount.toLocaleString()} <span style={{ fontSize: '14px', fontWeight: '600' }}>jobs</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              {syncJobsFailedCount > 0 ? 'Use "Retry All Failed Jobs" or "Clear Sync Queue"' : 'Zero errors'}
+            </div>
+          </div>
+        </div>
 
-                {/* Option 2: Assign Secondary Custom Pool */}
-                <div style={{ background: 'var(--surface-2)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>2. Assign Secondary Pool Group</div>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', marginBottom: '6px' }}>
-                      Assigns a custom secondary Pool Group to all users.
-                    </p>
-                    {(() => {
-                      const secondaryCategories = categories.filter((c: any) => !c.isDefault && c.name !== 'General Announcements')
-                      return (
-                        <select
-                          value={bulkCatSelect}
-                          onChange={e => setBulkCatSelect(e.target.value)}
-                          className="form-input"
-                          style={{ width: '100%', fontSize: '11px', padding: '6px' }}
-                          disabled={isBulkRunning || secondaryCategories.length === 0}
-                        >
-                          <option value="">
-                            {secondaryCategories.length === 0
-                              ? '-- No custom secondary pools --'
-                              : '-- Select Secondary Pool --'}
-                          </option>
-                          {secondaryCategories.map((c: any) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name} ({c.totalAssigned} / {c.totalCapacity})
-                            </option>
-                          ))}
-                        </select>
-                      )
-                    })()}
-                  </div>
-                  <button
-                    type="button"
-                    disabled={isBulkRunning || !bulkCatSelect}
-                    onClick={() => handleBulkAssign(bulkCatSelect)}
-                    className="btn btn-sm"
-                    style={{ alignSelf: 'flex-start', background: 'var(--success)', color: '#ffffff', border: 'none', fontSize: '11px', fontWeight: '700' }}
-                  >
-                    {isBulkRunning ? 'Processing...' : 'Assign Secondary Pool'}
-                  </button>
-                </div>
+        {/* Filter Controls & Action Buttons */}
+        <div className="card" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <select
+              value={filters.status}
+              onChange={e => setFilters(f => ({ ...f, status: e.target.value, page: 1 }))}
+              className="form-input"
+              style={{ fontSize: '12px', padding: '6px 12px' }}
+            >
+              <option value="">All Statuses</option>
+              <option value="PENDING">PENDING</option>
+              <option value="PROCESSING">PROCESSING</option>
+              <option value="SUCCESS">SUCCESS</option>
+              <option value="FAILED">FAILED</option>
+            </select>
 
-                {/* Option 3: Clean & Recalculate Duplicates */}
-                <div style={{ background: 'var(--surface-2)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>3. Clean & Fix Duplicates</div>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-                      Ensures every student has max 1 email per Pool Group.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={isCleaning}
-                    onClick={handleCleanupDuplicates}
-                    className="btn btn-sm"
-                    style={{ alignSelf: 'flex-start', background: 'var(--warning, #f59e0b)', color: '#ffffff', border: 'none', fontSize: '11px', fontWeight: '700' }}
-                  >
-                    {isCleaning ? 'Cleaning...' : 'Clean Duplicates'}
-                  </button>
-                </div>
+            <select
+              value={filters.action}
+              onChange={e => setFilters(f => ({ ...f, action: e.target.value, page: 1 }))}
+              className="form-input"
+              style={{ fontSize: '12px', padding: '6px 12px' }}
+            >
+              <option value="">All Actions</option>
+              <option value="ADD">ADD (Add Member)</option>
+              <option value="REMOVE">REMOVE (Remove Member)</option>
+            </select>
 
-                {/* Option 4: Full Nuclear Reset */}
-                <div style={{ background: 'var(--surface-2)', padding: '14px', borderRadius: '10px', border: '1px solid #ef4444', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#ef4444' }}>4. Nuclear Reset & Redistribute</div>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-                      Wipes all assignments and redistributes EVERY user from scratch (500 max).
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={isResettingFull}
-                    onClick={() => handleFullReset()}
-                    className="btn btn-sm"
-                    style={{ alignSelf: 'flex-start', background: '#ef4444', color: '#ffffff', border: 'none', fontSize: '11px', fontWeight: '700' }}
-                  >
-                    {isResettingFull ? 'Resetting...' : '🚨 Nuclear Reset'}
-                  </button>
-                </div>
-
-                {/* Option 5: Reconcile with Google */}
-                <div style={{ background: 'var(--surface-2)', padding: '14px', borderRadius: '10px', border: '1px solid var(--primary-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary)' }}>5. Reconcile with Google Workspace</div>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-                      Queries Google API & queues REMOVE jobs for extra members in overfilled groups.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={isReconciling}
-                    onClick={handleReconcileGoogle}
-                    className="btn btn-sm"
-                    style={{ alignSelf: 'flex-start', background: 'var(--primary)', color: '#ffffff', border: 'none', fontSize: '11px', fontWeight: '700' }}
-                  >
-                    {isReconciling ? 'Reconciling...' : 'Reconcile Google'}
-                  </button>
-                </div>
-              </div>
-            )}
+            <button
+              onClick={() => setRefreshKey(prev => prev + 1)}
+              className="btn btn-sm btn-ghost"
+              style={{ border: '1px solid var(--border)' }}
+            >
+              Refresh
+            </button>
           </div>
 
-          {/* Verification comparison modal / display if fetched */}
-          {googleVerificationData && (
-            <div className="card" style={{ padding: '20px', border: '1px solid var(--primary-light)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>📊 Google Groups API Verification Results</h4>
-                <button onClick={() => setGoogleVerificationData(null)} className="btn btn-sm btn-ghost" style={{ fontSize: '11px' }}>✕ Close</button>
-              </div>
-              <div style={{ fontSize: '12px', marginBottom: '12px', color: 'var(--text-secondary)' }}>
-                Total DB Pool Members: <strong>{googleVerificationData.totalDbMembers}</strong> | Total Actual Google Members: <strong>{googleVerificationData.totalGoogleMembers}</strong>
-              </div>
-              <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleForceRunSyncEngine}
+              disabled={isProcessingSync}
+              className="btn btn-sm"
+              style={{ fontSize: '12px', background: 'var(--primary)', color: '#ffffff', border: 'none', fontWeight: '700' }}
+            >
+              {isProcessingSync ? 'Processing Batch...' : '▶️ Run 1 Batch Now'}
+            </button>
+            <button
+              onClick={handleRetryFailed}
+              disabled={isRetryingFailed}
+              className="btn btn-sm"
+              style={{ fontSize: '12px', background: 'var(--surface-3)', color: 'var(--text-primary)', border: '1px solid var(--border)', fontWeight: '600' }}
+            >
+              {isRetryingFailed ? 'Re-queueing...' : '🔄 Retry Failed Jobs'}
+            </button>
+            <button
+              onClick={handleClearQueue}
+              disabled={isClearingQueue}
+              className="btn btn-sm btn-outline-danger"
+              style={{ fontSize: '12px' }}
+            >
+              {isClearingQueue ? 'Clearing...' : '🗑️ Clear Sync Queue'}
+            </button>
+            <button
+              onClick={handleResetLock}
+              disabled={isResetting}
+              className="btn btn-sm btn-ghost"
+              style={{ fontSize: '12px', border: '1px solid var(--border)' }}
+            >
+              {isResetting ? 'Resetting...' : '⚠️ Reset Lock'}
+            </button>
+          </div>
+        </div>
+
+        {/* Jobs Table */}
+        <div className="card" style={{ overflow: 'hidden' }}>
+          {!syncData && !syncError ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading sync jobs...</div>
+          ) : jobs.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎉</div>
+              <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>No Sync Jobs In Queue</div>
+              <div style={{ fontSize: '12px' }}>All background sync jobs have completed or queue is empty.</div>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                    <th style={{ padding: '8px' }}>Group Email</th>
-                    <th style={{ padding: '8px' }}>DB Count</th>
-                    <th style={{ padding: '8px' }}>Google Count</th>
-                    <th style={{ padding: '8px' }}>Status</th>
+                  <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>User Email</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Group Email</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Action</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Status</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Attempts</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Last Error</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '700' }}>Created At</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {googleVerificationData.comparison?.map((c: any) => (
-                    <tr key={c.groupEmail} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                      <td style={{ padding: '8px', fontWeight: '600' }}>{c.groupEmail}</td>
-                      <td style={{ padding: '8px' }}>{c.dbCount}</td>
-                      <td style={{ padding: '8px' }}>{c.googleCount === -1 ? (c.error || 'Error') : c.googleCount}</td>
-                      <td style={{ padding: '8px' }}>
-                        {c.matches ? (
-                          <span style={{ color: 'var(--success)', fontWeight: '700' }}>✅ MATCH</span>
-                        ) : (
-                          <span style={{ color: 'var(--danger)', fontWeight: '700' }}>❌ MISMATCH ({c.googleCount - c.dbCount > 0 ? `+${c.googleCount - c.dbCount} extra in Google` : `${c.googleCount - c.dbCount} in Google`})</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {jobs.map((job: any) => {
+                    const errLabel = getErrorLabel(job.lastError)
+                    return (
+                      <tr key={job.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: '600' }}>{job.userEmail}</td>
+                        <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{job.groupEmail}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{
+                            fontWeight: '700',
+                            fontSize: '11px',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            background: job.action === 'ADD' ? 'var(--success-light)' : 'var(--danger-light)',
+                            color: job.action === 'ADD' ? 'var(--success)' : 'var(--danger)',
+                          }}>
+                            {job.action}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{
+                            fontWeight: '700',
+                            fontSize: '11px',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            background: job.status === 'SUCCESS' ? 'var(--success-light)' : job.status === 'FAILED' ? 'var(--danger-light)' : 'var(--surface-3)',
+                            color: job.status === 'SUCCESS' ? 'var(--success)' : job.status === 'FAILED' ? 'var(--danger)' : 'var(--text-secondary)',
+                          }}>
+                            {job.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>{job.attemptCount} / 3</td>
+                        <td style={{ padding: '12px 16px', color: 'var(--danger)', fontSize: '11px' }}>
+                          {errLabel ? (
+                            <div style={{ fontWeight: '700', color: 'var(--danger)' }}>{errLabel}</div>
+                          ) : null}
+                          {job.lastError || '-'}
+                        </td>
+                        <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '11px' }}>
+                          {new Date(job.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
           )}
 
-          {/* Named Pool Groups List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>Active Pool Groups & Email Limits</h3>
+          {/* Pagination Controls */}
+          {pagination.totalPages > 1 && (
+            <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                Page {pagination.page} of {pagination.totalPages} ({pagination.total} total jobs)
+              </span>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
-                  onClick={handleVerifyGoogleCounts}
-                  disabled={isVerifyingGoogle}
-                  className="btn btn-sm btn-ghost"
+                  disabled={filters.page <= 1}
+                  onClick={() => setFilters(f => ({ ...f, page: f.page - 1 }))}
+                  className="btn btn-sm"
                   style={{ border: '1px solid var(--border)', fontSize: '12px' }}
                 >
-                  {isVerifyingGoogle ? 'Checking Google...' : '🔍 Verify Google Counts'}
+                  Previous
                 </button>
                 <button
-                  onClick={() => mutatePools()}
-                  className="btn btn-sm btn-ghost"
+                  disabled={filters.page >= pagination.totalPages}
+                  onClick={() => setFilters(f => ({ ...f, page: f.page + 1 }))}
+                  className="btn btn-sm"
                   style={{ border: '1px solid var(--border)', fontSize: '12px' }}
                 >
-                  🔄 Refresh Pools
+                  Next
                 </button>
               </div>
             </div>
-
-            {isLoadingPools ? (
-              <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading Pool Groups...</div>
-            ) : categories.length === 0 ? (
-              <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No Pool Groups created yet. Create your first Pool Group above!
-              </div>
-            ) : (
-              categories.map((cat: any) => {
-                const isAddingEmailToThis = selectedCatForEmail === cat.id
-
-                return (
-                  <div key={cat.id} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {/* Category Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-                            📂 {cat.name}
-                          </h4>
-                          {cat.isDefault && (
-                            <span style={{ fontSize: '10px', fontWeight: '700', background: 'var(--primary-light, #e0e7ff)', color: 'var(--primary, #4338ca)', padding: '2px 8px', borderRadius: '12px' }}>
-                              DEFAULT POOL
-                            </span>
-                          )}
-                        </div>
-                        {cat.description && (
-                          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>{cat.description}</p>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>
-                            {cat.totalAssigned} / {cat.totalCapacity} members
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                            {cat.emails.length} email(s) in pool • {cat.pendingCount} pending in queue
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => setSelectedCatForEmail(isAddingEmailToThis ? null : cat.id)}
-                          className="btn btn-sm"
-                          style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', fontSize: '12px', fontWeight: '700' }}
-                        >
-                          {isAddingEmailToThis ? 'Cancel' : '+ Add Group Email'}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Inline Form to Add Google Email to this Pool Category */}
-                    {isAddingEmailToThis && (
-                      <form onSubmit={e => handleAddEmailToCategory(cat.id, e)} style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '10px', border: '1px solid var(--primary-light)', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                        <div style={{ flex: '1', minWidth: '240px' }}>
-                          <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                            Google Group Email Address *
-                          </label>
-                          <input
-                            type="email"
-                            required
-                            placeholder="e.g. notifications-group-1@genziitian.org"
-                            value={newGroupEmail}
-                            onChange={e => setNewGroupEmail(e.target.value)}
-                            className="form-input"
-                            style={{ width: '100%' }}
-                          />
-                        </div>
-                        <div style={{ width: '120px' }}>
-                          <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                            Max Capacity
-                          </label>
-                          <input
-                            type="number"
-                            required
-                            min="1"
-                            max="500"
-                            value={newMaxCapacity}
-                            onChange={e => setNewMaxCapacity(e.target.value)}
-                            className="form-input"
-                            style={{ width: '100%' }}
-                          />
-                        </div>
-                        <button
-                          type="submit"
-                          disabled={isSubmittingEmail || !newGroupEmail.trim()}
-                          className="btn btn-sm"
-                          style={{ background: 'var(--primary)', color: '#ffffff', border: 'none', fontWeight: '700', padding: '10px 16px' }}
-                        >
-                          {isSubmittingEmail ? 'Saving...' : 'Add to Pool'}
-                        </button>
-                      </form>
-                    )}
-
-                    {/* Child Emails List inside Category */}
-                    {cat.emails.length === 0 ? (
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', background: 'var(--surface-2)', padding: '12px', borderRadius: '8px' }}>
-                        No Google Group emails added to this pool yet. Click <strong>+ Add Group Email</strong> above to add one (up to 500 members each).
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {cat.emails.map((email: any) => {
-                          const percentage = email.percentage || 0
-                          const isFull = email.isFull
-
-                          return (
-                            <div
-                              key={email.id}
-                              style={{
-                                padding: '12px 16px',
-                                borderRadius: '10px',
-                                background: 'var(--surface-2)',
-                                border: '1px solid var(--border-light)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '8px',
-                              }}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                                    ✉️ {email.groupEmail}
-                                  </span>
-                                  {isFull ? (
-                                    <span style={{ fontSize: '10px', fontWeight: '800', background: 'var(--danger-light)', color: 'var(--danger)', padding: '2px 8px', borderRadius: '12px' }}>
-                                      FULL (500/500)
-                                    </span>
-                                  ) : email.isActive ? (
-                                    <span style={{ fontSize: '10px', fontWeight: '800', background: 'var(--success-light)', color: 'var(--success)', padding: '2px 8px', borderRadius: '12px' }}>
-                                      ACTIVE POOL
-                                    </span>
-                                  ) : (
-                                    <span style={{ fontSize: '10px', fontWeight: '800', background: 'var(--surface-3)', color: 'var(--text-muted)', padding: '2px 8px', borderRadius: '12px' }}>
-                                      DISABLED
-                                    </span>
-                                  )}
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                  <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                                    {email.currentCount} / {email.maxCapacity} members
-                                  </span>
-                                  <button
-                                    onClick={() => handleToggleEmailStatus(email.id, email.isActive)}
-                                    className="btn btn-sm"
-                                    style={{
-                                      fontSize: '11px',
-                                      padding: '4px 10px',
-                                      background: 'transparent',
-                                      border: '1px solid var(--border)',
-                                      color: email.isActive ? 'var(--danger)' : 'var(--success)',
-                                    }}
-                                  >
-                                    {email.isActive ? 'Disable' : 'Enable'}
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Progress bar */}
-                              <div style={{ background: 'var(--surface)', height: '6px', borderRadius: '4px', overflow: 'hidden' }}>
-                                <div
-                                  style={{
-                                    height: '100%',
-                                    width: `${percentage}%`,
-                                    background: isFull ? 'var(--danger)' : 'var(--primary)',
-                                    transition: 'width 0.3s ease',
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              })
-            )}
-          </div>
+          )}
         </div>
-      )}
-
-      {/* TAB 2: GOOGLE GROUP SYNC JOBS MONITOR */}
-      {activeTab === 'jobs' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Live Pending Queue & ETA Banner */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
-            <div className="card" style={{ padding: '16px' }}>
-              <div style={{ fontSize: '11px', color: totalActiveQueueJobs > 0 ? '#f59e0b' : 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                ⏳ Pending Jobs in Queue
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: '800', color: totalActiveQueueJobs > 0 ? '#f59e0b' : 'var(--text-primary)', marginTop: '4px' }}>
-                {totalActiveQueueJobs.toLocaleString()} <span style={{ fontSize: '14px', fontWeight: '600' }}>jobs</span>
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                {totalActiveQueueJobs > 0 ? 'Queued background sync jobs' : 'Queue clear — all syncs complete!'}
-              </div>
-            </div>
-
-            <div className="card" style={{ padding: '16px', background: 'var(--primary-light, #e0e7ff)', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '11px', color: 'var(--primary, #4338ca)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                ⏱️ Estimated Time to Finish (ETA)
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--primary, #4338ca)', marginTop: '4px' }}>
-                {formattedSyncETA}
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--primary, #4338ca)', marginTop: '4px', opacity: 0.9 }}>
-                Based on ~1.5s rate-limited processing per Google API quota
-              </div>
-            </div>
-
-            <div className="card" style={{ padding: '16px' }}>
-              <div style={{ fontSize: '11px', color: syncJobsFailedCount > 0 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                ❌ Failed Jobs
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: '800', color: syncJobsFailedCount > 0 ? 'var(--danger)' : 'var(--text-primary)', marginTop: '4px' }}>
-                {syncJobsFailedCount.toLocaleString()} <span style={{ fontSize: '14px', fontWeight: '600' }}>jobs</span>
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                {syncJobsFailedCount > 0 ? 'Use "Retry All Failed Jobs" below' : 'Zero errors'}
-              </div>
-            </div>
-          </div>
-
-          <div className="card" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <select
-                value={filters.status}
-                onChange={e => setFilters(f => ({ ...f, status: e.target.value, page: 1 }))}
-                className="form-input"
-                style={{ fontSize: '12px', padding: '6px 12px' }}
-              >
-                <option value="">All Statuses</option>
-                <option value="PENDING">PENDING</option>
-                <option value="PROCESSING">PROCESSING</option>
-                <option value="SUCCESS">SUCCESS</option>
-                <option value="FAILED">FAILED</option>
-              </select>
-
-              <select
-                value={filters.action}
-                onChange={e => setFilters(f => ({ ...f, action: e.target.value, page: 1 }))}
-                className="form-input"
-                style={{ fontSize: '12px', padding: '6px 12px' }}
-              >
-                <option value="">All Actions</option>
-                <option value="ADD">ADD (Add Member)</option>
-                <option value="REMOVE">REMOVE (Remove Member)</option>
-              </select>
-
-              <button
-                onClick={() => setRefreshKey(prev => prev + 1)}
-                className="btn btn-sm btn-ghost"
-                style={{ border: '1px solid var(--border)' }}
-              >
-                Refresh
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => setAutoSyncEnabled(prev => !prev)}
-                className="btn btn-sm"
-                style={{
-                  fontSize: '12px',
-                  background: autoSyncEnabled ? '#10b981' : 'var(--surface-3)',
-                  color: autoSyncEnabled ? '#ffffff' : 'var(--text-primary)',
-                  border: '1px solid var(--border)',
-                  fontWeight: '700',
-                  boxShadow: autoSyncEnabled ? '0 0 12px rgba(16, 185, 129, 0.5)' : 'none',
-                }}
-              >
-                {autoSyncEnabled ? '🟢 Auto-Sync Worker: ACTIVE (Auto-Processing)' : '⚡ Turn ON Auto-Sync Worker'}
-              </button>
-              <button
-                onClick={handleForceRunSyncEngine}
-                disabled={isProcessingSync}
-                className="btn btn-sm"
-                style={{ fontSize: '12px', background: 'var(--primary)', color: '#ffffff', border: 'none', fontWeight: '700' }}
-              >
-                {isProcessingSync ? 'Processing Batch...' : '▶️ Run 1 Batch Now'}
-              </button>
-              <button
-                onClick={handleRetryFailed}
-                disabled={isRetryingFailed}
-                className="btn btn-sm"
-                style={{ fontSize: '12px', background: 'var(--primary)', color: '#ffffff', border: 'none', fontWeight: '700' }}
-              >
-                {isRetryingFailed ? 'Re-queueing...' : '🔄 Retry All Failed Jobs'}
-              </button>
-              <button
-                onClick={handleResetLock}
-                disabled={isResetting}
-                className="btn btn-sm btn-outline-danger"
-                style={{ fontSize: '12px' }}
-              >
-                {isResetting ? 'Resetting...' : '⚠️ Reset Sync Lock'}
-              </button>
-            </div>
-          </div>
-
-          <div className="card" style={{ overflow: 'hidden' }}>
-            {!syncData && !syncError ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading sync jobs...</div>
-            ) : jobs.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎉</div>
-                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>No Sync Jobs In Queue</div>
-                <div style={{ fontSize: '12px' }}>All background sync jobs have completed successfully.</div>
-              </div>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
-                      <th style={{ padding: '12px 16px', fontWeight: '700' }}>User Email</th>
-                      <th style={{ padding: '12px 16px', fontWeight: '700' }}>Group Email</th>
-                      <th style={{ padding: '12px 16px', fontWeight: '700' }}>Action</th>
-                      <th style={{ padding: '12px 16px', fontWeight: '700' }}>Status</th>
-                      <th style={{ padding: '12px 16px', fontWeight: '700' }}>Attempts</th>
-                      <th style={{ padding: '12px 16px', fontWeight: '700' }}>Last Error</th>
-                      <th style={{ padding: '12px 16px', fontWeight: '700' }}>Created At</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {jobs.map((job: any) => {
-                      const errLabel = getErrorLabel(job.lastError)
-                      return (
-                        <tr key={job.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                          <td style={{ padding: '12px 16px', fontWeight: '600' }}>{job.userEmail}</td>
-                          <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{job.groupEmail}</td>
-                          <td style={{ padding: '12px 16px' }}>
-                            <span style={{
-                              fontWeight: '700',
-                              fontSize: '11px',
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              background: job.action === 'ADD' ? 'var(--success-light)' : 'var(--danger-light)',
-                              color: job.action === 'ADD' ? 'var(--success)' : 'var(--danger)',
-                            }}>
-                              {job.action}
-                            </span>
-                          </td>
-                          <td style={{ padding: '12px 16px' }}>
-                            <span style={{
-                              fontWeight: '700',
-                              fontSize: '11px',
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              background: job.status === 'SUCCESS' ? 'var(--success-light)' : job.status === 'FAILED' ? 'var(--danger-light)' : 'var(--surface-3)',
-                              color: job.status === 'SUCCESS' ? 'var(--success)' : job.status === 'FAILED' ? 'var(--danger)' : 'var(--text-secondary)',
-                            }}>
-                              {job.status}
-                            </span>
-                          </td>
-                          <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>{job.attemptCount} / 5</td>
-                          <td style={{ padding: '12px 16px', color: 'var(--danger)', fontSize: '11px' }}>
-                            {errLabel ? (
-                              <div style={{ fontWeight: '700', color: 'var(--danger)' }}>{errLabel}</div>
-                            ) : null}
-                            {job.lastError || '-'}
-                          </td>
-                          <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '11px' }}>
-                            {new Date(job.createdAt).toLocaleString()}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Pagination Controls */}
-            {pagination.totalPages > 1 && (
-              <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Page {pagination.page} of {pagination.totalPages} ({pagination.total} total jobs)
-                </span>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    disabled={filters.page <= 1}
-                    onClick={() => setFilters(f => ({ ...f, page: f.page - 1 }))}
-                    className="btn btn-sm"
-                    style={{ border: '1px solid var(--border)', fontSize: '12px' }}
-                  >
-                    Previous
-                  </button>
-                  <button
-                    disabled={filters.page >= pagination.totalPages}
-                    onClick={() => setFilters(f => ({ ...f, page: f.page + 1 }))}
-                    className="btn btn-sm"
-                    style={{ border: '1px solid var(--border)', fontSize: '12px' }}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }
