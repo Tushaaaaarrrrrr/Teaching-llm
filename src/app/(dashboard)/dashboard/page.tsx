@@ -716,32 +716,56 @@ export default function DashboardPage() {
             {mobileHero && (
               <span style={{ position: 'absolute', top: '-40px', right: '-30px', width: '140px', height: '140px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.10), transparent 70%)', pointerEvents: 'none' }} />
             )}
-            <div className="stat-card-icon" style={{
-              background: mobileHero ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : (card.isTimer ? 'rgba(255,255,255,0.4)' : card.bg),
-              color: mobileHero ? '#ffffff' : card.color,
-              width: mobileHero ? '48px' : (isMobile ? '36px' : '48px'),
-              height: mobileHero ? '48px' : (isMobile ? '36px' : '48px'),
-              borderRadius: mobileHero ? '14px' : (isMobile ? '10px' : '14px'),
-              boxShadow: mobileHero ? '0 8px 18px rgba(99,102,241,0.35)' : undefined,
-              flexShrink: 0,
+            <div style={{
+              display: 'flex',
+              width: '100%',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              height: '100%',
+              position: 'relative',
+              zIndex: 1
             }}>
-              {card.icon}
-            </div>
-            <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
-              <div className="stat-card-label" style={{
-                color: mobileHero ? 'var(--accent)' : (card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(0,0,0,0.5)' : undefined),
-                fontSize: mobileHero ? '10.5px' : undefined,
-                fontWeight: mobileHero ? 800 : undefined,
-                letterSpacing: mobileHero ? '0.08em' : undefined,
+              {/* Left stack: Icon & Label */}
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'space-between', 
+                height: '100%', 
+                alignItems: 'flex-start' 
               }}>
-                {card.label}
+                <div className="stat-card-icon" style={{
+                  background: mobileHero ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : (card.isTimer ? 'rgba(255,255,255,0.4)' : card.bg),
+                  color: mobileHero ? '#ffffff' : card.color,
+                  width: mobileHero ? '48px' : (isMobile ? '36px' : '48px'),
+                  height: mobileHero ? '48px' : (isMobile ? '36px' : '48px'),
+                  borderRadius: mobileHero ? '14px' : (isMobile ? '10px' : '14px'),
+                  boxShadow: mobileHero ? '0 8px 18px rgba(99,102,241,0.35)' : undefined,
+                  flexShrink: 0,
+                }}>
+                  {card.icon}
+                </div>
+                <div className="stat-card-label" style={{
+                  color: mobileHero ? 'var(--accent)' : (card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(0,0,0,0.5)' : undefined),
+                  fontSize: mobileHero ? '10.5px' : undefined,
+                  fontWeight: mobileHero ? 800 : undefined,
+                  letterSpacing: mobileHero ? '0.08em' : undefined,
+                }}>
+                  {card.label}
+                </div>
               </div>
+
+              {/* Right: Value (number) */}
               <div className="stat-card-value" style={{
-                fontSize: mobileHero ? '26px' : undefined,
-                fontWeight: mobileHero ? 900 : undefined,
-                color: mobileHero ? 'var(--text-primary)' : undefined,
-                marginTop: mobileHero ? '4px' : undefined,
-                letterSpacing: mobileHero ? '-0.02em' : undefined,
+                fontSize: mobileHero 
+                  ? '26px' 
+                  : (isMobile 
+                      ? '24px' 
+                      : (card.isTimer ? '36px' : '48px')),
+                fontWeight: 900,
+                color: mobileHero ? 'var(--text-primary)' : 'var(--text-primary)',
+                letterSpacing: '-0.02em',
+                lineHeight: 1,
+                marginRight: card.isTimer ? '24px' : '48px', // Shift non-timer numbers further left to center them
               }}>
                 {card.value}
               </div>
