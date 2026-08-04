@@ -1122,7 +1122,15 @@ tr:hover td {
 }
 
 .header-titles {
-  margin-left: 64px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .sidebar-nav {
@@ -1666,9 +1674,10 @@ tr:hover td {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 8px !important;
-  padding: 8px 18px !important;
-  border-radius: 50px !important;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%) !important; /* Premium rich blue gradient */
   color: #ffffff !important;
   font-size: 13px !important;
