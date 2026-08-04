@@ -1853,7 +1853,13 @@ tr:hover td {
   .sidebar-nav {
     top: 76px !important;
     bottom: 16px !important;
+  }
+  .sidebar-nav.desktop-collapsed {
     width: 76px !important;
+  }
+  .sidebar-nav.desktop-expanded {
+    width: 240px !important;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.25) !important;
   }
   .sidebar-scrollable-content {
     gap: 1.8vh !important;
