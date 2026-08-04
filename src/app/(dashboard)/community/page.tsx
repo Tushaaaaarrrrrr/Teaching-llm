@@ -287,6 +287,8 @@ export default function CommunityPage() {
   const [userId, setUserId] = useState('')
   const [userRole, setUserRole] = useState('STUDENT')
   const [loading, setLoading] = useState(false)
+  const [loadingMessages, setLoadingMessages] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [managingCommunity, setManagingCommunity] = useState(false)
   
@@ -442,7 +444,7 @@ export default function CommunityPage() {
   const [showTagSuggestions, setShowTagSuggestions] = useState(false)
   const [tagSearchQuery, setTagSearchQuery] = useState('')
   const [tagTriggerIndex, setTagTriggerIndex] = useState(0)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
 
@@ -484,30 +486,35 @@ export default function CommunityPage() {
     setLoadingMore(false)
     shouldRestoreScrollRef.current = false
     shouldScrollToBottomRef.current = true
+    setLoadingMessages(true)
 
-    const url = classId.startsWith('dm_')
-      ? `/api/community/${classId}/messages`
-      : `/api/community/${classId}/messages?limit=50`
+    try {
+      const url = classId.startsWith('dm_')
+        ? `/api/community/${classId}/messages`
+        : `/api/community/${classId}/messages?limit=50`
 
-    const res = await fetch(url)
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      throw new Error(data?.error || 'Failed to load messages')
-    }
-    const loaded = Array.isArray(data) ? data : []
-    setMessages(loaded)
+      const res = await fetch(url)
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to load messages')
+      }
+      const loaded = Array.isArray(data) ? data : []
+      setMessages(loaded)
 
-    if (classId.startsWith('dm_')) {
-      setHasMore(false)
-    } else {
-      setHasMore(loaded.length >= 50)
-    }
-    
-    // Fetch pinned message for community (non-blocking)
-    if (!classId.startsWith('dm_')) {
-      loadPinnedMessage(classId).catch(console.error)
-    } else {
-      setPinnedMessage(null)
+      if (classId.startsWith('dm_')) {
+        setHasMore(false)
+      } else {
+        setHasMore(loaded.length >= 50)
+      }
+      
+      // Fetch pinned message for community (non-blocking)
+      if (!classId.startsWith('dm_')) {
+        loadPinnedMessage(classId).catch(console.error)
+      } else {
+        setPinnedMessage(null)
+      }
+    } finally {
+      setLoadingMessages(false)
     }
   }, [loadPinnedMessage])
 
@@ -616,11 +623,8 @@ export default function CommunityPage() {
         const nextId = preferredId || current?.id
         const match = nextId ? list.find((item: ClassItem) => item.id === nextId) : null
         if (match) return match
-        // On mobile, never auto-open the first community — let the user pick from the list.
-        // On desktop, fall back to the first community so the chat panel isn't empty.
-        const isMobileNow = typeof window !== 'undefined' && window.innerWidth < 768
-        if (isMobileNow) return current
-        return current || list[0] || null
+        // Never auto-open the first community — let the user pick from the list.
+        return current || null
       })
     } catch (error) {
       console.error(error)
@@ -809,6 +813,7 @@ export default function CommunityPage() {
     setMessages(prev => [...prev, optimistic])
     const msgContent = input
     setInput('')
+    setShowEmojiPicker(false)
     clearPendingImage()
 
     await fetch(`/api/community/${selectedClass.id}/messages`, {
@@ -824,7 +829,7 @@ export default function CommunityPage() {
     loadMessages(selectedClass.id)
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value
     setInput(val)
 
@@ -909,6 +914,22 @@ export default function CommunityPage() {
       }
       return subPart
     })
+  }
+
+  // Detect emoji-only messages (no text, just emojis)
+  const isEmojiOnly = (text: string): boolean => {
+    if (!text || !text.trim()) return false
+    const t = text.trim()
+    
+    // Curated emoji list we support, plus any others we want to detect
+    const emojiSet = new Set(['😂','😭','😅','🙂','😎','🤔','❤️','🔥','👏','👍','🙏','🎉','🥳','📚','📝','🎓','💯','✅','❌','⏰','💡','😤','🫡','💪','🤝','😴','🤯','👀','😬','🫠']);
+    
+    // Convert string to array of characters (correctly handles surrogate pairs)
+    const chars = Array.from(t).filter(c => c.trim() !== '');
+    if (chars.length === 0 || chars.length > 8) return false;
+    
+    // If every non-whitespace character in the message is one of our emojis, render big
+    return chars.every(char => emojiSet.has(char));
   }
 
   const renderMessageContent = (content: string) => {
@@ -1549,10 +1570,6 @@ export default function CommunityPage() {
           </>
         ) : (
           <>
-            {/* Groups header */}
-            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: isMobile ? '6px' : '4px', padding: '0 6px' }}>
-              Communities
-            </div>
             {classes.filter(cls => !cls.isDirectChat).map(cls => {
               const active = selectedClass?.id === cls.id
               return (
@@ -1739,9 +1756,16 @@ export default function CommunityPage() {
         ...(isMobile ? { height: '100dvh', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, background: 'var(--surface)', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' } : {}),
       }}>
         {!selectedClass ? (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', color: 'var(--text-muted)' }}>
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-            <p style={{ fontWeight: '700' }}>Select a community</p>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '16px', color: 'var(--text-muted)', padding: '40px' }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <p style={{ fontWeight: '700', fontSize: '15px', margin: 0 }}>Tap on a community to start chatting</p>
+            <p style={{ fontSize: '12px', margin: 0, opacity: 0.7, textAlign: 'center', lineHeight: 1.5 }}>Select any course community from the left panel to view messages and chat with your coursemates.</p>
+          </div>
+        ) : loadingMessages ? (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ width: '36px', height: '36px', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <p style={{ fontWeight: '600', fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>Loading messages...</p>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         ) : (
           <>
@@ -2513,7 +2537,7 @@ export default function CommunityPage() {
                                       </div>
                                     )
                                   })() : (
-                                    <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                    <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: isEmojiOnly(msg.content) ? '48px' : undefined, lineHeight: isEmojiOnly(msg.content) ? '1.2' : undefined }}>
                                       {renderMessageContent(msg.content)}
                                     </div>
                                   )}
@@ -2828,7 +2852,7 @@ export default function CommunityPage() {
                           ))}
                         </div>
                       )}
-                      <input
+                      <textarea
                         ref={inputRef}
                         value={editingMessage ? editContent : input}
                         onChange={e => {
@@ -2837,6 +2861,9 @@ export default function CommunityPage() {
                           } else {
                             handleInputChange(e)
                           }
+                          // Auto-grow height
+                          e.target.style.height = 'auto'
+                          e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
                         }}
                         onKeyDown={e => {
                           if (e.key === 'Escape') {
@@ -2845,12 +2872,18 @@ export default function CommunityPage() {
                               setEditContent('')
                             } else {
                               setShowTagSuggestions(false)
+                              setShowEmojiPicker(false)
                             }
                           } else if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
                             if (editingMessage) {
                               editMessage(editingMessage.id, editContent)
                             } else {
                               sendMessage()
+                            }
+                            // Reset height after send
+                            if (e.target instanceof HTMLTextAreaElement) {
+                              e.target.style.height = 'auto'
                             }
                           }
                         }}
@@ -2864,14 +2897,90 @@ export default function CommunityPage() {
                                 : `Message ${selectedClass.name} community...`
                         }
                         disabled={(!editingMessage && !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || uploadingImage}
+                        rows={1}
                         style={{
-                          width: '100%', padding: '11px 16px', borderRadius: '50px',
-                          border: 'none', outline: 'none',
+                          width: '100%', padding: '11px 16px', borderRadius: '22px',
+                          border: 'none', outline: 'none', resize: 'none',
                           fontFamily: 'inherit', fontSize: '14px',
                           ...neuInset, color: 'var(--text-primary)',
                           opacity: (!editingMessage && !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') ? 0.6 : 1,
+                          lineHeight: '1.4',
+                          maxHeight: '120px',
+                          overflowY: 'auto',
                         }}
                       />
+                    </div>
+                    {/* Emoji picker button */}
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        onClick={() => setShowEmojiPicker(v => !v)}
+                        title="Emoji"
+                        style={{
+                          width: '40px', height: '40px', borderRadius: '50%', border: 'none',
+                          cursor: 'pointer', flexShrink: 0,
+                          background: showEmojiPicker ? 'var(--primary-light)' : 'var(--surface-2)',
+                          boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '18px',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        😊
+                      </button>
+                      {showEmojiPicker && (
+                        <>
+                          {/* Click-outside overlay to close picker */}
+                          <div
+                            onClick={() => setShowEmojiPicker(false)}
+                            style={{ position: 'fixed', inset: 0, zIndex: 49 }}
+                          />
+                          <div style={{
+                            position: 'absolute', bottom: '50px', right: 0,
+                            background: 'var(--sidebar-bg)', borderRadius: '16px',
+                            border: '1px solid var(--border)',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                            padding: '12px', width: '280px', zIndex: 50,
+                          }}>
+                            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Reactions</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                              {['😂','😭','😅','🙂','😎','🤔','❤️','🔥','👏','👍','🙏','🎉','🥳','📚','📝','🎓','💯','✅','❌','⏰','💡','😤','🫡','💪','🤝','😴','🤯','👀','😬','🫠'].map(emoji => (
+                                <button
+                                  key={emoji}
+                                  onClick={() => {
+                                    const ta = inputRef.current
+                                    if (!ta) return
+                                    const start = ta.selectionStart || 0
+                                    const end = ta.selectionEnd || 0
+                                    const currentVal = editingMessage ? editContent : input
+                                    const newVal = currentVal.slice(0, start) + emoji + currentVal.slice(end)
+                                    if (editingMessage) {
+                                      setEditContent(newVal)
+                                    } else {
+                                      setInput(newVal)
+                                    }
+                                    setShowEmojiPicker(false)
+                                    setTimeout(() => {
+                                      ta.focus()
+                                      const pos = start + emoji.length
+                                      ta.setSelectionRange(pos, pos)
+                                    }, 50)
+                                  }}
+                                  style={{
+                                    width: '36px', height: '36px', fontSize: '20px',
+                                    background: 'none', border: 'none', borderRadius: '8px',
+                                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    transition: 'background 0.15s',
+                                  }}
+                                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(54,54,232,0.08)')}
+                                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                     <button
                       onClick={editingMessage ? () => editMessage(editingMessage.id, editContent) : sendMessage}
