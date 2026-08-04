@@ -529,6 +529,8 @@ export default function CoursesPage() {
                 display: 'flex',
                 flexDirection: 'column',
                 width: '100%',
+                maxWidth: '420px',
+                margin: '0 auto',
                 height: '100%',
                 position: 'relative',
                 filter: isCourseExpired ? 'grayscale(100%) opacity(0.85)' : 'none',

@@ -1008,18 +1008,37 @@ tr:hover td {
   }
 }
 
+@media (min-width: 769px) {
+  :root {
+    --course-banner-height: 180px;
+    --course-card-padding: 28px 24px 24px;
+    --course-icon-size: 72px;
+    --course-title-size: 20px;
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 12px !important;
   }
+  .stat-card {
+    flex-direction: row !important;
+    align-items: center !important;
+    min-height: auto !important;
+    padding: 12px 14px !important;
+    gap: 10px !important;
+  }
 }
 
 .stat-card {
-  padding: 22px 24px;
+  padding: 24px;
   display: flex;
-  align-items: center;
-  gap: 20px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-height: 140px;
+  gap: 16px;
   position: relative;
   overflow: hidden;
   border-radius: var(--radius-lg);

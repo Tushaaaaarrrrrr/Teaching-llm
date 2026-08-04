@@ -1794,6 +1794,9 @@ export default function ExploreCoursesPage() {
                 overflow: 'visible',
                 display: 'flex',
                 flexDirection: 'column',
+                width: '100%',
+                maxWidth: '420px',
+                margin: '0 auto',
                 transition: 'all 0.25s ease',
                 filter: isFullyPurchased ? 'grayscale(0.4) opacity(0.9)' : 'none',
                 pointerEvents: (isFullyPurchased && !isManager) ? 'none' : 'auto',
@@ -1811,7 +1814,7 @@ export default function ExploreCoursesPage() {
             >
               {/* Banner */}
               <div style={{
-                height: '110px',
+                height: 'var(--course-banner-height, 110px)',
                 background: `linear-gradient(135deg, ${offering.course?.color || 'var(--accent)'}ee, ${offering.course?.color || 'var(--accent)'}88)`,
                 position: 'relative',
                 overflow: 'hidden',
@@ -1824,7 +1827,7 @@ export default function ExploreCoursesPage() {
                 
                 {/* Course icon */}
                 <div style={{
-                  width: '60px', height: '60px', borderRadius: '50%',
+                  width: 'var(--course-icon-size, 60px)', height: 'var(--course-icon-size, 60px)', borderRadius: '50%',
                   background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(4px)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 1,
@@ -1890,7 +1893,7 @@ export default function ExploreCoursesPage() {
               </div>
 
               {/* Content */}
-              <div style={{ padding: '20px 22px 10px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 'var(--course-card-padding, 20px 22px 10px)', flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {/* Course Name - Big and Prominent */}
                 {offering.course?.name && (
                   <h2 style={{

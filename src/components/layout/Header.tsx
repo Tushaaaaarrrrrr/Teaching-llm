@@ -418,7 +418,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }} className={`header-titles ${showGreetingHeadline ? 'header-titles-dashboard' : ''}`}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }} className={`header-titles ${showGreetingHeadline ? 'header-titles-dashboard' : ''}`}>
         {showGreetingHeadline ? (
           <>
             <h1 style={{
@@ -429,7 +429,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
               letterSpacing: '-1.5px',
               display: 'flex',
               alignItems: 'baseline',
-              justifyContent: 'center',
+              justifyContent: 'flex-start',
               gap: '12px',
               flexWrap: 'wrap',
               fontFamily: "'Outfit', 'Nunito', sans-serif"
@@ -454,18 +454,18 @@ export default function Header({ userName, userRole }: HeaderProps) {
               letterSpacing: '0.01em',
               maxWidth: '600px',
               lineHeight: '1.5',
-              textAlign: 'center'
+              textAlign: 'left'
             }}>
               {mounted ? getGreeting().subtext : 'Loading your dashboard...'}
             </p>
           </>
         ) : (
           <>
-            <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.2', letterSpacing: '-0.5px', textAlign: 'center' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.2', letterSpacing: '-0.5px', textAlign: 'left' }}>
               {pageInfo.title}
             </h1>
             {pageInfo.subtitle ? (
-              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', flexWrap: 'wrap', fontWeight: '500' }}>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', flexWrap: 'wrap', fontWeight: '500' }}>
                 {pageInfo.subtitle}
                 {matchedKey === '/courses/explore' && (
                   <a 

@@ -692,17 +692,27 @@ export default function DashboardPage() {
         {statCards.filter(c => !c.isSupport && c.label !== 'Active Sessions' && !isMobile).map((card) => {
           const mobileHero = isMobile && card.isTimer
           return (
-          <div key={card.label} className="stat-card" style={{
-            background: mobileHero
-              ? 'linear-gradient(135deg, var(--surface) 0%, var(--surface) 55%, var(--primary-light) 100%)'
-              : (card.isTimer ? card.bg : undefined),
-            padding: mobileHero ? '22px 22px' : (isMobile ? '12px 14px' : '22px 24px'),
-            gap: isMobile ? '14px' : '20px',
-            borderRadius: mobileHero ? '22px' : (isMobile ? '16px' : '20px'),
-            border: mobileHero ? '1px solid rgba(99, 102, 241, 0.10)' : undefined,
-            boxShadow: mobileHero ? '0 12px 30px -10px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.04)' : undefined,
-            position: 'relative', overflow: 'hidden',
-          } as React.CSSProperties}>
+          <div 
+            key={card.label} 
+            className="stat-card" 
+            onClick={() => {
+              if (card.label === 'Total Courses' || card.label === 'Lectures') {
+                router.push('/courses')
+              }
+            }}
+            style={{
+              background: mobileHero
+                ? 'linear-gradient(135deg, var(--surface) 0%, var(--surface) 55%, var(--primary-light) 100%)'
+                : (card.isTimer ? card.bg : undefined),
+              padding: mobileHero ? '22px 22px' : (isMobile ? '12px 14px' : '22px 24px'),
+              gap: isMobile ? '14px' : '20px',
+              borderRadius: mobileHero ? '22px' : (isMobile ? '16px' : '20px'),
+              border: mobileHero ? '1px solid rgba(99, 102, 241, 0.10)' : undefined,
+              boxShadow: mobileHero ? '0 12px 30px -10px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.04)' : undefined,
+              position: 'relative', overflow: 'hidden',
+              cursor: 'default',
+            } as React.CSSProperties}
+          >
             {mobileHero && (
               <span style={{ position: 'absolute', top: '-40px', right: '-30px', width: '140px', height: '140px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.10), transparent 70%)', pointerEvents: 'none' }} />
             )}
