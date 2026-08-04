@@ -86,7 +86,17 @@ export default function CompanyPage() {
 
   return (
     <div style={{ padding: 'clamp(16px, 4vw, 24px) clamp(16px, 4vw, 32px) 48px', maxWidth: '1000px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '12px', flexWrap: 'wrap' }}>
+      <style>{`
+        .mobile-back-header {
+          display: none;
+        }
+        @media (max-width: 767px) {
+          .mobile-back-header {
+            display: flex !important;
+          }
+        }
+      `}</style>
+      <div className="mobile-back-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '12px', flexWrap: 'wrap', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: '1 1 200px' }}>
           <button
             onClick={() => router.back()}

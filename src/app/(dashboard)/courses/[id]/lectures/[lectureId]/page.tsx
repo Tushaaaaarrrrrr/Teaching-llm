@@ -101,15 +101,15 @@ export default function LecturePage() {
   const commentInputRef = useRef<HTMLTextAreaElement>(null)
   const videoIframeRef = useRef<HTMLIFrameElement>(null)
   const videoWrapperRef = useRef<HTMLDivElement>(null)
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
   const [isNativeApp, setIsNativeApp] = useState(false)
   const [activeTab, setActiveTab] = useState<'info' | 'qa'>('info')
   const [selectedSource, setSelectedSource] = useState<'GOOGLE' | 'YOUTUBE'>('GOOGLE')
   const [downloadConfirmContentId, setDownloadConfirmContentId] = useState<string | null>(null)
 
   useEffect(() => {
-    setIsMobile(window.innerWidth <= 768)
-    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])

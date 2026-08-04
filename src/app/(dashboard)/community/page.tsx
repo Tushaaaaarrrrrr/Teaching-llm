@@ -290,10 +290,10 @@ export default function CommunityPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [managingCommunity, setManagingCommunity] = useState(false)
   
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
   useEffect(() => {
-    setIsMobile(window.innerWidth <= 768)
-    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -618,7 +618,7 @@ export default function CommunityPage() {
         if (match) return match
         // On mobile, never auto-open the first community — let the user pick from the list.
         // On desktop, fall back to the first community so the chat panel isn't empty.
-        const isMobileNow = typeof window !== 'undefined' && window.innerWidth <= 768
+        const isMobileNow = typeof window !== 'undefined' && window.innerWidth < 768
         if (isMobileNow) return current
         return current || list[0] || null
       })

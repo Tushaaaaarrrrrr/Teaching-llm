@@ -133,7 +133,7 @@ export default function FreeResourcesPage() {
             gap: 8px !important;
           }
         }
-        @media (min-width: 769px) {
+        @media (min-width: 768px) {
           .page-header {
             display: none !important;
           }

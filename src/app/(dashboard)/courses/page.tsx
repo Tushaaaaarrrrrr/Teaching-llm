@@ -268,7 +268,7 @@ export default function CoursesPage() {
             --course-icon-size: 58px;
             --course-card-radius: 28px;
           }
-          @media (max-width: 768px) {
+          @media (max-width: 767px) {
             .grid-3 {
               grid-template-columns: repeat(2, 1fr) !important;
               gap: 12px !important;
@@ -426,7 +426,7 @@ export default function CoursesPage() {
           --course-optional-margin: 0;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           .grid-3 {
             grid-template-columns: repeat(2, 1fr) !important;
             gap: 12px !important;

@@ -82,8 +82,18 @@ function StudentFeedbackView({ userId }: { userId: string }) {
 
   return (
     <div className="page-container fade-in" style={{ maxWidth: '900px', margin: '0 auto', padding: 'clamp(16px, 4vw, 32px)' }}>
+      <style>{`
+        .mobile-back-header {
+          display: none;
+        }
+        @media (max-width: 767px) {
+          .mobile-back-header {
+            display: flex !important;
+          }
+        }
+      `}</style>
       {/* Premium Neumorphic Page Header */}
-      <div style={{
+      <div className="mobile-back-header" style={{
         display: 'flex',
         alignItems: 'center',
         gap: '16px',
@@ -427,7 +437,7 @@ function ManagerFeedbackView() {
   return (
     <div className="page-container fade-in" style={{ padding: 'clamp(16px, 4vw, 32px)' }}>
       <style dangerouslySetInnerHTML={{__html: `
-        @media (min-width: 769px) {
+        @media (min-width: 768px) {
           .feedback-mobile-header {
             display: none !important;
           }
