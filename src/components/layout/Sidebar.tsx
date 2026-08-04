@@ -468,26 +468,60 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px',
-            overflowY: 'auto',
-            padding: '12px 6px',
             background: 'rgba(17, 17, 30, 0.85)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '20px',
+            borderRadius: '24px',
             boxShadow: 'var(--shadow-lg)',
             width: '100%',
+            height: '100%',
+            padding: '12px 6px',
+            overflow: 'hidden',
           }}
         >
-          {visibleItems.map((item, idx) => {
-            const isActive = pathname === item.href ||
-              (item.href !== '/dashboard' && item.href !== '/courses/explore' && pathname.startsWith(item.href) && 
-               (pathname[item.href.length] === '/' || pathname[item.href.length] === undefined) && !pathname.startsWith('/courses/explore') &&
-               !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates') || pathname.startsWith('/manage/coupons') || pathname.startsWith('/manage/notifications') || pathname.startsWith('/manage/home-slides'))))
+          {/* Scrollable list of items */}
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              overflowY: 'auto',
+              width: '100%',
+              paddingRight: '2px',
+            }}
+            className="sidebar-scrollable-content"
+          >
+            {visibleItems.map((item, idx) => {
+              const isActive = pathname === item.href ||
+                (item.href !== '/dashboard' && item.href !== '/courses/explore' && pathname.startsWith(item.href) && 
+                 (pathname[item.href.length] === '/' || pathname[item.href.length] === undefined) && !pathname.startsWith('/courses/explore') &&
+                 !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates') || pathname.startsWith('/manage/coupons') || pathname.startsWith('/manage/notifications') || pathname.startsWith('/manage/home-slides'))))
 
-            const isStore = item.href === '/courses/explore'
-            const getLinkStyle = () => {
-              if (isStore) {
+              const isStore = item.href === '/courses/explore'
+              const getLinkStyle = () => {
+                if (isStore) {
+                  return {
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
+                    gap: isCurrentlyExpanded ? '12px' : '0px',
+                    padding: isCurrentlyExpanded ? '11px 18px' : '11px 0',
+                    borderRadius: '16px',
+                    color: '#ffffff',
+                    background: 'linear-gradient(135deg, #4b5563, #1f2937)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                    fontWeight: '800',
+                    transition: 'all 0.2s ease',
+                    position: 'relative' as const,
+                    whiteSpace: 'nowrap' as const,
+                    overflow: 'hidden' as const,
+                    height: '44px',
+                    width: '100%',
+                  }
+                }
                 return {
                   display: 'flex',
                   alignItems: 'center',
@@ -495,124 +529,105 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   gap: isCurrentlyExpanded ? '12px' : '0px',
                   padding: isCurrentlyExpanded ? '11px 18px' : '11px 0',
                   borderRadius: '16px',
-                  color: '#ffffff',
-                  background: 'linear-gradient(135deg, #4b5563, #1f2937)',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                  color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                  background: isActive ? 'var(--primary)' : 'transparent',
+                  boxShadow: isActive
+                    ? '0 4px 12px rgba(54,54,232,0.35)'
+                    : 'none',
                   textDecoration: 'none',
                   fontSize: '14px',
-                  fontWeight: '800',
+                  fontWeight: isActive ? '700' : '500',
                   transition: 'all 0.2s ease',
                   position: 'relative' as const,
                   whiteSpace: 'nowrap' as const,
-                  overflow: 'hidden' as const,
                   height: '44px',
                   width: '100%',
                 }
               }
-              return {
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
-                gap: isCurrentlyExpanded ? '12px' : '0px',
-                padding: isCurrentlyExpanded ? '11px 18px' : '11px 0',
-                borderRadius: '16px',
-                color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                background: isActive ? 'var(--primary)' : 'transparent',
-                boxShadow: isActive
-                  ? '0 4px 12px rgba(54,54,232,0.35)'
-                  : 'none',
-                textDecoration: 'none',
-                fontSize: '14px',
-                fontWeight: isActive ? '700' : '500',
-                transition: 'all 0.2s ease',
-                position: 'relative' as const,
-                whiteSpace: 'nowrap' as const,
-                height: '44px',
-                width: '100%',
-              }
-            }
 
-            return (
-              <div key={item.href} className={item.desktopOnly ? 'desktop-only-nav-item' : undefined} style={{ width: '100%' }}>
-                <Link
-                  href={item.href}
-                  style={getLinkStyle()}
-                  className={isStore ? 'store-link' : ''}
-                  onClick={() => setIsOpen(false)}
-                  title={!isCurrentlyExpanded ? item.label : undefined}
-                >
-                  <span style={{
-                    color: isStore ? '#ffffff' : (isActive ? '#ffffff' : 'var(--text-secondary)'),
-                    flexShrink: 0,
-                    display: 'flex',
-                    position: 'relative',
-                    zIndex: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '24px',
-                  }}>
-                    {item.icon}
-                  </span>
-                  <span style={{
-                    opacity: isCurrentlyExpanded ? 1 : 0,
-                    width: isCurrentlyExpanded ? 'auto' : 0,
-                    overflow: 'hidden',
-                    transition: 'opacity 0.2s ease, width 0.2s ease',
-                    zIndex: 1,
-                    position: 'relative',
-                    whiteSpace: 'nowrap',
-                    marginLeft: isCurrentlyExpanded ? '4px' : '0px',
-                  }}>
-                    {item.label}
-                  </span>
-                </Link>
-              </div>
-            )
-          })}
+              return (
+                <div key={item.href} className={item.desktopOnly ? 'desktop-only-nav-item' : undefined} style={{ width: '100%' }}>
+                  <Link
+                    href={item.href}
+                    style={getLinkStyle()}
+                    className={isStore ? 'store-link' : ''}
+                    onClick={() => setIsOpen(false)}
+                    title={!isCurrentlyExpanded ? item.label : undefined}
+                  >
+                    <span style={{
+                      color: isStore ? '#ffffff' : (isActive ? '#ffffff' : 'var(--text-secondary)'),
+                      flexShrink: 0,
+                      display: 'flex',
+                      position: 'relative',
+                      zIndex: 1,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      width: '24px',
+                    }}>
+                      {item.icon}
+                    </span>
+                    <span style={{
+                      opacity: isCurrentlyExpanded ? 1 : 0,
+                      width: isCurrentlyExpanded ? 'auto' : 0,
+                      overflow: 'hidden',
+                      transition: 'opacity 0.2s ease, width 0.2s ease',
+                      zIndex: 1,
+                      position: 'relative',
+                      whiteSpace: 'nowrap',
+                      marginLeft: isCurrentlyExpanded ? '4px' : '0px',
+                    }}>
+                      {item.label}
+                    </span>
+                  </Link>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Sign Out Button */}
+          <button
+            onClick={handleLogout}
+            title={!isCurrentlyExpanded ? "Sign Out" : undefined}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
+              gap: isCurrentlyExpanded ? '12px' : '0px',
+              padding: isCurrentlyExpanded ? '11px 18px' : '11px 0',
+              borderRadius: '16px',
+              color: 'var(--danger)',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '14.5px',
+              fontWeight: '500',
+              fontFamily: 'inherit',
+              transition: 'all 0.2s ease',
+              marginTop: '12px',
+              width: '100%',
+              height: '44px',
+              flexShrink: 0,
+            }}
+          >
+            <span style={{ color: 'var(--danger)', flexShrink: 0, display: 'flex', width: '24px', justifyContent: 'center' }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </span>
+            <span style={{
+              opacity: isCurrentlyExpanded ? 1 : 0,
+              width: isCurrentlyExpanded ? 'auto' : 0,
+              overflow: 'hidden',
+              transition: 'opacity 0.2s ease, width 0.2s ease',
+              whiteSpace: 'nowrap',
+              marginLeft: isCurrentlyExpanded ? '4px' : '0px',
+            }}>
+              Sign Out
+            </span>
+          </button>
         </div>
-
-        {/* Sign Out Button */}
-        <button
-          onClick={handleLogout}
-          title={!isCurrentlyExpanded ? "Sign Out" : undefined}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
-            gap: isCurrentlyExpanded ? '12px' : '0px',
-            padding: isCurrentlyExpanded ? '11px 18px' : '11px 0',
-            borderRadius: '16px',
-            color: 'var(--danger)',
-            background: 'rgba(239, 68, 68, 0.08)',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '14.5px',
-            fontWeight: '500',
-            fontFamily: 'inherit',
-            transition: 'all 0.2s ease',
-            marginTop: '12px',
-            width: '100%',
-            height: '44px',
-          }}
-        >
-          <span style={{ color: 'var(--danger)', flexShrink: 0, display: 'flex', width: '24px', justifyContent: 'center' }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-          </span>
-          <span style={{
-            opacity: isCurrentlyExpanded ? 1 : 0,
-            width: isCurrentlyExpanded ? 'auto' : 0,
-            overflow: 'hidden',
-            transition: 'opacity 0.2s ease, width 0.2s ease',
-            whiteSpace: 'nowrap',
-            marginLeft: isCurrentlyExpanded ? '4px' : '0px',
-          }}>
-            Sign Out
-          </span>
-        </button>
 
       </nav>
     </>
