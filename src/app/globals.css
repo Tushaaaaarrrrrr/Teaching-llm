@@ -1152,6 +1152,15 @@ tr:hover td {
   text-align: center;
 }
 
+@media (min-width: 769px) {
+  .header-titles-dashboard {
+    left: 120px !important;
+    transform: translateY(-50%) !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+  }
+}
+
 .sidebar-nav {
   width: 76px;
   min-height: 0;
