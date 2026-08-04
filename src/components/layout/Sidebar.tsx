@@ -418,7 +418,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
       {/* Desktop Permanent Corner-Fixed Logo */}
       <div className="sidebar-desktop-logo-fixed-container" style={{
         position: 'fixed',
-        left: '24px',
+        left: '12px',
         top: '24px',
         zIndex: 110,
         display: 'flex',
@@ -429,10 +429,10 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
-          width: '182px',
-          minHeight: '74px',
-          padding: '8px 12px',
-          borderRadius: '16px',
+          width: '110px',
+          minHeight: '46px',
+          padding: '4px 8px',
+          borderRadius: '10px',
           background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
           boxShadow: 'var(--shadow-lg)',
           cursor: 'pointer',
@@ -444,7 +444,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             style={{
               width: '100%',
               height: 'auto', 
-              maxHeight: '58px',
+              maxHeight: '32px',
               objectFit: 'contain',
               display: 'block',
             }} 

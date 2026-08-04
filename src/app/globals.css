@@ -1114,11 +1114,15 @@ tr:hover td {
   width: 100%;
   max-width: 100vw;
   margin-left: 0;
-  padding-left: 220px; /* Space to clear the permanent corner logo */
+  padding-left: 76px; /* Align with collapsed sidebar width */
   overflow: hidden;
   transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
               margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
               max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header-titles-dashboard {
+  margin-left: 48px;
 }
 
 .sidebar-nav {
@@ -1131,7 +1135,7 @@ tr:hover td {
   flex-shrink: 0;
   position: fixed;
   left: 0;
-  top: 130px; /* Start below the desktop fixed logo */
+  top: 92px; /* Start below the desktop fixed logo */
   bottom: 0;
   z-index: 100;
   transform: translateX(0); /* Always visible on desktop */
