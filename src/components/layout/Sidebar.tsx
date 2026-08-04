@@ -332,6 +332,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const [isOpen, setIsOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const [isManualExpanded, setIsManualExpanded] = useState(false)
+  const [isManualCollapsed, setIsManualCollapsed] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   // Listen for custom toggle events from the mobile header
   useEffect(() => {
