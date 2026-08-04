@@ -521,8 +521,6 @@ export default function Header({ userName, userRole }: HeaderProps) {
         <div
           ref={notifRef}
           className="header-notif"
-          onMouseEnter={() => setShowNotif(true)}
-          onMouseLeave={() => setShowNotif(false)}
           style={{ position: 'relative' }}
         >
           <button
@@ -678,8 +676,6 @@ export default function Header({ userName, userRole }: HeaderProps) {
         <div
           ref={userMenuRef}
           className="header-profile"
-          onMouseEnter={() => setShowUserMenu(true)}
-          onMouseLeave={() => setShowUserMenu(false)}
           style={{ position: 'relative' }}
         >
           <div
