@@ -331,6 +331,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const [canScrollMore, setCanScrollMore] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const [isManualExpanded, setIsManualExpanded] = useState(false)
 
   // Listen for custom toggle events from the mobile header
   useEffect(() => {
@@ -349,6 +350,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   // Auto-close sidebar on screen transition (navigation click)
   useEffect(() => {
     setIsOpen(false)
+    setIsManualExpanded(false)
   }, [pathname])
 
   // Use shared UserDataProvider instead of duplicate SWR/SSE calls
@@ -417,7 +419,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     return () => mql.removeEventListener('change', listener)
   }, [])
 
-  const isCurrentlyExpanded = isHovered && !isTabletDevice
+  const isCurrentlyExpanded = isManualExpanded || isOpen || (isHovered && !isTabletDevice)
 
   return (
     <>
@@ -475,17 +477,9 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           ref={navRef}
           className="sidebar-vertical-container"
           style={{
-            flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            background: 'rgba(17, 17, 30, 0.85)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: isTabletDevice ? '18px' : '24px',
-            boxShadow: 'none',
             width: '100%',
-            height: '100%',
-            padding: isTabletDevice ? '8px 4px' : '12px 6px',
             overflow: 'hidden',
           }}
         >
@@ -601,51 +595,133 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             })}
           </div>
 
-          {/* Sign Out Button */}
-          <button
-            onClick={handleLogout}
-            title={!isCurrentlyExpanded ? "Sign Out" : undefined}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
-              gap: isCurrentlyExpanded ? '12px' : '0px',
-              padding: isTabletDevice
-                ? (isCurrentlyExpanded ? '8px 14px' : '8px 0')
-                : (isCurrentlyExpanded ? '11px 18px' : '11px 0'),
-              borderRadius: isTabletDevice ? '12px' : '16px',
-              color: 'var(--danger)',
-              background: 'rgba(239, 68, 68, 0.08)',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: isTabletDevice ? '13px' : '14.5px',
-              fontWeight: '500',
-              fontFamily: 'inherit',
-              transition: 'all 0.2s ease',
-              marginTop: isTabletDevice ? '6px' : '12px',
-              width: '100%',
-              height: isTabletDevice ? '36px' : '44px',
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ color: 'var(--danger)', flexShrink: 0, display: 'flex', width: '24px', justifyContent: 'center' }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-            </span>
-            <span style={{
-              opacity: isCurrentlyExpanded ? 1 : 0,
-              width: isCurrentlyExpanded ? 'auto' : 0,
-              overflow: 'hidden',
-              transition: 'opacity 0.2s ease, width 0.2s ease',
-              whiteSpace: 'nowrap',
-              marginLeft: isCurrentlyExpanded ? '4px' : '0px',
-            }}>
-              Sign Out
-            </span>
-          </button>
+        </div>
+
+        {/* Separate Sign Out / Expand Card */}
+        <div className="sidebar-logout-card" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: isTabletDevice ? '6px' : '8px',
+        }}>
+          {isCurrentlyExpanded ? (
+            <>
+              {/* Collapse Button */}
+              <button
+                onClick={() => setIsManualExpanded(false)}
+                title="Collapse Sidebar"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  gap: '12px',
+                  padding: isTabletDevice ? '8px 14px' : '11px 18px',
+                  borderRadius: isTabletDevice ? '10px' : '12px',
+                  color: 'var(--text-secondary)',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: isTabletDevice ? '13px' : '14.5px',
+                  fontWeight: '500',
+                  fontFamily: 'inherit',
+                  transition: 'all 0.2s ease',
+                  width: '100%',
+                  height: isTabletDevice ? '36px' : '44px',
+                  flexShrink: 0,
+                }}
+              >
+                <span style={{ color: 'var(--text-secondary)', flexShrink: 0, display: 'flex', width: '24px', justifyContent: 'center' }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="11 17 6 12 11 7" />
+                    <polyline points="18 17 13 12 18 7" />
+                  </svg>
+                </span>
+                <span style={{
+                  opacity: 1,
+                  width: 'auto',
+                  overflow: 'hidden',
+                  transition: 'opacity 0.2s ease, width 0.2s ease',
+                  whiteSpace: 'nowrap',
+                  marginLeft: '4px',
+                }}>
+                  Collapse
+                </span>
+              </button>
+
+              {/* Sign Out Button */}
+              <button
+                onClick={handleLogout}
+                title="Sign Out"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  gap: '12px',
+                  padding: isTabletDevice ? '8px 14px' : '11px 18px',
+                  borderRadius: isTabletDevice ? '10px' : '12px',
+                  color: 'var(--danger)',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: isTabletDevice ? '13px' : '14.5px',
+                  fontWeight: '500',
+                  fontFamily: 'inherit',
+                  transition: 'all 0.2s ease',
+                  width: '100%',
+                  height: isTabletDevice ? '36px' : '44px',
+                  flexShrink: 0,
+                }}
+              >
+                <span style={{ color: 'var(--danger)', flexShrink: 0, display: 'flex', width: '24px', justifyContent: 'center' }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                </span>
+                <span style={{
+                  opacity: 1,
+                  width: 'auto',
+                  overflow: 'hidden',
+                  transition: 'opacity 0.2s ease, width 0.2s ease',
+                  whiteSpace: 'nowrap',
+                  marginLeft: '4px',
+                }}>
+                  Sign Out
+                </span>
+              </button>
+            </>
+          ) : (
+            /* Expand Button (when collapsed) */
+            <button
+              onClick={() => setIsManualExpanded(true)}
+              title="Expand Sidebar"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0px',
+                padding: '0px',
+                borderRadius: isTabletDevice ? '10px' : '12px',
+                color: 'var(--text-secondary)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                width: '100%',
+                height: isTabletDevice ? '36px' : '44px',
+                flexShrink: 0,
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
+            >
+              <span style={{ flexShrink: 0, display: 'flex', width: '24px', justifyContent: 'center' }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="13 17 18 12 13 7" />
+                  <polyline points="6 17 11 12 6 7" />
+                </svg>
+              </span>
+            </button>
+          )}
         </div>
 
       </nav>

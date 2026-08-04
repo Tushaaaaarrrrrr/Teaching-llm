@@ -1189,6 +1189,28 @@ tr:hover td {
   width: 240px;
 }
 
+.sidebar-vertical-container {
+  height: auto !important;
+  max-height: calc(100% - 68px) !important;
+  background: rgba(17, 17, 30, 0.85) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 24px !important;
+  padding: 12px 6px !important;
+  box-shadow: none !important;
+}
+
+.sidebar-logout-card {
+  margin-top: auto !important;
+  width: 100% !important;
+  background: rgba(17, 17, 30, 0.85) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 6px !important;
+  box-shadow: none !important;
+}
+
 @media (max-width: 767px) {
   .dashboard-main-container {
     padding-left: 0 !important;
@@ -1212,6 +1234,27 @@ tr:hover td {
   .sidebar-nav.sidebar-open {
     transform: translateX(0);
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar-vertical-container {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+  .sidebar-logout-card {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin-top: 16px !important;
+    box-shadow: none !important;
+  }
+  .sidebar-logout-card button[title="Collapse Sidebar"] {
+    display: none !important;
   }
 }
 
@@ -1830,5 +1873,14 @@ tr:hover td {
   }
   .header-titles-dashboard p {
     font-size: 14px !important;
+  }
+  .sidebar-vertical-container {
+    max-height: calc(100% - 52px) !important;
+    border-radius: 18px !important;
+    padding: 8px 4px !important;
+  }
+  .sidebar-logout-card {
+    border-radius: 12px !important;
+    padding: 4px !important;
   }
 }
