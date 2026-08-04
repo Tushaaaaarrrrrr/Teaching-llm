@@ -1388,9 +1388,9 @@ tr:hover td {
   transition: all 0.2s ease;
   width: 100%;
   flex-shrink: 0;
-  height: clamp(34px, 4.5vh, 44px);
+  height: clamp(40px, 4.8vh, 48px);
   border-radius: clamp(10px, 1.2vh, 12px);
-  font-size: clamp(12px, 1.2vw, 14.5px);
+  font-size: clamp(13px, 1.2vw, 14.5px);
 }
 
 .desktop-collapsed .sidebar-logout-btn {
@@ -1402,7 +1402,7 @@ tr:hover td {
 .desktop-expanded .sidebar-logout-btn,
 .sidebar-open .sidebar-logout-btn {
   justify-content: flex-start;
-  padding: 8px 14px;
+  padding: 10px 16px;
   gap: 12px;
 }
 
@@ -1422,9 +1422,9 @@ tr:hover td {
   transition: all 0.2s ease;
   width: 100%;
   flex-shrink: 0;
-  height: clamp(34px, 4.5vh, 44px);
+  height: clamp(40px, 4.8vh, 48px);
   border-radius: clamp(10px, 1.2vh, 12px);
-  font-size: clamp(12px, 1.2vw, 14.5px);
+  font-size: clamp(13px, 1.2vw, 14.5px);
 }
 
 .desktop-collapsed .sidebar-collapse-btn {
@@ -1436,7 +1436,7 @@ tr:hover td {
 .desktop-expanded .sidebar-collapse-btn,
 .sidebar-open .sidebar-collapse-btn {
   justify-content: flex-start;
-  padding: 8px 14px;
+  padding: 10px 16px;
   gap: 12px;
 }
 
