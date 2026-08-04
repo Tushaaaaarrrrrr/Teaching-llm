@@ -31,6 +31,29 @@ const THEME_INIT_SCRIPT = `
 })();
 `
 
+const SW_CLEANUP_SCRIPT = `
+(function(){
+  try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        for (var i = 0; i < regs.length; i++) {
+          regs[i].unregister().then(function(success) {
+            if (success) window.location.reload();
+          });
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(keys) {
+        keys.forEach(function(key) {
+          caches.delete(key);
+        });
+      });
+    }
+  } catch (e) {}
+})();
+`
+
 export const metadata: Metadata = {
   title: 'GenZ IITIAN',
   description: 'Upgrade How You Learn',
@@ -59,6 +82,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {process.env.NODE_ENV === 'development' && (
+          <script dangerouslySetInnerHTML={{ __html: SW_CLEANUP_SCRIPT }} />
+        )}
       </head>
       <body>
         <PostHogProvider>
