@@ -1122,7 +1122,7 @@ tr:hover td {
 }
 
 .header-titles {
-  margin-left: 60px;
+  margin-left: 64px;
 }
 
 .sidebar-nav {
@@ -1135,7 +1135,7 @@ tr:hover td {
   flex-shrink: 0;
   position: fixed;
   left: 0;
-  top: 120px; /* Start below the desktop fixed logo */
+  top: 114px; /* Start below the desktop fixed logo */
   bottom: 24px; /* Float above the bottom of the viewport */
   z-index: 100;
   transform: translateX(0); /* Always visible on desktop */

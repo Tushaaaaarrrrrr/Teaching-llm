@@ -429,10 +429,10 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
-          width: '132px',
-          minHeight: '64px',
-          padding: '8px 12px',
-          borderRadius: '12px',
+          width: '140px',
+          minHeight: '74px',
+          padding: '10px 14px',
+          borderRadius: '14px',
           background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
           boxShadow: 'var(--shadow-lg)',
           cursor: 'pointer',
@@ -444,7 +444,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             style={{
               width: '100%',
               height: 'auto', 
-              maxHeight: '44px',
+              maxHeight: '50px',
               objectFit: 'contain',
               display: 'block',
             }} 
