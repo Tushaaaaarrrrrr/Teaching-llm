@@ -458,8 +458,7 @@ export default function LivePage() {
     {/* Desktop layout */}
     <div className="page-container fade-in live-sessions-desktop-only">
       {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Today&apos;s Schedule &bull; {today}</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '32px' }}>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {isManager && lastSyncAt && (
             <span style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '0 12px' }}>

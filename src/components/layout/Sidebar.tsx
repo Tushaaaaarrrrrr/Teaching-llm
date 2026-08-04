@@ -412,17 +412,17 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     router.refresh()
   }
 
-  const [supportsHover, setSupportsHover] = useState(true)
+  const [isTabletDevice, setIsTabletDevice] = useState(false)
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const mql = window.matchMedia('(hover: hover)')
-    setSupportsHover(mql.matches)
-    const listener = (e: MediaQueryListEvent) => setSupportsHover(e.matches)
+    const mql = window.matchMedia('(min-width: 768px) and (max-width: 1024px) and (orientation: portrait)')
+    setIsTabletDevice(mql.matches)
+    const listener = (e: MediaQueryListEvent) => setIsTabletDevice(e.matches)
     mql.addEventListener('change', listener)
     return () => mql.removeEventListener('change', listener)
   }, [])
 
-  const isCurrentlyExpanded = (isHovered && supportsHover && !isManualCollapsed) || isManualExpanded || isOpen
+  const isCurrentlyExpanded = (isHovered && !isTabletDevice && !isManualCollapsed) || isManualExpanded || isOpen
 
   return (
     <>
@@ -430,34 +430,95 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
         className={`sidebar-overlay ${isOpen ? 'active' : ''}`} 
         onClick={() => setIsOpen(false)} 
       />
+      {/* Desktop Permanent Corner-Fixed Logo */}
+      <div className={`sidebar-desktop-logo-fixed-container ${isTabletDevice ? 'is-tablet-device' : ''}`} style={{
+        position: 'fixed',
+        left: '12px',
+        top: isTabletDevice ? '12px' : '24px',
+        zIndex: 110,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '12px',
+      }}>
+        <Link href="/dashboard" className="sidebar-logo-plate" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          width: isTabletDevice ? '110px' : '140px',
+          minHeight: isTabletDevice ? '52px' : '74px',
+          padding: isTabletDevice ? '6px 10px' : '10px 14px',
+          borderRadius: isTabletDevice ? '10px' : '14px',
+          background: 'linear-gradient(145deg, #f6f7fb, var(--border))',
+          boxShadow: 'none',
+          cursor: 'pointer',
+        }}>
+          <img
+            src={logoSrc}
+            alt="GenZ IITIAN Logo"
+            className="sidebar-logo-img"
+            style={{
+              width: '100%',
+              height: 'auto', 
+              maxHeight: isTabletDevice ? '36px' : '50px',
+              objectFit: 'contain',
+              display: 'block',
+            }} 
+          />
+        </Link>
+        {!isTabletDevice && currentUserRole && (
+          <div style={{
+            fontSize: '12px',
+            fontWeight: '700',
+            color: 'var(--text-secondary)',
+            letterSpacing: '0.06em',
+            paddingLeft: '12px',
+            textTransform: 'uppercase',
+            opacity: 0.8,
+            fontFamily: "'Outfit', 'Nunito', sans-serif",
+          }}>
+            {currentUserRole} Portal
+          </div>
+        )}
+      </div>
 
       <nav 
-        className={`sidebar-nav ${isOpen ? 'sidebar-open' : ''} ${isCurrentlyExpanded ? 'desktop-expanded' : 'desktop-collapsed'} ${isManualExpanded ? 'manual-expanded' : ''} ${isHovered && supportsHover && !isManualCollapsed ? 'hover-expanded' : ''}`}
+        className={`sidebar-nav ${isOpen ? 'sidebar-open' : ''} ${isCurrentlyExpanded ? 'desktop-expanded' : 'desktop-collapsed'} ${isTabletDevice ? 'is-tablet-device' : ''}`}
         onMouseLeave={() => {
           setIsHovered(false)
           setIsManualCollapsed(false)
           setIsManualExpanded(false)
         }}
+        style={{
+          width: isOpen ? '240px' : (isCurrentlyExpanded ? '240px' : '76px'),
+        }}
       >
-        {/* Logo Container inside Sidebar */}
-        <div className="sidebar-logo-container">
-          <Link href="/dashboard" className="sidebar-logo-plate">
-            <img
-              src={logoSrc}
-              alt="GenZ IITIAN Logo"
-              className="sidebar-logo-img"
-            />
-          </Link>
-        </div>
-
         {/* Navigation items rounded vertical container */}
         <div
           ref={navRef}
           className="sidebar-vertical-container"
           onMouseEnter={() => setIsHovered(true)}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            overflow: 'hidden',
+          }}
         >
           {/* Scrollable list of items */}
-          <div className="sidebar-scrollable-content">
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: isTabletDevice ? '1.8vh' : '8px',
+              overflowY: 'auto',
+              width: '100%',
+              paddingRight: '2px',
+            }}
+            className="sidebar-scrollable-content"
+          >
             {visibleItems.map((item, idx) => {
               const isActive = pathname === item.href ||
                 (item.href !== '/dashboard' && item.href !== '/courses/explore' && pathname.startsWith(item.href) && 
@@ -465,19 +526,90 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                  !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates') || pathname.startsWith('/manage/coupons') || pathname.startsWith('/manage/notifications') || pathname.startsWith('/manage/home-slides'))))
 
               const isStore = item.href === '/courses/explore'
+              const getLinkStyle = () => {
+                const height = isTabletDevice ? '36px' : '44px'
+                const padding = isTabletDevice
+                  ? (isCurrentlyExpanded ? '8px 14px' : '8px 0')
+                  : (isCurrentlyExpanded ? '11px 18px' : '11px 0')
+                const borderRadius = isTabletDevice ? '12px' : '16px'
+                const fontSize = isTabletDevice ? '13px' : '14px'
+
+                if (isStore) {
+                  return {
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
+                    gap: isCurrentlyExpanded ? '12px' : '0px',
+                    padding,
+                    borderRadius,
+                    color: '#ffffff',
+                    background: 'linear-gradient(135deg, #4b5563, #1f2937)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                    textDecoration: 'none',
+                    fontSize,
+                    fontWeight: '800',
+                    transition: 'all 0.2s ease',
+                    position: 'relative' as const,
+                    whiteSpace: 'nowrap' as const,
+                    overflow: 'hidden' as const,
+                    height,
+                    width: '100%',
+                  }
+                }
+                return {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: isCurrentlyExpanded ? 'flex-start' : 'center',
+                  gap: isCurrentlyExpanded ? '12px' : '0px',
+                  padding,
+                  borderRadius,
+                  color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                  background: isActive ? 'var(--primary)' : 'transparent',
+                  boxShadow: isActive
+                    ? '0 4px 12px rgba(54,54,232,0.35)'
+                    : 'none',
+                  textDecoration: 'none',
+                  fontSize,
+                  fontWeight: isActive ? '700' : '500',
+                  transition: 'all 0.2s ease',
+                  position: 'relative' as const,
+                  whiteSpace: 'nowrap' as const,
+                  height,
+                  width: '100%',
+                }
+              }
 
               return (
                 <div key={item.href} className={item.desktopOnly ? 'desktop-only-nav-item' : undefined} style={{ width: '100%' }}>
                   <Link
                     href={item.href}
-                    className={`sidebar-link ${isActive ? 'active' : ''} ${isStore ? 'store-link' : ''}`}
+                    style={getLinkStyle()}
+                    className={isStore ? 'store-link' : ''}
                     onClick={() => setIsOpen(false)}
                     title={!isCurrentlyExpanded ? item.label : undefined}
                   >
-                    <span className="sidebar-nav-item-icon">
+                    <span style={{
+                      color: isStore ? '#ffffff' : (isActive ? '#ffffff' : 'var(--text-secondary)'),
+                      flexShrink: 0,
+                      display: 'flex',
+                      position: 'relative',
+                      zIndex: 1,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      width: '24px',
+                    }}>
                       {item.icon}
                     </span>
-                    <span className="sidebar-nav-item-label">
+                    <span style={{
+                      opacity: isCurrentlyExpanded ? 1 : 0,
+                      width: isCurrentlyExpanded ? 'auto' : 0,
+                      overflow: 'hidden',
+                      transition: 'opacity 0.2s ease, width 0.2s ease',
+                      zIndex: 1,
+                      position: 'relative',
+                      whiteSpace: 'nowrap',
+                      marginLeft: isCurrentlyExpanded ? '4px' : '0px',
+                    }}>
                       {item.label}
                     </span>
                   </Link>
@@ -485,26 +617,57 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               )
             })}
           </div>
+
         </div>
 
         {/* Separate Sign Out / Expand Card */}
-        <div className="sidebar-logout-card">
+        <div className="sidebar-logout-card" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: isTabletDevice ? '6px' : '8px',
+          marginTop: 'auto',
+        }}>
           {isCurrentlyExpanded ? (
             <>
               {/* Sign Out Button (First) */}
               <button
                 onClick={() => setShowLogoutConfirm(true)}
                 title="Sign Out"
-                className="sidebar-logout-btn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  gap: '12px',
+                  padding: isTabletDevice ? '8px 14px' : '11px 18px',
+                  borderRadius: isTabletDevice ? '10px' : '12px',
+                  color: 'var(--danger)',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: isTabletDevice ? '13px' : '14.5px',
+                  fontWeight: '500',
+                  fontFamily: 'inherit',
+                  transition: 'all 0.2s ease',
+                  width: '100%',
+                  height: isTabletDevice ? '36px' : '44px',
+                  flexShrink: 0,
+                }}
               >
-                <span className="sidebar-nav-item-icon">
+                <span style={{ color: 'var(--danger)', flexShrink: 0, display: 'flex', width: '24px', justifyContent: 'center' }}>
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                     <polyline points="16 17 21 12 16 7"/>
                     <line x1="21" y1="12" x2="9" y2="12"/>
                   </svg>
                 </span>
-                <span className="sidebar-nav-item-label">
+                <span style={{
+                  opacity: 1,
+                  width: 'auto',
+                  overflow: 'hidden',
+                  transition: 'opacity 0.2s ease, width 0.2s ease',
+                  whiteSpace: 'nowrap',
+                  marginLeft: '4px',
+                }}>
                   Sign Out
                 </span>
               </button>
@@ -516,15 +679,40 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   setIsManualExpanded(false)
                 }}
                 title="Collapse Sidebar"
-                className="sidebar-collapse-btn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  gap: '12px',
+                  padding: isTabletDevice ? '8px 14px' : '11px 18px',
+                  borderRadius: isTabletDevice ? '10px' : '12px',
+                  color: 'var(--text-secondary)',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: isTabletDevice ? '13px' : '14.5px',
+                  fontWeight: '500',
+                  fontFamily: 'inherit',
+                  transition: 'all 0.2s ease',
+                  width: '100%',
+                  height: isTabletDevice ? '36px' : '44px',
+                  flexShrink: 0,
+                }}
               >
-                <span className="sidebar-nav-item-icon">
+                <span style={{ color: 'var(--text-secondary)', flexShrink: 0, display: 'flex', width: '24px', justifyContent: 'center' }}>
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="11 17 6 12 11 7" />
                     <polyline points="18 17 13 12 18 7" />
                   </svg>
                 </span>
-                <span className="sidebar-nav-item-label">
+                <span style={{
+                  opacity: 1,
+                  width: 'auto',
+                  overflow: 'hidden',
+                  transition: 'opacity 0.2s ease, width 0.2s ease',
+                  whiteSpace: 'nowrap',
+                  marginLeft: '4px',
+                }}>
                   Collapse
                 </span>
               </button>
@@ -537,9 +725,26 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 setIsManualCollapsed(false)
               }}
               title="Expand Sidebar"
-              className="sidebar-collapse-btn"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0px',
+                padding: '0px',
+                borderRadius: isTabletDevice ? '10px' : '12px',
+                color: 'var(--text-secondary)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                width: '100%',
+                height: isTabletDevice ? '36px' : '44px',
+                flexShrink: 0,
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
             >
-              <span className="sidebar-nav-item-icon">
+              <span style={{ flexShrink: 0, display: 'flex', width: '24px', justifyContent: 'center' }}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="13 17 18 12 13 7" />
                   <polyline points="6 17 11 12 6 7" />
@@ -548,6 +753,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             </button>
           )}
         </div>
+
       </nav>
 
       {/* Logout Confirmation Modal Overlay */}

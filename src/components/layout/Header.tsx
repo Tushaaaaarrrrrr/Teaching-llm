@@ -55,7 +55,7 @@ interface Notification {
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/dashboard':  { title: 'Dashboard',        subtitle: 'Welcome back to your learning hub' },
   '/courses/explore': { title: 'GenZ IITian Official Store', subtitle: 'You can also buy courses from ' },
-  '/courses':    { title: 'Courses',          subtitle: 'Manage your enrolled subjects and lectures' },
+  '/courses':    { title: 'Courses',          subtitle: 'Your enrolled subjects and lectures' },
   '/academics':  { title: 'Academics',        subtitle: 'Everything for your learning journey' },
   '/menu':       { title: 'Profile',          subtitle: 'View and edit your personal information' },
   '/live':       { title: 'Live Sessions',     subtitle: "Today's schedule" },
@@ -150,6 +150,12 @@ export default function Header({ userName, userRole }: HeaderProps) {
     .find(key => key === pathname || (key !== '/dashboard' && pathname.startsWith(key)))
 
   let pageInfo = matchedKey ? { ...PAGE_TITLES[matchedKey] } : { title: 'Dashboard', subtitle: '' }
+
+  // Dynamic Live Sessions Subtitle Override with Date
+  if (matchedKey === '/live') {
+    const todayStr = new Date().toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })
+    pageInfo.subtitle = `Today's Schedule • ${todayStr}`
+  }
 
   // Dynamic Tab Overrides for Manage Sub-dashboards
   if (pathname === '/manage') {
@@ -418,11 +424,11 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }} className={`header-titles ${showGreetingHeadline ? 'header-titles-dashboard' : ''}`}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: showGreetingHeadline ? 'flex-start' : 'center' }} className={`header-titles ${showGreetingHeadline ? 'header-titles-dashboard' : ''}`}>
         {showGreetingHeadline ? (
           <>
             <h1 style={{
-              fontSize: '38px',
+              fontSize: 'clamp(38px, 4vw, 48px)',
               fontWeight: '900',
               color: 'var(--text-primary)',
               lineHeight: '1.1',
@@ -457,11 +463,11 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </>
         ) : (
           <>
-            <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.2', letterSpacing: '-0.5px', textAlign: 'left' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.2', letterSpacing: '-0.5px', textAlign: 'center' }}>
               {pageInfo.title}
             </h1>
             {pageInfo.subtitle ? (
-              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', flexWrap: 'wrap', fontWeight: '500' }}>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', flexWrap: 'wrap', fontWeight: '500' }}>
                 {pageInfo.subtitle}
                 {matchedKey === '/courses/explore' && (
                   <a 

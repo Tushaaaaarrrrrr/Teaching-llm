@@ -371,8 +371,7 @@ export default function CoursesPage() {
           Failed to load courses. {error.message}
         </div>
       ) : null}
-      <div className="courses-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{courses.length} courses available</p>
+      <div className="courses-header-row" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
         <div className="courses-search-wrap" style={{ position: 'relative' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
