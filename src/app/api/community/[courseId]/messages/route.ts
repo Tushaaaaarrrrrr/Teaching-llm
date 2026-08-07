@@ -310,6 +310,20 @@ export async function POST(
           return NextResponse.json({ error: 'Daily post limit of 5 posts reached' }, { status: 429 })
         }
       }
+
+      // Enforce file attachment limit (max 10 files/day) for students
+      if (imageUrl) {
+        const filesCount = await prisma.communityMessage.count({
+          where: {
+            senderId: session.userId,
+            imageUrl: { not: null },
+            createdAt: { gte: oneDayAgo }
+          }
+        })
+        if (filesCount >= 10) {
+          return NextResponse.json({ error: 'Daily attachment upload limit of 10 files reached' }, { status: 429 })
+        }
+      }
     }
 
     const course = await prisma.course.findUnique({

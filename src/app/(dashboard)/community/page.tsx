@@ -4576,6 +4576,11 @@ export default function CommunityPage() {
                   <span style={{ fontWeight: '700' }}>File Limit per Message</span>
                   <span style={{ color: 'var(--primary)', fontWeight: '800' }}>1 file/message</span>
                 </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-2)', borderRadius: '10px' }}>
+                  <span style={{ fontWeight: '700' }}>Daily File Limit</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: '800' }}>10 files/day</span>
+                </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-2)', borderRadius: '10px' }}>
                   <span style={{ fontWeight: '700' }}>General Post Length</span>
