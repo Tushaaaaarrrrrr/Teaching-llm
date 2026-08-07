@@ -87,9 +87,27 @@ export async function GET(
     }
 
     // ── Community path ───────────────────────────────────────────────────────
-    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-    if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (courseId === 'general-discussion') {
+      const exists = await prisma.course.findUnique({ where: { id: 'general-discussion' } })
+      if (!exists) {
+        const mgr = await prisma.user.findFirst({ where: { role: { in: ['MANAGER', 'ADMIN'] } } })
+        if (mgr) {
+          await prisma.course.create({
+            data: {
+              id: 'general-discussion',
+              name: 'General Discussion',
+              description: 'Public community posts and general questions',
+              createdById: mgr.id,
+              isCommunityActive: true,
+            }
+          })
+        }
+      }
+    } else {
+      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(courseId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
 
     const course = await prisma.course.findUnique({
@@ -237,12 +255,21 @@ export async function POST(
     }
 
     // ── Community path ───────────────────────────────────────────────────────
-    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-    if (accessibleCourseIds !== null && !accessibleCourseIds.includes(params.courseId)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (params.courseId !== 'general-discussion') {
+      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(params.courseId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
 
-    if (session.role === 'STUDENT') {
+    // Enforce character limits: 500 for main posts, 300 for replies/comments
+    const isComment = !!replyToId
+    const maxChars = isComment ? 300 : 500
+    if (content && content.length > maxChars) {
+      return NextResponse.json({ error: `Message content exceeds character limit of ${maxChars}` }, { status: 400 })
+    }
+
+    if (session.role === 'STUDENT' && params.courseId !== 'general-discussion') {
       const enrollment = await prisma.enrollment.findUnique({
         where: {
           userId_courseId: {
@@ -251,11 +278,37 @@ export async function POST(
           },
         },
       })
-      if (enrollment?.type === 'DEMO') {
+      if (!enrollment || enrollment.type === 'DEMO') {
         return NextResponse.json(
           { error: 'Community chat is read-only in Demo mode. Unlock full course to send messages.' },
           { status: 403 }
         )
+      }
+
+      // Enforce posting rate limits for students (5 posts/day, 20 replies/day)
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      if (isComment) {
+        const repliesCount = await prisma.communityMessage.count({
+          where: {
+            senderId: session.userId,
+            replyToId: { not: null },
+            createdAt: { gte: oneDayAgo }
+          }
+        })
+        if (repliesCount >= 20) {
+          return NextResponse.json({ error: 'Daily reply limit of 20 replies reached' }, { status: 429 })
+        }
+      } else {
+        const postsCount = await prisma.communityMessage.count({
+          where: {
+            senderId: session.userId,
+            replyToId: null,
+            createdAt: { gte: oneDayAgo }
+          }
+        })
+        if (postsCount >= 5) {
+          return NextResponse.json({ error: 'Daily post limit of 5 posts reached' }, { status: 429 })
+        }
       }
     }
 

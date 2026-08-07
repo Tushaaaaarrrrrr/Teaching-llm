@@ -663,6 +663,8 @@ model CommunityMessage {
   isPinned        Boolean            @default(false)
   isEdited        Boolean            @default(false)
   editedAt        DateTime?
+  likes           String             @default("[]")
+  reactions       String             @default("{}")
 
   @@index([courseId])
   @@index([senderId])

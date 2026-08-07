@@ -42,55 +42,52 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
-    // Strict validation: Max 5MB for chat images
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large. Maximum 5MB for chat images.' }, { status: 400 })
+    // Strict validation: Max 20MB for chat attachments
+    if (file.size > 20 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large. Maximum 20MB for chat attachments.' }, { status: 400 })
     }
 
     const originalExt = (file.name.split('.').pop() || '').toLowerCase()
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp']
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'ppt', 'pptx', 'doc', 'docx', 'xls', 'xlsx', 'zip']
     const normalizedExt = originalExt === 'jpeg' ? 'jpg' : originalExt
 
     if (!allowedExtensions.includes(originalExt)) {
-      return NextResponse.json({ error: 'Invalid file type. Only JPG, PNG, and WEBP are allowed.' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid file type. Allowed: JPG, PNG, WEBP, PDF, PPT, PPTX, DOC, DOCX, XLS, XLSX, ZIP.' }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Validate magic bytes for images
-    const isJpg = buffer[0] === 0xFF && buffer[1] === 0xD8
-    const isPng = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47
-    const isWebp = buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46
-    
-    if (!isJpg && !isPng && !isWebp) {
-      return NextResponse.json({ error: 'File content does not match an allowed image type.' }, { status: 400 })
-    }
-
     const secureId = crypto.randomUUID()
     const filename = `${secureId}.${normalizedExt}`
 
     const supabase = getSupabaseAdmin()
-    const storagePath = `chat-images/${filename}`
+    const storagePath = `chat-files/${filename}`
 
     const contentTypeMap: Record<string, string> = {
       jpg: 'image/jpeg',
       png: 'image/png',
       webp: 'image/webp',
+      pdf: 'application/pdf',
+      ppt: 'application/vnd.ms-powerpoint',
+      pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      xls: 'application/vnd.ms-excel',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      zip: 'application/zip',
     }
 
     const { error: uploadError } = await supabase.storage
       .from('lms-uploads')
       .upload(storagePath, buffer, {
-        contentType: contentTypeMap[normalizedExt] || 'image/jpeg',
+        contentType: contentTypeMap[normalizedExt] || 'application/octet-stream',
         upsert: false,
       })
 
     if (uploadError) {
-      console.error('Supabase chat image upload error:', uploadError)
-      console.error('Bucket: lms-uploads, Path:', storagePath)
-      console.error('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-      return NextResponse.json({ error: `Failed to upload image: ${uploadError.message}` }, { status: 500 })
+      console.error('Supabase chat file upload error:', uploadError)
+      return NextResponse.json({ error: `Failed to upload file: ${uploadError.message}` }, { status: 500 })
     }
 
     const { data: urlData } = supabase.storage

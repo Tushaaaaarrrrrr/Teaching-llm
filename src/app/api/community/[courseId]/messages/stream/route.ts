@@ -107,11 +107,16 @@ export async function GET(
         controller.enqueue(`event: edit\ndata: ${JSON.stringify(editData)}\n\n`)
       }
 
+      const onUpdate = (updatedMsg: any) => {
+        controller.enqueue(`event: update\ndata: ${JSON.stringify(updatedMsg)}\n\n`)
+      }
+
       sseEmitter.on(`chat:${courseId}:message`, onMessage)
       sseEmitter.on(`chat:${courseId}:delete`, onDelete)
       sseEmitter.on(`chat:${courseId}:clear`, onClear)
       sseEmitter.on(`chat:${courseId}:pin`, onPin)
       sseEmitter.on(`chat:${courseId}:edit`, onEdit)
+      sseEmitter.on(`chat:${courseId}:update`, onUpdate)
 
       request.signal.addEventListener('abort', () => {
         sseEmitter.off(`chat:${courseId}:message`, onMessage)
@@ -119,6 +124,7 @@ export async function GET(
         sseEmitter.off(`chat:${courseId}:clear`, onClear)
         sseEmitter.off(`chat:${courseId}:pin`, onPin)
         sseEmitter.off(`chat:${courseId}:edit`, onEdit)
+        sseEmitter.off(`chat:${courseId}:update`, onUpdate)
       })
     }
   })

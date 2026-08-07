@@ -49,6 +49,10 @@ interface CommMsg {
       name: string
     }
   } | null
+  replyToId?: string | null
+  courseId?: string
+  likes?: string
+  reactions?: string
 }
 
 interface TranscriptMsg {
@@ -324,8 +328,23 @@ export default function CommunityPage() {
   const [editingMessage, setEditingMessage] = useState<CommMsg | null>(null)
   const [editContent, setEditContent] = useState('')
   const [guidelinesOpen, setGuidelinesOpen] = useState(false)
+  const [rulesOpen, setRulesOpen] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'general' | 'announcements'>('general')
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showGeneralEmojiPicker, setShowGeneralEmojiPicker] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [uploadFileName, setUploadFileName] = useState<string>('')
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const [postTargetCourseId, setPostTargetCourseId] = useState<string>('')
+  const [generalDiscussionPosts, setGeneralDiscussionPosts] = useState<CommMsg[]>([])
+  const [generalDiscussionLimit, setGeneralDiscussionLimit] = useState(10)
+  const [announcements, setAnnouncements] = useState<any[]>([])
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(false)
+  const [generalFeedFilter, setGeneralFeedFilter] = useState<'recent' | 'popular' | 'unanswered' | 'following'>('recent')
+  const [hoveredReactionMessageId, setHoveredReactionMessageId] = useState<string | null>(null)
+  const [expandedCommentsMessageId, setExpandedCommentsMessageId] = useState<string | null>(null)
+  const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({})
 
   const handleUpgradeClick = async () => {
     if (!selectedClass || !selectedClass.id) return
@@ -636,6 +655,71 @@ export default function CommunityPage() {
     }
   }
 
+  const loadGeneralDiscussionPosts = useCallback(async () => {
+    setLoadingMessages(true)
+    try {
+      const res = await fetch(`/api/community/general-discussion/messages?limit=${generalDiscussionLimit}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          const mapped = data.map((m: any) => ({
+            ...m,
+            courseId: 'general-discussion',
+            courseName: 'General Discussion',
+            courseColor: '#4F46E5',
+          }))
+          setGeneralDiscussionPosts(mapped)
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load general feed', err)
+    } finally {
+      setLoadingMessages(false)
+    }
+  }, [generalDiscussionLimit])
+
+  const loadAnnouncements = useCallback(async () => {
+    setLoadingAnnouncements(true)
+    try {
+      const res = await fetch('/api/announcements')
+      if (res.ok) {
+        const data = await res.json()
+        setAnnouncements(data)
+      }
+    } catch (err) {
+      console.error('Failed to load announcements', err)
+    } finally {
+      setLoadingAnnouncements(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const enrolled = classes.filter(c => !c.isDirectChat)
+    if (enrolled.length > 0 && !postTargetCourseId) {
+      setPostTargetCourseId(enrolled[0].id)
+    }
+  }, [classes, postTargetCourseId])
+
+  useEffect(() => {
+    if (!selectedClass) {
+      if (sidebarTab === 'general') {
+        loadGeneralDiscussionPosts()
+      } else if (sidebarTab === 'announcements') {
+        loadAnnouncements()
+      }
+    }
+  }, [selectedClass, sidebarTab, loadGeneralDiscussionPosts, loadAnnouncements])
+
+  // Poll for general feed updates when on General tab
+  useEffect(() => {
+    if (!selectedClass && sidebarTab === 'general') {
+      const interval = setInterval(() => {
+        loadGeneralDiscussionPosts()
+      }, 15000)
+      return () => clearInterval(interval)
+    }
+  }, [selectedClass, sidebarTab, loadGeneralDiscussionPosts])
+
   // Poll for unread status every 30 seconds
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -739,6 +823,15 @@ export default function CommunityPage() {
       }
     })
 
+    eventSource.addEventListener('update', (e) => {
+      try {
+        const updated = JSON.parse(e.data)
+        setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, likes: updated.likes, reactions: updated.reactions } : m))
+      } catch (err) {
+        console.error('SSE Update Error', err)
+      }
+    })
+
     return () => eventSource.close()
   }, [selectedClass, loadMessages, loadPinnedMessage])
 
@@ -757,8 +850,13 @@ export default function CommunityPage() {
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Files must be smaller than 10MB.')
+    if (file.size > 20 * 1024 * 1024) {
+      confirm({
+        title: 'Image Too Large',
+        message: 'Upload size is 20 MB only max. Please select a smaller image.',
+        confirmLabel: 'OK',
+        tone: 'danger'
+      })
       if (e.target) e.target.value = ''
       return
     }
@@ -771,11 +869,101 @@ export default function CommunityPage() {
     setPendingImagePreview(URL.createObjectURL(file))
   }
 
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 20 * 1024 * 1024) {
+      confirm({
+        title: 'File Too Large',
+        message: 'Upload size is 20 MB only max. Please select a smaller file.',
+        confirmLabel: 'OK',
+        tone: 'danger'
+      })
+      if (e.target) e.target.value = ''
+      return
+    }
+    setPendingImage(file)
+    setPendingImagePreview(file.name)
+  }
+
   function clearPendingImage() {
     setPendingImage(null)
-    if (pendingImagePreview) URL.revokeObjectURL(pendingImagePreview)
+    if (pendingImagePreview && pendingImagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(pendingImagePreview)
+    }
     setPendingImagePreview(null)
     if (imageInputRef.current) imageInputRef.current.value = ''
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const uploadFileWithProgress = (file: File, onProgress: (pct: number) => void, signal: AbortSignal): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const token = Math.random().toString()
+      
+      // Notify start
+      window.dispatchEvent(new CustomEvent('app-upload-start', { detail: { fileName: file.name, token } }))
+
+      const xhr = new XMLHttpRequest()
+      
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const pct = Math.round((event.loaded / event.total) * 100)
+          onProgress(pct)
+          window.dispatchEvent(new CustomEvent('app-upload-progress', { detail: { pct } }))
+        }
+      }
+      
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const res = JSON.parse(xhr.responseText)
+            window.dispatchEvent(new CustomEvent('app-upload-complete'))
+            resolve(res.url)
+          } catch (e) {
+            window.dispatchEvent(new CustomEvent('app-upload-error'))
+            reject(new Error('Invalid response format'))
+          }
+        } else {
+          try {
+            const res = JSON.parse(xhr.responseText)
+            window.dispatchEvent(new CustomEvent('app-upload-error'))
+            reject(new Error(res.error || 'Upload failed'))
+          } catch (e) {
+            window.dispatchEvent(new CustomEvent('app-upload-error'))
+            reject(new Error(`Upload failed with status ${xhr.status}`))
+          }
+        }
+      }
+      
+      xhr.onerror = () => {
+        window.dispatchEvent(new CustomEvent('app-upload-error'))
+        reject(new Error('Network error'))
+      }
+      
+      xhr.onabort = () => {
+        window.dispatchEvent(new CustomEvent('app-upload-error'))
+        reject(new Error('Upload cancelled'))
+      }
+      
+      // Wire cancel event from layout
+      const handleCancel = (e: any) => {
+        if (e.detail?.token === token) {
+          xhr.abort()
+        }
+      }
+      window.addEventListener('app-upload-cancel', handleCancel)
+
+      signal.addEventListener('abort', () => {
+        xhr.abort()
+      })
+      
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'announcements')
+      
+      xhr.open('POST', '/api/upload/chat-image')
+      xhr.send(formData)
+    })
   }
 
   async function sendMessage() {
@@ -1635,12 +1823,24 @@ export default function CommunityPage() {
                   cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
                   background: (sidebarTab === 'general' && !selectedClass) ? 'var(--primary-light)' : 'transparent',
                   color: (sidebarTab === 'general' && !selectedClass) ? 'var(--primary)' : 'var(--text-primary)',
-                  fontWeight: '700', fontSize: '13px', transition: 'all 0.2s',
+                  fontWeight: '700', fontSize: '13px', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
-                onMouseEnter={e => { if (sidebarTab !== 'general' || selectedClass) e.currentTarget.style.background = 'var(--surface-3)' }}
-                onMouseLeave={e => { if (sidebarTab !== 'general' || selectedClass) e.currentTarget.style.background = 'transparent' }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                  if (sidebarTab !== 'general' || selectedClass) {
+                    e.currentTarget.style.background = 'var(--surface-3)'
+                  }
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  if (sidebarTab !== 'general' || selectedClass) {
+                    e.currentTarget.style.background = 'transparent'
+                  }
+                }}
               >
-                <span style={{ fontSize: '16px' }}>💬</span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
                 General Discussion
               </button>
 
@@ -1655,12 +1855,25 @@ export default function CommunityPage() {
                   cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
                   background: (sidebarTab === 'announcements' && !selectedClass) ? 'var(--primary-light)' : 'transparent',
                   color: (sidebarTab === 'announcements' && !selectedClass) ? 'var(--primary)' : 'var(--text-primary)',
-                  fontWeight: '700', fontSize: '13px', transition: 'all 0.2s',
+                  fontWeight: '700', fontSize: '13px', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
-                onMouseEnter={e => { if (sidebarTab !== 'announcements' || selectedClass) e.currentTarget.style.background = 'var(--surface-3)' }}
-                onMouseLeave={e => { if (sidebarTab !== 'announcements' || selectedClass) e.currentTarget.style.background = 'transparent' }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                  if (sidebarTab !== 'announcements' || selectedClass) {
+                    e.currentTarget.style.background = 'var(--surface-3)'
+                  }
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  if (sidebarTab !== 'announcements' || selectedClass) {
+                    e.currentTarget.style.background = 'transparent'
+                  }
+                }}
               >
-                <span style={{ fontSize: '16px' }}>📢</span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
                 Announcements
               </button>
 
@@ -1672,12 +1885,21 @@ export default function CommunityPage() {
                   cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
                   background: 'transparent',
                   color: 'var(--text-primary)',
-                  fontWeight: '700', fontSize: '13px', transition: 'all 0.2s',
+                  fontWeight: '700', fontSize: '13px', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-3)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                  e.currentTarget.style.background = 'var(--surface-3)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.background = 'transparent'
+                }}
               >
-                <span style={{ fontSize: '16px' }}>📚</span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
                 Study Resources
               </button>
             </div>
@@ -1697,7 +1919,7 @@ export default function CommunityPage() {
                   padding: isMobile ? '14px 16px' : '12px 16px',
                   borderRadius: isMobile ? '20px' : '18px', border: 'none',
                   cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
-                  transition: 'all 0.2s',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   background: active ? cls.color : undefined,
                   color: active ? '#fff' : 'var(--community-item-text)',
                   boxShadow: active
@@ -1705,6 +1927,20 @@ export default function CommunityPage() {
                     : undefined,
                   position: 'relative',
                   minHeight: isMobile ? '64px' : 'auto',
+                }}
+                onMouseEnter={e => {
+                  if (!active) {
+                    e.currentTarget.style.background = 'var(--surface-3)'
+                    e.currentTarget.style.transform = 'translateY(-1.5px)'
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.06)'
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!active) {
+                    e.currentTarget.style.background = 'transparent'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }
                 }}
               >
                 {cls.hasUnread && !active && (
@@ -1858,6 +2094,37 @@ export default function CommunityPage() {
           </>
         )}
 
+        {/* System Rules & Limits Button for Manager */}
+        {userRole === 'MANAGER' && (
+          <button
+            onClick={() => setRulesOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '10px 14px', borderRadius: '14px',
+              cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+              background: 'var(--surface-2)', border: '1px solid var(--border)',
+              color: 'var(--text-primary)', fontWeight: '700', fontSize: '13px',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              marginTop: '16px', width: '100%'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-1px)'
+              e.currentTarget.style.background = 'var(--surface-3)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.background = 'var(--surface-2)'
+            }}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            System Rules & Limits
+          </button>
+        )}
+
         {/* Community Guidelines Card */}
         <div style={{
           marginTop: '16px',
@@ -1912,67 +2179,817 @@ export default function CommunityPage() {
         {!selectedClass && sidebarTab === 'general' ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {/* Header */}
-            <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>💬</div>
-              <div>
-                <div style={{ fontWeight: '800', fontSize: '16px', color: 'var(--text-primary)' }}>General Discussion</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Public community posts and general questions</div>
-              </div>
-            </div>
-            {/* Feed Wall */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }} className="chat-wallpaper">
-              {classes.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-                  <p style={{ fontWeight: '700' }}>No courses loaded yet</p>
+            <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
                 </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {classes.filter(c => !c.isDirectChat).map(course => (
-                    <div
-                      key={course.id}
-                      onClick={() => setSelectedClass(course)}
-                      style={{
-                        padding: '16px', borderRadius: '20px', background: 'var(--surface)',
-                        border: '1px solid var(--border)', cursor: 'pointer',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.02)', display: 'flex', gap: '16px',
-                        alignItems: 'center', transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(54,54,232,0.06)' }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.02)' }}
-                    >
-                      <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: course.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '800', color: course.color }}>
-                        {course.name.substring(0, 2).toUpperCase()}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>{course.name}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{course.subject || 'Course Forum'}</div>
-                      </div>
-                      <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: '700' }}>Enter Forum →</div>
+                <div>
+                  <div style={{ fontWeight: '800', fontSize: '16px', color: 'var(--text-primary)' }}>General Discussion</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Public community posts and general questions</div>
+                </div>
+              </div>
+              {/* Guidelines Button */}
+              <button
+                onClick={() => setGuidelinesOpen(true)}
+                style={{
+                  padding: '6px 12px', borderRadius: '10px', background: 'none', border: '1.5px solid var(--border)',
+                  fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', gap: '6px'
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                Guidelines
+              </button>
+            </div>
+
+            {/* Feed Wall */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', background: 'var(--surface-2)' }}>
+              {/* Composer Card */}
+              {classes.filter(c => !c.isDirectChat).length > 0 && (
+                <div style={{
+                  background: 'var(--surface)', borderRadius: '20px', padding: '18px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: '1px solid var(--border)',
+                  display: 'flex', flexDirection: 'column', gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{
+                      width: '38px', height: '38px', borderRadius: '50%', background: 'var(--primary-light)',
+                      color: 'var(--primary)', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '14px', flexShrink: 0
+                    }}>
+                      {userName ? userName.charAt(0).toUpperCase() : 'U'}
                     </div>
-                  ))}
+                    <div style={{ flex: 1, position: 'relative' }}>
+                      <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value.slice(0, 500))}
+                        placeholder="What's happening in your class? Ask a question or share updates..."
+                        style={{
+                          width: '100%', minHeight: '80px', border: 'none', resize: 'none', outline: 'none',
+                          background: 'none', fontSize: '14px', color: 'var(--text-primary)', fontFamily: 'inherit',
+                          padding: '4px 0'
+                        }}
+                      />
+                      <div style={{ position: 'absolute', bottom: '-10px', right: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {input.length}/500
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Attachment Preview */}
+                  {pendingImagePreview && (
+                    <div style={{ position: 'relative', width: 'fit-content', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', padding: pendingImage?.type.startsWith('image/') ? '0' : '10px 16px', background: pendingImage?.type.startsWith('image/') ? 'transparent' : 'var(--surface-2)' }}>
+                      {pendingImage?.type.startsWith('image/') ? (
+                        <img src={pendingImagePreview} alt="Upload preview" style={{ maxHeight: '150px', display: 'block' }} />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)', paddingRight: '20px' }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                          </svg>
+                          <span>{pendingImagePreview}</span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => {
+                          setPendingImage(null);
+                          setPendingImagePreview(null);
+                          if (imageInputRef.current) imageInputRef.current.value = '';
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                        style={{
+                          position: 'absolute', top: pendingImage?.type.startsWith('image/') ? '6px' : '50%', right: '6px', transform: pendingImage?.type.startsWith('image/') ? 'none' : 'translateY(-50%)', width: '24px', height: '24px',
+                          borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff',
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Composer Footer Actions */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12.5px', flexWrap: 'wrap' }}>
+                      {/* Image Picker */}
+                      <button
+                        onClick={() => imageInputRef.current?.click()}
+                        style={{
+                          background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '750'
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-secondary)' }}>
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        Image
+                      </button>
+                      <input
+                        type="file"
+                        ref={imageInputRef}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 10 * 1024 * 1024) {
+                              alert('File exceeds 10MB limit. Please upload a smaller image.');
+                              return;
+                            }
+                            setPendingImage(file);
+                            const reader = new FileReader();
+                            reader.onload = () => setPendingImagePreview(reader.result as string);
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                      />
+
+                      {/* Document Picker */}
+                      <button
+                        onClick={async () => {
+                          const allowed = await confirm({
+                            title: 'Upload Document Guidelines',
+                            message: 'Maximum allowed file size is 20 MB only max. Supported formats: PDF, PPT, DOCX, ZIP, XLS.',
+                            confirmLabel: 'Select File',
+                            cancelLabel: 'Cancel',
+                            tone: 'default'
+                          });
+                          if (allowed) {
+                            fileInputRef.current?.click();
+                          }
+                        }}
+                        style={{
+                          background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '750'
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-secondary)' }}>
+                          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                        </svg>
+                        Document
+                      </button>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 20 * 1024 * 1024) {
+                              confirm({
+                                title: 'File Too Large',
+                                message: 'Upload size is 20 MB only max. Please select a smaller file.',
+                                confirmLabel: 'OK',
+                                tone: 'danger'
+                              });
+                              return;
+                            }
+                            setPendingImage(file);
+                            setPendingImagePreview(file.name);
+                          }
+                        }}
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip"
+                        style={{ display: 'none' }}
+                      />
+
+                      {/* Emoji Picker */}
+                      <div style={{ position: 'relative' }}>
+                        <button
+                          onClick={() => setShowGeneralEmojiPicker(!showGeneralEmojiPicker)}
+                          style={{
+                            background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '750'
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-secondary)' }}>
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                            <line x1="9" y1="9" x2="9.01" y2="9" />
+                            <line x1="15" y1="9" x2="15.01" y2="9" />
+                          </svg>
+                          Emoji
+                        </button>
+                        {showGeneralEmojiPicker && (
+                          <>
+                            <div
+                              onClick={() => setShowGeneralEmojiPicker(false)}
+                              style={{ position: 'fixed', inset: 0, zIndex: 49 }}
+                            />
+                            <div style={{
+                              position: 'absolute', bottom: '30px', left: 0,
+                              background: 'var(--sidebar-bg)', borderRadius: '16px',
+                              border: '1px solid var(--border)',
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                              padding: '12px', width: '280px', zIndex: 50,
+                            }}>
+                              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Emojis</div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                {['😂','😭','😅','🙂','😎','🤔','❤️','🔥','👏','👍','🙏','🎉','🥳','📚','📝','🎓','💯','✅','❌','⏰','💡','😤','🫡','💪','🤝','😴','🤯','👀','😬','🫠'].map(emoji => (
+                                  <button
+                                    key={emoji}
+                                    onClick={() => {
+                                      setInput(prev => prev + emoji);
+                                      setShowGeneralEmojiPicker(false);
+                                    }}
+                                    style={{
+                                      width: '36px', height: '36px', fontSize: '20px',
+                                      background: 'none', border: 'none', borderRadius: '8px',
+                                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      transition: 'background 0.15s',
+                                    }}
+                                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(54,54,232,0.08)')}
+                                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+
+                    </div>
+
+                    <button
+                      onClick={async () => {
+                        if (!input.trim() && !pendingImage) return;
+
+                        setUploadingImage(true);
+                        setUploadProgress(0);
+                        setUploadFileName(pendingImage ? pendingImage.name : '');
+                        const controller = new AbortController();
+                        abortControllerRef.current = controller;
+                        let imageUrl = null;
+                        if (pendingImage) {
+                          try {
+                            imageUrl = await uploadFileWithProgress(pendingImage, setUploadProgress, controller.signal);
+                          } catch (err) {
+                            if (err instanceof Error && err.message === 'Upload cancelled') {
+                              // silent cancel
+                            } else {
+                              alert(err instanceof Error ? err.message : 'Upload failed');
+                            }
+                            setUploadingImage(false);
+                            setUploadProgress(null);
+                            abortControllerRef.current = null;
+                            return;
+                          }
+                        }
+                        // Done upload
+
+                        try {
+                          const res = await fetch(`/api/community/general-discussion/messages`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ content: input, imageUrl })
+                          });
+                          if (res.ok) {
+                            setInput('');
+                            setPendingImage(null);
+                            setPendingImagePreview(null);
+                            loadGeneralDiscussionPosts();
+                          } else {
+                            const errData = await res.json();
+                            alert(errData.error || 'Failed to post message');
+                          }
+                        } catch (err) {
+                          console.error(err);
+                        } finally {
+                          setUploadingImage(false);
+                        }
+                      }}
+                      disabled={uploadingImage || (!input.trim() && !pendingImage)}
+                      style={{
+                        padding: '8px 16px', borderRadius: '50px', background: 'var(--primary)',
+                        color: 'white', border: 'none', fontWeight: '800', fontSize: '13px',
+                        cursor: 'pointer', opacity: (uploadingImage || (!input.trim() && !pendingImage)) ? 0.6 : 1,
+                        transition: 'opacity 0.2s'
+                      }}
+                    >
+                      {uploadingImage ? 'Uploading...' : 'Post'}
+                    </button>
+                  </div>
                 </div>
               )}
+
+              {/* Sorting Filter Row */}
+              <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+                {(['recent', 'popular', 'unanswered', 'following'] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setGeneralFeedFilter(filter)}
+                    style={{
+                      padding: '6px 14px', borderRadius: '50px', border: 'none', cursor: 'pointer',
+                      fontSize: '12px', fontWeight: '800', transition: 'all 0.2s',
+                      background: generalFeedFilter === filter ? 'var(--primary-light)' : 'transparent',
+                      color: generalFeedFilter === filter ? 'var(--primary)' : 'var(--text-secondary)'
+                    }}
+                  >
+                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              {/* Posts Stream */}
+              {loadingMessages && generalDiscussionPosts.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {[1, 2, 3].map(i => (
+                    <div key={i} style={{
+                      background: 'var(--surface)',
+                      borderRadius: '20px',
+                      padding: '20px',
+                      border: '1px solid var(--border)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      animation: 'shimmerPulse 1.8s ease-in-out infinite'
+                    }}>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--surface-3)' }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                          <div style={{ width: '30%', height: '12px', borderRadius: '4px', background: 'var(--surface-3)' }} />
+                          <div style={{ width: '20%', height: '8px', borderRadius: '4px', background: 'var(--surface-3)' }} />
+                        </div>
+                      </div>
+                      <div style={{ width: '90%', height: '12px', borderRadius: '4px', background: 'var(--surface-3)', marginTop: '8px' }} />
+                      <div style={{ width: '75%', height: '12px', borderRadius: '4px', background: 'var(--surface-3)' }} />
+                      <div style={{ display: 'flex', gap: '16px', marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                        <div style={{ width: '50px', height: '12px', borderRadius: '4px', background: 'var(--surface-3)' }} />
+                        <div style={{ width: '80px', height: '12px', borderRadius: '4px', background: 'var(--surface-3)' }} />
+                      </div>
+                    </div>
+                  ))}
+                  <style>{`
+                    @keyframes shimmerPulse {
+                      0% { opacity: 0.6; }
+                      50% { opacity: 1; }
+                      100% { opacity: 0.6; }
+                    }
+                  `}</style>
+                </div>
+              ) : (
+                (() => {
+                  const mainPosts = generalDiscussionPosts.filter(m => !m.replyToId);
+                  const sortedPosts = [...mainPosts];
+
+                // Sort client side based on filter
+                if (generalFeedFilter === 'recent') {
+                  sortedPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                } else if (generalFeedFilter === 'popular') {
+                  const getInteractionCount = (m: any) => {
+                    let likes = 0;
+                    try { likes = JSON.parse(m.likes || '[]').length; } catch (e) {}
+                    let rxCount = 0;
+                    try {
+                      const rx = JSON.parse(m.reactions || '{}');
+                      Object.keys(rx).forEach(k => { rxCount += rx[k].length; });
+                    } catch (e) {}
+                    return likes + rxCount;
+                  };
+                  sortedPosts.sort((a, b) => getInteractionCount(b) - getInteractionCount(a));
+                } else if (generalFeedFilter === 'unanswered') {
+                  const filtered = sortedPosts.filter(p => generalDiscussionPosts.filter(r => r.replyToId === p.id).length === 0);
+                  sortedPosts.length = 0;
+                  sortedPosts.push(...filtered);
+                } else if (generalFeedFilter === 'following') {
+                  const filtered = sortedPosts.filter(p => p.sender.id === userId);
+                  sortedPosts.length = 0;
+                  sortedPosts.push(...filtered);
+                }
+
+                if (sortedPosts.length === 0) {
+                  return (
+                    <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}>
+                          <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+                          <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+                        </svg>
+                      </div>
+                      <p style={{ fontWeight: '700', marginTop: '12px' }}>No posts matches filter</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {sortedPosts.map(post => {
+                      const comments = generalDiscussionPosts.filter(r => r.replyToId === post.id);
+                      let likesList: string[] = [];
+                      try { likesList = JSON.parse(post.likes || '[]'); } catch(e){}
+                      const userHasLiked = likesList.includes(userId);
+
+                      let reactionsObj: Record<string, string[]> = {};
+                      try { reactionsObj = JSON.parse(post.reactions || '{}'); } catch(e){}
+
+                      const commentsOpen = expandedCommentsMessageId === post.id;
+
+                      return (
+                        <div key={post.id} style={{
+                          background: 'var(--surface)', borderRadius: '20px', padding: '18px',
+                          border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.01)',
+                          display: 'flex', flexDirection: 'column', gap: '12px'
+                        }}>
+                          {/* Post Header */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                              <div style={{
+                                width: '36px', height: '36px', borderRadius: '50%', background: 'var(--surface-3)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800',
+                                color: 'var(--text-secondary)', fontSize: '13px'
+                              }}>
+                                {post.sender.name ? post.sender.name.charAt(0).toUpperCase() : 'U'}
+                              </div>
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontWeight: '800', fontSize: '13.5px', color: 'var(--text-primary)' }}>{post.sender.name}</span>
+                                  {/* Course colored Badge pill */}
+                                  <span style={{
+                                    fontSize: '9px', fontWeight: '800', padding: '2px 8px', borderRadius: '50px',
+                                    background: (post as any).courseColor ? (post as any).courseColor + '15' : '#f0f0f5',
+                                    color: (post as any).courseColor || 'var(--text-secondary)',
+                                    border: `1px solid ${(post as any).courseColor ? (post as any).courseColor + '30' : 'var(--border)'}`
+                                  }}>
+                                    {(post as any).courseName || 'General'}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                                  {new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Post Body */}
+                          <div style={{ fontSize: '13.5px', color: 'var(--text-primary)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                            {post.content}
+                          </div>
+
+                          {post.imageUrl && (
+                            <div style={{ marginTop: '4px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', maxWidth: 'fit-content' }}>
+                              <img
+                                src={post.imageUrl}
+                                alt="Post attachment"
+                                style={{ maxHeight: '280px', maxWidth: '100%', objectFit: 'contain', cursor: 'pointer' }}
+                                onClick={() => setLightboxUrl(post.imageUrl || null)}
+                              />
+                            </div>
+                          )}
+
+                          {/* Reactions Summary */}
+                          {likesList.length > 0 && (
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
+                              <div style={{
+                                fontSize: '11px', padding: '4px 8px', borderRadius: '50px', background: 'var(--surface-2)',
+                                color: 'var(--text-secondary)', border: '1px solid var(--border)', fontWeight: '750',
+                                display: 'flex', alignItems: 'center', gap: '4px'
+                              }}>
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ef4444' }}>
+                                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                </svg>
+                                {likesList.length}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Post Footer Actions */}
+                          <div style={{ display: 'flex', gap: '16px', borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '4px' }}>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await fetch(`/api/community/${post.courseId}/messages/${post.id}/pin`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ action: 'like' })
+                                  });
+                                  loadGeneralDiscussionPosts();
+                                } catch (e){}
+                              }}
+                              style={{
+                                background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '800',
+                                color: userHasLiked ? 'var(--primary)' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px'
+                              }}
+                            >
+                              {userHasLiked ? (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--primary)' }}>
+                                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                </svg>
+                              ) : (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                </svg>
+                              )}
+                              <span>Like</span>
+                            </button>
+
+                            <button
+                              onClick={() => setExpandedCommentsMessageId(commentsOpen ? null : post.id)}
+                              style={{
+                                background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '800',
+                                color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px'
+                              }}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                              </svg>
+                              <span>Comments ({comments.length})</span>
+                            </button>
+                          </div>
+
+                          {/* Expanded Comments Section */}
+                          {commentsOpen && (
+                            <div style={{
+                              marginTop: '8px', borderTop: '1.5px solid var(--border)', paddingTop: '12px',
+                              display: 'flex', flexDirection: 'column', gap: '10px'
+                            }}>
+                              {/* Comments stream */}
+                              {comments.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+                                  {comments.map(comment => {
+                                    let cLikes: string[] = [];
+                                    try { cLikes = JSON.parse(comment.likes || '[]'); } catch(e){}
+                                    const cLiked = cLikes.includes(userId);
+
+                                    return (
+                                      <div key={comment.id} style={{
+                                        background: 'var(--surface-2)', borderRadius: '12px', padding: '10px 14px',
+                                        display: 'flex', flexDirection: 'column', gap: '4px'
+                                      }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                          <span style={{ fontWeight: '800', fontSize: '12px', color: 'var(--text-primary)' }}>{comment.sender.name}</span>
+                                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                        <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: 0 }}>{comment.content}</p>
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+                                          <button
+                                            onClick={async () => {
+                                              try {
+                                                await fetch(`/api/community/${post.courseId}/messages/${comment.id}/pin`, {
+                                                  method: 'POST',
+                                                  headers: { 'Content-Type': 'application/json' },
+                                                  body: JSON.stringify({ action: 'like' })
+                                                });
+                                                loadGeneralDiscussionPosts();
+                                              } catch (e){}
+                                            }}
+                                            style={{
+                                              background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px',
+                                              color: cLiked ? 'var(--primary)' : 'var(--text-muted)', fontWeight: '750',
+                                              display: 'flex', alignItems: 'center', gap: '4px'
+                                            }}
+                                          >
+                                            {cLiked ? (
+                                              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--primary)' }}>
+                                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                              </svg>
+                                            ) : (
+                                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                              </svg>
+                                            )}
+                                            <span>{cLikes.length > 0 ? cLikes.length : 'Like'}</span>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', margin: '4px 0' }}>No comments yet. Start the conversation!</p>
+                              )}
+
+                              {/* Comment Composer */}
+                              {comments.length < 200 ? (
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+                                  <input
+                                    type="text"
+                                    value={commentInputMap[post.id] || ''}
+                                    onChange={(e) => setCommentInputMap(prev => ({ ...prev, [post.id]: e.target.value.slice(0, 300) }))}
+                                    placeholder="Write a comment... (max 300 chars)"
+                                    style={{
+                                      flex: 1, padding: '8px 14px', borderRadius: '50px', border: '1.5px solid var(--border)',
+                                      background: 'var(--surface-2)', color: 'var(--text-primary)', fontSize: '12.5px', outline: 'none'
+                                    }}
+                                    onKeyDown={async (e) => {
+                                      if (e.key === 'Enter') {
+                                        const cText = commentInputMap[post.id] || '';
+                                        if (!cText.trim()) return;
+                                        try {
+                                          const res = await fetch(`/api/community/${post.courseId}/messages`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ content: cText, replyToId: post.id })
+                                          });
+                                          if (res.ok) {
+                                            setCommentInputMap(prev => ({ ...prev, [post.id]: '' }));
+                                            loadGeneralDiscussionPosts();
+                                          } else {
+                                            const errData = await res.json();
+                                            alert(errData.error || 'Failed to comment');
+                                          }
+                                        } catch (e){}
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    onClick={async () => {
+                                      const cText = commentInputMap[post.id] || '';
+                                      if (!cText.trim()) return;
+                                      try {
+                                        const res = await fetch(`/api/community/${post.courseId}/messages`, {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ content: cText, replyToId: post.id })
+                                        });
+                                        if (res.ok) {
+                                          setCommentInputMap(prev => ({ ...prev, [post.id]: '' }));
+                                          loadGeneralDiscussionPosts();
+                                        } else {
+                                          const errData = await res.json();
+                                          alert(errData.error || 'Failed to comment');
+                                        }
+                                      } catch (e){}
+                                    }}
+                                    style={{
+                                      padding: '8px 14px', borderRadius: '50px', background: 'var(--primary)',
+                                      color: '#white', border: 'none', fontSize: '12px', fontWeight: '800', cursor: 'pointer'
+                                    }}
+                                  >
+                                    Reply
+                                  </button>
+                                </div>
+                              ) : (
+                                <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>Comments locked (reached limit of 200 comments per post)</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {sortedPosts.length >= generalDiscussionLimit && (
+                      <button
+                        onClick={() => setGeneralDiscussionLimit(prev => prev + 10)}
+                        style={{
+                          alignSelf: 'center',
+                          padding: '12px 24px',
+                          borderRadius: '50px',
+                          background: 'var(--surface-3)',
+                          border: '1.5px solid var(--border)',
+                          color: 'var(--text-primary)',
+                          fontWeight: '800',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          marginTop: '10px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                          fontFamily: 'inherit'
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.transform = 'translateY(-1.5px)';
+                          e.currentTarget.style.background = 'var(--surface)';
+                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.06)';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.background = 'var(--surface-3)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)';
+                        }}
+                      >
+                        {loadingMessages ? 'Loading...' : 'Load More Posts'}
+                      </button>
+                    )}
+                  </div>
+                );
+              })())}
             </div>
           </div>
         ) : !selectedClass && sidebarTab === 'announcements' ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {/* Header */}
             <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>📢</div>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+              </div>
               <div>
                 <div style={{ fontWeight: '800', fontSize: '16px', color: 'var(--text-primary)' }}>Announcements</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Official notifications and course announcements</div>
               </div>
             </div>
+
             {/* Announcements Wall */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }} className="chat-wallpaper">
-              <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--surface)', border: '1px solid var(--border)', textAlign: 'center' }}>
-                <span style={{ fontSize: '32px' }}>📣</span>
-                <h4 style={{ margin: '12px 0 6px 0', fontWeight: '800', color: 'var(--text-primary)' }}>Official Announcements</h4>
-                <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                  There are no global announcements at this moment. Course-specific announcements can be viewed inside individual course forums.
-                </p>
-              </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--surface-2)' }}>
+              {loadingAnnouncements ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                  <div style={{ width: '36px', height: '36px', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+                  <p style={{ fontWeight: '600', fontSize: '13px' }}>Loading announcements...</p>
+                </div>
+              ) : announcements.length === 0 ? (
+                <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--surface)', border: '1px solid var(--border)', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}>
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                  </div>
+                  <h4 style={{ margin: '12px 0 6px 0', fontWeight: '800', color: 'var(--text-primary)' }}>Official Announcements</h4>
+                  <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                    There are no global announcements at this moment. Course-specific announcements can be viewed inside individual course forums.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {announcements.map((ann) => (
+                    <div key={ann.id} style={{
+                      background: 'var(--surface)', borderRadius: '20px', padding: '20px',
+                      border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.01)',
+                      display: 'flex', flexDirection: 'column', gap: '12px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)' }}>{ann.title}</h4>
+                            {ann.course && (
+                              <span style={{
+                                fontSize: '9px', fontWeight: '800', padding: '2px 8px', borderRadius: '50px',
+                                background: ann.course.color + '15', color: ann.course.color
+                              }}>
+                                {ann.course.name}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '4px' }}>
+                            Posted on {new Date(ann.createdAt).toLocaleDateString()} by {ann.createdBy?.name || 'Staff'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                        {ann.content}
+                      </div>
+
+                      {ann.attachmentUrl && (
+                        <div style={{
+                          marginTop: '8px', padding: '12px 16px', borderRadius: '14px', background: 'var(--surface-2)',
+                          border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              📄
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '12.5px', fontWeight: '800', color: 'var(--text-primary)' }}>{ann.attachmentName || 'Attachment'}</div>
+                              {ann.attachmentSize && (
+                                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{Math.round(ann.attachmentSize / 1024)} KB</div>
+                              )}
+                            </div>
+                          </div>
+                          <a
+                            href={ann.attachmentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: '6px 14px', borderRadius: '50px', background: 'var(--surface)',
+                              color: 'var(--text-primary)', border: '1.5px solid var(--border)', fontSize: '12px',
+                              fontWeight: '800', textDecoration: 'none'
+                            }}
+                          >
+                            Download
+                          </a>
+                        </div>
+                      )}
+
+                      {ann.ctaText && ann.ctaLink && (
+                        <a
+                          href={ann.ctaLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            marginTop: '8px', width: 'fit-content', padding: '8px 18px', borderRadius: '50px',
+                            background: 'var(--primary)', color: 'white', fontWeight: '800', fontSize: '12.5px',
+                            textDecoration: 'none', textAlign: 'center'
+                          }}
+                        >
+                          {ann.ctaText}
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : !selectedClass ? (
@@ -2221,87 +3238,7 @@ export default function CommunityPage() {
                       Hidden
                     </span>
                   )}
-                  {userRole === 'MANAGER' && (
-                    <>
-                      <button onClick={openTranscript} style={{ padding: '6px 12px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', ...neu, boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)', color: 'var(--primary)' }}>
-                        Transcript
-                      </button>
-                      {!isDM(selectedClass) && (
-                        <button
-                          onClick={toggleCommunityStatus}
-                          disabled={managingCommunity}
-                          style={{
-                            padding: '6px 12px', borderRadius: '50px', border: 'none',
-                            cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                            background: selectedClass.isCommunityActive === false ? 'var(--success)' : 'var(--warning)',
-                            color: '#fff',
-                            boxShadow: selectedClass.isCommunityActive === false ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
-                            opacity: managingCommunity ? 0.6 : 1,
-                          }}
-                        >
-                          {selectedClass.isCommunityActive === false ? 'Enable' : 'Disable'}
-                        </button>
-                      )}
-                      {isDM(selectedClass) && (
-                        <button
-                          onClick={async () => {
-                            if (managingCommunity) return
-                            const action = selectedClass.isDmDisabled ? 'enable' : 'disable'
-                            const allowed = await confirm({
-                              title: action === 'disable' ? 'Hide Chat from Student?' : 'Show Chat to Student?',
-                              message: action === 'disable'
-                                ? 'This will hide the chat from the student. All messages are preserved and you can re-enable it anytime.'
-                                : 'This will make the chat visible to the student again.',
-                              confirmLabel: action === 'disable' ? 'Hide Chat' : 'Show Chat',
-                              tone: action === 'disable' ? 'danger' : 'default',
-                            })
-                            if (!allowed) return
-                            setManagingCommunity(true)
-                            try {
-                              const chatId = selectedClass.id.replace('dm_', '')
-                              const res = await fetch('/api/community/direct/toggle', {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ chatId, action }),
-                              })
-                              if (!res.ok) throw new Error('Failed to toggle chat')
-                              await loadClasses(selectedClass.id)
-                            } catch (error) {
-                              console.error(error)
-                              alert(error instanceof Error ? error.message : 'Failed to toggle chat')
-                            } finally {
-                              setManagingCommunity(false)
-                            }
-                          }}
-                          disabled={managingCommunity}
-                          style={{
-                            padding: '6px 12px', borderRadius: '50px', border: 'none',
-                            cursor: managingCommunity ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                            background: selectedClass.isDmDisabled ? 'var(--success)' : 'var(--warning)',
-                            color: '#fff',
-                            boxShadow: selectedClass.isDmDisabled ? '4px 4px 10px rgba(34,197,94,0.25)' : '4px 4px 10px rgba(245,158,11,0.25)',
-                            opacity: managingCommunity ? 0.6 : 1,
-                          }}
-                        >
-                          {selectedClass.isDmDisabled ? 'Show to Student' : 'Hide from Student'}
-                        </button>
-                      )}
-                      <button
-                        onClick={clearCommunityMessages}
-                        disabled={managingCommunity || messages.length === 0}
-                        style={{
-                          padding: '6px 12px', borderRadius: '50px', border: 'none',
-                          cursor: managingCommunity || messages.length === 0 ? 'default' : 'pointer',
-                          fontFamily: 'inherit', fontSize: '12px', fontWeight: '700',
-                          background: 'var(--danger)', color: '#fff',
-                          boxShadow: '4px 4px 10px rgba(239,68,68,0.25)',
-                          opacity: managingCommunity || messages.length === 0 ? 0.5 : 1,
-                        }}
-                      >
-                        Clear Chat
-                      </button>
-                    </>
-                  )}
+
                   <div style={{ position: 'relative', zIndex: 10 }}>
                     <button
                       onClick={(e) => {
@@ -2351,6 +3288,140 @@ export default function CommunityPage() {
                           alignItems: 'flex-start'
                         }}
                       >
+                        {userRole === 'MANAGER' && (
+                          <button
+                            onClick={() => {
+                              openTranscript()
+                              setActiveMenuId(null)
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              background: 'none',
+                              border: 'none',
+                              borderRadius: '10px',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '14.5px',
+                              fontWeight: '600',
+                              color: 'var(--primary)',
+                              transition: 'background 0.2s',
+                              fontFamily: 'inherit',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                          >
+                            Chat Transcript
+                          </button>
+                        )}
+                        {userRole === 'MANAGER' && !isDM(selectedClass) && (
+                          <button
+                            onClick={() => {
+                              toggleCommunityStatus()
+                              setActiveMenuId(null)
+                            }}
+                            disabled={managingCommunity}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              background: 'none',
+                              border: 'none',
+                              borderRadius: '10px',
+                              textAlign: 'left',
+                              cursor: managingCommunity ? 'default' : 'pointer',
+                              fontSize: '14.5px',
+                              fontWeight: '600',
+                              color: selectedClass.isCommunityActive === false ? 'var(--success)' : 'var(--warning)',
+                              transition: 'background 0.2s',
+                              fontFamily: 'inherit',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                          >
+                            {selectedClass.isCommunityActive === false ? 'Enable Community' : 'Disable Community'}
+                          </button>
+                        )}
+                        {userRole === 'MANAGER' && isDM(selectedClass) && (
+                          <button
+                            onClick={async () => {
+                              if (managingCommunity) return
+                              const action = selectedClass.isDmDisabled ? 'enable' : 'disable'
+                              const allowed = await confirm({
+                                title: action === 'disable' ? 'Hide Chat from Student?' : 'Show Chat to Student?',
+                                message: action === 'disable'
+                                  ? 'This will hide the chat from the student. All messages are preserved and you can re-enable it anytime.'
+                                  : 'This will make the chat visible to the student again.',
+                                confirmLabel: action === 'disable' ? 'Hide Chat' : 'Show Chat',
+                                tone: action === 'disable' ? 'danger' : 'default',
+                              })
+                              if (!allowed) return
+                              setManagingCommunity(true)
+                              try {
+                                const chatId = selectedClass.id.replace('dm_', '')
+                                const res = await fetch('/api/community/direct/toggle', {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ chatId, action }),
+                                })
+                                if (!res.ok) throw new Error('Failed to toggle chat')
+                                await loadClasses(selectedClass.id)
+                              } catch (error) {
+                                console.error(error)
+                                alert(error instanceof Error ? error.message : 'Failed to toggle chat')
+                              } finally {
+                                setManagingCommunity(false)
+                                setActiveMenuId(null)
+                              }
+                            }}
+                            disabled={managingCommunity}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              background: 'none',
+                              border: 'none',
+                              borderRadius: '10px',
+                              textAlign: 'left',
+                              cursor: managingCommunity ? 'default' : 'pointer',
+                              fontSize: '14.5px',
+                              fontWeight: '600',
+                              color: selectedClass.isDmDisabled ? 'var(--success)' : 'var(--warning)',
+                              transition: 'background 0.2s',
+                              fontFamily: 'inherit',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                          >
+                            {selectedClass.isDmDisabled ? 'Show to Student' : 'Hide from Student'}
+                          </button>
+                        )}
+                        {userRole === 'MANAGER' && (
+                          <button
+                            onClick={() => {
+                              clearCommunityMessages()
+                              setActiveMenuId(null)
+                            }}
+                            disabled={managingCommunity || messages.length === 0}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              background: 'none',
+                              border: 'none',
+                              borderRadius: '10px',
+                              textAlign: 'left',
+                              cursor: (managingCommunity || messages.length === 0) ? 'default' : 'pointer',
+                              fontSize: '14.5px',
+                              fontWeight: '600',
+                              color: 'var(--danger)',
+                              transition: 'background 0.2s',
+                              fontFamily: 'inherit',
+                              opacity: (managingCommunity || messages.length === 0) ? 0.5 : 1,
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                          >
+                            Clear Chat History
+                          </button>
+                        )}
                         <button
                           onClick={(e) => handleMarkAsRead(e, selectedClass.id)}
                           style={{
@@ -2786,71 +3857,37 @@ export default function CommunityPage() {
                                   </span>
                                 )}
                               </div>
+
+                              {/* Reactions Floating Badge */}
+                              {(() => {
+                                let likesList: string[] = [];
+                                try { likesList = JSON.parse(msg.likes || '[]'); } catch(e){}
+                                let reactionsObj: Record<string, string[]> = {};
+                                try { reactionsObj = JSON.parse(msg.reactions || '{}'); } catch(e){}
+                                
+                                const totalLikes = likesList.length;
+                                const reactionKeys = Object.keys(reactionsObj).filter(k => reactionsObj[k].length > 0);
+                                
+                                if (totalLikes === 0 && reactionKeys.length === 0) return null;
+                                
+                                return (
+                                  <div style={{
+                                    position: 'absolute', bottom: '-10px', [isMe ? 'left' : 'right']: '12px',
+                                    background: 'var(--surface)', border: '1px solid var(--border)',
+                                    borderRadius: '50px', padding: '2px 6px', display: 'flex', gap: '3px',
+                                    alignItems: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.08)',
+                                    zIndex: 2, pointerEvents: 'auto', fontSize: '10px'
+                                  }}>
+                                    {totalLikes > 0 && <span>👍</span>}
+                                    {reactionKeys.map(k => <span key={k}>{k}</span>)}
+                                    <span style={{ fontWeight: '800', color: 'var(--text-secondary)', marginLeft: '2px' }}>
+                                      {totalLikes + reactionKeys.reduce((acc, k) => acc + reactionsObj[k].length, 0)}
+                                    </span>
+                                  </div>
+                                );
+                              })()}
                               </div>
                             </SwipeableMessage>
-                          {/* Hover Reactions Flyout + Like/Reply Actions bar below bubble */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '6px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                            
-                            {/* Like / Reaction Hover Container */}
-                            <div style={{ position: 'relative' }} className="like-btn-container">
-                              <button
-                                onClick={() => {
-                                  // Trigger generic like
-                                  fetch(`/api/community/${selectedClass.id}/messages/${msg.id}/pin`, { method: 'POST', body: JSON.stringify({ action: 'like' }) }).catch(console.error)
-                                }}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
-                              >
-                                <span>👍</span> Like
-                              </button>
-                              
-                              {/* Hover reactions panel */}
-                              <div className="reactions-hover-panel" style={{
-                                position: 'absolute', bottom: '20px', left: 0,
-                                background: 'var(--sidebar-bg)', borderRadius: '24px',
-                                border: '1px solid var(--border)', display: 'none',
-                                gap: '6px', padding: '6px 10px', boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
-                                zIndex: 10,
-                              }}>
-                                {['👍', '❤️', '😄', '😲'].map(emoji => (
-                                  <button
-                                    key={emoji}
-                                    onClick={() => {
-                                      // Trigger custom reaction
-                                      fetch(`/api/community/${selectedClass.id}/messages/${msg.id}/pin`, { method: 'POST', body: JSON.stringify({ action: 'react', reaction: emoji }) }).catch(console.error)
-                                    }}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '15px', padding: '2px', transition: 'transform 0.1s' }}
-                                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.3)'}
-                                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                                  >
-                                    {emoji}
-                                  </button>
-                                ))}
-                              </div>
-                              <style>{`
-                                .like-btn-container:hover .reactions-hover-panel {
-                                  display: flex !important;
-                                }
-                              `}</style>
-                            </div>
-
-                            <button
-                              onClick={() => setReplyingTo(msg)}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
-                            >
-                              <span>💬</span> Reply
-                            </button>
-
-                            {/* Message actions (delete/edit) for manager */}
-                            {(userRole === 'MANAGER' || isMe) && !msg.isDeleted && !msg.id.startsWith('temp-') && (
-                              <button
-                                onClick={() => deleteMessage(msg.id)}
-                                disabled={deletingId === msg.id}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: '11px', fontWeight: '800' }}
-                              >
-                                Delete
-                              </button>
-                            )}
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -2910,17 +3947,26 @@ export default function CommunityPage() {
                 </div>
               )}
 
-              {/* Image preview */}
+              {/* Image/File preview */}
               {pendingImagePreview && (
                 <div style={{ 
                   marginBottom: '10px', position: 'relative', display: 'inline-flex', 
-                  alignItems: 'flex-end', gap: '8px', padding: '10px 14px', 
-                  borderRadius: '16px', background: 'var(--primary-light)', 
-                  border: '2px solid #3636e830',
-                  boxShadow: '0 4px 12px rgba(54,54,232,0.1)',
+                  alignItems: 'center', gap: '8px', padding: '10px 14px', 
+                  borderRadius: '16px', background: 'var(--surface-2)', 
+                  border: '1.5px solid var(--border)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                 }}>
-                  <img src={pendingImagePreview} alt="Preview" style={{ maxHeight: '100px', maxWidth: '200px', borderRadius: '10px', objectFit: 'cover' }} />
-                  <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '600' }}>📎 Ready to send</div>
+                  {pendingImagePreview.startsWith('blob:') ? (
+                    <img src={pendingImagePreview} alt="Preview" style={{ maxHeight: '100px', maxWidth: '200px', borderRadius: '10px', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)', paddingRight: '20px' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                      </svg>
+                      <span>{pendingImagePreview}</span>
+                    </div>
+                  )}
                   <button
                     onClick={clearPendingImage}
                     style={{
@@ -2929,6 +3975,7 @@ export default function CommunityPage() {
                       background: 'var(--danger)', color: '#fff', border: '2px solid var(--border)',
                       cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 8px rgba(239,68,68,0.3)',
+                      zIndex: 10
                     }}
                   >✕</button>
                 </div>
@@ -2986,12 +4033,19 @@ export default function CommunityPage() {
                   );
                 }
                 return (
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', width: '100%' }}>
+                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center', width: '100%' }}>
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
                       ref={imageInputRef}
                       onChange={handleImageSelect}
+                      style={{ display: 'none' }}
+                    />
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
                       style={{ display: 'none' }}
                     />
                     <button
@@ -3001,10 +4055,10 @@ export default function CommunityPage() {
                       style={{
                         width: '40px', height: '40px', borderRadius: '50%', border: 'none',
                         cursor: editingMessage ? 'default' : 'pointer', flexShrink: 0,
-                        background: (pendingImage && !editingMessage) ? 'var(--primary-light)' : 'var(--surface-2)',
+                        background: (pendingImage && !editingMessage && pendingImagePreview?.startsWith('blob:')) ? 'var(--primary-light)' : 'var(--surface-2)',
                         boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: (pendingImage && !editingMessage) ? 'var(--primary)' : 'var(--text-muted)',
+                        color: (pendingImage && !editingMessage && pendingImagePreview?.startsWith('blob:')) ? 'var(--primary)' : 'var(--text-muted)',
                         transition: 'all 0.2s',
                         opacity: editingMessage ? 0.5 : 1,
                       }}
@@ -3013,6 +4067,36 @@ export default function CommunityPage() {
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                         <circle cx="8.5" cy="8.5" r="1.5"/>
                         <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const allowed = await confirm({
+                          title: 'Upload Document Guidelines',
+                          message: 'Maximum allowed file size is 20 MB only max. Supported formats: PDF, PPT, DOCX, ZIP, XLS.',
+                          confirmLabel: 'Select File',
+                          cancelLabel: 'Cancel',
+                          tone: 'default'
+                        });
+                        if (allowed) {
+                          fileInputRef.current?.click();
+                        }
+                      }}
+                      disabled={uploadingImage || !!editingMessage}
+                      title="Attach document"
+                      style={{
+                        width: '40px', height: '40px', borderRadius: '50%', border: 'none',
+                        cursor: editingMessage ? 'default' : 'pointer', flexShrink: 0,
+                        background: (pendingImage && !editingMessage && !pendingImagePreview?.startsWith('blob:')) ? 'var(--primary-light)' : 'var(--surface-2)',
+                        boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: (pendingImage && !editingMessage && !pendingImagePreview?.startsWith('blob:')) ? 'var(--primary)' : 'var(--text-muted)',
+                        transition: 'all 0.2s',
+                        opacity: editingMessage ? 0.5 : 1,
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                       </svg>
                     </button>
                     <div style={{ flex: 1, position: 'relative' }}>
@@ -3362,6 +4446,156 @@ export default function CommunityPage() {
                 Our goal is not to restrict conversation. It's to keep the Community safe, useful, and welcoming for everyone.
               </blockquote>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Uploading Progress Modal Overlay */}
+      {uploadProgress !== null && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 9999, padding: '20px'
+        }}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: '24px',
+            border: '1px solid var(--border)', width: '100%', maxWidth: '400px',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.4)', padding: '28px',
+            display: 'flex', flexDirection: 'column', gap: '20px',
+            alignItems: 'center', textAlign: 'center'
+          }}>
+            <div style={{
+              width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(54,54,232,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)',
+              marginBottom: '4px'
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin" style={{ animation: 'spin 1.5s linear infinite' }}>
+                <line x1="12" y1="2" x2="12" y2="6"/>
+                <line x1="12" y1="18" x2="12" y2="22"/>
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                <line x1="2" y1="12" x2="6" y2="12"/>
+                <line x1="18" y1="12" x2="22" y2="12"/>
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+              </svg>
+              <style>{`
+                @keyframes spin {
+                  from { transform: rotate(0deg); }
+                  to { transform: rotate(360deg); }
+                }
+              `}</style>
+            </div>
+            
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: '800', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>Uploading Attachment</h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', wordBreak: 'break-all', margin: 0 }}>{uploadFileName || 'file'}</p>
+            </div>
+
+            {/* Progress Bar Container */}
+            <div style={{ width: '100%', background: 'var(--surface-2)', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+              <div style={{ width: `${uploadProgress}%`, background: 'var(--primary)', height: '100%', borderRadius: '4px', transition: 'width 0.15s ease-out' }} />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '13px', fontWeight: '750', color: 'var(--text-secondary)' }}>
+              <span>{uploadProgress}% Complete</span>
+              <span>20 MB max limit</span>
+            </div>
+
+            <div style={{ fontSize: '12px', color: 'var(--warning)', fontWeight: '600', background: 'rgba(245,158,11,0.06)', padding: '10px 14px', borderRadius: '10px', lineHeight: '1.4' }}>
+              ⚠️ Please stay on this page. Navigating away or closing it will cancel the upload process.
+            </div>
+
+            <button
+              onClick={() => {
+                if (abortControllerRef.current) {
+                  abortControllerRef.current.abort()
+                }
+              }}
+              style={{
+                width: '100%', padding: '12px 0', borderRadius: '12px', border: 'none',
+                background: 'var(--danger-light)', color: 'var(--danger)', fontWeight: '800',
+                fontSize: '13px', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--danger-light)'}
+            >
+              Cancel Upload
+            </button>
+          </div>
+        </div>
+      )}
+
+      {rulesOpen && (
+        <div
+          onClick={() => setRulesOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', zIndex: 1000, padding: '20px'
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--surface)', borderRadius: '24px',
+              border: '1px solid var(--border)', width: '100%', maxWidth: '500px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.3)', padding: '24px',
+              display: 'flex', flexDirection: 'column', gap: '20px',
+              color: 'var(--text-primary)', fontFamily: 'inherit'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0 }}>System Rules & Limits</h3>
+              <button
+                onClick={() => setRulesOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: '20px', color: 'var(--text-muted)', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13.5px', lineHeight: '1.5' }}>
+              <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                Here is a summary of all active limits and restrictions applied to student users:
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-2)', borderRadius: '10px' }}>
+                  <span style={{ fontWeight: '700' }}>Post Daily Limit</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: '800' }}>15 posts/day</span>
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-2)', borderRadius: '10px' }}>
+                  <span style={{ fontWeight: '700' }}>Upload Size Limit</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: '800' }}>20 MB max</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-2)', borderRadius: '10px' }}>
+                  <span style={{ fontWeight: '700' }}>File Limit per Message</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: '800' }}>1 file/message</span>
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-2)', borderRadius: '10px' }}>
+                  <span style={{ fontWeight: '700' }}>General Post Length</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: '800' }}>500 chars max</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-2)', borderRadius: '10px' }}>
+                  <span style={{ fontWeight: '700' }}>Comment Reply Length</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: '800' }}>300 chars max</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-2)', borderRadius: '10px' }}>
+                  <span style={{ fontWeight: '700' }}>Course Chat Length</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: '800' }}>1000 chars max</span>
+                </div>
+              </div>
+
+              <div style={{ background: 'rgba(54,54,232,0.06)', borderLeft: '3px solid var(--primary)', padding: '10px 14px', borderRadius: '6px', fontSize: '12px', color: 'var(--text-secondary)', marginTop: '6px' }}>
+                <strong>Manager Override:</strong> Manager and Admin roles have completely unrestricted posting frequencies, unlimited file transmissions, and full message editing/deletion capabilities.
+              </div>
             </div>
           </div>
         </div>

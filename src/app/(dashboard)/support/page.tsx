@@ -607,12 +607,65 @@ export default function SupportPage() {
   }
 
   async function uploadImage(file: File): Promise<string> {
-    const formData = new FormData()
-    formData.append('file', file)
-    const res = await fetch('/api/upload/chat-image', { method: 'POST', body: formData })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Upload failed')
-    return data.url
+    return new Promise((resolve, reject) => {
+      const token = Math.random().toString()
+      window.dispatchEvent(new CustomEvent('app-upload-start', { detail: { fileName: file.name, token } }))
+
+      const xhr = new XMLHttpRequest()
+      
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const pct = Math.round((event.loaded / event.total) * 100)
+          window.dispatchEvent(new CustomEvent('app-upload-progress', { detail: { pct } }))
+        }
+      }
+      
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const res = JSON.parse(xhr.responseText)
+            window.dispatchEvent(new CustomEvent('app-upload-complete'))
+            resolve(res.url)
+          } catch (e) {
+            window.dispatchEvent(new CustomEvent('app-upload-error'))
+            reject(new Error('Invalid response format'))
+          }
+        } else {
+          try {
+            const res = JSON.parse(xhr.responseText)
+            window.dispatchEvent(new CustomEvent('app-upload-error'))
+            reject(new Error(res.error || 'Upload failed'))
+          } catch (e) {
+            window.dispatchEvent(new CustomEvent('app-upload-error'))
+            reject(new Error(`Upload failed with status ${xhr.status}`))
+          }
+        }
+      }
+      
+      xhr.onerror = () => {
+        window.dispatchEvent(new CustomEvent('app-upload-error'))
+        reject(new Error('Network error'))
+      }
+      
+      xhr.onabort = () => {
+        window.dispatchEvent(new CustomEvent('app-upload-error'))
+        reject(new Error('Upload cancelled'))
+      }
+      
+      const handleCancel = (e: any) => {
+        if (e.detail?.token === token) {
+          xhr.abort()
+        }
+      }
+      window.addEventListener('app-upload-cancel', handleCancel)
+      
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'announcements')
+      
+      xhr.open('POST', '/api/upload/chat-image')
+      xhr.send(formData)
+    })
   }
 
   async function sendChatMsg() {

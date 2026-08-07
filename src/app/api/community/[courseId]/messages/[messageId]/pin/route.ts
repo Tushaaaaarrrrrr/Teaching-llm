@@ -19,19 +19,16 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Only managers can pin/unpin messages
-    if (session.role !== 'MANAGER') {
+    const body = await request.json().catch(() => ({}))
+    const { action, reaction } = body
+
+    if (!['pin', 'unpin', 'like', 'react'].includes(action)) {
+      return NextResponse.json({ error: 'Invalid action. Must be pin, unpin, like, or react' }, { status: 400 })
+    }
+
+    // Only managers/admins can pin/unpin messages
+    if (['pin', 'unpin'].includes(action) && session.role !== 'MANAGER' && session.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Only managers can pin or unpin messages' }, { status: 403 })
-    }
-
-    const { action } = await request.json().catch(() => ({}))
-    if (action !== 'pin' && action !== 'unpin') {
-      return NextResponse.json({ error: 'Invalid action. Must be pin or unpin' }, { status: 400 })
-    }
-
-    // Direct Messages do not support pinned messages
-    if (courseId.startsWith('dm_')) {
-      return NextResponse.json({ error: 'Pinned messages are not supported in direct chats' }, { status: 400 })
     }
 
     const message = await prisma.communityMessage.findUnique({
@@ -47,7 +44,7 @@ export async function POST(
     }
 
     if (message.isDeleted || message.isSystemDeleted) {
-      return NextResponse.json({ error: 'Cannot pin a deleted message' }, { status: 400 })
+      return NextResponse.json({ error: 'Cannot interact with a deleted message' }, { status: 400 })
     }
 
     if (action === 'pin') {
@@ -75,7 +72,7 @@ export async function POST(
 
       // Emit real-time SSE pin event
       sseEmitter.emit(`chat:${courseId}:pin`, { messageId })
-    } else {
+    } else if (action === 'unpin') {
       // Unpin the targeted message
       await prisma.communityMessage.update({
         where: { id: messageId },
@@ -94,6 +91,85 @@ export async function POST(
 
       // Emit real-time SSE pin event (null indicates no pinned message)
       sseEmitter.emit(`chat:${courseId}:pin`, { messageId: null })
+    } else if (action === 'like') {
+      let likes: string[] = []
+      try {
+        likes = JSON.parse(message.likes || '[]')
+        if (!Array.isArray(likes)) likes = []
+      } catch (e) {
+        likes = []
+      }
+
+      if (likes.includes(session.userId)) {
+        likes = likes.filter(id => id !== session.userId)
+      } else {
+        likes.push(session.userId)
+      }
+
+      const updated = await prisma.communityMessage.update({
+        where: { id: messageId },
+        data: { likes: JSON.stringify(likes) },
+        include: {
+          sender: { select: { id: true, name: true, role: true } },
+          replyTo: {
+            include: {
+              sender: { select: { id: true, name: true } }
+            }
+          }
+        }
+      })
+
+      // Emit real-time SSE update event
+      sseEmitter.emit(`chat:${courseId}:update`, updated)
+    } else if (action === 'react') {
+      if (!reaction || typeof reaction !== 'string') {
+        return NextResponse.json({ error: 'Missing reaction emoji' }, { status: 400 })
+      }
+
+      let reactions: Record<string, string[]> = {}
+      try {
+        reactions = JSON.parse(message.reactions || '{}')
+        if (typeof reactions !== 'object' || reactions === null) reactions = {}
+      } catch (e) {
+        reactions = {}
+      }
+
+      if (!reactions[reaction]) {
+        reactions[reaction] = []
+      }
+
+      if (reactions[reaction].includes(session.userId)) {
+        reactions[reaction] = reactions[reaction].filter(id => id !== session.userId)
+      } else {
+        // Toggle off from other reactions first, or allow multiple? Let's toggle off from other emojis to prevent reaction spamming
+        Object.keys(reactions).forEach(emoji => {
+          reactions[emoji] = (reactions[emoji] || []).filter(id => id !== session.userId)
+        })
+        reactions[reaction].push(session.userId)
+      }
+
+      // Cleanup empty reaction categories
+      Object.keys(reactions).forEach(emoji => {
+        if (reactions[emoji].length === 0) {
+          delete reactions[emoji]
+        }
+      })
+
+      const updated = await prisma.communityMessage.update({
+        where: { id: messageId },
+        data: { reactions: JSON.stringify(reactions) },
+        include: {
+          sender: { select: { id: true, name: true, role: true } },
+          replyTo: {
+            include: {
+              sender: { select: { id: true, name: true } }
+            }
+          }
+        }
+      })
+
+      // Emit real-time SSE update event
+      sseEmitter.emit(`chat:${courseId}:update`, updated)
     }
 
     return NextResponse.json({ success: true })

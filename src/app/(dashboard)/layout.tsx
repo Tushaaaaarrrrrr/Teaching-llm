@@ -12,6 +12,7 @@ import DynamicPromptBlocker from '@/components/DynamicPromptBlocker'
 import UserJourneyTracker from '@/components/UserJourneyTracker'
 import PushNotificationSetup from '@/components/PushNotificationSetup'
 import { UserDataProvider } from '@/components/UserDataProvider'
+import GlobalUploadProgressModal from '@/components/GlobalUploadProgressModal'
 
 
 export default async function DashboardLayout({
@@ -59,11 +60,11 @@ export default async function DashboardLayout({
           <SupportFloatingButton />
           <MobileBottomNav />
         </div>
-        <UpdateOverlay />
+         <UpdateOverlay />
         <DynamicPromptBlocker />
         <UserJourneyTracker enableDetailedLogs={session.enableDetailedLogs} />
         <PushNotificationSetup />
-
+        <GlobalUploadProgressModal />
       </div>
     </UserDataProvider>
   )
