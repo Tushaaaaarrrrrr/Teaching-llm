@@ -500,6 +500,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             textTransform: 'uppercase',
             opacity: 0.8,
             fontFamily: "'Outfit', 'Nunito', sans-serif",
+            marginBottom: '24px',
           }}>
             {currentUserRole} Portal
           </div>
