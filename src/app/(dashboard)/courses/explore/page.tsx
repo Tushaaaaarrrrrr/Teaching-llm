@@ -952,7 +952,7 @@ export default function ExploreCoursesPage() {
         <div style={{ padding: '20px 0' }}>
           <h2 style={{ fontSize: '24px', fontWeight: '950', textAlign: 'center', marginBottom: '8px' }}>Select Level</h2>
           <p style={{ fontSize: '15px', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '32px' }}>Choose a level to explore available courses</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
             {visibleCategories.map(cat => {
               const courseCount = activeOfferings.filter((o: any) => (o.category || 'General') === cat).length;
               const bundleCount = activeBundles.filter((b: any) => (b.category || 'General') === cat).length;
@@ -1180,7 +1180,7 @@ export default function ExploreCoursesPage() {
         <div style={{ padding: '20px 0' }}>
           <h2 style={{ fontSize: '24px', fontWeight: '950', textAlign: 'center', marginBottom: '8px' }}>Select Level</h2>
           <p style={{ fontSize: '15px', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '32px' }}>Choose a level to explore available study notes</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
             {visibleNotesCategories.map(cat => {
               const notesCount = activeNotes.filter((n: any) => (n.category || 'General') === cat).length;
               return (
@@ -1581,7 +1581,7 @@ export default function ExploreCoursesPage() {
         <div style={{ padding: '20px 0' }}>
           <h2 style={{ fontSize: '24px', fontWeight: '950', textAlign: 'center', marginBottom: '8px' }}>Select Level</h2>
           <p style={{ fontSize: '15px', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '32px' }}>Choose a level to explore available test series</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
             {visibleTestSeriesCategories.map(cat => {
               const tsCount = activeTestSeries.filter((ts: any) => (ts.category || 'General') === cat).length;
               return (

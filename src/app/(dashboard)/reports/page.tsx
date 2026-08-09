@@ -111,7 +111,7 @@ export default function ReportsPage() {
   // Show UI Loading skeleton
   if (loading && !data) {
     return (
-      <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ padding: '40px' }}>
         <div style={{ height: '40px', width: '200px', background: 'var(--surface-2)', borderRadius: '12px', marginBottom: '24px', animation: 'pulse 1.5s infinite' }} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' }}>
           {[1, 2, 3].map(i => (
@@ -179,7 +179,7 @@ export default function ReportsPage() {
     : 0
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', color: 'var(--text-primary)' }}>
+    <div style={{ padding: '40px', color: 'var(--text-primary)' }}>
       
       {/* ==================== 1. TOP ACTION BAR ==================== */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>

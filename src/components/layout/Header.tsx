@@ -364,7 +364,6 @@ export default function Header({ userName, userRole }: HeaderProps) {
       padding: '0 24px',
     }} className={`dashboard-header ${!isHomePage ? 'mobile-hide-header' : ''}`}>
       <div style={{
-        maxWidth: '1400px',
         width: '100%',
         height: '100%',
         display: 'flex',

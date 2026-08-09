@@ -201,7 +201,7 @@ export default function TestSeriesDetailPage({ params }: { params: { id: string 
   }
 
   return (
-    <div style={{ padding: '32px 48px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '32px 48px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <button onClick={() => router.push('/exams')} style={{ width: '45px', height: '45px', borderRadius: '50%', background: 'var(--surface)', border: 'none', boxShadow: '4px 4px 10px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)' }}>

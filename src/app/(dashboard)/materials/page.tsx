@@ -11,7 +11,6 @@ export default function StudyMaterialsLandingPage() {
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
         gap: '24px',
-        maxWidth: '900px'
       }}>
         {/* Recordings Card */}
         <Link href="/materials/recordings" style={{ textDecoration: 'none' }}>

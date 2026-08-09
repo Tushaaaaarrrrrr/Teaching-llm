@@ -728,8 +728,8 @@ export default function CourseDetailPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative' }}>
-            <div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', position: 'relative' }}>
+            <div style={{ flex: '1 1 320px', minWidth: 0 }}>
               <Link href="/courses" style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                 color: getCourseSecondaryTextColor(course.color), fontSize: '13px', marginBottom: '12px', textDecoration: 'none',
@@ -838,6 +838,7 @@ export default function CourseDetailPage() {
                     color: getCourseBadgeText(course.color), padding: '8px 16px', borderRadius: '20px',
                     fontSize: '13px', fontWeight: '500', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: '6px', backdropFilter: 'blur(4px)',
+                    flexShrink: 0,
                     transition: 'all 0.15s',
                   }}
                 >
@@ -866,6 +867,7 @@ export default function CourseDetailPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: 'wrap',
             gap: '20px',
             boxShadow: '0 4px 15px rgba(245, 158, 11, 0.1)',
           }}
@@ -964,6 +966,24 @@ export default function CourseDetailPage() {
           border-color: color-mix(in srgb, var(--danger) 74%, transparent) !important;
           color: var(--danger) !important;
         }
+        .course-content-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+          min-width: 0;
+        }
+        @container (max-width: 935px) {
+          .course-content-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+        @supports not (container-type: inline-size) {
+          @media (max-width: 1100px) {
+            .course-content-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+        }
       `}} />
 
       {/* Tab Navigation and Search/Filter Bar */}
@@ -978,7 +998,7 @@ export default function CourseDetailPage() {
         paddingBottom: '0px'
       }}>
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: '32px' }}>
+        <div style={{ display: 'flex', gap: '32px', rowGap: 0, flexWrap: 'wrap', flex: '1 1 420px', minWidth: 0 }}>
           {(['lectures', 'materials', 'community', 'help', 'about'] as const).map(tab => {
             const isActive = tab !== 'community' && activeSectionTab === tab;
             return (
@@ -1019,8 +1039,8 @@ export default function CourseDetailPage() {
 
         {/* Search and Sort (only visible for Lectures/Materials tabs) */}
         {activeSectionTab !== 'about' && (
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', flex: isNative ? 1 : 'none', minWidth: isNative ? '100%' : '360px', justifyContent: 'flex-end', paddingBottom: '8px' }}>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1, maxWidth: '240px' }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', flex: isNative ? 1 : '1 1 360px', minWidth: isNative ? '100%' : 'min(100%, 360px)', justifyContent: 'flex-end', paddingBottom: '8px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: '1 1 220px', minWidth: '180px', maxWidth: '320px' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2.5" style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }}>
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
@@ -1171,7 +1191,7 @@ export default function CourseDetailPage() {
           }
 
           return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', containerType: 'inline-size' }}>
               {filteredTopics.map((topic, topicIdx) => {
                 const hasNewContent = ((topic as any).createdAt && new Date().getTime() - new Date((topic as any).createdAt).getTime() < 24 * 60 * 60 * 1000) ||
                   topic.content?.some((item: any) => item.createdAt && new Date().getTime() - new Date(item.createdAt).getTime() < 24 * 60 * 60 * 1000);
@@ -1222,7 +1242,7 @@ export default function CourseDetailPage() {
 	                      <button
 	                        onClick={() => toggleTopic(topic.id)}
 	                        style={{
-	                          flex: 1, minHeight: '62px', padding: '8px 20px 8px 24px', background: 'transparent', border: 'none',
+                          flex: 1, minWidth: 0, minHeight: '62px', padding: '8px 20px 8px 24px', background: 'transparent', border: 'none',
 	                          display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer',
 	                          textAlign: 'left',
 	                        }}
@@ -1279,11 +1299,7 @@ export default function CourseDetailPage() {
 	                    {/* Topic Accordion Content */}
 	                    {expandedTopics.has(topic.id) && (
 	                      <div style={{ padding: '0', minHeight: '60px' }}>
-                        <div style={{
-                          display: 'grid',
-                          gridTemplateColumns: isNative ? '1fr' : '1fr 1fr',
-                          gap: '16px',
-                        }}>
+                        <div className="course-content-grid" style={isNative ? { gridTemplateColumns: '1fr' } : undefined}>
                           {activeContent.map((item) => {
                             const isDocument = (!item.videoUrl && !item.youtubeUrl) || activeSectionTab === 'materials';
                             const isVideo = !isDocument;
@@ -1694,10 +1710,8 @@ export default function CourseDetailPage() {
                         {/* Blurred Locked Content */}
                         {lockedContent.length > 0 && (
                           <div style={{ position: 'relative', marginTop: activeContent.length > 0 ? '20px' : '0' }}>
-                            <div style={{
-                              display: 'grid',
-                              gridTemplateColumns: isNative ? '1fr' : '1fr 1fr',
-                              gap: '16px',
+                            <div className="course-content-grid" style={{
+                              ...(isNative ? { gridTemplateColumns: '1fr' } : {}),
                               filter: 'blur(5px) grayscale(50%)',
                               opacity: 0.45,
                               pointerEvents: 'none',

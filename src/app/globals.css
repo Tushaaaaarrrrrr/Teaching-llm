@@ -439,11 +439,16 @@ img {
   color: var(--text-muted);
 }
 
-/* Page layout */
-.page-container {
+/* Shared dashboard page containers.
+   Portal pages should use the dashboard column width instead of a fixed
+   desktop cap; intentionally narrow forms/readers keep their own local caps. */
+.page-container,
+.dashboard-inner-page,
+.announcements-page-container {
   padding: 24px;
-  max-width: 1400px;
+  max-width: none;
   width: 100%;
+  min-width: 0;
   margin: 0;
   overflow-x: hidden;
 }
@@ -1663,6 +1668,133 @@ tr:hover td {
   position: absolute;
   bottom: 24px;
   right: 32px;
+}
+
+/* Tablet portrait login layout: use the desktop auth flow, but reflow the
+   composition when the two-panel desktop artwork no longer fits comfortably. */
+@media (min-width: 768px) and (max-width: 1100px) and (orientation: portrait) {
+  .login-container {
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow: hidden;
+    padding: clamp(40px, 6dvh, 76px) 32px 88px;
+    box-sizing: border-box;
+  }
+
+  .login-left-panel {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 520px;
+    padding: 0;
+    align-items: center;
+    justify-content: flex-start;
+    position: static;
+  }
+
+  .login-logo-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 0;
+  }
+
+  .login-logo-card {
+    width: min(100%, 320px) !important;
+    max-width: 320px !important;
+    min-height: 188px !important;
+    padding: 22px 22px 18px !important;
+    border-radius: 28px !important;
+  }
+
+  .login-logo-card img {
+    max-width: 252px !important;
+    max-height: 122px !important;
+  }
+
+  .login-logo-container p {
+    margin-top: 10px !important;
+  }
+
+  .login-geometric-composition {
+    display: none !important;
+  }
+
+  .desktop-only-footer-links {
+    display: none !important;
+  }
+
+  .login-right-panel {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 560px;
+    padding: clamp(24px, 3.6dvh, 42px) 0 0;
+    align-items: center;
+    justify-content: flex-start;
+    position: static;
+  }
+
+  .login-card-container {
+    width: min(100%, 500px) !important;
+    max-width: 500px !important;
+    padding: clamp(34px, 4.2dvh, 48px) 36px !important;
+    box-sizing: border-box;
+  }
+
+  .login-card-title {
+    font-size: clamp(28px, 4vw, 32px) !important;
+  }
+
+  .login-card-subtitle {
+    margin-bottom: clamp(22px, 3dvh, 30px) !important;
+  }
+
+  .login-terms-text {
+    white-space: normal !important;
+  }
+
+  .login-explore-btn {
+    padding: 13px 32px !important;
+  }
+
+  .login-right-footer-container {
+    position: fixed;
+    left: 24px;
+    right: 24px;
+    bottom: max(18px, env(safe-area-inset-bottom));
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  .login-right-footer-container > * {
+    pointer-events: auto;
+  }
+
+  .mobile-only-policies-container {
+    display: block !important;
+  }
+
+  .login-contact-developer {
+    position: static;
+    right: auto;
+    bottom: auto;
+  }
+
+  .login-right-footer-container .policies-dropdown-menu {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
 }
 
 /* Login Page Mobile Optimization (Declared after base styles to override correctly) */

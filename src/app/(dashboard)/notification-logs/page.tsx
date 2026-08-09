@@ -106,7 +106,7 @@ export default function NotificationLogsPage() {
   })
 
   return (
-    <div className="dashboard-inner-page" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'inherit' }}>
+    <div className="dashboard-inner-page" style={{ padding: '24px', fontFamily: 'inherit' }}>
       {/* Header */}
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
