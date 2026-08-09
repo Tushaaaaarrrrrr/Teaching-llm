@@ -355,7 +355,7 @@ export default function CommunityPage() {
   const [mobileForumOpen, setMobileForumOpen] = useState(false)
 
   const isDocumentAttachment = (file: File | null) => !!file && !file.type.startsWith('image/')
-  const isCapacitorGeneralOpen = isMobile && isCapacitor && mobileForumOpen
+  const isMobileGeneralOpen = isMobile && mobileForumOpen
   const selectedClassId = selectedClass?.id
 
   const handleUpgradeClick = async () => {
@@ -1583,7 +1583,7 @@ export default function CommunityPage() {
       ) : null}
 
       {/* Left: Class list */}
-      <div style={{ width: isMobile ? '100%' : '230px', flexShrink: 0, display: (isMobile && (selectedClass || isCapacitorGeneralOpen)) ? 'none' : 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '8px', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '4px 4px 16px' : '0' }}>
+      <div style={{ width: isMobile ? '100%' : '230px', flexShrink: 0, display: (isMobile && (selectedClass || isMobileGeneralOpen)) ? 'none' : 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '8px', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '4px 4px 16px' : '0' }}>
         {isMobile && (
           /* Premium Neumorphic Page Header */
           <div style={{
@@ -1653,20 +1653,19 @@ export default function CommunityPage() {
         {/* If Mobile, render grid (same as Capacitor app) */}
         {isMobile ? (
           <>
-            {isCapacitor && (
-              <section
-                style={{
-                  margin: '10px 2px 14px',
-                  padding: '16px',
-                  borderRadius: '22px',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  boxShadow: '0 14px 32px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.03)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '14px',
-                }}
-              >
+            <section
+              style={{
+                margin: '10px 2px 14px',
+                padding: '16px',
+                borderRadius: '22px',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                boxShadow: '0 14px 32px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.03)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+              }}
+            >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{
@@ -1750,8 +1749,7 @@ export default function CommunityPage() {
                     All Posts
                   </button>
                 </div>
-              </section>
-            )}
+            </section>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', padding: '10px 2px 24px', overflow: 'hidden' }}>
             {classes.filter(cls => !cls.isDirectChat).map((cls, idx) => {
               const style = getSubjectStyle(cls.name, idx)
@@ -2338,7 +2336,7 @@ export default function CommunityPage() {
         flex: 1, 
         borderRadius: isMobile ? '0' : '24px', 
         ...(isMobile ? {} : neu), 
-        display: (isMobile && !selectedClass && !isCapacitorGeneralOpen) ? 'none' : 'flex', 
+        display: (isMobile && !selectedClass && !isMobileGeneralOpen) ? 'none' : 'flex', 
         flexDirection: 'column', 
         overflow: 'hidden', 
         minWidth: 0,
@@ -2349,7 +2347,7 @@ export default function CommunityPage() {
             {/* Header */}
             <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {isCapacitorGeneralOpen && (
+                {isMobileGeneralOpen && (
                   <button
                     onClick={() => setMobileForumOpen(false)}
                     aria-label="Back to communities"
@@ -2398,7 +2396,7 @@ export default function CommunityPage() {
             {/* Feed Wall */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', background: 'var(--surface-2)' }}>
               {/* Composer Card */}
-              {(isCapacitor || classes.filter(c => !c.isDirectChat).length > 0) && (
+              {(isMobile || isCapacitor || classes.filter(c => !c.isDirectChat).length > 0) && (
                 <div style={{
                   background: 'var(--surface)', borderRadius: '20px', padding: '18px',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: '1px solid var(--border)',
