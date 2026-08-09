@@ -842,7 +842,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             <h3 style={{
               fontSize: '20px',
               fontWeight: '750',
-              color: 'var(--text-primary)',
+              color: '#ffffff',
               margin: '0 0 8px 0',
               fontFamily: "'Outfit', 'Nunito', sans-serif",
             }}>
@@ -851,7 +851,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             
             <p style={{
               fontSize: '14.5px',
-              color: 'var(--text-secondary)',
+              color: '#cbd5e1',
               margin: '0 0 24px 0',
               lineHeight: '1.45',
               fontWeight: '550',
@@ -870,8 +870,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   flex: 1,
                   padding: '11px 0',
                   borderRadius: '12px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: 'var(--text-secondary)',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  color: '#e2e8f0',
                   border: 'none',
                   cursor: 'pointer',
                   fontWeight: '700',
@@ -879,8 +879,8 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                   fontFamily: 'inherit',
                   transition: 'all 0.15s ease',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)' }}
               >
                 Cancel
               </button>

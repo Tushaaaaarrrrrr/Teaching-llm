@@ -54,7 +54,7 @@ export default async function DashboardLayout({
         />
         <div className="dashboard-main-container">
           <Header userName={session.name} userRole={session.role} />
-          <main style={{ flex: 1, overflow: 'auto' }}>
+          <main className="dashboard-scroll-region">
             {children}
           </main>
           <SupportFloatingButton />
@@ -69,4 +69,3 @@ export default async function DashboardLayout({
     </UserDataProvider>
   )
 }
-

@@ -1170,6 +1170,30 @@ tr:hover td {
               max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.dashboard-header {
+  flex-shrink: 0;
+}
+
+.dashboard-scroll-region {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .dashboard-main-container:has(.dashboard-header.mobile-hide-header) > .dashboard-header {
+    position: relative !important;
+    top: auto !important;
+  }
+
+  .dashboard-main-container:has(.dashboard-header.mobile-hide-header) > .dashboard-scroll-region {
+    overscroll-behavior-y: contain;
+  }
+}
+
 .dashboard-main-container main > .page-container:not(.dashboard-home-page),
 .dashboard-main-container main > .announcements-page-container,
 .dashboard-main-container main > .dashboard-inner-page {

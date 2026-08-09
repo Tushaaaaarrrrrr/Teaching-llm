@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import useSWR from 'swr'
@@ -9,6 +9,7 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export default function SupportFloatingButton() {
   const pathname = usePathname()
+  const [isNativeApp, setIsNativeApp] = useState<boolean | null>(null)
   const { data } = useSWR('/api/auth/me', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
@@ -16,6 +17,34 @@ export default function SupportFloatingButton() {
   const userRole = data?.user?.role || data?.role || ''
   
   const [isHovered, setIsHovered] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    ;(async () => {
+      const nativeFromWindow = !!(
+        document.documentElement.classList.contains('is-native') ||
+        (window as any).Capacitor?.isNativePlatform?.() ||
+        (window as any).Capacitor?.isNative
+      )
+
+      if (nativeFromWindow) {
+        if (mounted) setIsNativeApp(true)
+        return
+      }
+
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (mounted) setIsNativeApp(Capacitor.isNativePlatform())
+      } catch {
+        if (mounted) setIsNativeApp(false)
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   // Visibility Rules:
   // Hide on: Profile, Settings, Exam pages, Lecture pages (recordings), Support tab, Community section,
@@ -36,7 +65,7 @@ export default function SupportFloatingButton() {
 
   const isHidden = hiddenPaths.some(path => pathname === path || pathname.startsWith(path + '/'))
 
-  if (isHidden || userRole === 'MANAGER') return null
+  if (isNativeApp !== false || isHidden || userRole === 'MANAGER') return null
 
   return (
     <div

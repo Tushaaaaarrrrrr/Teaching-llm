@@ -628,6 +628,9 @@ export default function CommunityPage() {
           ? data.classes
           : []
       setClasses(list)
+      if (preferredId && !list.some((item: ClassItem) => item.id === preferredId)) {
+        setLoadError(preferredId.startsWith('dm_') ? 'Direct message not available' : 'Community not available for this course')
+      }
       setSelectedClass(current => {
         const nextId = preferredId || current?.id
         const match = nextId ? list.find((item: ClassItem) => item.id === nextId) : null
@@ -1696,7 +1699,7 @@ export default function CommunityPage() {
             background: 'var(--danger-light)',
           }}
         >
-          Failed to load community data. {loadError}
+          {loadError}
         </div>
       ) : null}
 

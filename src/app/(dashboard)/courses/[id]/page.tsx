@@ -17,6 +17,8 @@ interface ContentItem {
   youtubeUrl?: string
   pptUrl?: string
   order: number
+  createdAt?: string
+  duration?: string | null
 }
 
 interface Topic {
@@ -34,6 +36,12 @@ interface CourseDetail {
   color: string
   expiresAt?: string
   teacherName: string
+  aboutUs?: string | null
+  startDate?: string | null
+  endDate?: string | null
+  isCommunityActive?: boolean
+  isDisabled?: boolean
+  isEffectivelyDisabled?: boolean
   enrollmentType?: 'LIVE' | 'RECORDED' | 'DEMO' | 'FREE' | null
   liveUpgradePrice?: number | null
   instructorAssignments?: { instructor: { id: string; name: string } }[]
@@ -96,6 +104,10 @@ export default function CourseDetailPage() {
   const [showUnenrollThanksModal, setShowUnenrollThanksModal] = useState(false)
   const [showUnenrollFeedbackModal, setShowUnenrollFeedbackModal] = useState(false)
   const [showForcedFeedback, setShowForcedFeedback] = useState(false)
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false)
+  const [activeSectionTab, setActiveSectionTab] = useState<'lectures' | 'materials' | 'about'>('lectures')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'latest' | 'oldest'>('latest')
 
   const fetchData = useCallback(async () => {
     try {
@@ -285,6 +297,15 @@ export default function CourseDetailPage() {
       else next.add(id)
       return next
     })
+  }
+
+  const openCourseCommunity = () => {
+    if (!course?.id || course.isCommunityActive === false || course.isEffectivelyDisabled) {
+      alert('Community not available for this course')
+      return
+    }
+
+    router.push(`/community?course=${encodeURIComponent(course.id)}`)
   }
   
   const handleUnenrollDemo = async () => {
@@ -541,6 +562,35 @@ export default function CourseDetailPage() {
 
   const isManager = ['MANAGER', 'ADMIN'].includes(role)
   const canManage = isManager
+
+  const getFilteredTopics = () => {
+    return topics.map(topic => {
+      let filteredContent = [...(topic.content || [])]
+
+      if (activeSectionTab === 'materials') {
+        filteredContent = filteredContent.filter(item => !!item.pptUrl)
+      }
+
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase()
+        filteredContent = filteredContent.filter(item => 
+          (item.title || '').toLowerCase().includes(query) || 
+          (item.description || '').toLowerCase().includes(query)
+        )
+      }
+
+      filteredContent.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime()
+        const dateB = new Date(b.createdAt || 0).getTime()
+        return sortBy === 'latest' ? dateB - dateA : dateA - dateB
+      })
+
+      return {
+        ...topic,
+        content: filteredContent
+      }
+    }).filter(topic => topic.content.length > 0)
+  }
 
   const isCourseExpired = course.expiresAt && new Date(course.expiresAt).getTime() < new Date().getTime();
   const isDemoExpired = !isManager && course.enrollmentType === 'DEMO' && Number((course as any).demoExpiryDays || 0) > 0 && (() => {
@@ -850,397 +900,804 @@ export default function CourseDetailPage() {
           </Link>
         </div>
       )}
+      {/* Dynamic inline styles for desktop interactions */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .lecture-card {
+          transition: all 0.2s ease-in-out;
+        }
+        .lecture-card:hover {
+          transform: translateY(-1.5px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+          border-color: ${extractHex(course.color)} !important;
+        }
+        .search-input-hover {
+          transition: all 0.15s ease-in-out;
+        }
+        .search-input-hover:focus, .search-input-hover:hover {
+          border-color: ${extractHex(course.color)} !important;
+          background: var(--surface) !important;
+          outline: none;
+        }
+        .btn-watch-hover {
+          transition: all 0.15s ease-in-out;
+        }
+        .btn-watch-hover:hover {
+          background: ${extractHex(course.color)}dd !important;
+          transform: translateY(-1px);
+        }
+        .btn-watch-hover:active {
+          transform: translateY(0) scale(0.98);
+        }
+        .btn-notes-hover {
+          transition: all 0.15s ease-in-out;
+        }
+        .btn-notes-hover:hover {
+          background: rgba(74, 85, 104, 0.04) !important;
+          border-color: ${extractHex(course.color)} !important;
+          transform: translateY(-1px);
+        }
+        .btn-notes-hover:active {
+          transform: translateY(0) scale(0.98);
+        }
+        .btn-progress-hover {
+          transition: all 0.15s ease-in-out;
+        }
+        .btn-progress-hover:hover {
+          transform: translateY(-1px);
+          filter: brightness(0.96);
+        }
+        .btn-progress-hover:active {
+          transform: translateY(0) scale(0.98);
+        }
+        .tab-underline-hover {
+          transition: all 0.2s ease-in-out;
+        }
+        .tab-underline-hover:hover {
+          color: ${extractHex(course.color)} !important;
+          opacity: 0.85;
+        }
+      `}} />
 
-      {/* Topics + Content */}
-      {topics.length === 0 ? (
-        <div className="card empty-state" style={{ padding: '48px' }}>
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" style={{ marginBottom: '12px' }}>
-            <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
-          </svg>
-          <p style={{ fontSize: '15px', fontWeight: '500', marginBottom: '4px' }}>No content yet</p>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-            {isManager ? 'Go to Manage Course to add topics and lectures.' : 'Content will appear here once the teacher adds it.'}
-          </p>
-          {isManager && (
-            <button onClick={() => router.push(`/courses/${params.id}/edit`)} className="btn btn-primary" style={{ marginTop: '16px' }}>
-              Add Content
-            </button>
+      {/* Tab Navigation and Search/Filter Bar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '16px',
+        marginBottom: '24px',
+        borderBottom: '1px solid var(--border)',
+        paddingBottom: '0px'
+      }}>
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '32px' }}>
+          {(['lectures', 'materials', 'community', 'about'] as const).map(tab => {
+            const isActive = tab !== 'community' && activeSectionTab === tab;
+            return (
+              <button
+                key={tab}
+                className="tab-underline-hover"
+                onClick={() => {
+                  if (tab === 'community') {
+                    openCourseCommunity()
+                    return
+                  }
+                  setActiveSectionTab(tab);
+                  setSearchQuery('');
+                }}
+                style={{
+                  padding: '12px 4px',
+                  fontSize: '15px',
+                  fontWeight: '700',
+                  border: 'none',
+                  background: 'none',
+                  color: isActive ? extractHex(course.color) : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  borderBottom: isActive ? `3px solid ${extractHex(course.color)}` : '3px solid transparent',
+                  marginBottom: '-1px',
+                  zIndex: 2,
+                }}
+              >
+                {tab === 'lectures' ? 'Lectures' : tab === 'materials' ? 'Materials' : tab === 'community' ? 'Community' : 'About Course'}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search and Sort (only visible for Lectures/Materials tabs) */}
+        {activeSectionTab !== 'about' && (
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', flex: isNative ? 1 : 'none', minWidth: isNative ? '100%' : '360px', justifyContent: 'flex-end', paddingBottom: '8px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1, maxWidth: '240px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2.5" style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }}>
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                type="text"
+                className="form-input search-input-hover"
+                placeholder="Search lecture..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{
+                  paddingLeft: '34px',
+                  borderRadius: '10px',
+                  height: '36px',
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  fontSize: '13px',
+                  width: '100%',
+                  boxShadow: 'none',
+                }}
+              />
+            </div>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2.5" style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }}>
+                <line x1="4" y1="21" x2="4" y2="14"/>
+                <line x1="4" y1="10" x2="4" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12" y2="3"/>
+                <line x1="20" y1="21" x2="20" y2="16"/>
+                <line x1="20" y1="12" x2="20" y2="3"/>
+                <line x1="1" y1="14" x2="7" y2="14"/>
+                <line x1="9" y1="8" x2="15" y2="8"/>
+                <line x1="17" y1="16" x2="23" y2="16"/>
+              </svg>
+              <select
+                className="form-input search-input-hover"
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as any)}
+                style={{
+                  paddingLeft: '34px',
+                  paddingRight: '28px',
+                  borderRadius: '10px',
+                  height: '36px',
+                  width: '160px',
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='%236b7280' stroke-width='2.5'><polyline points='6 9 12 15 18 9'/></svg>")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 10px center',
+                  backgroundSize: '12px',
+                  boxShadow: 'none',
+                }}
+              >
+                <option value="latest">Latest</option>
+                <option value="oldest">Oldest</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content Render area based on selected tab */}
+      {activeSectionTab === 'about' ? (
+        <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '14px' }}>About Course</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              {course.aboutUs || 'No about course details available.'}
+            </p>
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Teacher</div>
+              <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {course.teacherName || 'Not Assigned'}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Course Duration</div>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>
+                  {course.startDate ? new Date(course.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not Available'}
+                  {' - '}
+                  {course.endDate ? new Date(course.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not Available'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {role === 'STUDENT' && (
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', display: 'flex', justifyContent: 'flex-start' }}>
+              <button
+                onClick={() => setShowFeedbackModal(true)}
+                className="btn btn-primary"
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '50px',
+                  fontWeight: '800',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  background: extractHex(course.color),
+                  color: '#fff',
+                  border: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Give Feedback
+              </button>
+            </div>
           )}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {topics.map((topic, topicIdx) => {
-            const hasNewContent = ((topic as any).createdAt && new Date().getTime() - new Date((topic as any).createdAt).getTime() < 24 * 60 * 60 * 1000) ||
-              topic.content?.some((item: any) => item.createdAt && new Date().getTime() - new Date(item.createdAt).getTime() < 24 * 60 * 60 * 1000);
-            
-            const lowestPrice = (() => {
-              if (offering) {
-                const prices: number[] = [];
-                if (offering.hasRecorded && typeof offering.recordedDiscountPrice === 'number') prices.push(offering.recordedDiscountPrice);
-                if (offering.hasLive && typeof offering.liveDiscountPrice === 'number') prices.push(offering.liveDiscountPrice);
-                if (typeof offering.championDiscountPrice === 'number' && offering.championDiscountPrice > 0) prices.push(offering.championDiscountPrice);
-                if (prices.length > 0) return Math.min(...prices);
-              }
-              if (course && typeof course.liveUpgradePrice === 'number') {
-                return course.liveUpgradePrice;
-              }
-              return null;
-            })();
+        /* Lectures and Materials View */
+        (() => {
+          const filteredTopics = getFilteredTopics()
+          if (filteredTopics.length === 0) {
             return (
-              <div key={topic.id} className="card" style={{ overflow: 'hidden' }}>
-                {/* Topic Header */}
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <button
-                    onClick={() => toggleTopic(topic.id)}
-                    style={{
-                      flex: 1, padding: '16px 20px', background: 'none', border: 'none',
-                      display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
-                      textAlign: 'left',
-                    }}
-                  >
-                    <div style={{
-                      width: '36px', height: '36px', borderRadius: '10px',
-                      background: colorWithOpacity(course.color, '18'), color: extractHex(course.color),
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '13px', fontWeight: '700', flexShrink: 0,
-                    }}>
-                      {String(topicIdx + 1).padStart(2, '0')}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>{topic.title}</span>
-                        {hasNewContent && (
-                          <span style={{
-                            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                            color: 'white', padding: '2px 6px', borderRadius: '4px',
-                            fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
-                            letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
-                            flexShrink: 0
-                          }}>
-                            New
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {topic.content.length} lecture{topic.content.length !== 1 ? 's' : ''}
-                      </div>
-                    </div>
-                    <svg
-                      width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"
-                      style={{ transition: 'transform 0.2s', transform: expandedTopics.has(topic.id) ? 'rotate(180deg)' : 'none' }}
-                    >
-                      <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                  </button>
-                </div>
+              <div className="card empty-state" style={{ padding: '48px' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" style={{ marginBottom: '12px' }}>
+                  <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <p style={{ fontSize: '15px', fontWeight: '500', marginBottom: '4px' }}>No matches found</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  Try refining your search query or sorting options.
+                </p>
+              </div>
+            )
+          }
 
-              {/* Topic Content */}
-              {expandedTopics.has(topic.id) && (
-                <div style={{ borderTop: '1px solid #d8dae3', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '60px' }}>
-                  {topic.content.length === 0 ? (
-                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-                      No lectures in this topic yet
+          const handleProgressCycle = async (itemId: string) => {
+            const currentStatus = progressMap[itemId]
+            let nextStatus: 'COMPLETED' | 'REWATCH' | 'NOT_STARTED' = 'COMPLETED'
+            if (currentStatus === 'COMPLETED') {
+              nextStatus = 'REWATCH'
+            } else if (currentStatus === 'REWATCH') {
+              nextStatus = 'NOT_STARTED'
+            }
+            await updateProgress(itemId, nextStatus)
+          }
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {filteredTopics.map((topic, topicIdx) => {
+                const hasNewContent = ((topic as any).createdAt && new Date().getTime() - new Date((topic as any).createdAt).getTime() < 24 * 60 * 60 * 1000) ||
+                  topic.content?.some((item: any) => item.createdAt && new Date().getTime() - new Date(item.createdAt).getTime() < 24 * 60 * 60 * 1000);
+
+                const videoNumbers = new Map<string, string>();
+                let videoSeq = 0;
+                (topic.content || []).forEach((item: any) => {
+                  const isVideo = !!(item.videoUrl || item.youtubeUrl);
+                  if (isVideo) {
+                    videoSeq++;
+                    videoNumbers.set(item.id, String(videoSeq).padStart(2, '0'));
+                  }
+                });
+
+                const activeContent = topic.content.filter((item) => !(item as any).isDemoLocked)
+                const lockedContent = topic.content.filter((item) => (item as any).isDemoLocked)
+
+                return (
+                  <div key={topic.id} className="card" style={{ overflow: 'hidden' }}>
+                    {/* Topic Accordion Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                      <button
+                        onClick={() => toggleTopic(topic.id)}
+                        style={{
+                          flex: 1, padding: '16px 20px', background: 'none', border: 'none',
+                          display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div style={{
+                          width: '36px', height: '36px', borderRadius: '10px',
+                          background: colorWithOpacity(course.color, '18'), color: extractHex(course.color),
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '13px', fontWeight: '700', flexShrink: 0,
+                        }}>
+                          {String(topicIdx + 1).padStart(2, '0')}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>{topic.title}</span>
+                            {hasNewContent && (
+                              <span style={{
+                                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                color: 'white', padding: '2px 6px', borderRadius: '4px',
+                                fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
+                                letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                                flexShrink: 0
+                              }}>
+                                New
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            {topic.content.length} {activeSectionTab === 'materials' ? 'material' : 'lecture'}{topic.content.length !== 1 ? 's' : ''}
+                          </div>
+                        </div>
+                        <svg
+                          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"
+                          style={{ transition: 'transform 0.2s', transform: expandedTopics.has(topic.id) ? 'rotate(180deg)' : 'none' }}
+                        >
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </button>
                     </div>
-                  ) : (
-                    <>
-                      {/* Render Unlocked/Available Lectures */}
-                      {topic.content.filter((item) => !(item as any).isDemoLocked).map((item) => {
-                        const isVideo = !!(item.videoUrl || item.youtubeUrl);
-                        if (!isVideo) {
-                          return (
-                            <div
-                              key={item.id}
-                              className="material-row"
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: isNative ? '16px' : '12px',
-                                padding: isNative ? '18px 24px' : '10px 18px',
-                                borderRadius: isNative ? '24px' : '16px',
-                                background: 'var(--surface-2)',
-                                boxShadow: isNative ? '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)' : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
-                                transition: 'box-shadow 0.2s',
-                                justifyContent: 'space-between',
-                                minHeight: isNative ? '84px' : '52px',
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                                {/* PDF Style Document Icon with Red Highlight */}
-                                <div style={{
-                                  width: isNative ? '38px' : '30px', height: isNative ? '38px' : '30px', borderRadius: isNative ? '10px' : '8px',
-                                  background: '#fef2f2',
-                                  color: '#ef4444',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                                }}>
-                                  <svg width={isNative ? "16" : "14"} height={isNative ? "16" : "14"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                    <polyline points="14 2 14 8 20 8"/>
-                                    <line x1="16" y1="13" x2="8" y2="13"/>
-                                    <line x1="16" y1="17" x2="8" y2="17"/>
-                                  </svg>
+
+                    {/* Topic Accordion Content */}
+                    {expandedTopics.has(topic.id) && (
+                      <div style={{ borderTop: '1px solid #d8dae3', padding: '16px', minHeight: '60px' }}>
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: isNative ? '1fr' : '1fr 1fr',
+                          gap: '16px',
+                        }}>
+                          {activeContent.map((item) => {
+                            const isDocument = (!item.videoUrl && !item.youtubeUrl) || activeSectionTab === 'materials';
+                            const isVideo = !isDocument;
+                            const videoNum = videoNumbers.get(item.id);
+                            const gridCol = 'auto';
+
+                            if (isDocument && activeSectionTab === 'lectures') {
+                              return (
+                                <div
+                                  key={item.id}
+                                  className="lecture-card"
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    background: 'var(--surface-2)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '12px',
+                                    padding: '10px 16px',
+                                    gap: '6px',
+                                    position: 'relative',
+                                    transition: 'all 0.2s ease',
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.01)',
+                                    gridColumn: gridCol,
+                                    minHeight: '82px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', gap: '14px', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                                    <div style={{
+                                      width: '40px',
+                                      height: '40px',
+                                      borderRadius: '8px',
+                                      background: 'rgba(74, 85, 104, 0.08)',
+                                      color: 'var(--text-muted)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      flexShrink: 0
+                                    }}>
+                                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    </div>
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                      <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.title}>
+                                        {item.title}
+                                      </h4>
+                                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }}>
+                                        <span style={{
+                                          background: 'rgba(74, 85, 104, 0.08)',
+                                          color: 'var(--text-muted)',
+                                          padding: '2px 6px',
+                                          borderRadius: '4px',
+                                          fontSize: '9px',
+                                          fontWeight: '800',
+                                          textTransform: 'uppercase',
+                                          letterSpacing: '0.05em'
+                                        }}>
+                                          NOTES ONLY
+                                        </span>
+                                      {item.createdAt && (
+                                        <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          Added on {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </span>
+                                      )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {item.pptUrl && (
+                                    <Link
+                                      href={`/material/${item.id}/view`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="btn btn-ghost btn-notes-hover"
+                                      style={{
+                                        padding: '5px 13px',
+                                        fontSize: '11px',
+                                        fontWeight: '700',
+                                        borderRadius: '8px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        height: '28px',
+                                        border: '1px solid var(--border)',
+                                        background: 'transparent',
+                                        boxShadow: 'none',
+                                        flexShrink: 0,
+                                      }}
+                                    >
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                                      </svg>
+                                      Download Notes
+                                    </Link>
+                                  )}
                                 </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: isNative ? '15px' : '14px', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
-                                    {(item as any).createdAt && !isNative && (
-                                      <span style={{ fontSize: '11px', fontWeight: '500', color: 'var(--text-muted)', flexShrink: 0 }}>
-                                        - Added on {new Date((item as any).createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                      </span>
+                              );
+                            }
+
+                            if (isDocument) {
+                              return (
+                                <div
+                                  key={item.id}
+                                  className="lecture-card"
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    background: 'var(--surface-2)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '12px',
+                                    padding: '8px 16px',
+                                    gap: '16px',
+                                    position: 'relative',
+                                    transition: 'all 0.2s ease',
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.01)',
+                                    gridColumn: gridCol,
+                                    height: '66px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                >
+                                  {/* Left part: Icon + Text info */}
+                                  <div style={{ display: 'flex', gap: '14px', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                                    {/* Document Icon Container */}
+                                    <div style={{
+                                      width: '40px',
+                                      height: '40px',
+                                      borderRadius: '8px',
+                                      background: 'rgba(74, 85, 104, 0.08)',
+                                      color: 'var(--text-muted)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      flexShrink: 0
+                                    }}>
+                                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    </div>
+
+                                    {/* Text info */}
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                      <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.title}>
+                                        {item.title}
+                                      </h4>
+                                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                        <span style={{
+                                          background: 'rgba(74, 85, 104, 0.08)',
+                                          color: 'var(--text-muted)',
+                                          padding: '2px 6px',
+                                          borderRadius: '4px',
+                                          fontSize: '9px',
+                                          fontWeight: '800',
+                                          textTransform: 'uppercase',
+                                          letterSpacing: '0.05em'
+                                        }}>
+                                          {activeSectionTab === 'materials' ? 'NOTES' : 'NOTES ONLY'}
+                                        </span>
+                                        {item.createdAt && (
+                                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                            • Added on {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Right part: Action Button */}
+                                  <div style={{ flexShrink: 0 }}>
+                                    {item.pptUrl && (
+                                      <Link
+                                        href={`/material/${item.id}/view`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn btn-ghost btn-notes-hover"
+                                        style={{
+                                          padding: '5px 12px',
+                                          fontSize: '11px',
+                                          fontWeight: '700',
+                                          borderRadius: '8px',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          height: '28px',
+                                          border: '1px solid var(--border)',
+                                          background: 'transparent',
+                                          boxShadow: 'none',
+                                        }}
+                                      >
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                                        </svg>
+                                        Download Notes
+                                      </Link>
                                     )}
-                                    {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
-                                      <span style={{
-                                        background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                                        color: 'white', padding: '2px 6px', borderRadius: '4px',
-                                        fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
-                                        letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
-                                        flexShrink: 0
-                                      }}>
-                                        New
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            // Video item styling
+                            return (
+                              <div
+                                key={item.id}
+                                className="lecture-card"
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  justifyContent: 'space-between',
+                                  background: 'var(--surface-2)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: '12px',
+                                  padding: '10px 16px',
+                                  gap: '6px',
+                                  position: 'relative',
+                                  transition: 'all 0.2s ease',
+                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.01)',
+                                  gridColumn: gridCol,
+                                  minHeight: '82px',
+                                  boxSizing: 'border-box'
+                                }}
+                              >
+                                {/* Card Top: Icon/Number container on left, status on right */}
+                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                                  {/* Left part: Number Badge + Title/Badge */}
+                                  <div style={{ display: 'flex', gap: '14px', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                                    <div style={{
+                                      width: '40px',
+                                      height: '40px',
+                                      borderRadius: '8px',
+                                      background: colorWithOpacity(course.color, '10'),
+                                      color: extractHex(course.color),
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: '14px',
+                                      fontWeight: '700',
+                                      flexShrink: 0
+                                    }}>
+                                      {videoNum || '00'}
+                                    </div>
+
+                                    {/* Title & Badge */}
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                      <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.title}>
+                                        {item.title}
+                                      </h4>
+                                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                        <span style={{
+                                          background: colorWithOpacity(course.color, '12'),
+                                          color: extractHex(course.color),
+                                          padding: '2px 6px',
+                                          borderRadius: '4px',
+                                          fontSize: '9px',
+                                          fontWeight: '800',
+                                          textTransform: 'uppercase',
+                                          letterSpacing: '0.05em'
+                                        }}>
+                                          VIDEO
+                                        </span>
+                                        {item.duration && (
+                                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                                            • {item.duration}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Right part: Status Buttons */}
+                                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                                    {role === 'STUDENT' && (
+                                      <>
+                                        <button
+                                          onClick={() => updateProgress(item.id, progressMap[item.id] === 'REWATCH' ? 'NOT_STARTED' : 'REWATCH')}
+                                          className="btn-progress-hover"
+                                          style={{
+                                            background: progressMap[item.id] === 'REWATCH' ? 'rgba(234, 179, 8, 0.15)' : 'transparent',
+                                            color: progressMap[item.id] === 'REWATCH' ? '#ca8a04' : 'var(--text-muted)',
+                                            border: `1px solid ${progressMap[item.id] === 'REWATCH' ? '#eab308' : 'var(--border)'}`,
+                                            padding: '3px 8px',
+                                            borderRadius: '50px',
+                                            fontSize: '10px',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '3px',
+                                            transition: 'all 0.2s ease',
+                                            boxShadow: 'none',
+                                          }}
+                                        >
+                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                                          Rewatch
+                                        </button>
+                                        <button
+                                          onClick={() => updateProgress(item.id, progressMap[item.id] === 'COMPLETED' ? 'NOT_STARTED' : 'COMPLETED')}
+                                          className="btn-progress-hover"
+                                          style={{
+                                            background: progressMap[item.id] === 'COMPLETED' ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
+                                            color: progressMap[item.id] === 'COMPLETED' ? 'var(--success)' : 'var(--text-muted)',
+                                            border: `1px solid ${progressMap[item.id] === 'COMPLETED' ? 'var(--success)' : 'var(--border)'}`,
+                                            padding: '3px 8px',
+                                            borderRadius: '50px',
+                                            fontSize: '10px',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '3px',
+                                            transition: 'all 0.2s ease',
+                                            boxShadow: 'none',
+                                          }}
+                                        >
+                                          {progressMap[item.id] === 'COMPLETED' ? (
+                                            <>
+                                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                              Completed
+                                            </>
+                                          ) : (
+                                            <>
+                                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                              Complete
+                                            </>
+                                          )}
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Card Description */}
+                                {item.description && (
+                                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.3', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', margin: '0' }}>
+                                    {item.description}
+                                  </p>
+                                )}
+
+                                {/* Card Bottom: Added date + action buttons */}
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  marginTop: '2px'
+                                }}>
+                                  <div style={{ minWidth: 0, flex: 1 }}>
+                                    {item.createdAt && (
+                                      <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        Added on {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                       </span>
                                     )}
                                   </div>
-                                  {item.description && (
-                                    <p style={{ fontSize: isNative ? '13px' : '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px', margin: 0 }}>
-                                      {item.description}
-                                    </p>
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                                  {item.pptUrl && (
+                                    <Link
+                                      href={`/material/${item.id}/view`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="btn btn-ghost btn-notes-hover"
+                                      style={{
+                                        padding: '5px 13px',
+                                        fontSize: '11px',
+                                        fontWeight: '700',
+                                        borderRadius: '8px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        height: '28px',
+                                        border: '1px solid var(--border)',
+                                        background: 'transparent',
+                                        boxShadow: 'none',
+                                      }}
+                                    >
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                                      </svg>
+                                      Download Notes
+                                    </Link>
                                   )}
+                                  {(item.videoUrl || item.youtubeUrl) && (
+                                    <Link
+                                      href={`/courses/${params.id}/lectures/${item.id}`}
+                                      className="btn btn-primary btn-watch-hover"
+                                      style={{
+                                        padding: '5px 14px',
+                                        fontSize: '11px',
+                                        fontWeight: '700',
+                                        borderRadius: '8px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        height: '28px',
+                                        background: extractHex(course.color),
+                                        color: '#fff',
+                                        border: 'none',
+                                        boxShadow: 'none',
+                                      }}
+                                    >
+                                      <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                      Watch
+                                    </Link>
+                                  )}
+                                  </div>
                                 </div>
                               </div>
+                            );
+                          })}
+                        </div>
 
-                              {/* Download Button right next to title inline */}
-                              {item.pptUrl && (
-                                <Link
-                                  href={`/material/${item.id}/view`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-ghost"
-                                  style={{
-                                    padding: isNative ? '10px 18px' : '6px 14px',
-                                    fontSize: isNative ? '13px' : '12px',
-                                    fontWeight: '800',
-                                    borderRadius: '50px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    height: isNative ? '40px' : '32px',
-                                    border: '1.5px solid var(--border)',
-                                    flexShrink: 0,
-                                    marginLeft: '12px',
-                                  }}
-                                >
-                                  <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                                  </svg>
-                                  Download Notes
-                                </Link>
-                              )}
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div
-                            key={item.id}
-                            className="lecture-row"
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: isNative ? '16px' : '12px',
-                              padding: isNative ? '18px 24px' : '10px 18px',
-                              borderRadius: isNative ? '24px' : '16px',
-                              background: 'var(--surface-2)',
-                              boxShadow: isNative ? '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)' : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
-                              transition: 'box-shadow 0.2s',
-                              flexWrap: 'wrap',
-                              minHeight: isNative ? '84px' : '52px',
-                            }}
-                          >
-                            {/* Lecture icon */}
+                        {/* Blurred Locked Content */}
+                        {lockedContent.length > 0 && (
+                          <div style={{ position: 'relative', marginTop: activeContent.length > 0 ? '20px' : '0' }}>
                             <div style={{
-                              width: isNative ? '38px' : '30px', height: isNative ? '38px' : '30px', borderRadius: isNative ? '10px' : '8px',
-                              background: colorWithOpacity(course.color, '12'),
-                              color: extractHex(course.color),
-                              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                            }}>
-                              <svg width={isNative ? "14" : "12"} height={isNative ? "14" : "12"} viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                            </div>
-
-                            {/* Title + description */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: isNative ? '15px' : '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
-                                {(item as any).createdAt && !isNative && (
-                                  <span style={{ fontSize: '11px', fontWeight: '500', color: 'var(--text-muted)', flexShrink: 0 }}>
-                                    - Added on {new Date((item as any).createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                  </span>
-                                )}
-                                {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
-                                  <span style={{
-                                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                                    color: 'white', padding: '2px 6px', borderRadius: '4px',
-                                    fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
-                                    letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
-                                    flexShrink: 0
-                                  }}>
-                                    New
-                                  </span>
-                                )}
-                              </div>
-                              {item.description && (
-                                <p style={{ fontSize: isNative ? '13px' : '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
-                                  {item.description}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Action Buttons Group */}
-                            <div className="lecture-row-actions" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginLeft: 'auto', gap: '6px', flexWrap: 'wrap' }}>
-                              {/* Progress actions for students */}
-                              {role === 'STUDENT' && (
-                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginRight: '6px', paddingRight: '12px', borderRight: '1px solid #d8dae3' }}>
-                                  <button
-                                    onClick={() => updateProgress(item.id, progressMap[item.id] === 'COMPLETED' ? 'NOT_STARTED' : 'COMPLETED')}
-                                    style={{
-                                      background: progressMap[item.id] === 'COMPLETED' ? '#22c55e20' : 'transparent',
-                                      color: progressMap[item.id] === 'COMPLETED' ? 'var(--success)' : 'var(--text-muted)',
-                                      border: `1px solid ${progressMap[item.id] === 'COMPLETED' ? 'var(--success)' : 'var(--text-muted)'}`,
-                                      padding: isNative ? '6px 12px' : '4px 10px', borderRadius: '50px', fontSize: isNative ? '11px' : '10px', fontWeight: '700',
-                                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
-                                      transition: 'all 0.2s'
-                                    }}
-                                  >
-                                    <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                    Completed
-                                  </button>
-                                  <button
-                                    onClick={() => updateProgress(item.id, progressMap[item.id] === 'REWATCH' ? 'NOT_STARTED' : 'REWATCH')}
-                                    style={{
-                                      background: progressMap[item.id] === 'REWATCH' ? '#eab30820' : 'transparent',
-                                      color: progressMap[item.id] === 'REWATCH' ? '#ca8a04' : 'var(--text-muted)',
-                                      border: `1px solid ${progressMap[item.id] === 'REWATCH' ? '#eab308' : 'var(--text-muted)'}`,
-                                      padding: isNative ? '6px 12px' : '4px 10px', borderRadius: '50px', fontSize: isNative ? '11px' : '10px', fontWeight: '700',
-                                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
-                                      transition: 'all 0.2s'
-                                    }}
-                                  >
-                                    <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
-                                    Rewatch
-                                  </button>
-                                </div>
-                              )}
-
-                              {/* Watch / Material buttons */}
-                              <div style={{ display: 'flex', gap: '8px', flexShrink: 0, alignItems: 'center' }}>
-                                {item.pptUrl && (
-                                  <Link
-                                    href={`/material/${item.id}/view`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn btn-ghost"
-                                    style={{
-                                      padding: isNative ? '10px 18px' : '6px 14px',
-                                      fontSize: isNative ? '13px' : '12px',
-                                      fontWeight: '800',
-                                      borderRadius: '50px',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '6px',
-                                      height: isNative ? '40px' : '32px',
-                                      border: '1.5px solid var(--border)',
-                                    }}
-                                  >
-                                    <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                                    </svg>
-                                    Download Notes
-                                  </Link>
-                                )}
-                                <Link
-                                  href={`/courses/${params.id}/lectures/${item.id}`}
-                                  className="btn btn-primary"
-                                  style={{
-                                    padding: isNative ? '10px 20px' : '6px 14px',
-                                    fontSize: isNative ? '13px' : '12px',
-                                    fontWeight: '800',
-                                    borderRadius: '50px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    height: isNative ? '40px' : '32px',
-                                  }}
-                                >
-                                  <svg width={isNative ? "12" : "10"} height={isNative ? "12" : "10"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                  Watch
-                                </Link>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Render Locked Lectures blurred as a group */}
-                      {(() => {
-                        const lockedItems = topic.content.filter((item) => (item as any).isDemoLocked)
-                        if (lockedItems.length === 0) return null
-
-                        return (
-                          <div style={{ position: 'relative', marginTop: topic.content.some((item) => !(item as any).isDemoLocked) ? '12px' : '0' }}>
-                            {/* Blurred rows */}
-                            <div style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '10px',
+                              display: 'grid',
+                              gridTemplateColumns: isNative ? '1fr' : '1fr 1fr',
+                              gap: '16px',
                               filter: 'blur(5px) grayscale(50%)',
                               opacity: 0.45,
                               pointerEvents: 'none',
                               userSelect: 'none',
                             }}>
-                              {lockedItems.map((item) => {
-                                const isVideo = !!(item.videoUrl || item.youtubeUrl);
-                                if (!isVideo) {
+                              {lockedContent.map((item) => {
+                                const isDocument = (!item.videoUrl && !item.youtubeUrl) || activeSectionTab === 'materials';
+                                const isVideo = !isDocument;
+                                const videoNum = videoNumbers.get(item.id);
+                                const gridCol = 'auto';
+
+                                if (isDocument) {
                                   return (
                                     <div
                                       key={item.id}
-                                      className="material-row"
                                       style={{
-                                        display: 'flex', alignItems: 'center', gap: isNative ? '16px' : '12px',
-                                        padding: isNative ? '18px 24px' : '10px 18px',
-                                        borderRadius: isNative ? '24px' : '16px',
-                                        background: 'var(--surface-2)',
-                                        boxShadow: isNative ? '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)' : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
+                                        display: 'flex',
+                                        alignItems: 'center',
                                         justifyContent: 'space-between',
-                                        minHeight: isNative ? '84px' : '52px',
+                                        background: 'var(--surface-2)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '12px',
+                                        padding: '8px 16px',
+                                        gap: '16px',
+                                        position: 'relative',
+                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.01)',
+                                        gridColumn: gridCol,
+                                        height: '66px',
+                                        boxSizing: 'border-box'
                                       }}
                                     >
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                                        {/* PDF Style Document Icon with Red Highlight */}
-                                        <div style={{
-                                          width: isNative ? '38px' : '30px', height: isNative ? '38px' : '30px', borderRadius: isNative ? '10px' : '8px',
-                                          background: '#fef2f2',
-                                          color: '#ef4444',
-                                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                                        }}>
-                                          <svg width={isNative ? "16" : "14"} height={isNative ? "16" : "14"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                            <polyline points="14 2 14 8 20 8"/>
-                                            <line x1="16" y1="13" x2="8" y2="13"/>
-                                            <line x1="16" y1="17" x2="8" y2="17"/>
-                                          </svg>
+                                      <div style={{ display: 'flex', gap: '14px', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                                        {/* Smaller 40px Icon container */}
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'rgba(74, 85, 104, 0.08)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                                         </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                          <div style={{ fontSize: isNative ? '15px' : '14px', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
-                                          </div>
-                                          {item.description && (
-                                            <p style={{ fontSize: isNative ? '13px' : '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px', margin: 0 }}>
-                                              {item.description}
-                                            </p>
-                                          )}
+                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                          <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</h4>
+                                          <span style={{
+                                            background: 'rgba(74, 85, 104, 0.08)',
+                                            color: 'var(--text-muted)',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            fontSize: '9px',
+                                            fontWeight: '800',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em'
+                                          }}>
+                                            {activeSectionTab === 'materials' ? 'NOTES' : 'NOTES ONLY'}
+                                          </span>
                                         </div>
-                                      </div>
-
-                                      {/* Lock Icon */}
-                                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginLeft: 'auto', color: 'var(--text-muted)' }}>
-                                        <svg width={isNative ? "18" : "14"} height={isNative ? "18" : "14"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                        </svg>
                                       </div>
                                     </div>
                                   );
@@ -1249,52 +1706,63 @@ export default function CourseDetailPage() {
                                 return (
                                   <div
                                     key={item.id}
-                                    className="lecture-row"
                                     style={{
-                                      display: 'flex', alignItems: 'center', gap: isNative ? '16px' : '12px',
-                                      padding: isNative ? '18px 24px' : '10px 18px',
-                                      borderRadius: isNative ? '24px' : '16px',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      justifyContent: 'space-between',
                                       background: 'var(--surface-2)',
-                                      boxShadow: isNative ? '5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light)' : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
-                                      flexWrap: 'wrap',
-                                      minHeight: isNative ? '84px' : '52px',
+                                      border: '1px solid var(--border)',
+                                      borderRadius: '12px',
+                                      padding: '10px 16px',
+                                      gap: '6px',
+                                      position: 'relative',
+                                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.01)',
+                                      gridColumn: gridCol,
+                                      minHeight: '82px',
+                                      boxSizing: 'border-box'
                                     }}
                                   >
-                                    {/* Lecture icon */}
-                                    <div style={{
-                                      width: isNative ? '38px' : '30px', height: isNative ? '38px' : '30px', borderRadius: isNative ? '10px' : '8px',
-                                      background: '#f0f0f5',
-                                      color: 'var(--text-muted)',
-                                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                                    }}>
-                                      <svg width={isNative ? "14" : "12"} height={isNative ? "14" : "12"} viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                    </div>
-
-                                    {/* Title + description */}
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div style={{ fontSize: isNative ? '15px' : '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
+                                    <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                                      <div style={{ display: 'flex', gap: '14px', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                                        {/* Smaller 40px Number container */}
+                                        <div style={{
+                                          width: '40px',
+                                          height: '40px',
+                                          borderRadius: '8px',
+                                          background: colorWithOpacity(course.color, '10'),
+                                          color: extractHex(course.color),
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          fontSize: '14px',
+                                          fontWeight: '700',
+                                          flexShrink: 0
+                                        }}>
+                                          {videoNum || '00'}
+                                        </div>
+                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                          <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</h4>
+                                          <span style={{
+                                            background: colorWithOpacity(course.color, '12'),
+                                            color: extractHex(course.color),
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            fontSize: '9px',
+                                            fontWeight: '800',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em'
+                                          }}>
+                                            VIDEO
+                                          </span>
+                                        </div>
                                       </div>
-                                      {item.description && (
-                                        <p style={{ fontSize: isNative ? '13px' : '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
-                                          {item.description}
-                                        </p>
-                                      )}
-                                    </div>
-
-                                    {/* Lock Icon */}
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginLeft: 'auto', color: 'var(--text-muted)' }}>
-                                      <svg width={isNative ? "18" : "14"} height={isNative ? "18" : "14"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                      </svg>
                                     </div>
                                   </div>
                                 );
                               })}
                             </div>
 
-                            {/* Center Premium Overlay Card */}
+                            {/* Center Premium Overlay Lock Card */}
                             <div style={{
                               position: 'absolute',
                               top: 0, left: 0, right: 0, bottom: 0,
@@ -1365,15 +1833,15 @@ export default function CourseDetailPage() {
                               </div>
                             </div>
                           </div>
-                        )
-                      })()}
-                    </>
-                  )}
-                </div>
-              )}
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
-          )})}
-        </div>
+          )
+        })()
       )}
       {/* Info Modal */}
       {infoModalCourse && (
@@ -2278,17 +2746,19 @@ export default function CourseDetailPage() {
         </div>
       )}
 
-      {showForcedFeedback && course && (
+      {(showForcedFeedback || showFeedbackModal) && course && (
         <FeedbackModal
           courseId={course.id}
           courseName={course.name}
           courseSubject={course.subject || ''}
-          isForced={true}
+          isForced={showForcedFeedback}
           onClose={() => {
             setShowForcedFeedback(false)
+            setShowFeedbackModal(false)
           }}
           onSuccess={() => {
             setShowForcedFeedback(false)
+            setShowFeedbackModal(false)
             fetchData()
           }}
         />
