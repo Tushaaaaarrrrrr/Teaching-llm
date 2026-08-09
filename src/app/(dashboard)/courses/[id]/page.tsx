@@ -107,7 +107,6 @@ export default function CourseDetailPage() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
   const [activeSectionTab, setActiveSectionTab] = useState<'lectures' | 'materials' | 'about'>('lectures')
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState<'latest' | 'oldest'>('latest')
 
   const fetchData = useCallback(async () => {
     try {
@@ -562,6 +561,31 @@ export default function CourseDetailPage() {
 
   const isManager = ['MANAGER', 'ADMIN'].includes(role)
   const canManage = isManager
+  const NEW_CONTENT_WINDOW_MS = 24 * 60 * 60 * 1000
+
+  const isNewContentItem = (item: { createdAt?: string | null }) => {
+    if (!item.createdAt) return false
+    const createdAt = new Date(item.createdAt).getTime()
+    return Number.isFinite(createdAt) && Date.now() - createdAt < NEW_CONTENT_WINDOW_MS
+  }
+
+  const renderNewBadge = () => (
+    <span style={{
+      background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+      color: 'white',
+      padding: '2px 6px',
+      borderRadius: '4px',
+      fontSize: '9px',
+      fontWeight: '800',
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+      flexShrink: 0,
+      lineHeight: 1.2,
+    }}>
+      New
+    </span>
+  )
 
   const getFilteredTopics = () => {
     return topics.map(topic => {
@@ -578,12 +602,6 @@ export default function CourseDetailPage() {
           (item.description || '').toLowerCase().includes(query)
         )
       }
-
-      filteredContent.sort((a, b) => {
-        const dateA = new Date(a.createdAt || 0).getTime()
-        const dateB = new Date(b.createdAt || 0).getTime()
-        return sortBy === 'latest' ? dateB - dateA : dateA - dateB
-      })
 
       return {
         ...topic,
@@ -1037,7 +1055,7 @@ export default function CourseDetailPage() {
           })}
         </div>
 
-        {/* Search and Sort (only visible for Lectures/Materials tabs) */}
+        {/* Search (only visible for Lectures/Materials tabs) */}
         {activeSectionTab !== 'about' && (
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', flex: isNative ? 1 : '1 1 360px', minWidth: isNative ? '100%' : 'min(100%, 360px)', justifyContent: 'flex-end', paddingBottom: '8px' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: '1 1 220px', minWidth: '180px', maxWidth: '320px' }}>
@@ -1061,44 +1079,6 @@ export default function CourseDetailPage() {
                   boxShadow: 'none',
                 }}
               />
-            </div>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2.5" style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }}>
-                <line x1="4" y1="21" x2="4" y2="14"/>
-                <line x1="4" y1="10" x2="4" y2="3"/>
-                <line x1="12" y1="21" x2="12" y2="12"/>
-                <line x1="12" y1="8" x2="12" y2="3"/>
-                <line x1="20" y1="21" x2="20" y2="16"/>
-                <line x1="20" y1="12" x2="20" y2="3"/>
-                <line x1="1" y1="14" x2="7" y2="14"/>
-                <line x1="9" y1="8" x2="15" y2="8"/>
-                <line x1="17" y1="16" x2="23" y2="16"/>
-              </svg>
-              <select
-                className="form-input search-input-hover"
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value as any)}
-                style={{
-                  paddingLeft: '34px',
-                  paddingRight: '28px',
-                  borderRadius: '10px',
-                  height: '36px',
-                  width: '160px',
-                  background: 'var(--surface-2)',
-                  border: '1px solid var(--border)',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  appearance: 'none',
-                  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='%236b7280' stroke-width='2.5'><polyline points='6 9 12 15 18 9'/></svg>")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 10px center',
-                  backgroundSize: '12px',
-                  boxShadow: 'none',
-                }}
-              >
-                <option value="latest">Latest</option>
-                <option value="oldest">Oldest</option>
-              </select>
             </div>
           </div>
         )}
@@ -1193,8 +1173,7 @@ export default function CourseDetailPage() {
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', containerType: 'inline-size' }}>
               {filteredTopics.map((topic, topicIdx) => {
-                const hasNewContent = ((topic as any).createdAt && new Date().getTime() - new Date((topic as any).createdAt).getTime() < 24 * 60 * 60 * 1000) ||
-                  topic.content?.some((item: any) => item.createdAt && new Date().getTime() - new Date(item.createdAt).getTime() < 24 * 60 * 60 * 1000);
+                const hasNewContent = isNewContentItem(topic as any) || topic.content?.some((item: any) => isNewContentItem(item));
 
                 const videoNumbers = new Map<string, string>();
                 let videoSeq = 0;
@@ -1271,17 +1250,7 @@ export default function CourseDetailPage() {
 	                            }}>
 	                              {topic.title}
 	                            </span>
-	                            {hasNewContent && (
-	                              <span style={{
-	                                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                                color: 'white', padding: '2px 6px', borderRadius: '4px',
-                                fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
-                                letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
-                                flexShrink: 0
-                              }}>
-	                                New
-	                              </span>
-	                            )}
+	                            {hasNewContent && renderNewBadge()}
 	                          </div>
 	                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700' }}>
 	                            {topicItemCount} {topicItemLabel}
@@ -1343,8 +1312,9 @@ export default function CourseDetailPage() {
                                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                                     </div>
                                     <div style={{ minWidth: 0, flex: 1 }}>
-                                      <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.title}>
-                                        {item.title}
+                                      <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }} title={item.title}>
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{item.title}</span>
+                                        {isNewContentItem(item) && renderNewBadge()}
                                       </h4>
                                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }}>
                                         <span style={{
@@ -1439,8 +1409,9 @@ export default function CourseDetailPage() {
 
                                     {/* Text info */}
                                     <div style={{ minWidth: 0, flex: 1 }}>
-                                      <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.title}>
-                                        {item.title}
+                                      <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }} title={item.title}>
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{item.title}</span>
+                                        {isNewContentItem(item) && renderNewBadge()}
                                       </h4>
                                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                                         <span style={{
@@ -1541,8 +1512,9 @@ export default function CourseDetailPage() {
 
                                     {/* Title & Badge */}
                                     <div style={{ minWidth: 0, flex: 1 }}>
-                                      <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.title}>
-                                        {item.title}
+                                      <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }} title={item.title}>
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{item.title}</span>
+                                        {isNewContentItem(item) && renderNewBadge()}
                                       </h4>
                                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                                         <span style={{

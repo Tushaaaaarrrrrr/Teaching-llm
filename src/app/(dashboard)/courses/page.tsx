@@ -6,7 +6,6 @@ import Script from 'next/script'
 import useSWR, { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
 import FeedbackModal from '@/components/FeedbackModal'
-import UserAvatar from '@/components/UserAvatar'
 import { extractHex, colorWithOpacity, getCourseBackground, isGradient } from '@/lib/color-utils'
 import { CourseIconBadge } from '@/lib/course-icons'
 
@@ -31,6 +30,30 @@ interface CourseItem {
   enrollmentType?: string
   liveUpgradePrice?: number | null
   _count: { lectures: number; materials: number; topics: number; courseEvents: number }
+}
+
+function TeacherIcon({ size = 24, color, background }: { size?: number; color: string; background: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background,
+        color,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}
+    >
+      <svg width={Math.max(12, Math.round(size * 0.58))} height={Math.max(12, Math.round(size * 0.58))} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21a8 8 0 0 0-16 0" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    </span>
+  )
 }
 
 export default function CoursesPage() {
@@ -686,7 +709,7 @@ export default function CoursesPage() {
                 {/* Show teacher for LIVE users and General Batch */}
                 {(!isRecorded || isFreeOrDemo) && course.teacherName && (
                   <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: 'var(--course-teacher-margin, 14px)' }}>
-                    <UserAvatar user={{ name: course.teacherName }} size={24} />
+                    <TeacherIcon size={24} color={extractHex(course.color)} background={colorWithOpacity(course.color, '14')} />
                     <span style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: '500' }}>
                       {course.teacherName}
                     </span>
@@ -699,7 +722,7 @@ export default function CoursesPage() {
                     {/* Show teacher only for LIVE users or above upgrade for RECORDED */}
                     {course.teacherName && (
                       <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                        <UserAvatar user={{ name: course.teacherName }} size={20} />
+                        <TeacherIcon size={20} color={extractHex(course.color)} background={colorWithOpacity(course.color, '12')} />
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                           {course.teacherName}
                         </span>

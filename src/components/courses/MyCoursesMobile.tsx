@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 import FeedbackModal from '@/components/FeedbackModal'
-import UserAvatar from '@/components/UserAvatar'
 import { CourseIconBadge } from '@/lib/course-icons'
 
 interface CourseItem {
@@ -22,6 +21,32 @@ interface CourseItem {
 }
 
 interface ProgressRow { contentId: string; status: string }
+
+function TeacherIcon({ size = 28, color }: { size?: number; color: string }) {
+  const subtleBg = color.startsWith('#') ? `${color}14` : 'var(--surface-2)'
+
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: subtleBg,
+        color,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}
+    >
+      <svg width={Math.max(13, Math.round(size * 0.58))} height={Math.max(13, Math.round(size * 0.58))} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21a8 8 0 0 0-16 0" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    </span>
+  )
+}
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -276,7 +301,7 @@ function CourseCard({
       {/* Body */}
       <div style={{ padding: '14px 18px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-          <UserAvatar user={{ name: course.teacherName || 'Mentor' }} size={28} />
+          <TeacherIcon size={28} color={course.color || 'var(--accent)'} />
           <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {course.teacherName || 'Mentor'}
           </span>

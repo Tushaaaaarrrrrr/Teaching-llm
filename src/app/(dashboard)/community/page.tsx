@@ -980,6 +980,7 @@ export default function CommunityPage() {
       formData.append('type', 'announcements')
       
       xhr.open('POST', '/api/upload/chat-image')
+      xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest')
       xhr.send(formData)
     })
   }
@@ -2849,7 +2850,15 @@ export default function CommunityPage() {
                             if (err instanceof Error && err.message === 'Upload cancelled') {
                               // silent cancel
                             } else {
-                              alert(err instanceof Error ? err.message : 'Upload failed');
+                              console.error('General Discussion attachment upload failed:', err);
+                              await confirm({
+                                title: 'Upload Failed',
+                                message: pendingImage && isDocumentAttachment(pendingImage)
+                                  ? "Couldn't upload the document. Please try again."
+                                  : "Couldn't upload the attachment. Please try again.",
+                                confirmLabel: 'OK',
+                                tone: 'danger'
+                              });
                             }
                             setUploadingImage(false);
                             setUploadProgress(null);
@@ -3901,7 +3910,7 @@ export default function CommunityPage() {
                   )}
 
                   {/* Guidelines Button */}
-                  {!isDM(selectedClass) && (
+                  {!isMobile && !isCapacitor && !isDM(selectedClass) && (
                     <button
                       onClick={() => setGuidelinesOpen(true)}
                       style={{
