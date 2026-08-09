@@ -761,14 +761,6 @@ export default function CoursesPage() {
                 {/* Unlock Full Course button for DEMO users */}
                 {course.enrollmentType === 'DEMO' && plusPrice != null && (
                   <div style={{ position: 'relative', marginTop: 'auto' }}>
-                    {course.teacherName && (
-                      <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                        <UserAvatar user={{ name: course.teacherName }} size={20} />
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                          {course.teacherName}
-                        </span>
-                      </div>
-                    )}
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUnlockClick(course.id) }}
                       style={{
