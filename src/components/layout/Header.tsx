@@ -6,6 +6,7 @@ import { useUserData } from '@/components/UserDataProvider'
 import { getDefaultAvatar } from '@/lib/avatar'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { clearSWRCache } from '@/lib/cache'
+import { useTheme } from '@/components/ThemeProvider'
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -107,6 +108,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
   const notifRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
+  const themeCtx = useTheme()
   const fetcher = (url: string) => fetch(url).then(r => r.json())
 
   const stripFcmMeta = (content: string): string => {
@@ -516,6 +518,49 @@ export default function Header({ userName, userRole }: HeaderProps) {
           </svg>
           <span className="download-btn-text">Download App</span>
         </a>
+
+        {/* Appearance Toggle — Dark/Light */}
+        <button
+          onClick={() => {
+            const { resolvedTheme, setTheme } = themeCtx
+            setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
+          }}
+          title={themeCtx.resolvedTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          className="theme-toggle-btn"
+          style={{
+            width: '38px', height: '38px', borderRadius: '50%',
+            border: 'none', cursor: 'pointer',
+            background: 'var(--surface)',
+            boxShadow: 'var(--shadow)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: themeCtx.resolvedTheme === 'dark' ? '#f59e0b' : 'var(--text-secondary)',
+            transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; e.currentTarget.style.transform = 'scale(1.08)'; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow)'; e.currentTarget.style.transform = 'scale(1)'; }}
+        >
+          {themeCtx.resolvedTheme === 'dark' ? (
+            /* Sun icon */
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.4s ease' }}>
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          ) : (
+            /* Moon icon */
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.4s ease' }}>
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          )}
+        </button>
 
         {/* Notification bell */}
         <div

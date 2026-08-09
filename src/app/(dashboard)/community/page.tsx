@@ -345,6 +345,7 @@ export default function CommunityPage() {
   const [hoveredReactionMessageId, setHoveredReactionMessageId] = useState<string | null>(null)
   const [expandedCommentsMessageId, setExpandedCommentsMessageId] = useState<string | null>(null)
   const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({})
+  const [hoveredChatMsgId, setHoveredChatMsgId] = useState<string | null>(null)
 
   const handleUpgradeClick = async () => {
     if (!selectedClass || !selectedClass.id) return
@@ -3239,6 +3240,27 @@ export default function CommunityPage() {
                     </span>
                   )}
 
+                  {/* Guidelines Button */}
+                  {!isDM(selectedClass) && (
+                    <button
+                      onClick={() => setGuidelinesOpen(true)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '6px 14px', borderRadius: '50px',
+                        background: 'var(--surface-2)', border: '1.5px solid var(--border)',
+                        color: 'var(--text-primary)', fontSize: '12px', fontWeight: '800',
+                        cursor: 'pointer', transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-3)'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                      </svg>
+                      Guidelines
+                    </button>
+                  )}
+
                   <div style={{ position: 'relative', zIndex: 10 }}>
                     <button
                       onClick={(e) => {
@@ -3611,7 +3633,7 @@ export default function CommunityPage() {
                         </span>
                       </div>
                     )}
-                    <div id={`msg-${msg.id}`} className="msg-row" style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '8px', alignItems: 'flex-end', marginBottom: showAvatar ? '6px' : '1px' }}>
+                    <div id={`msg-${msg.id}`} className="msg-row" style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '8px', alignItems: 'flex-end', marginBottom: showAvatar ? '6px' : '1px', position: 'relative' }} onMouseEnter={() => setHoveredChatMsgId(msg.id)} onMouseLeave={() => setHoveredChatMsgId(null)}>
                       {/* Avatar */}
                       {!isMe && (
                         <div 
@@ -3858,36 +3880,66 @@ export default function CommunityPage() {
                                 )}
                               </div>
 
-                              {/* Reactions Floating Badge */}
-                              {(() => {
-                                let likesList: string[] = [];
-                                try { likesList = JSON.parse(msg.likes || '[]'); } catch(e){}
-                                let reactionsObj: Record<string, string[]> = {};
-                                try { reactionsObj = JSON.parse(msg.reactions || '{}'); } catch(e){}
-                                
-                                const totalLikes = likesList.length;
-                                const reactionKeys = Object.keys(reactionsObj).filter(k => reactionsObj[k].length > 0);
-                                
-                                if (totalLikes === 0 && reactionKeys.length === 0) return null;
-                                
-                                return (
-                                  <div style={{
-                                    position: 'absolute', bottom: '-10px', [isMe ? 'left' : 'right']: '12px',
-                                    background: 'var(--surface)', border: '1px solid var(--border)',
-                                    borderRadius: '50px', padding: '2px 6px', display: 'flex', gap: '3px',
-                                    alignItems: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.08)',
-                                    zIndex: 2, pointerEvents: 'auto', fontSize: '10px'
-                                  }}>
-                                    {totalLikes > 0 && <span>👍</span>}
-                                    {reactionKeys.map(k => <span key={k}>{k}</span>)}
-                                    <span style={{ fontWeight: '800', color: 'var(--text-secondary)', marginLeft: '2px' }}>
-                                      {totalLikes + reactionKeys.reduce((acc, k) => acc + reactionsObj[k].length, 0)}
-                                    </span>
-                                  </div>
-                                );
-                              })()}
                               </div>
                             </SwipeableMessage>
+
+                        {/* Hover action toolbar */}
+                        {hoveredChatMsgId === msg.id && !msg.isDeleted && !msg.id.startsWith('temp-') && (
+                          <div style={{
+                            display: 'flex', gap: '4px', alignItems: 'center',
+                            background: 'var(--surface)', border: '1px solid var(--border)',
+                            borderRadius: '20px', padding: '3px 6px',
+                            boxShadow: '0 3px 10px rgba(0,0,0,0.10)',
+                            zIndex: 5,
+                            position: 'absolute',
+                            top: '-14px',
+                            ...(isMe ? { left: '40px' } : { right: '40px' }),
+                          }}>
+                            {/* Reply */}
+                            <button
+                              onClick={() => setReplyingTo(msg)}
+                              title="Reply"
+                              style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', transition: 'background 0.15s' }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+                            </button>
+                            {/* Delete (own messages or manager) */}
+                            {(userRole === 'MANAGER' || msg.sender.id === userId) && (
+                              <button
+                                onClick={() => deleteMessage(msg.id)}
+                                title="Delete"
+                                style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', transition: 'background 0.15s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                              </button>
+                            )}
+                            {/* Pin (manager only) */}
+                            {userRole === 'MANAGER' && !isDM(selectedClass) && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await fetch(`/api/community/${selectedClass.id}/messages/${msg.id}/pin`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ action: 'pin' })
+                                    });
+                                    loadMessages();
+                                  } catch(e){}
+                                }}
+                                title={msg.isPinned ? 'Unpin' : 'Pin'}
+                                style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: msg.isPinned ? '#d97706' : 'var(--text-secondary)', transition: 'background 0.15s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill={msg.isPinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>
+                              </button>
+                            )}
+                          </div>
+                        )}
                         </div>
                       </div>
                     </div>
