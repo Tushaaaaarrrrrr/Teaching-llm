@@ -745,7 +745,7 @@ export default function DashboardPage() {
                   {card.icon}
                 </div>
                 <div className="stat-card-label" style={{
-                  color: mobileHero ? 'var(--accent)' : (card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(255,255,255,0.72)' : undefined),
+                  color: mobileHero ? 'var(--accent)' : (card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'var(--quiz-countdown-label-color)' : undefined),
                   fontSize: mobileHero ? '10.5px' : undefined,
                   fontWeight: mobileHero ? 800 : undefined,
                   letterSpacing: mobileHero ? '0.08em' : undefined,
@@ -785,7 +785,7 @@ export default function DashboardPage() {
                   width: '24px',
                   height: '24px',
                   borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.5)',
+                  background: 'var(--quiz-countdown-edit-bg)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -793,7 +793,7 @@ export default function DashboardPage() {
                   cursor: 'pointer'
                 }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e1e3a" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--quiz-countdown-edit-icon)" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
             )}
           </div>

@@ -62,6 +62,12 @@
   --course-icon-hover-bg: color-mix(in srgb, var(--primary-light) 86%, var(--surface) 14%);
   --course-icon-selected-bg: color-mix(in srgb, var(--primary-light) 78%, var(--surface) 22%);
   --course-icon-selected-border: rgba(79, 70, 229, 0.46);
+  --topic-header-bg: #DDE1E8;
+  --topic-header-text: #1e1e3a;
+  --topic-header-muted: #4f566b;
+  --quiz-countdown-label-color: #4f566b;
+  --quiz-countdown-edit-bg: rgba(255,255,255,0.5);
+  --quiz-countdown-edit-icon: #1e1e3a;
 }
 
 /* Community Channel List Buttons */
@@ -149,6 +155,12 @@
   --course-icon-hover-bg: color-mix(in srgb, var(--primary-light) 62%, var(--surface-2) 38%);
   --course-icon-selected-bg: color-mix(in srgb, var(--primary-light) 72%, var(--surface-2) 28%);
   --course-icon-selected-border: rgba(155, 155, 255, 0.5);
+  --topic-header-bg: #1b1b28;
+  --topic-header-text: #ffffff;
+  --topic-header-muted: #b7bccd;
+  --quiz-countdown-label-color: rgba(255,255,255,0.72);
+  --quiz-countdown-edit-bg: rgba(255,255,255,0.5);
+  --quiz-countdown-edit-icon: #1e1e3a;
   /* Flat drop shadows in dark — neumorphism's light offset reads as a boxy
      frame on dark, so we drop it. --neu-light goes transparent so the inline
      neumorphic pairs (…var(--neu-dark), …var(--neu-light)) the codemod produced

@@ -1201,7 +1201,7 @@ export default function CourseDetailPage() {
 	                      alignItems: 'center',
 	                      width: '100%',
 	                      minHeight: '62px',
-	                      background: 'var(--surface-2)',
+	                      background: 'var(--topic-header-bg)',
 	                      border: '1px solid var(--border)',
 	                      borderRadius: '15px',
 	                      boxShadow: '0 6px 18px rgba(15, 23, 42, 0.04)',
@@ -1243,7 +1243,7 @@ export default function CourseDetailPage() {
 	                            <span style={{
 	                              fontSize: '16px',
 	                              fontWeight: '900',
-	                              color: 'var(--text-primary)',
+	                              color: 'var(--topic-header-text)',
 	                              overflow: 'hidden',
 	                              textOverflow: 'ellipsis',
 	                              whiteSpace: 'nowrap',
@@ -1252,12 +1252,12 @@ export default function CourseDetailPage() {
 	                            </span>
 	                            {hasNewContent && renderNewBadge()}
 	                          </div>
-	                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700' }}>
+	                          <span style={{ fontSize: '12px', color: 'var(--topic-header-muted)', fontWeight: '700' }}>
 	                            {topicItemCount} {topicItemLabel}
 	                          </span>
 	                        </div>
 	                        <svg
-	                          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2.5"
+	                          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--topic-header-muted)" strokeWidth="2.5"
 	                          style={{ transition: 'transform 0.2s', transform: expandedTopics.has(topic.id) ? 'rotate(180deg)' : 'none' }}
 	                        >
                           <polyline points="6 9 12 15 18 9"/>
