@@ -194,7 +194,7 @@ export default function AcademicsPage() {
           }
           :root[data-theme="dark"] .academic-card {
             background: color-mix(in srgb, var(--surface) 62%, var(--surface-2) 38%);
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22), 0 2px 7px rgba(0, 0, 0, 0.14);
+            box-shadow: var(--shadow-md);
             border-color: color-mix(in srgb, var(--border) 86%, transparent);
           }
           .academic-card-icon-wrap {
@@ -204,21 +204,21 @@ export default function AcademicsPage() {
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #ffffff;
+            color: var(--bg);
             margin-bottom: 14px;
             flex-shrink: 0;
+          }
+          :root[data-theme="dark"] .academic-card-icon-wrap {
+            color: var(--text-primary);
           }
           .academic-card-title {
             font-size: 14.5px;
             font-weight: 700;
-            color: #0c1a30;
+            color: var(--text-primary);
             text-align: center;
             line-height: 1.25;
             letter-spacing: -0.01em;
             padding: 0 4px;
-          }
-          :root[data-theme="dark"] .academic-card-title {
-            color: var(--text-primary);
           }
           .mobile-page-divider {
             height: 1px;

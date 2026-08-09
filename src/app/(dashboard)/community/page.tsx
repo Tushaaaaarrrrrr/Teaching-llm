@@ -197,8 +197,10 @@ export default function CommunityPage() {
   const [input, setInput] = useState('')
   const [userId, setUserId] = useState('')
   const [userRole, setUserRole] = useState('STUDENT')
+  const [loadingUser, setLoadingUser] = useState(true)
   const [loading, setLoading] = useState(false)
-  const [loadingMessages, setLoadingMessages] = useState(false)
+  const [loadingClasses, setLoadingClasses] = useState(true)
+  const [loadingMessages, setLoadingMessages] = useState(true)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [managingCommunity, setManagingCommunity] = useState(false)
@@ -484,7 +486,11 @@ export default function CommunityPage() {
     setLoadingMore(false)
     shouldRestoreScrollRef.current = false
     shouldScrollToBottomRef.current = true
-    if (showLoading) setLoadingMessages(true)
+    if (showLoading) {
+      setLoadingMessages(true)
+      setMessages([])
+      setPinnedMessage(null)
+    }
 
     try {
       const url = classId.startsWith('dm_')
@@ -568,11 +574,15 @@ export default function CommunityPage() {
   }, [selectedClass])
 
   useEffect(() => {
-    fetch('/api/auth/me').then(r => r.json()).then(d => {
-      setUserRole(d.user?.role || 'STUDENT')
-      setUserId(d.user?.id || '')
-      setUserName(d.user?.name || '')
-    })
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(d => {
+        setUserRole(d.user?.role || 'STUDENT')
+        setUserId(d.user?.id || '')
+        setUserName(d.user?.name || '')
+      })
+      .catch(console.error)
+      .finally(() => setLoadingUser(false))
     
     // Fetch staff list for tagging
     fetch('/api/users/staff')
@@ -605,6 +615,7 @@ export default function CommunityPage() {
 
   async function loadClasses(preferredId?: string) {
     try {
+      setLoadingClasses(true)
       setLoadError(null)
       const res = await fetch('/api/classes')
       const data = await res.json().catch(() => ({}))
@@ -629,6 +640,8 @@ export default function CommunityPage() {
       setClasses([])
       setSelectedClass(null)
       setLoadError(error instanceof Error ? error.message : 'Failed to load communities')
+    } finally {
+      setLoadingClasses(false)
     }
   }
 
@@ -1426,6 +1439,126 @@ export default function CommunityPage() {
   }
 
   const isDM = (cls: ClassItem | null) => cls?.isDirectChat === true
+  const courseClasses = classes.filter(cls => !cls.isDirectChat && cls.id !== 'general-discussion')
+  const directChatClasses = classes.filter(cls => cls.isDirectChat)
+  const shouldShowCourseSkeletons = loadingClasses && courseClasses.length === 0
+  const shouldShowDirectSkeletons = loadingClasses && directChatClasses.length === 0
+
+  const SkeletonBlock = ({ style }: { style?: React.CSSProperties }) => (
+    <span className="community-skeleton-block" style={style} aria-hidden="true" />
+  )
+
+  const CourseRowSkeleton = ({ compact = false }: { compact?: boolean }) => (
+    <div
+      className="community-skeleton-card"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: compact ? '10px' : '12px',
+        padding: compact ? '10px 8px' : '12px',
+        minHeight: compact ? '72px' : '72px',
+        borderRadius: compact ? '18px' : '18px',
+      }}
+    >
+      <SkeletonBlock style={{ width: compact ? '34px' : '44px', height: compact ? '34px' : '44px', borderRadius: compact ? '10px' : '14px', flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <SkeletonBlock style={{ width: compact ? '64%' : '58%', height: compact ? '12px' : '14px' }} />
+        <SkeletonBlock style={{ width: compact ? '38%' : '34%', height: '10px' }} />
+      </div>
+      <SkeletonBlock style={{ width: compact ? '24px' : '26px', height: compact ? '24px' : '26px', borderRadius: '50%', flexShrink: 0 }} />
+    </div>
+  )
+
+  const DirectMessageSkeleton = () => (
+    <div className="community-skeleton-card" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', borderRadius: '18px', minHeight: '56px' }}>
+      <SkeletonBlock style={{ width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '7px' }}>
+        <SkeletonBlock style={{ width: '62%', height: '12px' }} />
+        <SkeletonBlock style={{ width: '44%', height: '9px' }} />
+      </div>
+    </div>
+  )
+
+  const ComposerSkeleton = () => (
+    <div className="community-skeleton-card" style={{ borderRadius: '20px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <SkeletonBlock style={{ width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0 }} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>
+          <SkeletonBlock style={{ width: '84%', height: '14px' }} />
+          <SkeletonBlock style={{ width: '68%', height: '14px' }} />
+          <SkeletonBlock style={{ width: '46%', height: '14px' }} />
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '12px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+        <SkeletonBlock style={{ width: '64px', height: '14px' }} />
+        <SkeletonBlock style={{ width: '86px', height: '14px' }} />
+        <SkeletonBlock style={{ width: '58px', height: '14px' }} />
+        <SkeletonBlock style={{ width: '64px', height: '32px', borderRadius: '999px', marginLeft: 'auto' }} />
+      </div>
+    </div>
+  )
+
+  const PostCardSkeleton = () => (
+    <div className="community-skeleton-card" style={{ borderRadius: '20px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <SkeletonBlock style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0 }} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '7px' }}>
+          <SkeletonBlock style={{ width: '32%', height: '13px' }} />
+          <SkeletonBlock style={{ width: '22%', height: '10px' }} />
+        </div>
+      </div>
+      <SkeletonBlock style={{ width: '92%', height: '13px', marginTop: '6px' }} />
+      <SkeletonBlock style={{ width: '76%', height: '13px' }} />
+      <SkeletonBlock style={{ width: '48%', height: '13px' }} />
+      <div style={{ display: 'flex', gap: '16px', borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '4px' }}>
+        <SkeletonBlock style={{ width: '56px', height: '13px' }} />
+        <SkeletonBlock style={{ width: '96px', height: '13px' }} />
+      </div>
+    </div>
+  )
+
+  const PostFeedSkeleton = ({ count = 3 }: { count?: number }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {Array.from({ length: count }, (_, i) => <PostCardSkeleton key={i} />)}
+    </div>
+  )
+
+  const ChatMessageSkeleton = ({ align = 'left' }: { align?: 'left' | 'right' }) => (
+    <div style={{ display: 'flex', justifyContent: align === 'right' ? 'flex-end' : 'flex-start', gap: '8px', alignItems: 'flex-end' }}>
+      {align === 'left' && <SkeletonBlock style={{ width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0 }} />}
+      <div className="community-skeleton-card" style={{ width: align === 'right' ? '58%' : '64%', maxWidth: '420px', borderRadius: '18px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <SkeletonBlock style={{ width: '72%', height: '12px' }} />
+        <SkeletonBlock style={{ width: '48%', height: '12px' }} />
+      </div>
+      {align === 'right' && <SkeletonBlock style={{ width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0 }} />}
+    </div>
+  )
+
+  const ChatThreadSkeleton = () => (
+    <>
+      <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+        {isMobile && <SkeletonBlock style={{ width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0 }} />}
+        <SkeletonBlock style={{ width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px', flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <SkeletonBlock style={{ width: '34%', height: '14px' }} />
+          <SkeletonBlock style={{ width: '22%', height: '10px' }} />
+        </div>
+      </div>
+      <div className="chat-wallpaper" style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <ChatMessageSkeleton />
+        <ChatMessageSkeleton align="right" />
+        <ChatMessageSkeleton />
+        <ChatMessageSkeleton align="right" />
+      </div>
+      <div style={{ padding: '12px 16px', borderTop: '1.5px solid var(--border)', flexShrink: 0 }}>
+        <div className="community-skeleton-card" style={{ borderRadius: '20px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <SkeletonBlock style={{ width: '30px', height: '30px', borderRadius: '50%' }} />
+          <SkeletonBlock style={{ flex: 1, height: '16px' }} />
+          <SkeletonBlock style={{ width: '42px', height: '30px', borderRadius: '999px' }} />
+        </div>
+      </div>
+    </>
+  )
 
   const neu = { background: 'var(--community-item-bg)', boxShadow: '6px 6px 12px var(--community-item-shadow-dark), -6px -6px 12px var(--community-item-shadow-light)' }
   const neuInset = { background: 'var(--community-item-bg)', boxShadow: 'inset 4px 4px 8px var(--community-item-shadow-dark), inset -4px -4px 8px var(--community-item-shadow-light)' }
@@ -1491,6 +1624,46 @@ export default function CommunityPage() {
           width: 100%;
           background: color-mix(in srgb, var(--border) 78%, transparent);
           flex-shrink: 0;
+        }
+        .community-skeleton-card {
+          background: color-mix(in srgb, var(--surface) 82%, var(--surface-2) 18%);
+          border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.035);
+          overflow: hidden;
+          box-sizing: border-box;
+        }
+        .community-skeleton-block {
+          display: block;
+          border-radius: 999px;
+          background:
+            linear-gradient(
+              90deg,
+              color-mix(in srgb, var(--surface-3) 84%, transparent) 0%,
+              color-mix(in srgb, var(--surface) 72%, var(--surface-3) 28%) 42%,
+              color-mix(in srgb, var(--surface-3) 84%, transparent) 78%
+            );
+          background-size: 220% 100%;
+          animation: communitySkeletonShimmer 1.6s ease-in-out infinite;
+        }
+        :root[data-theme="dark"] .community-skeleton-card {
+          background: color-mix(in srgb, var(--surface) 66%, var(--surface-2) 34%);
+          border-color: color-mix(in srgb, var(--border) 64%, transparent);
+          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+        }
+        :root[data-theme="dark"] .community-skeleton-block {
+          background:
+            linear-gradient(
+              90deg,
+              color-mix(in srgb, var(--surface-3) 72%, transparent) 0%,
+              color-mix(in srgb, var(--surface-2) 64%, var(--surface-3) 36%) 42%,
+              color-mix(in srgb, var(--surface-3) 72%, transparent) 78%
+            );
+          background-size: 220% 100%;
+        }
+        @keyframes communitySkeletonShimmer {
+          0% { background-position: 120% 0; opacity: 0.78; }
+          50% { opacity: 1; }
+          100% { background-position: -120% 0; opacity: 0.78; }
         }
       `}</style>
       {confirmDialog}
@@ -1726,9 +1899,25 @@ export default function CommunityPage() {
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '0 2px 18px', overflow: 'hidden' }}>
-            {classes.filter(cls => !cls.isDirectChat && cls.id !== 'general-discussion').map((cls) => {
-              const isMuted = cls.isMuted || false
-              return (
+            {shouldShowCourseSkeletons ? (
+              <>
+                {[1, 2, 3, 4].map(i => <CourseRowSkeleton key={i} />)}
+              </>
+            ) : courseClasses.length === 0 ? (
+              <div style={{
+                padding: '18px 14px',
+                borderRadius: '18px',
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                color: 'var(--text-muted)',
+                fontSize: '13px',
+                fontWeight: 700,
+                textAlign: 'center',
+              }}>
+                No courses available
+              </div>
+            ) : (
+              courseClasses.map((cls) => (
                 <div
                   key={cls.id}
                   onTouchStart={() => handleTouchStart(cls)}
@@ -1855,8 +2044,8 @@ export default function CommunityPage() {
                           right: '0px',
                           background: 'var(--surface)',
                           borderRadius: '16px',
-                          boxShadow: '0 10px 28px rgba(0,0,0,0.15)',
-                          border: '1px solid rgba(0,0,0,0.06)',
+                          boxShadow: 'var(--shadow-md)',
+                          border: '1px solid var(--border)',
                           padding: '8px',
                           display: 'flex',
                           flexDirection: 'column',
@@ -1938,8 +2127,8 @@ export default function CommunityPage() {
                     )}
                   </div>
                 </div>
-              )
-            })}
+              ))
+            )}
           </div>
           <p style={{
             textAlign: 'center',
@@ -2057,7 +2246,15 @@ export default function CommunityPage() {
               <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', padding: '0 6px' }}>
                 My Courses
               </div>
-              {classes.filter(cls => !cls.isDirectChat && cls.id !== 'general-discussion').map((cls, idx, courseList) => {
+              {shouldShowCourseSkeletons ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[1, 2, 3, 4].map(i => <CourseRowSkeleton key={i} compact />)}
+                </div>
+              ) : courseClasses.length === 0 ? (
+                <div style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center', padding: '12px 10px' }}>
+                  No courses available
+                </div>
+              ) : courseClasses.map((cls, idx, courseList) => {
                 const active = selectedClass?.id === cls.id
                 return (
                 <React.Fragment key={cls.id}>
@@ -2191,7 +2388,7 @@ export default function CommunityPage() {
         )}
 
         {/* Direct Messages section — hidden for students with zero DMs, and hidden entirely on mobile views */}
-        {!isMobile && (userRole === 'MANAGER' || classes.some(cls => cls.isDirectChat)) && (
+        {!isMobile && (shouldShowDirectSkeletons || userRole === 'MANAGER' || directChatClasses.length > 0) && (
           <>
             <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '12px 0 4px', padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>Direct Messages</span>
@@ -2205,7 +2402,11 @@ export default function CommunityPage() {
                 </button>
               )}
             </div>
-            {classes.filter(cls => cls.isDirectChat).map(cls => (
+            {shouldShowDirectSkeletons ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {[1, 2, 3].map(i => <DirectMessageSkeleton key={i} />)}
+              </div>
+            ) : directChatClasses.map(cls => (
               <button
                 key={cls.id}
                 onClick={() => setSelectedClass(cls)}
@@ -2249,7 +2450,7 @@ export default function CommunityPage() {
                   </div>
               </button>
             ))}
-            {classes.filter(cls => cls.isDirectChat).length === 0 && (
+            {!shouldShowDirectSkeletons && directChatClasses.length === 0 && (
               <div style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center', padding: '8px 10px' }}>
                 {userRole === 'MANAGER' ? 'No active DMs — click + to start one' : 'No direct messages yet'}
               </div>
@@ -2355,20 +2556,26 @@ export default function CommunityPage() {
             {/* Feed Wall */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', background: 'var(--surface-2)' }}>
               {/* Composer Card */}
-              {(isMobile || isCapacitor || classes.filter(c => !c.isDirectChat).length > 0) && (
+              {shouldShowCourseSkeletons ? (
+                <ComposerSkeleton />
+              ) : (isMobile || isCapacitor || courseClasses.length > 0) && (
                 <div style={{
                   background: 'var(--surface)', borderRadius: '20px', padding: '18px',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: '1px solid var(--border)',
                   display: 'flex', flexDirection: 'column', gap: '12px'
                 }}>
                   <div style={{ display: 'flex', gap: '12px' }}>
-                    <div style={{
-                      width: '38px', height: '38px', borderRadius: '50%', background: 'var(--primary-light)',
-                      color: 'var(--primary)', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '14px', flexShrink: 0
-                    }}>
-                      {userName ? userName.charAt(0).toUpperCase() : 'U'}
-                    </div>
+                    {loadingUser ? (
+                      <SkeletonBlock style={{ width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{
+                        width: '38px', height: '38px', borderRadius: '50%', background: 'var(--primary-light)',
+                        color: 'var(--primary)', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '14px', flexShrink: 0
+                      }}>
+                        {userName ? userName.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
                     <div style={{ flex: 1, position: 'relative' }}>
                       <textarea
                         ref={generalComposerRef}
@@ -2680,41 +2887,7 @@ export default function CommunityPage() {
 
               {/* Posts Stream */}
               {loadingMessages && generalDiscussionPosts.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  {[1, 2, 3].map(i => (
-                    <div key={i} style={{
-                      background: 'var(--surface)',
-                      borderRadius: '20px',
-                      padding: '20px',
-                      border: '1px solid var(--border)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '12px',
-                      animation: 'shimmerPulse 1.8s ease-in-out infinite'
-                    }}>
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--surface-3)' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-                          <div style={{ width: '30%', height: '12px', borderRadius: '4px', background: 'var(--surface-3)' }} />
-                          <div style={{ width: '20%', height: '8px', borderRadius: '4px', background: 'var(--surface-3)' }} />
-                        </div>
-                      </div>
-                      <div style={{ width: '90%', height: '12px', borderRadius: '4px', background: 'var(--surface-3)', marginTop: '8px' }} />
-                      <div style={{ width: '75%', height: '12px', borderRadius: '4px', background: 'var(--surface-3)' }} />
-                      <div style={{ display: 'flex', gap: '16px', marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-                        <div style={{ width: '50px', height: '12px', borderRadius: '4px', background: 'var(--surface-3)' }} />
-                        <div style={{ width: '80px', height: '12px', borderRadius: '4px', background: 'var(--surface-3)' }} />
-                      </div>
-                    </div>
-                  ))}
-                  <style>{`
-                    @keyframes shimmerPulse {
-                      0% { opacity: 0.6; }
-                      50% { opacity: 1; }
-                      100% { opacity: 0.6; }
-                    }
-                  `}</style>
-                </div>
+                <PostFeedSkeleton count={3} />
               ) : (
                 (() => {
                   const visibleGeneralMessages = generalDiscussionPosts.filter(m => !m.isDeleted && !m.deletedAt && !(m as any).isSystemDeleted);
@@ -3336,10 +3509,7 @@ export default function CommunityPage() {
             {/* Announcements Wall */}
             <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '14px' : 'clamp(14px, 2vw, 24px)', display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--surface-2)', minWidth: 0 }}>
               {loadingAnnouncements ? (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-                  <div style={{ width: '36px', height: '36px', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-                  <p style={{ fontWeight: '600', fontSize: '13px' }}>Loading announcements...</p>
-                </div>
+                <PostFeedSkeleton count={2} />
               ) : announcements.length === 0 ? (
                 <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--surface)', border: '1px solid var(--border)', textAlign: 'center' }}>
                   <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
@@ -3442,12 +3612,8 @@ export default function CommunityPage() {
             <p style={{ fontWeight: '700', fontSize: '15px', margin: 0 }}>Tap on a community to start chatting</p>
             <p style={{ fontSize: '12px', margin: 0, opacity: 0.7, textAlign: 'center', lineHeight: 1.5 }}>Select any course community from the left panel to view messages and chat with your coursemates.</p>
           </div>
-        ) : loadingMessages ? (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ width: '36px', height: '36px', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-            <p style={{ fontWeight: '600', fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>Loading messages...</p>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </div>
+        ) : loadingMessages && messages.length === 0 ? (
+          <ChatThreadSkeleton />
         ) : (
           <>
             {/* Header */}
