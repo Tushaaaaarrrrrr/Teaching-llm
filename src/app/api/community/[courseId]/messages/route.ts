@@ -495,9 +495,11 @@ export async function DELETE(
     }
 
     // ── Community path ───────────────────────────────────────────────────────
-    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-    if (accessibleCourseIds !== null && !accessibleCourseIds.includes(params.courseId)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (params.courseId !== 'general-discussion') {
+      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(params.courseId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
 
     const course = await prisma.course.findUnique({
@@ -516,6 +518,9 @@ export async function DELETE(
     }
     if (session.role !== 'MANAGER' && message.senderId !== session.userId) {
       return NextResponse.json({ error: 'You can only delete your own messages' }, { status: 403 })
+    }
+    if (session.role !== 'MANAGER' && Date.now() - message.createdAt.getTime() > 24 * 60 * 60 * 1000) {
+      return NextResponse.json({ error: 'Messages can only be deleted within 24 hours' }, { status: 403 })
     }
     if (message.isDeleted) return NextResponse.json({ error: 'Message already deleted' }, { status: 400 })
 
@@ -556,11 +561,6 @@ export async function PATCH(
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Only ADMIN and MANAGER can edit messages
-    if (session.role !== 'MANAGER' && session.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Only admins and managers can edit messages' }, { status: 403 })
-    }
-
     const { messageId, content } = await request.json()
     if (!messageId) return NextResponse.json({ error: 'messageId is required' }, { status: 400 })
     if (!content || !content.trim()) {
@@ -577,9 +577,11 @@ export async function PATCH(
     }
 
     // Community path
-    const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
-    if (accessibleCourseIds !== null && !accessibleCourseIds.includes(params.courseId)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (params.courseId !== 'general-discussion') {
+      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role)
+      if (accessibleCourseIds !== null && !accessibleCourseIds.includes(params.courseId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
 
     const message = await prisma.communityMessage.findUnique({ where: { id: messageId } })
@@ -592,6 +594,9 @@ export async function PATCH(
     }
     if (message.senderId !== session.userId) {
       return NextResponse.json({ error: 'You can only edit your own messages' }, { status: 403 })
+    }
+    if (Date.now() - message.createdAt.getTime() > 24 * 60 * 60 * 1000) {
+      return NextResponse.json({ error: 'Messages can only be edited within 24 hours' }, { status: 403 })
     }
 
     const editedAt = new Date()

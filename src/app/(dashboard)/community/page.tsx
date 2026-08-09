@@ -511,6 +511,56 @@ export default function CommunityPage() {
     }
   }
 
+  const canEditOwnGeneralPost = (msg: CommMsg) => (
+    msg.sender.id === userId &&
+    !msg.isDeleted &&
+    !msg.id.startsWith('temp-') &&
+    Date.now() - new Date(msg.createdAt).getTime() <= 24 * 60 * 60 * 1000
+  )
+
+  const canDeleteGeneralPost = (msg: CommMsg) => (
+    userRole === 'MANAGER' ||
+    canEditOwnGeneralPost(msg)
+  )
+
+  const startGeneralPostEdit = (msg: CommMsg) => {
+    setEditingMessage(msg)
+    setInput(msg.content)
+    clearPendingImage()
+    openGeneralDiscussion(true)
+  }
+
+  async function deleteGeneralPost(msg: CommMsg) {
+    if (deletingId) return
+    const allowed = await confirm({
+      title: 'Delete Post?',
+      message: userRole === 'MANAGER'
+        ? 'This post will be removed from General Discussion.'
+        : 'You can delete your own post within 24 hours.',
+      confirmLabel: 'Delete Post',
+      tone: 'danger',
+    })
+    if (!allowed) return
+    setDeletingId(msg.id)
+    try {
+      const res = await fetch(`/api/community/${msg.courseId}/messages`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId: msg.id }),
+      })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'Failed to delete post')
+      }
+      loadGeneralDiscussionPosts()
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : 'Could not delete post')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const loadPinnedMessage = useCallback(async (classId: string) => {
     try {
       const res = await fetch(`/api/community/${classId}/messages/pinned`)
@@ -2412,6 +2462,40 @@ export default function CommunityPage() {
                     </div>
                   )}
 
+                  {editingMessage?.courseId === 'general-discussion' && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                      padding: '9px 12px',
+                      borderRadius: '12px',
+                      background: 'rgba(217, 119, 6, 0.08)',
+                      color: '#d97706',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                    }}>
+                      <span>Editing post</span>
+                      <button
+                        onClick={() => {
+                          setEditingMessage(null)
+                          setInput('')
+                        }}
+                        style={{
+                          border: 'none',
+                          background: 'transparent',
+                          color: '#d97706',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: 900,
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+
                   {/* Composer Footer Actions */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12.5px', flexWrap: 'wrap' }}>
@@ -2535,8 +2619,9 @@ export default function CommunityPage() {
                         if (!input.trim() && !pendingImage) return;
 
                         setUploadingImage(true);
+                        const isEditingGeneralPost = editingMessage?.courseId === 'general-discussion'
                         let imageUrl: string | null = null;
-                        if (pendingImage) {
+                        if (!isEditingGeneralPost && pendingImage) {
                           try {
                             if (isDocumentAttachment(pendingImage)) {
                               setUploadProgress(0);
@@ -2570,6 +2655,21 @@ export default function CommunityPage() {
                         // Done upload
 
                         try {
+                          if (isEditingGeneralPost && editingMessage) {
+                            const res = await fetch(`/api/community/general-discussion/messages`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ messageId: editingMessage.id, content: input })
+                            });
+                            if (!res.ok) {
+                              const errData = await res.json();
+                              throw new Error(errData.error || 'Failed to edit post');
+                            }
+                            setInput('');
+                            setEditingMessage(null);
+                            loadGeneralDiscussionPosts();
+                            return;
+                          }
                           const res = await fetch(`/api/community/general-discussion/messages`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -2597,7 +2697,7 @@ export default function CommunityPage() {
                         transition: 'opacity 0.2s'
                       }}
                     >
-                      {uploadingImage ? 'Uploading...' : 'Post'}
+                      {uploadingImage ? 'Uploading...' : editingMessage?.courseId === 'general-discussion' ? 'Save' : 'Post'}
                     </button>
                   </div>
                 </div>
@@ -2660,7 +2760,8 @@ export default function CommunityPage() {
                 </div>
               ) : (
                 (() => {
-                  const mainPosts = generalDiscussionPosts.filter(m => !m.replyToId);
+                  const visibleGeneralMessages = generalDiscussionPosts.filter(m => !m.isDeleted && !m.deletedAt && !(m as any).isSystemDeleted);
+                  const mainPosts = visibleGeneralMessages.filter(m => !m.replyToId);
                   const sortedPosts = [...mainPosts];
 
                 // Sort client side based on filter
@@ -2679,7 +2780,7 @@ export default function CommunityPage() {
                   };
                   sortedPosts.sort((a, b) => getInteractionCount(b) - getInteractionCount(a));
                 } else if (generalFeedFilter === 'unanswered') {
-                  const filtered = sortedPosts.filter(p => generalDiscussionPosts.filter(r => r.replyToId === p.id).length === 0);
+                  const filtered = sortedPosts.filter(p => visibleGeneralMessages.filter(r => r.replyToId === p.id).length === 0);
                   sortedPosts.length = 0;
                   sortedPosts.push(...filtered);
                 } else if (generalFeedFilter === 'following') {
@@ -2705,7 +2806,7 @@ export default function CommunityPage() {
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     {sortedPosts.map(post => {
-                      const comments = generalDiscussionPosts.filter(r => r.replyToId === post.id);
+                      const comments = visibleGeneralMessages.filter(r => r.replyToId === post.id);
                       let likesList: string[] = [];
                       try { likesList = JSON.parse(post.likes || '[]'); } catch(e){}
                       const userHasLiked = likesList.includes(userId);
@@ -2714,6 +2815,8 @@ export default function CommunityPage() {
                       try { reactionsObj = JSON.parse(post.reactions || '{}'); } catch(e){}
 
                       const commentsOpen = expandedCommentsMessageId === post.id;
+                      const canEditPost = canEditOwnGeneralPost(post);
+                      const canDeletePost = canDeleteGeneralPost(post);
 
                       return (
                         <div key={post.id} style={{
@@ -2733,22 +2836,88 @@ export default function CommunityPage() {
                               </div>
                               <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{ fontWeight: '800', fontSize: '13.5px', color: 'var(--text-primary)' }}>{post.sender.name}</span>
-                                  {/* Course colored Badge pill */}
-                                  <span style={{
-                                    fontSize: '9px', fontWeight: '800', padding: '2px 8px', borderRadius: '50px',
-                                    background: (post as any).courseColor ? (post as any).courseColor + '15' : '#f0f0f5',
-                                    color: (post as any).courseColor || 'var(--text-secondary)',
-                                    border: `1px solid ${(post as any).courseColor ? (post as any).courseColor + '30' : 'var(--border)'}`
-                                  }}>
-                                    {(post as any).courseName || 'General'}
-                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      if (userRole === 'MANAGER') setSelectedUserDetailsId(post.sender.id)
+                                    }}
+                                    style={{
+                                      border: 'none',
+                                      background: 'transparent',
+                                      padding: 0,
+                                      fontWeight: '800',
+                                      fontSize: '13.5px',
+                                      color: userRole === 'MANAGER' ? 'var(--primary)' : 'var(--text-primary)',
+                                      cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                                      fontFamily: 'inherit',
+                                      textAlign: 'left',
+                                    }}
+                                  >
+                                    {post.sender.name}
+                                  </button>
+                                  {post.isEdited && (
+                                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700 }}>(edited)</span>
+                                  )}
                                 </div>
                                 <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: '600' }}>
                                   {new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </div>
                               </div>
                             </div>
+                            {(canEditPost || canDeletePost) && (
+                              <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                                {canEditPost && (
+                                  <button
+                                    onClick={() => startGeneralPostEdit(post)}
+                                    title="Edit post"
+                                    style={{
+                                      width: '30px',
+                                      height: '30px',
+                                      borderRadius: '10px',
+                                      border: '1px solid var(--border)',
+                                      background: 'var(--surface-2)',
+                                      color: '#d97706',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                    }}
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                      <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
+                                    </svg>
+                                  </button>
+                                )}
+                                {canDeletePost && (
+                                  <button
+                                    onClick={() => deleteGeneralPost(post)}
+                                    title={userRole === 'MANAGER' ? 'Delete post' : 'Delete post within 24 hours'}
+                                    disabled={deletingId === post.id}
+                                    style={{
+                                      width: '30px',
+                                      height: '30px',
+                                      borderRadius: '10px',
+                                      border: '1px solid var(--border)',
+                                      background: 'var(--danger-light)',
+                                      color: 'var(--danger)',
+                                      cursor: deletingId === post.id ? 'wait' : 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      opacity: deletingId === post.id ? 0.65 : 1,
+                                    }}
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="3 6 5 6 21 6"/>
+                                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                      <path d="M10 11v6"/>
+                                      <path d="M14 11v6"/>
+                                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {/* Post Body */}
@@ -2840,6 +3009,8 @@ export default function CommunityPage() {
                                     let cLikes: string[] = [];
                                     try { cLikes = JSON.parse(comment.likes || '[]'); } catch(e){}
                                     const cLiked = cLikes.includes(userId);
+                                    const canEditComment = canEditOwnGeneralPost(comment);
+                                    const canDeleteComment = canDeleteGeneralPost(comment);
 
                                     return (
                                       <div key={comment.id} style={{
@@ -2847,8 +3018,59 @@ export default function CommunityPage() {
                                         display: 'flex', flexDirection: 'column', gap: '4px'
                                       }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                          <span style={{ fontWeight: '800', fontSize: '12px', color: 'var(--text-primary)' }}>{comment.sender.name}</span>
-                                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                                            <button
+                                              onClick={() => {
+                                                if (userRole === 'MANAGER') setSelectedUserDetailsId(comment.sender.id)
+                                              }}
+                                              style={{
+                                                border: 'none',
+                                                background: 'transparent',
+                                                padding: 0,
+                                                fontWeight: '800',
+                                                fontSize: '12px',
+                                                color: userRole === 'MANAGER' ? 'var(--primary)' : 'var(--text-primary)',
+                                                cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                                                fontFamily: 'inherit',
+                                                textAlign: 'left',
+                                              }}
+                                            >
+                                              {comment.sender.name}
+                                            </button>
+                                            {comment.isEdited && (
+                                              <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700 }}>(edited)</span>
+                                            )}
+                                          </div>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                            {canEditComment && (
+                                              <button
+                                                onClick={() => startGeneralPostEdit(comment)}
+                                                title="Edit comment"
+                                                style={{ border: 'none', background: 'transparent', color: '#d97706', cursor: 'pointer', padding: '2px', display: 'flex' }}
+                                              >
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                  <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
+                                                </svg>
+                                              </button>
+                                            )}
+                                            {canDeleteComment && (
+                                              <button
+                                                onClick={() => deleteGeneralPost(comment)}
+                                                title={userRole === 'MANAGER' ? 'Delete comment' : 'Delete comment within 24 hours'}
+                                                disabled={deletingId === comment.id}
+                                                style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: deletingId === comment.id ? 'wait' : 'pointer', padding: '2px', display: 'flex', opacity: deletingId === comment.id ? 0.65 : 1 }}
+                                              >
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                  <polyline points="3 6 5 6 21 6"/>
+                                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                                  <path d="M10 11v6"/>
+                                                  <path d="M14 11v6"/>
+                                                </svg>
+                                              </button>
+                                            )}
+                                          </div>
                                         </div>
                                         <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: 0 }}>{comment.content}</p>
                                         <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
@@ -4885,6 +5107,7 @@ export default function CommunityPage() {
           onClose={() => setSelectedUserDetailsId(null)} 
           onUpdate={() => {
             if (selectedClass?.id) loadMessages(selectedClass.id, { showLoading: false }).catch(console.error)
+            if (!selectedClass && sidebarTab === 'general') loadGeneralDiscussionPosts()
             if (transcriptOpen) openTranscript()
           }}
         />
