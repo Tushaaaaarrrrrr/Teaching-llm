@@ -619,34 +619,6 @@ function CurriculumTab({
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      {/* Status legend */}
-      {isStudent && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '14px',
-          padding: '8px 14px',
-          borderRadius: '12px',
-          background: 'var(--surface)',
-          border: '1px solid rgba(15,23,42,0.04)',
-          fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)',
-        }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
-            Tap to cycle:
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', border: '1.5px solid #cbd5e1', display: 'inline-block' }} />
-            None
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--success)' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
-            Done
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--warning)' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--warning)', display: 'inline-block' }} />
-            Rewatch
-          </span>
-        </div>
-      )}
-
       {topics.map((topic, idx) => {
         const open = expandedTopics.has(topic.id)
         const completed = topic.content.filter(c => progressMap[c.id] === 'COMPLETED').length
